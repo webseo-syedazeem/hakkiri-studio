@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import { Icon } from "@/components/ui";
 
@@ -205,6 +206,7 @@ const STEPS = [
 ];
 
 export function AssessmentFlow() {
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState(0);
   const [name, setName] = useState("Alex Rivera");
   const [targetRole, setTargetRole] = useState("Senior Product Manager");
@@ -228,6 +230,9 @@ export function AssessmentFlow() {
     if (currentStep < STEPS.length - 1) {
       setCurrentStep((prev) => prev + 1);
     } else {
+      // Mark assessment completed in cookies and state
+      document.cookie = `hk_assessed=1; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`;
+      document.cookie = `hk_welcomed=1; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`;
       setIsCompleted(true);
     }
   };
@@ -241,8 +246,7 @@ export function AssessmentFlow() {
   if (isCompleted) {
     return (
       <div className="mx-auto max-w-4xl py-6 animate-fade-in">
-        <div className="rounded-3xl border border-white/[0.08] bg-[#141522] p-8 md:p-12 shadow-2xl relative overflow-hidden">
-          {/* Subtle background glow */}
+        <div className="rounded-[28px] border border-white/[0.08] bg-[#141522] p-8 md:p-12 shadow-2xl relative overflow-hidden">
           <div className="absolute top-0 right-0 -mr-24 -mt-24 h-96 w-96 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
           
           <div className="flex items-center gap-2 mb-4">
@@ -349,17 +353,11 @@ export function AssessmentFlow() {
               <Icon name="arrowRight" size={16} />
             </Link>
             <Link
-              href="/analytics"
+              href="/"
               className="inline-flex items-center gap-2 rounded-xl bg-panel-2 px-5 py-3.5 text-sm font-semibold text-ink border border-white/10 hover:bg-[#282a35] transition-colors"
             >
-              <Icon name="barChart" size={16} />
-              <span>View Clarity Profile</span>
-            </Link>
-            <Link
-              href="/"
-              className="text-xs text-muted hover:text-ink transition-colors ml-auto"
-            >
-              Return to Studio Home →
+              <span>Go to Studio Dashboard</span>
+              <Icon name="arrowRight" size={14} />
             </Link>
           </div>
         </div>
@@ -369,63 +367,76 @@ export function AssessmentFlow() {
 
   return (
     <div className="mx-auto max-w-2xl py-6 animate-fade-in">
-      {/* Progress Header */}
-      <div className="mb-6 flex items-center justify-between">
+      {/* Top Header Bar matching user's exact screenshot */}
+      <div className="mb-4 flex items-center justify-between px-1">
         <div className="flex items-center gap-3">
           {currentStep > 0 && (
             <button
               onClick={handleBack}
-              className="flex h-9 w-9 items-center justify-center rounded-xl bg-panel-2 text-muted hover:text-ink hover:bg-[#282a35] transition-colors"
+              className="flex h-8 w-8 items-center justify-center rounded-lg bg-panel-2 text-muted hover:text-white transition-colors cursor-pointer"
               title="Go back"
             >
-              <Icon name="back" size={16} />
+              <Icon name="back" size={14} />
             </button>
           )}
-          <span className="text-xs font-extrabold tracking-widest text-blue-soft uppercase">
+          <span className="text-xs font-black tracking-widest text-[#aab3ff] uppercase">
             {step.tag} · {step.stepNum}
           </span>
         </div>
-        <div className="w-32 h-2 rounded-full bg-white/[0.08] overflow-hidden">
-          <div
-            className="h-full bg-blue transition-all duration-300 rounded-full"
-            style={{ width: `${step.progress * 100}%` }}
-          />
+
+        <div className="flex items-center gap-4">
+          {/* Top-right pill progress bar */}
+          <div className="w-28 h-2 rounded-full bg-white/[0.1] overflow-hidden">
+            <div
+              className="h-full bg-[#7a88ff] transition-all duration-300 rounded-full"
+              style={{ width: `${step.progress * 100}%` }}
+            />
+          </div>
+
+          {/* Quick Skip Option */}
+          <Link
+            href="/api/assessment/skip"
+            className="text-xs text-muted hover:text-white transition-colors ml-1"
+            title="Skip assessment and enter dashboard"
+          >
+            Skip →
+          </Link>
         </div>
       </div>
 
-      {/* Question Card */}
-      <div className="rounded-3xl border border-white/[0.08] bg-panel/90 p-7 md:p-10 shadow-2xl backdrop-blur-md">
-        <h1 className="text-2xl md:text-4xl font-black tracking-tight text-ink leading-tight">
+      {/* Main Question Card matching screenshot container styling */}
+      <div className="rounded-[28px] border border-white/[0.08] bg-[#141520]/95 p-7 md:p-10 shadow-2xl backdrop-blur-md">
+        <h1 className="text-2xl md:text-[38px] font-black tracking-tight text-white leading-tight">
           {step.titlePre}
-          <span className="text-blue-soft">{step.titleHighlight}</span>
+          <span className="text-[#8494ff]">{step.titleHighlight}</span>
         </h1>
-        <p className="mt-2 text-sm md:text-base text-muted">{step.subtitle}</p>
+        <p className="mt-2 text-sm md:text-base text-muted/90">{step.subtitle}</p>
 
-        {/* Step 1: Name and Role Input */}
+        {/* Step 1: Name and Role Input (Exact replica of user screenshot) */}
         {step.isNameInput && (
-          <div className="mt-8 space-y-5">
+          <div className="mt-8 space-y-6">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-muted mb-2">
-                Your Full Name
+              <label className="block text-[11px] font-extrabold uppercase tracking-wider text-muted/80 mb-2">
+                YOUR FULL NAME
               </label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Alex Rivera"
-                className="w-full rounded-xl border border-white/10 bg-booth px-4 py-3.5 text-base font-semibold text-white placeholder-muted focus:border-blue focus:outline-none focus:ring-1 focus:ring-blue transition-all"
+                placeholder="Alex Rivera"
+                className="w-full rounded-xl border border-white/[0.08] bg-[#1a1b28]/90 px-4 py-3.5 text-base font-semibold text-white placeholder-muted focus:border-blue-soft focus:outline-none focus:ring-2 focus:ring-blue/30 transition-all"
               />
             </div>
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-muted mb-2">
-                Target Role or Professional Position
+              <label className="block text-[11px] font-extrabold uppercase tracking-wider text-muted/80 mb-2">
+                TARGET ROLE OR PROFESSIONAL POSITION
               </label>
               <input
                 type="text"
                 value={targetRole}
                 onChange={(e) => setTargetRole(e.target.value)}
-                placeholder="e.g. Senior Product Manager / VP of Engineering"
-                className="w-full rounded-xl border border-white/10 bg-booth px-4 py-3.5 text-base font-semibold text-white placeholder-muted focus:border-blue focus:outline-none focus:ring-1 focus:ring-blue transition-all"
+                placeholder="Senior Product Manager"
+                className="w-full rounded-xl border border-white/[0.08] bg-[#1a1b28]/90 px-4 py-3.5 text-base font-semibold text-white placeholder-muted focus:border-blue-soft focus:outline-none focus:ring-2 focus:ring-blue/30 transition-all"
               />
             </div>
           </div>
@@ -434,7 +445,7 @@ export function AssessmentFlow() {
         {/* Step 5: Confidence Gauge Slider */}
         {step.hasGauge && (
           <div className="mt-8 space-y-6">
-            <div className="rounded-2xl border border-white/10 bg-booth p-6 text-center">
+            <div className="rounded-2xl border border-white/10 bg-[#1a1b28] p-6 text-center">
               <div className="text-5xl font-black text-blue-soft">{confidenceScore} / 5</div>
               <div className="mt-2 text-base font-bold text-white">
                 {confidenceScore === 1 && "Extremely Anxious & Overwhelmed under pressure"}
@@ -469,7 +480,7 @@ export function AssessmentFlow() {
           </div>
         )}
 
-        {/* Options List */}
+        {/* Options List for other steps */}
         {step.options && (
           <div className="mt-6 space-y-3">
             {step.options.map((opt: Option) => {
@@ -481,8 +492,8 @@ export function AssessmentFlow() {
                   className={clsx(
                     "cursor-pointer rounded-2xl p-4 md:p-5 border transition-all duration-200 flex items-start gap-4",
                     selected
-                      ? "border-blue/50 bg-blue/10 shadow-md ring-1 ring-blue/30"
-                      : "border-white/[0.06] bg-panel-2/70 hover:border-white/15 hover:bg-panel-2"
+                      ? "border-blue/50 bg-blue/15 shadow-md ring-1 ring-blue/30"
+                      : "border-white/[0.06] bg-[#1a1b28]/60 hover:border-white/15 hover:bg-[#1a1b28]"
                   )}
                 >
                   <div
@@ -513,9 +524,9 @@ export function AssessmentFlow() {
           </div>
         )}
 
-        {/* Continue Button */}
-        <div className="mt-8 flex items-center justify-between border-t border-line pt-6">
-          <span className="text-xs text-muted">
+        {/* Bottom Bar matching screenshot */}
+        <div className="mt-8 flex items-center justify-between border-t border-white/[0.06] pt-6">
+          <span className="text-xs text-muted/70">
             Step {step.stepNum} · All data stored locally & confidentially
           </span>
           <button
@@ -523,7 +534,7 @@ export function AssessmentFlow() {
             className="inline-flex items-center gap-2 rounded-xl bg-blue-fill px-6 py-3 text-sm font-bold text-white shadow-lg hover:bg-blue-hover transition-transform hover:scale-[1.02] cursor-pointer"
           >
             <span>{currentStep === STEPS.length - 1 ? "Complete Assessment" : "Continue"}</span>
-            <Icon name="arrowRight" size={16} />
+            <Icon name="arrowRight" size={15} />
           </button>
         </div>
       </div>

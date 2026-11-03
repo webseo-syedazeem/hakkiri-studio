@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import clsx from "clsx";
 import { ButtonLink, Chip, Icon, Panel, Sep } from "@/components/ui";
 import { StartButton } from "@/components/interview/StartSession";
@@ -128,6 +129,12 @@ function InterviewCard({ interview, micOk, delay }: { interview: Interview; micO
 export default async function HomePage() {
   const jar = await cookies();
   const micOk = jar.get("hk_mic_ok")?.value === "1";
+  const assessed = jar.get("hk_assessed")?.value === "1";
+
+  // When the app starts, unonboarded users begin with the Diagnostic Assessment (Step 1/7)
+  if (!assessed) {
+    redirect("/assessment");
+  }
 
   const interviews = listInterviews(londonToday());
   const mine = interviews.filter((i) => !isDemoInterview(i.id));
