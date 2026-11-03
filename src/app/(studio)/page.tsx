@@ -129,9 +129,15 @@ function InterviewCard({ interview, micOk, delay }: { interview: Interview; micO
 export default async function HomePage() {
   const jar = await cookies();
   const micOk = jar.get("hk_mic_ok")?.value === "1";
+  const authed = jar.get("hk_auth")?.value === "1";
   const assessed = jar.get("hk_assessed")?.value === "1";
 
-  // When the app starts, unonboarded users begin with the Diagnostic Assessment (Step 1/7)
+  // Proper Flow Step 1: First Login
+  if (!authed) {
+    redirect("/login");
+  }
+
+  // Proper Flow Step 2: Immediate Initial Assessment on App Start
   if (!assessed) {
     redirect("/assessment");
   }

@@ -86,11 +86,11 @@ export function DesktopHeader({
         </Link>
 
         <Link
-          href="/login"
-          className="hidden md:flex h-8 items-center gap-1.5 rounded-lg border border-white/[0.08] bg-panel-2 px-2.5 text-xs font-semibold text-muted hover:text-ink hover:bg-[#282a35] transition-colors"
-          title="Switch Account / Sign In"
+          href="/api/auth/logout"
+          className="hidden md:flex h-8 items-center gap-1.5 rounded-lg border border-white/[0.08] bg-panel-2 px-2.5 text-xs font-semibold text-muted hover:text-red-soft hover:bg-[#282a35] transition-colors"
+          title="Sign Out / Switch Account"
         >
-          <span>Log In</span>
+          <span>Log Out</span>
         </Link>
 
         <Link

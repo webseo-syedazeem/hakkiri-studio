@@ -34,22 +34,26 @@ export function AuthCard({ initialMode = "login" }: { initialMode?: "login" | "s
     setStatusText(mode === "login" ? "Verifying executive credentials..." : "Generating custom coaching profile...");
 
     setTimeout(() => {
-      setStatusText("Calibrating accent-neutral voice engine...");
+      setStatusText("Redirecting to your initial voice assessment...");
       setTimeout(() => {
-        document.cookie = `hk_welcomed=1; path=/; max-age=${60 * 60 * 24 * 365}`;
-        router.push("/");
-      }, 700);
-    }, 800);
+        document.cookie = `hk_auth=1; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`;
+        document.cookie = `hk_user=${encodeURIComponent(name || email.split("@")[0] || "Alex Rivera")}; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`;
+        document.cookie = `hk_welcomed=1; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`;
+        router.push("/assessment");
+      }, 500);
+    }, 600);
   };
 
   const handleDemoLogin = () => {
     setError(null);
     setLoading(true);
-    setStatusText("Entering as Priya Shah (Senior PM Demo)...");
+    setStatusText("Entering as Priya Shah...");
     setTimeout(() => {
-      document.cookie = `hk_welcomed=1; path=/; max-age=${60 * 60 * 24 * 365}`;
-      router.push("/");
-    }, 750);
+      document.cookie = `hk_auth=1; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`;
+      document.cookie = `hk_user=Priya%20Shah; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`;
+      document.cookie = `hk_welcomed=1; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`;
+      router.push("/assessment");
+    }, 500);
   };
 
   return (
