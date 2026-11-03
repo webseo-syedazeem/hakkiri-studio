@@ -26,10 +26,10 @@ export function SiteNav() {
           {label}
         </Link>
       ))}
-      <Link href="/" className="hidden px-3 py-1.5 text-mk-ink/70 hover:text-mk-ink sm:inline">
-        Open Hakkiri
+      <Link href="/login" className="hidden px-3 py-1.5 text-mk-ink/70 hover:text-mk-ink sm:inline">
+        Log in
       </Link>
-      <Link href="/" className="ml-1 rounded-full bg-mk-cta px-4 py-1.5 font-medium text-white transition-colors hover:bg-mk-cta-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mk-cta">
+      <Link href="/signup" className="ml-1 rounded-full bg-mk-cta px-4 py-1.5 font-medium text-white transition-colors hover:bg-mk-cta-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mk-cta">
         Start free
       </Link>
     </nav>

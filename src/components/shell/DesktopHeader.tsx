@@ -78,6 +78,14 @@ export function DesktopHeader({
         </Link>
 
         <Link
+          href="/login"
+          className="hidden md:flex h-8 items-center gap-1.5 rounded-lg border border-white/[0.08] bg-panel-2 px-2.5 text-xs font-semibold text-muted hover:text-ink hover:bg-[#282a35] transition-colors"
+          title="Switch Account / Sign In"
+        >
+          <span>Log In</span>
+        </Link>
+
+        <Link
           href="/settings"
           className="flex h-8 w-8 items-center justify-center rounded-full bg-panel-2 text-xs font-bold text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:shadow-[inset_0_0_0_1.5px_var(--color-blue-soft)] transition-all"
           title={`Signed in as ${firstName} (${initials})`}
