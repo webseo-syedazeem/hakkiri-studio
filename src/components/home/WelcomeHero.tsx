@@ -241,6 +241,57 @@ export function WelcomeHero({
             </div>
           </div>
 
+          {/* Communication Agility Gym & Clarity Strip */}
+          <div className="rounded-2xl border border-blue/30 bg-blue/10 p-5 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-start gap-3.5">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-fill text-white shadow-md">
+                <Icon name="zap" size={20} />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-blue-soft">
+                    Communication Gym · Today's Drill
+                  </span>
+                  <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-300 flex items-center gap-1">
+                    <Icon name="flame" size={11} className="text-amber-400" />
+                    4-Day Streak · 320 XP
+                  </span>
+                </div>
+                <h4 className="mt-1 text-base font-bold text-white">
+                  Think Fast: Spontaneous Stakeholder Objection (60s)
+                </h4>
+                <p className="text-xs text-ink/70">
+                  Calibrated for bottom-line-up-front (BLUF) and eliminating conversational filler words.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2.5 shrink-0">
+              <Link
+                href="/gym"
+                className="pro-btn inline-flex items-center gap-2 rounded-xl bg-blue-fill px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-blue-hover transition-all"
+              >
+                <Icon name="play" size={14} />
+                <span>Launch Gym Drill</span>
+              </Link>
+              <Link
+                href="/analytics"
+                className="pro-btn inline-flex items-center gap-1.5 rounded-xl bg-panel-2 px-3.5 py-2.5 text-xs font-semibold text-ink border border-white/10 hover:bg-[#282a35] transition-colors"
+              >
+                <Icon name="barChart" size={14} />
+                <span>Clarity Profile</span>
+              </Link>
+              <Link
+                href="/assessment"
+                className="pro-btn inline-flex items-center gap-1.5 rounded-xl bg-white/[0.06] px-3 py-2.5 text-xs font-semibold text-muted hover:text-ink hover:bg-white/[0.1] transition-colors"
+                title="Diagnostic Speaking Assessment"
+              >
+                <Icon name="target" size={14} />
+                <span className="hidden lg:inline">Diagnostic</span>
+              </Link>
+            </div>
+          </div>
+
           {/* Quick Metrics Bar */}
           <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-white/[0.06] bg-booth/60 px-5 py-3 text-xs">
             <div className="flex flex-wrap items-center gap-4">

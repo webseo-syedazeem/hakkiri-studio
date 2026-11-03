@@ -20,6 +20,18 @@ const ITEMS: {
     match: (p) => p === "/" || p.startsWith("/welcome"),
   },
   {
+    label: "Communication Gym",
+    href: "/gym",
+    icon: "zap",
+    match: (p) => p.startsWith("/gym"),
+  },
+  {
+    label: "Speech Analytics",
+    href: "/analytics",
+    icon: "barChart",
+    match: (p) => p.startsWith("/analytics"),
+  },
+  {
     label: "Interviews",
     href: "/interviews",
     icon: "brief",
@@ -36,6 +48,12 @@ const ITEMS: {
     href: "/story-bank",
     icon: "book",
     match: (p) => p.startsWith("/story-bank"),
+  },
+  {
+    label: "Diagnostic Assessment",
+    href: "/assessment",
+    icon: "target",
+    match: (p) => p.startsWith("/assessment"),
   },
 ];
 

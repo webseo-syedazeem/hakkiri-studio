@@ -15,7 +15,11 @@ export function DesktopHeader({
 
   // Derive page label for desktop breadcrumb
   let pageTitle = "Studio Home";
-  if (pathname.startsWith("/interviews")) pageTitle = "Interview Pipelines";
+  if (pathname.startsWith("/gym")) pageTitle = "Communication Agility Gym";
+  else if (pathname.startsWith("/analytics")) pageTitle = "Speech Analytics & Clarity Profile";
+  else if (pathname.startsWith("/assessment")) pageTitle = "Diagnostic Assessment";
+  else if (pathname.startsWith("/pricing")) pageTitle = "Membership & Plans";
+  else if (pathname.startsWith("/interviews")) pageTitle = "Interview Pipelines";
   else if (pathname.startsWith("/presentations")) pageTitle = "Presentation & Pitch Lab";
   else if (pathname.startsWith("/story-bank")) pageTitle = "STAR Story Bank";
   else if (pathname.startsWith("/settings")) pageTitle = "Studio Preferences";
@@ -64,10 +68,14 @@ export function DesktopHeader({
           <span className="hidden sm:inline">Mic Ready</span>
         </Link>
 
-        <div className="hidden sm:flex h-8 items-center gap-1.5 rounded-lg border border-blue/20 bg-blue/10 px-3 text-xs font-medium text-blue-soft">
+        <Link
+          href="/pricing"
+          className="hidden sm:flex h-8 items-center gap-1.5 rounded-lg border border-blue/20 bg-blue/10 px-3 text-xs font-medium text-blue-soft hover:bg-blue/20 transition-colors"
+          title="Upgrade or View Subscription Plans"
+        >
           <span className="font-bold text-ink">11m</span>
           <span>trial credit</span>
-        </div>
+        </Link>
 
         <Link
           href="/interviews/new"
