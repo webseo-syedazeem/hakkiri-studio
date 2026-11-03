@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import { Icon, type IconName } from "@/components/ui";
+import { OptionIllustration } from "@/components/illustrations/OptionIllustration";
 
 interface Option {
   id: string;
@@ -617,16 +618,8 @@ export function AssessmentFlow() {
                       : "border-white/[0.07] bg-[#1a1b28]/70 hover:border-white/20 hover:bg-[#1a1b28] hover:-translate-y-0.5"
                   )}
                 >
-                  {/* Left Illustrated Icon Capsule */}
-                  <div
-                    className={clsx(
-                      "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br shadow-inner border transition-all duration-300",
-                      opt.iconGradient,
-                      selected ? "scale-105 border-white/30" : "border-white/10 group-hover:scale-105"
-                    )}
-                  >
-                    <Icon name={opt.iconName} size={20} />
-                  </div>
+                  {/* Left 3D Illustrated Artwork Capsule */}
+                  <OptionIllustration type={opt.id} selected={selected} />
 
                   {/* Middle Details */}
                   <div className="min-w-0 grow">
