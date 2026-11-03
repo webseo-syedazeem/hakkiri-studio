@@ -1,0 +1,202 @@
+@import "tailwindcss";
+
+/*
+  Hakkiri Studio design tokens (Direction B, "Booth").
+  Every colour, radius and animation used by the designs lives here,
+  so screens use names like bg-panel or text-muted, never raw hex.
+*/
+@theme {
+  --font-sans: "Inter Variable", "Inter", system-ui, -apple-system, sans-serif;
+
+  /* Surfaces */
+  --color-booth: #16171e;        /* page background */
+  --color-panel: #1c1d25;        /* panels */
+  --color-panel-2: #22232c;      /* fields, chips, raised rows */
+  --color-line: rgb(255 255 255 / 0.08);
+  --color-line-strong: rgb(255 255 255 / 0.14);
+
+  /* Text */
+  --color-ink: #f1f1f4;
+  --color-muted: #9a9ba7;
+  --color-dim: #8a8b97;          /* 4.6:1 on panel-2, AA for small text */
+
+  /* Brand: Hakkiri blue for you and for actions, red for the coach's marks */
+  --color-blue: #7b88ff;         /* data, meters, your voice */
+  --color-blue-fill: #4a5af0;    /* primary buttons */
+  --color-blue-hover: #5a69ff;
+  --color-blue-soft: #aeb6ff;    /* links, "ready" */
+  --color-lilac: #c9ccf5;        /* "getting there" */
+  --color-wave: #5664d8;         /* recorded waveform */
+  --color-late: #c2545f;         /* waveform inside a late point */
+  --color-red: #ff5c61;          /* fillers, late points, recording light */
+  --color-red-soft: #ffb3b5;
+
+  /* The prep sheet: a light page, on screen and in print */
+  --color-paper: #fbfbfd;
+  --color-paper-ink: #17181f;
+  --color-paper-muted: #5d5f6c;
+  --color-paper-line: #e2e3ea;
+  --color-paper-accent: #3d4bd8;
+
+  /* Halden demo company tile */
+  --color-halden: #1f3a34;
+
+  /* The public site (landing, presenters, legal): white, with the app shown in its own dark colours */
+  --color-mk-mist: #f5f5f7;      /* alternate sections */
+  --color-mk-ink: #1d1d1f;       /* text */
+  --color-mk-slate: #6e6e73;     /* secondary text, 5:1 on white */
+  --color-mk-line: #d2d2d7;      /* hairlines */
+  --color-mk-blue: #3d4bd8;      /* links, 6:1 on white */
+  --color-mk-cta: #4a5af0;       /* buttons, white text 5.2:1 */
+  --color-mk-cta-hover: #3d4bd8;
+  --color-mk-stage: #16171e;     /* the app's own surface: device frames and the presentations stage */
+  --color-mk-bezel: #0d0e13;
+
+  --animate-wave: wave 1.3s ease-in-out infinite;
+  --animate-rec: rec 1.6s ease-in-out infinite;
+  --animate-rise: rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-slide-up: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-fade-in: fadeIn 0.4s ease-out both;
+  --animate-scale-in: scaleIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-float: float 4s ease-in-out infinite;
+  --animate-pulse-glow: pulseGlow 3s ease-in-out infinite;
+  --animate-shimmer: shimmer 2.5s linear infinite;
+
+  @keyframes wave {
+    0%, 100% { transform: scaleY(0.3); }
+    50% { transform: scaleY(1); }
+  }
+  @keyframes rec {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+  }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.96); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+  }
+  @keyframes pulseGlow {
+    0%, 100% { opacity: 0.4; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(1.05); }
+  }
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+}
+
+@layer base {
+  html, body {
+    background-color: var(--color-booth);
+    background-image: 
+      radial-gradient(1200px 500px at 50% -50px, rgba(123, 136, 255, 0.08), transparent 70%),
+      radial-gradient(800px 400px at 90% 10%, rgba(74, 90, 240, 0.04), transparent 60%);
+    background-attachment: fixed;
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-blue);
+    outline-offset: 2px;
+  }
+  button { cursor: pointer; }
+
+  /* Smooth custom desktop scrollbars */
+  ::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.14);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.28);
+  }
+}
+
+@layer utilities {
+  .num { font-variant-numeric: tabular-nums; }
+  .um { color: var(--color-red); text-decoration: line-through; text-decoration-thickness: 1.5px; }
+  .late { color: var(--color-ink); background: rgb(255 92 97 / 0.16); box-shadow: inset 0 -2px 0 var(--color-red); }
+  .good { color: var(--color-ink); box-shadow: inset 0 -2px 0 var(--color-blue); }
+  /* A filler inside a late point: lighter red so it stays readable on the red wash (AA). */
+  .late .um { color: var(--color-red-soft); }
+
+  /* Professional micro-interaction utilities */
+  .pro-card {
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s ease, border-color 0.28s ease;
+  }
+  .pro-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(255, 255, 255, 0.18);
+    box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.4);
+  }
+  .pro-btn {
+    transition: transform 0.15s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .pro-btn:active {
+    transform: scale(0.97);
+  }
+}
+
+/* Legal pages: plain, readable prose. */
+@layer components {
+  .legal p + p, .legal p + ul, .legal ul + p, .legal p + table, .legal table + p { margin-top: 0.85em; }
+  .legal ul { list-style: disc; padding-left: 1.3em; }
+  .legal li + li { margin-top: 0.35em; }
+  .legal a { color: var(--color-blue-soft); text-decoration: underline; text-underline-offset: 2px; }
+  .legal strong { font-weight: 600; color: var(--color-ink); }
+  .legal table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .legal th, .legal td { text-align: left; vertical-align: top; padding: 8px 10px 8px 0; border-top: 1px solid var(--color-line); }
+  .legal th { font-weight: 600; color: var(--color-muted); font-size: 13px; }
+}
+
+/* Public pages: white. The app's own tokens are remapped so shared pieces (legal pages) read on white. */
+html:has(.mk) { background: #fff; }
+.mk {
+  --color-booth: #ffffff;
+  --color-panel: #f5f5f7;
+  --color-panel-2: #ececf1;
+  --color-line: rgb(0 0 0 / 0.08);
+  --color-line-strong: rgb(0 0 0 / 0.14);
+  --color-ink: #1d1d1f;
+  --color-muted: #6e6e73;
+  --color-dim: #6e6e73;
+  --color-blue-soft: #3d4bd8;
+  --color-lilac: #3d4bd8;
+  --color-red-soft: #b3261e;
+  color-scheme: light;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+/* Printing (the prep sheet): only the page itself, on white. */
+@media print {
+  @page { size: A4; margin: 11mm; }
+  html, body { background: #fff !important; }
+  .print-hide { display: none !important; }
+  .print-sheet { box-shadow: none !important; margin: 0 !important; padding: 0 !important; max-width: none !important; border-radius: 0 !important; font-size: 12px !important; line-height: 1.42 !important; }
+  .print-sheet * { animation: none !important; }
+}

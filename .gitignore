@@ -1,0 +1,16 @@
+node_modules
+.next
+out
+.env
+.env.local
+*.tsbuildinfo
+next-env.d.ts
+.DS_Store
+
+# Local practice data (answers, recordings, reports)
+.hakkiri-data
+
+# End-to-end output
+e2e/out
+
+.vercel
