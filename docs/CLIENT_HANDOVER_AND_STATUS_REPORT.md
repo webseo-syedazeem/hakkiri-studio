@@ -170,11 +170,10 @@ Rather than discarding the client's design investment in the mobile app, we extr
 
 While the user-facing application is 100% finished and operational, the following cloud infrastructure milestones represent what remains for commercial multi-tenant SaaS scaling:
 
-1. **Cloud Database Migration:**
-   - Migrate local `.hakkiri-data/users.json` and session stores to **Supabase Postgres** (London region).
-   - Enforce Row-Level Security (RLS) so each user only reads and writes their own data.
-2. **Cloud Audio Storage:**
-   - Direct practice session audio uploads to **Supabase Storage or AWS S3 private buckets** with signed expiring URLs, replacing local server disk storage.
+1. **MongoDB Database Integration:**
+   - Connect a simple, lightweight **MongoDB** database (via Mongoose / native MongoDB driver) with a clean backend to store user profiles, practice interviews, speech scores, and custom questions. The current JSON store (`users.json`, `mocks.json`, etc.) maps directly to MongoDB collections with zero schema friction.
+2. **Cloud Audio File Storage:**
+   - Direct practice session audio uploads and presentation slides to **AWS S3 / Cloud Object Storage** with secure signed expiring URLs, replacing local server disk storage.
 3. **Stripe Billing Integration:**
    - Connect live Stripe API keys in `src/lib/pricing.ts` and wire up webhook listeners for automatic practice hour provisioning upon plan purchase (Foundation, Accelerator, Executive Mastery).
 4. **Unified Mobile Client Strategy (Recommendation):**

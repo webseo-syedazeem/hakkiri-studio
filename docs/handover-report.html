@@ -611,20 +611,19 @@
     </thead>
     <tbody>
       <tr>
-        <td><b>1. Cloud Database Migration</b></td>
+        <td><b>1. MongoDB Database Integration</b></td>
         <td>
-          Migrate local <code>.hakkiri-data/users.json</code> and interview session stores to <b>Supabase Postgres</b> (London region).
-          Enforce Row-Level Security (RLS) on each table so users can only access their own recordings and interview data.
+          Connect a simple, lightweight <b>MongoDB</b> database (via Mongoose / native MongoDB driver) with a clean backend to store user profiles, practice interviews, speech scores, and custom questions. The current JSON store maps directly to MongoDB collections.
         </td>
         <td>
-          <span class="status-badge complete">Ready to execute</span><br>
-          <span style="font-size: 7pt; color:#64748b;">Schema already designed in mobile repo docs.</span>
+          <span class="status-badge complete">Ready to connect</span><br>
+          <span style="font-size: 7pt; color:#64748b;">Simple MongoDB schema ready.</span>
         </td>
       </tr>
       <tr>
         <td><b>2. Cloud Audio File Storage</b></td>
         <td>
-          Direct practice answer recordings and slide presentation uploads to <b>Supabase Storage / AWS S3 private buckets</b> with signed expiring URLs, replacing local server disk storage.
+          Direct practice answer recordings and presentation uploads to <b>AWS S3 / Cloud Object Storage</b> with secure signed URLs, replacing local server disk storage.
         </td>
         <td>
           <span class="status-badge complete">Ready to execute</span><br>
