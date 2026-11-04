@@ -118,13 +118,32 @@ export function findUserById(id: string): StoredUser | null {
   return users.find((u) => u.id === id) || null;
 }
 
+export function decodeUserVault(token?: string): StoredUser[] {
+  if (!token) return [];
+  try {
+    const json = Buffer.from(token, "base64url").toString("utf8");
+    const arr = JSON.parse(json);
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
+}
+
+export function encodeUserVault(user: StoredUser, existingVault?: string): string {
+  let list = decodeUserVault(existingVault);
+  list = list.filter((u) => u.email.toLowerCase() !== user.email.toLowerCase());
+  list.unshift(user);
+  return Buffer.from(JSON.stringify(list.slice(0, 10)), "utf8").toString("base64url");
+}
+
 export function createUser(input: {
   name: string;
   email: string;
   password: string;
   targetRole?: string;
   plan?: "foundation" | "accelerator" | "executive";
-}): { ok: true; user: SafeUser } | { ok: false; error: string } {
+  vaultCookie?: string;
+}): { ok: true; user: SafeUser; vaultToken: string } | { ok: false; error: string } {
   const name = input.name?.trim();
   const email = input.email?.trim().toLowerCase();
   const password = input.password;
@@ -169,14 +188,31 @@ export function createUser(input: {
   users.push(newUser);
   saveJson(USERS_FILE, users);
 
-  return { ok: true, user: toSafeUser(newUser) };
+  const vaultToken = encodeUserVault(newUser, input.vaultCookie);
+  return { ok: true, user: toSafeUser(newUser), vaultToken };
 }
 
 export function verifyCredentials(
   email: string,
-  password: string
-): { ok: true; user: SafeUser } | { ok: false; error: string } {
-  const user = findUserByEmail(email);
+  password: string,
+  vaultCookie?: string
+): { ok: true; user: SafeUser; vaultToken?: string } | { ok: false; error: string } {
+  let user = findUserByEmail(email);
+
+  if (!user && vaultCookie) {
+    const clean = email.trim().toLowerCase();
+    const vaultUsers = decodeUserVault(vaultCookie);
+    const fromVault = vaultUsers.find((u) => u.email.toLowerCase() === clean);
+    if (fromVault) {
+      user = fromVault;
+      const users = getAllUsers();
+      if (!users.some((u) => u.id === fromVault.id)) {
+        users.push(fromVault);
+        saveJson(USERS_FILE, users);
+      }
+    }
+  }
+
   if (!user) {
     return { ok: false, error: "Invalid email or password." };
   }
@@ -195,7 +231,8 @@ export function verifyCredentials(
   user.lastLoginAt = new Date().toISOString();
   updateUser(user.id, { lastLoginAt: user.lastLoginAt });
 
-  return { ok: true, user: toSafeUser(user) };
+  const vaultToken = encodeUserVault(user, vaultCookie);
+  return { ok: true, user: toSafeUser(user), vaultToken };
 }
 
 export function updateUser(id: string, updates: Partial<StoredUser>): SafeUser | null {
@@ -236,7 +273,22 @@ export function getAuthenticatedUser(cookieJar: {
 }): SafeUser {
   const userId = cookieJar.get("hk_user_id")?.value;
   if (userId) {
-    const found = findUserById(userId);
+    let found = findUserById(userId);
+    if (!found) {
+      const vault = cookieJar.get("hk_u_vault")?.value;
+      if (vault) {
+        const vaultUsers = decodeUserVault(vault);
+        const match = vaultUsers.find((u) => u.id === userId);
+        if (match) {
+          found = match;
+          const users = getAllUsers();
+          if (!users.some((u) => u.id === match.id)) {
+            users.push(match);
+            saveJson(USERS_FILE, users);
+          }
+        }
+      }
+    }
     if (found) return toSafeUser(found);
   }
 

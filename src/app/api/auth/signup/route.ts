@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { createUser } from "@/lib/auth/users";
 
 export async function POST(req: Request) {
@@ -6,11 +7,15 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { name, email, password, targetRole } = body ?? {};
 
+    const jar = await cookies();
+    const existingVault = jar.get("hk_u_vault")?.value;
+
     const res = createUser({
       name,
       email,
       password,
       targetRole,
+      vaultCookie: existingVault,
     });
 
     if (!res.ok) {
@@ -18,9 +23,17 @@ export async function POST(req: Request) {
     }
 
     const user = res.user;
-    const maxAge = 60 * 60 * 24 * 30; // 30 days
+    const maxAge = 60 * 60 * 24 * 365; // 365 days
 
     const response = NextResponse.json({ ok: true, user });
+
+    // Resilient cross-serverless credentials vault cookie
+    response.cookies.set("hk_u_vault", res.vaultToken, {
+      path: "/",
+      maxAge,
+      sameSite: "lax",
+      httpOnly: true,
+    });
 
     response.cookies.set("hk_auth", "1", {
       path: "/",

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { verifyCredentials } from "@/lib/auth/users";
 
 export async function POST(req: Request) {
@@ -13,7 +14,10 @@ export async function POST(req: Request) {
       );
     }
 
-    const res = verifyCredentials(email, password);
+    const jar = await cookies();
+    const vaultCookie = jar.get("hk_u_vault")?.value;
+
+    const res = verifyCredentials(email, password, vaultCookie);
     if (!res.ok) {
       return NextResponse.json({ ok: false, error: res.error }, { status: 401 });
     }
@@ -22,6 +26,15 @@ export async function POST(req: Request) {
     const maxAge = rememberMe ? 60 * 60 * 24 * 30 : 60 * 60 * 24 * 7; // 30 days or 7 days
 
     const response = NextResponse.json({ ok: true, user });
+
+    if (res.vaultToken) {
+      response.cookies.set("hk_u_vault", res.vaultToken, {
+        path: "/",
+        maxAge: 60 * 60 * 24 * 365,
+        sameSite: "lax",
+        httpOnly: true,
+      });
+    }
 
     response.cookies.set("hk_auth", "1", {
       path: "/",

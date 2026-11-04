@@ -104,4 +104,27 @@ describe("Authentication & User Management", () => {
     expect(user.initials).toBe("ER");
     expect(user.targetRole).toBe("VP of Design");
   });
+
+  it("authenticates and re-hydrates user across stateless serverless lambdas via vault token", () => {
+    const signup = createUser({
+      name: "Tariq Mansoor",
+      email: "tariq@executive.com",
+      password: "strongPassword456",
+    });
+    expect(signup.ok).toBe(true);
+    if (!signup.ok) return;
+
+    // Simulate brand new Vercel serverless container with cold state
+    const authFromColdContainer = verifyCredentials(
+      "tariq@executive.com",
+      "strongPassword456",
+      signup.vaultToken
+    );
+
+    expect(authFromColdContainer.ok).toBe(true);
+    if (authFromColdContainer.ok) {
+      expect(authFromColdContainer.user.name).toBe("Tariq Mansoor");
+      expect(authFromColdContainer.user.email).toBe("tariq@executive.com");
+    }
+  });
 });
