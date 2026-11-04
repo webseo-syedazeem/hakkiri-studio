@@ -21,15 +21,26 @@ export function SiteNav() {
           key={label}
           href={href}
           aria-current={current ? "page" : undefined}
-          className={clsx("hidden rounded-full px-3 py-1.5 transition-colors md:inline", current ? "text-mk-ink" : "text-mk-ink/70 hover:text-mk-ink")}
+          className={clsx(
+            "hidden rounded-full px-3 py-1.5 transition-all duration-150 md:inline",
+            current
+              ? "text-mk-ink font-medium"
+              : "text-mk-ink/70 hover:text-mk-ink hover:bg-black/[0.04]",
+          )}
         >
           {label}
         </Link>
       ))}
-      <Link href="/login" className="hidden px-3 py-1.5 text-mk-ink/70 hover:text-mk-ink sm:inline">
+      <Link
+        href="/login"
+        className="hidden rounded-full px-3 py-1.5 text-mk-ink/70 transition-all duration-150 hover:text-mk-ink hover:bg-black/[0.04] sm:inline"
+      >
         Log in
       </Link>
-      <Link href="/signup" className="ml-1 rounded-full bg-mk-cta px-4 py-1.5 font-medium text-white transition-colors hover:bg-mk-cta-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mk-cta">
+      <Link
+        href="/signup"
+        className="ml-1 rounded-full bg-mk-cta px-4 py-1.5 font-medium text-white transition-all duration-200 hover:scale-[1.04] active:scale-[0.97] hover:bg-mk-cta-hover hover:shadow-md hover:shadow-mk-cta/25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mk-cta"
+      >
         Start free
       </Link>
     </nav>
