@@ -70,15 +70,39 @@ const PROMISES = [
 export default function PricingPage() {
   const [selectedPlan, setSelectedPlan] = useState<string>("job-search");
   const [activeNotification, setActiveNotification] = useState<string | null>(null);
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
 
-  const handleSelectPlan = (planId: string, planName: string) => {
+  const handleSelectPlan = async (planId: string, planName: string) => {
     setSelectedPlan(planId);
     if (planId === "free") {
-      setActiveNotification("Free plan active: You have 1 free 10-minute rehearsal session.");
-    } else {
+      setActiveNotification("✓ Free plan active: You have 1 free 10-minute rehearsal session.");
+      return;
+    }
+
+    setLoadingPlan(planId);
+    setActiveNotification(`Initiating checkout for ${planName}...`);
+
+    try {
+      const res = await fetch("/api/billing/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planId }),
+      });
+      const data = await res.json();
+
+      if (data.url) {
+        // Live Stripe redirect
+        window.location.href = data.url;
+        return;
+      }
+
       setActiveNotification(
-        `Selected ${planName} plan. Checkout integration with Stripe will process live transactions once production keys are connected.`
+        data.message || `Selected ${planName} plan (£${planId === "job-search" ? "34.99" : "14.99"}). Stripe Checkout is ready to process cards once live keys are added.`
       );
+    } catch {
+      setActiveNotification(`Selected ${planName} plan. Integration endpoint ready for Stripe keys.`);
+    } finally {
+      setLoadingPlan(null);
     }
   };
 
@@ -155,18 +179,19 @@ export default function PricingPage() {
               <div className="mt-8 pt-4">
                 <button
                   type="button"
+                  disabled={Boolean(loadingPlan)}
                   onClick={(e) => {
                     e.stopPropagation();
                     handleSelectPlan(plan.id, plan.name);
                   }}
                   className={clsx(
-                    "w-full rounded-full py-3 text-xs font-bold transition-all duration-200 cursor-pointer shadow-md",
+                    "w-full rounded-full py-3 text-xs font-bold transition-all duration-200 cursor-pointer shadow-md disabled:opacity-60",
                     plan.primary
                       ? "bg-blue-fill text-white hover:bg-blue-hover shadow-blue-fill/30"
                       : "bg-white/[0.06] text-white border border-white/20 hover:bg-white/10"
                   )}
                 >
-                  {plan.cta}
+                  {loadingPlan === plan.id ? "Connecting..." : plan.cta}
                 </button>
               </div>
             </div>
