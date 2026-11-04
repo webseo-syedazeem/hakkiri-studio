@@ -18,7 +18,7 @@ import { pitchNextStep, pitchReadiness } from "@/lib/pitch/plan";
 import { AUDIENCE_LABEL } from "@/lib/pitch/labels";
 import { readinessFor } from "@/lib/scoring/combine";
 import { capitalise, daysBetween, longDay, whenSaid } from "@/lib/format";
-import { user } from "@/lib/mock-data";
+import { getAuthenticatedUser } from "@/lib/auth/users";
 import type { Interview } from "@/lib/types";
 
 export const dynamic = "force-dynamic"; // scores change as you practise
@@ -142,6 +142,7 @@ export default async function HomePage() {
     redirect("/assessment");
   }
 
+  const activeUser = getAuthenticatedUser(jar);
   const interviews = listInterviews(londonToday());
   const mine = interviews.filter((i) => !isDemoInterview(i.id));
   const shown = (mine.length ? mine : interviews).slice(0, 3);
@@ -150,7 +151,7 @@ export default async function HomePage() {
   return (
     <div className="flex grow flex-col gap-6">
       {/* Enhanced Welcome Hero Section at top of Home Screen */}
-      <WelcomeHero firstName={user.firstName} micOk={micOk} />
+      <WelcomeHero firstName={activeUser.firstName} micOk={micOk} />
 
       {/* Main Studio Dashboard Header */}
       <header className="flex animate-rise flex-wrap items-end justify-between gap-4 border-b border-white/[0.06] pb-4">

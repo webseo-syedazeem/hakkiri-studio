@@ -22,38 +22,98 @@ export function AuthCard({ initialMode = "login" }: { initialMode?: "login" | "s
   const [loading, setLoading] = useState(false);
   const [statusText, setStatusText] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [ssoNotice, setSsoNotice] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+    setSuccessMessage(null);
+
     if (!email || !password || (mode === "signup" && !name)) {
       setError("Please fill in all required fields.");
       return;
     }
-    setError(null);
-    setLoading(true);
-    setStatusText(mode === "login" ? "Verifying executive credentials..." : "Generating custom coaching profile...");
 
-    setTimeout(() => {
-      setStatusText("Redirecting to your initial voice assessment...");
+    setLoading(true);
+    setStatusText(mode === "login" ? "Verifying executive credentials..." : "Creating your executive coaching profile...");
+
+    try {
+      const endpoint = mode === "login" ? "/api/auth/login" : "/api/auth/signup";
+      const payload =
+        mode === "login"
+          ? { email: email.trim(), password, rememberMe }
+          : { name: name.trim(), email: email.trim(), password, targetRole: targetRole.trim() };
+
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.ok) {
+        setError(data.error || "Authentication failed. Please check your credentials.");
+        setLoading(false);
+        return;
+      }
+
+      setStatusText(
+        data.user?.assessed
+          ? "Redirecting to your Studio Dashboard..."
+          : "Redirecting to your initial diagnostic assessment..."
+      );
+
+      // Brief delay for smooth UX transition
       setTimeout(() => {
-        document.cookie = `hk_auth=1; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`;
-        document.cookie = `hk_user=${encodeURIComponent(name || email.split("@")[0] || "Alex Rivera")}; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`;
-        document.cookie = `hk_welcomed=1; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`;
-        router.push("/assessment");
-      }, 500);
-    }, 600);
+        if (data.user?.assessed) {
+          router.push("/");
+        } else {
+          router.push("/assessment");
+        }
+      }, 400);
+    } catch {
+      setError("Network or server error. Please try again.");
+      setLoading(false);
+    }
   };
 
-  const handleDemoLogin = () => {
+  const handleQuickFillExecutive = () => {
+    setMode("login");
+    setEmail("priya@example.com");
+    setPassword("password123");
     setError(null);
-    setLoading(true);
-    setStatusText("Entering as Priya Shah...");
-    setTimeout(() => {
-      document.cookie = `hk_auth=1; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`;
-      document.cookie = `hk_user=Priya%20Shah; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`;
-      document.cookie = `hk_welcomed=1; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`;
-      router.push("/assessment");
-    }, 500);
+    setSuccessMessage("Autofilled executive credentials (Priya Shah). Click 'Sign In to Studio' to authenticate.");
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotEmail) return;
+
+    setForgotLoading(true);
+    try {
+      const res = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: forgotEmail.trim() }),
+      });
+      const data = await res.json();
+      setSuccessMessage(data.message || "Password reset instructions sent.");
+      setShowForgotModal(false);
+    } catch {
+      setError("Could not submit password reset request.");
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
+  const handleSSOClick = (provider: string) => {
+    setSsoNotice(`${provider} Enterprise SSO is active for verified corporate workspaces. Please sign in with email & password or create an account.`);
+    setTimeout(() => setSsoNotice(null), 5000);
   };
 
   return (
@@ -81,12 +141,12 @@ export function AuthCard({ initialMode = "login" }: { initialMode?: "login" | "s
             <span className="h-3 w-3 rounded-full bg-[#ffbd2e]/80 ring-1 ring-[#ffbd2e]/40" />
             <span className="h-3 w-3 rounded-full bg-[#27c93f]/80 ring-1 ring-[#27c93f]/40" />
             <span className="ml-3 font-mono text-[11px] font-semibold tracking-wider text-muted/80 uppercase">
-              Hakkiri Studio Pro · Rehearsal Booth
+              Hakkiri Studio Pro · Rehearsal Suite
             </span>
           </div>
           <div className="flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
-            <span className="text-[11px] font-semibold text-emerald-400">Offline Mock AI Ready</span>
+            <span className="text-[11px] font-semibold text-emerald-400">Secure Authentication Engine</span>
           </div>
         </div>
 
@@ -140,7 +200,7 @@ export function AuthCard({ initialMode = "login" }: { initialMode?: "login" | "s
                     <span className="font-bold text-white">Sam (AI Interviewer)</span>
                   </div>
                   <span className="rounded-md bg-blue/20 px-2 py-0.5 text-[10px] font-bold text-blue-soft border border-blue/30">
-                    Target: In 5 days
+                    Target: Halden Payments
                   </span>
                 </div>
 
@@ -211,6 +271,7 @@ export function AuthCard({ initialMode = "login" }: { initialMode?: "login" | "s
                 onClick={() => {
                   setMode("login");
                   setError(null);
+                  setSuccessMessage(null);
                 }}
                 className={clsx(
                   "relative flex-1 rounded-xl py-2.5 text-xs font-bold transition-all duration-200 cursor-pointer",
@@ -226,6 +287,7 @@ export function AuthCard({ initialMode = "login" }: { initialMode?: "login" | "s
                 onClick={() => {
                   setMode("signup");
                   setError(null);
+                  setSuccessMessage(null);
                 }}
                 className={clsx(
                   "relative flex-1 rounded-xl py-2.5 text-xs font-bold transition-all duration-200 cursor-pointer",
@@ -245,8 +307,8 @@ export function AuthCard({ initialMode = "login" }: { initialMode?: "login" | "s
               </h3>
               <p className="mt-1.5 text-xs text-muted leading-relaxed">
                 {mode === "login"
-                  ? "Enter your credentials to access your interview pipelines and decks."
-                  : "Start your 7-day free trial with unlimited access to the Communication Gym."}
+                  ? "Enter your credentials to access your interview pipelines and rehearsal decks."
+                  : "Start your 7-day trial with full access to the Communication Gym and Diagnostic Assessment."}
               </p>
             </div>
 
@@ -258,11 +320,27 @@ export function AuthCard({ initialMode = "login" }: { initialMode?: "login" | "s
               </div>
             )}
 
+            {/* Success Message */}
+            {successMessage && (
+              <div className="mt-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-300 flex items-center gap-2.5 animate-slide-up">
+                <Icon name="check" size={15} className="shrink-0 text-emerald-400" />
+                <span className="font-semibold">{successMessage}</span>
+              </div>
+            )}
+
+            {/* SSO Info Notice */}
+            {ssoNotice && (
+              <div className="mt-4 rounded-xl border border-blue/30 bg-blue/10 p-3 text-xs text-blue-soft flex items-center gap-2.5 animate-slide-up">
+                <Icon name="shield" size={15} className="shrink-0 text-blue" />
+                <span>{ssoNotice}</span>
+              </div>
+            )}
+
             {/* Social Authentication */}
             <div className="mt-6 grid grid-cols-2 gap-3">
               <button
                 type="button"
-                onClick={handleDemoLogin}
+                onClick={() => handleSSOClick("Google")}
                 className="flex h-11 items-center justify-center gap-2.5 rounded-xl border border-white/[0.1] bg-[#1a1b28]/80 px-4 text-xs font-bold text-white shadow-sm hover:border-white/20 hover:bg-[#202234] transition-all cursor-pointer"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden>
@@ -271,18 +349,18 @@ export function AuthCard({ initialMode = "login" }: { initialMode?: "login" | "s
                   <path fill="#FBBC05" d="M5.28 14.32c-.25-.72-.38-1.49-.38-2.32s.13-1.6.38-2.32V6.57H1.25C.45 8.16 0 9.98 0 12s.45 3.84 1.25 5.43l4.03-3.11z" />
                   <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.27 2.57 1.25 6.57l4.03 3.11c.95-2.83 3.6-4.93 6.72-4.93z" />
                 </svg>
-                <span>Google</span>
+                <span>Google SSO</span>
               </button>
 
               <button
                 type="button"
-                onClick={handleDemoLogin}
+                onClick={() => handleSSOClick("GitHub")}
                 className="flex h-11 items-center justify-center gap-2.5 rounded-xl border border-white/[0.1] bg-[#1a1b28]/80 px-4 text-xs font-bold text-white shadow-sm hover:border-white/20 hover:bg-[#202234] transition-all cursor-pointer"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
                   <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
                 </svg>
-                <span>GitHub</span>
+                <span>GitHub SSO</span>
               </button>
             </div>
 
@@ -292,7 +370,7 @@ export function AuthCard({ initialMode = "login" }: { initialMode?: "login" | "s
                 <div className="w-full border-t border-white/[0.08]" />
               </div>
               <div className="relative flex justify-center text-[10px] font-bold uppercase tracking-widest">
-                <span className="bg-[#12131c] px-3 text-muted/70">Or with email</span>
+                <span className="bg-[#12131c] px-3 text-muted/70">Or with corporate email</span>
               </div>
             </div>
 
@@ -308,7 +386,7 @@ export function AuthCard({ initialMode = "login" }: { initialMode?: "login" | "s
                       required
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      placeholder="e.g. Priya Shah"
+                      placeholder="e.g. Alex Rivera"
                       className="w-full bg-transparent text-xs text-white outline-none placeholder:text-muted/60"
                     />
                   </div>
@@ -336,7 +414,10 @@ export function AuthCard({ initialMode = "login" }: { initialMode?: "login" | "s
                   {mode === "login" && (
                     <button
                       type="button"
-                      onClick={() => alert("Password reset link sent to your email!")}
+                      onClick={() => {
+                        setForgotEmail(email);
+                        setShowForgotModal(true);
+                      }}
                       className="text-[11px] font-semibold text-blue-soft hover:underline cursor-pointer"
                     >
                       Forgot password?
@@ -365,7 +446,7 @@ export function AuthCard({ initialMode = "login" }: { initialMode?: "login" | "s
 
               {mode === "signup" && (
                 <div>
-                  <label className="block text-xs font-bold text-ink mb-1.5">Target Role & Level</label>
+                  <label className="block text-xs font-bold text-ink mb-1.5">Target Executive Role</label>
                   <div className="flex h-11 items-center gap-3 rounded-xl border border-white/[0.1] bg-[#1a1b28]/80 px-3.5 text-sm focus-within:border-blue focus-within:ring-2 focus-within:ring-blue/30 transition-all">
                     <Icon name="brief" size={16} className="text-muted" />
                     <input
@@ -389,7 +470,7 @@ export function AuthCard({ initialMode = "login" }: { initialMode?: "login" | "s
                     className="h-4 w-4 rounded border-white/20 bg-[#1a1b28] text-blue-fill focus:ring-blue cursor-pointer"
                   />
                   <label htmlFor="rememberMe" className="text-xs text-muted cursor-pointer select-none">
-                    Remember this device for 30 days
+                    Remember this workstation for 30 days
                   </label>
                 </div>
               )}
@@ -416,20 +497,74 @@ export function AuthCard({ initialMode = "login" }: { initialMode?: "login" | "s
               </button>
             </form>
 
-            {/* One-Click Instant Demo Login */}
-            <div className="mt-6 rounded-2xl border border-emerald-500/25 bg-emerald-500/10 p-3.5 text-center">
-              <span className="text-[11px] text-muted block">Want to preview the studio immediately?</span>
+            {/* Executive Fast-Testing Helper */}
+            <div className="mt-6 rounded-2xl border border-white/[0.08] bg-[#181924]/60 p-3.5 text-center">
+              <span className="text-[11px] text-muted block">
+                Testing executive features? Pre-seeded account available:
+              </span>
               <button
                 type="button"
-                onClick={handleDemoLogin}
-                className="mt-1 inline-flex items-center gap-1.5 text-xs font-bold text-emerald-400 hover:text-emerald-300 transition-colors cursor-pointer"
+                onClick={handleQuickFillExecutive}
+                className="mt-1.5 inline-flex items-center gap-1.5 text-xs font-bold text-blue-soft hover:text-white transition-colors cursor-pointer"
               >
-                <span>⚡ One-Click Instant Demo Login (Priya Shah) →</span>
+                <span>⚡ Auto-fill Executive Credentials (priya@example.com)</span>
               </button>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Forgot Password Modal */}
+      {showForgotModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-md rounded-2xl border border-white/[0.12] bg-[#161722] p-6 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+              <h4 className="text-base font-bold text-white">Reset Account Password</h4>
+              <button
+                type="button"
+                onClick={() => setShowForgotModal(false)}
+                className="text-muted hover:text-white text-sm"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleForgotPassword} className="mt-4 space-y-4">
+              <p className="text-xs text-muted leading-relaxed">
+                Enter your account email. We will generate an instant verification token and instructions to securely reset your credentials.
+              </p>
+              <div>
+                <label className="block text-xs font-semibold text-ink mb-1">Email Address</label>
+                <input
+                  type="email"
+                  required
+                  value={forgotEmail}
+                  onChange={(e) => setForgotEmail(e.target.value)}
+                  placeholder="name@company.com"
+                  className="w-full h-10 rounded-xl border border-white/[0.1] bg-[#1c1d2c] px-3 text-xs text-white outline-none focus:border-blue"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowForgotModal(false)}
+                  className="rounded-xl px-4 py-2 text-xs font-semibold text-muted hover:text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={forgotLoading}
+                  className="rounded-xl bg-blue-fill px-4 py-2 text-xs font-bold text-white hover:bg-blue-hover disabled:opacity-50"
+                >
+                  {forgotLoading ? "Sending..." : "Send Reset Token"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

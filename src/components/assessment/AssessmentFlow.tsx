@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
@@ -270,6 +270,22 @@ export function AssessmentFlow() {
   });
   const [isCompleted, setIsCompleted] = useState(false);
 
+  useEffect(() => {
+    // Read user from /api/auth/me or cookies
+    fetch("/api/auth/me")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.ok && data?.user) {
+          if (data.user.name) setName(data.user.name);
+          if (data.user.targetRole) setTargetRole(data.user.targetRole);
+        }
+      })
+      .catch(() => {
+        const match = document.cookie.match(/(?:^|;\s*)hk_user=([^;]*)/);
+        if (match) setName(decodeURIComponent(match[1]));
+      });
+  }, []);
+
   const step = STEPS[currentStep];
 
   const handleSelect = (optionId: string) => {
@@ -282,6 +298,14 @@ export function AssessmentFlow() {
     } else {
       document.cookie = `hk_assessed=1; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`;
       document.cookie = `hk_welcomed=1; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`;
+
+      // Persist to user record in background
+      fetch("/api/auth/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ assessed: true, targetRole }),
+      }).catch(() => {});
+
       setIsCompleted(true);
     }
   };

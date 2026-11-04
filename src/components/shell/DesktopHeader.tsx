@@ -49,7 +49,7 @@ export function DesktopHeader({
       <div className="hidden items-center gap-3 md:flex">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-[11px] font-semibold text-emerald-400 border border-emerald-500/20">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          Offline Mock AI Engine Active
+          Hakkiri AI Speech Lab Active
         </span>
         <span className="hidden lg:inline-flex items-center gap-1 rounded-full bg-white/[0.04] px-2.5 py-1 text-[11px] text-muted">
           <Icon name="shield" size={13} className="text-blue-soft" />
