@@ -71,7 +71,7 @@ export function AuthCard({ initialMode = "login" }: { initialMode?: "login" | "s
       // Brief delay for smooth UX transition
       setTimeout(() => {
         if (data.user?.assessed) {
-          router.push("/");
+          router.push("/studio");
         } else {
           router.push("/assessment");
         }
@@ -135,25 +135,25 @@ export function AuthCard({ initialMode = "login" }: { initialMode?: "login" | "s
       {/* Main Glass Card Container with glowing 1px border */}
       <div className="relative z-10 w-full max-w-[1140px] overflow-hidden rounded-[28px] border border-white/[0.12] bg-[#12131c]/90 shadow-[0_32px_100px_-20px_rgba(0,0,0,0.85)] backdrop-blur-3xl ring-1 ring-white/[0.05]">
         {/* Top Desktop Window Chrome */}
-        <div className="flex h-11 items-center justify-between border-b border-white/[0.08] bg-[#0e0f17]/90 px-6 backdrop-blur-md">
+        <div className="flex h-11 items-center justify-between border-b border-white/[0.08] bg-[#0e0f17]/90 px-4 sm:px-6 backdrop-blur-md">
           <div className="flex items-center gap-2.5">
             <span className="h-3 w-3 rounded-full bg-[#ff5f56]/80 ring-1 ring-[#ff5f56]/40" />
             <span className="h-3 w-3 rounded-full bg-[#ffbd2e]/80 ring-1 ring-[#ffbd2e]/40" />
             <span className="h-3 w-3 rounded-full bg-[#27c93f]/80 ring-1 ring-[#27c93f]/40" />
-            <span className="ml-3 font-mono text-[11px] font-semibold tracking-wider text-muted/80 uppercase">
+            <span className="hidden sm:inline-block ml-3 font-mono text-[11px] font-semibold tracking-wider text-muted/80 uppercase">
               Hakkiri Studio Pro · Rehearsal Suite
             </span>
           </div>
           <div className="flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
-            <span className="text-[11px] font-semibold text-emerald-400">Secure Authentication Engine</span>
+            <span className="text-[11px] font-semibold text-emerald-400">Secure Auth</span>
           </div>
         </div>
 
-        {/* 2-Column Split View */}
+        {/* 2-Column Split View: Desktop Simulation hidden on small screens */}
         <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1fr]">
-          {/* Left Panel: Executive Simulation Telemetry */}
-          <div className="relative flex flex-col justify-between border-b border-white/[0.08] bg-gradient-to-br from-[#161726]/95 via-[#12131e]/90 to-[#0e0f17]/95 p-8 sm:p-11 lg:border-b-0 lg:border-r border-white/[0.08]">
+          {/* Left Panel: Executive Simulation Telemetry (hidden on mobile, visible on desktop) */}
+          <div className="hidden lg:flex relative flex-col justify-between border-b border-white/[0.08] bg-gradient-to-br from-[#161726]/95 via-[#12131e]/90 to-[#0e0f17]/95 p-8 sm:p-11 lg:border-b-0 lg:border-r border-white/[0.08]">
             {/* Header / Brand */}
             <div>
               <div className="flex items-center justify-between">
@@ -263,7 +263,24 @@ export function AuthCard({ initialMode = "login" }: { initialMode?: "login" | "s
           </div>
 
           {/* Right Panel: Clean Professional Auth Experience */}
-          <div className="flex flex-col justify-center p-8 sm:p-12 bg-[#12131c]/60">
+          <div className="flex flex-col justify-center p-6 sm:p-12 bg-[#12131c]/60">
+            {/* Mobile Brand Header (only visible on mobile screens) */}
+            <div className="flex lg:hidden items-center justify-between mb-6 pb-4 border-b border-white/[0.08]">
+              <Link href="/" className="inline-flex items-center gap-2.5">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue/15 ring-1 ring-blue/20">
+                  <Mark size={22} live={true} />
+                </div>
+                <div>
+                  <span className="text-base font-extrabold tracking-tight text-white flex items-center gap-1.5">
+                    Hakkiri Studio
+                    <span className="rounded bg-blue/20 px-1.5 py-0.5 text-[8px] font-extrabold uppercase text-blue-soft">Pro</span>
+                  </span>
+                </div>
+              </Link>
+              <Link href="/" className="text-xs text-blue-soft hover:underline font-medium">
+                ← Website
+              </Link>
+            </div>
             {/* Sliding Switcher (Login / Signup) */}
             <div className="relative mb-7 flex rounded-2xl bg-[#0c0d13] p-1 shadow-inner border border-white/[0.08]">
               <button

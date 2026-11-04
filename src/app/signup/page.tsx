@@ -17,7 +17,7 @@ export default async function SignupPage() {
     if (!assessed) {
       redirect("/assessment");
     }
-    redirect("/");
+    redirect("/studio");
   }
 
   return <AuthCard initialMode="signup" />;

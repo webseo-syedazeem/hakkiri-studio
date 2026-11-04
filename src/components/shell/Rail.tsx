@@ -15,9 +15,9 @@ const ITEMS: {
 }[] = [
   {
     label: "Home",
-    href: "/",
+    href: "/studio",
     icon: "home",
-    match: (p) => p === "/" || p.startsWith("/welcome"),
+    match: (p) => p === "/studio" || p.startsWith("/welcome"),
   },
   {
     label: "Communication Gym",
@@ -71,7 +71,7 @@ export function Rail({
       className="print-hide sticky top-0 flex h-screen w-[72px] shrink-0 flex-col items-center gap-2 border-r border-white/[0.08] bg-[#14151c]/95 py-5 backdrop-blur-md z-40"
     >
       <Link
-        href="/"
+        href="/studio"
         aria-label="Hakkiri Studio home"
         className="mb-3 transition-transform hover:scale-105"
       >

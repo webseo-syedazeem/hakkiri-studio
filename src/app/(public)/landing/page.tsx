@@ -29,7 +29,6 @@ const FAQ: { q: string; a: string }[] = [
 export default function LandingPage() {
   return (
     <div>
-      <DraftNote show={!isLaunch()} />
 
       <Hero
         kicker="Interview practice, built around your job"

@@ -123,21 +123,19 @@ function InterviewCard({ interview, micOk, delay }: { interview: Interview; micO
 }
 
 /**
- * Home: your interviews and presentations, each with where it stands and a
+ * Studio Home: your interviews and presentations, each with where it stands and a
  * Continue button that goes straight to the most useful next step.
  */
-export default async function HomePage() {
+export default async function StudioPage() {
   const jar = await cookies();
   const micOk = jar.get("hk_mic_ok")?.value === "1";
   const authed = jar.get("hk_auth")?.value === "1";
   const assessed = jar.get("hk_assessed")?.value === "1";
 
-  // Proper Flow Step 1: First Login
   if (!authed) {
     redirect("/login");
   }
 
-  // Proper Flow Step 2: Immediate Initial Assessment on App Start
   if (!assessed) {
     redirect("/assessment");
   }

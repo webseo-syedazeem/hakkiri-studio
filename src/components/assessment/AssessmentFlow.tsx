@@ -429,7 +429,7 @@ export function AssessmentFlow() {
               <Icon name="arrowRight" size={16} />
             </Link>
             <Link
-              href="/"
+              href="/studio"
               className="inline-flex items-center gap-2 rounded-xl bg-panel-2 px-5 py-3.5 text-sm font-semibold text-ink border border-white/10 hover:bg-[#282a35] transition-colors"
             >
               <span>Go to Studio Dashboard</span>

@@ -151,7 +151,7 @@ export default function PricingPage() {
         </div>
 
         <Link
-          href="/"
+          href="/studio"
           className="text-xs font-semibold text-blue-soft hover:underline shrink-0"
         >
           Return to Studio Home →

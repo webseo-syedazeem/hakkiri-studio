@@ -7,9 +7,9 @@ import clsx from "clsx";
 /** The public site's top links. Pricing and questions stay on the page you're on (presenters or interviews). */
 export function SiteNav() {
   const path = usePathname();
-  const base = path === "/present" ? "/present" : "/landing";
+  const base = path === "/present" ? "/present" : "";
   const links: [string, string, boolean][] = [
-    ["/landing", "Interviews", path === "/landing"],
+    ["/", "Interviews", path === "/" || path === "/landing"],
     ["/present", "Presentations", path === "/present"],
     [`${base}#pricing`, "Pricing", false],
     [`${base}#faq`, "Questions", false],

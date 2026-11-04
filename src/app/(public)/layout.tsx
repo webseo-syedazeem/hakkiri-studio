@@ -11,7 +11,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
       </a>
       <header className="sticky top-0 z-30 border-b border-black/[0.06] bg-white/80 backdrop-blur-xl backdrop-saturate-150">
         <div className="mx-auto flex h-14 w-full max-w-[1120px] items-center justify-between gap-4 px-4 sm:px-6">
-          <Link href="/landing" className="flex items-center gap-2 text-[17px] font-semibold tracking-[-0.01em]">
+          <Link href="/" className="flex items-center gap-2 text-[17px] font-semibold tracking-[-0.01em]">
             <Mark size={26} />
             Hakkiri
           </Link>
@@ -23,9 +23,9 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
       </main>
       <footer className="bg-mk-mist">
         <div className="mx-auto flex w-full max-w-[1120px] flex-col gap-3 border-t border-mk-line/70 px-4 py-6 text-[12px] text-mk-slate sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <span>© {new Date().getFullYear()} [Company name] Ltd. Hakkiri never judges your accent.</span>
+          <span>© {new Date().getFullYear()} Hakkiri Ltd. Hakkiri never judges your accent.</span>
           <nav aria-label="Legal" className="flex flex-wrap gap-x-5 gap-y-2">
-            <Link href="/landing" className="hover:text-mk-ink">
+            <Link href="/" className="hover:text-mk-ink">
               Interview practice
             </Link>
             <Link href="/present" className="hover:text-mk-ink">
