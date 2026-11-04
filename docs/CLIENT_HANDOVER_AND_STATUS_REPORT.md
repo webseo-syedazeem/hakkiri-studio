@@ -22,19 +22,19 @@ This comprehensive document presents the complete technical handover of **Hakkir
 
 ```mermaid
 graph TD
-    A["User Lands on App"] --> B{"Authenticated?"}
-    B -- "No" --> C["/login or /signup (Real PBKDF2 Auth)"]
-    C --> D{"First-time User?"}
-    D -- "Yes (Not Assessed)" --> E["/assessment (7-Step Diagnostic Flow)"]
-    E --> F["Generated 4-Week Custom Plan"]
-    F --> G["Studio Dashboard (/)"]
-    D -- "No (Already Assessed)" --> G
-    B -- "Yes" --> G
-    G --> H["Communication Gym (/gym)"]
-    G --> I["Speech Analytics (/analytics)"]
-    G --> J["Interview Prep (/interviews)"]
-    G --> K["Presentation Lab (/presentations)"]
-    G --> L["STAR Story Bank (/story-bank)"]
+    A["Public Visitor Lands on Root /"] --> B["Landing Page (/ & /present)"]
+    B --> C["Click 'Start free' or 'Log in'"]
+    C --> D["/login or /signup (Real PBKDF2 Auth)"]
+    D --> E{"First-time User?"}
+    E -- "Yes (Not Assessed)" --> F["/assessment (7-Step Diagnostic Flow)"]
+    F --> G["Generated 4-Week Custom Plan"]
+    G --> H["Studio Dashboard (/studio)"]
+    E -- "No (Already Assessed)" --> H
+    H --> I["Communication Gym (/gym)"]
+    H --> J["Speech Analytics (/analytics)"]
+    H --> K["Interview Pipelines (/interviews)"]
+    H --> L["Presentation Lab (/presentations)"]
+    H --> M["STAR Story Bank (/story-bank)"]
 ```
 
 ### 1. User Authentication & Profile Security
