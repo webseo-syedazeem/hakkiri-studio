@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 
 export function GET(req: Request) {
   const url = new URL(req.url);
-  const next = url.searchParams.get("next") ?? "/";
-  const safe = next.startsWith("/") && !next.startsWith("//") ? next : "/";
+  const next = url.searchParams.get("next") ?? "/studio";
+  const safe = next.startsWith("/") && !next.startsWith("//") ? next : "/studio";
 
   const res = NextResponse.redirect(new URL(safe, req.url));
   res.cookies.set("hk_auth", "1", {
