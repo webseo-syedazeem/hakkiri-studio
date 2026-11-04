@@ -9,7 +9,7 @@ import { profileFor } from "@/lib/scoring/profiles";
 import { followUpLimit } from "@/lib/followups";
 import { mmss, whenSaid } from "@/lib/format";
 import { buildReport } from "@/lib/mocks/report";
-import { findMock, rowsFor } from "@/lib/mocks/store";
+import { findMock, rowsFor, saveMock, type MockRecord } from "@/lib/mocks/store";
 import { openSession } from "@/lib/sessions/server";
 import { drillTitle, HABIT_INSTRUCTION } from "@/lib/sessions/drills";
 import type { Question } from "@/lib/types";
@@ -61,8 +61,28 @@ export default async function MockInterviewPage({
   const byId = (qid: string) => interview.questions.find((x) => x.id === qid);
 
   if (sessionId) {
-    const m = openSession(interview.id, sessionId);
-    if (!m) notFound();
+    const existing = openSession(interview.id, sessionId);
+    const m: MockRecord = existing ?? {
+      id: sessionId,
+      interviewId: interview.id,
+      kind: "interview",
+      status: "planned",
+      questionIds: interview.questions.slice(0, 6).map((q) => q.id),
+      spareIds: interview.questions.slice(6).map((q) => q.id),
+      settings: {
+        difficulty: "medium",
+        minutes: 20,
+        preset: "balanced",
+        mix: { motivation: 20, competency: 20, technical: 20, cv: 20, curveball: 20 },
+      },
+      startedAt: new Date().toISOString(),
+      finishedAt: new Date().toISOString(),
+      answerIds: [],
+      planned: 6,
+    };
+    if (!existing) {
+      saveMock(m);
+    }
     if (m.status === "done") redirect(`/interviews/${interview.id}/mocks/${m.id}`);
     if (m.status === "stopped") redirect(`/interviews/${interview.id}`);
     const questions = (m.questionIds ?? []).flatMap((qid) => byId(qid) ?? []);
