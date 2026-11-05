@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
+import { useAuth } from "@/lib/auth/AuthContext";
 
 /** The public site's top links. Pricing and questions stay on the page you're on (presenters or interviews). */
 export function SiteNav() {
   const path = usePathname();
+  const { user } = useAuth();
   const base = path === "/present" ? "/present" : "/landing";
   const links: [string, string, boolean][] = [
     ["/landing", "Interviews", path === "/landing"],
@@ -31,18 +33,29 @@ export function SiteNav() {
           {label}
         </Link>
       ))}
-      <Link
-        href="/"
-        className="hidden rounded-full px-3 py-1.5 text-mk-ink/70 transition-all duration-150 hover:text-mk-ink hover:bg-black/[0.03] sm:inline"
-      >
-        Open Hakkiri
-      </Link>
-      <Link
-        href="/"
-        className="ml-1 rounded-full bg-mk-cta px-4 py-1.5 font-medium text-white transition-all duration-200 hover:scale-[1.04] active:scale-[0.97] hover:bg-mk-cta-hover hover:shadow-md hover:shadow-mk-cta/25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mk-cta"
-      >
-        Start free
-      </Link>
+      {user ? (
+        <Link
+          href="/"
+          className="ml-1 rounded-full bg-mk-cta px-4 py-1.5 font-medium text-white transition-all duration-200 hover:scale-[1.04] active:scale-[0.97] hover:bg-mk-cta-hover hover:shadow-md hover:shadow-mk-cta/25"
+        >
+          Open Studio ({user.initials})
+        </Link>
+      ) : (
+        <>
+          <Link
+            href="/login"
+            className="hidden rounded-full px-3 py-1.5 text-mk-ink/70 transition-all duration-150 hover:text-mk-ink hover:bg-black/[0.03] sm:inline"
+          >
+            Log in
+          </Link>
+          <Link
+            href="/signup"
+            className="ml-1 rounded-full bg-mk-cta px-4 py-1.5 font-medium text-white transition-all duration-200 hover:scale-[1.04] active:scale-[0.97] hover:bg-mk-cta-hover hover:shadow-md hover:shadow-mk-cta/25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mk-cta"
+          >
+            Start free
+          </Link>
+        </>
+      )}
     </nav>
   );
 }

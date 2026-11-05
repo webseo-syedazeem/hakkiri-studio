@@ -222,7 +222,12 @@ export interface Story {
 }
 
 export interface User {
+  id?: string;
+  email?: string;
   firstName: string;
+  lastName?: string;
   initials: string;
   trial: { interviewSecondsLeft: number; pitchSecondsLeft: number };
+  tier?: "free" | "beta" | "job_search" | "monthly";
+  createdAt?: string;
 }
