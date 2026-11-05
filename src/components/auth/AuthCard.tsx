@@ -45,17 +45,24 @@ export function AuthCard({ initialMode = "signin" }: { initialMode?: "signin" | 
     }
   };
 
+  const inputStyle =
+    "mt-1.5 w-full rounded-xl border border-line bg-panel-2 px-3.5 py-2.5 text-[15px] text-ink placeholder:text-muted/60 transition-all duration-200 focus:border-blue focus:ring-2 focus:ring-blue/20 focus:outline-none [&:-webkit-autofill]:[box-shadow:0_0_0_1000px_#22232c_inset] [&:-webkit-autofill]:[-webkit-text-fill-color:#f1f1f4]";
+
   return (
-    <div className="w-full max-w-[420px] rounded-2xl border border-line bg-panel p-8 shadow-2xl backdrop-blur-md">
+    <div className="relative z-10 w-full max-w-[420px] rounded-2xl border border-line bg-panel/95 p-8 shadow-[0_0_0_1px_rgba(255,255,255,0.06),0_28px_64px_-16px_rgba(0,0,0,0.65)] backdrop-blur-xl animate-scale-in transition-all duration-300 hover:border-line-strong">
       {/* Brand header */}
       <div className="flex flex-col items-center text-center">
-        <Link href="/" aria-label="Hakkiri home" className="transition-transform duration-300 hover:scale-105">
-          <Mark size={40} />
+        <Link
+          href="/"
+          aria-label="Hakkiri home"
+          className="transition-transform duration-500 hover:scale-110 active:scale-95"
+        >
+          <Mark size={42} />
         </Link>
-        <h1 className="mt-4 text-[22px] font-semibold tracking-[-0.02em] text-ink">
+        <h1 className="mt-4 text-[22px] font-semibold tracking-[-0.02em] text-ink animate-fade-in">
           {mode === "signin" ? "Sign in to Hakkiri Studio" : "Create your Studio account"}
         </h1>
-        <p className="mt-1 text-[14px] text-muted">
+        <p className="mt-1 text-[14px] text-muted animate-fade-in">
           {mode === "signin"
             ? "Your practice interviews, presentations, and scores"
             : "Practise for the interview you actually have"}
@@ -66,8 +73,11 @@ export function AuthCard({ initialMode = "signin" }: { initialMode?: "signin" | 
       <div className="mt-6 flex rounded-xl bg-panel-2 p-1 border border-line">
         <button
           type="button"
-          onClick={() => { setMode("signin"); setError(null); }}
-          className={`flex-1 rounded-lg py-1.5 text-[14px] font-medium transition-all ${
+          onClick={() => {
+            setMode("signin");
+            setError(null);
+          }}
+          className={`flex-1 rounded-lg py-1.5 text-[14px] font-medium transition-all duration-200 cursor-pointer ${
             mode === "signin"
               ? "bg-panel text-ink shadow-sm"
               : "text-muted hover:text-ink"
@@ -77,8 +87,11 @@ export function AuthCard({ initialMode = "signin" }: { initialMode?: "signin" | 
         </button>
         <button
           type="button"
-          onClick={() => { setMode("signup"); setError(null); }}
-          className={`flex-1 rounded-lg py-1.5 text-[14px] font-medium transition-all ${
+          onClick={() => {
+            setMode("signup");
+            setError(null);
+          }}
+          className={`flex-1 rounded-lg py-1.5 text-[14px] font-medium transition-all duration-200 cursor-pointer ${
             mode === "signup"
               ? "bg-panel text-ink shadow-sm"
               : "text-muted hover:text-ink"
@@ -90,7 +103,7 @@ export function AuthCard({ initialMode = "signin" }: { initialMode?: "signin" | 
 
       {/* Error alert */}
       {error && (
-        <div className="mt-4 rounded-xl border border-red/20 bg-red/10 px-3.5 py-2.5 text-[13px] text-red-soft">
+        <div className="mt-4 rounded-xl border border-red/20 bg-red/10 px-3.5 py-2.5 text-[13px] text-red-soft animate-fade-in">
           {error}
         </div>
       )}
@@ -98,7 +111,7 @@ export function AuthCard({ initialMode = "signin" }: { initialMode?: "signin" | 
       {/* Form */}
       <form onSubmit={handleSubmit} className="mt-5 space-y-4">
         {mode === "signup" && (
-          <div>
+          <div className="animate-fade-in">
             <label htmlFor="auth-name" className="block text-[13px] font-medium text-dim">
               Full name
             </label>
@@ -106,10 +119,10 @@ export function AuthCard({ initialMode = "signin" }: { initialMode?: "signin" | 
               id="auth-name"
               type="text"
               required
-              placeholder="e.g. Faizan Rizwan"
+              placeholder="e.g. Alex Morgan"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="mt-1.5 w-full rounded-xl border border-line bg-panel-2 px-3.5 py-2.5 text-[15px] text-ink placeholder:text-muted/60 transition-colors focus:border-blue focus:outline-none"
+              className={inputStyle}
             />
           </div>
         )}
@@ -123,10 +136,10 @@ export function AuthCard({ initialMode = "signin" }: { initialMode?: "signin" | 
             type="email"
             required
             autoComplete="email"
-            placeholder="you@domain.com"
+            placeholder="e.g. alex.morgan@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="mt-1.5 w-full rounded-xl border border-line bg-panel-2 px-3.5 py-2.5 text-[15px] text-ink placeholder:text-muted/60 transition-colors focus:border-blue focus:outline-none"
+            className={inputStyle}
           />
         </div>
 
@@ -142,17 +155,17 @@ export function AuthCard({ initialMode = "signin" }: { initialMode?: "signin" | 
             placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="mt-1.5 w-full rounded-xl border border-line bg-panel-2 px-3.5 py-2.5 text-[15px] text-ink placeholder:text-muted/60 transition-colors focus:border-blue focus:outline-none"
+            className={inputStyle}
           />
         </div>
 
         <button
           type="submit"
           disabled={submitting}
-          className="mt-2 w-full rounded-xl bg-blue-fill py-2.5 text-[15px] font-medium text-white transition-all hover:bg-blue-hover active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed shadow-md shadow-blue-fill/20"
+          className="mt-2 w-full rounded-xl bg-blue-fill py-2.5 text-[15px] font-medium text-white transition-all duration-200 hover:bg-blue-hover hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed shadow-md shadow-blue-fill/25 hover:shadow-lg hover:shadow-blue-fill/35 cursor-pointer"
         >
           {submitting
-            ? "Signing in..."
+            ? "Please wait..."
             : mode === "signin"
               ? "Sign in to Studio"
               : "Create free account"}
@@ -173,10 +186,11 @@ export function AuthCard({ initialMode = "signin" }: { initialMode?: "signin" | 
       <button
         type="button"
         onClick={() => {
-          // Prepared for Google OAuth: creates or authenticates session
-          setError("Google OAuth is enabled for launch domain hakkiri.ai. You can sign in using email & password or continue as Guest.");
+          setError(
+            "Google OAuth is configured for custom domain hakkiri.ai. You can sign in using email & password or continue as Guest below.",
+          );
         }}
-        className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-line bg-panel-2 py-2.5 text-[14px] font-medium text-ink transition-all hover:bg-panel-2/80 hover:border-line-strong active:scale-[0.98]"
+        className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-line bg-panel-2 py-2.5 text-[14px] font-medium text-ink transition-all duration-200 hover:bg-panel-2/80 hover:border-line-strong hover:scale-[1.01] active:scale-[0.98] cursor-pointer"
       >
         <svg className="h-4 w-4" viewBox="0 0 24 24">
           <path
@@ -203,7 +217,7 @@ export function AuthCard({ initialMode = "signin" }: { initialMode?: "signin" | 
       <div className="mt-6 text-center">
         <Link
           href="/"
-          className="text-[13px] text-muted hover:text-blue-soft transition-colors underline-offset-4 hover:underline"
+          className="inline-flex items-center gap-1 text-[13px] text-muted hover:text-blue-soft transition-all duration-200 hover:translate-x-0.5 underline-offset-4 hover:underline"
         >
           Skip for now · Continue to Studio as Guest →
         </Link>
