@@ -7,11 +7,20 @@ import "server-only";
 export const aiConfig = {
   geminiKey:
     process.env.GEMINI_API_KEY ||
+    process.env.gemini_api_key ||
     process.env.GOOGLE_API_KEY ||
+    process.env.google_api_key ||
     process.env.GOOGLE_GENAI_API_KEY ||
+    process.env.google_genai_api_key ||
     "",
-  deepgramKey: process.env.DEEPGRAM_API_KEY ?? "",
-  anthropicKey: process.env.ANTHROPIC_API_KEY ?? "",
+  deepgramKey:
+    process.env.DEEPGRAM_API_KEY ||
+    process.env.deepgram_api_key ||
+    "",
+  anthropicKey:
+    process.env.ANTHROPIC_API_KEY ||
+    process.env.anthropic_api_key ||
+    "",
   /** Only needed if your Claude key isn't scoped to one workspace. */
   anthropicWorkspaceId: process.env.ANTHROPIC_WORKSPACE_ID ?? "",
   mainModel: process.env.HAKKIRI_MAIN_MODEL || "claude-sonnet-5",

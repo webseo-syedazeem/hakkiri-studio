@@ -23,7 +23,7 @@ import type { Audience, Mark, Presentation, QaSession, QaStyle, Run, RunMode } f
  * planning a new deck, scoring a run, and running a Q&A session.
  */
 
-const modelAvailable = () => !mockAiEnabled() && Boolean(aiConfig.anthropicKey);
+const modelAvailable = () => !mockAiEnabled() && Boolean(aiConfig.anthropicKey || aiConfig.geminiKey);
 
 // ---------------------------------------------------------------- planning
 

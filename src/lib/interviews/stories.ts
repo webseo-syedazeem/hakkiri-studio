@@ -37,7 +37,7 @@ export function templateStory(input: StoryInput): { title: string; text: string;
 
 /** Your four answers as one story in your words: Claude when there's a key, otherwise in order, result first. */
 export async function draftStory(input: StoryInput): Promise<{ title: string; text: string; useFor: string[] }> {
-  if (!mockAiEnabled() && aiConfig.anthropicKey) {
+  if (!mockAiEnabled() && (aiConfig.anthropicKey || aiConfig.geminiKey)) {
     const { system, user } = buildStoryPrompt(input);
     const drafted = await ask({ model: aiConfig.mainModel, system, user, maxTokens: 900, temperature: 0.3, timeoutMs: 45_000, schema: StorySchema, check: (r) => checkStory(r, input), label: "story" });
     if (drafted) return drafted;

@@ -21,7 +21,7 @@ import { PAY_IDS, payQuestions, payStage } from "./pay";
  * bank for the next one, and stopping when something's wrong.
  */
 
-const canWrite = () => !mockAiEnabled() && Boolean(aiConfig.anthropicKey);
+const canWrite = () => !mockAiEnabled() && Boolean(aiConfig.anthropicKey || aiConfig.geminiKey);
 
 /* ---------------------------------------------------------------- standing */
 

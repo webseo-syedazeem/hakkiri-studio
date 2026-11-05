@@ -17,7 +17,7 @@ import { mmss, whenSaid } from "@/lib/format";
 export const dynamic = "force-dynamic";
 
 const DEMO_NOTE: Record<string, string> = {
-  "no-keys": devOr("This is the demo Q&A report. Add DEEPGRAM_API_KEY and ANTHROPIC_API_KEY to .env.local to score your own answers.", "Scoring isn’t available right now, so this is an example. Try again in a few minutes."),
+  "no-keys": devOr("This is the demo Q&A report. Add DEEPGRAM_API_KEY and GEMINI_API_KEY or ANTHROPIC_API_KEY to .env.local to score your own answers.", "Scoring isn’t available right now, so this is an example. Try again in a few minutes."),
   "no-audio": "No recording was captured (the mic may be blocked), so this is the demo Q&A report.",
 };
 

@@ -106,7 +106,7 @@ export default async function InterviewOverview({ params, searchParams }: { para
       ))}
       <p className="mt-3 text-xs leading-relaxed text-dim">
         Built from {[src.cv, src.coverLetter, src.job, src.company].filter(Boolean).join(", ") || "the details you gave"}.
-        {interview.planBy === "templates" && devOr(" Standard questions for now: add ANTHROPIC_API_KEY to .env.local for questions built from your documents.", " Standard questions for now.")}
+        {interview.planBy === "templates" && devOr(" Standard questions for now: add GEMINI_API_KEY or ANTHROPIC_API_KEY to .env.local for questions built from your documents.", " Standard questions for now.")}
       </p>
     </Panel>
   );

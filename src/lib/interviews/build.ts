@@ -55,7 +55,7 @@ const slug = (s: string) =>
     .replace(/^-|-$/g, "")
     .slice(0, 24) || "interview";
 
-const useModel = () => !mockAiEnabled() && Boolean(aiConfig.anthropicKey);
+const useModel = () => !mockAiEnabled() && Boolean(aiConfig.anthropicKey || aiConfig.geminiKey);
 
 const emptyCounts = (): Record<QuestionGroup, number> => ({ motivation: 0, competency: 0, technical: 0, cv: 0, curveball: 0 });
 
@@ -114,9 +114,9 @@ export async function buildInterview(input: BuildInput): Promise<BuildResult> {
     if (reply) {
       plan = reply;
       planBy = "model";
-    } else notes.push("Claude couldn’t build your questions this time, so you have a standard set for now. Use “Something’s wrong” in the interview to rebuild them later.");
+    } else notes.push("AI couldn’t build your questions this time, so you have a standard set for now. Use “Something’s wrong” in the interview to rebuild them later.");
   } else if (!mockAiEnabled()) {
-    notes.push(devOr("Add ANTHROPIC_API_KEY to .env.local to build questions from your CV and the job spec. For now you have a standard set.", "Your questions couldn’t be tailored this time, so you have a standard set for now. Use “Something’s wrong” in the interview to rebuild them later."));
+    notes.push(devOr("Add GEMINI_API_KEY or ANTHROPIC_API_KEY to .env.local to build questions from your CV and the job spec. For now you have a standard set.", "Your questions couldn’t be tailored this time, so you have a standard set for now. Use “Something’s wrong” in the interview to rebuild them later."));
   }
   plan ??= templatePlan({ company: planInput.company, role: planInput.role, counts, interviewerTitle: INTERVIEWER_FOR_ROUND[round], job, site });
 

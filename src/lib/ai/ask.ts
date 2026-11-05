@@ -33,7 +33,7 @@ export async function ask<T>(o: AskOptions<T>): Promise<T | null> {
       if (aiConfig.geminiKey) {
         text = await callGemini(
           {
-            model: o.model.startsWith("gemini") ? o.model : "gemini-2.5-flash",
+            model: o.model.startsWith("gemini") ? o.model : "gemini-2.0-flash",
             system: o.system,
             user: o.user + retryNote,
             maxTokens: o.maxTokens,
