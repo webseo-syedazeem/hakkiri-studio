@@ -30,6 +30,7 @@ const FAQ: { q: string; a: string }[] = [
 export default function PresentPage() {
   return (
     <div>
+      <DraftNote show={!isLaunch()} />
 
       <Hero
         kicker="Presentation practice, built around your slides"

@@ -226,7 +226,7 @@ export default async function SettingsPage() {
             title={launch ? "Your practice" : "Usage"}
             intro={
               beta
-                ? "How much of your beta allowance you’ve used. Hours count only while you speak; if you run low, ask for more with the Feedback button."
+                ? "How much of this month’s beta allowance you’ve used. It resets on the 1st; hours count only while you practise."
                 : launch
                   ? "How long you’ve practised. There’s a daily limit so the service stays quick for everyone."
                   : "What Hakkiri has used today and this month, against the limits in .env.local."
@@ -242,19 +242,19 @@ export default async function SettingsPage() {
               </div>
             )}
             <div className="flex flex-col gap-4">
-              {LIMITS.totalMinutes > 0 && (
+              {LIMITS.monthlyMinutes > 0 && (
                 <div>
                   <div className="mb-1.5 flex justify-between text-sm">
-                    <span>Beta practice used</span>
+                    <span>Beta practice this month</span>
                     <span className="num text-muted">
-                      {mins(standing.minutesTotal ?? 0)} of{" "}
-                      {mins(LIMITS.totalMinutes)}
+                      {mins(standing.minutesMonth ?? 0)} of{" "}
+                      {mins(LIMITS.monthlyMinutes)}
                     </span>
                   </div>
                   <Bar
-                    value={standing.minutesTotal ?? 0}
-                    max={LIMITS.totalMinutes}
-                    label="Minutes of practice used, against your beta allowance"
+                    value={standing.minutesMonth ?? 0}
+                    max={LIMITS.monthlyMinutes}
+                    label="Minutes of practice this month, against your monthly beta allowance"
                   />
                 </div>
               )}

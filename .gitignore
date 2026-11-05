@@ -12,5 +12,3 @@ next-env.d.ts
 
 # End-to-end output
 e2e/out
-
-.vercel

@@ -19,8 +19,8 @@ const store = (g.__hakkiriInterviews ??= new Map<string, Interview>(loadJson<Int
 
 const persist = () => saveJson(FILE, [...store.values()]);
 
-/** The Halden demo stays available for practice and live rehearsal walkthroughs. */
-const demoBase = (id: string) => (id === halden.id ? halden : undefined);
+/** The Halden demo, while building. Hidden once launched: real people start with their own. */
+const demoBase = (id: string) => (id === halden.id && !isLaunch() ? halden : undefined);
 
 /** The Halden demo stays the demo even after you practise on it (practice saves a copy). */
 export function isDemoInterview(id: string): boolean {

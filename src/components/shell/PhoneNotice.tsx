@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 /** Studio is built for a laptop: on a phone, say so rather than show a squeezed layout. (Public pages work on phones.) */
 export function PhoneNotice() {
   return (
@@ -9,9 +7,6 @@ export function PhoneNotice() {
       </svg>
       <p className="text-xl font-semibold tracking-[-0.015em]">Hakkiri Studio works on a laptop or desktop</p>
       <p className="max-w-[340px] text-[15px] leading-normal text-muted">Practice sessions need a bigger screen and a good microphone. Open this page on your computer to carry on.</p>
-      <Link href="/" className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/[0.08] px-4 py-2 text-xs font-semibold text-blue-soft hover:bg-white/15 transition-colors">
-        ← Back to Main Website
-      </Link>
     </div>
   );
 }

@@ -15,7 +15,7 @@ The docs in this folder:
 | `01-developer-handover.md` | The whole picture: what each part is, where it lives, what's done, what's left in order, known gaps, the audit, and the things not to change. **Read this first.** |
 | `02-pricing-and-cost-per-user.md` | What an interview costs in AI services (about 27p for 30 minutes), the plans, the margins, and how to keep costs down. Needed when you build the hours balance and Stripe. |
 | `03-launch-checklist.md` | The blockers before anyone else uses it, launch-day settings, and the open decisions that are the owner's to make. |
-| `05-beta-plan.md` | **The first milestone.** A closed beta for 10 to 15 invited testers with 5 free hours each, and how feedback is collected (a per-screen Feedback button, already built). |
+| `05-beta-plan.md` | **The first milestone.** A closed beta for 10 to 15 testers, each given a login by the team and 10 free hours a month with full use of the app, and how feedback is collected (a per-screen Feedback button, already built). |
 | `04-mobile-app-audit.md` | A review of the separate Flutter mobile app repo. It's a visual prototype; it's being handled separately and the web launch doesn't wait for it. |
 | `../README.md` and `../CONTRIBUTING.md` | Running, testing, conventions, and how the code is laid out. |
 

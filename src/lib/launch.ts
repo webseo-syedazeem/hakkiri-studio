@@ -18,8 +18,8 @@ export function isLaunch(): boolean {
 
 /**
  * The beta switch. HAKKIRI_BETA=1 (and NEXT_PUBLIC_HAKKIRI_BETA=1 for the
- * browser) runs the launched app as a closed, free beta: each invited tester
- * gets BETA.hoursPerTester of practice in total, nothing is for sale, and a
+ * browser) runs the launched app as a closed, free beta: each tester gets a
+ * login from the team (no sign-up) and BETA.hoursPerTester of practice a month, nothing is for sale, and a
  * Feedback button on every screen asks questions about the screen they're on
  * and sends the answers to the alerts webhook or email. Beta implies launch
  * (demos and developer messages hidden). Until accounts land the allowance
@@ -33,10 +33,13 @@ export function isBeta(): boolean {
 }
 
 export const BETA = {
-  /** Free practice per invited tester, in total, for the whole beta. */
-  hoursPerTester: 5,
-  /** A safety net per day so one long session can't burn the lot by accident. */
-  minutesPerDay: 120,
+  /** Free practice per tester per calendar month: full use of the app. */
+  hoursPerTester: 10,
+  /** No daily cap in the beta: the monthly hours are the only limit (0 = off). */
+  minutesPerDay: 0,
+  /** Whole-app spending ceilings while the beta runs (about 15 testers). */
+  dailyUsd: 25,
+  monthlyUsd: 200,
 };
 
 /** A developer message in the prototype, a plain one at launch. */

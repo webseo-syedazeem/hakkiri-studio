@@ -8,7 +8,7 @@ type Variant = "primary" | "secondary" | "ghost";
 type Size = "sm" | "md" | "lg";
 
 const buttonBase =
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[10px] font-semibold transition-all duration-200 active:scale-[0.98] select-none cursor-pointer disabled:pointer-events-none disabled:opacity-50";
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[10px] font-semibold transition-colors disabled:pointer-events-none disabled:opacity-50";
 const buttonVariants: Record<Variant, string> = {
   primary: "bg-blue-fill text-white hover:bg-blue-hover",
   secondary: "bg-panel-2 text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-[#2a2b35]",
@@ -157,26 +157,6 @@ const paths = {
   back: "M15 5l-7 7 7 7",
   speaker: "M4 9h4l5-4v14l-5-4H4z M16 9a4 4 0 0 1 0 6",
   x: "M6 6l12 12 M18 6L6 18",
-  arrowRight: "M5 12h14 M12 5l7 7-7 7",
-  sparkles: "M12 3l1.9 4.8L19 9.5l-4 3.7 1.2 5.3-4.2-2.7-4.2 2.7 1.2-5.3-4-3.7 5.1-1.7L12 3z",
-  award: "M12 15a7 7 0 1 0 0-14 7 7 0 0 0 0 14z M8.21 13.89L7 23l5-3 5 3-1.21-9.12",
-  trending: "M23 6l-9.5 9.5-5-5L1 18 M17 6h6v6",
-  shield: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z",
-  zap: "M13 2L3 14h9l-1 8 10-12h-9l1-8z",
-  barChart: "M18 20V10 M12 20V4 M6 20v-7",
-  target: "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12z M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4z",
-  flame: "M8.5 14.5A2.5 2.5 0 0 0 11 17c1.38 0 2.5-1.12 2.5-2.5 0-1.63-1.5-3.5-1.5-3.5s-1.5 1.87-1.5 3.5z M12 2c-4 4.5-8 9-8 13.5a8 8 0 0 0 16 0c0-4.5-4-9-8-13.5z",
-  crown: "M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7z",
-  laptop: "M4 6h16a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2zm-2 13h20v1a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-1z",
-  building: "M3 21h18 M9 8h1 M9 12h1 M9 16h1 M14 8h1 M14 12h1 M14 16h1 M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16",
-  megaphone: "M3 11v2a2 2 0 0 0 2 2h2l5 4V5L7 9H5a2 2 0 0 0-2 2zm13-3a5 5 0 0 1 0 8 M19 5a8 8 0 0 1 0 14",
-  activity: "M22 12h-4l-3 9L9 3l-3 9H2",
-  user: "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z",
-  users: "M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z M23 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75",
-  clock: "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z M12 6v6l4 2",
-  cross: "M12 2v20 M2 12h20",
-  heart: "M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z",
-  brain: "M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-2.04z M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-2.04z",
 } as const;
 
 export type IconName = keyof typeof paths;

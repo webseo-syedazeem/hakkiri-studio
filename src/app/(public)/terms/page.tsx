@@ -4,18 +4,18 @@ import { LegalPage } from "@/components/shell/LegalPage";
 
 export const metadata: Metadata = { title: "Terms · Hakkiri", description: "The terms for using Hakkiri." };
 
-/** Production legal terms */
-const DRAFT = false;
+/** Set to false once a solicitor has approved the wording. */
+const DRAFT = true;
 
 export default function TermsPage() {
   return (
     <LegalPage
       title="Terms of use"
-      updated="November 2026"
+      updated="26 October 2026"
       draft={DRAFT}
       intro={
         <p>
-          These terms are the agreement between you and Hakkiri Studio Ltd (“we”, “us”) for using Hakkiri. Please read them; by using Hakkiri you agree to them. Our <Link href="/privacy">privacy policy</Link> explains how we handle your data. If you’re a
+          These terms are the agreement between you and [Company name] Ltd (“we”, “us”) for using Hakkiri. Please read them; by using Hakkiri you agree to them. Our <Link href="/privacy">privacy policy</Link> explains how we handle your data. If you’re a
           consumer, nothing here affects your legal rights.
         </p>
       }
@@ -33,14 +33,14 @@ export default function TermsPage() {
         {
           id: "eligibility",
           title: "Who can use it",
-          body: <p>You must be 16 or over. If you use Hakkiri for an organisation, you confirm you’re allowed to accept these terms for it.</p>,
+          body: <p>You must be [16] or over. If you use Hakkiri for an organisation, you confirm you’re allowed to accept these terms for it.</p>,
         },
         {
           id: "account",
           title: "Your account",
           body: (
             <p>
-              You sign in securely with your credentials. Keep access to your account secure: anyone who can access your account can view your rehearsal sessions. Contact us straight away at <a href="mailto:support@hakkiri.com">support@hakkiri.com</a> if you
+              [Once accounts launch:] you sign in with an email link or with Google. Keep access to your email account secure: anyone who can open your sign-in emails can get into your Hakkiri account. Tell us straight away at [support@hakkiri.com] if you
               think someone else has used it.
             </p>
           ),

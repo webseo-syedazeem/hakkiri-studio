@@ -2,7 +2,7 @@ import "server-only";
 import { NextResponse } from "next/server";
 import { londonToday } from "@/lib/dates";
 import { BETA, devOr, isBeta } from "@/lib/launch";
-import { allUsage, usageInMonth, usageOn, type UsageEntry } from "./store";
+import { usageInMonth, usageOn, type UsageEntry } from "./store";
 import { reportProblem } from "@/lib/alerts/store";
 
 /**
@@ -23,14 +23,20 @@ export const LIMITS = {
     process.env.HAKKIRI_DAILY_MINUTES,
     isBeta() ? BETA.minutesPerDay : 120,
   ),
-  /** Minutes of practice in total, ever. Only the beta sets it (per tester). */
-  totalMinutes: isBeta()
+  /** Minutes of practice per calendar month. Only the beta sets it (per tester). */
+  monthlyMinutes: isBeta()
     ? num(process.env.HAKKIRI_BETA_MINUTES, BETA.hoursPerTester * 60)
     : 0,
   /** Estimated dollars per day, across every service. */
-  dailyUsd: num(process.env.HAKKIRI_DAILY_SPEND_USD, 5),
+  dailyUsd: num(
+    process.env.HAKKIRI_DAILY_SPEND_USD,
+    isBeta() ? BETA.dailyUsd : 5,
+  ),
   /** Estimated dollars per calendar month. */
-  monthlyUsd: num(process.env.HAKKIRI_MONTHLY_SPEND_USD, 60),
+  monthlyUsd: num(
+    process.env.HAKKIRI_MONTHLY_SPEND_USD,
+    isBeta() ? BETA.monthlyUsd : 60,
+  ),
 };
 
 /** Test-mode samples don't count towards limits. */
@@ -40,8 +46,8 @@ export interface Standing {
   minutesToday: number;
   spentToday: number;
   spentMonth: number;
-  /** Minutes of practice ever; only read in the beta. */
-  minutesTotal?: number;
+  /** Minutes of practice this calendar month; only read in the beta. */
+  minutesMonth?: number;
 }
 
 export function limitStanding(today = londonToday()): Standing {
@@ -50,8 +56,8 @@ export function limitStanding(today = londonToday()): Standing {
     minutesToday: t.reduce((s, e) => s + (e.seconds ?? 0), 0) / 60,
     spentToday: t.reduce((s, e) => s + e.costUsd, 0),
     spentMonth: real(usageInMonth(today)).reduce((s, e) => s + e.costUsd, 0),
-    minutesTotal: LIMITS.totalMinutes
-      ? real([...allUsage()]).reduce((s, e) => s + (e.seconds ?? 0), 0) / 60
+    minutesMonth: LIMITS.monthlyMinutes
+      ? real(usageInMonth(today)).reduce((s, e) => s + (e.seconds ?? 0), 0) / 60
       : undefined,
   };
 }
@@ -86,10 +92,10 @@ export function limitReached(
   }
   if (
     opts.practice &&
-    LIMITS.totalMinutes &&
-    (s.minutesTotal ?? 0) >= LIMITS.totalMinutes * grace
+    LIMITS.monthlyMinutes &&
+    (s.minutesMonth ?? 0) >= LIMITS.monthlyMinutes * grace
   ) {
-    return `You’ve used your ${hm(LIMITS.totalMinutes)} of beta practice. Thank you. If you’d like more, say so with the Feedback button and we’ll top you up.`;
+    return `You’ve used this month’s ${hm(LIMITS.monthlyMinutes)} of beta practice. It resets on the 1st. If you need more before then, say so with the Feedback button.`;
   }
   if (
     opts.practice &&

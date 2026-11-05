@@ -5,9 +5,11 @@ import os from "node:os";
 /**
  * Local saving for the prototype: JSON files and recordings in a
  * `.hakkiri-data` folder inside the project, so your practice survives a
- * restart. In serverless environments (Vercel/AWS Lambda), process.cwd() is
- * read-only (/var/task), so we automatically fall back to os.tmpdir() (/tmp)
- * where writes are permitted.
+ * restart. A stand-in until the real database and file storage (build plan:
+ * "Data, privacy and security"); every store keeps the same functions, so
+ * swapping this out won't touch the screens.
+ *
+ * Off in unit tests. Set HAKKIRI_DATA_DIR to keep the data somewhere else.
  */
 const enabled = !process.env.VITEST && process.env.HAKKIRI_SAVE !== "off";
 /** True when files are being saved to disk (false in unit tests and with HAKKIRI_SAVE=off). */
@@ -17,23 +19,10 @@ function resolveStorageDirectory(): string {
   if (process.env.HAKKIRI_DATA_DIR) {
     return process.env.HAKKIRI_DATA_DIR;
   }
-  // Vercel / AWS Lambda environment detection
   if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
     return path.join(os.tmpdir(), "hakkiri-data");
   }
-  const defaultDir = path.join(process.cwd(), ".hakkiri-data");
-  try {
-    if (!fs.existsSync(defaultDir)) {
-      fs.mkdirSync(defaultDir, { recursive: true });
-    }
-    // Test write accessibility
-    const testProbe = path.join(defaultDir, ".write_probe");
-    fs.writeFileSync(testProbe, "1");
-    fs.unlinkSync(testProbe);
-    return defaultDir;
-  } catch {
-    return path.join(os.tmpdir(), "hakkiri-data");
-  }
+  return path.join(process.cwd(), ".hakkiri-data");
 }
 
 const DIR = resolveStorageDirectory();

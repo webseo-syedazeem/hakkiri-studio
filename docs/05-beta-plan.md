@@ -4,14 +4,14 @@ Oct 27, 2026 · Bilaal (owner) with Claude
 
 ## The shape of it
 
-A closed beta: 10 to 15 invited people, 5 hours of practice each (about ten 30-minute interviews, or a mix of interviews, presentations and Q&A), free, for about three weeks. Nothing is for sale. The point is not "do people like it"; it is to find out whether the scores feel fair, whether the feedback is specific enough to act on, and where people get stuck. Three weeks is long enough for someone with a real interview coming up to use it properly and tell you whether it helped.
+A closed beta: 10 to 15 people, each given a login by the team and 10 hours of practice a month with full use of the app (about twenty 30-minute interviews, or any mix of interviews, drills, presentations and Q&A), free. The hours reset on the 1st of each month. At about 27p per 30-minute interview, 15 testers using every hour cost roughly £80 a month in AI services. Nothing is for sale. The point is not "do people like it"; it is to find out whether the scores feel fair, whether the feedback is specific enough to act on, and where people get stuck. Three weeks is long enough for someone with a real interview coming up to use it properly and tell you whether it helped.
 
 What the beta needs from the build, in order:
 
-1. **Accounts** (sign-in by email link and Google). This is the one blocker: without it everyone shares one data set and one allowance. It's step 1 of the handover anyway.
-2. **The beta switch on** (`HAKKIRI_BETA=1` and `NEXT_PUBLIC_HAKKIRI_BETA=1`). Already built: it gives each tester 5 hours in total with a 120-minute daily cap, swaps the pricing section for "free while we're in beta", changes the plan FAQ, and puts a Feedback button on every screen of the app. `HAKKIRI_BETA_MINUTES` changes the allowance.
+1. **Logins and per-user data.** The team creates each tester's login; there is no sign-up page, no Google sign-in and no email links in the beta. With Supabase: turn public sign-ups off, create each tester in the dashboard with their email and a password, and send them the login privately. Every record then carries the tester's user id, so each sees only their own work and their own 10 hours. This is the one real build item: without it everyone shares one data set and one allowance. It is step 1 of the handover anyway; email-link and Google sign-in can be added at launch.
+2. **The beta switch on** (`HAKKIRI_BETA=1` and `NEXT_PUBLIC_HAKKIRI_BETA=1`). Already built: it gives each tester 10 hours a month (reset on the 1st) with no daily cap, raises the whole-app spend limits to $25 a day and $200 a month, swaps the pricing section for "free while we're in beta", changes the plan FAQ, and puts a Feedback button on every screen of the app. `HAKKIRI_BETA_MINUTES` changes the allowance.
 3. **Alerts pointed at you** (`ALERT_WEBHOOK_URL` to a Slack or Discord channel, or Resend email). Every feedback note arrives there the moment it's sent, with the screen it was sent from.
-4. **An invite list**, not an open sign-up: the sign-in page should accept only addresses on an allow-list during the beta. Keep the list in the database so you can add people without a deploy.
+4. **A simple tester list** (a spreadsheet is enough): name, email, login sent, date started, hours used, exit call booked. Adding a tester mid-beta is creating one more login, no deploy.
 
 Payments, Stripe and the hours balance wait until after the beta.
 
@@ -62,7 +62,7 @@ Write the answers in the same table for everyone; patterns show up by the fourth
 
 **Numbers to watch** (from Settings > Usage and the data files; per person once accounts exist):
 
-- How many of the 5 hours each person used, and how fast. Someone who used 20 minutes and stopped is the most important person to call.
+- How many of their 10 monthly hours each person used, and how fast. Someone who used 20 minutes and stopped is the most important person to call.
 - Interviews started vs finished. A high drop-off mid-interview means something is wrong with the live screen, not the product idea.
 - The Yes / Partly / No split on "Was this score fair?" If fewer than about 70% say Yes, the scoring prompts need work before launch.
 - Which screens get feedback and which never do. Silence on the story bank means no one found it.

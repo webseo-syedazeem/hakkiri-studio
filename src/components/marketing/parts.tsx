@@ -31,9 +31,9 @@ export function Cta({
 }) {
   return (
     <Link
-      href="/signup"
+      href="/"
       className={clsx(
-        "inline-flex items-center justify-center rounded-full bg-mk-cta font-medium text-white transition-all duration-200 hover:scale-[1.03] active:scale-[0.98] hover:bg-mk-cta-hover hover:shadow-lg hover:shadow-mk-cta/25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mk-cta",
+        "inline-flex items-center justify-center rounded-full bg-mk-cta font-medium text-white transition-colors hover:bg-mk-cta-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mk-cta",
         size === "lg" ? "px-7 py-3.5 text-[17px]" : "px-5 py-2.5 text-[15px]",
         className,
       )}
@@ -71,8 +71,8 @@ export function TextLink({
     <Link
       href={href}
       className={clsx(
-        "inline-flex items-center gap-1 text-[17px] font-medium underline-offset-4 transition-all duration-200 hover:underline hover:translate-x-0.5",
-        dark ? "text-[#aeb6ff] hover:text-white" : "text-mk-blue hover:text-mk-cta",
+        "text-[17px] font-medium underline-offset-4 hover:underline",
+        dark ? "text-[#aeb6ff]" : "text-mk-blue",
         className,
       )}
     >
@@ -106,7 +106,7 @@ export function Device({
   return (
     <div
       className={clsx(
-        "group rounded-[20px] bg-mk-bezel p-[5px] shadow-[0_0_0_1px_rgb(0_0_0/0.08),0_60px_120px_-40px_rgb(23_28_80/0.45)] transition-all duration-500 hover:-translate-y-1.5 hover:shadow-[0_0_0_1px_rgb(59_130_246/0.25),0_80px_160px_-40px_rgb(37_99_235/0.35)] sm:rounded-[26px] sm:p-[9px]",
+        "rounded-[20px] bg-mk-bezel p-[5px] shadow-[0_0_0_1px_rgb(0_0_0/0.08),0_60px_120px_-40px_rgb(23_28_80/0.45)] sm:rounded-[26px] sm:p-[9px]",
         className,
       )}
     >
@@ -119,10 +119,7 @@ export function Device({
           height={height}
           loading={priority ? "eager" : "lazy"}
           decoding="async"
-          className={clsx(
-            "block h-auto w-full transition-transform duration-700 ease-out group-hover:scale-[1.012]",
-            imgClass,
-          )}
+          className={clsx("block h-auto w-full", imgClass)}
         />
         {fade && (
           <div
@@ -174,7 +171,7 @@ export function Hero({
       className="overflow-hidden pb-20 pt-16 sm:pb-28 sm:pt-24"
     >
       <div className={clsx(WRAP, "flex flex-col items-center text-center")}>
-        <p className="animate-fade-in text-[17px] font-semibold text-mk-blue sm:text-[19px]">
+        <p className="text-[17px] font-semibold text-mk-blue sm:text-[19px]">
           {kicker}
         </p>
         <h1
@@ -183,17 +180,17 @@ export function Hero({
         >
           {title}
         </h1>
-        <p className={clsx(LEAD, "mt-6 max-w-[680px] animate-rise [animation-delay:90ms]")}>{body}</p>
-        <div className="mt-9 flex flex-col items-center gap-4 animate-rise [animation-delay:170ms] sm:flex-row sm:gap-7">
+        <p className={clsx(LEAD, "mt-6 max-w-[680px]")}>{body}</p>
+        <div className="mt-9 flex flex-col items-center gap-4 sm:flex-row sm:gap-7">
           <Cta>{cta}</Cta>
           <TextLink href={secondary.href}>{secondary.label}</TextLink>
         </div>
-        <Reassure className="mt-4 animate-fade-in [animation-delay:240ms]">{reassure}</Reassure>
+        <Reassure className="mt-4">{reassure}</Reassure>
       </div>
       <div
         className={clsx(
           WRAP,
-          "mt-14 animate-rise [animation-delay:260ms] sm:mt-20",
+          "mt-14 animate-rise [animation-delay:120ms] sm:mt-20",
         )}
       >
         {children}
@@ -223,12 +220,12 @@ export function Statement({
           {points.map((p) => (
             <li
               key={p.text}
-              className="group flex flex-col items-center gap-3 text-center transition-transform duration-300 hover:-translate-y-1"
+              className="flex flex-col items-center gap-3 text-center"
             >
-              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-mk-blue shadow-[0_1px_2px_rgb(0_0_0/0.06)] transition-all duration-300 group-hover:scale-110 group-hover:shadow-md group-hover:text-mk-cta">
+              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-mk-blue shadow-[0_1px_2px_rgb(0_0_0/0.06)]">
                 <Icon name={p.icon} size={22} />
               </span>
-              <span className="max-w-[260px] text-[17px] font-medium leading-snug transition-colors duration-200 group-hover:text-mk-ink">
+              <span className="max-w-[260px] text-[17px] font-medium leading-snug">
                 {p.text}
               </span>
             </li>
@@ -263,14 +260,11 @@ export function Steps({
         </h2>
         <ol className="mx-auto mt-14 grid max-w-[1000px] gap-10 sm:grid-cols-3 sm:gap-8">
           {steps.map((st, i) => (
-            <li
-              key={st.title}
-              className="group flex flex-col rounded-2xl p-5 -m-5 transition-all duration-300 hover:bg-mk-mist/60 hover:shadow-lg hover:shadow-black/[0.03] hover:-translate-y-1.5"
-            >
-              <span className="num text-[56px] font-semibold leading-none tracking-[-0.04em] text-mk-cta transition-transform duration-300 group-hover:scale-110 group-hover:translate-x-1">
+            <li key={st.title} className="flex flex-col">
+              <span className="num text-[56px] font-semibold leading-none tracking-[-0.04em] text-mk-cta">
                 {i + 1}
               </span>
-              <h3 className="mt-4 text-[21px] font-semibold tracking-[-0.015em] transition-colors duration-200 group-hover:text-mk-blue">
+              <h3 className="mt-4 text-[21px] font-semibold tracking-[-0.015em]">
                 {st.title}
               </h3>
               <p className="mt-2 text-[17px] leading-relaxed text-mk-slate">
@@ -384,10 +378,10 @@ export function Tiles({
             {big.map((t) => (
               <article
                 key={t.title}
-                className="group flex min-w-0 flex-col overflow-hidden rounded-[28px] bg-white transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-black/[0.08]"
+                className="flex min-w-0 flex-col overflow-hidden rounded-[28px] bg-white"
               >
                 <div className="px-8 pt-9 sm:px-10 sm:pt-11">
-                  <h3 className="text-[26px] font-semibold leading-tight tracking-[-0.02em] [text-wrap:balance] sm:text-[30px] transition-colors duration-300 group-hover:text-mk-blue">
+                  <h3 className="text-[26px] font-semibold leading-tight tracking-[-0.02em] [text-wrap:balance] sm:text-[30px]">
                     {t.title}
                   </h3>
                   <p className="mt-3 text-[17px] leading-relaxed text-mk-slate">
@@ -404,7 +398,7 @@ export function Tiles({
                       height={t.shot.height}
                       loading="lazy"
                       decoding="async"
-                      className="block h-auto w-[150%] max-w-none rounded-tl-[11px] transition-transform duration-700 ease-out group-hover:scale-[1.02] sm:w-[135%]"
+                      className="block h-auto w-[150%] max-w-none rounded-tl-[11px] sm:w-[135%]"
                     />
                   </div>
                 </div>
@@ -422,12 +416,12 @@ export function Tiles({
             <li
               key={f.title}
               className={clsx(
-                "group rounded-[22px] px-7 py-7 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-lg hover:shadow-black/[0.05]",
+                "rounded-[22px] px-7 py-7",
                 mist ? "bg-white" : "bg-mk-mist",
               )}
             >
-              <Icon name={f.icon} size={24} className="text-mk-cta transition-transform duration-300 group-hover:scale-110" />
-              <h3 className="mt-4 text-[19px] font-semibold tracking-[-0.01em] transition-colors duration-200 group-hover:text-mk-blue">
+              <Icon name={f.icon} size={24} className="text-mk-cta" />
+              <h3 className="mt-4 text-[19px] font-semibold tracking-[-0.01em]">
                 {f.title}
               </h3>
               <p className="mt-1.5 text-[15px] leading-relaxed text-mk-slate">
@@ -488,7 +482,7 @@ export function Stage({
               {uses.map((u) => (
                 <li
                   key={u}
-                  className="rounded-full bg-white/[0.08] px-3.5 py-1.5 text-[14px] text-white/85 shadow-[inset_0_0_0_1px_rgb(255_255_255/0.12)] transition-all duration-200 hover:bg-white/[0.18] hover:scale-105 cursor-default"
+                  className="rounded-full bg-white/[0.08] px-3.5 py-1.5 text-[14px] text-white/85 shadow-[inset_0_0_0_1px_rgb(255_255_255/0.12)]"
                 >
                   {u}
                 </li>
@@ -611,7 +605,7 @@ export function Compare({
             </thead>
             <tbody>
               {rows.map((r, ri) => (
-                <tr key={r.label} className="border-t border-mk-line/70 transition-colors duration-150 hover:bg-mk-blue/[0.04]">
+                <tr key={r.label} className="border-t border-mk-line/70">
                   <th scope="row" className="py-4 pr-4 text-[16px] font-medium">
                     {r.label}
                   </th>
@@ -619,7 +613,7 @@ export function Compare({
                     <td
                       key={i}
                       className={clsx(
-                        "px-3 py-4 text-center transition-colors duration-150",
+                        "px-3 py-4 text-center",
                         i === 0 && "bg-mk-mist font-semibold",
                         i === 0 && ri === rows.length - 1 && "rounded-b-[18px]",
                       )}
@@ -673,20 +667,20 @@ export function Pricing({
               key={p.id}
               aria-labelledby={`plan-${p.id}`}
               className={clsx(
-                "group relative flex flex-col rounded-[24px] bg-white px-8 py-9 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl",
+                "relative flex flex-col rounded-[24px] bg-white px-8 py-9",
                 p.featured
-                  ? "shadow-[0_0_0_2px_var(--color-mk-cta),0_30px_60px_-30px_rgb(74_90_240/0.45)] hover:shadow-[0_0_0_2px_var(--color-mk-cta),0_40px_80px_-20px_rgb(74_90_240/0.5)]"
-                  : "shadow-[0_1px_2px_rgb(0_0_0/0.05)] hover:shadow-black/[0.08]",
+                  ? "shadow-[0_0_0_2px_var(--color-mk-cta),0_30px_60px_-30px_rgb(74_90_240/0.45)]"
+                  : "shadow-[0_1px_2px_rgb(0_0_0/0.05)]",
               )}
             >
               {p.badge && (
-                <span className="absolute -top-3.5 left-8 rounded-full bg-mk-cta px-3 py-1 text-[12px] font-semibold text-white shadow-sm transition-transform duration-300 group-hover:scale-105">
+                <span className="absolute -top-3.5 left-8 rounded-full bg-mk-cta px-3 py-1 text-[12px] font-semibold text-white">
                   {p.badge}
                 </span>
               )}
               <h3
                 id={`plan-${p.id}`}
-                className="text-[21px] font-semibold tracking-[-0.015em] transition-colors duration-200 group-hover:text-mk-blue"
+                className="text-[21px] font-semibold tracking-[-0.015em]"
               >
                 {p.name}
               </h3>
@@ -694,7 +688,7 @@ export function Pricing({
                 {p.blurb}
               </p>
               <p className="mt-6 flex items-baseline gap-2">
-                <span className="num text-[48px] font-semibold leading-none tracking-[-0.035em] transition-transform duration-300 group-hover:scale-[1.02] origin-left">
+                <span className="num text-[48px] font-semibold leading-none tracking-[-0.035em]">
                   {priceLabel(p.price)}
                 </span>
                 {p.period && (
@@ -711,7 +705,7 @@ export function Pricing({
                       name="check"
                       size={17}
                       strokeWidth={2.4}
-                      className="mt-0.5 shrink-0 text-mk-cta transition-transform duration-200 group-hover:scale-110"
+                      className="mt-0.5 shrink-0 text-mk-cta"
                     />
                     <span>{f}</span>
                   </li>
@@ -721,8 +715,8 @@ export function Pricing({
                 <Cta className="mt-9 w-full">{p.cta}</Cta>
               ) : (
                 <Link
-                  href="/signup"
-                  className="mt-9 inline-flex w-full items-center justify-center rounded-full px-6 py-3.5 text-[17px] font-medium text-mk-blue shadow-[inset_0_0_0_1.5px_var(--color-mk-blue)] transition-all duration-200 hover:bg-mk-blue hover:text-white hover:scale-[1.02] active:scale-[0.98]"
+                  href="/"
+                  className="mt-9 inline-flex w-full items-center justify-center rounded-full px-6 py-3.5 text-[17px] font-medium text-mk-blue shadow-[inset_0_0_0_1.5px_var(--color-mk-blue)] transition-colors hover:bg-mk-blue hover:text-white"
                 >
                   {p.cta}
                 </Link>
@@ -748,7 +742,7 @@ export function Pricing({
         <div className="mt-12 grid gap-5 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
           <section
             aria-labelledby="hours-h"
-            className="rounded-[24px] bg-white px-8 py-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-black/[0.04]"
+            className="rounded-[24px] bg-white px-8 py-8"
           >
             <h3 id="hours-h" className="text-[19px] font-semibold">
               How practice hours work
@@ -770,7 +764,7 @@ export function Pricing({
           </section>
           <section
             aria-labelledby="extra-h"
-            className="flex flex-col rounded-[24px] bg-white px-8 py-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-black/[0.04]"
+            className="flex flex-col rounded-[24px] bg-white px-8 py-8"
           >
             <h3 id="extra-h" className="text-[19px] font-semibold">
               Extra hours
@@ -810,7 +804,7 @@ function BetaPricing({ plans }: { plans: Plan[] }) {
   const paid = plans.filter((p) => p.price > 0);
   const from = paid.length ? Math.min(...paid.map((p) => p.price)) : null;
   const included = [
-    `${BETA.hoursPerTester} hours of practice: about ten 30-minute interviews, or thirty run-throughs of a talk`,
+    `${BETA.hoursPerTester} hours of practice a month: about twenty 30-minute interviews, or sixty run-throughs of a 10-minute talk`,
     "Interviews built from your job and CV, with follow-ups",
     "Presentations and audience Q&A",
     "Reports, feedback on every answer, drills, story bank, prep sheet",
@@ -837,13 +831,13 @@ function BetaPricing({ plans }: { plans: Plan[] }) {
           </h2>
           <p className={clsx(LEAD, "mt-5")}>
             A small group of testers, {BETA.hoursPerTester} hours of practice
-            each, and one ask in return: tell us where a score felt wrong.
+            a month each, and one ask in return: tell us where a score felt wrong.
             That’s the whole deal.
           </p>
         </div>
         <article
           aria-labelledby="plan-beta"
-          className="relative mx-auto mt-14 max-w-[560px] rounded-[24px] bg-white px-8 py-9 shadow-[0_0_0_2px_var(--color-mk-cta),0_30px_60px_-30px_rgb(74_90_240/0.45)] transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_0_0_2px_var(--color-mk-cta),0_40px_80px_-20px_rgb(74_90_240/0.5)]"
+          className="relative mx-auto mt-14 max-w-[560px] rounded-[24px] bg-white px-8 py-9 shadow-[0_0_0_2px_var(--color-mk-cta),0_30px_60px_-30px_rgb(74_90_240/0.45)]"
         >
           <span className="absolute -top-3.5 left-8 rounded-full bg-mk-cta px-3 py-1 text-[12px] font-semibold text-white">
             Everything included
@@ -855,14 +849,14 @@ function BetaPricing({ plans }: { plans: Plan[] }) {
             Beta
           </h3>
           <p className="mt-1 text-[15px] text-mk-slate">
-            For invited testers, while the beta runs.
+            For our beta testers, while the beta runs.
           </p>
           <p className="mt-6 flex items-baseline gap-2">
             <span className="num text-[48px] font-semibold leading-none tracking-[-0.035em]">
               {priceLabel(0)}
             </span>
             <span className="text-[17px] text-mk-slate">
-              for {BETA.hoursPerTester} hours of practice
+              for {BETA.hoursPerTester} hours a month
             </span>
           </p>
           <p className="mt-2 min-h-[20px] text-[14px] font-medium text-mk-blue">
@@ -881,7 +875,7 @@ function BetaPricing({ plans }: { plans: Plan[] }) {
               </li>
             ))}
           </ul>
-          <Cta className="mt-9 w-full">Sign in with your invite</Cta>
+          <Cta className="mt-9 w-full">Sign in with your beta login</Cta>
           {from != null && (
             <p className="mt-4 text-center text-[13px] text-mk-slate">
               After the beta, plans start at {priceLabel(from)} a month. Beta
@@ -947,11 +941,11 @@ export function Privacy({ points }: { points: string[] }) {
 const BETA_FAQ: Record<string, { q: string; a: string } | null> = {
   "What do I get for free?": {
     q: "What do I get for free?",
-    a: `Everything, for ${BETA.hoursPerTester} hours of practice during the beta. Interviews built from your CV and the job, presentations, reports, feedback on every answer, drills and the story bank. No card needed.`,
+    a: `Everything, for ${BETA.hoursPerTester} hours of practice a month during the beta. Interviews built from your CV and the job, presentations, reports, feedback on every answer, drills and the story bank. No card needed.`,
   },
   "What happens if I run out of hours?": {
     q: "What happens when I’ve used my hours?",
-    a: "Your reports, feedback and prep sheet stay open; hours only count while you’re speaking. If you want more, say so with the Feedback button and we’ll add some.",
+    a: "Your hours reset on the 1st of each month. Until then, your reports, feedback and prep sheet stay open; hours only count while you practise.",
   },
   "I’m presenting as part of a job interview. Does it help?": {
     q: "I’m presenting as part of a job interview. Does it help?",
@@ -985,13 +979,13 @@ export function Faq({ items: given }: { items: { q: string; a: string }[] }) {
         </h2>
         <div className="mt-12 divide-y divide-mk-line/80 border-y border-mk-line/80">
           {items.map((f) => (
-            <details key={f.q} className="group py-6 transition-colors duration-150">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-6 text-[19px] font-semibold tracking-[-0.01em] transition-colors duration-150 hover:text-mk-blue [&::-webkit-details-marker]:hidden">
+            <details key={f.q} className="group py-6">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-6 text-[19px] font-semibold tracking-[-0.01em] [&::-webkit-details-marker]:hidden">
                 {f.q}
                 <Icon
                   name="plus"
                   size={20}
-                  className="shrink-0 text-mk-slate transition-transform duration-300 group-open:rotate-45"
+                  className="shrink-0 text-mk-slate transition-transform group-open:rotate-45"
                 />
               </summary>
               <p className="mt-3 max-w-[680px] text-[17px] leading-relaxed text-mk-slate">
@@ -1020,9 +1014,7 @@ export function FinalCta({
   return (
     <section aria-labelledby="final-h" className="py-28 sm:py-36">
       <div className={clsx(WRAP, "flex flex-col items-center text-center")}>
-        <div className="transition-transform duration-500 hover:scale-110">
-          <Mark size={52} live={true} />
-        </div>
+        <Mark size={52} />
         <h2 id="final-h" className={clsx(H2, "mt-6 max-w-[820px]")}>
           {title}
         </h2>

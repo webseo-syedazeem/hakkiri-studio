@@ -29,7 +29,7 @@ export function StickyCta({ label }: { label: string }) {
         aria-hidden={!show}
       >
         <Link
-          href="/signup"
+          href="/"
           tabIndex={show ? 0 : -1}
           className="inline-flex w-full items-center justify-center rounded-full bg-mk-cta px-5 py-3 text-[16px] font-medium text-white transition-colors hover:bg-mk-cta-hover"
         >

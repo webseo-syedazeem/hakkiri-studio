@@ -4,14 +4,14 @@ import { LegalPage } from "@/components/shell/LegalPage";
 
 export const metadata: Metadata = { title: "Privacy policy · Hakkiri", description: "What Hakkiri collects, why, who it shares it with, how long it keeps it, and your rights." };
 
-/** Production legal wording */
-const DRAFT = false;
+/** Set to false once a solicitor has approved the wording. */
+const DRAFT = true;
 
 export default function PrivacyPage() {
   return (
     <LegalPage
       title="Privacy policy"
-      updated="November 2026"
+      updated="26 October 2026"
       draft={DRAFT}
       intro={
         <>
@@ -32,10 +32,11 @@ export default function PrivacyPage() {
           body: (
             <>
               <p>
-                Hakkiri is run by Hakkiri Studio Ltd, a company registered in England and Wales. We are the controller of your personal data.
+                Hakkiri is run by [Company name] Ltd, a company registered in [England and Wales] (company number [number]), at [registered address]. We are the controller of your personal data. We are registered with the Information Commissioner’s Office
+                (registration number [ICO number]).
               </p>
               <p>
-                Questions about your data: <a href="mailto:privacy@hakkiri.com">privacy@hakkiri.com</a>.
+                Questions about your data: <a href="mailto:[privacy@hakkiri.com]">[privacy@hakkiri.com]</a>.
               </p>
             </>
           ),

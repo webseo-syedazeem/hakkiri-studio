@@ -203,42 +203,44 @@ describe("limits", () => {
 afterEach(() => vi.unstubAllEnvs());
 
 describe("beta mode", () => {
-  it("gives each tester 5 hours in total and a daily cap", async () => {
+  it("gives each tester 10 hours a month, with no daily cap", async () => {
     vi.resetModules();
     process.env.HAKKIRI_BETA = "1";
     delete process.env.HAKKIRI_DAILY_MINUTES;
     delete process.env.HAKKIRI_BETA_MINUTES;
     try {
       const { LIMITS: L, limitReached: reached } = await import("./limits");
-      expect(L.totalMinutes).toBe(300);
-      expect(L.dailyMinutes).toBe(120);
+      expect(L.monthlyMinutes).toBe(600);
+      expect(L.dailyMinutes).toBe(0);
+      expect(L.dailyUsd).toBe(25);
+      expect(L.monthlyUsd).toBe(200);
       expect(
         reached(
           { practice: true },
-          { minutesToday: 10, spentToday: 0, spentMonth: 0, minutesTotal: 301 },
+          { minutesToday: 10, spentToday: 0, spentMonth: 0, minutesMonth: 601 },
         ),
-      ).toMatch(/5 h of beta practice/);
+      ).toMatch(/this month’s 10 h of beta practice/);
       expect(
         reached(
           { practice: true },
           {
-            minutesToday: 121,
+            minutesToday: 300,
             spentToday: 0,
             spentMonth: 0,
-            minutesTotal: 200,
+            minutesMonth: 400,
           },
         ),
-      ).toMatch(/daily cap during the beta/);
+      ).toBeNull();
       expect(
         reached(
           { practice: true },
-          { minutesToday: 30, spentToday: 0, spentMonth: 0, minutesTotal: 200 },
+          { minutesToday: 30, spentToday: 0, spentMonth: 0, minutesMonth: 200 },
         ),
       ).toBeNull();
       expect(
         reached(
           {},
-          { minutesToday: 30, spentToday: 0, spentMonth: 0, minutesTotal: 400 },
+          { minutesToday: 30, spentToday: 0, spentMonth: 0, minutesMonth: 400 },
         ),
       ).toBeNull();
     } finally {

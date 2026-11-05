@@ -12,6 +12,7 @@ import { minutesLong, whenSaid } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
+/** Every interview, re-run and drill for this job, newest first. */
 export default async function PastSessionsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const interview = getInterview(id);
@@ -20,93 +21,54 @@ export default async function PastSessionsPage({ params }: { params: Promise<{ i
   const started = sessions.some(isFresh);
 
   return (
-    <div className="flex grow flex-col gap-6">
-      <header className="flex animate-rise flex-wrap items-end justify-between gap-6">
+    <div className="flex grow flex-col">
+      <header className="flex animate-rise items-end justify-between gap-8">
         <div>
-          <Crumbs items={[{ label: `${interview.company} Pipeline`, href: `/interviews/${interview.id}` }, { label: "Evaluation History" }]} />
-          <h1 className="mt-2 text-[32px] font-extrabold tracking-tight text-ink">Evaluation History</h1>
-          <p className="mt-1 text-sm text-muted">Recorded interviews, targeted drills, and re-runs for {interview.role}.</p>
+          <Crumbs items={[{ label: `${interview.company} interview`, href: `/interviews/${interview.id}` }, { label: "Past interviews" }]} />
+          <h1 className="mt-2 text-[28px] font-semibold tracking-[-0.025em]">Past interviews</h1>
+          <p className="mt-1 text-sm text-muted">Interviews, re-runs and drills. Only interviews with new questions count towards your verdict.</p>
         </div>
-        <ButtonLink href={`/interviews/${interview.id}#new-questions`} variant="primary" size="md">
+        <ButtonLink href={`/interviews/${interview.id}#new-questions`} variant="primary">
           <Icon name="mic" size={16} strokeWidth={2} />
-          <span>{started ? "Start New Questions" : "Start Interview"}</span>
+          {started ? "New questions" : "Start interview"}
         </ButtonLink>
       </header>
-
       <InterviewTabs id={interview.id} current="mocks" prepReady={started} />
 
-      <Panel aria-label="Past sessions" className="animate-rise rounded-2xl border border-white/[0.08] bg-panel/80 p-6 shadow-xl backdrop-blur-md">
-        {sessions.length === 0 ? (
-          <div className="py-8 text-center text-sm text-muted">
-            <Icon name="repeat" size={24} className="mx-auto text-dim mb-2" />
-            <p className="font-semibold text-ink">No recorded sessions yet</p>
-            <p className="text-xs text-muted mt-1">Your practice runs and question drills will appear here along with full AI analytical reports.</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            {/* Table Header */}
-            <div className="grid grid-cols-[minmax(0,1.2fr)_200px_110px_140px] items-center gap-4 border-b border-white/[0.08] pb-3 text-xs font-bold uppercase tracking-wider text-muted">
-              <span>Session & Setting</span>
-              <span>Questions & Follow-ups</span>
-              <span>Duration</span>
-              <span className="text-right">Evaluation</span>
-            </div>
-
-            <div className="divide-y divide-white/[0.06]">
-              {sessions.map((m) => {
-                const rows = rowsFor(m);
-                const score = mockScore(rows);
-                const followUps = rows.reduce((n, r) => n + r.followUps.length, 0);
-                const stopped = m.status === "stopped";
-
-                return (
-                  <Link
-                    key={m.id}
-                    href={`/interviews/${interview.id}/mocks/${m.id}`}
-                    className="grid grid-cols-[minmax(0,1.2fr)_200px_110px_140px] items-center gap-4 py-4 text-sm transition-colors hover:bg-white/[0.03] group rounded-xl px-2"
-                  >
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-ink group-hover:text-blue-soft transition-colors truncate">
-                          {sessionTitle(m, interview)}
-                        </span>
-                        {m.kind !== "drill" && !isFresh(m) && !stopped && (
-                          <span className="rounded bg-white/[0.06] px-1.5 py-0.5 text-[10px] text-muted">
-                            Practice Re-run
-                          </span>
-                        )}
-                      </div>
-                      <div className="mt-1 text-xs text-muted">
-                        {[sessionSettingsText(m), whenSaid(m.startedAt)].filter(Boolean).join(" · ")}
-                      </div>
-                    </div>
-
-                    <div className="text-xs text-muted">
-                      {stopped ? <span className="text-amber-400">Stopped: rebuilt</span> : countsLine(rows.length, followUps)}
-                    </div>
-
-                    <div className="num font-mono text-xs text-muted">
-                      {stopped ? "—" : minutesLong((Date.parse(m.finishedAt) - Date.parse(m.startedAt)) / 1000)}
-                    </div>
-
-                    <div className="text-right">
-                      {stopped ? (
-                        <span className="text-xs text-dim">Incomplete</span>
-                      ) : score != null ? (
-                        <span className="inline-flex items-center gap-1.5 rounded-lg bg-blue/10 px-2.5 py-1 text-xs font-bold text-blue-soft border border-blue/20">
-                          <span className="font-mono text-sm">{score.toFixed(1)}</span>
-                          <span className="text-[11px] font-medium text-ink/80">{scoreLabel(score)}</span>
-                        </span>
-                      ) : (
-                        <span className="text-xs text-dim">Pending</span>
-                      )}
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        )}
+      <Panel aria-label="Past sessions" className="mt-5 animate-rise px-5 pb-1.5 pt-3 [animation-delay:0.05s]">
+        {sessions.length === 0 && <p className="px-1 py-3.5 text-sm text-muted">Nothing yet. Your interviews, re-runs and drills appear here, each with its report.</p>}
+        {sessions.map((m, k) => {
+          const rows = rowsFor(m);
+          const score = mockScore(rows);
+          const followUps = rows.reduce((n, r) => n + r.followUps.length, 0);
+          const stopped = m.status === "stopped";
+          return (
+            <Link
+              key={m.id}
+              href={`/interviews/${interview.id}/mocks/${m.id}`}
+              className={clsx("grid grid-cols-[minmax(0,1fr)_220px_110px_150px] items-center gap-4 rounded-md px-1 py-3.5 text-sm hover:bg-white/[0.03]", k > 0 && "border-t border-line")}
+            >
+              <span className="min-w-0 truncate">
+                <span className="font-semibold">{sessionTitle(m, interview)}</span>
+                {m.kind !== "drill" && !isFresh(m) && !stopped && <span className="ml-2 text-xs text-dim">doesn’t count towards your verdict</span>}
+                <span className="ml-3 text-muted">{[sessionSettingsText(m), whenSaid(m.startedAt)].filter(Boolean).join(" · ")}</span>
+              </span>
+              <span className="text-muted">{stopped ? "Stopped: rebuilt" : countsLine(rows.length, followUps)}</span>
+              <span className="num text-muted">{stopped ? "" : minutesLong((Date.parse(m.finishedAt) - Date.parse(m.startedAt)) / 1000)}</span>
+              <span className="text-right">
+                {stopped ? (
+                  <span className="text-dim">Not scored</span>
+                ) : score != null ? (
+                  <>
+                    <b className={clsx("num font-semibold", score < 3 && "text-red-soft")}>{score.toFixed(1)}</b> <span className="text-muted">{scoreLabel(score)}</span>
+                  </>
+                ) : (
+                  <span className="text-dim">Not scored</span>
+                )}
+              </span>
+            </Link>
+          );
+        })}
       </Panel>
     </div>
   );

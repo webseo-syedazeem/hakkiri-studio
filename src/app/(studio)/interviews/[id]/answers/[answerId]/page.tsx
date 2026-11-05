@@ -110,8 +110,8 @@ export default async function AnswerFeedbackPage({
         />
       </div>
 
-      <div className="mt-5 grid min-h-0 grow grid-cols-[1fr_400px] gap-6">
-        <Panel aria-label="Transcript" className="overflow-hidden rounded-2xl border border-white/[0.08] bg-panel/80 p-6 shadow-xl backdrop-blur-md">
+      <div className="mt-[18px] grid min-h-0 grow grid-cols-[1fr_392px] gap-5">
+        <Panel aria-label="Transcript" className="overflow-hidden px-6 pt-3.5">
           <Transcript
             words={answer.words}
             highlights={answer.highlights}
@@ -123,34 +123,32 @@ export default async function AnswerFeedbackPage({
             initialTab={tab === "follow-ups" && followUps.length ? "follow-ups" : "yours"}
           />
         </Panel>
-        <Panel aria-label="Coach notes" className="flex flex-col rounded-2xl border border-white/[0.08] bg-panel/80 p-6 shadow-xl backdrop-blur-md">
-          <h2 className="mb-2 text-base font-bold text-ink">Analytical Coach Notes</h2>
+        <Panel aria-label="Coach notes" className="flex flex-col px-5 pb-[18px] pt-3.5">
+          <h2 className="mb-1 text-[15px] font-semibold">Coach notes</h2>
           {answer.notes.map((n) => (
-            <div key={n.id} className="grid grid-cols-[22px_1fr] gap-3 border-t border-line/60 py-3.5">
+            <div key={n.id} className="grid grid-cols-[22px_1fr] gap-2.5 border-t border-line py-3">
               <span className="mt-0.5">
                 <Pin n={n.id} tone={n.tone} />
               </span>
               <div>
-                <div className="text-sm font-bold text-ink">{n.title}</div>
-                <div className="mt-1 text-xs leading-relaxed text-muted">{n.body}</div>
+                <div className="text-sm font-semibold">{n.title}</div>
+                <div className="mt-0.5 text-[13px] leading-normal text-muted">{n.body}</div>
               </div>
             </div>
           ))}
           <div className="grow" />
-          <div className="rounded-xl border border-blue/20 bg-blue/10 p-4 shadow-inner">
-            <div className="text-[11px] font-bold uppercase tracking-wider text-blue-soft">Your Core Action For Retry</div>
-            <div className="mt-1 text-sm font-bold text-ink">{answer.oneFix}</div>
-            <div className="mt-2.5">
-              <HearButton text={answer.strongerVersion.map((s) => s.text).join(" ")} />
-            </div>
+          <div className="rounded-xl bg-panel-2 px-4 py-3.5 shadow-[inset_0_0_0_1px_var(--color-line-strong)]">
+            <div className="text-xs text-muted">Your one fix for the retry</div>
+            <div className="mt-0.5 text-base font-semibold">{answer.oneFix}</div>
+            <HearButton text={answer.strongerVersion.map((s) => s.text).join(" ")} />
           </div>
-          <div className="mt-4 flex gap-3">
-            <ButtonLink href={mock ? `/interviews/${interview.id}/mocks/${mock.id}` : `/interviews/${interview.id}`} className="flex-1" variant="secondary" size="md">
-              {mock ? "Report" : "Pipeline"}
+          <div className="mt-3 flex gap-2.5">
+            <ButtonLink href={mock ? `/interviews/${interview.id}/mocks/${mock.id}` : `/interviews/${interview.id}`} className="flex-1">
+              {mock ? "Back to report" : "Back to the interview"}
             </ButtonLink>
-            <ButtonLink href={`/mock/${interview.id}?q=${question.id}`} variant="primary" size="md" className="flex-[1.6] shadow-lg">
-              <Icon name="repeat" size={15} strokeWidth={2} />
-              <span>Retry Question</span>
+            <ButtonLink href={`/mock/${interview.id}?q=${question.id}`} variant="primary" className="flex-[1.6]">
+              <Icon name="repeat" size={16} strokeWidth={2} />
+              Retry with this fix
             </ButtonLink>
           </div>
         </Panel>

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { demoPresentation, demoQaSession, demoRuns } from "./demo";
 import { pitchNextStep, pitchReadiness } from "./plan";
-import { DEMO_TODAY, addDays, londonIso } from "@/lib/dates";
+import { addDays, londonIso } from "@/lib/dates";
 import type { Run } from "./types";
 
 const today = "2026-10-25";
@@ -29,14 +29,7 @@ describe("pitch readiness", () => {
   });
 
   it("is ready after two runs in a row at 4 or more, on time", () => {
-    const good = (n: number): Run => ({
-      ...demoRuns[2],
-      id: `g${n}`,
-      number: 3 + n,
-      totalSec: 590,
-      overall: 4.2,
-      finishedAt: londonIso(addDays(DEMO_TODAY, n), "14:00"),
-    });
+    const good = (n: number): Run => ({ ...demoRuns[2], id: `g${n}`, number: 3 + n, totalSec: 590, overall: 4.2, finishedAt: `2099-01-0${n}T12:00:00.000Z` });
     expect(pitchReadiness(p, [...demoRuns, good(3)], []).ready).toBe(false);
     expect(pitchReadiness(p, [...demoRuns, good(3), good(4)], []).ready).toBe(true);
   });

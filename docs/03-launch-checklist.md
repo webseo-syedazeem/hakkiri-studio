@@ -23,7 +23,7 @@ Security fixes on 26 Oct: other websites can no longer post to Hakkiri's API (wh
 
 ## First: the closed beta
 
-Before launch there is a closed beta of 10 to 15 invited testers with 5 free hours each (`05-beta-plan.md`). It needs accounts, hosting, alerts pointed at the team, an invite allow-list, and `HAKKIRI_BETA=1` + `NEXT_PUBLIC_HAKKIRI_BETA=1`. Payments wait until after it.
+Before launch there is a closed beta of 10 to 15 testers, each given a login by the team and 10 free hours a month (`05-beta-plan.md`). It needs logins, per-user data, hosting, alerts pointed at the team, and `HAKKIRI_BETA=1` + `NEXT_PUBLIC_HAKKIRI_BETA=1`. Payments wait until after it.
 
 ## Must do before anyone else uses it
 

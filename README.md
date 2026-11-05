@@ -86,7 +86,7 @@ Pitch readiness comes from your runs: "Ready" means two full runs in a row at 4 
 
 **Launch switch:** `HAKKIRI_LAUNCH=1` and `NEXT_PUBLIC_HAKKIRI_LAUNCH=1` hide the Halden and Q1 roadmap demos (new people see empty states), turn test mode off, replace developer messages (".env.local", key names) with plain ones, and hide costs. Don't launch before accounts and a database: until then everyone shares one set of data.
 
-**Beta switch:** `HAKKIRI_BETA=1` and `NEXT_PUBLIC_HAKKIRI_BETA=1` (implies the launch switch) run a closed free beta: each tester gets 5 hours of practice in total (`HAKKIRI_BETA_MINUTES` overrides) with a 120-minute daily cap, the public pricing section says "free while we're in beta", and a Feedback button in the rail asks a question about the screen the tester is on and sends the answer to the alerts channel. Notes are kept in `feedback.json`. See `docs/05-beta-plan.md`.
+**Beta switch:** `HAKKIRI_BETA=1` and `NEXT_PUBLIC_HAKKIRI_BETA=1` (implies the launch switch) run a closed free beta: each tester gets a login from the team and 10 hours of practice a month, reset on the 1st (`HAKKIRI_BETA_MINUTES` overrides), no daily cap, whole-app spend limits raised to $25 a day and $200 a month, the public pricing section says "free while we're in beta", and a Feedback button in the rail asks a question about the screen the tester is on and sends the answer to the alerts channel. Notes are kept in `feedback.json`. See `docs/05-beta-plan.md`.
 
 On Windows, double-click `start-hakkiri.bat`: it installs Node.js if needed, installs packages the first time, starts the app and opens it. After an update, double-click it again: it closes the old copy first.
 
