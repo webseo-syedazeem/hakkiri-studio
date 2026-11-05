@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { isMongoConfigured, saveToMongo } from "./mongodb";
+import { isMongoConfigured, saveToMongo, hydrateFromMongo } from "./mongodb";
 
 /**
  * Local saving for the prototype: JSON files and recordings in a
@@ -27,6 +27,11 @@ function resolveStorageDirectory(): string {
 }
 
 const DIR = resolveStorageDirectory();
+
+// Pre-warm local storage cache from MongoDB Atlas when running on serverless/cloud
+if (enabled && isMongoConfigured()) {
+  void hydrateFromMongo(DIR);
+}
 
 function ensureDir(dir: string) {
   if (!fs.existsSync(/*turbopackIgnore: true*/ dir)) fs.mkdirSync(/*turbopackIgnore: true*/ dir, { recursive: true });

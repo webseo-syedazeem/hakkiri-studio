@@ -1,4 +1,6 @@
 import { MongoClient, Db } from "mongodb";
+import fs from "node:fs";
+import path from "node:path";
 
 /**
  * MongoDB Atlas integration for Hakkiri Studio.
@@ -80,6 +82,30 @@ export async function loadFromMongo<T>(collectionName: string, docId: string): P
   } catch (err) {
     console.warn(`[mongodb] load error for ${collectionName}/${docId}:`, err instanceof Error ? err.message : err);
     return null;
+  }
+}
+
+/**
+ * Sync all stored documents from MongoDB to local cache directory on startup.
+ */
+export async function hydrateFromMongo(targetDir: string): Promise<void> {
+  if (!isMongoConfigured()) return;
+  try {
+    const db = await getMongoDb();
+    if (!db) return;
+    const col = db.collection<{ _id: string; data: unknown }>("storage");
+    const docs = await col.find({}).toArray();
+    for (const doc of docs) {
+      const file = path.join(targetDir, doc._id);
+      if (!fs.existsSync(file)) {
+        if (!fs.existsSync(path.dirname(file))) {
+          fs.mkdirSync(path.dirname(file), { recursive: true });
+        }
+        fs.writeFileSync(file, JSON.stringify(doc.data));
+      }
+    }
+  } catch (err) {
+    console.warn("[mongodb] hydrate error:", err instanceof Error ? err.message : err);
   }
 }
 

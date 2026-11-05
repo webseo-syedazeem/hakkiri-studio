@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { isMongoConfigured, testMongoConnection } from "@/lib/storage/mongodb";
+import { isMongoConfigured, testMongoConnection, getMongoDb } from "@/lib/storage/mongodb";
 
 export const dynamic = "force-dynamic";
 
@@ -12,11 +12,31 @@ export async function GET() {
   }
 
   const result = await testMongoConnection();
-  return NextResponse.json(
-    {
-      status: result.ok ? "connected" : "error",
+  if (!result.ok) {
+    return NextResponse.json(
+      {
+        status: "error",
+        message: result.message,
+      },
+      { status: 500 },
+    );
+  }
+
+  // Quick stats
+  try {
+    const db = await getMongoDb();
+    const collections = db ? (await db.listCollections().toArray()).map((c) => c.name) : [];
+    return NextResponse.json({
+      status: "connected",
+      message: "Connected to MongoDB Atlas successfully!",
+      database: db?.databaseName ?? "hakkiri_studio",
+      collections,
+    });
+  } catch (err) {
+    return NextResponse.json({
+      status: "connected",
       message: result.message,
-    },
-    { status: result.ok ? 200 : 500 },
-  );
+      detail: err instanceof Error ? err.message : String(err),
+    });
+  }
 }
