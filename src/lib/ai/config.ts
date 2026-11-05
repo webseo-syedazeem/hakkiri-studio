@@ -5,6 +5,11 @@ import "server-only";
  * Keys never reach the browser.
  */
 export const aiConfig = {
+  geminiKey:
+    process.env.GEMINI_API_KEY ||
+    process.env.GOOGLE_API_KEY ||
+    process.env.GOOGLE_GENAI_API_KEY ||
+    "",
   deepgramKey: process.env.DEEPGRAM_API_KEY ?? "",
   anthropicKey: process.env.ANTHROPIC_API_KEY ?? "",
   /** Only needed if your Claude key isn't scoped to one workspace. */
@@ -17,6 +22,6 @@ export const aiConfig = {
 export function missingKeys(): string[] {
   const missing: string[] = [];
   if (!aiConfig.deepgramKey) missing.push("DEEPGRAM_API_KEY");
-  if (!aiConfig.anthropicKey) missing.push("ANTHROPIC_API_KEY");
+  if (!aiConfig.anthropicKey && !aiConfig.geminiKey) missing.push("GEMINI_API_KEY or ANTHROPIC_API_KEY");
   return missing;
 }

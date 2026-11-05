@@ -1,6 +1,7 @@
 import "server-only";
 import { aiConfig } from "./config";
 import { callClaude, extractJson } from "./providers/claude";
+import { callGemini } from "./providers/gemini";
 import { buildFollowUpPrompt, checkFollowUp, followUpsRemaining, FollowUpReplySchema, ruleFollowUp, toDecision } from "./follow-up";
 import type { FollowUpDecision, FollowUpInput, InterviewerBrain } from "./types";
 
@@ -11,7 +12,7 @@ import type { FollowUpDecision, FollowUpInput, InterviewerBrain } from "./types"
  * a stalled interview is not.
  */
 export class ClaudeInterviewerBrain implements InterviewerBrain {
-  readonly name = "claude-fast";
+  readonly name = "ai-fast";
 
   async decideFollowUp(input: FollowUpInput): Promise<FollowUpDecision> {
     if (followUpsRemaining(input) === 0) return { action: "move-on" };
@@ -19,10 +20,25 @@ export class ClaudeInterviewerBrain implements InterviewerBrain {
     let problems: string[] = [];
     for (let attempt = 0; attempt < 2; attempt++) {
       const retryNote = problems.length ? `\n\nYour last reply had these problems. Fix them:\n- ${problems.join("\n- ")}` : "";
-      const text = await callClaude(
-        { model: aiConfig.fastModel, system, user: user + retryNote, maxTokens: 300, temperature: 0.3, timeoutMs: 8000, label: "follow-up" },
-        { apiKey: aiConfig.anthropicKey, workspaceId: aiConfig.anthropicWorkspaceId || undefined },
-      );
+      const text = aiConfig.geminiKey
+        ? await callGemini(
+            {
+              model: aiConfig.fastModel.startsWith("gemini")
+                ? aiConfig.fastModel
+                : "gemini-2.5-flash",
+              system,
+              user: user + retryNote,
+              maxTokens: 300,
+              temperature: 0.3,
+              timeoutMs: 8000,
+              label: "follow-up",
+            },
+            { apiKey: aiConfig.geminiKey },
+          )
+        : await callClaude(
+            { model: aiConfig.fastModel, system, user: user + retryNote, maxTokens: 300, temperature: 0.3, timeoutMs: 8000, label: "follow-up" },
+            { apiKey: aiConfig.anthropicKey, workspaceId: aiConfig.anthropicWorkspaceId || undefined },
+          );
       let parsed: unknown;
       try {
         parsed = extractJson(text);

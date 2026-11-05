@@ -1,6 +1,7 @@
 import "server-only";
 import { aiConfig } from "./config";
 import { callClaude, extractJson } from "./providers/claude";
+import { callGemini } from "./providers/gemini";
 import { buildScorePrompt, checkScoreWithFollowUps, ScoreWithFollowUpsSchema, type ScoreInput, type ScoreResult } from "./score-answer";
 import type { FollowUpScores } from "./score-follow-ups";
 
@@ -26,10 +27,26 @@ export async function scoreAnswer(input: ScoreInput, extraSources: string[] = []
   let problems: string[] = [];
   for (let attempt = 0; attempt < 2; attempt++) {
     const retryNote = problems.length ? `\n\nYour last reply had these problems. Fix them:\n- ${problems.join("\n- ")}` : "";
-    const text = await callClaude(
-      { model: aiConfig.mainModel, system, context, user: `${user}${retryNote}`, maxTokens: 2000 + 700 * followCount, temperature: 0, timeoutMs: 90_000, label: "score-answer" },
-      { apiKey: aiConfig.anthropicKey, workspaceId: aiConfig.anthropicWorkspaceId || undefined },
-    );
+    const text = aiConfig.geminiKey
+      ? await callGemini(
+          {
+            model: aiConfig.mainModel.startsWith("gemini")
+              ? aiConfig.mainModel
+              : "gemini-2.5-flash",
+            system,
+            context,
+            user: `${user}${retryNote}`,
+            maxTokens: 2000 + 700 * followCount,
+            temperature: 0,
+            timeoutMs: 90_000,
+            label: "score-answer",
+          },
+          { apiKey: aiConfig.geminiKey },
+        )
+      : await callClaude(
+          { model: aiConfig.mainModel, system, context, user: `${user}${retryNote}`, maxTokens: 2000 + 700 * followCount, temperature: 0, timeoutMs: 90_000, label: "score-answer" },
+          { apiKey: aiConfig.anthropicKey, workspaceId: aiConfig.anthropicWorkspaceId || undefined },
+        );
     let parsed: unknown;
     try {
       parsed = extractJson(text);
