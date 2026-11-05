@@ -345,7 +345,7 @@ export function AudienceQA(p: AudienceQAProps) {
         </div>
       </header>
 
-      <main className="grid min-h-0 grow grid-cols-[1fr_300px] items-center gap-16 pl-[120px] pr-10">
+      <main className="grid min-h-0 grow grid-cols-[minmax(0,1fr)_320px] items-center gap-12 pl-[120px] pr-10">
         {phase === "finishing" || (phase === "error" && problem?.stage === "finish") ? (
           <div key="end">
             <div className="animate-rise text-sm text-muted">
@@ -398,7 +398,7 @@ export function AudienceQA(p: AudienceQAProps) {
         )}
 
         {phase === "ready" || phase === "preparing" || (phase === "error" && problem?.stage === "start") ? (
-          <aside className="rounded-[14px] bg-panel px-[22px] py-5 shadow-[inset_0_0_0_1px_var(--color-line)]">
+          <aside className="rounded-[14px] bg-panel px-5 py-5 shadow-[inset_0_0_0_1px_var(--color-line)]">
             <div className="text-[13px] text-muted">Who’s asking</div>
             <div className="mt-2.5">
               <div role="radiogroup" aria-label="Audience style" className="grid grid-cols-2 gap-1.5">
@@ -427,7 +427,7 @@ export function AudienceQA(p: AudienceQAProps) {
             </p>
           </aside>
         ) : phase === "finishing" || (phase === "error" && problem?.stage === "finish") ? (
-          <aside className="animate-rise rounded-[14px] bg-panel px-[22px] py-5 shadow-[inset_0_0_0_1px_var(--color-line)]">
+          <aside className="animate-rise rounded-[14px] bg-panel px-5 py-5 shadow-[inset_0_0_0_1px_var(--color-line)]">
             <div className="text-[13px] text-muted">Your report</div>
             <div className="num mt-1 text-sm font-semibold">
               {Math.min(scored, answered.current.size)} of {answered.current.size} answers scored
@@ -439,7 +439,7 @@ export function AudienceQA(p: AudienceQAProps) {
             </div>
           </aside>
         ) : (
-          <aside className="animate-rise rounded-[14px] bg-panel px-[22px] py-5 shadow-[inset_0_0_0_1px_var(--color-line)]">
+          <aside className="animate-rise rounded-[14px] bg-panel px-5 py-5 shadow-[inset_0_0_0_1px_var(--color-line)]">
             {qSlide ? (
               <>
                 <div className="text-[13px] text-muted">About your slide</div>
@@ -470,9 +470,11 @@ export function AudienceQA(p: AudienceQAProps) {
               {tip}
             </span>
           </div>
-          <div className={clsx("num text-[clamp(26px,3.8vh,34px)] font-semibold tracking-[-0.02em]", (phase === "asking" || phase === "finishing" || phase === "ready") && "text-dim")} aria-live="off">
-            {mmss(phase === "ready" || phase === "preparing" ? 0 : shownSec)}
-          </div>
+          {phase !== "ready" && phase !== "preparing" && (
+            <div className={clsx("num text-[clamp(26px,3.8vh,34px)] font-semibold tracking-[-0.02em]", (phase === "asking" || phase === "finishing") && "text-dim")} aria-live="off">
+              {mmss(shownSec)}
+            </div>
+          )}
         </div>
         <div className="ml-20 rounded-2xl bg-panel px-6 pb-3.5 pt-[clamp(14px,2.4vh,22px)] shadow-[inset_0_0_0_1px_var(--color-line)]">
           <div aria-hidden className="flex h-[clamp(64px,12vh,112px)] items-center justify-between">

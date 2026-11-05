@@ -709,7 +709,7 @@ export function LiveInterview(p: LiveInterviewProps) {
         </div>
       </header>
 
-      <main className="grid min-h-0 grow grid-cols-[1fr_300px] items-center gap-16 pl-[120px] pr-10">
+      <main className="grid min-h-0 grow grid-cols-[minmax(0,1fr)_320px] items-center gap-12 pl-[120px] pr-10">
         {phase === "finishing" || (phase === "error" && problem?.stage === "report") ? (
           <div key="end">
             <div className="animate-rise text-sm text-muted">
@@ -824,7 +824,7 @@ export function LiveInterview(p: LiveInterviewProps) {
         )}
 
         {phase === "finishing" || (phase === "error" && problem?.stage === "report") ? (
-          <aside className="animate-rise rounded-[14px] bg-panel px-[22px] py-5 shadow-[inset_0_0_0_1px_var(--color-line)]">
+          <aside className="animate-rise rounded-[14px] bg-panel px-5 py-5 shadow-[inset_0_0_0_1px_var(--color-line)]">
             <div className="text-[13px] text-muted">Your report</div>
             <div className="num mt-1 text-sm font-semibold">
               {scoredCount} of {total} answers scored
@@ -837,14 +837,14 @@ export function LiveInterview(p: LiveInterviewProps) {
             <p className="mt-3.5 border-t border-line pt-3.5 text-[13px] leading-normal text-muted">Answers were scored in the background while you carried on, so this only takes a few seconds.</p>
           </aside>
         ) : phase === "feedback" ? (
-          <aside className="animate-rise rounded-[14px] bg-panel px-[22px] py-5 shadow-[inset_0_0_0_1px_var(--color-line)]">
+          <aside className="animate-rise rounded-[14px] bg-panel px-5 py-5 shadow-[inset_0_0_0_1px_var(--color-line)]">
             <div className="text-[13px] text-muted">{feedback?.last ? "That was the last question" : "Next"}</div>
             <div className="mt-1 text-sm font-semibold">{feedback?.last ? "See how the drill went" : session?.drill?.kind === "fix" && qIndex === 0 ? "A new question on the same skill" : `Question ${qIndex + 2} of ${queue.length}`}</div>
             {session?.escalate && style !== p.interviewer.style && <p className="mt-2 text-[13px] text-lilac">Strong answer, so {name} gets tougher for the next one.</p>}
             <p className="mt-3.5 border-t border-line pt-3.5 text-[13px] leading-normal text-muted">The full feedback for each answer is in your summary at the end.</p>
           </aside>
         ) : turn.kind === "main" ? (
-          <aside className="rounded-[14px] bg-panel px-[22px] py-5 shadow-[inset_0_0_0_1px_var(--color-line)]">
+          <aside className="rounded-[14px] bg-panel px-5 py-5 shadow-[inset_0_0_0_1px_var(--color-line)]">
             <div className="flex items-center gap-3">
               <Mark size={34} live={phase === "asking" || phase === "answering"} />
               <div>
@@ -860,6 +860,7 @@ export function LiveInterview(p: LiveInterviewProps) {
                   label="Interviewer style"
                   value={style}
                   onChange={setStyle}
+                  fullWidth
                   options={[
                     { value: "friendly", label: "Friendly" },
                     { value: "realistic", label: "Realistic" },
@@ -880,7 +881,7 @@ export function LiveInterview(p: LiveInterviewProps) {
             )}
           </aside>
         ) : (
-          <aside className="animate-rise rounded-[14px] bg-panel px-[22px] py-5 shadow-[inset_0_0_0_1px_var(--color-line)]">
+          <aside className="animate-rise rounded-[14px] bg-panel px-5 py-5 shadow-[inset_0_0_0_1px_var(--color-line)]">
             <div className="text-[13px] text-muted">Your last answer</div>
             <div className="mt-1 text-sm font-semibold">{q.short}</div>
             <div className="num mt-0.5 text-[13px] text-muted">
@@ -901,9 +902,11 @@ export function LiveInterview(p: LiveInterviewProps) {
               {tip}
             </span>
           </div>
-          <div className={clsx("num text-[clamp(26px,3.8vh,34px)] font-semibold tracking-[-0.02em]", (phase === "asking" || phase === "finishing" || phase === "feedback") && "text-dim")} aria-live="off">
-            {mmss(shownSec)}
-          </div>
+          {phase !== "ready" && (
+            <div className={clsx("num text-[clamp(26px,3.8vh,34px)] font-semibold tracking-[-0.02em]", (phase === "asking" || phase === "finishing" || phase === "feedback") && "text-dim")} aria-live="off">
+              {mmss(shownSec)}
+            </div>
+          )}
         </div>
         <div className="ml-20 rounded-2xl bg-panel px-6 pb-3.5 pt-[clamp(14px,2.4vh,22px)] shadow-[inset_0_0_0_1px_var(--color-line)]">
           <div aria-hidden className="flex h-[clamp(64px,12vh,112px)] items-center justify-between">
