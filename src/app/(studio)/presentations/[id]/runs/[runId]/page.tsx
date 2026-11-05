@@ -5,7 +5,8 @@ import clsx from "clsx";
 import { ButtonLink, Crumbs, Meter, Panel, Sep } from "@/components/ui";
 import { HearButton } from "@/components/feedback/HearButton";
 import { SlideRows, type SlideRow } from "@/components/pitch/SlideRows";
-import { getPresentation, getRun, listRuns } from "@/lib/pitch/store";
+import { getPresentation, getPresentationAsync, getRun, getRunAsync, listRuns } from "@/lib/pitch/store";
+import { demoRuns } from "@/lib/pitch/demo";
 import { slideFlags } from "@/lib/pitch/measure";
 import { AUDIENCE_LABEL, PART_LABEL, PART_ORDER, runTitle } from "@/lib/pitch/labels";
 import { hasRecording } from "@/lib/answers/audio";
@@ -22,8 +23,14 @@ const DEMO_NOTE: Record<string, string> = {
 export default async function RunReportPage({ params, searchParams }: { params: Promise<{ id: string; runId: string }>; searchParams: Promise<{ demo?: string }> }) {
   const { id, runId } = await params;
   const { demo } = await searchParams;
-  const p = getPresentation(id);
-  const run = getRun(runId);
+  const p = (await getPresentationAsync(id)) ?? getPresentation(id);
+  let run = (await getRunAsync(runId)) ?? getRun(runId);
+  if (!run && p?.id === "q1-roadmap") {
+    // If a rehearsal run on the demo presentation was interrupted by an ephemeral server restart,
+    // gracefully render the latest run with this runId so the user never sees a broken 404 page.
+    const lastDemo = demoRuns[demoRuns.length - 1];
+    run = { ...lastDemo, id: runId };
+  }
   if (!p || !run || run.presentationId !== p.id) notFound();
 
   const sameMode = listRuns(p.id).filter((r) => r.mode === run.mode && r.number <= run.number && (run.mode !== "section" || (r.from === run.from && r.to === run.to)));

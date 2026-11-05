@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getPresentation } from "@/lib/pitch/store";
 import { recordRun } from "@/lib/pitch/server";
 import { MAX_AUDIO_BYTES, notConfigured, scoringError, transcribe } from "@/lib/answers/pipeline";
+import { flushStorage } from "@/lib/storage/disk";
 import { guard } from "@/lib/usage/limits";
 import { setUsageContext } from "@/lib/usage/store";
 
@@ -51,6 +52,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   try {
     const run = await recordRun({ presentation: p, ...meta, audio, transcribe });
     if ("error" in run) return NextResponse.json({ error: "no-speech", message: "We couldn’t hear anything in that run. Check your mic and try again." }, { status: 422 });
+    await flushStorage();
     return NextResponse.json({ id: run.id });
   } catch (err) {
     return scoringError(err);

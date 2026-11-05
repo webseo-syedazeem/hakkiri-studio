@@ -1,6 +1,7 @@
 import type { Answer } from "@/lib/types";
 import { answers as demoAnswers } from "@/lib/mock-data";
-import { loadJson, saveJson } from "@/lib/storage/disk";
+import { loadJson, loadJsonAsync, saveJson, saveJsonAsync } from "@/lib/storage/disk";
+import { isMongoConfigured } from "@/lib/storage/mongodb";
 
 /**
  * Scored answers (build plan: "Answers" table). Kept in memory and saved to
@@ -20,6 +21,28 @@ export function findAnswer(id: string): Answer | undefined {
   const a = store.get(id) ?? demoAnswers.find((x) => x.id === id);
   // Answers saved before follow-ups existed have no followUps list.
   return a && { ...a, followUps: a.followUps ?? [] };
+}
+
+export async function findAnswerAsync(id: string): Promise<Answer | undefined> {
+  const cached = findAnswer(id);
+  if (cached && !demoAnswers.some((x) => x.id === cached.id)) return cached;
+
+  if (isMongoConfigured()) {
+    try {
+      const fromDb = await loadJsonAsync<Answer[]>(FILE, []);
+      if (Array.isArray(fromDb)) {
+        for (const item of fromDb) {
+          store.set(item.id, item);
+        }
+        const found = findAnswer(id);
+        if (found) return found;
+      }
+    } catch (err) {
+      console.warn("[answers/store] MongoDB load answers failed:", err);
+    }
+  }
+
+  return findAnswer(id);
 }
 
 /** Answers you've recorded for an interview, oldest first (demo answers not included). */

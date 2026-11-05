@@ -4,7 +4,8 @@ import { demoMock, roadmapAnswer } from "@/lib/mock-data";
 import { getInterview } from "@/lib/interviews/store";
 import { findAnswer } from "@/lib/answers/store";
 import { rowFromAnswer, mockScore, type MockRow } from "./report";
-import { loadJson, saveJson } from "@/lib/storage/disk";
+import { loadJson, loadJsonAsync, saveJson, saveJsonAsync } from "@/lib/storage/disk";
+import { isMongoConfigured } from "@/lib/storage/mongodb";
 import type { SessionSettings } from "@/lib/interviews/settings";
 import type { DrillSpec } from "@/lib/sessions/drills";
 import type { WrongReason } from "@/lib/ai/interview/questions";
@@ -99,6 +100,28 @@ export function createSession(s: Omit<MockRecord, "id" | "status" | "startedAt" 
 
 export function findMock(id: string): MockRecord | undefined {
   return store.get(id) ?? (id === demo.id ? demo : undefined);
+}
+
+export async function findMockAsync(id: string): Promise<MockRecord | undefined> {
+  const cached = findMock(id);
+  if (cached) return cached;
+
+  if (isMongoConfigured()) {
+    try {
+      const fromDb = await loadJsonAsync<MockRecord[]>(FILE, []);
+      if (Array.isArray(fromDb)) {
+        for (const item of fromDb) {
+          store.set(item.id, item);
+        }
+        const found = findMock(id);
+        if (found) return found;
+      }
+    } catch (err) {
+      console.warn("[mocks/store] MongoDB load mocks failed:", err);
+    }
+  }
+
+  return findMock(id);
 }
 
 /** Every session for an interview, newest first (planned ones included). */

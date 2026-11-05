@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { devOr } from "@/lib/launch";
 import { notFound } from "next/navigation";
 import clsx from "clsx";
 import { ButtonLink, Chip, Crumbs, Panel, Pin, Sep } from "@/components/ui";
@@ -7,7 +6,9 @@ import { AnswerClip } from "@/components/feedback/AnswerClip";
 import { HearButton } from "@/components/feedback/HearButton";
 import { Transcript } from "@/components/feedback/Transcript";
 import { SlideView } from "@/components/pitch/SlideView";
-import { getPresentation, getQa } from "@/lib/pitch/store";
+import { getPresentation, getPresentationAsync, getQa, getQaAsync } from "@/lib/pitch/store";
+import { demoQaSession } from "@/lib/pitch/demo";
+import { devOr, isLaunch } from "@/lib/launch";
 import { QA_STYLE_LABEL } from "@/lib/pitch/labels";
 import { scoreAnswerView } from "@/lib/answers/view";
 import { hasRecording } from "@/lib/answers/audio";
@@ -34,8 +35,11 @@ function Score({ value }: { value: number | null }) {
 export default async function QaReportPage({ params, searchParams }: { params: Promise<{ id: string; sessionId: string }>; searchParams: Promise<{ q?: string; demo?: string }> }) {
   const { id, sessionId } = await params;
   const { q: qParam, demo } = await searchParams;
-  const p = getPresentation(id);
-  const s = getQa(sessionId);
+  const p = (await getPresentationAsync(id)) ?? getPresentation(id);
+  let s = (await getQaAsync(sessionId)) ?? getQa(sessionId);
+  if (!s && p?.id === "q1-roadmap" && !isLaunch()) {
+    s = { ...demoQaSession, id: sessionId };
+  }
   if (!p || !s || s.presentationId !== p.id) notFound();
 
   const views = s.answers.map((a) => ({ a, v: scoreAnswerView(a, "presentation-qa"), q: s.questions[a.questionNumber - 1] }));

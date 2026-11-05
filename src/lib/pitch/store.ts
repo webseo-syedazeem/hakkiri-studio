@@ -1,4 +1,5 @@
-import { loadFile, loadJson, removeDir, saveFile, saveJson, savingToDisk } from "@/lib/storage/disk";
+import { loadFile, loadJson, loadJsonAsync, removeDir, saveFile, saveJson, saveJsonAsync, savingToDisk } from "@/lib/storage/disk";
+import { isMongoConfigured } from "@/lib/storage/mongodb";
 import { demoPresentation, demoQaSession, demoRuns } from "./demo";
 import type { Presentation, QaSession, Run } from "./types";
 import { completeRuns } from "./plan";
@@ -32,6 +33,28 @@ export const isDemoPresentation = (id: string) => id === demoPresentation.id && 
 
 export function getPresentation(id: string): Presentation | undefined {
   return db().presentations.get(id) ?? (id === demoPresentation.id && demoOn() ? demoPresentation : undefined);
+}
+
+export async function getPresentationAsync(id: string): Promise<Presentation | undefined> {
+  const p = getPresentation(id);
+  if (p && p.id !== demoPresentation.id) return p;
+
+  if (isMongoConfigured()) {
+    try {
+      const fromDb = await loadJsonAsync<Presentation[]>("presentations.json", []);
+      if (Array.isArray(fromDb)) {
+        for (const item of fromDb) {
+          db().presentations.set(item.id, item);
+        }
+        const found = getPresentation(id);
+        if (found) return found;
+      }
+    } catch (err) {
+      console.warn("[pitch/store] MongoDB load presentations failed:", err);
+    }
+  }
+
+  return getPresentation(id);
 }
 
 /** Every presentation, soonest first; ones in the past go last. */
@@ -86,9 +109,36 @@ export function getRun(id: string): Run | undefined {
   return db().runs.get(id) ?? (demoOn() ? demoRuns.find((r) => r.id === id) : undefined);
 }
 
+export async function getRunAsync(id: string): Promise<Run | undefined> {
+  const r = db().runs.get(id);
+  if (r) return r;
+
+  if (isMongoConfigured()) {
+    try {
+      const fromDb = await loadJsonAsync<Run[]>("runs.json", []);
+      if (Array.isArray(fromDb)) {
+        for (const run of fromDb) {
+          db().runs.set(run.id, run);
+        }
+        const found = db().runs.get(id);
+        if (found) return found;
+      }
+    } catch (err) {
+      console.warn("[pitch/store] MongoDB load runs failed:", err);
+    }
+  }
+
+  return demoOn() ? demoRuns.find((x) => x.id === id) : undefined;
+}
+
 export function saveRun(run: Run) {
   db().runs.set(run.id, run);
   saveJson("runs.json", [...db().runs.values()]);
+}
+
+export async function saveRunAsync(run: Run): Promise<void> {
+  db().runs.set(run.id, run);
+  await saveJsonAsync("runs.json", [...db().runs.values()]);
 }
 
 export function nextRunNumber(presentationId: string): number {
@@ -112,9 +162,36 @@ export function getQa(id: string): QaSession | undefined {
   return db().qa.get(id) ?? (id === demoQaSession.id && demoOn() ? demoQaSession : undefined);
 }
 
+export async function getQaAsync(id: string): Promise<QaSession | undefined> {
+  const s = db().qa.get(id);
+  if (s) return s;
+
+  if (isMongoConfigured()) {
+    try {
+      const fromDb = await loadJsonAsync<QaSession[]>("qa.json", []);
+      if (Array.isArray(fromDb)) {
+        for (const item of fromDb) {
+          db().qa.set(item.id, item);
+        }
+        const found = db().qa.get(id);
+        if (found) return found;
+      }
+    } catch (err) {
+      console.warn("[pitch/store] MongoDB load QA failed:", err);
+    }
+  }
+
+  return demoOn() ? (id === demoQaSession.id ? demoQaSession : undefined) : undefined;
+}
+
 export function saveQa(s: QaSession) {
   db().qa.set(s.id, s);
   saveJson("qa.json", [...db().qa.values()]);
+}
+
+export async function saveQaAsync(s: QaSession): Promise<void> {
+  db().qa.set(s.id, s);
+  await saveJsonAsync("qa.json", [...db().qa.values()]);
 }
 
 // ------------------------------------------------------------- your data

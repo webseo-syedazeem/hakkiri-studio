@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { isMongoConfigured, saveToMongo, hydrateFromMongo } from "./mongodb";
+import { isMongoConfigured, saveToMongo, loadFromMongo, hydrateFromMongo } from "./mongodb";
 
 /**
  * Local saving for the prototype: JSON files and recordings in a
@@ -28,6 +28,8 @@ function resolveStorageDirectory(): string {
 
 const DIR = resolveStorageDirectory();
 
+const pendingSaves = new Set<Promise<unknown>>();
+
 // Pre-warm local storage cache from MongoDB Atlas when running on serverless/cloud
 if (enabled && isMongoConfigured()) {
   void hydrateFromMongo(DIR);
@@ -46,10 +48,38 @@ export function loadJson<T>(name: string, fallback: T): T {
   }
 }
 
+/** Loads JSON from MongoDB Atlas with fallback to local disk. */
+export async function loadJsonAsync<T>(name: string, fallback: T): Promise<T> {
+  if (isMongoConfigured()) {
+    try {
+      const fromDb = await loadFromMongo<T>("storage", name);
+      if (fromDb !== null && fromDb !== undefined) {
+        if (enabled) {
+          try {
+            ensureDir(DIR);
+            const file = path.join(/*turbopackIgnore: true*/ DIR, name);
+            fs.writeFileSync(/*turbopackIgnore: true*/ `${file}.tmp`, JSON.stringify(fromDb));
+            fs.renameSync(`${file}.tmp`, file);
+          } catch {
+            // ignore disk cache write failure
+          }
+        }
+        return fromDb;
+      }
+    } catch (err) {
+      console.warn(`[storage] couldn't load ${name} from mongo:`, err);
+    }
+  }
+  return loadJson<T>(name, fallback);
+}
+
 /** Writes to a temporary file first, so a crash mid-write never leaves a broken file. Also mirrors to MongoDB Atlas when configured. */
 export function saveJson(name: string, value: unknown) {
   if (isMongoConfigured()) {
-    void saveToMongo("storage", name, value);
+    const p = saveToMongo("storage", name, value)
+      .catch((err) => console.warn(`[storage] mongo save error for ${name}:`, err))
+      .finally(() => pendingSaves.delete(p));
+    pendingSaves.add(p);
   }
   if (!enabled) return;
   try {
@@ -59,6 +89,19 @@ export function saveJson(name: string, value: unknown) {
     fs.renameSync(`${file}.tmp`, file);
   } catch (err) {
     console.warn(`[storage] couldn't save ${name}:`, err instanceof Error ? err.message : err);
+  }
+}
+
+/** Explicitly awaits MongoDB persistence and local disk save. */
+export async function saveJsonAsync(name: string, value: unknown): Promise<void> {
+  saveJson(name, value);
+  await flushStorage();
+}
+
+/** Awaits any in-flight asynchronous saves to MongoDB Atlas before function returns. */
+export async function flushStorage(): Promise<void> {
+  if (pendingSaves.size > 0) {
+    await Promise.allSettled(Array.from(pendingSaves));
   }
 }
 

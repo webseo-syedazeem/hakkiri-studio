@@ -4,11 +4,12 @@ import { cookies } from "next/headers";
 import clsx from "clsx";
 import { ButtonLink, Chip, Crumbs, Icon, Meter, Panel, Sep, toneText } from "@/components/ui";
 import { StartButton } from "@/components/interview/StartSession";
-import { getInterview } from "@/lib/interviews/store";
+import { getInterview, getInterviewAsync } from "@/lib/interviews/store";
 import { understandingOf } from "@/lib/interviews/build";
 import { categoryLabel, settingsLine } from "@/lib/interviews/settings";
 import { findAnswer } from "@/lib/answers/store";
-import { doneSessions, findMock, isFresh, previousScore, rerunOf, rowsFor, SKIP_REASON_LABEL, type MockRecord } from "@/lib/mocks/store";
+import { doneSessions, findMock, findMockAsync, isFresh, previousScore, rerunOf, rowsFor, SKIP_REASON_LABEL, type MockRecord } from "@/lib/mocks/store";
+import { demoMock, roadmapAnswer } from "@/lib/mock-data";
 import { buildReport, countsLine, VERDICT_LABEL, type MockRow } from "@/lib/mocks/report";
 import { compareRuns } from "@/lib/sessions/compare";
 import { HABIT_FOR_FIX, HABIT_LABEL, habitLine, rowHabit, suggestDrills } from "@/lib/sessions/drills";
@@ -116,8 +117,11 @@ function Header({ interview, mock, title, meta, right }: { interview: Interview;
 export default async function SessionReportPage({ params, searchParams }: { params: Promise<{ id: string; mockId: string }>; searchParams: Promise<{ demo?: string }> }) {
   const { id, mockId } = await params;
   const { demo } = await searchParams;
-  const interview = getInterview(id);
-  const mock = findMock(mockId);
+  const interview = (await getInterviewAsync(id)) ?? getInterview(id);
+  let mock = (await findMockAsync(mockId)) ?? findMock(mockId);
+  if (!mock && interview?.id === "halden" && !isLaunch()) {
+    mock = { ...demoMock, answerIds: [roadmapAnswer.id], planned: 6, id: mockId };
+  }
   if (!interview || !mock || mock.interviewId !== interview.id) notFound();
 
   const micOk = (await cookies()).get("hk_mic_ok")?.value === "1";

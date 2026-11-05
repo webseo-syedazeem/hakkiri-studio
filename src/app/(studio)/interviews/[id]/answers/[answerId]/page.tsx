@@ -4,11 +4,11 @@ import { AnswerClip } from "@/components/feedback/AnswerClip";
 import { Transcript } from "@/components/feedback/Transcript";
 import { HearButton } from "@/components/feedback/HearButton";
 import { ButtonLink, Chip, Crumbs, Icon, Panel, Pin } from "@/components/ui";
-import { getInterview } from "@/lib/interviews/store";
-import { findAnswer } from "@/lib/answers/store";
+import { getInterview, getInterviewAsync } from "@/lib/interviews/store";
+import { findAnswer, findAnswerAsync } from "@/lib/answers/store";
 import { SCORE_LABELS } from "@/lib/scoring/combine";
 import { scoreAnswerView } from "@/lib/answers/view";
-import { findMock } from "@/lib/mocks/store";
+import { findMock, findMockAsync } from "@/lib/mocks/store";
 import { hasRecording } from "@/lib/answers/audio";
 import { inWords } from "@/lib/format";
 
@@ -44,8 +44,8 @@ export default async function AnswerFeedbackPage({
 }) {
   const { id, answerId } = await params;
   const { demo, tab, mock: mockId } = await searchParams;
-  const interview = getInterview(id);
-  const answer = findAnswer(answerId);
+  const interview = (await getInterviewAsync(id)) ?? getInterview(id);
+  const answer = (await findAnswerAsync(answerId)) ?? findAnswer(answerId);
   if (!interview || !answer || answer.interviewId !== interview.id) notFound();
   const question = interview.questions.find((q) => q.id === answer.questionId);
   if (!question) notFound(); // the question was removed after it was answered
@@ -53,7 +53,7 @@ export default async function AnswerFeedbackPage({
   // follow-up reply); content and structure come from the model.
   const { profile, metrics, scores, overall, followUps } = scoreAnswerView(answer, question.type);
   const lateHl = answer.highlights.find((h) => h.kind === "late");
-  const mock = mockId ? findMock(mockId) : undefined;
+  const mock = mockId ? ((await findMockAsync(mockId)) ?? findMock(mockId)) : undefined;
   const late = lateHl ? { start: answer.words[lateHl.from].start, end: answer.words[lateHl.to].end } : null;
 
   return (

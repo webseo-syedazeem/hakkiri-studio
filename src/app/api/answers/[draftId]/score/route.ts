@@ -5,6 +5,7 @@ import { buildAnswer, buildFollowUp } from "@/lib/answers/build-answer";
 import { deleteDraft, getDraft } from "@/lib/answers/drafts";
 import { saveAnswer } from "@/lib/answers/store";
 import { saveRecordings } from "@/lib/answers/audio";
+import { flushStorage } from "@/lib/storage/disk";
 import { notConfigured, scoringError } from "@/lib/answers/pipeline";
 import { getInterview } from "@/lib/interviews/store";
 import { profileFor } from "@/lib/scoring/profiles";
@@ -79,6 +80,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ draftI
     saveAnswer(answer);
     saveRecordings(answer.id, draft.audio ?? []);
     deleteDraft(draft.id);
+    await flushStorage();
     // The measured row comes back too, so a drill can show feedback straight away.
     const pay = isPayType(question.type) ? payChecks(question.id, main.words, payStage(interview.round)) : undefined;
     return NextResponse.json({ id: answer.id, row: rowFromAnswer(answer, question, draft.questionNumber), oneFix: answer.oneFix, strength: answer.strength, pay });

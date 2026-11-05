@@ -1,7 +1,8 @@
 import type { Interview, QuestionGroup } from "@/lib/types";
 import { halden } from "@/lib/mock-data";
 import { customQuestions } from "@/lib/questions/store";
-import { loadJson, saveJson } from "@/lib/storage/disk";
+import { loadJson, loadJsonAsync, saveJson, saveJsonAsync } from "@/lib/storage/disk";
+import { isMongoConfigured } from "@/lib/storage/mongodb";
 import { daysBetween } from "@/lib/format";
 import { isLaunch } from "@/lib/launch";
 
@@ -37,6 +38,28 @@ export function getInterview(id: string): Interview | undefined {
   const groupCounts: Record<QuestionGroup, number> = { motivation: 0, competency: 0, technical: 0, cv: 0, curveball: 0 };
   for (const q of questions) if (!q.slot && !q.retired && !q.pay) groupCounts[q.group] += 1;
   return { ...base, questions, groupCounts };
+}
+
+export async function getInterviewAsync(id: string): Promise<Interview | undefined> {
+  const cached = getInterview(id);
+  if (cached && !isDemoInterview(cached.id)) return cached;
+
+  if (isMongoConfigured()) {
+    try {
+      const fromDb = await loadJsonAsync<Interview[]>(FILE, []);
+      if (Array.isArray(fromDb)) {
+        for (const item of fromDb) {
+          store.set(item.id, item);
+        }
+        const found = getInterview(id);
+        if (found) return found;
+      }
+    } catch (err) {
+      console.warn("[interviews/store] MongoDB load interviews failed:", err);
+    }
+  }
+
+  return getInterview(id);
 }
 
 /**

@@ -6,6 +6,7 @@ import { findAnswer } from "@/lib/answers/store";
 import { findMock, saveMock, SKIP_REASONS } from "@/lib/mocks/store";
 import { retireSkipped, topUp } from "@/lib/sessions/server";
 import { mergeRules, rulesFromSkips } from "@/lib/sessions/rules";
+import { flushStorage } from "@/lib/storage/disk";
 import { guard } from "@/lib/usage/limits";
 import { withUsageContext } from "@/lib/usage/store";
 
@@ -54,10 +55,12 @@ export async function POST(req: Request) {
     if (rules.length) updateInterview(interview.id, (i) => ({ ...i, rules: mergeRules(i.rules, rules) }));
     retireSkipped(interview.id, skipped);
     after(() => withUsageContext({ interviewId: interview.id, feature: "questions" }, () => topUp(interview.id)).catch((err) => console.warn("[sessions] top-up failed:", err)));
+    await flushStorage();
     return NextResponse.json({ id: session.id });
   }
 
   const id = randomUUID();
   saveMock({ id, interviewId: interview.id, kind: body.kind ?? "full", status: "done", group: body.group, startedAt: body.startedAt, style: body.style, finishedAt, answerIds: body.answerIds, planned: body.planned });
+  await flushStorage();
   return NextResponse.json({ id });
 }

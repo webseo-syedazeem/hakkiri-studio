@@ -6,6 +6,7 @@ import { SettingsBody } from "@/lib/interviews/settings-schema";
 import { PlanError, planDrill, planInterview, planRerun } from "@/lib/sessions/server";
 import { guard } from "@/lib/usage/limits";
 import { setUsageContext } from "@/lib/usage/store";
+import { flushStorage } from "@/lib/storage/disk";
 
 export const runtime = "nodejs";
 export const maxDuration = 180;
@@ -53,6 +54,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     } else {
       sessionId = (await planDrill(id, body.drill)).id;
     }
+    await flushStorage();
     return NextResponse.json({ id: sessionId, href: `/mock/${id}?session=${sessionId}` });
   } catch (err) {
     if (err instanceof PlanError) return NextResponse.json({ error: "cant-plan", message: err.message }, { status: 409 });
