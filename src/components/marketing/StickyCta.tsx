@@ -31,7 +31,7 @@ export function StickyCta({ label }: { label: string }) {
         <Link
           href="/"
           tabIndex={show ? 0 : -1}
-          className="inline-flex w-full items-center justify-center rounded-full bg-mk-cta px-5 py-3 text-[16px] font-medium text-white transition-colors hover:bg-mk-cta-hover"
+          className="inline-flex w-full items-center justify-center rounded-full bg-mk-cta px-5 py-3 text-[16px] font-medium text-white transition-all duration-200 active:scale-[0.98] hover:bg-mk-cta-hover hover:shadow-lg hover:shadow-mk-cta/25"
         >
           {label}
         </Link>

@@ -54,7 +54,15 @@
 
   --animate-wave: wave 1.3s ease-in-out infinite;
   --animate-rec: rec 1.6s ease-in-out infinite;
-  --animate-rise: rise 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-rise: rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-slide-up: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-fade-in: fadeIn 0.4s ease-out both;
+  --animate-scale-in: scaleIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-float: float 4s ease-in-out infinite;
+  --animate-pulse-glow: pulseGlow 3s ease-in-out infinite;
+  --animate-shimmer: shimmer 2.5s linear infinite;
+  --animate-spin-slow: spinSlow 12s linear infinite;
+  --animate-bounce-subtle: bounceSubtle 2s ease-in-out infinite;
 
   @keyframes wave {
     0%, 100% { transform: scaleY(0.3); }
@@ -65,14 +73,50 @@
     50% { opacity: 0.35; }
   }
   @keyframes rise {
-    from { opacity: 0; transform: translateY(12px); }
+    from { opacity: 0; transform: translateY(14px); }
     to { opacity: 1; transform: none; }
+  }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.96); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+  @keyframes pulseGlow {
+    0%, 100% { opacity: 0.35; transform: scale(1); }
+    50% { opacity: 0.85; transform: scale(1.08); }
+  }
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+  @keyframes spinSlow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  @keyframes bounceSubtle {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
   }
 }
 
 @layer base {
   html, body {
-    background: var(--color-booth);
+    background-color: var(--color-booth);
+    background-image: 
+      radial-gradient(1200px 500px at 50% -50px, rgba(123, 136, 255, 0.08), transparent 70%),
+      radial-gradient(800px 400px at 90% 10%, rgba(74, 90, 240, 0.04), transparent 60%);
+    background-attachment: fixed;
     color: var(--color-ink);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
@@ -82,6 +126,22 @@
     outline-offset: 2px;
   }
   button { cursor: pointer; }
+
+  /* Smooth custom desktop scrollbars */
+  ::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.14);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.28);
+  }
 }
 
 @layer utilities {
@@ -91,6 +151,22 @@
   .good { color: var(--color-ink); box-shadow: inset 0 -2px 0 var(--color-blue); }
   /* A filler inside a late point: lighter red so it stays readable on the red wash (AA). */
   .late .um { color: var(--color-red-soft); }
+
+  /* Professional micro-interaction utilities */
+  .pro-card {
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s ease, border-color 0.28s ease;
+  }
+  .pro-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(255, 255, 255, 0.18);
+    box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.4);
+  }
+  .pro-btn {
+    transition: transform 0.15s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .pro-btn:active {
+    transform: scale(0.97);
+  }
 }
 
 /* Legal pages: plain, readable prose. */

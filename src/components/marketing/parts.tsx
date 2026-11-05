@@ -33,7 +33,7 @@ export function Cta({
     <Link
       href="/"
       className={clsx(
-        "inline-flex items-center justify-center rounded-full bg-mk-cta font-medium text-white transition-colors hover:bg-mk-cta-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mk-cta",
+        "inline-flex items-center justify-center rounded-full bg-mk-cta font-medium text-white transition-all duration-200 hover:scale-[1.03] active:scale-[0.98] hover:bg-mk-cta-hover hover:shadow-lg hover:shadow-mk-cta/25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mk-cta",
         size === "lg" ? "px-7 py-3.5 text-[17px]" : "px-5 py-2.5 text-[15px]",
         className,
       )}
@@ -71,8 +71,8 @@ export function TextLink({
     <Link
       href={href}
       className={clsx(
-        "text-[17px] font-medium underline-offset-4 hover:underline",
-        dark ? "text-[#aeb6ff]" : "text-mk-blue",
+        "inline-flex items-center gap-1 text-[17px] font-medium underline-offset-4 transition-all duration-200 hover:underline hover:translate-x-0.5",
+        dark ? "text-[#aeb6ff] hover:text-white" : "text-mk-blue hover:text-mk-cta",
         className,
       )}
     >
@@ -106,7 +106,7 @@ export function Device({
   return (
     <div
       className={clsx(
-        "rounded-[20px] bg-mk-bezel p-[5px] shadow-[0_0_0_1px_rgb(0_0_0/0.08),0_60px_120px_-40px_rgb(23_28_80/0.45)] sm:rounded-[26px] sm:p-[9px]",
+        "group rounded-[20px] bg-mk-bezel p-[5px] shadow-[0_0_0_1px_rgb(0_0_0/0.08),0_60px_120px_-40px_rgb(23_28_80/0.45)] transition-all duration-500 hover:-translate-y-1.5 hover:shadow-[0_0_0_1px_rgb(59_130_246/0.25),0_80px_160px_-40px_rgb(37_99_235/0.35)] sm:rounded-[26px] sm:p-[9px]",
         className,
       )}
     >
@@ -119,7 +119,10 @@ export function Device({
           height={height}
           loading={priority ? "eager" : "lazy"}
           decoding="async"
-          className={clsx("block h-auto w-full", imgClass)}
+          className={clsx(
+            "block h-auto w-full transition-transform duration-700 ease-out group-hover:scale-[1.012]",
+            imgClass,
+          )}
         />
         {fade && (
           <div
@@ -171,7 +174,7 @@ export function Hero({
       className="overflow-hidden pb-20 pt-16 sm:pb-28 sm:pt-24"
     >
       <div className={clsx(WRAP, "flex flex-col items-center text-center")}>
-        <p className="text-[17px] font-semibold text-mk-blue sm:text-[19px]">
+        <p className="animate-fade-in text-[17px] font-semibold text-mk-blue sm:text-[19px]">
           {kicker}
         </p>
         <h1
@@ -180,17 +183,17 @@ export function Hero({
         >
           {title}
         </h1>
-        <p className={clsx(LEAD, "mt-6 max-w-[680px]")}>{body}</p>
-        <div className="mt-9 flex flex-col items-center gap-4 sm:flex-row sm:gap-7">
+        <p className={clsx(LEAD, "mt-6 max-w-[680px] animate-rise [animation-delay:90ms]")}>{body}</p>
+        <div className="mt-9 flex flex-col items-center gap-4 animate-rise [animation-delay:170ms] sm:flex-row sm:gap-7">
           <Cta>{cta}</Cta>
           <TextLink href={secondary.href}>{secondary.label}</TextLink>
         </div>
-        <Reassure className="mt-4">{reassure}</Reassure>
+        <Reassure className="mt-4 animate-fade-in [animation-delay:240ms]">{reassure}</Reassure>
       </div>
       <div
         className={clsx(
           WRAP,
-          "mt-14 animate-rise [animation-delay:120ms] sm:mt-20",
+          "mt-14 animate-rise [animation-delay:260ms] sm:mt-20",
         )}
       >
         {children}
@@ -220,12 +223,12 @@ export function Statement({
           {points.map((p) => (
             <li
               key={p.text}
-              className="flex flex-col items-center gap-3 text-center"
+              className="group flex flex-col items-center gap-3 text-center transition-transform duration-300 hover:-translate-y-1"
             >
-              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-mk-blue shadow-[0_1px_2px_rgb(0_0_0/0.06)]">
+              <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-mk-blue shadow-[0_1px_2px_rgb(0_0_0/0.06)] transition-all duration-300 group-hover:scale-110 group-hover:shadow-md group-hover:text-mk-cta">
                 <Icon name={p.icon} size={22} />
               </span>
-              <span className="max-w-[260px] text-[17px] font-medium leading-snug">
+              <span className="max-w-[260px] text-[17px] font-medium leading-snug transition-colors duration-200 group-hover:text-mk-ink">
                 {p.text}
               </span>
             </li>
@@ -260,8 +263,11 @@ export function Steps({
         </h2>
         <ol className="mx-auto mt-14 grid max-w-[1000px] gap-10 sm:grid-cols-3 sm:gap-8">
           {steps.map((st, i) => (
-            <li key={st.title} className="flex flex-col">
-              <span className="num text-[56px] font-semibold leading-none tracking-[-0.04em] text-mk-cta">
+            <li
+              key={st.title}
+              className="group relative flex flex-col rounded-[20px] bg-white p-7 shadow-[0_1px_2px_rgb(0_0_0/0.06)] transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-black/[0.04] sm:p-9"
+            >
+              <span className="num text-[56px] font-semibold leading-none tracking-[-0.04em] text-mk-cta transition-transform duration-300 group-hover:scale-110 origin-left">
                 {i + 1}
               </span>
               <h3 className="mt-4 text-[21px] font-semibold tracking-[-0.015em]">
@@ -335,7 +341,7 @@ export function Feature({
           </ul>
         )}
         <div
-          className={clsx("mt-14 sm:mt-16", narrow && "mx-auto max-w-[860px]")}
+          className={clsx("mt-14 transition-transform duration-500 hover:scale-[1.008] sm:mt-16", narrow && "mx-auto max-w-[860px]")}
         >
           {shot}
         </div>
@@ -378,10 +384,10 @@ export function Tiles({
             {big.map((t) => (
               <article
                 key={t.title}
-                className="flex min-w-0 flex-col overflow-hidden rounded-[28px] bg-white"
+                className="group flex min-w-0 flex-col overflow-hidden rounded-[28px] bg-white transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/[0.05]"
               >
                 <div className="px-8 pt-9 sm:px-10 sm:pt-11">
-                  <h3 className="text-[26px] font-semibold leading-tight tracking-[-0.02em] [text-wrap:balance] sm:text-[30px]">
+                  <h3 className="text-[26px] font-semibold leading-tight tracking-[-0.02em] [text-wrap:balance] transition-colors duration-200 group-hover:text-mk-blue sm:text-[30px]">
                     {t.title}
                   </h3>
                   <p className="mt-3 text-[17px] leading-relaxed text-mk-slate">
@@ -389,7 +395,7 @@ export function Tiles({
                   </p>
                 </div>
                 <div className="mt-8 grow pl-8 sm:pl-10">
-                  <div className="h-full max-h-[340px] overflow-hidden rounded-tl-[16px] bg-mk-bezel p-[6px] pb-0 pr-0 sm:max-h-[380px]">
+                  <div className="h-full max-h-[340px] overflow-hidden rounded-tl-[16px] bg-mk-bezel p-[6px] pb-0 pr-0 transition-transform duration-500 group-hover:scale-[1.015] sm:max-h-[380px]">
                     {/* eslint-disable-next-line @next/next/no-img-element -- static screenshots, already sized */}
                     <img
                       src={t.shot.src}
@@ -416,11 +422,13 @@ export function Tiles({
             <li
               key={f.title}
               className={clsx(
-                "rounded-[22px] px-7 py-7",
+                "group rounded-[22px] px-7 py-7 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-black/[0.04]",
                 mist ? "bg-white" : "bg-mk-mist",
               )}
             >
-              <Icon name={f.icon} size={24} className="text-mk-cta" />
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-mk-mist text-mk-blue transition-all duration-300 group-hover:scale-110 group-hover:bg-mk-cta group-hover:text-white">
+                <Icon name={f.icon} size={22} />
+              </div>
               <h3 className="mt-4 text-[19px] font-semibold tracking-[-0.01em]">
                 {f.title}
               </h3>
@@ -482,7 +490,7 @@ export function Stage({
               {uses.map((u) => (
                 <li
                   key={u}
-                  className="rounded-full bg-white/[0.08] px-3.5 py-1.5 text-[14px] text-white/85 shadow-[inset_0_0_0_1px_rgb(255_255_255/0.12)]"
+                  className="rounded-full bg-white/[0.08] px-3.5 py-1.5 text-[14px] text-white/85 shadow-[inset_0_0_0_1px_rgb(255_255_255/0.12)] transition-all duration-200 hover:bg-white/[0.14] hover:scale-105"
                 >
                   {u}
                 </li>
@@ -667,20 +675,20 @@ export function Pricing({
               key={p.id}
               aria-labelledby={`plan-${p.id}`}
               className={clsx(
-                "relative flex flex-col rounded-[24px] bg-white px-8 py-9",
+                "group relative flex flex-col rounded-[24px] bg-white px-8 py-9 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl",
                 p.featured
                   ? "shadow-[0_0_0_2px_var(--color-mk-cta),0_30px_60px_-30px_rgb(74_90_240/0.45)]"
                   : "shadow-[0_1px_2px_rgb(0_0_0/0.05)]",
               )}
             >
               {p.badge && (
-                <span className="absolute -top-3.5 left-8 rounded-full bg-mk-cta px-3 py-1 text-[12px] font-semibold text-white">
+                <span className="absolute -top-3.5 left-8 rounded-full bg-mk-cta px-3 py-1 text-[12px] font-semibold text-white animate-pulse-glow">
                   {p.badge}
                 </span>
               )}
               <h3
                 id={`plan-${p.id}`}
-                className="text-[21px] font-semibold tracking-[-0.015em]"
+                className="text-[21px] font-semibold tracking-[-0.015em] transition-colors duration-200 group-hover:text-mk-blue"
               >
                 {p.name}
               </h3>
@@ -688,7 +696,7 @@ export function Pricing({
                 {p.blurb}
               </p>
               <p className="mt-6 flex items-baseline gap-2">
-                <span className="num text-[48px] font-semibold leading-none tracking-[-0.035em]">
+                <span className="num text-[48px] font-semibold leading-none tracking-[-0.035em] transition-transform duration-300 group-hover:scale-[1.02] origin-left">
                   {priceLabel(p.price)}
                 </span>
                 {p.period && (
@@ -705,7 +713,7 @@ export function Pricing({
                       name="check"
                       size={17}
                       strokeWidth={2.4}
-                      className="mt-0.5 shrink-0 text-mk-cta"
+                      className="mt-0.5 shrink-0 text-mk-cta transition-transform duration-200 group-hover:scale-110"
                     />
                     <span>{f}</span>
                   </li>
@@ -716,7 +724,7 @@ export function Pricing({
               ) : (
                 <Link
                   href="/"
-                  className="mt-9 inline-flex w-full items-center justify-center rounded-full px-6 py-3.5 text-[17px] font-medium text-mk-blue shadow-[inset_0_0_0_1.5px_var(--color-mk-blue)] transition-colors hover:bg-mk-blue hover:text-white"
+                  className="mt-9 inline-flex w-full items-center justify-center rounded-full px-6 py-3.5 text-[17px] font-medium text-mk-blue shadow-[inset_0_0_0_1.5px_var(--color-mk-blue)] transition-all duration-200 hover:bg-mk-blue hover:text-white hover:scale-[1.02] active:scale-[0.98]"
                 >
                   {p.cta}
                 </Link>
@@ -837,7 +845,7 @@ function BetaPricing({ plans }: { plans: Plan[] }) {
         </div>
         <article
           aria-labelledby="plan-beta"
-          className="relative mx-auto mt-14 max-w-[560px] rounded-[24px] bg-white px-8 py-9 shadow-[0_0_0_2px_var(--color-mk-cta),0_30px_60px_-30px_rgb(74_90_240/0.45)]"
+          className="relative mx-auto mt-14 max-w-[560px] rounded-[24px] bg-white px-8 py-9 shadow-[0_0_0_2px_var(--color-mk-cta),0_30px_60px_-30px_rgb(74_90_240/0.45)] transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_0_0_2px_var(--color-mk-cta),0_40px_80px_-20px_rgb(74_90_240/0.5)]"
         >
           <span className="absolute -top-3.5 left-8 rounded-full bg-mk-cta px-3 py-1 text-[12px] font-semibold text-white">
             Everything included
@@ -979,13 +987,13 @@ export function Faq({ items: given }: { items: { q: string; a: string }[] }) {
         </h2>
         <div className="mt-12 divide-y divide-mk-line/80 border-y border-mk-line/80">
           {items.map((f) => (
-            <details key={f.q} className="group py-6">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-6 text-[19px] font-semibold tracking-[-0.01em] [&::-webkit-details-marker]:hidden">
+            <details key={f.q} className="group py-6 transition-colors duration-150">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-6 text-[19px] font-semibold tracking-[-0.01em] transition-colors duration-150 hover:text-mk-blue [&::-webkit-details-marker]:hidden">
                 {f.q}
                 <Icon
                   name="plus"
                   size={20}
-                  className="shrink-0 text-mk-slate transition-transform group-open:rotate-45"
+                  className="shrink-0 text-mk-slate transition-transform duration-300 group-open:rotate-45"
                 />
               </summary>
               <p className="mt-3 max-w-[680px] text-[17px] leading-relaxed text-mk-slate">
@@ -1014,7 +1022,9 @@ export function FinalCta({
   return (
     <section aria-labelledby="final-h" className="py-28 sm:py-36">
       <div className={clsx(WRAP, "flex flex-col items-center text-center")}>
-        <Mark size={52} />
+        <div className="transition-transform duration-500 hover:scale-110">
+          <Mark size={52} />
+        </div>
         <h2 id="final-h" className={clsx(H2, "mt-6 max-w-[820px]")}>
           {title}
         </h2>
