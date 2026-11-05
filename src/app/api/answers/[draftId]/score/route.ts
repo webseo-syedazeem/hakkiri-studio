@@ -2,12 +2,12 @@ import { NextResponse } from "next/server";
 import { mockAiEnabled, mockFollowUpScores, mockScore } from "@/lib/ai/mock";
 import { scoreAnswer } from "@/lib/ai/score";
 import { buildAnswer, buildFollowUp } from "@/lib/answers/build-answer";
-import { deleteDraft, getDraft } from "@/lib/answers/drafts";
+import { deleteDraft, deleteDraftAsync, getDraft, getDraftAsync } from "@/lib/answers/drafts";
 import { saveAnswer } from "@/lib/answers/store";
 import { saveRecordings } from "@/lib/answers/audio";
 import { flushStorage } from "@/lib/storage/disk";
 import { notConfigured, scoringError } from "@/lib/answers/pipeline";
-import { getInterview } from "@/lib/interviews/store";
+import { getInterview, getInterviewAsync } from "@/lib/interviews/store";
 import { profileFor } from "@/lib/scoring/profiles";
 import type { FollowUpKind } from "@/lib/types";
 import { progressFor } from "@/lib/progress";
@@ -32,8 +32,8 @@ export async function POST(_req: Request, { params }: { params: Promise<{ draftI
   const { draftId } = await params;
   const limited = guard(_req, "answer", { inSession: true });
   if (limited) return limited;
-  const draft = getDraft(draftId);
-  const interview = draft && getInterview(draft.interviewId);
+  const draft = (await getDraftAsync(draftId)) ?? getDraft(draftId);
+  const interview = draft ? ((await getInterviewAsync(draft.interviewId)) ?? getInterview(draft.interviewId)) : undefined;
   const question = interview?.questions.find((q) => q.id === draft?.questionId);
   if (!draft || !interview || !question) {
     return NextResponse.json({ error: "not-found", message: "This answer has expired. Start the question again." }, { status: 404 });
@@ -79,7 +79,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ draftI
     });
     saveAnswer(answer);
     saveRecordings(answer.id, draft.audio ?? []);
-    deleteDraft(draft.id);
+    await deleteDraftAsync(draft.id);
     await flushStorage();
     // The measured row comes back too, so a drill can show feedback straight away.
     const pay = isPayType(question.type) ? payChecks(question.id, main.words, payStage(interview.round)) : undefined;

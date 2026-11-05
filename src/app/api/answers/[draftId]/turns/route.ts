@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { mockFollowUpTranscript } from "@/lib/ai/mock";
-import { getDraft, saveDraft } from "@/lib/answers/drafts";
+import { getDraft, getDraftAsync, saveDraft, saveDraftAsync } from "@/lib/answers/drafts";
 import { MAX_AUDIO_BYTES, nextFollowUp, notConfigured, scoringError, transcribe } from "@/lib/answers/pipeline";
 import { guard } from "@/lib/usage/limits";
 import { setUsageContext } from "@/lib/usage/store";
@@ -20,7 +20,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ draftId
   const { draftId } = await params;
   const limited = guard(req, "answer", { inSession: true });
   if (limited) return limited;
-  const draft = getDraft(draftId);
+  const draft = (await getDraftAsync(draftId)) ?? getDraft(draftId);
   if (draft) setUsageContext({ interviewId: draft.interviewId, sessionId: draft.sessionId, feature: draft.sessionId ? "interview" : "single question" });
   if (!draft) return NextResponse.json({ error: "not-found", message: "This answer has expired. Start the question again." }, { status: 404 });
   if (!draft.pending) return NextResponse.json({ error: "no-follow-up", message: "There’s no follow-up waiting for a reply." }, { status: 409 });
@@ -36,13 +36,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ draftId
     if (words.length < 3) {
       // Nothing heard: drop this follow-up and move on rather than score silence.
       draft.pending = null;
-      saveDraft(draft);
+      await saveDraftAsync(draft);
       return NextResponse.json({ followUp: null, skipped: true });
     }
     draft.turns.push({ asked: question, kind, words });
     draft.audio.push({ data: await audio.arrayBuffer(), type: audio.type || "audio/webm" });
     const { followUp } = await nextFollowUp(draft);
-    saveDraft(draft);
+    await saveDraftAsync(draft);
     return NextResponse.json({ followUp });
   } catch (err) {
     return scoringError(err);

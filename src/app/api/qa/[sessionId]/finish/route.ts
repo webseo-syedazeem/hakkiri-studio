@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { devOr } from "@/lib/launch";
 import { getPresentation } from "@/lib/pitch/store";
-import { getQaDraft } from "@/lib/pitch/qa-drafts";
+import { getQaDraft, getQaDraftAsync, deleteQaDraftAsync } from "@/lib/pitch/qa-drafts";
 import { finishQa } from "@/lib/pitch/server";
 import { guard } from "@/lib/usage/limits";
 import { setUsageContext } from "@/lib/usage/store";
@@ -15,7 +15,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ session
   const { sessionId } = await params;
   const limited = guard(req, "answer", { inSession: true });
   if (limited) return limited;
-  const draft = getQaDraft(sessionId);
+  const draft = (await getQaDraftAsync(sessionId)) ?? getQaDraft(sessionId);
   setUsageContext({ sessionId, presentationId: draft?.presentationId, feature: "q&a" });
   const p = draft && getPresentation(draft.presentationId);
   if (!draft || !p) return NextResponse.json({ error: "not-found", message: "This Q&A has expired. Start it again." }, { status: 404 });

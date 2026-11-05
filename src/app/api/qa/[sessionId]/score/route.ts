@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getPresentation } from "@/lib/pitch/store";
-import { getQaDraft } from "@/lib/pitch/qa-drafts";
+import { getQaDraft, getQaDraftAsync } from "@/lib/pitch/qa-drafts";
 import { scoreQaQuestion } from "@/lib/pitch/server";
 import { guard } from "@/lib/usage/limits";
 import { setUsageContext } from "@/lib/usage/store";
@@ -13,7 +13,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ session
   const { sessionId } = await params;
   const limited = guard(req, "answer", { inSession: true });
   if (limited) return limited;
-  const draft = getQaDraft(sessionId);
+  const draft = (await getQaDraftAsync(sessionId)) ?? getQaDraft(sessionId);
   setUsageContext({ sessionId, presentationId: draft?.presentationId, feature: "q&a" });
   const p = draft && getPresentation(draft.presentationId);
   const body = (await req.json().catch(() => ({}))) as { k?: number };

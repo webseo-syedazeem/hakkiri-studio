@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
 import { mockTranscript } from "@/lib/ai/mock";
-import { getInterview } from "@/lib/interviews/store";
-import { saveDraft, type Draft } from "@/lib/answers/drafts";
+import { getInterview, getInterviewAsync } from "@/lib/interviews/store";
+import { saveDraft, saveDraftAsync, type Draft } from "@/lib/answers/drafts";
 import { MAX_AUDIO_BYTES, nextFollowUp, notConfigured, scoringError, transcribe } from "@/lib/answers/pipeline";
 import { soundsLikeCorrection } from "@/lib/ai/follow-up";
 import { setUsageContext } from "@/lib/usage/store";
@@ -31,7 +31,8 @@ export async function POST(req: Request) {
   if (limited) return limited;
 
   const audio = form.get("audio");
-  const interview = getInterview(String(form.get("interviewId") ?? ""));
+  const interviewId = String(form.get("interviewId") ?? "");
+  const interview = (await getInterviewAsync(interviewId)) ?? getInterview(interviewId);
   const question = interview?.questions.find((q) => q.id === String(form.get("questionId") ?? ""));
   if (!(audio instanceof Blob) || !interview || !question) {
     return NextResponse.json({ error: "bad-request", message: "Missing the recording or the question." }, { status: 400 });
@@ -66,7 +67,7 @@ export async function POST(req: Request) {
     };
     const { followUp, correction } = await nextFollowUp(draft);
     if (correction && form.get("session")) return NextResponse.json({ correction: true });
-    saveDraft(draft);
+    await saveDraftAsync(draft);
     return NextResponse.json({ draftId: draft.id, followUp });
   } catch (err) {
     return scoringError(err);

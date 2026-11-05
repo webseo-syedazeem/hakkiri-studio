@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
 import type { InterviewerStyle, QuestionGroup } from "@/lib/types";
 import { demoMock, roadmapAnswer } from "@/lib/mock-data";
-import { getInterview } from "@/lib/interviews/store";
-import { findAnswer } from "@/lib/answers/store";
+import { getInterview, getInterviewAsync } from "@/lib/interviews/store";
+import { findAnswer, findAnswerAsync } from "@/lib/answers/store";
 import { rowFromAnswer, mockScore, type MockRow } from "./report";
 import { loadJson, loadJsonAsync, saveJson, saveJsonAsync } from "@/lib/storage/disk";
 import { isMongoConfigured } from "@/lib/storage/mongodb";
@@ -168,6 +168,20 @@ export function rowsFor(m: MockRecord): MockRow[] {
     return a && q ? [rowFromAnswer(a, q, a.questionNumber)] : [];
   });
   // Numbered 1, 2, 3… in the order answered (a skipped opening leaves no gap).
+  return [...(m.rows ?? []), ...fromAnswers].sort((a, b) => a.number - b.number).map((r, k) => ({ ...r, number: k + 1 }));
+}
+
+export async function rowsForAsync(m: MockRecord): Promise<MockRow[]> {
+  const interview = (await getInterviewAsync(m.interviewId)) ?? getInterview(m.interviewId);
+  const fromAnswers = (
+    await Promise.all(
+      m.answerIds.map(async (id) => {
+        const a = (await findAnswerAsync(id)) ?? findAnswer(id);
+        const q = a && interview?.questions.find((x) => x.id === a.questionId);
+        return a && q ? [rowFromAnswer(a, q, a.questionNumber)] : [];
+      })
+    )
+  ).flat();
   return [...(m.rows ?? []), ...fromAnswers].sort((a, b) => a.number - b.number).map((r, k) => ({ ...r, number: k + 1 }));
 }
 

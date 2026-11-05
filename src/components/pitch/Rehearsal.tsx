@@ -284,7 +284,7 @@ export function Rehearsal(p: RehearsalProps) {
                 </>
               ) : (
                 <>
-                  <div className="text-[13px] font-semibold text-red-soft">{problem?.kind === "keys" ? "Scoring isn’t set up yet" : problem?.kind === "mic" ? "Microphone" : "Your run wasn’t scored"}</div>
+                  <div className="text-[13px] font-semibold text-red-soft">{problem?.kind === "keys" ? "Scoring isn’t available" : problem?.kind === "mic" ? "Microphone" : "Your run wasn’t scored"}</div>
                   <p className="mt-1.5 text-sm leading-normal" role="alert">
                     {problem?.message}
                   </p>

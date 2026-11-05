@@ -1,9 +1,9 @@
 import { NextResponse, after } from "next/server";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
-import { getInterview, updateInterview } from "@/lib/interviews/store";
-import { findAnswer } from "@/lib/answers/store";
-import { findMock, saveMock, SKIP_REASONS } from "@/lib/mocks/store";
+import { getInterview, getInterviewAsync, updateInterview } from "@/lib/interviews/store";
+import { findAnswer, findAnswerAsync } from "@/lib/answers/store";
+import { findMock, findMockAsync, saveMock, SKIP_REASONS } from "@/lib/mocks/store";
 import { retireSkipped, topUp } from "@/lib/sessions/server";
 import { mergeRules, rulesFromSkips } from "@/lib/sessions/rules";
 import { flushStorage } from "@/lib/storage/disk";
@@ -38,15 +38,15 @@ export async function POST(req: Request) {
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "bad-request", message: "That interview couldn’t be saved." }, { status: 400 });
   const body = parsed.data;
-  const interview = getInterview(body.interviewId);
-  const answers = body.answerIds.map((id) => findAnswer(id));
+  const interview = (await getInterviewAsync(body.interviewId)) ?? getInterview(body.interviewId);
+  const answers = await Promise.all(body.answerIds.map(async (id) => (await findAnswerAsync(id)) ?? findAnswer(id)));
   if (!interview || answers.some((a) => !a || a.interviewId !== interview.id)) {
     return NextResponse.json({ error: "not-found", message: "Some answers in this interview have expired." }, { status: 404 });
   }
   const finishedAt = new Date().toISOString();
 
   if (body.sessionId) {
-    const session = findMock(body.sessionId);
+    const session = (await findMockAsync(body.sessionId)) ?? findMock(body.sessionId);
     if (!session || session.interviewId !== interview.id) return NextResponse.json({ error: "not-found", message: "That interview has expired." }, { status: 404 });
     if (session.status === "done") return NextResponse.json({ id: session.id });
     const skipped = body.skipped ?? [];

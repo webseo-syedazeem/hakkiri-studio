@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getPresentation } from "@/lib/pitch/store";
-import { getQaDraft } from "@/lib/pitch/qa-drafts";
+import { getQaDraft, getQaDraftAsync } from "@/lib/pitch/qa-drafts";
 import { answerQa } from "@/lib/pitch/server";
 import { mockQaTranscript } from "@/lib/ai/pitch/mock";
 import { MAX_AUDIO_BYTES, notConfigured, scoringError, transcribe } from "@/lib/answers/pipeline";
@@ -22,7 +22,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ session
   const blocked = notConfigured();
   if (blocked) return blocked;
   const { sessionId } = await params;
-  const draft = getQaDraft(sessionId);
+  const draft = (await getQaDraftAsync(sessionId)) ?? getQaDraft(sessionId);
   const p = draft && getPresentation(draft.presentationId);
   if (!draft || !p) return NextResponse.json({ error: "not-found", message: "This Q&A has expired. Start it again." }, { status: 404 });
 

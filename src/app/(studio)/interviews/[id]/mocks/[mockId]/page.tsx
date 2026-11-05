@@ -8,7 +8,7 @@ import { getInterview, getInterviewAsync } from "@/lib/interviews/store";
 import { understandingOf } from "@/lib/interviews/build";
 import { categoryLabel, settingsLine } from "@/lib/interviews/settings";
 import { findAnswer } from "@/lib/answers/store";
-import { doneSessions, findMock, findMockAsync, isFresh, previousScore, rerunOf, rowsFor, SKIP_REASON_LABEL, type MockRecord } from "@/lib/mocks/store";
+import { doneSessions, findMock, findMockAsync, isFresh, previousScore, rerunOf, rowsFor, rowsForAsync, SKIP_REASON_LABEL, type MockRecord } from "@/lib/mocks/store";
 import { demoMock, roadmapAnswer } from "@/lib/mock-data";
 import { buildReport, countsLine, VERDICT_LABEL, type MockRow } from "@/lib/mocks/report";
 import { compareRuns } from "@/lib/sessions/compare";
@@ -127,7 +127,7 @@ export default async function SessionReportPage({ params, searchParams }: { para
   const micOk = (await cookies()).get("hk_mic_ok")?.value === "1";
   const u = understandingOf(interview);
   const label = (g: MockRow["group"]) => categoryLabel(g, u.technicalLabel);
-  const rows = rowsFor(mock);
+  const rows = (await rowsForAsync(mock)) ?? rowsFor(mock);
   const report = buildReport(rows, interview.interviewer.name);
   const lengthSec = Math.max(0, (Date.parse(mock.finishedAt) - Date.parse(mock.startedAt)) / 1000);
   const title = sessionTitle(mock, interview);
