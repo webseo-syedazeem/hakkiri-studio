@@ -42,9 +42,12 @@ export const BETA = {
   monthlyUsd: 200,
 };
 
-/** A developer message in the prototype, a plain one at launch. */
+/** A developer message in the prototype, a plain one at launch or in production. */
 export function devOr(dev: string, user: string): string {
-  return isLaunch() ? user : dev;
+  if (process.env.NODE_ENV === "production" || process.env.VERCEL || isLaunch()) {
+    return user;
+  }
+  return dev;
 }
 
 export const SERVICE_PROBLEM =

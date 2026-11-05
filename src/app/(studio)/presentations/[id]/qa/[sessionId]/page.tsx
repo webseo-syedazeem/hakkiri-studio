@@ -54,11 +54,6 @@ export default async function QaReportPage({ params, searchParams }: { params: P
 
   return (
     <div className="flex grow flex-col">
-      {demo && DEMO_NOTE[demo] && (
-        <div role="status" className="mb-4 rounded-[10px] bg-blue/12 px-4 py-2.5 text-[13px] text-lilac shadow-[inset_0_0_0_1px_rgb(123_136_255/0.3)]">
-          {DEMO_NOTE[demo]}
-        </div>
-      )}
       <header className="flex animate-rise items-end justify-between gap-8">
         <div className="min-w-0">
           <Crumbs items={[{ label: p.title, href: `/presentations/${p.id}` }, { label: "Audience Q&A", href: `/presentations/${p.id}` }]} />

@@ -86,11 +86,6 @@ export default async function RunReportPage({ params, searchParams }: { params: 
 
   return (
     <div className="flex grow flex-col">
-      {demo && DEMO_NOTE[demo] && (
-        <div role="status" className="mb-4 rounded-[10px] bg-blue/12 px-4 py-2.5 text-[13px] text-lilac shadow-[inset_0_0_0_1px_rgb(123_136_255/0.3)]">
-          {DEMO_NOTE[demo]}
-        </div>
-      )}
       {run.partial && (
         <div role="status" className="mb-4 rounded-[10px] bg-red/10 px-4 py-2.5 text-[13px] text-red-soft">
           The AI couldn’t score this run, so you’re seeing what was measured: time on each slide and your delivery. Run it again to get the full report.

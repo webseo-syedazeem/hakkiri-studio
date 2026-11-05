@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { aiConfig } from "@/lib/ai/config";
+import { callGemini } from "@/lib/ai/providers/gemini";
 
 export const dynamic = "force-dynamic";
 
@@ -9,28 +10,22 @@ export async function GET() {
     return NextResponse.json({ error: "no-key", message: "Gemini API key is not configured." });
   }
 
-  const results: Record<string, unknown> = {
-    keyLength: key.length,
-    keyPrefix: key.slice(0, 6) + "...",
-  };
+  try {
+    const text = await callGemini(
+      {
+        model: "gemini-2.5-flash",
+        system: "You are a helpful assistant.",
+        user: "Respond with valid JSON: {\"status\": \"ok\", \"model\": \"gemini-2.5-flash\"}",
+        maxTokens: 100,
+        temperature: 0,
+        timeoutMs: 10000,
+        label: "test-gemini",
+      },
+      { apiKey: key },
+    );
 
-  for (const ver of ["v1beta", "v1"]) {
-    try {
-      const res = await fetch(`https://generativelanguage.googleapis.com/${ver}/models?key=${key}`);
-      const body = await res.json().catch(() => null);
-      results[ver] = {
-        status: res.status,
-        models: Array.isArray(body?.models)
-          ? body.models.map((m: { name: string; supportedGenerationMethods?: string[] }) => ({
-              name: m.name,
-              methods: m.supportedGenerationMethods,
-            }))
-          : body,
-      };
-    } catch (err) {
-      results[ver] = { error: err instanceof Error ? err.message : String(err) };
-    }
+    return NextResponse.json({ success: true, response: text });
+  } catch (err) {
+    return NextResponse.json({ success: false, error: err instanceof Error ? err.message : String(err) }, { status: 500 });
   }
-
-  return NextResponse.json(results);
 }

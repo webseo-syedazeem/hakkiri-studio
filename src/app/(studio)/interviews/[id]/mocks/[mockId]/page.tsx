@@ -134,11 +134,7 @@ export default async function SessionReportPage({ params, searchParams }: { para
   const answerHref = (answerId: string, followUps = false) => `/interviews/${interview.id}/answers/${answerId}?mock=${mock.id}${followUps ? "&tab=follow-ups" : ""}`;
   const shortOf = (qid: string) => interview.questions.find((q) => q.id === qid)?.short ?? "this question";
 
-  const demoNote = demo && DEMO_NOTE[demo] && (
-    <div role="status" className="mb-4 rounded-[10px] bg-blue/12 px-4 py-2.5 text-[13px] text-lilac shadow-[inset_0_0_0_1px_rgb(123_136_255/0.3)]">
-      {DEMO_NOTE[demo]}
-    </div>
-  );
+  const demoNote = null;
 
   /* ------------------------------------------------------------ stopped */
   if (mock.status === "stopped" || mock.status === "planned") {

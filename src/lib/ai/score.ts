@@ -32,7 +32,7 @@ export async function scoreAnswer(input: ScoreInput, extraSources: string[] = []
           {
             model: aiConfig.mainModel.startsWith("gemini")
               ? aiConfig.mainModel
-              : "gemini-2.0-flash",
+              : "gemini-2.5-flash",
             system,
             context,
             user: `${user}${retryNote}`,

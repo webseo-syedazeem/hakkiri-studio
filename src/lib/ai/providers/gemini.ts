@@ -25,7 +25,7 @@ export async function callGemini(
   const primaryModel =
     req.model && req.model.startsWith("gemini")
       ? req.model
-      : "gemini-2.0-flash";
+      : "gemini-2.5-flash";
 
   const userParts: { text: string }[] = [];
   if (req.context) {
@@ -53,58 +53,62 @@ export async function callGemini(
     };
   }
 
-  // Attempt with primary model, then fallback to gemini-1.5-flash if model not found
-  const candidateModels = [primaryModel];
-  if (primaryModel !== "gemini-1.5-flash") {
-    candidateModels.push("gemini-1.5-flash");
-  }
+  const candidateModels = [
+    primaryModel,
+    "gemini-2.5-flash",
+    "gemini-flash-latest",
+    "gemini-2.5-pro",
+    "gemini-pro-latest",
+  ].filter((m, i, arr) => arr.indexOf(m) === i);
 
   let lastError: Error | null = null;
   for (const model of candidateModels) {
-    const url = `${GEMINI_API_BASE}/${model}:generateContent?key=${auth.apiKey}`;
-    try {
-      const res = await fetch(url, {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-        },
-        body: JSON.stringify(payload),
-        signal: req.timeoutMs ? AbortSignal.timeout(req.timeoutMs) : undefined,
-      });
+    for (const ver of ["v1beta", "v1"]) {
+      const url = `https://generativelanguage.googleapis.com/${ver}/models/${model}:generateContent?key=${auth.apiKey}`;
+      try {
+        const res = await fetch(url, {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+          },
+          body: JSON.stringify(payload),
+          signal: req.timeoutMs ? AbortSignal.timeout(req.timeoutMs) : undefined,
+        });
 
-      if (!res.ok) {
-        const detail = await res.text().catch(() => "");
-        if (res.status === 404 && model !== candidateModels[candidateModels.length - 1]) {
-          continue;
+        if (!res.ok) {
+          const detail = await res.text().catch(() => "");
+          if (res.status === 404) {
+            continue; // try next version or model
+          }
+          throw new ProviderError("claude", res.status, `Gemini error: ${detail.slice(0, 300)}`);
         }
-        throw new ProviderError("claude", res.status, `Gemini error: ${detail.slice(0, 300)}`);
-      }
 
-      const json = (await res.json()) as {
-        candidates?: { content?: { parts?: { text?: string }[] } }[];
-        usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number };
-      };
+        const json = (await res.json()) as {
+          candidates?: { content?: { parts?: { text?: string }[] } }[];
+          usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number };
+        };
 
-      const usage = json.usageMetadata;
-      recordUsage({
-        service: "claude",
-        label: req.label ?? "gemini",
-        model,
-        inputTokens: usage?.promptTokenCount ?? 0,
-        outputTokens: usage?.candidatesTokenCount ?? 0,
-        cachedTokens: 0,
-        cacheWriteTokens: 0,
-      });
+        const usage = json.usageMetadata;
+        recordUsage({
+          service: "claude",
+          label: req.label ?? "gemini",
+          model,
+          inputTokens: usage?.promptTokenCount ?? 0,
+          outputTokens: usage?.candidatesTokenCount ?? 0,
+          cachedTokens: 0,
+          cacheWriteTokens: 0,
+        });
 
-      const candidate = json.candidates?.[0];
-      const text = candidate?.content?.parts?.[0]?.text ?? "";
-      return text;
-    } catch (err) {
-      lastError = err instanceof Error ? err : new Error(String(err));
-      if (model !== candidateModels[candidateModels.length - 1] && !(err instanceof ProviderError && err.status === 401)) {
+        const candidate = json.candidates?.[0];
+        const text = candidate?.content?.parts?.[0]?.text ?? "";
+        return text;
+      } catch (err) {
+        lastError = err instanceof Error ? err : new Error(String(err));
+        if (err instanceof ProviderError && (err.status === 401 || err.status === 403)) {
+          throw err;
+        }
         continue;
       }
-      throw lastError;
     }
   }
   throw lastError ?? new Error("Gemini call failed");

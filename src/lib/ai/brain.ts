@@ -25,7 +25,7 @@ export class ClaudeInterviewerBrain implements InterviewerBrain {
             {
               model: aiConfig.fastModel.startsWith("gemini")
                 ? aiConfig.fastModel
-                : "gemini-2.0-flash",
+                : "gemini-2.5-flash",
               system,
               user: user + retryNote,
               maxTokens: 300,
