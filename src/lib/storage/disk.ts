@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
+import { isMongoConfigured, saveToMongo } from "./mongodb";
 
 /**
  * Local saving for the prototype: JSON files and recordings in a
@@ -40,8 +41,11 @@ export function loadJson<T>(name: string, fallback: T): T {
   }
 }
 
-/** Writes to a temporary file first, so a crash mid-write never leaves a broken file. */
+/** Writes to a temporary file first, so a crash mid-write never leaves a broken file. Also mirrors to MongoDB Atlas when configured. */
 export function saveJson(name: string, value: unknown) {
+  if (isMongoConfigured()) {
+    void saveToMongo("storage", name, value);
+  }
   if (!enabled) return;
   try {
     ensureDir(DIR);

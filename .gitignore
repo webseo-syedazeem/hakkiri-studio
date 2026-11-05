@@ -9,6 +9,7 @@ next-env.d.ts
 
 # Local practice data (answers, recordings, reports)
 .hakkiri-data
+.vercel
 
 # End-to-end output
 e2e/out
