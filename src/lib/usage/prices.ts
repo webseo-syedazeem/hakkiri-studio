@@ -38,7 +38,7 @@ export function costOf(e: { service: "claude" | "deepgram" | "elevenlabs"; model
     const p = claudePrice(e.model ?? "");
     return ((e.inputTokens ?? 0) * p.input + (e.outputTokens ?? 0) * p.output + (e.cachedTokens ?? 0) * p.cached + (e.cacheWriteTokens ?? 0) * p.input * CACHE_WRITE_FACTOR) / 1_000_000;
   }
-  if (e.service === "deepgram") return ((e.seconds ?? 0) / 60) * DEEPGRAM_PER_MIN;
+  if (e.service === "deepgram") return e.characters ? ((e.characters / 1000) * 0.015) : (((e.seconds ?? 0) / 60) * DEEPGRAM_PER_MIN);
   return ((e.characters ?? 0) / 1000) * ELEVENLABS_PER_1K;
 }
 

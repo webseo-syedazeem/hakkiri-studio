@@ -10,9 +10,25 @@ afterEach(() => {
 });
 
 describe("POST /api/voice", () => {
-  it("says no (501) without an ElevenLabs key, so the browser voice is used", async () => {
+  it("says no (501) without a key, so the browser voice is used", async () => {
     vi.stubEnv("ELEVENLABS_API_KEY", "");
+    vi.stubEnv("DEEPGRAM_API_KEY", "");
+    vi.stubEnv("deepgram_api_key", "");
     expect((await call({ text: "Tell me about yourself.", voice: "medium" })).status).toBe(501);
+  });
+
+  it("uses Deepgram Aura when ElevenLabs is not set but Deepgram key is present", async () => {
+    vi.stubEnv("ELEVENLABS_API_KEY", "");
+    vi.stubEnv("DEEPGRAM_API_KEY", "dg-test-key");
+    vi.stubEnv("HAKKIRI_MOCK_AI", "");
+    const fetchMock = vi.fn(async () => new Response(new Uint8Array([1, 2, 3]), { status: 200, headers: { "content-type": "audio/mpeg" } }));
+    vi.stubGlobal("fetch", fetchMock);
+    const res = await call({ text: "Tell me about yourself.", voice: "medium" }, "198.51.100.12");
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toBe("audio/mpeg");
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toContain("api.deepgram.com/v1/speak?model=aura-helios-en");
+    expect((init.headers as Record<string, string>)["Authorization"]).toBe("Token dg-test-key");
   });
 
   it("says no in test mode, so nothing is spent", async () => {

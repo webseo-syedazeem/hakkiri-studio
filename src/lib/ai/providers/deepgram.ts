@@ -64,6 +64,36 @@ export class DeepgramSpeechToText implements SpeechToText {
   }
 }
 
+export const DEEPGRAM_VOICES: Record<"easy" | "medium" | "hard", { id: string; name: string }> = {
+  easy: { id: process.env.DEEPGRAM_VOICE_EASY || "aura-asteria-en", name: "Asteria" },
+  medium: { id: process.env.DEEPGRAM_VOICE_MEDIUM || "aura-helios-en", name: "Helios" },
+  hard: { id: process.env.DEEPGRAM_VOICE_HARD || "aura-orion-en", name: "Orion" },
+};
+
+/**
+ * Deepgram Aura text-to-speech: fast natural voice using the existing Deepgram API key.
+ * https://developers.deepgram.com/docs/text-to-speech
+ */
+export async function synthesiseDeepgram(text: string, voice: "easy" | "medium" | "hard", apiKey: string): Promise<ArrayBuffer> {
+  const voiceConfig = DEEPGRAM_VOICES[voice] || DEEPGRAM_VOICES.medium;
+  const url = `https://api.deepgram.com/v1/speak?model=${voiceConfig.id}`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Token ${apiKey}`,
+      "Content-Type": "application/json",
+      Accept: "audio/mpeg",
+    },
+    body: JSON.stringify({ text }),
+    signal: AbortSignal.timeout(15_000),
+  });
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    throw new ProviderError("deepgram-aura", res.status, detail.slice(0, 300));
+  }
+  return res.arrayBuffer();
+}
+
 export class ProviderError extends Error {
   constructor(
     readonly provider: string,
