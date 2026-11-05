@@ -22,19 +22,14 @@ export async function getMongoClient(): Promise<MongoClient | null> {
   const uri = process.env.MONGODB_URI;
   if (!uri) return null;
 
-  if (process.env.NODE_ENV === "development") {
-    if (!global._mongoClientPromise) {
-      const client = new MongoClient(uri);
-      global._mongoClientPromise = client.connect();
-    }
-    return global._mongoClientPromise;
-  } else {
-    if (!clientPromise) {
-      const client = new MongoClient(uri);
-      clientPromise = client.connect();
-    }
-    return clientPromise;
+  if (!global._mongoClientPromise) {
+    const client = new MongoClient(uri, {
+      maxPoolSize: 10,
+      serverSelectionTimeoutMS: 8000,
+    });
+    global._mongoClientPromise = client.connect();
   }
+  return global._mongoClientPromise;
 }
 
 export async function getMongoDb(dbName = "hakkiri_studio"): Promise<Db | null> {
