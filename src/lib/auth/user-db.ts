@@ -102,17 +102,19 @@ export async function createUser(
   if (isMongoConfigured()) {
     try {
       const db = await getMongoDb();
-      if (db) {
-        const usersCol = db.collection<DbUserRecord>("users");
-        const existing = await usersCol.findOne({ email: normEmail });
-        if (existing) {
-          return { ok: false, error: "An account with this email already exists. Please sign in." };
-        }
-        await usersCol.insertOne(userDoc);
+      if (!db) {
+        return { ok: false, error: "Database service is initializing. Please try again in a moment." };
       }
+      const usersCol = db.collection<DbUserRecord>("users");
+      const existing = await usersCol.findOne({ email: normEmail });
+      if (existing) {
+        return { ok: false, error: "An account with this email already exists. Please sign in." };
+      }
+      await usersCol.insertOne(userDoc);
     } catch (err) {
       console.error("[auth] error creating user:", err);
-      return { ok: false, error: "Database error creating user account. Please try again." };
+      const msg = err instanceof Error ? err.message : String(err);
+      return { ok: false, error: `Could not create account: ${msg}` };
     }
   } else {
     // In-memory fallback
@@ -160,7 +162,8 @@ export async function authenticateUser(
       }
     } catch (err) {
       console.error("[auth] error looking up user:", err);
-      return { ok: false, error: "Database error during login. Please try again." };
+      const msg = err instanceof Error ? err.message : String(err);
+      return { ok: false, error: `Login error: ${msg}` };
     }
   } else {
     for (const u of memUsers.values()) {

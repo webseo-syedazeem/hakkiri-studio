@@ -25,9 +25,13 @@ export async function getMongoClient(): Promise<MongoClient | null> {
   if (!global._mongoClientPromise) {
     const client = new MongoClient(uri, {
       maxPoolSize: 10,
-      serverSelectionTimeoutMS: 8000,
+      serverSelectionTimeoutMS: 10000,
+      connectTimeoutMS: 10000,
     });
-    global._mongoClientPromise = client.connect();
+    global._mongoClientPromise = client.connect().catch((err) => {
+      delete global._mongoClientPromise;
+      throw err;
+    });
   }
   return global._mongoClientPromise;
 }
