@@ -145,7 +145,10 @@ export default async function HomePage() {
         </Link>
 
         {/* Card 3: Practice sessions completed */}
-        <div className="group flex items-center justify-between rounded-[18px] bg-panel p-4 shadow-[inset_0_0_0_1px_var(--color-line)] transition-all hover:shadow-[inset_0_0_0_1px_var(--color-line-strong)]">
+        <Link
+          href="/interviews"
+          className="group flex items-center justify-between rounded-[18px] bg-panel p-4 shadow-[inset_0_0_0_1px_var(--color-line)] transition-all hover:shadow-[inset_0_0_0_1px_var(--color-line-strong)] cursor-pointer"
+        >
           <div className="flex items-center gap-3.5">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-[#221c38] text-[#c084fc]">
               <Icon name="zap" size={20} />
@@ -163,7 +166,7 @@ export default async function HomePage() {
             size={18}
             className="text-muted transition-colors group-hover:text-ink shrink-0"
           />
-        </div>
+        </Link>
       </div>
 
       {/* Main 3-Column Content Layout */}
@@ -184,20 +187,22 @@ export default async function HomePage() {
             </p>
 
             {/* Target Role Card */}
-            <div className="mt-4 flex items-center gap-3.5 rounded-[12px] bg-panel-2 p-3 shadow-[inset_0_0_0_1px_var(--color-line)]">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-[#143029] text-[17px] font-bold text-[#34d399]">
-                H
-              </span>
-              <div className="min-w-0 grow">
-                <Link
-                  href="/interviews/halden"
-                  className="block truncate text-sm font-semibold text-ink hover:underline"
-                >
-                  Senior Product Manager, Payments
-                </Link>
-                <div className="text-xs text-muted">Halden</div>
+            <Link
+              href="/interviews/halden"
+              className="mt-4 flex items-center gap-3.5 rounded-[12px] bg-panel-2 p-3 shadow-[inset_0_0_0_1px_var(--color-line)] transition-all hover:shadow-[inset_0_0_0_1px_var(--color-line-strong)] block"
+            >
+              <div className="flex items-center gap-3.5 min-w-0">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-[#143029] text-[17px] font-bold text-[#34d399]">
+                  H
+                </span>
+                <div className="min-w-0 grow">
+                  <div className="truncate text-sm font-semibold text-ink hover:underline">
+                    Senior Product Manager, Payments
+                  </div>
+                  <div className="text-xs text-muted">Halden</div>
+                </div>
               </div>
-            </div>
+            </Link>
 
             {/* Stage Progress Header */}
             <div className="mt-4 flex items-center justify-between text-xs">
@@ -229,7 +234,10 @@ export default async function HomePage() {
               </div>
 
               {/* Stage 2 (Active Stage) */}
-              <div className="my-1 rounded-[12px] bg-[#1c2237] p-3 shadow-[inset_0_0_0_1px_#374268]">
+              <Link
+                href="/interviews/halden"
+                className="my-1 rounded-[12px] bg-[#1c2237] p-3 shadow-[inset_0_0_0_1px_#374268] transition-all hover:shadow-[inset_0_0_0_1px_#818cf8] block"
+              >
                 <div className="flex items-start gap-3">
                   <div className="flex flex-col items-center">
                     <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-[#818cf8] bg-panel-2">
@@ -245,7 +253,7 @@ export default async function HomePage() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </Link>
 
               {/* Stage 3 */}
               <div className="flex items-start gap-3 mt-1">
@@ -277,13 +285,18 @@ export default async function HomePage() {
           </div>
 
           {/* Bottom Focus Banner */}
-          <div className="mt-5 flex items-center gap-2.5 rounded-[12px] bg-[#1b2238] px-3.5 py-2.5 text-xs shadow-[inset_0_0_0_1px_#2d3858]">
-            <Icon name="compass" size={16} className="text-[#818cf8] shrink-0" />
-            <div className="min-w-0 grow truncate">
-              <span className="text-muted">Focus next: </span>
-              <span className="font-semibold text-ink">Technical questions</span>
+          <Link
+            href="/interviews/halden"
+            className="mt-5 flex items-center gap-2.5 rounded-[12px] bg-[#1b2238] px-3.5 py-2.5 text-xs shadow-[inset_0_0_0_1px_#2d3858] transition-all hover:shadow-[inset_0_0_0_1px_#818cf8] block"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <Icon name="compass" size={16} className="text-[#818cf8] shrink-0" />
+              <div className="min-w-0 grow truncate">
+                <span className="text-muted">Focus next: </span>
+                <span className="font-semibold text-ink">Technical questions</span>
+              </div>
             </div>
-          </div>
+          </Link>
         </Panel>
 
         {/* Column 3: Stacked Cards */}
@@ -300,12 +313,15 @@ export default async function HomePage() {
             <div className="mt-4 flex flex-col gap-3">
               {/* Item 1: Technical drill */}
               <div className="flex items-center justify-between gap-3 rounded-[12px] p-1 transition-all">
-                <div className="flex items-center gap-3 min-w-0 grow">
+                <Link
+                  href="/interviews/halden"
+                  className="flex items-center gap-3 min-w-0 grow group"
+                >
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[11px] bg-[#1c2338] text-[#93c5fd]">
                     <Icon name="code" size={18} />
                   </div>
                   <div className="min-w-0 grow">
-                    <div className="truncate text-[13px] font-semibold text-ink">
+                    <div className="truncate text-[13px] font-semibold text-ink group-hover:underline">
                       Technical drill
                     </div>
                     <div className="truncate text-xs text-muted">
@@ -315,7 +331,7 @@ export default async function HomePage() {
                       Technical
                     </span>
                   </div>
-                </div>
+                </Link>
                 <ButtonLink
                   href="/interviews/halden"
                   variant="primary"
@@ -328,12 +344,15 @@ export default async function HomePage() {
 
               {/* Item 2: Motivation answers */}
               <div className="flex items-center justify-between gap-3 rounded-[12px] p-1 transition-all">
-                <div className="flex items-center gap-3 min-w-0 grow">
+                <Link
+                  href="/interviews/halden"
+                  className="flex items-center gap-3 min-w-0 grow group"
+                >
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[11px] bg-[#241e38] text-[#c084fc]">
                     <Icon name="users" size={18} />
                   </div>
                   <div className="min-w-0 grow">
-                    <div className="truncate text-[13px] font-semibold text-ink">
+                    <div className="truncate text-[13px] font-semibold text-ink group-hover:underline">
                       Motivation answers
                     </div>
                     <div className="truncate text-xs text-muted">
@@ -343,7 +362,7 @@ export default async function HomePage() {
                       Structure
                     </span>
                   </div>
-                </div>
+                </Link>
                 <ButtonLink
                   href="/interviews/halden"
                   variant="primary"
@@ -356,12 +375,15 @@ export default async function HomePage() {
 
               {/* Item 3: Re-run slide 4 */}
               <div className="flex items-center justify-between gap-3 rounded-[12px] p-1 transition-all">
-                <div className="flex items-center gap-3 min-w-0 grow">
+                <Link
+                  href="/presentations/q1-roadmap"
+                  className="flex items-center gap-3 min-w-0 grow group"
+                >
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-[#142825] text-[#34d399]">
                     <Icon name="present" size={18} />
                   </div>
                   <div className="min-w-0 grow">
-                    <div className="truncate text-[13px] font-semibold text-ink">
+                    <div className="truncate text-[13px] font-semibold text-ink group-hover:underline">
                       Re-run slide 4
                     </div>
                     <div className="truncate text-xs text-muted">
@@ -371,7 +393,7 @@ export default async function HomePage() {
                       Timing
                     </span>
                   </div>
-                </div>
+                </Link>
                 <ButtonLink
                   href="/presentations/q1-roadmap"
                   variant="primary"
@@ -395,9 +417,12 @@ export default async function HomePage() {
 
             <div className="mt-3.5 flex flex-col divide-y divide-white/[0.06]">
               {/* Recent 1 */}
-              <div className="flex items-center justify-between py-2.5">
+              <Link
+                href="/interviews/halden"
+                className="flex items-center justify-between py-2.5 px-2 -mx-2 rounded-xl transition-colors hover:bg-panel-2/60 group"
+              >
                 <div className="min-w-0 grow">
-                  <div className="truncate text-[13px] font-semibold text-ink">
+                  <div className="truncate text-[13px] font-semibold text-ink group-hover:underline">
                     Technical questions
                   </div>
                   <div className="truncate text-xs text-muted">Halden</div>
@@ -408,12 +433,15 @@ export default async function HomePage() {
                     Interview
                   </span>
                 </div>
-              </div>
+              </Link>
 
               {/* Recent 2 */}
-              <div className="flex items-center justify-between py-2.5">
+              <Link
+                href="/presentations/q1-roadmap"
+                className="flex items-center justify-between py-2.5 px-2 -mx-2 rounded-xl transition-colors hover:bg-panel-2/60 group"
+              >
                 <div className="min-w-0 grow">
-                  <div className="truncate text-[13px] font-semibold text-ink">
+                  <div className="truncate text-[13px] font-semibold text-ink group-hover:underline">
                     Q&A rehearsal
                   </div>
                   <div className="truncate text-xs text-muted">Q1 roadmap</div>
@@ -424,12 +452,15 @@ export default async function HomePage() {
                     Presentation
                   </span>
                 </div>
-              </div>
+              </Link>
 
               {/* Recent 3 */}
-              <div className="flex items-center justify-between py-2.5">
+              <Link
+                href="/interviews/halden"
+                className="flex items-center justify-between py-2.5 px-2 -mx-2 rounded-xl transition-colors hover:bg-panel-2/60 group"
+              >
                 <div className="min-w-0 grow">
-                  <div className="truncate text-[13px] font-semibold text-ink">
+                  <div className="truncate text-[13px] font-semibold text-ink group-hover:underline">
                     Behavioural practice
                   </div>
                   <div className="truncate text-xs text-muted">Halden</div>
@@ -440,7 +471,7 @@ export default async function HomePage() {
                     Interview
                   </span>
                 </div>
-              </div>
+              </Link>
             </div>
           </Panel>
         </div>
