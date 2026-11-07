@@ -36,9 +36,9 @@ export function UpcomingAgenda({ events }: { events: UpcomingEvent[] }) {
               type="button"
               onClick={() => setFilter("this-week")}
               className={clsx(
-                "rounded-lg px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer",
+                "rounded-lg px-3 py-1 text-xs font-semibold transition-all duration-200 cursor-pointer",
                 filter === "this-week"
-                  ? "bg-[#28324a] text-ink shadow-sm"
+                  ? "bg-[#28324a] text-ink shadow-sm scale-[1.02]"
                   : "text-muted hover:text-ink"
               )}
             >
@@ -48,9 +48,9 @@ export function UpcomingAgenda({ events }: { events: UpcomingEvent[] }) {
               type="button"
               onClick={() => setFilter("all")}
               className={clsx(
-                "rounded-lg px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer",
+                "rounded-lg px-3 py-1 text-xs font-semibold transition-all duration-200 cursor-pointer",
                 filter === "all"
-                  ? "bg-[#28324a] text-ink shadow-sm"
+                  ? "bg-[#28324a] text-ink shadow-sm scale-[1.02]"
                   : "text-muted hover:text-ink"
               )}
             >
@@ -60,12 +60,16 @@ export function UpcomingAgenda({ events }: { events: UpcomingEvent[] }) {
         </div>
 
         <div className="mt-4 flex flex-col gap-4">
-          {displayed.map((item) => (
-            <div key={item.id}>
+          {displayed.map((item, idx) => (
+            <div
+              key={item.id}
+              className="animate-rise"
+              style={{ animationDelay: `${0.05 * (idx + 1)}s` }}
+            >
               <span className="mb-2 block text-xs font-semibold text-muted">
                 {item.dateGroup}
               </span>
-              <div className="flex items-center justify-between gap-3 rounded-[14px] bg-panel-2 p-3.5 shadow-[inset_0_0_0_1px_var(--color-line)] transition-all hover:shadow-[inset_0_0_0_1px_var(--color-line-strong)]">
+              <div className="group flex items-center justify-between gap-3 rounded-[14px] bg-panel-2 p-3.5 shadow-[inset_0_0_0_1px_var(--color-line)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_20px_-6px_rgba(0,0,0,0.5),inset_0_0_0_1px_var(--color-line-strong)]">
                 {/* Time & date pill */}
                 <div className="shrink-0 text-left">
                   <div className="text-sm font-bold text-ink">{item.time}</div>
@@ -85,7 +89,7 @@ export function UpcomingAgenda({ events }: { events: UpcomingEvent[] }) {
                   )}
                   <Link
                     href={item.href}
-                    className="block truncate text-[14px] font-semibold tracking-[-0.01em] text-ink hover:underline"
+                    className="block truncate text-[14px] font-semibold tracking-[-0.01em] text-ink hover:underline group-hover:text-blue-soft transition-colors"
                   >
                     {item.title}
                   </Link>
@@ -101,7 +105,7 @@ export function UpcomingAgenda({ events }: { events: UpcomingEvent[] }) {
                   href={item.href}
                   variant="primary"
                   size="sm"
-                  className="shrink-0 !rounded-lg !px-3.5"
+                  className="shrink-0 !rounded-lg !px-3.5 active:scale-95 transition-all shadow-sm hover:shadow-[0_0_15px_rgba(74,90,240,0.4)]"
                 >
                   {item.actionLabel}
                 </ButtonLink>
@@ -109,6 +113,23 @@ export function UpcomingAgenda({ events }: { events: UpcomingEvent[] }) {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Bottom helper card to keep height balanced and fill dead space */}
+      <div className="mt-5 flex items-center justify-between rounded-[12px] bg-panel-2/60 px-3.5 py-2.5 text-xs text-muted shadow-[inset_0_0_0_1px_var(--color-line)] transition-all hover:bg-panel-2">
+        <span className="flex items-center gap-2">
+          <span className="relative flex h-2 w-2">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue opacity-75" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-blue" />
+          </span>
+          <span>{displayed.length} sessions scheduled</span>
+        </span>
+        <Link
+          href="/interviews/new"
+          className="flex items-center gap-1 font-semibold text-blue-soft hover:underline transition-colors"
+        >
+          <Icon name="plus" size={12} strokeWidth={2.4} /> Add new
+        </Link>
       </div>
     </div>
   );
