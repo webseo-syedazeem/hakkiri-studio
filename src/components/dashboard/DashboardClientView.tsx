@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Icon, Panel } from "@/components/ui";
 import { UpcomingAgenda, type UpcomingEvent } from "./UpcomingAgenda";
 import { StageTracker } from "./StageTracker";
 import { ArchiveModal, type ArchivedItem } from "./ArchiveModal";
+import { loadArchivedItems, saveArchivedItems } from "@/lib/interviews/archive-store";
 
 export function DashboardClientView({
   upcomingInterviewsCount,
@@ -17,30 +18,16 @@ export function DashboardClientView({
   agendaEvents: UpcomingEvent[];
 }) {
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
-  const [archivedItems, setArchivedItems] = useState<ArchivedItem[]>([
-    {
-      id: "archive-1",
-      role: "Lead Product Manager",
-      company: "Stripe",
-      outcome: "Unsuccessful",
-      stageReached: "Stage 3 · Case interview",
-      date: "28 Oct",
-      feedbackNotes:
-        "Strong product vision and API depth. Interviewers recommended deepening operational risk and ledger scale experience.",
-    },
-    {
-      id: "archive-2",
-      role: "Group PM, Growth & Retention",
-      company: "Monzo",
-      outcome: "Unsuccessful",
-      stageReached: "Stage 2 · Hiring manager",
-      date: "14 Oct",
-      feedbackNotes:
-        "Impressive storytelling and structure. Team decided to proceed with an internal candidate.",
-    },
-  ]);
+  const [archivedItems, setArchivedItems] = useState<ArchivedItem[]>([]);
   const [isHaldenArchived, setIsHaldenArchived] = useState(false);
   const [archiveToast, setArchiveToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    setArchivedItems(loadArchivedItems());
+    const handleUpdate = () => setArchivedItems(loadArchivedItems());
+    window.addEventListener("hk_archive_updated", handleUpdate);
+    return () => window.removeEventListener("hk_archive_updated", handleUpdate);
+  }, []);
 
   const handleArchiveHalden = (reason: string) => {
     setIsHaldenArchived(true);
@@ -55,13 +42,17 @@ export function DashboardClientView({
         reason ||
         "Candidate completed recruiter screen with strong marks. Hiring manager round outcome marked unsuccessful.",
     };
-    setArchivedItems((prev) => [newArchived, ...prev]);
+    const updated = [newArchived, ...archivedItems];
+    setArchivedItems(updated);
+    saveArchivedItems(updated);
     setArchiveToast("Interview moved to Archive (Past interviews & outcomes).");
     setTimeout(() => setArchiveToast(null), 4000);
   };
 
   const handleRestore = (id: string) => {
-    setArchivedItems((prev) => prev.filter((item) => item.id !== id));
+    const updated = archivedItems.filter((item) => item.id !== id);
+    setArchivedItems(updated);
+    saveArchivedItems(updated);
     if (id.includes("halden")) {
       setIsHaldenArchived(false);
     }

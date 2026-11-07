@@ -1,6 +1,6 @@
 import Link from "next/link";
 import clsx from "clsx";
-import { ButtonLink, Chip, Icon, Panel } from "@/components/ui";
+import { ButtonLink, Chip, Panel } from "@/components/ui";
 import { isDemoInterview, listInterviews } from "@/lib/interviews/store";
 import { settingsLine, settingsOr } from "@/lib/interviews/settings";
 import { standing } from "@/lib/sessions/server";
@@ -8,6 +8,7 @@ import { interviewWhen } from "@/lib/sessions/labels";
 import { VERDICT_LABEL } from "@/lib/mocks/report";
 import { londonToday } from "@/lib/dates";
 import { DraftInterviewCard } from "@/components/interview/DraftInterviewCard";
+import { InterviewsHeaderControls } from "@/components/interview/InterviewsHeaderControls";
 
 export const dynamic = "force-dynamic";
 
@@ -23,10 +24,7 @@ export default function InterviewsPage() {
           <h1 className="text-[28px] font-semibold tracking-[-0.025em]">Interviews</h1>
           <p className="mt-1 text-[15px] text-muted">One for each job you’re going for, built from the company, the job spec and your CV.</p>
         </div>
-        <ButtonLink href="/interviews/new" variant="primary">
-          <Icon name="plus" size={16} strokeWidth={2} />
-          New interview
-        </ButtonLink>
+        <InterviewsHeaderControls />
       </header>
 
       {/* In-progress Saved Draft Card */}

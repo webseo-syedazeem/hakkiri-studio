@@ -7,6 +7,7 @@ import { listInterviews } from "@/lib/interviews/store";
 import { listPresentations } from "@/lib/pitch/store";
 import { longDay } from "@/lib/format";
 import { DashboardClientView } from "@/components/dashboard/DashboardClientView";
+import { HomeHeaderActions } from "@/components/dashboard/HomeHeaderActions";
 import type { UpcomingEvent } from "@/components/dashboard/UpcomingAgenda";
 
 export const dynamic = "force-dynamic";
@@ -89,24 +90,7 @@ export default async function HomePage() {
             You have 3 things coming up this week.
           </h1>
         </div>
-        <div className="flex shrink-0 items-center gap-3">
-          <Link
-            href="/interviews/new"
-            className="group/btn relative overflow-hidden inline-flex items-center justify-center gap-2 rounded-xl bg-panel-2 px-4 py-2 text-[13px] font-semibold text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)] transition-all duration-300 hover:bg-[#2b2d38] hover:shadow-[0_4px_16px_rgba(0,0,0,0.4)] active:scale-95"
-          >
-            <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/[0.08] to-transparent transition-transform duration-700 group-hover/btn:translate-x-full" />
-            <Icon name="plus" size={15} strokeWidth={2.2} className="transition-transform duration-300 group-hover/btn:rotate-90" />
-            <span>New interview</span>
-          </Link>
-          <Link
-            href="/presentations/new"
-            className="group/btn relative overflow-hidden inline-flex items-center justify-center gap-2 rounded-xl bg-panel-2 px-4 py-2 text-[13px] font-semibold text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)] transition-all duration-300 hover:bg-[#2b2d38] hover:shadow-[0_4px_16px_rgba(0,0,0,0.4)] active:scale-95"
-          >
-            <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/[0.08] to-transparent transition-transform duration-700 group-hover/btn:translate-x-full" />
-            <Icon name="plus" size={15} strokeWidth={2.2} className="transition-transform duration-300 group-hover/btn:rotate-90" />
-            <span>New presentation</span>
-          </Link>
-        </div>
+        <HomeHeaderActions />
       </header>
 
       {/* Interactive 4-Card Top Metrics & 3-Column Dashboard */}

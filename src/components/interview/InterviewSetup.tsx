@@ -7,6 +7,7 @@ import clsx from "clsx";
 import { Button, Crumbs, Icon, Panel } from "@/components/ui";
 import { pastedDocument, readDocument, type ReadDoc } from "./read-docs";
 import { CalendarPopup, TimePickerPopup } from "./DatePicker";
+import { DraftStorageModal } from "./DraftStorageModal";
 
 /* ------------------------------------------------------------------ DocField (exported for RebuildFlow) */
 export function DocField({
@@ -1908,88 +1909,29 @@ export function InterviewSetup() {
       )}
 
       {/* Draft Storage Details Modal */}
-      {showDraftModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-fade-in">
-          <div className="relative flex w-full max-w-[540px] flex-col rounded-[22px] border border-line bg-panel p-6 shadow-2xl animate-scale-in">
-            <div className="flex items-center justify-between border-b border-line pb-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-[#1a2238] text-blue-soft">
-                  <Icon name="archive" size={20} />
-                </div>
-                <div>
-                  <h2 className="text-[17px] font-bold text-ink">Draft Storage Details</h2>
-                  <p className="text-xs text-muted">Where and how your progress is saved</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowDraftModal(false)}
-                className="rounded-lg p-1.5 text-muted hover:bg-panel-2 hover:text-ink cursor-pointer"
-              >
-                <Icon name="x" size={16} />
-              </button>
-            </div>
-
-            <div className="mt-4 flex flex-col gap-3 text-xs">
-              <div className="rounded-[12px] bg-panel-2 p-3.5 border border-line">
-                <div className="flex items-center gap-2 font-semibold text-ink mb-1">
-                  <Icon name="globe" size={14} className="text-blue-soft" />
-                  <span>Workspace Local Cache</span>
-                </div>
-                <p className="text-muted leading-relaxed">
-                  Your draft is securely preserved in your browser&apos;s workspace storage (<code className="text-blue-soft font-mono">hk_interview_wizard_draft</code>). It will not be lost if you refresh, close the tab, or navigate elsewhere.
-                </p>
-              </div>
-
-              <div className="rounded-[12px] bg-panel-2 p-3.5 border border-line flex flex-col gap-2">
-                <span className="font-semibold text-ink">Included in this draft:</span>
-                <div className="grid grid-cols-2 gap-2 text-muted">
-                  <div className="flex items-center gap-1.5">
-                    <Icon name="check" size={12} className="text-[#10b981]" />
-                    <span>Role: {jobTitle || "Not set"}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <Icon name="check" size={12} className="text-[#10b981]" />
-                    <span>Company: {companyName || "Not set"}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <Icon name="check" size={12} className="text-[#10b981]" />
-                    <span>Stages: {stages.length} configured</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <Icon name="check" size={12} className="text-[#10b981]" />
-                    <span>Current step: Step {step} of 4</span>
-                  </div>
-                </div>
-              </div>
-
-              {lastSavedTime && (
-                <div className="flex items-center justify-between text-dim pt-1">
-                  <span>Last saved timestamp:</span>
-                  <span className="font-medium text-ink">{lastSavedTime}</span>
-                </div>
-              )}
-            </div>
-
-            <div className="mt-5 flex items-center justify-between border-t border-line pt-4 text-xs">
-              <button
-                type="button"
-                onClick={handleDiscardDraft}
-                className="font-semibold text-red-soft hover:underline cursor-pointer"
-              >
-                Discard draft
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowDraftModal(false)}
-                className="rounded-[10px] bg-blue-fill px-4 py-2 font-semibold text-white hover:bg-blue-hover cursor-pointer transition-colors"
-              >
-                Keep working
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <DraftStorageModal
+        isOpen={showDraftModal}
+        onClose={() => setShowDraftModal(false)}
+        initialDraft={{
+          companyName,
+          jobTitle,
+          companyWebsite,
+          cvDoc,
+          jobDoc,
+          coverDoc,
+          stagesExpectation,
+          stages,
+          selectedRounds,
+          techFocus,
+          skillsFocus,
+          expFocus,
+          difficulty,
+          duration,
+          step,
+          savedAt: lastSavedTime || "Recently",
+        }}
+        onDraftDiscarded={handleDiscardDraft}
+      />
     </div>
   );
 }
