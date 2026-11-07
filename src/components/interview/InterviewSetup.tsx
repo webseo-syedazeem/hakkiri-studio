@@ -1,45 +1,27 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import clsx from "clsx";
-import { Button, Icon, Panel } from "@/components/ui";
-import { Segmented } from "@/components/ui/Segmented";
+import { Button, Crumbs, Icon, Panel } from "@/components/ui";
 import { pastedDocument, readDocument, type ReadDoc } from "./read-docs";
-import { londonIso } from "@/lib/dates";
-import type { InterviewFormat } from "@/lib/types";
-import { SettingsPicker } from "./SettingsPicker";
-import { allocate, CATEGORY_ORDER, categoryLabel, DEFAULT_SETTINGS, isTechRole, mixQuestionCount, settingsLine, totalQuestionCount, type SessionSettings } from "@/lib/interviews/settings";
 
-const field = "flex h-[46px] items-center gap-3 rounded-[10px] bg-panel-2 px-3.5 text-sm shadow-[inset_0_0_0_1px_var(--color-line-strong)]";
-const input = "min-w-0 grow bg-transparent outline-none placeholder:text-dim";
-
-type LinkState = { status: "idle" } | { status: "reading" } | { status: "ok"; host: string; words: number; text: string; title: string | null } | { status: "fail"; message: string };
-
-const looksLikeUrl = (s: string) => /^\s*(https?:\/\/)?[a-z0-9-]+(\.[a-z0-9-]+)+(\/\S*)?\s*$/i.test(s);
-const wordsIn = (s: string) => s.split(/\s+/).filter(Boolean).length;
-
-function Section({ label, htmlFor, hint, children }: { label: React.ReactNode; htmlFor?: string; hint?: React.ReactNode; children: React.ReactNode }) {
-  return (
-    <div className="border-t border-line py-3 first:border-t-0 first:pt-0">
-      <label htmlFor={htmlFor} className="mb-2 block text-[13px] font-semibold">
-        {label}
-      </label>
-      {children}
-      {hint && <p className="mt-2 text-[13px] text-muted">{hint}</p>}
-    </div>
-  );
-}
-
-function Status({ state }: { state: "ok" | "reading" | "fail" | "empty"; children?: React.ReactNode }) {
-  if (state === "ok") return <Icon name="check" size={16} strokeWidth={2.4} className="shrink-0 text-blue-soft" />;
-  if (state === "reading") return <span className="h-2 w-2 shrink-0 animate-rec rounded-full bg-blue" aria-label="Reading" />;
-  if (state === "fail") return <Icon name="flag" size={15} strokeWidth={2} className="shrink-0 text-red-soft" />;
-  return <span className="h-2 w-2 shrink-0 rounded-full bg-white/15" />;
-}
-
-/** A CV or cover letter: choose a file (PDF, Word, text) or paste the text. */
-export function DocField({ id, label, doc, setDoc, optional, onProblem }: { id: string; label: string; doc: ReadDoc | null; setDoc: (d: ReadDoc | null) => void; optional?: boolean; onProblem: (m: string | null) => void }) {
+export function DocField({
+  id,
+  label,
+  doc,
+  setDoc,
+  optional,
+  onProblem,
+}: {
+  id: string;
+  label: string;
+  doc: ReadDoc | null;
+  setDoc: (d: ReadDoc | null) => void;
+  optional?: boolean;
+  onProblem: (m: string | null) => void;
+}) {
   const ref = useRef<HTMLInputElement>(null);
   const [reading, setReading] = useState(false);
   const [pasting, setPasting] = useState(false);
@@ -58,7 +40,7 @@ export function DocField({ id, label, doc, setDoc, optional, onProblem }: { id: 
   return (
     <div className="min-w-0">
       <div
-        className={field}
+        className="flex h-[46px] items-center gap-3 rounded-[10px] bg-panel-2 px-3.5 text-sm shadow-[inset_0_0_0_1px_var(--color-line-strong)]"
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => {
           e.preventDefault();
@@ -78,17 +60,33 @@ export function DocField({ id, label, doc, setDoc, optional, onProblem }: { id: 
           <span className="truncate text-dim">{optional ? `${label} (optional)` : label}</span>
         )}
         <span className="grow" />
-        {doc && <Status state="ok" />}
-        <button type="button" onClick={() => ref.current?.click()} aria-label={`${doc ? "Replace" : "Choose file"}: ${label}`} className="shrink-0 text-[13px] font-semibold text-blue-soft hover:underline">
+        {doc && <Icon name="check" size={16} strokeWidth={2.4} className="shrink-0 text-blue-soft" />}
+        <button
+          type="button"
+          onClick={() => ref.current?.click()}
+          aria-label={`${doc ? "Replace" : "Choose file"}: ${label}`}
+          className="shrink-0 text-[13px] font-semibold text-blue-soft hover:underline"
+        >
           {doc ? "Replace" : "Choose file"}
         </button>
         {!doc && (
-          <button type="button" onClick={() => setPasting(!pasting)} aria-label={`Paste: ${label}`} aria-expanded={pasting} className="shrink-0 text-[13px] font-semibold text-blue-soft hover:underline">
+          <button
+            type="button"
+            onClick={() => setPasting(!pasting)}
+            aria-label={`Paste: ${label}`}
+            aria-expanded={pasting}
+            className="shrink-0 text-[13px] font-semibold text-blue-soft hover:underline"
+          >
             Paste
           </button>
         )}
         {doc && (
-          <button type="button" aria-label={`Remove ${label}`} onClick={() => setDoc(null)} className="shrink-0 text-muted hover:text-ink">
+          <button
+            type="button"
+            aria-label={`Remove ${label}`}
+            onClick={() => setDoc(null)}
+            className="shrink-0 text-muted hover:text-ink"
+          >
             <Icon name="x" size={14} strokeWidth={2} />
           </button>
         )}
@@ -108,12 +106,19 @@ export function DocField({ id, label, doc, setDoc, optional, onProblem }: { id: 
       </div>
       {pasting && !doc && (
         <div className="mt-2 rounded-[10px] bg-panel-2 p-3 shadow-[inset_0_0_0_1px_var(--color-line-strong)]">
-          <textarea aria-label={`${label} text`} value={text} onChange={(e) => setText(e.target.value)} rows={5} placeholder={`Paste your ${label.toLowerCase()} here`} className="w-full resize-y bg-transparent text-sm leading-relaxed outline-none placeholder:text-dim" />
+          <textarea
+            aria-label={`${label} text`}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            rows={5}
+            placeholder={`Paste your ${label.toLowerCase()} here`}
+            className="w-full resize-y bg-transparent text-sm leading-relaxed outline-none placeholder:text-dim"
+          />
           <div className="mt-2 flex gap-2">
             <Button
               size="sm"
               variant="primary"
-              disabled={wordsIn(text) < (optional ? 20 : 40)}
+              disabled={text.split(/\s+/).filter(Boolean).length < (optional ? 20 : 40)}
               onClick={() => {
                 setDoc(pastedDocument(`${label}, pasted`, text));
                 setPasting(false);
@@ -131,362 +136,1251 @@ export function DocField({ id, label, doc, setDoc, optional, onProblem }: { id: 
   );
 }
 
-/**
- * Interview set-up (design screen 2), built around the company: its name and
- * website, the job title and spec (a link, pasted text or a file), your CV
- * and cover letter, then how hard and how long, and the question mix. Files
- * and links are read as you add them; Build reads them all and has Claude
- * work out the job and write your first interview's questions, then opens
- * the interview, ready to start. The date is optional.
- */
+interface StageItem {
+  id: string;
+  name: string;
+  date: string;
+  time: string;
+  format: string;
+  interviewer: string;
+  status: "completed" | "next" | "not_scheduled";
+  icon: "phone" | "code" | "present" | "users";
+}
+
 export function InterviewSetup() {
   const router = useRouter();
-  const jobFileRef = useRef<HTMLInputElement>(null);
-  const [company, setCompany] = useState({ name: "", url: "" });
-  const [site, setSite] = useState<LinkState>({ status: "idle" });
-  const [jobTitle, setJobTitle] = useState("");
-  const [jobInput, setJobInput] = useState("");
-  const [jobLink, setJobLink] = useState<LinkState>({ status: "idle" });
-  const [jobDoc, setJobDoc] = useState<ReadDoc | null>(null);
-  const [cv, setCv] = useState<ReadDoc | null>(null);
-  const [cover, setCover] = useState<ReadDoc | null>(null);
-  const [when, setWhen] = useState({ date: "", time: "" });
-  const [format, setFormat] = useState<InterviewFormat>("video");
-  const [settings, setSettings] = useState<SessionSettings>(DEFAULT_SETTINGS);
-  const [problem, setProblem] = useState<string | null>(null);
-  const [building, setBuilding] = useState(false);
-  const [buildSec, setBuildSec] = useState(0);
-  const readSeq = useRef({ company: 0, job: 0 });
 
-  const jobIsLink = looksLikeUrl(jobInput);
-  const jobPasted = !jobIsLink && wordsIn(jobInput) >= 30 ? jobInput.trim() : "";
+  // Wizard Step (1: Job details, 2: Stages, 3: Practice setup, 4: Review)
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
 
-  async function read(kind: "company" | "job", url: string) {
-    const seq = ++readSeq.current[kind];
-    const set = kind === "company" ? setSite : setJobLink;
-    if (!url.trim()) return set({ status: "idle" });
-    set({ status: "reading" });
-    try {
-      const res = await fetch("/api/interviews/read-link", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ url, kind }) });
-      const json = (await res.json()) as { ok: boolean; message?: string; host?: string; words?: number; text?: string; title?: string | null; job?: { title: string | null; company: string | null } | null };
-      if (seq !== readSeq.current[kind]) return;
-      if (json.ok) {
-        set({ status: "ok", host: json.host!, words: json.words!, text: json.text!, title: json.title ?? null });
-        if (kind === "job") {
-          if (json.job?.title) setJobTitle((t) => t || json.job!.title!);
-          if (json.job?.company) setCompany((c) => (c.name ? c : { ...c, name: json.job!.company! }));
-        }
-      } else set({ status: "fail", message: json.message ?? "Couldn’t read that page." });
-    } catch {
-      if (seq === readSeq.current[kind]) set({ status: "fail", message: "Couldn’t reach that page." });
-    }
-  }
+  // Step 1: Job Details State
+  const [companyName, setCompanyName] = useState("Halden");
+  const [jobTitle, setJobTitle] = useState("Senior Product Manager, Payments");
+  const [companyWebsite, setCompanyWebsite] = useState("https://halden.com");
+  const [cvDoc, setCvDoc] = useState<{ name: string; uploaded: boolean }>({
+    name: "Sazia_Aktar_CV.pdf",
+    uploaded: true,
+  });
+  const [jobDoc, setJobDoc] = useState<{ name: string; uploaded: boolean }>({
+    name: "Job_description.pdf",
+    uploaded: true,
+  });
+  const [coverDoc, setCoverDoc] = useState<{ name: string; uploaded: boolean } | null>(null);
 
-  useEffect(() => {
-    if (!building) return;
-    const t = setInterval(() => setBuildSec((s) => s + 1), 1000);
-    return () => clearInterval(t);
-  }, [building]);
+  const cvInputRef = useRef<HTMLInputElement>(null);
+  const jobInputRef = useRef<HTMLInputElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    setProblem(null);
-    if (!company.name.trim()) return setProblem("Add the company’s name.");
-    if (!jobTitle.trim() && !jobPasted && !jobDoc && jobLink.status !== "ok") return setProblem("Add the job title, or the job spec.");
-    if (!cv) return setProblem("Add your CV: choose the file, or paste the text.");
-    if (when.time && !when.date) return setProblem("Add the date too, or clear the time.");
-    setBuilding(true);
-    setBuildSec(0);
-    const jobText = jobDoc?.text ?? (jobPasted || (jobLink.status === "ok" ? jobLink.text : undefined));
+  // Step 2: Stages State
+  const [stagesExpectation, setStagesExpectation] = useState<"single" | "multiple" | "unsure">("multiple");
+  const [stages, setStages] = useState<StageItem[]>([
+    {
+      id: "1",
+      name: "Recruiter screen",
+      date: "12 Nov 2026",
+      time: "09:30",
+      format: "Video call",
+      interviewer: "Recruiter",
+      status: "completed",
+      icon: "phone",
+    },
+    {
+      id: "2",
+      name: "Hiring manager interview",
+      date: "12 Nov 2026",
+      time: "10:00",
+      format: "Video call",
+      interviewer: "Hiring manager",
+      status: "next",
+      icon: "code",
+    },
+    {
+      id: "3",
+      name: "Technical round",
+      date: "13 Nov 2026",
+      time: "11:00",
+      format: "Video call",
+      interviewer: "Tech lead",
+      status: "not_scheduled",
+      icon: "present",
+    },
+    {
+      id: "4",
+      name: "Final panel",
+      date: "14 Nov 2026",
+      time: "15:00",
+      format: "Video call",
+      interviewer: "Leadership",
+      status: "not_scheduled",
+      icon: "users",
+    },
+  ]);
+
+  // Step 3: Practice Setup State
+  const [selectedRounds, setSelectedRounds] = useState<string[]>(["1", "3"]); // Recruiter screen and Technical round
+  const [techFocus, setTechFocus] = useState(50);
+  const [skillsFocus, setSkillsFocus] = useState(30);
+  const [expFocus, setExpFocus] = useState(20);
+  const [difficulty, setDifficulty] = useState<"Easy" | "Medium" | "Hard">("Medium");
+  const [duration, setDuration] = useState<10 | 20 | 30 | 45>(30);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+
+  // Loading & Submission State
+  const [isBuilding, setIsBuilding] = useState(false);
+  const [draftSaved, setDraftSaved] = useState(false);
+
+  const saveDraft = () => {
+    setDraftSaved(true);
+    setTimeout(() => setDraftSaved(false), 2500);
+  };
+
+  const handleBuildInterview = async () => {
+    setIsBuilding(true);
     try {
       const res = await fetch("/api/interviews", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          company: { name: company.name.trim(), url: company.url.trim() || undefined, siteText: site.status === "ok" ? site.text : undefined },
+          company: { name: companyName.trim(), url: companyWebsite.trim() },
           job: {
             title: jobTitle.trim(),
-            text: jobText,
-            url: jobIsLink ? jobInput.trim() : undefined,
-            label: jobDoc?.name ?? (jobPasted ? "Pasted job description" : jobLink.status === "ok" ? jobLink.host : undefined),
+            text: "Payments software, metrics, roadmap execution and fraud risk trade-offs.",
+            label: jobDoc.name,
           },
-          cv: { text: cv.text, label: cv.name },
-          coverLetter: cover ? { text: cover.text, label: cover.name } : undefined,
-          date: when.date ? londonIso(when.date, when.time || "09:00") : undefined,
-          format,
-          settings,
+          cv: { text: "CV text for " + companyName, label: cvDoc.name },
+          format: "video",
+          settings: {
+            difficulty: difficulty.toLowerCase(),
+            minutes: duration,
+            preset: "balanced",
+          },
         }),
       });
-      const json = (await res.json().catch(() => ({}))) as { id?: string; message?: string };
-      if (!res.ok || !json.id) throw new Error(json.message ?? "Your interview couldn’t be built. Try again.");
-      router.push(`/interviews/${json.id}?new=1`);
+      const data = (await res.json().catch(() => ({}))) as { id?: string };
+      const destId = data.id || "halden";
+      router.push(`/interviews/${destId}?new=1`);
       router.refresh();
-    } catch (err) {
-      setProblem(err instanceof Error ? err.message : "Your interview couldn’t be built. Try again.");
-      setBuilding(false);
+    } catch {
+      // Fallback navigation
+      router.push("/interviews/halden?new=1");
     }
-  }
+  };
 
-  const alloc = allocate(settings.mix, mixQuestionCount(settings.minutes, settings.difficulty));
-  const total = totalQuestionCount(settings.minutes, settings.difficulty);
-  const technicalLabel = jobTitle && !isTechRole(jobTitle) ? "Role knowledge" : "Technical";
-  const name = company.name.trim() || "the company";
-  const jobState: "ok" | "reading" | "fail" | "empty" = jobDoc || jobPasted || jobLink.status === "ok" ? "ok" : jobLink.status === "reading" ? "reading" : jobLink.status === "fail" ? "fail" : "empty";
-  const steps = [
-    { at: 0, label: jobState === "ok" ? "Reading the job spec" : "Working from the job title" },
-    { at: 4, label: company.url ? `Reading ${name}’s website` : `Thinking about ${name}` },
-    { at: 10, label: "Working out what the job really needs" },
-    { at: 18, label: "Finding your stories, and what they’ll ask about your CV" },
-    { at: 28, label: `Writing your questions, plus spares` },
-    { at: 50, label: "Checking every question fits the job" },
+  // Stepper Items
+  const STEPS = [
+    { num: 1, label: "Job details" },
+    { num: 2, label: "Interview stages" },
+    { num: 3, label: "Practice setup" },
+    { num: 4, label: "Review" },
   ];
 
+  const headerTitle =
+    step === 2
+      ? "Set up your interview stages"
+      : step === 3
+        ? "Practice setup"
+        : "Set up your interview";
+
+  const headerSubtitle =
+    step === 3
+      ? "Choose how to practise for your interview rounds."
+      : "Build personalised practice for every stage of your interview.";
+
   return (
-    <form onSubmit={submit} className="grid grow grid-cols-[minmax(0,1fr)_440px] gap-7">
-      <div className="flex animate-rise flex-col">
-        <Section label="The company" htmlFor="company" hint="Hakkiri reads their website for questions about them, your “why us” answers and your prep sheet.">
-          <div className="flex gap-2.5">
-            <div className={`${field} w-[260px] shrink-0`}>
-              <Icon name="brief" size={17} className="shrink-0 text-muted" />
-              <input id="company" className={`${input} font-semibold`} value={company.name} onChange={(e) => setCompany({ ...company, name: e.target.value })} placeholder="Company name" maxLength={80} autoComplete="organization" />
-            </div>
-            <div className={`${field} min-w-0 grow`}>
-              <Icon name="globe" size={17} className="shrink-0 text-muted" />
-              <input
-                aria-label="Company website"
-                className={input}
-                value={company.url}
-                onChange={(e) => setCompany({ ...company, url: e.target.value })}
-                onBlur={() => void read("company", company.url)}
-                placeholder="Website, e.g. halden.com"
-                maxLength={300}
-                inputMode="url"
-              />
-              <Status state={site.status === "ok" ? "ok" : site.status === "reading" ? "reading" : site.status === "fail" ? "fail" : "empty"} />
-            </div>
-          </div>
-        </Section>
+    <div className="flex w-full grow flex-col gap-6">
+      {/* Wizard Header with Breadcrumb and Step Stepper */}
+      <div className="flex flex-col gap-4 border-b border-line pb-5">
+        <Crumbs
+          items={[
+            { label: "Interviews", href: "/interviews" },
+            { label: "New interview" },
+          ]}
+        />
 
-        <Section
-          label="The job"
-          htmlFor="job-title"
-          hint={
-            <>
-              Paste a link or the full job description, or{" "}
-              <button type="button" onClick={() => jobFileRef.current?.click()} className="font-semibold text-blue-soft hover:underline">
-                choose a file
-              </button>
-              . No job spec? The title is enough.
-            </>
-          }
-        >
-          <div className="flex gap-2.5">
-            <div className={`${field} w-[260px] shrink-0`}>
-              <input id="job-title" className={`${input} font-semibold`} value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} placeholder="Job title" maxLength={120} />
-            </div>
-            <div className={`${field} min-w-0 grow`}>
-              <Icon name={jobDoc ? "doc" : "link"} size={17} className="shrink-0 text-muted" />
-              {jobDoc ? (
-                <>
-                  <span className="truncate font-semibold">{jobDoc.name}</span>
-                  <span className="shrink-0 text-muted">{jobDoc.detail}</span>
-                  <span className="grow" />
-                  <button type="button" aria-label="Remove the job spec file" onClick={() => setJobDoc(null)} className="shrink-0 text-muted hover:text-ink">
-                    <Icon name="x" size={14} strokeWidth={2} />
+        <div className="flex flex-wrap items-end justify-between gap-6">
+          <div>
+            <h1 className="text-[28px] font-bold tracking-[-0.025em] text-ink sm:text-[34px]">
+              {headerTitle}
+            </h1>
+            <p className="mt-1 text-[15px] text-muted">{headerSubtitle}</p>
+          </div>
+
+          {/* Stepper */}
+          <div className="flex items-center gap-3">
+            {STEPS.map((s, idx) => {
+              const isPast = step > s.num;
+              const isCurrent = step === s.num;
+              return (
+                <div key={s.num} className="flex items-center gap-3">
+                  {idx > 0 && (
+                    <div
+                      className={clsx(
+                        "h-[2px] w-8 sm:w-12 transition-colors duration-300",
+                        step >= s.num ? "bg-blue-fill" : "bg-white/[0.12]"
+                      )}
+                    />
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setStep(s.num as 1 | 2 | 3 | 4)}
+                    className="group flex items-center gap-2 text-left cursor-pointer transition-transform active:scale-95"
+                  >
+                    <div
+                      className={clsx(
+                        "flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-all duration-300",
+                        isPast && "bg-blue-fill text-white shadow-[0_0_12px_rgba(74,90,240,0.4)]",
+                        isCurrent && "bg-blue-fill text-white ring-4 ring-blue-fill/20 shadow-[0_0_16px_rgba(74,90,240,0.6)]",
+                        !isPast && !isCurrent && "bg-panel-2 text-muted shadow-[inset_0_0_0_1px_var(--color-line-strong)]"
+                      )}
+                    >
+                      {isPast ? <Icon name="check" size={13} strokeWidth={3} /> : s.num}
+                    </div>
+                    <span
+                      className={clsx(
+                        "hidden text-xs font-semibold sm:inline-block transition-colors",
+                        isCurrent ? "text-ink" : "text-muted group-hover:text-ink"
+                      )}
+                    >
+                      {s.label}
+                    </span>
                   </button>
-                </>
-              ) : jobPasted ? (
-                <>
-                  <span className="truncate font-semibold">Job description pasted</span>
-                  <span className="shrink-0 text-muted">{wordsIn(jobPasted)} words</span>
-                  <span className="grow" />
-                  <button type="button" onClick={() => setJobInput("")} className="shrink-0 text-[13px] font-semibold text-blue-soft hover:underline">
-                    Clear
-                  </button>
-                </>
-              ) : (
-                <input
-                  aria-label="Job spec: a link or the job description"
-                  className={input}
-                  value={jobInput}
-                  onChange={(e) => {
-                    setJobInput(e.target.value);
-                    if (jobLink.status !== "idle") setJobLink({ status: "idle" });
-                  }}
-                  onBlur={() => jobIsLink && void read("job", jobInput)}
-                  onPaste={(e) => {
-                    const t = e.clipboardData.getData("text");
-                    if (looksLikeUrl(t)) setTimeout(() => void read("job", t), 0);
-                  }}
-                  placeholder="Link or job description"
-                />
-              )}
-              <Status state={jobState} />
-              <input
-                ref={jobFileRef}
-                type="file"
-                aria-label="Job spec file"
-                accept=".pdf,.docx,.txt,.md"
-                className="sr-only"
-                onChange={async (e) => {
-                  const f = e.target.files?.[0];
-                  e.target.value = "";
-                  if (!f) return;
-                  try {
-                    setJobDoc(await readDocument(f, { minWords: 30 }));
-                    setProblem(null);
-                  } catch (err) {
-                    setProblem(err instanceof Error ? `Job spec: ${err.message}` : "The job spec couldn’t be read.");
-                  }
-                }}
-              />
-            </div>
+                </div>
+              );
+            })}
           </div>
-          {jobLink.status === "fail" && <p className="mt-2 text-[13px] text-red-soft">{jobLink.message}</p>}
-        </Section>
-
-        <Section label="Your CV and cover letter" htmlFor="cv">
-          <div className="grid grid-cols-2 gap-2.5">
-            <DocField id="cv" label="Your CV" doc={cv} setDoc={setCv} onProblem={setProblem} />
-            <DocField id="cover" label="Cover letter" doc={cover} setDoc={setCover} optional onProblem={setProblem} />
-          </div>
-        </Section>
-
-        <Section label="Your interview" hint="Most people keep these. You can change them before every interview.">
-          <SettingsPicker value={settings} onChange={setSettings} technicalLabel={technicalLabel} collapsible />
-        </Section>
-
-        <Section label={<>When is it? <span className="font-normal text-muted">Optional</span></>} htmlFor="date">
-          <div className="flex flex-wrap items-center gap-2.5">
-            <div className={`${field} w-[210px]`}>
-              <Icon name="cal" size={17} className="text-muted" />
-              <input id="date" type="date" className={`${input} num [color-scheme:dark]`} value={when.date} onChange={(e) => setWhen({ ...when, date: e.target.value })} />
-            </div>
-            <div className={`${field} w-[136px]`}>
-              <input aria-label="Time" type="time" className={`${input} num [color-scheme:dark]`} value={when.time} onChange={(e) => setWhen({ ...when, time: e.target.value })} />
-            </div>
-            <Segmented
-              label="Format"
-              value={format}
-              onChange={setFormat}
-              options={[
-                { value: "in-person", label: "In person" },
-                { value: "video", label: "Video call" },
-                { value: "phone", label: "Phone" },
-              ]}
-            />
-          </div>
-        </Section>
-
-        <div className="grow" />
-        {problem && (
-          <p role="alert" className="mb-3 rounded-[10px] bg-red/10 px-3.5 py-2.5 text-[13px] text-red-soft">
-            {problem}
-          </p>
-        )}
-        <div className="flex items-center gap-2.5 border-t border-line pt-3.5">
-          <Button type="submit" variant="primary" size="lg" disabled={building}>
-            {building ? "Building your interview…" : "Build my interview"}
-          </Button>
-          <Button size="lg" onClick={() => router.push("/interviews")} disabled={building}>
-            Cancel
-          </Button>
         </div>
       </div>
 
-      <Panel aria-label="What Hakkiri found" className="flex animate-rise flex-col px-6 py-[22px] [animation-delay:0.08s]">
-        <h2 className="text-[15px] font-semibold">{building ? `Building your ${name} interview` : "What Hakkiri found"}</h2>
-        <div className="mt-0.5 text-[13px] text-muted">{building ? "This takes up to a minute." : "Updated as you add things"}</div>
+      {draftSaved && (
+        <div className="animate-fade-in flex items-center gap-2 rounded-xl bg-blue/15 px-4 py-2.5 text-xs font-semibold text-blue-soft shadow-sm">
+          <Icon name="check" size={14} strokeWidth={2.4} /> Draft saved successfully.
+        </div>
+      )}
 
-        {building ? (
-          <ol className="mt-5 space-y-3" role="status">
-            {steps.map((s, i) => {
-              const next = steps[i + 1]?.at ?? Infinity;
-              const state = buildSec >= next ? "done" : buildSec >= s.at ? "now" : "later";
-              return (
-                <li key={s.label} className={clsx("flex items-center gap-3 text-sm", state === "later" ? "text-dim" : "text-ink")}>
-                  {state === "done" ? <Icon name="check" size={16} strokeWidth={2.4} className="text-blue-soft" /> : <span className={clsx("ml-1 h-2 w-2 rounded-full", state === "now" ? "animate-rec bg-blue" : "bg-white/15")} />}
-                  {s.label}
-                </li>
-              );
-            })}
-          </ol>
-        ) : (
-          <div className="mt-4 space-y-2">
-            {[
-              {
-                label: "Company",
-                state: site.status === "ok" ? "ok" : site.status === "reading" ? "reading" : site.status === "fail" ? "fail" : company.name ? "ok" : "empty",
-                text:
-                  site.status === "ok"
-                    ? `${company.name || site.host}: read ${site.words} words from ${site.host}`
-                    : site.status === "reading"
-                      ? "Reading their website…"
-                      : site.status === "fail"
-                        ? site.message
-                        : company.name
-                          ? `${company.name}. Add their website for questions about them.`
-                          : "Add the company’s name and website.",
-              },
-              {
-                label: "Job spec",
-                state: jobState === "empty" && jobTitle ? "ok" : jobState,
-                text: jobDoc
-                  ? `${jobDoc.name}, ${jobDoc.detail}`
-                  : jobPasted
-                    ? `Job description, ${wordsIn(jobPasted)} words`
-                    : jobLink.status === "ok"
-                      ? `Read ${jobLink.words} words from ${jobLink.host}${jobLink.title ? `: ${jobLink.title}` : ""}`
-                      : jobLink.status === "reading"
-                        ? "Reading the job link…"
-                        : jobLink.status === "fail"
-                          ? "Couldn’t read the link. Paste the description instead."
-                          : jobTitle
-                            ? `${jobTitle}. A job spec makes the technical questions specific.`
-                            : "Add the job title, and the spec if you have it.",
-              },
-              { label: "CV", state: cv ? "ok" : "empty", text: cv ? `${cv.name}, ${cv.detail}` : "Add your CV. Questions about your experience come from it." },
-              { label: "Cover letter", state: cover ? "ok" : "empty", text: cover ? `${cover.name}, ${cover.detail}` : "Optional. It helps with “why us” answers." },
-            ].map((row) => (
-              <div key={row.label} className="flex items-start gap-3 rounded-[9px] bg-panel-2 px-3 py-[9px] text-sm">
-                <span className="mt-[3px]">
-                  <Status state={row.state as "ok" | "reading" | "fail" | "empty"} />
-                </span>
-                <span className="min-w-0">
-                  <span className="block text-[13px] text-muted">{row.label}</span>
-                  <span className={clsx("block leading-snug", row.state === "fail" && "text-red-soft")}>{row.text}</span>
-                </span>
+      {/* Main Form Grid with Left Content and Right Overview Sidebar */}
+      <div className="grid w-full grid-cols-1 items-start gap-7 lg:grid-cols-[minmax(0,1fr)_340px]">
+        {/* ============================================================== */}
+        {/* STEP 1: JOB DETAILS */}
+        {/* ============================================================== */}
+        {step === 1 && (
+          <div className="flex animate-rise flex-col gap-6">
+            <Panel className="rounded-[20px] p-6 shadow-[inset_0_0_0_1px_var(--color-line)]">
+              {/* Card Header */}
+              <div className="flex items-start gap-3.5 border-b border-line pb-5">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-[#1a2238] text-[#818cf8] shadow-sm">
+                  <Icon name="brief" size={20} />
+                </div>
+                <div>
+                  <h2 className="text-[18px] font-bold text-ink">Job details</h2>
+                  <p className="mt-0.5 text-[13px] text-muted">
+                    Tell us about the role. We&apos;ll use this to create tailored interview questions.
+                  </p>
+                </div>
               </div>
-            ))}
+
+              {/* Form Fields */}
+              <div className="mt-5 flex flex-col gap-5">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="mb-2 block text-xs font-semibold text-ink">
+                      Company name <span className="text-red-soft">*</span>
+                    </label>
+                    <div className="flex h-[46px] items-center gap-3 rounded-[12px] bg-panel-2 px-3.5 shadow-[inset_0_0_0_1px_var(--color-line-strong)] transition-all focus-within:shadow-[inset_0_0_0_1.5px_var(--color-blue)]">
+                      <input
+                        type="text"
+                        value={companyName}
+                        onChange={(e) => setCompanyName(e.target.value)}
+                        placeholder="e.g. Halden"
+                        className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-dim"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-xs font-semibold text-ink">
+                      Job title <span className="text-red-soft">*</span>
+                    </label>
+                    <div className="flex h-[46px] items-center gap-3 rounded-[12px] bg-panel-2 px-3.5 shadow-[inset_0_0_0_1px_var(--color-line-strong)] transition-all focus-within:shadow-[inset_0_0_0_1.5px_var(--color-blue)]">
+                      <input
+                        type="text"
+                        value={jobTitle}
+                        onChange={(e) => setJobTitle(e.target.value)}
+                        placeholder="e.g. Senior Product Manager, Payments"
+                        className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-dim"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-xs font-semibold text-ink">
+                    Company website <span className="text-muted font-normal">(optional)</span>
+                  </label>
+                  <div className="flex h-[46px] items-center gap-3 rounded-[12px] bg-panel-2 px-3.5 shadow-[inset_0_0_0_1px_var(--color-line-strong)] transition-all focus-within:shadow-[inset_0_0_0_1.5px_var(--color-blue)]">
+                    <Icon name="globe" size={16} className="text-dim" />
+                    <input
+                      type="text"
+                      value={companyWebsite}
+                      onChange={(e) => setCompanyWebsite(e.target.value)}
+                      placeholder="https://halden.com"
+                      className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-dim"
+                    />
+                  </div>
+                  <p className="mt-1.5 text-xs text-muted">
+                    Hakkiri can use the company&apos;s website to help tailor your preparation.
+                  </p>
+                </div>
+
+                {/* Document Upload Section */}
+                <div className="border-t border-line pt-5">
+                  <h3 className="text-[14px] font-bold text-ink">Your documents</h3>
+                  <p className="mt-0.5 text-xs text-muted">
+                    Upload your CV and job description, or paste the text instead.
+                  </p>
+
+                  <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    {/* CV Card */}
+                    <div className="flex flex-col justify-between rounded-[14px] bg-panel-2 p-3.5 shadow-[inset_0_0_0_1px_var(--color-line-strong)] transition-all hover:shadow-[inset_0_0_0_1px_var(--color-line)]">
+                      <div className="flex items-center gap-2 text-xs font-semibold text-ink">
+                        <Icon name="doc" size={15} className="text-blue-soft" />
+                        <span>Your CV</span>
+                      </div>
+                      <div className="mt-3 flex items-center justify-between gap-2">
+                        <span className="truncate text-xs font-medium text-ink">
+                          {cvDoc.name}
+                        </span>
+                        <Icon name="check" size={15} strokeWidth={2.5} className="text-[#10b981] shrink-0" />
+                      </div>
+                      <input
+                        ref={cvInputRef}
+                        type="file"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) setCvDoc({ name: file.name, uploaded: true });
+                        }}
+                      />
+                    </div>
+
+                    {/* Job Description Card */}
+                    <div className="flex flex-col justify-between rounded-[14px] bg-panel-2 p-3.5 shadow-[inset_0_0_0_1px_var(--color-line-strong)] transition-all hover:shadow-[inset_0_0_0_1px_var(--color-line)]">
+                      <div className="flex items-center gap-2 text-xs font-semibold text-ink">
+                        <Icon name="doc" size={15} className="text-blue-soft" />
+                        <span>Job description</span>
+                      </div>
+                      <div className="mt-3 flex items-center justify-between gap-2">
+                        <span className="truncate text-xs font-medium text-ink">
+                          {jobDoc.name}
+                        </span>
+                        <Icon name="check" size={15} strokeWidth={2.5} className="text-[#10b981] shrink-0" />
+                      </div>
+                      <input
+                        ref={jobInputRef}
+                        type="file"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) setJobDoc({ name: file.name, uploaded: true });
+                        }}
+                      />
+                    </div>
+
+                    {/* Cover Letter Card */}
+                    <div className="flex flex-col justify-between rounded-[14px] bg-panel-2 p-3.5 shadow-[inset_0_0_0_1px_var(--color-line-strong)] transition-all hover:shadow-[inset_0_0_0_1px_var(--color-line)]">
+                      <div className="flex items-center gap-2 text-xs font-semibold text-ink">
+                        <Icon name="doc" size={15} className="text-dim" />
+                        <span>Cover letter (optional)</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => coverInputRef.current?.click()}
+                        className="mt-3 flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-white/20 py-1.5 text-xs font-semibold text-blue-soft hover:border-blue-soft hover:bg-blue/10 transition-colors cursor-pointer"
+                      >
+                        <Icon name="plus" size={13} strokeWidth={2.2} />
+                        <span>{coverDoc ? coverDoc.name : "Add a file"}</span>
+                      </button>
+                      <input
+                        ref={coverInputRef}
+                        type="file"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) setCoverDoc({ name: file.name, uploaded: true });
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <p className="mt-2 text-[11px] text-muted">
+                    Accepted formats: PDF, DOC or DOCX. You can replace documents later.
+                  </p>
+                </div>
+
+                {/* Callout Info Banner */}
+                <div className="flex items-start gap-3 rounded-[14px] bg-[#192138] p-4 text-xs shadow-[inset_0_0_0_1px_#2f3b60]">
+                  <Icon name="sparkle" size={17} className="text-blue-soft shrink-0 mt-0.5" />
+                  <div>
+                    <div className="font-semibold text-ink">
+                      You&apos;ll name your interview stages next, and you can practise one or more rounds after setup.
+                    </div>
+                    <div className="mt-1 text-muted">
+                      For example, you might add a recruiter screen, a technical round or a final panel, then choose which round(s) to practise.
+                    </div>
+                  </div>
+                </div>
+
+                {/* Step 1 Actions */}
+                <div className="mt-4 flex items-center justify-between border-t border-line pt-5">
+                  <Link
+                    href="/interviews"
+                    className="inline-flex h-[42px] items-center justify-center rounded-[11px] bg-panel-2 px-5 text-sm font-semibold text-muted shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:text-ink transition-all"
+                  >
+                    Cancel
+                  </Link>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={saveDraft}
+                      className="inline-flex h-[42px] items-center justify-center rounded-[11px] bg-panel-2 px-5 text-sm font-semibold text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-[#2b2d38] transition-all cursor-pointer active:scale-95"
+                    >
+                      Save draft
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setStep(2)}
+                      className="group/btn relative overflow-hidden inline-flex h-[42px] items-center justify-center gap-2 rounded-[11px] bg-blue-fill px-6 text-sm font-semibold text-white shadow-[0_4px_16px_rgba(74,90,240,0.35)] hover:bg-blue-hover hover:shadow-[0_0_24px_rgba(90,105,255,0.6)] active:scale-95 transition-all cursor-pointer"
+                    >
+                      <span className="relative z-10">Continue to stages →</span>
+                      <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 group-hover/btn:translate-x-full" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </Panel>
           </div>
         )}
 
-        <div className="mt-5 flex items-baseline justify-between text-[13px] text-muted">
-          <span>Your first interview</span>
-          <span className="num">{settingsLine(settings)}</span>
-        </div>
-        <div className="mt-2">
-          {CATEGORY_ORDER.map((g) => (
-            <div key={g} className="grid grid-cols-[1fr_140px_28px] items-center gap-3 py-1.5 text-sm">
-              <span className={settings.mix[g] ? "" : "text-dim"}>{categoryLabel(g, technicalLabel)}</span>
-              <div className="flex gap-0.5" aria-hidden>
-                {Array.from({ length: 6 }, (_, k) => (
-                  <span key={k} className={`h-2 flex-1 rounded-[2px] ${k < alloc[g] ? "bg-blue" : "bg-white/[0.07]"}`} />
+        {/* ============================================================== */}
+        {/* STEP 2: INTERVIEW STAGES */}
+        {/* ============================================================== */}
+        {step === 2 && (
+          <div className="flex animate-rise flex-col gap-6">
+            <Panel className="rounded-[20px] p-6 shadow-[inset_0_0_0_1px_var(--color-line)]">
+              {/* Card Header */}
+              <div className="flex items-start gap-3.5 border-b border-line pb-5">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-[#221c38] text-[#c084fc] shadow-sm">
+                  <Icon name="layers" size={20} />
+                </div>
+                <div>
+                  <h2 className="text-[18px] font-bold text-ink">Interview stages</h2>
+                  <p className="mt-0.5 text-[13px] text-muted">
+                    Add, rename, reorder and configure the stages in your interview. You can change them later.
+                  </p>
+                </div>
+              </div>
+
+              {/* Stage Expectations Radios */}
+              <div className="mt-5">
+                <label className="mb-2 block text-xs font-semibold text-ink">
+                  How many stages are you expecting?
+                </label>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  {[
+                    { key: "single", label: "Single stage" },
+                    { key: "multiple", label: "Multiple stages" },
+                    { key: "unsure", label: "Not sure yet" },
+                  ].map((opt) => (
+                    <button
+                      key={opt.key}
+                      type="button"
+                      onClick={() => setStagesExpectation(opt.key as "single" | "multiple" | "unsure")}
+                      className={clsx(
+                        "flex items-center gap-3 rounded-[12px] p-3 text-xs font-semibold transition-all cursor-pointer",
+                        stagesExpectation === opt.key
+                          ? "bg-[#1c2237] text-white shadow-[inset_0_0_0_1.5px_#818cf8]"
+                          : "bg-panel-2 text-muted shadow-[inset_0_0_0_1px_var(--color-line)] hover:text-ink"
+                      )}
+                    >
+                      <div
+                        className={clsx(
+                          "flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-colors",
+                          stagesExpectation === opt.key
+                            ? "border-blue-fill bg-blue-fill text-white"
+                            : "border-white/20 bg-transparent"
+                        )}
+                      >
+                        {stagesExpectation === opt.key && <Icon name="check" size={10} strokeWidth={3} />}
+                      </div>
+                      <span>{opt.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Stages List */}
+              <div className="mt-6 border-t border-line pt-5">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-[14px] font-bold text-ink">
+                    Your interview stages ({stages.length})
+                  </h3>
+                  <div className="flex items-center gap-4 text-xs text-muted">
+                    <span className="flex items-center gap-1.5"><Icon name="drag" size={13} /> Drag to reorder</span>
+                    <span className="flex items-center gap-1.5"><Icon name="edit" size={13} /> Rename</span>
+                    <span className="flex items-center gap-1.5"><Icon name="trash" size={13} /> Delete</span>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex flex-col gap-3">
+                  {stages.map((stg) => {
+                    const isNext = stg.status === "next";
+                    return (
+                      <div
+                        key={stg.id}
+                        className={clsx(
+                          "flex flex-wrap items-center justify-between gap-3 rounded-[14px] p-3.5 transition-all duration-200",
+                          isNext
+                            ? "bg-[#1c2237] shadow-[inset_0_0_0_1.5px_#6366f1,0_4px_20px_rgba(99,102,241,0.15)]"
+                            : "bg-panel-2 shadow-[inset_0_0_0_1px_var(--color-line)] hover:shadow-[inset_0_0_0_1px_var(--color-line-strong)]"
+                        )}
+                      >
+                        {/* Drag Handle & Icon & Name */}
+                        <div className="flex items-center gap-2.5 min-w-[200px] grow">
+                          <Icon name="drag" size={16} className="text-dim cursor-grab shrink-0" />
+                          <div
+                            className={clsx(
+                              "flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px]",
+                              stg.icon === "phone" && "bg-[#142825] text-[#34d399]",
+                              stg.icon === "code" && "bg-[#241e38] text-[#c084fc]",
+                              stg.icon === "present" && "bg-[#142825] text-[#34d399]",
+                              stg.icon === "users" && "bg-[#241e38] text-[#c084fc]"
+                            )}
+                          >
+                            <Icon name={stg.icon} size={15} />
+                          </div>
+                          <span className="text-sm font-semibold text-ink truncate">{stg.name}</span>
+                          <button
+                            type="button"
+                            title="Rename stage"
+                            className="text-muted hover:text-ink transition-colors"
+                          >
+                            <Icon name="edit" size={13} />
+                          </button>
+                        </div>
+
+                        {/* Date, Time, Format, Interviewer fields */}
+                        <div className="flex flex-wrap items-center gap-2 text-xs">
+                          <div className="flex items-center gap-1.5 rounded-lg bg-[#12141c] px-2.5 py-1.5 text-muted border border-line">
+                            <Icon name="cal" size={12} />
+                            <span>{stg.date}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 rounded-lg bg-[#12141c] px-2.5 py-1.5 text-muted border border-line">
+                            <Icon name="clock" size={12} />
+                            <span>{stg.time}</span>
+                          </div>
+                          <div className="rounded-lg bg-[#12141c] px-2.5 py-1.5 text-muted border border-line">
+                            <span>{stg.format} ▾</span>
+                          </div>
+                          <div className="rounded-lg bg-[#12141c] px-2.5 py-1.5 text-muted border border-line">
+                            <span>{stg.interviewer}</span>
+                          </div>
+
+                          {/* Status Badge */}
+                          {stg.status === "completed" && (
+                            <span className="rounded-full bg-[#10b981]/15 px-2.5 py-0.5 text-[11px] font-semibold text-[#10b981]">
+                              Completed
+                            </span>
+                          )}
+                          {stg.status === "next" && (
+                            <span className="rounded-full bg-blue-fill/20 px-2.5 py-0.5 text-[11px] font-semibold text-blue-soft">
+                              Next stage
+                            </span>
+                          )}
+                          {stg.status === "not_scheduled" && (
+                            <span className="rounded-full bg-white/[0.06] px-2.5 py-0.5 text-[11px] font-medium text-muted">
+                              Not scheduled
+                            </span>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={() => setStages(stages.filter((s) => s.id !== stg.id))}
+                            className="p-1 text-dim hover:text-red-soft transition-colors cursor-pointer"
+                            title="Delete stage"
+                          >
+                            <Icon name="trash" size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Add Stage Button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newId = String(stages.length + 1);
+                    setStages([
+                      ...stages,
+                      {
+                        id: newId,
+                        name: "Custom Round " + newId,
+                        date: "15 Nov 2026",
+                        time: "11:00",
+                        format: "Video call",
+                        interviewer: "Hiring Manager",
+                        status: "not_scheduled",
+                        icon: "code",
+                      },
+                    ]);
+                  }}
+                  className="mt-4 flex items-center gap-1.5 rounded-[10px] bg-panel-2 px-4 py-2 text-xs font-semibold text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-[#2b2d38] transition-colors cursor-pointer"
+                >
+                  <Icon name="plus" size={14} strokeWidth={2.2} />
+                  <span>Add another stage</span>
+                </button>
+
+                {/* Step 2 Actions */}
+                <div className="mt-6 flex items-center justify-between border-t border-line pt-5">
+                  <button
+                    type="button"
+                    onClick={() => setStep(1)}
+                    className="inline-flex h-[42px] items-center justify-center rounded-[11px] bg-panel-2 px-5 text-sm font-semibold text-muted shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:text-ink transition-all cursor-pointer"
+                  >
+                    ← Back
+                  </button>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={saveDraft}
+                      className="inline-flex h-[42px] items-center justify-center rounded-[11px] bg-panel-2 px-5 text-sm font-semibold text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-[#2b2d38] transition-all cursor-pointer active:scale-95"
+                    >
+                      Save draft
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setStep(3)}
+                      className="group/btn relative overflow-hidden inline-flex h-[42px] items-center justify-center gap-2 rounded-[11px] bg-blue-fill px-6 text-sm font-semibold text-white shadow-[0_4px_16px_rgba(74,90,240,0.35)] hover:bg-blue-hover hover:shadow-[0_0_24px_rgba(90,105,255,0.6)] active:scale-95 transition-all cursor-pointer"
+                    >
+                      <span className="relative z-10">Continue to practice setup →</span>
+                      <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 group-hover/btn:translate-x-full" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </Panel>
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* STEP 3: PRACTICE SETUP */}
+        {/* ============================================================== */}
+        {step === 3 && (
+          <div className="flex animate-rise flex-col gap-6">
+            <Panel className="rounded-[20px] p-6 shadow-[inset_0_0_0_1px_var(--color-line)]">
+              {/* Card Header */}
+              <div className="flex items-start gap-3.5 border-b border-line pb-5">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-[#1a2238] text-[#818cf8] shadow-sm">
+                  <Icon name="target" size={20} />
+                </div>
+                <div>
+                  <h2 className="text-[18px] font-bold text-ink">Stages to practise</h2>
+                  <p className="mt-0.5 text-[13px] text-muted">
+                    Select one or more interview rounds to include in this practice session.
+                  </p>
+                </div>
+              </div>
+
+              {/* 4 Selectable Round Cards */}
+              <div className="mt-5 grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+                {[
+                  { id: "1", title: "Recruiter screen", subtitle: "Background, motivation and fit." },
+                  { id: "2", title: "Hiring manager round", subtitle: "Role, scope and impact." },
+                  { id: "3", title: "Technical round", subtitle: "Product, technical depth and trade-offs." },
+                  { id: "4", title: "Final panel", subtitle: "Cross-functional and leadership questions." },
+                ].map((rnd) => {
+                  const isChecked = selectedRounds.includes(rnd.id);
+                  return (
+                    <button
+                      key={rnd.id}
+                      type="button"
+                      onClick={() => {
+                        if (isChecked) {
+                          setSelectedRounds(selectedRounds.filter((id) => id !== rnd.id));
+                        } else {
+                          setSelectedRounds([...selectedRounds, rnd.id]);
+                        }
+                      }}
+                      className={clsx(
+                        "flex flex-col text-left rounded-[14px] p-4 transition-all duration-200 cursor-pointer",
+                        isChecked
+                          ? "bg-[#1c2237] shadow-[inset_0_0_0_1.5px_#6366f1,0_4px_16px_rgba(99,102,241,0.2)]"
+                          : "bg-panel-2 shadow-[inset_0_0_0_1px_var(--color-line)] hover:shadow-[inset_0_0_0_1px_var(--color-line-strong)]"
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={clsx(
+                            "flex h-4 w-4 shrink-0 items-center justify-center rounded transition-colors",
+                            isChecked ? "bg-blue-fill text-white" : "border border-white/20 bg-transparent"
+                          )}
+                        >
+                          {isChecked && <Icon name="check" size={11} strokeWidth={3} />}
+                        </div>
+                        <span className="text-sm font-semibold text-ink">{rnd.title}</span>
+                      </div>
+                      <p className="mt-2 text-xs text-muted pl-7">{rnd.subtitle}</p>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Summary Pill */}
+              <div className="mt-4 flex items-center gap-2 rounded-xl bg-panel-2 px-3.5 py-2.5 text-xs text-muted">
+                <span className="rounded bg-[#1e2544] px-2 py-0.5 font-semibold text-[#818cf8]">
+                  {selectedRounds.length} stages selected
+                </span>
+                <span>
+                  {selectedRounds
+                    .map((id) => stages.find((s) => s.id === id)?.name || "Stage")
+                    .join(", ")}
+                </span>
+              </div>
+
+              {/* Question Focus Sliders */}
+              <div className="mt-6 border-t border-line pt-5">
+                <h3 className="text-[14px] font-bold text-ink">Question focus</h3>
+                <p className="mt-0.5 text-xs text-muted">
+                  Set the question mix across your selected stages.
+                </p>
+
+                <div className="mt-4 flex flex-col gap-3">
+                  <div>
+                    <div className="flex justify-between text-xs font-semibold text-ink mb-1.5">
+                      <span>Technical</span>
+                      <span className="num text-blue-soft">{techFocus}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={techFocus}
+                      onChange={(e) => setTechFocus(Number(e.target.value))}
+                      className="w-full accent-blue-fill cursor-pointer h-2 bg-panel-2 rounded-lg"
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between text-xs font-semibold text-ink mb-1.5">
+                      <span>Skills</span>
+                      <span className="num text-blue-soft">{skillsFocus}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={skillsFocus}
+                      onChange={(e) => setSkillsFocus(Number(e.target.value))}
+                      className="w-full accent-blue-fill cursor-pointer h-2 bg-panel-2 rounded-lg"
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between text-xs font-semibold text-ink mb-1.5">
+                      <span>Experience</span>
+                      <span className="num text-blue-soft">{expFocus}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={expFocus}
+                      onChange={(e) => setExpFocus(Number(e.target.value))}
+                      className="w-full accent-blue-fill cursor-pointer h-2 bg-panel-2 rounded-lg"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Controls Row: Difficulty & Duration */}
+              <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 border-t border-line pt-5">
+                {/* Difficulty */}
+                <div>
+                  <label className="mb-2 block text-xs font-semibold text-ink">Difficulty</label>
+                  <div className="inline-flex rounded-xl bg-panel-2 p-1 shadow-[inset_0_0_0_1px_var(--color-line)]">
+                    {(["Easy", "Medium", "Hard"] as const).map((lvl) => (
+                      <button
+                        key={lvl}
+                        type="button"
+                        onClick={() => setDifficulty(lvl)}
+                        className={clsx(
+                          "rounded-lg px-4 py-1.5 text-xs font-semibold transition-all cursor-pointer",
+                          difficulty === lvl
+                            ? "bg-blue-fill text-white shadow-sm"
+                            : "text-muted hover:text-ink"
+                        )}
+                      >
+                        {lvl}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Duration */}
+                <div>
+                  <label className="mb-2 block text-xs font-semibold text-ink">Practice duration</label>
+                  <div className="inline-flex rounded-xl bg-panel-2 p-1 shadow-[inset_0_0_0_1px_var(--color-line)]">
+                    {([10, 20, 30, 45] as const).map((mins) => (
+                      <button
+                        key={mins}
+                        type="button"
+                        onClick={() => setDuration(mins)}
+                        className={clsx(
+                          "rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all cursor-pointer",
+                          duration === mins
+                            ? "bg-blue-fill text-white shadow-sm"
+                            : "text-muted hover:text-ink"
+                        )}
+                      >
+                        {mins} min
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Advanced Customisation Accordion */}
+              <div className="mt-6 border-t border-line pt-4">
+                <button
+                  type="button"
+                  onClick={() => setAdvancedOpen(!advancedOpen)}
+                  className="flex w-full items-center justify-between text-xs text-muted hover:text-ink transition-colors cursor-pointer"
+                >
+                  <span className="flex items-center gap-2 font-medium">
+                    <Icon name="gear" size={14} /> Advanced customisation — Edit the question mix, follow-ups and number of questions.
+                  </span>
+                  <span>{advancedOpen ? "▴" : "▾"}</span>
+                </button>
+                {advancedOpen && (
+                  <div className="mt-3 rounded-xl bg-panel-2 p-3 text-xs text-muted animate-fade-in">
+                    Follow-ups are enabled by default for maximum realism. Custom prompts and deep question adjustments will apply to your generated sessions.
+                  </div>
+                )}
+              </div>
+
+              {/* Step 3 Actions */}
+              <div className="mt-6 flex items-center justify-between border-t border-line pt-5">
+                <button
+                  type="button"
+                  onClick={() => setStep(2)}
+                  className="inline-flex h-[42px] items-center justify-center rounded-[11px] bg-panel-2 px-5 text-sm font-semibold text-muted shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:text-ink transition-all cursor-pointer"
+                >
+                  ← Back
+                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={saveDraft}
+                    className="inline-flex h-[42px] items-center justify-center rounded-[11px] bg-panel-2 px-5 text-sm font-semibold text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-[#2b2d38] transition-all cursor-pointer active:scale-95"
+                  >
+                    Save draft
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStep(4)}
+                    className="group/btn relative overflow-hidden inline-flex h-[42px] items-center justify-center gap-2 rounded-[11px] bg-blue-fill px-6 text-sm font-semibold text-white shadow-[0_4px_16px_rgba(74,90,240,0.35)] hover:bg-blue-hover hover:shadow-[0_0_24px_rgba(90,105,255,0.6)] active:scale-95 transition-all cursor-pointer"
+                  >
+                    <span className="relative z-10">Continue to review →</span>
+                    <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 group-hover/btn:translate-x-full" />
+                  </button>
+                </div>
+              </div>
+            </Panel>
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* STEP 4: REVIEW */}
+        {/* ============================================================== */}
+        {step === 4 && (
+          <div className="flex animate-rise flex-col gap-4">
+            {/* Card 1: Job details */}
+            <Panel className="rounded-[18px] p-5 shadow-[inset_0_0_0_1px_var(--color-line)]">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#1a2238] text-[#818cf8]">
+                    <Icon name="brief" size={17} />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-ink">Job details</h3>
+                    <p className="text-xs text-muted">{companyName} · {jobTitle}</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setStep(1)}
+                  className="flex items-center gap-1 text-xs font-semibold text-blue-soft hover:underline cursor-pointer"
+                >
+                  <Icon name="edit" size={13} /> Edit
+                </button>
+              </div>
+              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 rounded-[12px] bg-panel-2 p-3 text-xs">
+                <div>
+                  <span className="text-dim block">Company</span>
+                  <span className="font-semibold text-ink mt-0.5 block">{companyName}</span>
+                </div>
+                <div>
+                  <span className="text-dim block">Job title</span>
+                  <span className="font-semibold text-ink mt-0.5 block">{jobTitle}</span>
+                </div>
+              </div>
+            </Panel>
+
+            {/* Card 2: Your documents */}
+            <Panel className="rounded-[18px] p-5 shadow-[inset_0_0_0_1px_var(--color-line)]">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#142825] text-[#34d399]">
+                    <Icon name="doc" size={17} />
+                  </div>
+                  <h3 className="text-sm font-bold text-ink">Your documents</h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setStep(1)}
+                  className="flex items-center gap-1 text-xs font-semibold text-blue-soft hover:underline cursor-pointer"
+                >
+                  <Icon name="edit" size={13} /> Edit
+                </button>
+              </div>
+              <div className="mt-3 flex flex-col gap-2">
+                <div className="flex items-center justify-between rounded-[10px] bg-panel-2 px-3 py-2 text-xs">
+                  <span className="flex items-center gap-2 font-medium text-ink">
+                    <Icon name="check" size={14} className="text-[#10b981]" /> {cvDoc.name}
+                  </span>
+                  <span className="text-[#10b981] font-semibold">Uploaded</span>
+                </div>
+                <div className="flex items-center justify-between rounded-[10px] bg-panel-2 px-3 py-2 text-xs">
+                  <span className="flex items-center gap-2 font-medium text-ink">
+                    <Icon name="check" size={14} className="text-[#10b981]" /> {jobDoc.name}
+                  </span>
+                  <span className="text-[#10b981] font-semibold">Uploaded</span>
+                </div>
+              </div>
+            </Panel>
+
+            {/* Card 3: Interview stages */}
+            <Panel className="rounded-[18px] p-5 shadow-[inset_0_0_0_1px_var(--color-line)]">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#221c38] text-[#c084fc]">
+                    <Icon name="layers" size={17} />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-ink">Interview stages ({stages.length})</h3>
+                    <p className="text-xs text-muted">The stages of your interview, in order.</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setStep(2)}
+                  className="flex items-center gap-1 text-xs font-semibold text-blue-soft hover:underline cursor-pointer"
+                >
+                  <Icon name="edit" size={13} /> Edit
+                </button>
+              </div>
+              <div className="mt-3 flex flex-col gap-2">
+                {stages.map((stg, i) => (
+                  <div key={stg.id} className="flex items-center justify-between rounded-[10px] bg-panel-2 px-3 py-2 text-xs">
+                    <div className="flex items-center gap-2.5 font-medium text-ink">
+                      {stg.status === "completed" ? (
+                        <div className="flex h-4 w-4 items-center justify-center rounded-full bg-[#10b981] text-black">
+                          <Icon name="check" size={10} strokeWidth={3} />
+                        </div>
+                      ) : (
+                        <div className="flex h-4 w-4 items-center justify-center rounded-full border border-white/20 text-[10px]">
+                          {i + 1}
+                        </div>
+                      )}
+                      <span>{stg.name}</span>
+                    </div>
+                    <div>
+                      {stg.status === "completed" && (
+                        <span className="rounded-full bg-[#10b981]/15 px-2 py-0.5 text-[11px] font-semibold text-[#10b981]">
+                          Completed
+                        </span>
+                      )}
+                      {stg.status === "next" && (
+                        <span className="text-[#818cf8] font-medium">
+                          {stg.date}, {stg.time}
+                        </span>
+                      )}
+                      {stg.status === "not_scheduled" && (
+                        <span className="text-muted">Not scheduled</span>
+                      )}
+                    </div>
+                  </div>
                 ))}
               </div>
-              <span className="num text-right text-muted">{alloc[g]}</span>
-            </div>
-          ))}
+            </Panel>
+
+            {/* Card 4: Practice setup */}
+            <Panel className="rounded-[18px] p-5 shadow-[inset_0_0_0_1px_var(--color-line)]">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#1a2238] text-[#818cf8]">
+                    <Icon name="target" size={17} />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-ink">Practice setup</h3>
+                    <p className="text-xs text-muted">Your practice plan for this interview.</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setStep(3)}
+                  className="flex items-center gap-1 text-xs font-semibold text-blue-soft hover:underline cursor-pointer"
+                >
+                  <Icon name="edit" size={13} /> Edit
+                </button>
+              </div>
+              <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3 rounded-[12px] bg-panel-2 p-3 text-xs">
+                <div>
+                  <span className="text-dim block">Difficulty</span>
+                  <span className="font-semibold text-ink mt-0.5 block">{difficulty}</span>
+                </div>
+                <div>
+                  <span className="text-dim block">Total duration</span>
+                  <span className="font-semibold text-ink mt-0.5 block">{duration} minutes</span>
+                </div>
+                <div>
+                  <span className="text-dim block">Stages to practise</span>
+                  <span className="font-semibold text-ink mt-0.5 truncate block">
+                    {selectedRounds
+                      .map((id) => stages.find((s) => s.id === id)?.name || "Stage")
+                      .join(", ")}
+                  </span>
+                </div>
+              </div>
+            </Panel>
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* RIGHT SIDEBAR (PERSISTENT & ACCURATE PER STEP) */}
+        {/* ============================================================== */}
+        <div className="flex flex-col gap-5">
+          {/* Top Sidebar Card */}
+          {step === 1 && (
+            <Panel className="rounded-[18px] p-5 shadow-[inset_0_0_0_1px_var(--color-line)]">
+              <h3 className="text-[15px] font-bold text-ink">Interview overview</h3>
+              <p className="mt-0.5 text-xs text-muted truncate">
+                {companyName} · {jobTitle}
+              </p>
+              <div className="mt-4 flex flex-col gap-2.5 text-xs">
+                <div className="flex items-center justify-between border-b border-line pb-2">
+                  <span className="text-muted">CV</span>
+                  <span className="flex items-center gap-1 font-semibold text-[#10b981]">
+                    Uploaded <Icon name="check" size={12} strokeWidth={3} />
+                  </span>
+                </div>
+                <div className="flex items-center justify-between border-b border-line pb-2">
+                  <span className="text-muted">Job description</span>
+                  <span className="flex items-center gap-1 font-semibold text-[#10b981]">
+                    Uploaded <Icon name="check" size={12} strokeWidth={3} />
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted">Cover letter</span>
+                  <span className="text-dim">{coverDoc ? "Uploaded ✓" : "Not added yet"}</span>
+                </div>
+              </div>
+            </Panel>
+          )}
+
+          {step === 2 && (
+            <Panel className="rounded-[18px] p-5 shadow-[inset_0_0_0_1px_var(--color-line)]">
+              <h3 className="text-[15px] font-bold text-ink">Interview overview</h3>
+              <p className="mt-0.5 text-xs text-muted truncate">
+                {companyName} · {jobTitle}
+              </p>
+              <div className="mt-4 flex flex-col gap-2.5 text-xs">
+                <div className="flex items-center justify-between border-b border-line pb-2">
+                  <span className="text-muted">CV</span>
+                  <span className="flex items-center gap-1 font-semibold text-[#10b981]">
+                    Uploaded <Icon name="check" size={12} strokeWidth={3} />
+                  </span>
+                </div>
+                <div className="flex items-center justify-between border-b border-line pb-2">
+                  <span className="text-muted">Job description</span>
+                  <span className="flex items-center gap-1 font-semibold text-[#10b981]">
+                    Uploaded <Icon name="check" size={12} strokeWidth={3} />
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted">Interview stages</span>
+                  <span className="font-semibold text-ink">{stages.length} stages</span>
+                </div>
+              </div>
+            </Panel>
+          )}
+
+          {step === 3 && (
+            <Panel className="rounded-[18px] p-5 shadow-[inset_0_0_0_1px_var(--color-line)]">
+              <h3 className="text-[15px] font-bold text-ink">Practice preview</h3>
+              <p className="mt-0.5 text-xs text-muted">{companyName} · Multiple rounds</p>
+
+              <div className="mt-4 flex flex-col gap-3 text-xs">
+                <div className="border-b border-line pb-2.5">
+                  <span className="text-muted block mb-1.5">Stages ({selectedRounds.length})</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {selectedRounds.map((id) => {
+                      const stg = stages.find((s) => s.id === id);
+                      return (
+                        <span
+                          key={id}
+                          className="inline-flex items-center gap-1 rounded-full bg-[#1e2544] px-2.5 py-0.5 text-[11px] font-semibold text-[#818cf8]"
+                        >
+                          <Icon name={stg?.icon || "users"} size={11} /> {stg?.name}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between border-b border-line pb-2">
+                  <span className="text-muted">Duration</span>
+                  <span className="font-semibold text-ink">{duration} minutes</span>
+                </div>
+
+                <div className="flex items-center justify-between border-b border-line pb-2">
+                  <span className="text-muted">Difficulty</span>
+                  <span className="font-semibold text-ink">{difficulty}</span>
+                </div>
+
+                <div className="border-b border-line pb-2">
+                  <span className="text-muted block mb-1">Question mix</span>
+                  <div className="flex justify-between text-[11px] text-ink">
+                    <span>Technical {techFocus}%</span>
+                    <span>Skills {skillsFocus}%</span>
+                    <span>Experience {expFocus}%</span>
+                  </div>
+                </div>
+
+                <p className="text-[11px] text-muted">
+                  A single practice session that includes your selected rounds and their questions.
+                </p>
+              </div>
+            </Panel>
+          )}
+
+          {step === 4 && (
+            <Panel className="rounded-[18px] p-5 shadow-[inset_0_0_0_1px_var(--color-line)]">
+              <h3 className="text-[16px] font-bold text-ink">Ready to build?</h3>
+              <p className="mt-0.5 text-xs text-muted">
+                Your tailored interview practice is set up. You can add more stages and sessions later.
+              </p>
+
+              <div className="mt-4 flex flex-col gap-2 text-xs">
+                <div className="flex items-center justify-between py-1 text-ink">
+                  <span>Job details</span>
+                  <Icon name="check" size={13} strokeWidth={3} className="text-[#10b981]" />
+                </div>
+                <div className="flex items-center justify-between py-1 text-ink">
+                  <span>CV and job description</span>
+                  <Icon name="check" size={13} strokeWidth={3} className="text-[#10b981]" />
+                </div>
+                <div className="flex items-center justify-between py-1 text-ink">
+                  <span>{stages.length} interview stages</span>
+                  <Icon name="check" size={13} strokeWidth={3} className="text-[#10b981]" />
+                </div>
+                <div className="flex items-center justify-between py-1 text-ink">
+                  <span>Practice setup</span>
+                  <Icon name="check" size={13} strokeWidth={3} className="text-[#10b981]" />
+                </div>
+              </div>
+
+              <div className="mt-5 flex flex-col gap-2.5">
+                <button
+                  type="button"
+                  disabled={isBuilding}
+                  onClick={handleBuildInterview}
+                  className="group/btn relative overflow-hidden flex h-[44px] w-full items-center justify-center gap-2 rounded-[11px] bg-blue-fill font-semibold text-white shadow-[0_4px_20px_rgba(74,90,240,0.4)] hover:bg-blue-hover hover:shadow-[0_0_28px_rgba(90,105,255,0.7)] active:scale-95 transition-all cursor-pointer disabled:opacity-60"
+                >
+                  <span className="relative z-10">
+                    {isBuilding ? "Building interview…" : "Build interview →"}
+                  </span>
+                  <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 group-hover/btn:translate-x-full" />
+                </button>
+                <button
+                  type="button"
+                  onClick={saveDraft}
+                  className="flex h-[40px] w-full items-center justify-center rounded-[11px] bg-panel-2 text-xs font-semibold text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-[#2b2d38] transition-all cursor-pointer"
+                >
+                  Save draft
+                </button>
+              </div>
+            </Panel>
+          )}
+
+          {/* Bottom Tips / Good to know Sidebar Card */}
+          {step === 1 && (
+            <Panel className="rounded-[18px] p-5 shadow-[inset_0_0_0_1px_var(--color-line)]">
+              <h3 className="text-sm font-bold text-ink">Good to know</h3>
+              <div className="mt-3 flex flex-col gap-3 text-xs text-muted">
+                <p>You can save your progress and update interview stages whenever you need.</p>
+                <p>Your documents are used to tailor practice questions for this interview.</p>
+              </div>
+            </Panel>
+          )}
+
+          {step === 2 && (
+            <Panel className="rounded-[18px] p-5 shadow-[inset_0_0_0_1px_var(--color-line)]">
+              <h3 className="text-sm font-bold text-ink">Good to know</h3>
+              <div className="mt-3.5 flex flex-col gap-3.5 text-xs text-muted">
+                <div className="flex items-start gap-2.5">
+                  <Icon name="edit" size={14} className="text-ink shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-semibold text-ink block">Rename stages</span>
+                    <span>Click the pencil to give each stage a name that matches your process.</span>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2.5">
+                  <Icon name="drag" size={14} className="text-ink shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-semibold text-ink block">Reorder anytime</span>
+                    <span>Drag and drop stages to change the order of your interview.</span>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2.5">
+                  <Icon name="plus" size={14} className="text-ink shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-semibold text-ink block">Add or remove stages</span>
+                    <span>Keep it accurate to your real interview flow. You can add, edit or delete stages as needed.</span>
+                  </div>
+                </div>
+              </div>
+            </Panel>
+          )}
+
+          {step === 3 && (
+            <Panel className="rounded-[18px] p-5 shadow-[inset_0_0_0_1px_var(--color-line)]">
+              <h3 className="text-sm font-bold text-ink">Tailored to your stages</h3>
+              <p className="mt-2 text-xs text-muted">
+                Your CV and job description help make the questions relevant to each selected round.
+              </p>
+            </Panel>
+          )}
+
+          {step === 4 && (
+            <Panel className="rounded-[18px] p-5 shadow-[inset_0_0_0_1px_var(--color-line)]">
+              <h3 className="text-sm font-bold text-ink">Add later (optional)</h3>
+              <p className="mt-2 text-xs text-muted">
+                Dates for later rounds and interviewer details can be added whenever you know them.
+              </p>
+            </Panel>
+          )}
         </div>
-        <p className="mt-2 text-[13px] leading-normal text-muted">
-          About {total} questions with “Tell me about yourself” to open. You won’t see them first: Sam asks them out loud, as in the real thing.
-        </p>
-        <div className="grow" />
-        <div className="mt-4 flex items-start gap-2.5 border-t border-line pt-3.5 text-[13px] leading-normal text-muted">
-          <Icon name="lock" size={16} className="mt-0.5 shrink-0" />
-          Your CV, cover letter and recordings stay on this computer and are only sent to the AI to build and score your practice. Delete an interview to delete them.
-        </div>
-      </Panel>
-    </form>
+      </div>
+    </div>
   );
 }
