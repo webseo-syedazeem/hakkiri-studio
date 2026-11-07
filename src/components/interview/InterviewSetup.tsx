@@ -176,7 +176,7 @@ export function InterviewSetup() {
   const coverInputRef = useRef<HTMLInputElement>(null);
 
   // Step 2: Stages State
-  const [stagesExpectation, setStagesExpectation] = useState<"single" | "multiple" | "unsure">("multiple");
+  const [stagesExpectation, setStagesExpectation] = useState<"single" | "multiple" | "practice">("multiple");
   const [stages, setStages] = useState<StageItem[]>([
     {
       id: "1",
@@ -247,19 +247,133 @@ export function InterviewSetup() {
     const num = stages.length + 1;
     const newStage: StageItem = {
       id: `stage-${Date.now()}`,
-      name: `Custom Stage ${num}`,
+      name: stagesExpectation === "practice" ? `Practice Round ${num}` : `Custom Stage ${num}`,
       date: "15 Nov 2026",
       time: "11:00",
       format: "Video call",
-      interviewer: "Hiring Manager",
-      status: "not_scheduled",
+      interviewer: stagesExpectation === "practice" ? "" : "Hiring Manager",
+      status: stagesExpectation === "practice" ? "next" : "not_scheduled",
       icon: "code",
     };
     setStages((prev) => [...prev, newStage]);
+    setSelectedRounds((prev) => [...prev, newStage.id]);
   };
 
   const handleRemoveStage = (id: string) => {
     setStages((prev) => prev.filter((s) => s.id !== id));
+  };
+
+  const handleSelectExpectation = (opt: "single" | "multiple" | "practice") => {
+    setStagesExpectation(opt);
+    if (opt === "single") {
+      if (stages.length > 1) {
+        const single = {
+          ...stages[0],
+          name: stages[0].name.toLowerCase().includes("recruiter") ? "Single stage interview" : stages[0].name,
+        };
+        setStages([single]);
+        setSelectedRounds([single.id]);
+      } else if (stages.length === 0) {
+        const single: StageItem = {
+          id: "1",
+          name: "Single stage interview",
+          date: "12 Nov 2026",
+          time: "10:00",
+          format: "Video call",
+          interviewer: "Hiring manager",
+          status: "next",
+          icon: "code",
+        };
+        setStages([single]);
+        setSelectedRounds([single.id]);
+      }
+    } else if (opt === "multiple") {
+      if (stages.length <= 1) {
+        const defaultMulti: StageItem[] = [
+          {
+            id: "1",
+            name: "Recruiter screen",
+            date: "12 Nov 2026",
+            time: "09:30",
+            format: "Video call",
+            interviewer: "Recruiter",
+            status: "completed",
+            icon: "phone",
+          },
+          {
+            id: "2",
+            name: "Hiring manager interview",
+            date: "12 Nov 2026",
+            time: "10:00",
+            format: "Video call",
+            interviewer: "Hiring manager",
+            status: "next",
+            icon: "code",
+          },
+          {
+            id: "3",
+            name: "Technical round",
+            date: "13 Nov 2026",
+            time: "11:00",
+            format: "Video call",
+            interviewer: "Tech lead",
+            status: "not_scheduled",
+            icon: "present",
+          },
+          {
+            id: "4",
+            name: "Final panel",
+            date: "14 Nov 2026",
+            time: "15:00",
+            format: "Video call",
+            interviewer: "Leadership",
+            status: "not_scheduled",
+            icon: "users",
+          },
+        ];
+        setStages(defaultMulti);
+        setSelectedRounds(["1", "3"]);
+      }
+    } else if (opt === "practice") {
+      if (stages.length <= 1) {
+        const practiceStages: StageItem[] = [
+          {
+            id: "p1",
+            name: "General interview practice",
+            date: "",
+            time: "",
+            format: "Video call",
+            interviewer: "",
+            status: "next",
+            icon: "phone",
+          },
+          {
+            id: "p2",
+            name: "Technical & role drill",
+            date: "",
+            time: "",
+            format: "Video call",
+            interviewer: "",
+            status: "not_scheduled",
+            icon: "code",
+          },
+          {
+            id: "p3",
+            name: "Behavioral & situational questions",
+            date: "",
+            time: "",
+            format: "Video call",
+            interviewer: "",
+            status: "not_scheduled",
+            icon: "users",
+          },
+        ];
+        setStages(practiceStages);
+        setSelectedRounds(["p1", "p2", "p3"]);
+      } else {
+        setSelectedRounds(stages.map((s) => s.id));
+      }
+    }
   };
 
   const handleDragStart = (idx: number) => {
@@ -304,7 +418,13 @@ export function InterviewSetup() {
         if (parsed.cvDoc) setCvDoc(parsed.cvDoc);
         if (parsed.jobDoc) setJobDoc(parsed.jobDoc);
         if (parsed.coverDoc !== undefined) setCoverDoc(parsed.coverDoc);
-        if (parsed.stagesExpectation) setStagesExpectation(parsed.stagesExpectation);
+        if (parsed.stagesExpectation) {
+          if (parsed.stagesExpectation === "unsure") {
+            setStagesExpectation("practice");
+          } else {
+            setStagesExpectation(parsed.stagesExpectation);
+          }
+        }
         if (parsed.stages && Array.isArray(parsed.stages) && parsed.stages.length > 0) setStages(parsed.stages);
         if (parsed.selectedRounds) setSelectedRounds(parsed.selectedRounds);
         if (parsed.techFocus !== undefined) setTechFocus(parsed.techFocus);
@@ -426,8 +546,8 @@ export function InterviewSetup() {
       company: companyName.trim() || "Halden",
       companyInitial: (companyName.trim() || "H").charAt(0).toUpperCase(),
       role: jobTitle.trim() || "Senior Product Manager, Payments",
-      date: stages[0]?.date || "12 Nov 2026",
-      time: stages[0]?.time || "10:00",
+      date: stagesExpectation === "practice" ? "Just Practice" : (stages[0]?.date || "12 Nov 2026"),
+      time: stagesExpectation === "practice" ? "On-demand" : (stages[0]?.time || "10:00"),
       format: stages[0]?.format || "Video call",
       settings: {
         difficulty: validDifficulty,
@@ -817,12 +937,12 @@ export function InterviewSetup() {
                   {[
                     { key: "single", label: "Single stage" },
                     { key: "multiple", label: "Multiple stages" },
-                    { key: "unsure", label: "Not sure yet" },
+                    { key: "practice", label: "Just Practice" },
                   ].map((opt) => (
                     <button
                       key={opt.key}
                       type="button"
-                      onClick={() => setStagesExpectation(opt.key as "single" | "multiple" | "unsure")}
+                      onClick={() => handleSelectExpectation(opt.key as "single" | "multiple" | "practice")}
                       className={clsx(
                         "flex items-center gap-3 rounded-[12px] p-3.5 text-xs font-semibold transition-all cursor-pointer",
                         stagesExpectation === opt.key
@@ -844,6 +964,20 @@ export function InterviewSetup() {
                     </button>
                   ))}
                 </div>
+
+                {stagesExpectation === "practice" && (
+                  <div className="mt-3.5 flex items-start gap-3 rounded-[12px] border border-blue-fill/30 bg-blue-fill/10 p-3 text-xs animate-fade-in">
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-blue-fill/25 text-blue-soft mt-0.5">
+                      <Icon name="target" size={14} />
+                    </div>
+                    <div>
+                      <span className="font-semibold text-ink">Just Practice Mode</span>
+                      <p className="mt-0.5 text-muted leading-relaxed">
+                        Dates, times, and interviewers are hidden so you can focus directly on practicing questions tailored to your profile.
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Stages List */}
@@ -870,7 +1004,7 @@ export function InterviewSetup() {
                         onDragOver={(e) => handleDragOver(e, idx)}
                         className={clsx(
                           "group relative flex flex-wrap items-center justify-between gap-3 rounded-[14px] p-3.5 transition-all duration-200",
-                          isNext
+                          stagesExpectation !== "practice" && isNext
                             ? "bg-[#1c2237] shadow-[inset_0_0_0_1.5px_#6366f1,0_4px_20px_rgba(99,102,241,0.2)]"
                             : "bg-panel-2 shadow-[inset_0_0_0_1px_var(--color-line)] hover:shadow-[inset_0_0_0_1px_var(--color-line-strong)]"
                         )}
@@ -911,69 +1045,73 @@ export function InterviewSetup() {
 
                         {/* Editable Date, Time, Format, Interviewer, and Status */}
                         <div className="flex flex-wrap items-center gap-2 text-xs">
-                          {/* Date Field with Interactive Calendar Popup */}
-                          <div className="relative">
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setActiveDatePickerId(activeDatePickerId === stg.id ? null : stg.id);
-                                setActiveTimePickerId(null);
-                                setActiveFormatDropdownId(null);
-                                setActiveStatusDropdownId(null);
-                              }}
-                              className={clsx(
-                                "flex items-center gap-1.5 rounded-lg bg-[#141620] px-2.5 py-1.5 text-muted border transition-all cursor-pointer",
-                                activeDatePickerId === stg.id
-                                  ? "border-blue-fill text-ink shadow-[0_0_12px_rgba(74,90,240,0.4)]"
-                                  : "border-line/80 hover:border-line hover:text-ink"
-                              )}
-                            >
-                              <span className="text-[10px] text-dim font-medium uppercase tracking-wider">Date</span>
-                              <Icon name="cal" size={13} className="text-blue-soft shrink-0" />
-                              <span className="text-xs font-semibold text-ink whitespace-nowrap">{stg.date}</span>
-                            </button>
+                          {stagesExpectation !== "practice" && (
+                            <>
+                              {/* Date Field with Interactive Calendar Popup */}
+                              <div className="relative">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActiveDatePickerId(activeDatePickerId === stg.id ? null : stg.id);
+                                    setActiveTimePickerId(null);
+                                    setActiveFormatDropdownId(null);
+                                    setActiveStatusDropdownId(null);
+                                  }}
+                                  className={clsx(
+                                    "flex items-center gap-1.5 rounded-lg bg-[#141620] px-2.5 py-1.5 text-muted border transition-all cursor-pointer",
+                                    activeDatePickerId === stg.id
+                                      ? "border-blue-fill text-ink shadow-[0_0_12px_rgba(74,90,240,0.4)]"
+                                      : "border-line/80 hover:border-line hover:text-ink"
+                                  )}
+                                >
+                                  <span className="text-[10px] text-dim font-medium uppercase tracking-wider">Date</span>
+                                  <Icon name="cal" size={13} className="text-blue-soft shrink-0" />
+                                  <span className="text-xs font-semibold text-ink whitespace-nowrap">{stg.date}</span>
+                                </button>
 
-                            {activeDatePickerId === stg.id && (
-                              <CalendarPopup
-                                value={stg.date}
-                                onChange={(newDate) => updateStage(stg.id, { date: newDate })}
-                                onClose={() => setActiveDatePickerId(null)}
-                              />
-                            )}
-                          </div>
+                                {activeDatePickerId === stg.id && (
+                                  <CalendarPopup
+                                    value={stg.date}
+                                    onChange={(newDate) => updateStage(stg.id, { date: newDate })}
+                                    onClose={() => setActiveDatePickerId(null)}
+                                  />
+                                )}
+                              </div>
 
-                          {/* Time Field with Interactive Time Picker Popup */}
-                          <div className="relative">
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setActiveTimePickerId(activeTimePickerId === stg.id ? null : stg.id);
-                                setActiveDatePickerId(null);
-                                setActiveFormatDropdownId(null);
-                                setActiveStatusDropdownId(null);
-                              }}
-                              className={clsx(
-                                "flex items-center gap-1.5 rounded-lg bg-[#141620] px-2.5 py-1.5 text-muted border transition-all cursor-pointer",
-                                activeTimePickerId === stg.id
-                                  ? "border-blue-fill text-ink shadow-[0_0_12px_rgba(74,90,240,0.4)]"
-                                  : "border-line/80 hover:border-line hover:text-ink"
-                              )}
-                            >
-                              <span className="text-[10px] text-dim font-medium uppercase tracking-wider">Time</span>
-                              <Icon name="clock" size={13} className="text-blue-soft shrink-0" />
-                              <span className="text-xs font-semibold text-ink whitespace-nowrap">{stg.time}</span>
-                            </button>
+                              {/* Time Field with Interactive Time Picker Popup */}
+                              <div className="relative">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActiveTimePickerId(activeTimePickerId === stg.id ? null : stg.id);
+                                    setActiveDatePickerId(null);
+                                    setActiveFormatDropdownId(null);
+                                    setActiveStatusDropdownId(null);
+                                  }}
+                                  className={clsx(
+                                    "flex items-center gap-1.5 rounded-lg bg-[#141620] px-2.5 py-1.5 text-muted border transition-all cursor-pointer",
+                                    activeTimePickerId === stg.id
+                                      ? "border-blue-fill text-ink shadow-[0_0_12px_rgba(74,90,240,0.4)]"
+                                      : "border-line/80 hover:border-line hover:text-ink"
+                                  )}
+                                >
+                                  <span className="text-[10px] text-dim font-medium uppercase tracking-wider">Time</span>
+                                  <Icon name="clock" size={13} className="text-blue-soft shrink-0" />
+                                  <span className="text-xs font-semibold text-ink whitespace-nowrap">{stg.time}</span>
+                                </button>
 
-                            {activeTimePickerId === stg.id && (
-                              <TimePickerPopup
-                                value={stg.time}
-                                onChange={(newTime) => updateStage(stg.id, { time: newTime })}
-                                onClose={() => setActiveTimePickerId(null)}
-                              />
-                            )}
-                          </div>
+                                {activeTimePickerId === stg.id && (
+                                  <TimePickerPopup
+                                    value={stg.time}
+                                    onChange={(newTime) => updateStage(stg.id, { time: newTime })}
+                                    onClose={() => setActiveTimePickerId(null)}
+                                  />
+                                )}
+                              </div>
+                            </>
+                          )}
 
                           {/* Format Dropdown with Custom Dark Studio Menu */}
                           <div className="relative">
@@ -1098,132 +1236,142 @@ export function InterviewSetup() {
                             )}
                           </div>
 
-                          {/* Interviewer Field */}
-                          <div className="flex items-center gap-1.5 rounded-lg bg-[#141620] px-2.5 py-1.5 text-muted border border-line/80 focus-within:border-blue-fill">
-                            <span className="text-[10px] text-dim font-medium uppercase tracking-wider">Interviewer</span>
-                            <input
-                              type="text"
-                              value={stg.interviewer}
-                              onChange={(e) => updateStage(stg.id, { interviewer: e.target.value })}
-                              placeholder="Recruiter"
-                              className="w-[85px] bg-transparent text-xs font-medium text-ink outline-none"
-                            />
-                          </div>
-
-                          {/* Status Dropdown with Custom Dark Studio Pill & Menu */}
-                          <div className="relative">
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setActiveStatusDropdownId(activeStatusDropdownId === stg.id ? null : stg.id);
-                                setActiveDatePickerId(null);
-                                setActiveTimePickerId(null);
-                                setActiveFormatDropdownId(null);
-                              }}
-                              className={clsx(
-                                "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold border transition-all cursor-pointer",
-                                stg.status === "completed" && "bg-[#10b981]/15 text-[#10b981] border-[#10b981]/30 hover:bg-[#10b981]/25 hover:border-[#10b981]/50 shadow-[0_0_12px_rgba(16,185,129,0.2)]",
-                                stg.status === "next" && "bg-blue-fill/20 text-blue-soft border-blue-fill/40 hover:bg-blue-fill/30 hover:border-blue-fill/60 shadow-[0_0_12px_rgba(74,90,240,0.25)]",
-                                stg.status === "not_scheduled" && "bg-white/[0.06] text-muted border-white/[0.12] hover:bg-white/[0.1] hover:border-white/[0.2]",
-                                activeStatusDropdownId === stg.id && "ring-2 ring-blue-fill/40"
-                              )}
-                            >
-                              <span
-                                className={clsx(
-                                  "h-1.5 w-1.5 rounded-full shrink-0",
-                                  stg.status === "completed" && "bg-[#10b981] shadow-[0_0_6px_#10b981]",
-                                  stg.status === "next" && "bg-blue-soft shadow-[0_0_6px_#4f5df4] animate-pulse",
-                                  stg.status === "not_scheduled" && "bg-dim"
-                                )}
+                          {stagesExpectation !== "practice" && (
+                            /* Interviewer Field */
+                            <div className="flex items-center gap-1.5 rounded-lg bg-[#141620] px-2.5 py-1.5 text-muted border border-line/80 focus-within:border-blue-fill">
+                              <span className="text-[10px] text-dim font-medium uppercase tracking-wider">Interviewer</span>
+                              <input
+                                type="text"
+                                value={stg.interviewer}
+                                onChange={(e) => updateStage(stg.id, { interviewer: e.target.value })}
+                                placeholder="Recruiter"
+                                className="w-[85px] bg-transparent text-xs font-medium text-ink outline-none"
                               />
-                              <span className="capitalize">
-                                {stg.status === "completed" ? "Completed" : stg.status === "next" ? "Next stage" : "Not scheduled"}
-                              </span>
-                              <span className={clsx("text-[9px] opacity-70 transition-transform duration-200", activeStatusDropdownId === stg.id && "rotate-180")}>▾</span>
-                            </button>
+                            </div>
+                          )}
 
-                            {activeStatusDropdownId === stg.id && (
-                              <div
-                                onClick={(e) => e.stopPropagation()}
-                                className="absolute top-full right-0 z-50 mt-1.5 w-56 rounded-xl border border-line bg-[#151824] p-1.5 shadow-[0_16px_40px_rgba(0,0,0,0.8),0_0_20px_rgba(99,102,241,0.25)] backdrop-blur-md animate-scale-in"
+                          {stagesExpectation !== "practice" ? (
+                            /* Status Dropdown with Custom Dark Studio Pill & Menu */
+                            <div className="relative">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActiveStatusDropdownId(activeStatusDropdownId === stg.id ? null : stg.id);
+                                  setActiveDatePickerId(null);
+                                  setActiveTimePickerId(null);
+                                  setActiveFormatDropdownId(null);
+                                }}
+                                className={clsx(
+                                  "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold border transition-all cursor-pointer",
+                                  stg.status === "completed" && "bg-[#10b981]/15 text-[#10b981] border-[#10b981]/30 hover:bg-[#10b981]/25 hover:border-[#10b981]/50 shadow-[0_0_12px_rgba(16,185,129,0.2)]",
+                                  stg.status === "next" && "bg-blue-fill/20 text-blue-soft border-blue-fill/40 hover:bg-blue-fill/30 hover:border-blue-fill/60 shadow-[0_0_12px_rgba(74,90,240,0.25)]",
+                                  stg.status === "not_scheduled" && "bg-white/[0.06] text-muted border-white/[0.12] hover:bg-white/[0.1] hover:border-white/[0.2]",
+                                  activeStatusDropdownId === stg.id && "ring-2 ring-blue-fill/40"
+                                )}
                               >
-                                <div className="px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-dim border-b border-line/50 mb-1 flex items-center justify-between">
-                                  <span>Stage Status</span>
-                                  <span className="text-[9px] lowercase text-dim font-normal">workflow</span>
-                                </div>
-                                {[
-                                  {
-                                    id: "completed",
-                                    label: "Completed",
-                                    desc: "Stage finished & passed",
-                                    badgeColor: "text-[#10b981]",
-                                    bgColor: "hover:bg-[#10b981]/10",
-                                    indicator: (
-                                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#10b981]/20 text-[#10b981] font-bold text-xs border border-[#10b981]/30">
-                                        ✓
-                                      </div>
-                                    ),
-                                  },
-                                  {
-                                    id: "next",
-                                    label: "Next stage",
-                                    desc: "Upcoming interview focus",
-                                    badgeColor: "text-blue-soft",
-                                    bgColor: "hover:bg-blue-fill/15",
-                                    indicator: (
-                                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-fill/25 text-blue-soft text-xs border border-blue-fill/40">
-                                        <span className="h-2 w-2 rounded-full bg-blue-soft animate-ping" />
-                                      </div>
-                                    ),
-                                  },
-                                  {
-                                    id: "not_scheduled",
-                                    label: "Not scheduled",
-                                    desc: "Date yet to be confirmed",
-                                    badgeColor: "text-muted",
-                                    bgColor: "hover:bg-panel-2",
-                                    indicator: (
-                                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-dim text-xs border border-white/[0.1]">
-                                        ○
-                                      </div>
-                                    ),
-                                  },
-                                ].map((st) => {
-                                  const isSelected = stg.status === st.id;
-                                  return (
-                                    <button
-                                      key={st.id}
-                                      type="button"
-                                      onClick={() => {
-                                        updateStage(stg.id, {
-                                          status: st.id as "completed" | "next" | "not_scheduled",
-                                        });
-                                        setActiveStatusDropdownId(null);
-                                      }}
-                                      className={clsx(
-                                        "flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left transition-all cursor-pointer group/stg",
-                                        isSelected ? "bg-white/[0.08]" : st.bgColor
-                                      )}
-                                    >
-                                      <div className="flex items-center gap-2.5">
-                                        {st.indicator}
-                                        <div>
-                                          <div className={clsx("text-xs font-semibold leading-tight", st.badgeColor)}>
-                                            {st.label}
-                                          </div>
-                                          <div className="text-[10px] text-muted">{st.desc}</div>
+                                <span
+                                  className={clsx(
+                                    "h-1.5 w-1.5 rounded-full shrink-0",
+                                    stg.status === "completed" && "bg-[#10b981] shadow-[0_0_6px_#10b981]",
+                                    stg.status === "next" && "bg-blue-soft shadow-[0_0_6px_#4f5df4] animate-pulse",
+                                    stg.status === "not_scheduled" && "bg-dim"
+                                  )}
+                                />
+                                <span className="capitalize">
+                                  {stg.status === "completed" ? "Completed" : stg.status === "next" ? "Next stage" : "Not scheduled"}
+                                </span>
+                                <span className={clsx("text-[9px] opacity-70 transition-transform duration-200", activeStatusDropdownId === stg.id && "rotate-180")}>▾</span>
+                              </button>
+
+                              {activeStatusDropdownId === stg.id && (
+                                <div
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="absolute top-full right-0 z-50 mt-1.5 w-56 rounded-xl border border-line bg-[#151824] p-1.5 shadow-[0_16px_40px_rgba(0,0,0,0.8),0_0_20px_rgba(99,102,241,0.25)] backdrop-blur-md animate-scale-in"
+                                >
+                                  <div className="px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-dim border-b border-line/50 mb-1 flex items-center justify-between">
+                                    <span>Stage Status</span>
+                                    <span className="text-[9px] lowercase text-dim font-normal">workflow</span>
+                                  </div>
+                                  {[
+                                    {
+                                      id: "completed",
+                                      label: "Completed",
+                                      desc: "Stage finished & passed",
+                                      badgeColor: "text-[#10b981]",
+                                      bgColor: "hover:bg-[#10b981]/10",
+                                      indicator: (
+                                        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#10b981]/20 text-[#10b981] font-bold text-xs border border-[#10b981]/30">
+                                          ✓
                                         </div>
-                                      </div>
-                                      {isSelected && (
-                                        <span className={clsx("text-xs font-bold pl-2", st.badgeColor)}>✓</span>
-                                      )}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            )}
-                          </div>
+                                      ),
+                                    },
+                                    {
+                                      id: "next",
+                                      label: "Next stage",
+                                      desc: "Upcoming interview focus",
+                                      badgeColor: "text-blue-soft",
+                                      bgColor: "hover:bg-blue-fill/15",
+                                      indicator: (
+                                        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-fill/25 text-blue-soft text-xs border border-blue-fill/40">
+                                          <span className="h-2 w-2 rounded-full bg-blue-soft animate-ping" />
+                                        </div>
+                                      ),
+                                    },
+                                    {
+                                      id: "not_scheduled",
+                                      label: "Not scheduled",
+                                      desc: "Date yet to be confirmed",
+                                      badgeColor: "text-muted",
+                                      bgColor: "hover:bg-panel-2",
+                                      indicator: (
+                                        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-dim text-xs border border-white/[0.1]">
+                                          ○
+                                        </div>
+                                      ),
+                                    },
+                                  ].map((st) => {
+                                    const isSelected = stg.status === st.id;
+                                    return (
+                                      <button
+                                        key={st.id}
+                                        type="button"
+                                        onClick={() => {
+                                          updateStage(stg.id, {
+                                            status: st.id as "completed" | "next" | "not_scheduled",
+                                          });
+                                          setActiveStatusDropdownId(null);
+                                        }}
+                                        className={clsx(
+                                          "flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left transition-all cursor-pointer group/stg",
+                                          isSelected ? "bg-white/[0.08]" : st.bgColor
+                                        )}
+                                      >
+                                        <div className="flex items-center gap-2.5">
+                                          {st.indicator}
+                                          <div>
+                                            <div className={clsx("text-xs font-semibold leading-tight", st.badgeColor)}>
+                                              {st.label}
+                                            </div>
+                                            <div className="text-[10px] text-muted">{st.desc}</div>
+                                          </div>
+                                        </div>
+                                        {isSelected && (
+                                          <span className={clsx("text-xs font-bold pl-2", st.badgeColor)}>✓</span>
+                                        )}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            /* Practice Round Badge */
+                            <div className="flex items-center gap-1.5 rounded-full bg-blue-soft/10 px-3 py-1.5 text-[11px] font-semibold text-blue-soft border border-blue-fill/30 shadow-[0_0_12px_rgba(74,90,240,0.15)]">
+                              <span className="h-1.5 w-1.5 rounded-full bg-blue-soft shadow-[0_0_6px_#4f5df4] animate-pulse" />
+                              <span>Practice Round</span>
+                            </div>
+                          )}
 
                           {/* Delete Button */}
                           <button
@@ -1247,7 +1395,7 @@ export function InterviewSetup() {
                   className="mt-4 flex items-center gap-1.5 rounded-[10px] bg-panel-2 px-4 py-2 text-xs font-semibold text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-[#2b2d38] transition-colors cursor-pointer active:scale-95"
                 >
                   <Icon name="plus" size={14} strokeWidth={2.2} />
-                  <span>+ Add another stage</span>
+                  <span>{stagesExpectation === "practice" ? "+ Add another practice round" : "+ Add another stage"}</span>
                 </button>
 
                 {/* Step 2 Actions */}
@@ -1301,14 +1449,34 @@ export function InterviewSetup() {
                 </div>
               </div>
 
-              {/* 4 Selectable Round Cards in 4-Column Layout */}
-              <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                {[
-                  { id: "1", title: "Recruiter screen", subtitle: "Background, motivation and fit." },
-                  { id: "2", title: "Hiring manager round", subtitle: "Role, scope and impact." },
-                  { id: "3", title: "Technical round", subtitle: "Product, technical depth and trade-offs." },
-                  { id: "4", title: "Final panel", subtitle: "Cross-functional and leadership questions." },
-                ].map((rnd) => {
+              {/* Selectable Round Cards */}
+              <div
+                className={clsx(
+                  "mt-5 grid grid-cols-1 gap-3",
+                  stages.length === 1 && "sm:grid-cols-1 max-w-md",
+                  stages.length === 2 && "sm:grid-cols-2",
+                  stages.length === 3 && "sm:grid-cols-3",
+                  stages.length >= 4 && "sm:grid-cols-2 lg:grid-cols-4"
+                )}
+              >
+                {(stages.length > 0
+                  ? stages.map((stg, idx) => ({
+                      id: stg.id,
+                      title: stg.name,
+                      subtitle:
+                        stagesExpectation === "practice"
+                          ? `Practice round ${idx + 1} (${stg.format})`
+                          : stg.interviewer
+                            ? `With ${stg.interviewer} · ${stg.format}`
+                            : `${stg.format} stage`,
+                    }))
+                  : [
+                      { id: "1", title: "Recruiter screen", subtitle: "Background, motivation and fit." },
+                      { id: "2", title: "Hiring manager round", subtitle: "Role, scope and impact." },
+                      { id: "3", title: "Technical round", subtitle: "Product, technical depth and trade-offs." },
+                      { id: "4", title: "Final panel", subtitle: "Cross-functional and leadership questions." },
+                    ]
+                ).map((rnd) => {
                   const isChecked = selectedRounds.includes(rnd.id);
                   return (
                     <button
@@ -1316,7 +1484,9 @@ export function InterviewSetup() {
                       type="button"
                       onClick={() => {
                         if (isChecked) {
-                          setSelectedRounds(selectedRounds.filter((id) => id !== rnd.id));
+                          if (selectedRounds.length > 1) {
+                            setSelectedRounds(selectedRounds.filter((id) => id !== rnd.id));
+                          }
                         } else {
                           setSelectedRounds([...selectedRounds, rnd.id]);
                         }
@@ -1337,7 +1507,7 @@ export function InterviewSetup() {
                         >
                           {isChecked && <Icon name="check" size={11} strokeWidth={3} />}
                         </div>
-                        <span className="text-sm font-semibold text-ink">{rnd.title}</span>
+                        <span className="text-sm font-semibold text-ink truncate">{rnd.title}</span>
                       </div>
                       <p className="mt-2 text-xs text-muted pl-7 leading-relaxed">{rnd.subtitle}</p>
                     </button>
@@ -1348,11 +1518,11 @@ export function InterviewSetup() {
               {/* Summary Pill */}
               <div className="mt-4 flex items-center gap-2 rounded-xl bg-panel-2 px-3.5 py-2.5 text-xs text-muted">
                 <span className="rounded bg-[#1e2544] px-2 py-0.5 font-semibold text-[#818cf8]">
-                  {selectedRounds.length} stages selected
+                  {selectedRounds.length} {selectedRounds.length === 1 ? "round" : "rounds"} selected
                 </span>
-                <span>
+                <span className="truncate">
                   {selectedRounds
-                    .map((id) => stages.find((s) => s.id === id)?.name || "Stage")
+                    .map((id) => stages.find((s) => s.id === id)?.name || "Round")
                     .join(", ")}
                 </span>
               </div>
@@ -1602,8 +1772,12 @@ export function InterviewSetup() {
                     <Icon name="layers" size={17} />
                   </div>
                   <div>
-                    <h3 className="text-sm font-bold text-ink">Interview stages ({stages.length})</h3>
-                    <p className="text-xs text-muted">The stages of your interview, in order.</p>
+                    <h3 className="text-sm font-bold text-ink">
+                      {stagesExpectation === "practice" ? "Practice rounds" : "Interview stages"} ({stages.length})
+                    </h3>
+                    <p className="text-xs text-muted">
+                      {stagesExpectation === "practice" ? "The practice sessions configured for this interview." : "The stages of your interview, in order."}
+                    </p>
                   </div>
                 </div>
                 <button
@@ -1618,7 +1792,11 @@ export function InterviewSetup() {
                 {stages.map((stg, i) => (
                   <div key={stg.id} className="flex items-center justify-between rounded-[10px] bg-panel-2 px-3 py-2 text-xs">
                     <div className="flex items-center gap-2.5 font-medium text-ink">
-                      {stg.status === "completed" ? (
+                      {stagesExpectation === "practice" ? (
+                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-fill/20 text-blue-soft text-[10px] font-bold">
+                          {i + 1}
+                        </div>
+                      ) : stg.status === "completed" ? (
                         <div className="flex h-4 w-4 items-center justify-center rounded-full bg-[#10b981] text-black">
                           <Icon name="check" size={10} strokeWidth={3} />
                         </div>
@@ -1630,18 +1808,26 @@ export function InterviewSetup() {
                       <span>{stg.name}</span>
                     </div>
                     <div>
-                      {stg.status === "completed" && (
-                        <span className="rounded-full bg-[#10b981]/15 px-2 py-0.5 text-[11px] font-semibold text-[#10b981]">
-                          Completed
+                      {stagesExpectation === "practice" ? (
+                        <span className="rounded-full bg-blue-soft/10 px-2.5 py-0.5 text-[11px] font-semibold text-blue-soft border border-blue-fill/30">
+                          {stg.format}
                         </span>
-                      )}
-                      {stg.status === "next" && (
-                        <span className="text-muted font-medium">
-                          Thu 12 Nov, 10:00
-                        </span>
-                      )}
-                      {stg.status === "not_scheduled" && (
-                        <span className="text-muted">Not scheduled</span>
+                      ) : (
+                        <>
+                          {stg.status === "completed" && (
+                            <span className="rounded-full bg-[#10b981]/15 px-2 py-0.5 text-[11px] font-semibold text-[#10b981]">
+                              Completed
+                            </span>
+                          )}
+                          {stg.status === "next" && (
+                            <span className="text-muted font-medium">
+                              {stg.date}{stg.time ? `, ${stg.time}` : ""}
+                            </span>
+                          )}
+                          {stg.status === "not_scheduled" && (
+                            <span className="text-muted">Not scheduled</span>
+                          )}
+                        </>
                       )}
                     </div>
                   </div>
@@ -1861,29 +2047,59 @@ export function InterviewSetup() {
 
           {step === 2 && (
             <Panel className="rounded-[18px] p-5 shadow-[inset_0_0_0_1px_var(--color-line)]">
-              <h3 className="text-sm font-bold text-ink">Good to know</h3>
+              <h3 className="text-sm font-bold text-ink">
+                {stagesExpectation === "practice" ? "Practice mode tips" : "Good to know"}
+              </h3>
               <div className="mt-3.5 flex flex-col gap-3.5 text-xs text-muted">
-                <div className="flex items-start gap-2.5">
-                  <Icon name="edit" size={14} className="text-ink shrink-0 mt-0.5" />
-                  <div>
-                    <span className="font-semibold text-ink block">Rename stages</span>
-                    <span>Click the pencil to give each stage a name that matches your process.</span>
-                  </div>
-                </div>
-                <div className="flex items-start gap-2.5">
-                  <Icon name="drag" size={14} className="text-ink shrink-0 mt-0.5" />
-                  <div>
-                    <span className="font-semibold text-ink block">Reorder anytime</span>
-                    <span>Drag and drop stages to change the order of your interview.</span>
-                  </div>
-                </div>
-                <div className="flex items-start gap-2.5">
-                  <Icon name="plus" size={14} className="text-ink shrink-0 mt-0.5" />
-                  <div>
-                    <span className="font-semibold text-ink block">Add or remove stages</span>
-                    <span>Keep it accurate to your real interview flow. You can add, edit or delete stages as needed.</span>
-                  </div>
-                </div>
+                {stagesExpectation === "practice" ? (
+                  <>
+                    <div className="flex items-start gap-2.5">
+                      <Icon name="target" size={14} className="text-blue-soft shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-semibold text-ink block">No dates needed</span>
+                        <span>Practice on your own schedule without worrying about calendar dates or interviewer contacts.</span>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2.5">
+                      <Icon name="edit" size={14} className="text-ink shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-semibold text-ink block">Customize rounds</span>
+                        <span>Rename each round to focus on technical, behavioral, or case study practice.</span>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2.5">
+                      <Icon name="plus" size={14} className="text-ink shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-semibold text-ink block">Add more rounds</span>
+                        <span>Add as many practice rounds as you need to build confidence.</span>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-start gap-2.5">
+                      <Icon name="edit" size={14} className="text-ink shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-semibold text-ink block">Rename stages</span>
+                        <span>Click the pencil to give each stage a name that matches your process.</span>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2.5">
+                      <Icon name="drag" size={14} className="text-ink shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-semibold text-ink block">Reorder anytime</span>
+                        <span>Drag and drop stages to change the order of your interview.</span>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2.5">
+                      <Icon name="plus" size={14} className="text-ink shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-semibold text-ink block">Add or remove stages</span>
+                        <span>Keep it accurate to your real interview flow. You can add, edit or delete stages as needed.</span>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </Panel>
           )}
@@ -1899,9 +2115,13 @@ export function InterviewSetup() {
 
           {step === 4 && (
             <Panel className="rounded-[18px] p-5 shadow-[inset_0_0_0_1px_var(--color-line)]">
-              <h3 className="text-sm font-bold text-ink">Add later (optional)</h3>
-              <p className="mt-2 text-xs text-muted">
-                Dates for later rounds and interviewer details can be added whenever you know them.
+              <h3 className="text-sm font-bold text-ink">
+                {stagesExpectation === "practice" ? "Practice mode ready" : "Add later (optional)"}
+              </h3>
+              <p className="mt-2 text-xs text-muted leading-relaxed">
+                {stagesExpectation === "practice"
+                  ? "Dates and interviewers aren't required. You can jump straight into high-yield mock practice whenever you're ready."
+                  : "Dates for later rounds and interviewer details can be added whenever you know them."}
               </p>
             </Panel>
           )}

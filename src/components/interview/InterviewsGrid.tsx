@@ -48,6 +48,14 @@ export function InterviewsGrid({
       const mins = c.settings?.minutes ?? 30;
       const preset = c.settings?.preset ? c.settings.preset.charAt(0).toUpperCase() + c.settings.preset.slice(1) : "Balanced";
 
+      const isPractice = c.date === "Just Practice";
+      const whenText = isPractice
+        ? "Just Practice · On-demand"
+        : c.date
+          ? `${c.date}${c.time ? `, ${c.time}` : ""}`
+          : "Upcoming interview";
+      const whenRel = isPractice ? "Ready" : "Active";
+
       merged.unshift({
         id: c.id,
         company: c.company,
@@ -55,8 +63,8 @@ export function InterviewsGrid({
         role: c.role,
         isDemo: false,
         settingsLine: `${diff} · ${mins} min · ${preset}`,
-        whenText: c.date ? `${c.date}${c.time ? `, ${c.time}` : ""}` : "Upcoming interview",
-        whenRel: "Active",
+        whenText,
+        whenRel,
         verdictLabel: "Not started",
         verdictTone: "text-lilac",
         freshCount: 0,
