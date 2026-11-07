@@ -7,6 +7,7 @@ import { standing } from "@/lib/sessions/server";
 import { interviewWhen } from "@/lib/sessions/labels";
 import { VERDICT_LABEL } from "@/lib/mocks/report";
 import { londonToday } from "@/lib/dates";
+import { DraftInterviewCard } from "@/components/interview/DraftInterviewCard";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +28,9 @@ export default function InterviewsPage() {
           New interview
         </ButtonLink>
       </header>
+
+      {/* In-progress Saved Draft Card */}
+      <DraftInterviewCard />
 
       {all.length === 0 && (
         <Panel className="mt-6 max-w-[620px] animate-rise px-6 py-6">

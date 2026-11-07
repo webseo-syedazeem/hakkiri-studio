@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import clsx from "clsx";
@@ -283,11 +283,89 @@ export function InterviewSetup() {
 
   // Loading & Submission State
   const [isBuilding, setIsBuilding] = useState(false);
-  const [draftSaved, setDraftSaved] = useState(false);
+  const [lastSavedTime, setLastSavedTime] = useState<string | null>(null);
+  const [showDraftModal, setShowDraftModal] = useState(false);
+  const [draftToast, setDraftToast] = useState<{ title: string; subtitle: string } | null>(null);
+  const [draftRestoredBanner, setDraftRestoredBanner] = useState<string | null>(null);
+
+  // Restore saved draft on mount
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("hk_interview_wizard_draft");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed.companyName) setCompanyName(parsed.companyName);
+        if (parsed.jobTitle) setJobTitle(parsed.jobTitle);
+        if (parsed.companyWebsite) setCompanyWebsite(parsed.companyWebsite);
+        if (parsed.cvDoc) setCvDoc(parsed.cvDoc);
+        if (parsed.jobDoc) setJobDoc(parsed.jobDoc);
+        if (parsed.coverDoc !== undefined) setCoverDoc(parsed.coverDoc);
+        if (parsed.stagesExpectation) setStagesExpectation(parsed.stagesExpectation);
+        if (parsed.stages && Array.isArray(parsed.stages) && parsed.stages.length > 0) setStages(parsed.stages);
+        if (parsed.selectedRounds) setSelectedRounds(parsed.selectedRounds);
+        if (parsed.techFocus !== undefined) setTechFocus(parsed.techFocus);
+        if (parsed.skillsFocus !== undefined) setSkillsFocus(parsed.skillsFocus);
+        if (parsed.expFocus !== undefined) setExpFocus(parsed.expFocus);
+        if (parsed.difficulty) setDifficulty(parsed.difficulty);
+        if (parsed.duration) setDuration(parsed.duration);
+        if (parsed.step) setStep(parsed.step);
+        if (parsed.savedAt) {
+          setLastSavedTime(parsed.savedAt);
+          setDraftRestoredBanner(`Continuing saved draft for ${parsed.jobTitle || "Role"} at ${parsed.companyName || "Company"}`);
+        }
+      }
+    } catch {}
+  }, []);
 
   const saveDraft = () => {
-    setDraftSaved(true);
-    setTimeout(() => setDraftSaved(false), 2500);
+    const now = new Date();
+    const timeStr = `Today at ${now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+    const draftData = {
+      companyName,
+      jobTitle,
+      companyWebsite,
+      cvDoc,
+      jobDoc,
+      coverDoc,
+      stagesExpectation,
+      stages,
+      selectedRounds,
+      techFocus,
+      skillsFocus,
+      expFocus,
+      difficulty,
+      duration,
+      step,
+      savedAt: timeStr,
+    };
+    try {
+      localStorage.setItem("hk_interview_wizard_draft", JSON.stringify(draftData));
+      window.dispatchEvent(new Event("hk_draft_updated"));
+    } catch {}
+
+    setLastSavedTime(timeStr);
+    setDraftToast({
+      title: "Draft saved to workspace",
+      subtitle: `${companyName || "Halden"} · ${jobTitle || "Role"} (Step ${step} of 4) saved. You can safely close or resume anytime.`,
+    });
+    setTimeout(() => setDraftToast(null), 4500);
+  };
+
+  const handleDiscardDraft = () => {
+    if (confirm("Are you sure you want to discard this saved draft and start fresh?")) {
+      try {
+        localStorage.removeItem("hk_interview_wizard_draft");
+        window.dispatchEvent(new Event("hk_draft_updated"));
+      } catch {}
+      setCompanyName("Halden");
+      setJobTitle("Senior Product Manager, Payments");
+      setCompanyWebsite("https://halden.com");
+      setCoverDoc(null);
+      setStep(1);
+      setLastSavedTime(null);
+      setShowDraftModal(false);
+      setDraftRestoredBanner(null);
+    }
   };
 
   const handleBuildInterview = async () => {
@@ -345,12 +423,29 @@ export function InterviewSetup() {
     <div className="flex w-full grow flex-col gap-6">
       {/* Wizard Header with Breadcrumb and Step Stepper */}
       <div className="flex flex-col gap-4 border-b border-line pb-5">
-        <Crumbs
-          items={[
-            { label: "Interviews", href: "/interviews" },
-            { label: "New interview" },
-          ]}
-        />
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Crumbs
+            items={[
+              { label: "Interviews", href: "/interviews" },
+              { label: "New interview" },
+            ]}
+          />
+
+          {/* Live Draft Saved Indicator */}
+          <button
+            type="button"
+            onClick={() => setShowDraftModal(true)}
+            title="Click to view where and how your draft is saved"
+            className="group flex items-center gap-2 rounded-full bg-panel-2 px-3 py-1 text-xs text-muted border border-line hover:border-blue-soft hover:text-ink transition-all cursor-pointer shadow-sm"
+          >
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#10b981] opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-[#10b981]" />
+            </span>
+            <span>Draft {lastSavedTime ? `saved (${lastSavedTime})` : "saved locally"}</span>
+            <span className="text-[10px] font-semibold text-blue-soft group-hover:underline">Storage info</span>
+          </button>
+        </div>
 
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div>
@@ -406,9 +501,34 @@ export function InterviewSetup() {
         </div>
       </div>
 
-      {draftSaved && (
-        <div className="animate-fade-in flex items-center gap-2 rounded-xl bg-blue/15 px-4 py-2.5 text-xs font-semibold text-blue-soft shadow-sm">
-          <Icon name="check" size={14} strokeWidth={2.4} /> Draft saved successfully.
+      {/* Restored Draft Banner if draft exists */}
+      {draftRestoredBanner && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-gradient-to-r from-[#171d32] to-[#1c2444] px-4 py-3 text-xs text-ink border border-line shadow-sm animate-fade-in">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-soft/20 text-blue-soft">
+              <Icon name="doc" size={15} />
+            </div>
+            <div className="truncate">
+              <span className="font-bold text-white">Draft in progress: </span>
+              <span className="text-muted">{draftRestoredBanner} · All progress safely preserved.</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 shrink-0">
+            <button
+              type="button"
+              onClick={() => setShowDraftModal(true)}
+              className="text-xs font-semibold text-blue-soft hover:underline cursor-pointer"
+            >
+              Draft details
+            </button>
+            <button
+              type="button"
+              onClick={handleDiscardDraft}
+              className="text-xs text-muted hover:text-red-soft hover:underline cursor-pointer"
+            >
+              Start fresh
+            </button>
+          </div>
         </div>
       )}
 
@@ -1541,6 +1661,125 @@ export function InterviewSetup() {
             setActiveTimePickerId(null);
           }}
         />
+      )}
+
+      {/* Floating Animated Toast on Save Draft */}
+      {draftToast && (
+        <div className="fixed bottom-6 right-6 z-50 flex max-w-[420px] items-start gap-3 rounded-2xl border border-line bg-[#151824] p-4 text-xs text-ink shadow-[0_20px_50px_rgba(0,0,0,0.8),0_0_25px_rgba(99,102,241,0.25)] animate-rise">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#10b981]/20 text-[#10b981]">
+            <Icon name="check" size={16} strokeWidth={2.6} />
+          </div>
+          <div className="min-w-0 grow">
+            <div className="font-bold text-white text-sm">{draftToast.title}</div>
+            <p className="mt-0.5 text-xs text-muted leading-relaxed">{draftToast.subtitle}</p>
+            <div className="mt-2.5 flex items-center gap-3">
+              <Link
+                href="/interviews"
+                className="font-semibold text-blue-soft hover:underline"
+              >
+                View in Interviews list →
+              </Link>
+              <button
+                type="button"
+                onClick={() => setShowDraftModal(true)}
+                className="text-muted hover:text-ink cursor-pointer"
+              >
+                Storage details
+              </button>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setDraftToast(null)}
+            className="p-1 text-muted hover:text-ink cursor-pointer"
+          >
+            <Icon name="x" size={14} />
+          </button>
+        </div>
+      )}
+
+      {/* Draft Storage Details Modal */}
+      {showDraftModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-fade-in">
+          <div className="relative flex w-full max-w-[540px] flex-col rounded-[22px] border border-line bg-panel p-6 shadow-2xl animate-scale-in">
+            <div className="flex items-center justify-between border-b border-line pb-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-[#1a2238] text-blue-soft">
+                  <Icon name="archive" size={20} />
+                </div>
+                <div>
+                  <h2 className="text-[17px] font-bold text-ink">Draft Storage Details</h2>
+                  <p className="text-xs text-muted">Where and how your progress is saved</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowDraftModal(false)}
+                className="rounded-lg p-1.5 text-muted hover:bg-panel-2 hover:text-ink cursor-pointer"
+              >
+                <Icon name="x" size={16} />
+              </button>
+            </div>
+
+            <div className="mt-4 flex flex-col gap-3 text-xs">
+              <div className="rounded-[12px] bg-panel-2 p-3.5 border border-line">
+                <div className="flex items-center gap-2 font-semibold text-ink mb-1">
+                  <Icon name="globe" size={14} className="text-blue-soft" />
+                  <span>Workspace Local Cache</span>
+                </div>
+                <p className="text-muted leading-relaxed">
+                  Your draft is securely preserved in your browser&apos;s workspace storage (<code className="text-blue-soft font-mono">hk_interview_wizard_draft</code>). It will not be lost if you refresh, close the tab, or navigate elsewhere.
+                </p>
+              </div>
+
+              <div className="rounded-[12px] bg-panel-2 p-3.5 border border-line flex flex-col gap-2">
+                <span className="font-semibold text-ink">Included in this draft:</span>
+                <div className="grid grid-cols-2 gap-2 text-muted">
+                  <div className="flex items-center gap-1.5">
+                    <Icon name="check" size={12} className="text-[#10b981]" />
+                    <span>Role: {jobTitle || "Not set"}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Icon name="check" size={12} className="text-[#10b981]" />
+                    <span>Company: {companyName || "Not set"}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Icon name="check" size={12} className="text-[#10b981]" />
+                    <span>Stages: {stages.length} configured</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Icon name="check" size={12} className="text-[#10b981]" />
+                    <span>Current step: Step {step} of 4</span>
+                  </div>
+                </div>
+              </div>
+
+              {lastSavedTime && (
+                <div className="flex items-center justify-between text-dim pt-1">
+                  <span>Last saved timestamp:</span>
+                  <span className="font-medium text-ink">{lastSavedTime}</span>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-5 flex items-center justify-between border-t border-line pt-4 text-xs">
+              <button
+                type="button"
+                onClick={handleDiscardDraft}
+                className="font-semibold text-red-soft hover:underline cursor-pointer"
+              >
+                Discard draft
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowDraftModal(false)}
+                className="rounded-[10px] bg-blue-fill px-4 py-2 font-semibold text-white hover:bg-blue-hover cursor-pointer transition-colors"
+              >
+                Keep working
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
