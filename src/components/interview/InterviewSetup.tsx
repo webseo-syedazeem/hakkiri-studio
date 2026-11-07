@@ -7,6 +7,7 @@ import clsx from "clsx";
 import { Button, Crumbs, Icon, Panel } from "@/components/ui";
 import { pastedDocument, readDocument, type ReadDoc } from "./read-docs";
 
+/* ------------------------------------------------------------------ DocField */
 export function DocField({
   id,
   label,
@@ -65,7 +66,7 @@ export function DocField({
           type="button"
           onClick={() => ref.current?.click()}
           aria-label={`${doc ? "Replace" : "Choose file"}: ${label}`}
-          className="shrink-0 text-[13px] font-semibold text-blue-soft hover:underline"
+          className="shrink-0 text-[13px] font-semibold text-blue-soft hover:underline cursor-pointer"
         >
           {doc ? "Replace" : "Choose file"}
         </button>
@@ -75,7 +76,7 @@ export function DocField({
             onClick={() => setPasting(!pasting)}
             aria-label={`Paste: ${label}`}
             aria-expanded={pasting}
-            className="shrink-0 text-[13px] font-semibold text-blue-soft hover:underline"
+            className="shrink-0 text-[13px] font-semibold text-blue-soft hover:underline cursor-pointer"
           >
             Paste
           </button>
@@ -85,7 +86,7 @@ export function DocField({
             type="button"
             aria-label={`Remove ${label}`}
             onClick={() => setDoc(null)}
-            className="shrink-0 text-muted hover:text-ink"
+            className="shrink-0 text-muted hover:text-ink cursor-pointer"
           >
             <Icon name="x" size={14} strokeWidth={2} />
           </button>
@@ -136,7 +137,7 @@ export function DocField({
   );
 }
 
-interface StageItem {
+export interface StageItem {
   id: string;
   name: string;
   date: string;
@@ -261,7 +262,6 @@ export function InterviewSetup() {
       router.push(`/interviews/${destId}?new=1`);
       router.refresh();
     } catch {
-      // Fallback navigation
       router.push("/interviews/halden?new=1");
     }
   };
@@ -302,20 +302,20 @@ export function InterviewSetup() {
             <h1 className="text-[28px] font-bold tracking-[-0.025em] text-ink sm:text-[34px]">
               {headerTitle}
             </h1>
-            <p className="mt-1 text-[15px] text-muted">{headerSubtitle}</p>
+            <p className="mt-1 text-[14px] text-muted">{headerSubtitle}</p>
           </div>
 
-          {/* Stepper */}
-          <div className="flex items-center gap-3">
+          {/* Stepper with Circles and Labels Positioned Below */}
+          <div className="flex items-start">
             {STEPS.map((s, idx) => {
               const isPast = step > s.num;
               const isCurrent = step === s.num;
               return (
-                <div key={s.num} className="flex items-center gap-3">
+                <div key={s.num} className="flex items-center">
                   {idx > 0 && (
                     <div
                       className={clsx(
-                        "h-[2px] w-8 sm:w-12 transition-colors duration-300",
+                        "h-[2px] w-6 sm:w-10 lg:w-14 -translate-y-3 transition-colors duration-300",
                         step >= s.num ? "bg-blue-fill" : "bg-white/[0.12]"
                       )}
                     />
@@ -323,22 +323,22 @@ export function InterviewSetup() {
                   <button
                     type="button"
                     onClick={() => setStep(s.num as 1 | 2 | 3 | 4)}
-                    className="group flex items-center gap-2 text-left cursor-pointer transition-transform active:scale-95"
+                    className="group flex flex-col items-center gap-1.5 cursor-pointer transition-transform active:scale-95 px-1"
                   >
                     <div
                       className={clsx(
-                        "flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold transition-all duration-300",
-                        isPast && "bg-blue-fill text-white shadow-[0_0_12px_rgba(74,90,240,0.4)]",
-                        isCurrent && "bg-blue-fill text-white ring-4 ring-blue-fill/20 shadow-[0_0_16px_rgba(74,90,240,0.6)]",
-                        !isPast && !isCurrent && "bg-panel-2 text-muted shadow-[inset_0_0_0_1px_var(--color-line-strong)]"
+                        "flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold transition-all duration-300",
+                        isPast && "bg-blue-fill text-white shadow-[0_0_12px_rgba(74,90,240,0.5)]",
+                        isCurrent && "bg-blue-fill text-white ring-4 ring-blue-fill/20 shadow-[0_0_14px_rgba(74,90,240,0.6)]",
+                        !isPast && !isCurrent && "border border-white/20 bg-transparent text-muted"
                       )}
                     >
-                      {isPast ? <Icon name="check" size={13} strokeWidth={3} /> : s.num}
+                      {isPast ? <Icon name="check" size={12} strokeWidth={3} /> : s.num}
                     </div>
                     <span
                       className={clsx(
-                        "hidden text-xs font-semibold sm:inline-block transition-colors",
-                        isCurrent ? "text-ink" : "text-muted group-hover:text-ink"
+                        "text-[11px] transition-colors whitespace-nowrap",
+                        isCurrent ? "font-bold text-ink" : "text-muted group-hover:text-ink font-medium"
                       )}
                     >
                       {s.label}
@@ -365,7 +365,7 @@ export function InterviewSetup() {
         {step === 1 && (
           <div className="flex animate-rise flex-col gap-6">
             <Panel className="rounded-[20px] p-6 shadow-[inset_0_0_0_1px_var(--color-line)]">
-              {/* Card Header */}
+              {/* Box 1 Header */}
               <div className="flex items-start gap-3.5 border-b border-line pb-5">
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-[#1a2238] text-[#818cf8] shadow-sm">
                   <Icon name="brief" size={20} />
@@ -417,7 +417,6 @@ export function InterviewSetup() {
                     Company website <span className="text-muted font-normal">(optional)</span>
                   </label>
                   <div className="flex h-[46px] items-center gap-3 rounded-[12px] bg-panel-2 px-3.5 shadow-[inset_0_0_0_1px_var(--color-line-strong)] transition-all focus-within:shadow-[inset_0_0_0_1.5px_var(--color-blue)]">
-                    <Icon name="globe" size={16} className="text-dim" />
                     <input
                       type="text"
                       value={companyWebsite}
@@ -431,9 +430,9 @@ export function InterviewSetup() {
                   </p>
                 </div>
 
-                {/* Document Upload Section */}
+                {/* Box 2: Your Documents */}
                 <div className="border-t border-line pt-5">
-                  <h3 className="text-[14px] font-bold text-ink">Your documents</h3>
+                  <h3 className="text-[15px] font-bold text-ink">Your documents</h3>
                   <p className="mt-0.5 text-xs text-muted">
                     Upload your CV and job description, or paste the text instead.
                   </p>
@@ -445,7 +444,7 @@ export function InterviewSetup() {
                         <Icon name="doc" size={15} className="text-blue-soft" />
                         <span>Your CV</span>
                       </div>
-                      <div className="mt-3 flex items-center justify-between gap-2">
+                      <div className="mt-3 flex items-center justify-between gap-2 rounded-[10px] bg-[#141620] px-3 py-2 border border-line/60">
                         <span className="truncate text-xs font-medium text-ink">
                           {cvDoc.name}
                         </span>
@@ -468,7 +467,7 @@ export function InterviewSetup() {
                         <Icon name="doc" size={15} className="text-blue-soft" />
                         <span>Job description</span>
                       </div>
-                      <div className="mt-3 flex items-center justify-between gap-2">
+                      <div className="mt-3 flex items-center justify-between gap-2 rounded-[10px] bg-[#141620] px-3 py-2 border border-line/60">
                         <span className="truncate text-xs font-medium text-ink">
                           {jobDoc.name}
                         </span>
@@ -494,10 +493,10 @@ export function InterviewSetup() {
                       <button
                         type="button"
                         onClick={() => coverInputRef.current?.click()}
-                        className="mt-3 flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-white/20 py-1.5 text-xs font-semibold text-blue-soft hover:border-blue-soft hover:bg-blue/10 transition-colors cursor-pointer"
+                        className="mt-3 flex items-center justify-center gap-1.5 rounded-[10px] border border-dashed border-white/20 py-2 text-xs font-semibold text-muted hover:border-blue-soft hover:text-ink hover:bg-blue/10 transition-colors cursor-pointer"
                       >
                         <Icon name="plus" size={13} strokeWidth={2.2} />
-                        <span>{coverDoc ? coverDoc.name : "Add a file"}</span>
+                        <span>{coverDoc ? coverDoc.name : "+ Add a file"}</span>
                       </button>
                       <input
                         ref={coverInputRef}
@@ -510,13 +509,13 @@ export function InterviewSetup() {
                       />
                     </div>
                   </div>
-                  <p className="mt-2 text-[11px] text-muted">
+                  <p className="mt-2.5 text-[11px] text-muted">
                     Accepted formats: PDF, DOC or DOCX. You can replace documents later.
                   </p>
                 </div>
 
-                {/* Callout Info Banner */}
-                <div className="flex items-start gap-3 rounded-[14px] bg-[#192138] p-4 text-xs shadow-[inset_0_0_0_1px_#2f3b60]">
+                {/* Blue Info Callout Banner */}
+                <div className="flex items-start gap-3 rounded-[14px] bg-[#171d32] p-4 text-xs shadow-[inset_0_0_0_1px_#2b3658]">
                   <Icon name="sparkle" size={17} className="text-blue-soft shrink-0 mt-0.5" />
                   <div>
                     <div className="font-semibold text-ink">
@@ -594,7 +593,7 @@ export function InterviewSetup() {
                       type="button"
                       onClick={() => setStagesExpectation(opt.key as "single" | "multiple" | "unsure")}
                       className={clsx(
-                        "flex items-center gap-3 rounded-[12px] p-3 text-xs font-semibold transition-all cursor-pointer",
+                        "flex items-center gap-3 rounded-[12px] p-3.5 text-xs font-semibold transition-all cursor-pointer",
                         stagesExpectation === opt.key
                           ? "bg-[#1c2237] text-white shadow-[inset_0_0_0_1.5px_#818cf8]"
                           : "bg-panel-2 text-muted shadow-[inset_0_0_0_1px_var(--color-line)] hover:text-ink"
@@ -618,7 +617,7 @@ export function InterviewSetup() {
 
               {/* Stages List */}
               <div className="mt-6 border-t border-line pt-5">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <h3 className="text-[14px] font-bold text-ink">
                     Your interview stages ({stages.length})
                   </h3>
@@ -638,18 +637,18 @@ export function InterviewSetup() {
                         className={clsx(
                           "flex flex-wrap items-center justify-between gap-3 rounded-[14px] p-3.5 transition-all duration-200",
                           isNext
-                            ? "bg-[#1c2237] shadow-[inset_0_0_0_1.5px_#6366f1,0_4px_20px_rgba(99,102,241,0.15)]"
+                            ? "bg-[#1c2237] shadow-[inset_0_0_0_1.5px_#6366f1,0_4px_20px_rgba(99,102,241,0.2)]"
                             : "bg-panel-2 shadow-[inset_0_0_0_1px_var(--color-line)] hover:shadow-[inset_0_0_0_1px_var(--color-line-strong)]"
                         )}
                       >
                         {/* Drag Handle & Icon & Name */}
-                        <div className="flex items-center gap-2.5 min-w-[200px] grow">
+                        <div className="flex items-center gap-2.5 min-w-[220px] grow">
                           <Icon name="drag" size={16} className="text-dim cursor-grab shrink-0" />
                           <div
                             className={clsx(
                               "flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px]",
                               stg.icon === "phone" && "bg-[#142825] text-[#34d399]",
-                              stg.icon === "code" && "bg-[#241e38] text-[#c084fc]",
+                              stg.icon === "code" && "bg-[#1a2238] text-[#818cf8]",
                               stg.icon === "present" && "bg-[#142825] text-[#34d399]",
                               stg.icon === "users" && "bg-[#241e38] text-[#c084fc]"
                             )}
@@ -660,7 +659,7 @@ export function InterviewSetup() {
                           <button
                             type="button"
                             title="Rename stage"
-                            className="text-muted hover:text-ink transition-colors"
+                            className="text-muted hover:text-ink transition-colors cursor-pointer"
                           >
                             <Icon name="edit" size={13} />
                           </button>
@@ -669,17 +668,21 @@ export function InterviewSetup() {
                         {/* Date, Time, Format, Interviewer fields */}
                         <div className="flex flex-wrap items-center gap-2 text-xs">
                           <div className="flex items-center gap-1.5 rounded-lg bg-[#12141c] px-2.5 py-1.5 text-muted border border-line">
+                            <span className="text-[11px] text-dim">Date</span>
                             <Icon name="cal" size={12} />
                             <span>{stg.date}</span>
                           </div>
                           <div className="flex items-center gap-1.5 rounded-lg bg-[#12141c] px-2.5 py-1.5 text-muted border border-line">
+                            <span className="text-[11px] text-dim">Time</span>
                             <Icon name="clock" size={12} />
                             <span>{stg.time}</span>
                           </div>
-                          <div className="rounded-lg bg-[#12141c] px-2.5 py-1.5 text-muted border border-line">
+                          <div className="flex items-center gap-1 rounded-lg bg-[#12141c] px-2.5 py-1.5 text-muted border border-line">
+                            <span className="text-[11px] text-dim">Format</span>
                             <span>{stg.format} ▾</span>
                           </div>
-                          <div className="rounded-lg bg-[#12141c] px-2.5 py-1.5 text-muted border border-line">
+                          <div className="flex items-center gap-1 rounded-lg bg-[#12141c] px-2.5 py-1.5 text-muted border border-line">
+                            <span className="text-[11px] text-dim">Interviewer</span>
                             <span>{stg.interviewer}</span>
                           </div>
 
@@ -790,8 +793,8 @@ export function InterviewSetup() {
                 </div>
               </div>
 
-              {/* 4 Selectable Round Cards */}
-              <div className="mt-5 grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+              {/* 4 Selectable Round Cards in 4-Column Layout */}
+              <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 {[
                   { id: "1", title: "Recruiter screen", subtitle: "Background, motivation and fit." },
                   { id: "2", title: "Hiring manager round", subtitle: "Role, scope and impact." },
@@ -828,7 +831,7 @@ export function InterviewSetup() {
                         </div>
                         <span className="text-sm font-semibold text-ink">{rnd.title}</span>
                       </div>
-                      <p className="mt-2 text-xs text-muted pl-7">{rnd.subtitle}</p>
+                      <p className="mt-2 text-xs text-muted pl-7 leading-relaxed">{rnd.subtitle}</p>
                     </button>
                   );
                 })}
@@ -853,50 +856,41 @@ export function InterviewSetup() {
                   Set the question mix across your selected stages.
                 </p>
 
-                <div className="mt-4 flex flex-col gap-3">
-                  <div>
-                    <div className="flex justify-between text-xs font-semibold text-ink mb-1.5">
-                      <span>Technical</span>
-                      <span className="num text-blue-soft">{techFocus}%</span>
+                <div className="mt-4 flex flex-col gap-4">
+                  {/* Technical Bar */}
+                  <div className="flex items-center gap-4">
+                    <span className="w-24 text-xs font-semibold text-ink shrink-0">Technical</span>
+                    <div className="relative h-2 grow rounded-full bg-[#171d32] overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-[#6366f1] shadow-[0_0_10px_rgba(99,102,241,0.6)] transition-all duration-300"
+                        style={{ width: `${techFocus}%` }}
+                      />
                     </div>
-                    <input
-                      type="range"
-                      min={0}
-                      max={100}
-                      value={techFocus}
-                      onChange={(e) => setTechFocus(Number(e.target.value))}
-                      className="w-full accent-blue-fill cursor-pointer h-2 bg-panel-2 rounded-lg"
-                    />
+                    <span className="w-12 text-right text-xs font-semibold text-ink num">{techFocus}%</span>
                   </div>
 
-                  <div>
-                    <div className="flex justify-between text-xs font-semibold text-ink mb-1.5">
-                      <span>Skills</span>
-                      <span className="num text-blue-soft">{skillsFocus}%</span>
+                  {/* Skills Bar */}
+                  <div className="flex items-center gap-4">
+                    <span className="w-24 text-xs font-semibold text-ink shrink-0">Skills</span>
+                    <div className="relative h-2 grow rounded-full bg-[#171d32] overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-[#6366f1] shadow-[0_0_10px_rgba(99,102,241,0.6)] transition-all duration-300"
+                        style={{ width: `${skillsFocus}%` }}
+                      />
                     </div>
-                    <input
-                      type="range"
-                      min={0}
-                      max={100}
-                      value={skillsFocus}
-                      onChange={(e) => setSkillsFocus(Number(e.target.value))}
-                      className="w-full accent-blue-fill cursor-pointer h-2 bg-panel-2 rounded-lg"
-                    />
+                    <span className="w-12 text-right text-xs font-semibold text-ink num">{skillsFocus}%</span>
                   </div>
 
-                  <div>
-                    <div className="flex justify-between text-xs font-semibold text-ink mb-1.5">
-                      <span>Experience</span>
-                      <span className="num text-blue-soft">{expFocus}%</span>
+                  {/* Experience Bar */}
+                  <div className="flex items-center gap-4">
+                    <span className="w-24 text-xs font-semibold text-ink shrink-0">Experience</span>
+                    <div className="relative h-2 grow rounded-full bg-[#171d32] overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-[#6366f1] shadow-[0_0_10px_rgba(99,102,241,0.6)] transition-all duration-300"
+                        style={{ width: `${expFocus}%` }}
+                      />
                     </div>
-                    <input
-                      type="range"
-                      min={0}
-                      max={100}
-                      value={expFocus}
-                      onChange={(e) => setExpFocus(Number(e.target.value))}
-                      className="w-full accent-blue-fill cursor-pointer h-2 bg-panel-2 rounded-lg"
-                    />
+                    <span className="w-12 text-right text-xs font-semibold text-ink num">{expFocus}%</span>
                   </div>
                 </div>
               </div>
@@ -1110,8 +1104,8 @@ export function InterviewSetup() {
                         </span>
                       )}
                       {stg.status === "next" && (
-                        <span className="text-[#818cf8] font-medium">
-                          {stg.date}, {stg.time}
+                        <span className="text-muted font-medium">
+                          Thu 12 Nov, 10:00
                         </span>
                       )}
                       {stg.status === "not_scheduled" && (
