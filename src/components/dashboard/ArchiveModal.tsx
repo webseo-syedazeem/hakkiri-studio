@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Icon } from "@/components/ui";
 
 export interface ArchivedItem {
@@ -23,13 +25,25 @@ export function ArchiveModal({
   archivedItems: ArchivedItem[];
   onRestore?: (id: string) => void;
 }) {
-  if (!isOpen) return null;
+  const [mounted, setMounted] = useState(false);
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-fade-in">
-      <div className="relative flex w-full max-w-[620px] flex-col rounded-[22px] border border-line bg-panel p-6 shadow-2xl animate-scale-in">
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!isOpen || !mounted) return null;
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm animate-fade-in overflow-y-auto"
+      onClick={onClose}
+    >
+      <div
+        className="relative my-auto flex w-full max-w-[620px] max-h-[88vh] flex-col rounded-[22px] border border-line bg-panel p-6 shadow-2xl animate-scale-in"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-line pb-4">
+        <div className="flex items-center justify-between border-b border-line pb-4 shrink-0">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-[#1a2238] text-blue-soft">
               <Icon name="archive" size={20} />
@@ -49,7 +63,7 @@ export function ArchiveModal({
         </div>
 
         {/* Content */}
-        <div className="mt-4 flex max-h-[60vh] flex-col gap-3 overflow-y-auto pr-1">
+        <div className="mt-4 flex flex-col gap-3 overflow-y-auto pr-1">
           {archivedItems.length === 0 ? (
             <div className="py-12 text-center text-sm text-muted">
               No archived interviews yet. Unsuccessful or completed interviews will be stored here.
@@ -91,7 +105,7 @@ export function ArchiveModal({
         </div>
 
         {/* Footer */}
-        <div className="mt-5 flex justify-end border-t border-line pt-4">
+        <div className="mt-5 flex justify-end border-t border-line pt-4 shrink-0">
           <button
             type="button"
             onClick={onClose}
@@ -101,6 +115,7 @@ export function ArchiveModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

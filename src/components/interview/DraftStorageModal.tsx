@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { Icon } from "@/components/ui";
 import type { WizardDraftData } from "./DraftInterviewCard";
@@ -16,7 +17,12 @@ export function DraftStorageModal({
   initialDraft?: WizardDraftData | null;
   onDraftDiscarded?: () => void;
 }) {
+  const [mounted, setMounted] = useState(false);
   const [draft, setDraft] = useState<WizardDraftData | null>(initialDraft ?? null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const syncDraft = () => {
     try {
@@ -55,19 +61,19 @@ export function DraftStorageModal({
     }
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !mounted) return null;
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-fade-in"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm animate-fade-in overflow-y-auto"
       onClick={onClose}
     >
       <div
-        className="relative flex w-full max-w-[540px] flex-col rounded-[22px] border border-line bg-panel p-6 shadow-2xl animate-scale-in"
+        className="relative my-auto flex w-full max-w-[540px] max-h-[88vh] flex-col rounded-[22px] border border-line bg-panel p-6 shadow-2xl animate-scale-in"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-line pb-4">
+        <div className="flex items-center justify-between border-b border-line pb-4 shrink-0">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-[#1a2238] text-blue-soft">
               <Icon name="archive" size={20} />
@@ -87,7 +93,7 @@ export function DraftStorageModal({
         </div>
 
         {/* Content Details */}
-        <div className="mt-4 flex flex-col gap-3 text-xs">
+        <div className="mt-4 flex flex-col gap-3 overflow-y-auto pr-1 text-xs">
           {/* Workspace Storage Card */}
           <div className="rounded-[12px] bg-panel-2 p-3.5 border border-line">
             <div className="flex items-center gap-2 font-semibold text-ink mb-1">
@@ -139,7 +145,7 @@ export function DraftStorageModal({
         </div>
 
         {/* Footer Actions */}
-        <div className="mt-5 flex items-center justify-between border-t border-line pt-4">
+        <div className="mt-5 flex items-center justify-between border-t border-line pt-4 shrink-0">
           {draft ? (
             <button
               type="button"
@@ -169,6 +175,7 @@ export function DraftStorageModal({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
