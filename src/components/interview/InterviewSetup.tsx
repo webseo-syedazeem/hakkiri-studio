@@ -222,6 +222,8 @@ export function InterviewSetup() {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [activeDatePickerId, setActiveDatePickerId] = useState<string | null>(null);
   const [activeTimePickerId, setActiveTimePickerId] = useState<string | null>(null);
+  const [activeFormatDropdownId, setActiveFormatDropdownId] = useState<string | null>(null);
+  const [activeStatusDropdownId, setActiveStatusDropdownId] = useState<string | null>(null);
 
   // Stage update helper
   const updateStage = (id: string, updates: Partial<StageItem>) => {
@@ -868,6 +870,8 @@ export function InterviewSetup() {
                                 e.stopPropagation();
                                 setActiveDatePickerId(activeDatePickerId === stg.id ? null : stg.id);
                                 setActiveTimePickerId(null);
+                                setActiveFormatDropdownId(null);
+                                setActiveStatusDropdownId(null);
                               }}
                               className={clsx(
                                 "flex items-center gap-1.5 rounded-lg bg-[#141620] px-2.5 py-1.5 text-muted border transition-all cursor-pointer",
@@ -898,6 +902,8 @@ export function InterviewSetup() {
                                 e.stopPropagation();
                                 setActiveTimePickerId(activeTimePickerId === stg.id ? null : stg.id);
                                 setActiveDatePickerId(null);
+                                setActiveFormatDropdownId(null);
+                                setActiveStatusDropdownId(null);
                               }}
                               className={clsx(
                                 "flex items-center gap-1.5 rounded-lg bg-[#141620] px-2.5 py-1.5 text-muted border transition-all cursor-pointer",
@@ -920,19 +926,127 @@ export function InterviewSetup() {
                             )}
                           </div>
 
-                          {/* Format Dropdown */}
-                          <div className="flex items-center gap-1 rounded-lg bg-[#141620] px-2.5 py-1.5 text-muted border border-line/80 focus-within:border-blue-fill">
-                            <span className="text-[10px] text-dim font-medium uppercase tracking-wider">Format</span>
-                            <select
-                              value={stg.format}
-                              onChange={(e) => updateStage(stg.id, { format: e.target.value })}
-                              className="bg-transparent text-xs font-medium text-ink outline-none cursor-pointer pr-1 appearance-none"
+                          {/* Format Dropdown with Custom Dark Studio Menu */}
+                          <div className="relative">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveFormatDropdownId(activeFormatDropdownId === stg.id ? null : stg.id);
+                                setActiveDatePickerId(null);
+                                setActiveTimePickerId(null);
+                                setActiveStatusDropdownId(null);
+                              }}
+                              className={clsx(
+                                "flex items-center gap-1.5 rounded-lg bg-[#141620] px-2.5 py-1.5 text-muted border transition-all cursor-pointer group",
+                                activeFormatDropdownId === stg.id
+                                  ? "border-blue-fill text-ink shadow-[0_0_12px_rgba(74,90,240,0.4)]"
+                                  : "border-line/80 hover:border-line hover:text-ink"
+                              )}
                             >
-                              <option value="Video call" className="bg-[#1a1d28] text-ink">Video call</option>
-                              <option value="In person" className="bg-[#1a1d28] text-ink">In person</option>
-                              <option value="Phone call" className="bg-[#1a1d28] text-ink">Phone call</option>
-                            </select>
-                            <span className="text-[10px] text-dim pointer-events-none">▾</span>
+                              <span className="text-[10px] text-dim font-medium uppercase tracking-wider">Format</span>
+                              {stg.format === "Video call" && (
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-soft shrink-0">
+                                  <polygon points="23 7 16 12 23 17 23 7" />
+                                  <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+                                </svg>
+                              )}
+                              {stg.format === "In person" && (
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-lilac shrink-0">
+                                  <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z" />
+                                  <path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2" />
+                                  <path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2" />
+                                </svg>
+                              )}
+                              {stg.format === "Phone call" && (
+                                <Icon name="phone" size={11} className="text-emerald-400 shrink-0" />
+                              )}
+                              <span className="text-xs font-semibold text-ink whitespace-nowrap">{stg.format}</span>
+                              <span className={clsx("text-[9px] text-dim transition-transform duration-200", activeFormatDropdownId === stg.id && "rotate-180")}>▾</span>
+                            </button>
+
+                            {activeFormatDropdownId === stg.id && (
+                              <div
+                                onClick={(e) => e.stopPropagation()}
+                                className="absolute top-full left-0 z-50 mt-1.5 w-56 rounded-xl border border-line bg-[#151824] p-1.5 shadow-[0_16px_40px_rgba(0,0,0,0.8),0_0_20px_rgba(99,102,241,0.25)] backdrop-blur-md animate-scale-in"
+                              >
+                                <div className="px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-dim border-b border-line/50 mb-1 flex items-center justify-between">
+                                  <span>Select Format</span>
+                                  <span className="text-[9px] lowercase text-dim font-normal">3 options</span>
+                                </div>
+                                {[
+                                  {
+                                    id: "Video call",
+                                    label: "Video call",
+                                    desc: "Online meeting via video",
+                                    icon: (
+                                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-soft">
+                                        <polygon points="23 7 16 12 23 17 23 7" />
+                                        <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+                                      </svg>
+                                    ),
+                                  },
+                                  {
+                                    id: "In person",
+                                    label: "In person",
+                                    desc: "On-site at company office",
+                                    icon: (
+                                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-lilac">
+                                        <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z" />
+                                        <path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2" />
+                                        <path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2" />
+                                      </svg>
+                                    ),
+                                  },
+                                  {
+                                    id: "Phone call",
+                                    label: "Phone call",
+                                    desc: "Direct voice phone screening",
+                                    icon: <Icon name="phone" size={12} className="text-emerald-400" />,
+                                  },
+                                ].map((fmt) => {
+                                  const isSelected = stg.format === fmt.id;
+                                  return (
+                                    <button
+                                      key={fmt.id}
+                                      type="button"
+                                      onClick={() => {
+                                        updateStage(stg.id, { format: fmt.id });
+                                        setActiveFormatDropdownId(null);
+                                      }}
+                                      className={clsx(
+                                        "flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left transition-all cursor-pointer group/item",
+                                        isSelected
+                                          ? "bg-blue-fill/15 text-white"
+                                          : "hover:bg-panel-2 text-ink/80 hover:text-ink"
+                                      )}
+                                    >
+                                      <div className="flex items-center gap-2.5">
+                                        <div
+                                          className={clsx(
+                                            "flex h-7 w-7 items-center justify-center rounded-lg border transition-colors",
+                                            isSelected
+                                              ? "bg-blue-fill/20 border-blue-fill/50"
+                                              : "bg-panel-2 border-line/60 group-hover/item:border-line"
+                                          )}
+                                        >
+                                          {fmt.icon}
+                                        </div>
+                                        <div>
+                                          <div className={clsx("text-xs font-semibold leading-tight", isSelected ? "text-ink" : "text-ink/90")}>
+                                            {fmt.label}
+                                          </div>
+                                          <div className="text-[10px] text-muted">{fmt.desc}</div>
+                                        </div>
+                                      </div>
+                                      {isSelected && (
+                                        <span className="text-blue-soft text-xs font-bold pl-2">✓</span>
+                                      )}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
                           </div>
 
                           {/* Interviewer Field */}
@@ -947,26 +1061,119 @@ export function InterviewSetup() {
                             />
                           </div>
 
-                          {/* Status Dropdown Selector */}
+                          {/* Status Dropdown with Custom Dark Studio Pill & Menu */}
                           <div className="relative">
-                            <select
-                              value={stg.status}
-                              onChange={(e) =>
-                                updateStage(stg.id, {
-                                  status: e.target.value as "completed" | "next" | "not_scheduled",
-                                })
-                              }
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveStatusDropdownId(activeStatusDropdownId === stg.id ? null : stg.id);
+                                setActiveDatePickerId(null);
+                                setActiveTimePickerId(null);
+                                setActiveFormatDropdownId(null);
+                              }}
                               className={clsx(
-                                "rounded-full px-3 py-1 text-[11px] font-semibold appearance-none cursor-pointer outline-none transition-colors border",
-                                stg.status === "completed" && "bg-[#10b981]/15 text-[#10b981] border-[#10b981]/30",
-                                stg.status === "next" && "bg-blue-fill/20 text-blue-soft border-blue-fill/40",
-                                stg.status === "not_scheduled" && "bg-white/[0.06] text-muted border-white/[0.12]"
+                                "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold border transition-all cursor-pointer",
+                                stg.status === "completed" && "bg-[#10b981]/15 text-[#10b981] border-[#10b981]/30 hover:bg-[#10b981]/25 hover:border-[#10b981]/50 shadow-[0_0_12px_rgba(16,185,129,0.2)]",
+                                stg.status === "next" && "bg-blue-fill/20 text-blue-soft border-blue-fill/40 hover:bg-blue-fill/30 hover:border-blue-fill/60 shadow-[0_0_12px_rgba(74,90,240,0.25)]",
+                                stg.status === "not_scheduled" && "bg-white/[0.06] text-muted border-white/[0.12] hover:bg-white/[0.1] hover:border-white/[0.2]",
+                                activeStatusDropdownId === stg.id && "ring-2 ring-blue-fill/40"
                               )}
                             >
-                              <option value="completed" className="bg-[#1a1d28] text-[#10b981]">Completed</option>
-                              <option value="next" className="bg-[#1a1d28] text-blue-soft">Next stage</option>
-                              <option value="not_scheduled" className="bg-[#1a1d28] text-muted">Not scheduled</option>
-                            </select>
+                              <span
+                                className={clsx(
+                                  "h-1.5 w-1.5 rounded-full shrink-0",
+                                  stg.status === "completed" && "bg-[#10b981] shadow-[0_0_6px_#10b981]",
+                                  stg.status === "next" && "bg-blue-soft shadow-[0_0_6px_#4f5df4] animate-pulse",
+                                  stg.status === "not_scheduled" && "bg-dim"
+                                )}
+                              />
+                              <span className="capitalize">
+                                {stg.status === "completed" ? "Completed" : stg.status === "next" ? "Next stage" : "Not scheduled"}
+                              </span>
+                              <span className={clsx("text-[9px] opacity-70 transition-transform duration-200", activeStatusDropdownId === stg.id && "rotate-180")}>▾</span>
+                            </button>
+
+                            {activeStatusDropdownId === stg.id && (
+                              <div
+                                onClick={(e) => e.stopPropagation()}
+                                className="absolute top-full right-0 z-50 mt-1.5 w-56 rounded-xl border border-line bg-[#151824] p-1.5 shadow-[0_16px_40px_rgba(0,0,0,0.8),0_0_20px_rgba(99,102,241,0.25)] backdrop-blur-md animate-scale-in"
+                              >
+                                <div className="px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-dim border-b border-line/50 mb-1 flex items-center justify-between">
+                                  <span>Stage Status</span>
+                                  <span className="text-[9px] lowercase text-dim font-normal">workflow</span>
+                                </div>
+                                {[
+                                  {
+                                    id: "completed",
+                                    label: "Completed",
+                                    desc: "Stage finished & passed",
+                                    badgeColor: "text-[#10b981]",
+                                    bgColor: "hover:bg-[#10b981]/10",
+                                    indicator: (
+                                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#10b981]/20 text-[#10b981] font-bold text-xs border border-[#10b981]/30">
+                                        ✓
+                                      </div>
+                                    ),
+                                  },
+                                  {
+                                    id: "next",
+                                    label: "Next stage",
+                                    desc: "Upcoming interview focus",
+                                    badgeColor: "text-blue-soft",
+                                    bgColor: "hover:bg-blue-fill/15",
+                                    indicator: (
+                                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-fill/25 text-blue-soft text-xs border border-blue-fill/40">
+                                        <span className="h-2 w-2 rounded-full bg-blue-soft animate-ping" />
+                                      </div>
+                                    ),
+                                  },
+                                  {
+                                    id: "not_scheduled",
+                                    label: "Not scheduled",
+                                    desc: "Date yet to be confirmed",
+                                    badgeColor: "text-muted",
+                                    bgColor: "hover:bg-panel-2",
+                                    indicator: (
+                                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/[0.06] text-dim text-xs border border-white/[0.1]">
+                                        ○
+                                      </div>
+                                    ),
+                                  },
+                                ].map((st) => {
+                                  const isSelected = stg.status === st.id;
+                                  return (
+                                    <button
+                                      key={st.id}
+                                      type="button"
+                                      onClick={() => {
+                                        updateStage(stg.id, {
+                                          status: st.id as "completed" | "next" | "not_scheduled",
+                                        });
+                                        setActiveStatusDropdownId(null);
+                                      }}
+                                      className={clsx(
+                                        "flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left transition-all cursor-pointer group/stg",
+                                        isSelected ? "bg-white/[0.08]" : st.bgColor
+                                      )}
+                                    >
+                                      <div className="flex items-center gap-2.5">
+                                        {st.indicator}
+                                        <div>
+                                          <div className={clsx("text-xs font-semibold leading-tight", st.badgeColor)}>
+                                            {st.label}
+                                          </div>
+                                          <div className="text-[10px] text-muted">{st.desc}</div>
+                                        </div>
+                                      </div>
+                                      {isSelected && (
+                                        <span className={clsx("text-xs font-bold pl-2", st.badgeColor)}>✓</span>
+                                      )}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
                           </div>
 
                           {/* Delete Button */}
@@ -1652,13 +1859,15 @@ export function InterviewSetup() {
         </div>
       </div>
 
-      {/* Click outside backdrop for open calendar or timepicker */}
-      {(activeDatePickerId || activeTimePickerId) && (
+      {/* Click outside backdrop for open calendar, timepicker, format or status dropdown */}
+      {(activeDatePickerId || activeTimePickerId || activeFormatDropdownId || activeStatusDropdownId) && (
         <div
           className="fixed inset-0 z-40 bg-transparent"
           onClick={() => {
             setActiveDatePickerId(null);
             setActiveTimePickerId(null);
+            setActiveFormatDropdownId(null);
+            setActiveStatusDropdownId(null);
           }}
         />
       )}
