@@ -130,6 +130,15 @@ export function Rail({
               <Icon name="gear" size={15} />
               Settings
             </Link>
+            <Link
+              href="/landing"
+              target="_blank"
+              onClick={() => setShowMenu(false)}
+              className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[13px] text-muted hover:bg-panel-2 hover:text-ink transition-colors"
+            >
+              <Icon name="globe" size={15} />
+              Preview Homepage
+            </Link>
             <button
               type="button"
               onClick={() => { setShowMenu(false); void logout(); }}

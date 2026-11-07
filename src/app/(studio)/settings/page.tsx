@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import clsx from "clsx";
 import { ButtonLink, Icon, Panel } from "@/components/ui";
 import { VoiceSetting } from "@/components/settings/VoiceSetting";
+import { AccountControls } from "@/components/settings/AccountControls";
 import {
   DataButtons,
   RetentionSetting,
@@ -454,31 +455,7 @@ export default async function SettingsPage() {
           )}
 
           <Section id="account" title="Account">
-            <p className="text-sm text-muted">
-              {launch
-                ? "Sign-in with an email link or Google is coming soon."
-                : "Accounts come later: sign in with an email link or Google. Until then, everything is saved on this computer."}
-            </p>
-            <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm">
-              <Link
-                href="/privacy"
-                className="font-semibold text-blue-soft underline-offset-2 hover:underline"
-              >
-                Privacy policy
-              </Link>
-              <Link
-                href="/terms"
-                className="font-semibold text-blue-soft underline-offset-2 hover:underline"
-              >
-                Terms
-              </Link>
-              <Link
-                href="/welcome"
-                className="font-semibold text-blue-soft underline-offset-2 hover:underline"
-              >
-                Welcome screen
-              </Link>
-            </div>
+            <AccountControls />
           </Section>
         </div>
       </div>
