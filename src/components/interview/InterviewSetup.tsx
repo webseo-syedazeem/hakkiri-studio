@@ -7,7 +7,7 @@ import clsx from "clsx";
 import { Button, Crumbs, Icon, Panel } from "@/components/ui";
 import { pastedDocument, readDocument, type ReadDoc } from "./read-docs";
 
-/* ------------------------------------------------------------------ DocField */
+/* ------------------------------------------------------------------ DocField (exported for RebuildFlow) */
 export function DocField({
   id,
   label,
@@ -216,6 +216,58 @@ export function InterviewSetup() {
       icon: "users",
     },
   ]);
+
+  // Drag and drop tracking
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+
+  // Stage update helper
+  const updateStage = (id: string, updates: Partial<StageItem>) => {
+    setStages((prev) =>
+      prev.map((s) => {
+        if (s.id !== id) {
+          // If setting this one to "next", clear next from others to keep only one next stage
+          if (updates.status === "next" && s.status === "next") {
+            return { ...s, status: "not_scheduled" };
+          }
+          return s;
+        }
+        return { ...s, ...updates };
+      })
+    );
+  };
+
+  const handleAddStage = () => {
+    const num = stages.length + 1;
+    const newStage: StageItem = {
+      id: `stage-${Date.now()}`,
+      name: `Custom Stage ${num}`,
+      date: "15 Nov 2026",
+      time: "11:00",
+      format: "Video call",
+      interviewer: "Hiring Manager",
+      status: "not_scheduled",
+      icon: "code",
+    };
+    setStages((prev) => [...prev, newStage]);
+  };
+
+  const handleRemoveStage = (id: string) => {
+    setStages((prev) => prev.filter((s) => s.id !== id));
+  };
+
+  const handleDragStart = (idx: number) => {
+    setDraggedIndex(idx);
+  };
+
+  const handleDragOver = (e: React.DragEvent, targetIdx: number) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === targetIdx) return;
+    const newStages = [...stages];
+    const [draggedItem] = newStages.splice(draggedIndex, 1);
+    newStages.splice(targetIdx, 0, draggedItem);
+    setDraggedIndex(targetIdx);
+    setStages(newStages);
+  };
 
   // Step 3: Practice Setup State
   const [selectedRounds, setSelectedRounds] = useState<string[]>(["1", "3"]); // Recruiter screen and Technical round
@@ -439,13 +491,16 @@ export function InterviewSetup() {
 
                   <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
                     {/* CV Card */}
-                    <div className="flex flex-col justify-between rounded-[14px] bg-panel-2 p-3.5 shadow-[inset_0_0_0_1px_var(--color-line-strong)] transition-all hover:shadow-[inset_0_0_0_1px_var(--color-line)]">
+                    <div
+                      onClick={() => cvInputRef.current?.click()}
+                      className="group flex flex-col justify-between rounded-[14px] bg-panel-2 p-3.5 shadow-[inset_0_0_0_1px_var(--color-line-strong)] transition-all hover:shadow-[inset_0_0_0_1.5px_#818cf8] cursor-pointer"
+                    >
                       <div className="flex items-center gap-2 text-xs font-semibold text-ink">
                         <Icon name="doc" size={15} className="text-blue-soft" />
                         <span>Your CV</span>
                       </div>
                       <div className="mt-3 flex items-center justify-between gap-2 rounded-[10px] bg-[#141620] px-3 py-2 border border-line/60">
-                        <span className="truncate text-xs font-medium text-ink">
+                        <span className="truncate text-xs font-medium text-ink group-hover:text-blue-soft transition-colors">
                           {cvDoc.name}
                         </span>
                         <Icon name="check" size={15} strokeWidth={2.5} className="text-[#10b981] shrink-0" />
@@ -462,13 +517,16 @@ export function InterviewSetup() {
                     </div>
 
                     {/* Job Description Card */}
-                    <div className="flex flex-col justify-between rounded-[14px] bg-panel-2 p-3.5 shadow-[inset_0_0_0_1px_var(--color-line-strong)] transition-all hover:shadow-[inset_0_0_0_1px_var(--color-line)]">
+                    <div
+                      onClick={() => jobInputRef.current?.click()}
+                      className="group flex flex-col justify-between rounded-[14px] bg-panel-2 p-3.5 shadow-[inset_0_0_0_1px_var(--color-line-strong)] transition-all hover:shadow-[inset_0_0_0_1.5px_#818cf8] cursor-pointer"
+                    >
                       <div className="flex items-center gap-2 text-xs font-semibold text-ink">
                         <Icon name="doc" size={15} className="text-blue-soft" />
                         <span>Job description</span>
                       </div>
                       <div className="mt-3 flex items-center justify-between gap-2 rounded-[10px] bg-[#141620] px-3 py-2 border border-line/60">
-                        <span className="truncate text-xs font-medium text-ink">
+                        <span className="truncate text-xs font-medium text-ink group-hover:text-blue-soft transition-colors">
                           {jobDoc.name}
                         </span>
                         <Icon name="check" size={15} strokeWidth={2.5} className="text-[#10b981] shrink-0" />
@@ -485,19 +543,18 @@ export function InterviewSetup() {
                     </div>
 
                     {/* Cover Letter Card */}
-                    <div className="flex flex-col justify-between rounded-[14px] bg-panel-2 p-3.5 shadow-[inset_0_0_0_1px_var(--color-line-strong)] transition-all hover:shadow-[inset_0_0_0_1px_var(--color-line)]">
+                    <div
+                      onClick={() => coverInputRef.current?.click()}
+                      className="group flex flex-col justify-between rounded-[14px] bg-panel-2 p-3.5 shadow-[inset_0_0_0_1px_var(--color-line-strong)] transition-all hover:shadow-[inset_0_0_0_1.5px_#818cf8] cursor-pointer"
+                    >
                       <div className="flex items-center gap-2 text-xs font-semibold text-ink">
                         <Icon name="doc" size={15} className="text-dim" />
                         <span>Cover letter (optional)</span>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => coverInputRef.current?.click()}
-                        className="mt-3 flex items-center justify-center gap-1.5 rounded-[10px] border border-dashed border-white/20 py-2 text-xs font-semibold text-muted hover:border-blue-soft hover:text-ink hover:bg-blue/10 transition-colors cursor-pointer"
-                      >
+                      <div className="mt-3 flex items-center justify-center gap-1.5 rounded-[10px] border border-dashed border-white/20 py-2 text-xs font-semibold text-muted group-hover:border-blue-soft group-hover:text-ink group-hover:bg-blue/10 transition-colors">
                         <Icon name="plus" size={13} strokeWidth={2.2} />
                         <span>{coverDoc ? coverDoc.name : "+ Add a file"}</span>
-                      </button>
+                      </div>
                       <input
                         ref={coverInputRef}
                         type="file"
@@ -559,7 +616,7 @@ export function InterviewSetup() {
         )}
 
         {/* ============================================================== */}
-        {/* STEP 2: INTERVIEW STAGES */}
+        {/* STEP 2: INTERVIEW STAGES (FULLY INTERACTIVE & EDITABLE) */}
         {/* ============================================================== */}
         {step === 2 && (
           <div className="flex animate-rise flex-col gap-6">
@@ -623,27 +680,36 @@ export function InterviewSetup() {
                   </h3>
                   <div className="flex items-center gap-4 text-xs text-muted">
                     <span className="flex items-center gap-1.5"><Icon name="drag" size={13} /> Drag to reorder</span>
-                    <span className="flex items-center gap-1.5"><Icon name="edit" size={13} /> Rename</span>
+                    <span className="flex items-center gap-1.5"><Icon name="edit" size={13} /> Click to edit</span>
                     <span className="flex items-center gap-1.5"><Icon name="trash" size={13} /> Delete</span>
                   </div>
                 </div>
 
                 <div className="mt-4 flex flex-col gap-3">
-                  {stages.map((stg) => {
+                  {stages.map((stg, idx) => {
                     const isNext = stg.status === "next";
                     return (
                       <div
                         key={stg.id}
+                        draggable
+                        onDragStart={() => handleDragStart(idx)}
+                        onDragOver={(e) => handleDragOver(e, idx)}
                         className={clsx(
-                          "flex flex-wrap items-center justify-between gap-3 rounded-[14px] p-3.5 transition-all duration-200",
+                          "group relative flex flex-wrap items-center justify-between gap-3 rounded-[14px] p-3.5 transition-all duration-200",
                           isNext
                             ? "bg-[#1c2237] shadow-[inset_0_0_0_1.5px_#6366f1,0_4px_20px_rgba(99,102,241,0.2)]"
                             : "bg-panel-2 shadow-[inset_0_0_0_1px_var(--color-line)] hover:shadow-[inset_0_0_0_1px_var(--color-line-strong)]"
                         )}
                       >
-                        {/* Drag Handle & Icon & Name */}
+                        {/* Drag Handle & Squircle Icon & Editable Name Input */}
                         <div className="flex items-center gap-2.5 min-w-[220px] grow">
-                          <Icon name="drag" size={16} className="text-dim cursor-grab shrink-0" />
+                          <span
+                            title="Drag to reorder"
+                            className="cursor-grab active:cursor-grabbing p-1 text-dim hover:text-ink transition-colors"
+                          >
+                            <Icon name="drag" size={16} />
+                          </span>
+
                           <div
                             className={clsx(
                               "flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px]",
@@ -655,58 +721,102 @@ export function InterviewSetup() {
                           >
                             <Icon name={stg.icon} size={15} />
                           </div>
-                          <span className="text-sm font-semibold text-ink truncate">{stg.name}</span>
-                          <button
-                            type="button"
-                            title="Rename stage"
-                            className="text-muted hover:text-ink transition-colors cursor-pointer"
-                          >
-                            <Icon name="edit" size={13} />
-                          </button>
+
+                          {/* Editable Stage Name Input */}
+                          <div className="relative flex items-center gap-1.5 rounded-lg bg-[#141620] px-3 py-1.5 border border-line/80 focus-within:border-blue-fill min-w-[180px] max-w-[240px] grow transition-all">
+                            <input
+                              type="text"
+                              value={stg.name}
+                              onChange={(e) => updateStage(stg.id, { name: e.target.value })}
+                              placeholder="Stage name"
+                              className="w-full bg-transparent text-xs font-semibold text-ink outline-none"
+                            />
+                            <Icon name="edit" size={12} className="text-muted shrink-0 pointer-events-none" />
+                          </div>
                         </div>
 
-                        {/* Date, Time, Format, Interviewer fields */}
+                        {/* Editable Date, Time, Format, Interviewer, and Status */}
                         <div className="flex flex-wrap items-center gap-2 text-xs">
-                          <div className="flex items-center gap-1.5 rounded-lg bg-[#12141c] px-2.5 py-1.5 text-muted border border-line">
-                            <span className="text-[11px] text-dim">Date</span>
-                            <Icon name="cal" size={12} />
-                            <span>{stg.date}</span>
-                          </div>
-                          <div className="flex items-center gap-1.5 rounded-lg bg-[#12141c] px-2.5 py-1.5 text-muted border border-line">
-                            <span className="text-[11px] text-dim">Time</span>
-                            <Icon name="clock" size={12} />
-                            <span>{stg.time}</span>
-                          </div>
-                          <div className="flex items-center gap-1 rounded-lg bg-[#12141c] px-2.5 py-1.5 text-muted border border-line">
-                            <span className="text-[11px] text-dim">Format</span>
-                            <span>{stg.format} ▾</span>
-                          </div>
-                          <div className="flex items-center gap-1 rounded-lg bg-[#12141c] px-2.5 py-1.5 text-muted border border-line">
-                            <span className="text-[11px] text-dim">Interviewer</span>
-                            <span>{stg.interviewer}</span>
+                          {/* Date Field */}
+                          <div className="flex items-center gap-1.5 rounded-lg bg-[#141620] px-2.5 py-1.5 text-muted border border-line/80 focus-within:border-blue-fill">
+                            <span className="text-[10px] text-dim font-medium uppercase tracking-wider">Date</span>
+                            <Icon name="cal" size={12} className="text-dim shrink-0" />
+                            <input
+                              type="text"
+                              value={stg.date}
+                              onChange={(e) => updateStage(stg.id, { date: e.target.value })}
+                              placeholder="12 Nov 2026"
+                              className="w-[88px] bg-transparent text-xs font-medium text-ink outline-none"
+                            />
                           </div>
 
-                          {/* Status Badge */}
-                          {stg.status === "completed" && (
-                            <span className="rounded-full bg-[#10b981]/15 px-2.5 py-0.5 text-[11px] font-semibold text-[#10b981]">
-                              Completed
-                            </span>
-                          )}
-                          {stg.status === "next" && (
-                            <span className="rounded-full bg-blue-fill/20 px-2.5 py-0.5 text-[11px] font-semibold text-blue-soft">
-                              Next stage
-                            </span>
-                          )}
-                          {stg.status === "not_scheduled" && (
-                            <span className="rounded-full bg-white/[0.06] px-2.5 py-0.5 text-[11px] font-medium text-muted">
-                              Not scheduled
-                            </span>
-                          )}
+                          {/* Time Field */}
+                          <div className="flex items-center gap-1.5 rounded-lg bg-[#141620] px-2.5 py-1.5 text-muted border border-line/80 focus-within:border-blue-fill">
+                            <span className="text-[10px] text-dim font-medium uppercase tracking-wider">Time</span>
+                            <Icon name="clock" size={12} className="text-dim shrink-0" />
+                            <input
+                              type="text"
+                              value={stg.time}
+                              onChange={(e) => updateStage(stg.id, { time: e.target.value })}
+                              placeholder="09:30"
+                              className="w-[50px] bg-transparent text-xs font-medium text-ink outline-none"
+                            />
+                          </div>
 
+                          {/* Format Dropdown */}
+                          <div className="flex items-center gap-1 rounded-lg bg-[#141620] px-2.5 py-1.5 text-muted border border-line/80 focus-within:border-blue-fill">
+                            <span className="text-[10px] text-dim font-medium uppercase tracking-wider">Format</span>
+                            <select
+                              value={stg.format}
+                              onChange={(e) => updateStage(stg.id, { format: e.target.value })}
+                              className="bg-transparent text-xs font-medium text-ink outline-none cursor-pointer pr-1 appearance-none"
+                            >
+                              <option value="Video call" className="bg-[#1a1d28] text-ink">Video call</option>
+                              <option value="In person" className="bg-[#1a1d28] text-ink">In person</option>
+                              <option value="Phone call" className="bg-[#1a1d28] text-ink">Phone call</option>
+                            </select>
+                            <span className="text-[10px] text-dim pointer-events-none">▾</span>
+                          </div>
+
+                          {/* Interviewer Field */}
+                          <div className="flex items-center gap-1.5 rounded-lg bg-[#141620] px-2.5 py-1.5 text-muted border border-line/80 focus-within:border-blue-fill">
+                            <span className="text-[10px] text-dim font-medium uppercase tracking-wider">Interviewer</span>
+                            <input
+                              type="text"
+                              value={stg.interviewer}
+                              onChange={(e) => updateStage(stg.id, { interviewer: e.target.value })}
+                              placeholder="Recruiter"
+                              className="w-[85px] bg-transparent text-xs font-medium text-ink outline-none"
+                            />
+                          </div>
+
+                          {/* Status Dropdown Selector */}
+                          <div className="relative">
+                            <select
+                              value={stg.status}
+                              onChange={(e) =>
+                                updateStage(stg.id, {
+                                  status: e.target.value as "completed" | "next" | "not_scheduled",
+                                })
+                              }
+                              className={clsx(
+                                "rounded-full px-3 py-1 text-[11px] font-semibold appearance-none cursor-pointer outline-none transition-colors border",
+                                stg.status === "completed" && "bg-[#10b981]/15 text-[#10b981] border-[#10b981]/30",
+                                stg.status === "next" && "bg-blue-fill/20 text-blue-soft border-blue-fill/40",
+                                stg.status === "not_scheduled" && "bg-white/[0.06] text-muted border-white/[0.12]"
+                              )}
+                            >
+                              <option value="completed" className="bg-[#1a1d28] text-[#10b981]">Completed</option>
+                              <option value="next" className="bg-[#1a1d28] text-blue-soft">Next stage</option>
+                              <option value="not_scheduled" className="bg-[#1a1d28] text-muted">Not scheduled</option>
+                            </select>
+                          </div>
+
+                          {/* Delete Button */}
                           <button
                             type="button"
-                            onClick={() => setStages(stages.filter((s) => s.id !== stg.id))}
-                            className="p-1 text-dim hover:text-red-soft transition-colors cursor-pointer"
+                            onClick={() => handleRemoveStage(stg.id)}
+                            className="p-1.5 text-dim hover:text-red-soft hover:bg-red-soft/10 rounded-lg transition-colors cursor-pointer"
                             title="Delete stage"
                           >
                             <Icon name="trash" size={14} />
@@ -720,26 +830,11 @@ export function InterviewSetup() {
                 {/* Add Stage Button */}
                 <button
                   type="button"
-                  onClick={() => {
-                    const newId = String(stages.length + 1);
-                    setStages([
-                      ...stages,
-                      {
-                        id: newId,
-                        name: "Custom Round " + newId,
-                        date: "15 Nov 2026",
-                        time: "11:00",
-                        format: "Video call",
-                        interviewer: "Hiring Manager",
-                        status: "not_scheduled",
-                        icon: "code",
-                      },
-                    ]);
-                  }}
-                  className="mt-4 flex items-center gap-1.5 rounded-[10px] bg-panel-2 px-4 py-2 text-xs font-semibold text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-[#2b2d38] transition-colors cursor-pointer"
+                  onClick={handleAddStage}
+                  className="mt-4 flex items-center gap-1.5 rounded-[10px] bg-panel-2 px-4 py-2 text-xs font-semibold text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-[#2b2d38] transition-colors cursor-pointer active:scale-95"
                 >
                   <Icon name="plus" size={14} strokeWidth={2.2} />
-                  <span>Add another stage</span>
+                  <span>+ Add another stage</span>
                 </button>
 
                 {/* Step 2 Actions */}
@@ -775,7 +870,7 @@ export function InterviewSetup() {
         )}
 
         {/* ============================================================== */}
-        {/* STEP 3: PRACTICE SETUP */}
+        {/* STEP 3: PRACTICE SETUP (INTERACTIVE SLIDERS & ROUND SELECTION) */}
         {/* ============================================================== */}
         {step === 3 && (
           <div className="flex animate-rise flex-col gap-6">
@@ -849,7 +944,7 @@ export function InterviewSetup() {
                 </span>
               </div>
 
-              {/* Question Focus Sliders */}
+              {/* Question Focus Sliders with Interactive Tracks */}
               <div className="mt-6 border-t border-line pt-5">
                 <h3 className="text-[14px] font-bold text-ink">Question focus</h3>
                 <p className="mt-0.5 text-xs text-muted">
@@ -860,37 +955,61 @@ export function InterviewSetup() {
                   {/* Technical Bar */}
                   <div className="flex items-center gap-4">
                     <span className="w-24 text-xs font-semibold text-ink shrink-0">Technical</span>
-                    <div className="relative h-2 grow rounded-full bg-[#171d32] overflow-hidden">
+                    <div className="relative h-3 grow rounded-full bg-[#171d32] overflow-hidden flex items-center">
                       <div
-                        className="h-full rounded-full bg-[#6366f1] shadow-[0_0_10px_rgba(99,102,241,0.6)] transition-all duration-300"
+                        className="h-full rounded-full bg-[#6366f1] shadow-[0_0_10px_rgba(99,102,241,0.6)] transition-all duration-150"
                         style={{ width: `${techFocus}%` }}
                       />
+                      <input
+                        type="range"
+                        min={0}
+                        max={100}
+                        value={techFocus}
+                        onChange={(e) => setTechFocus(Number(e.target.value))}
+                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                      />
                     </div>
-                    <span className="w-12 text-right text-xs font-semibold text-ink num">{techFocus}%</span>
+                    <span className="w-12 text-right text-xs font-bold text-ink num">{techFocus}%</span>
                   </div>
 
                   {/* Skills Bar */}
                   <div className="flex items-center gap-4">
                     <span className="w-24 text-xs font-semibold text-ink shrink-0">Skills</span>
-                    <div className="relative h-2 grow rounded-full bg-[#171d32] overflow-hidden">
+                    <div className="relative h-3 grow rounded-full bg-[#171d32] overflow-hidden flex items-center">
                       <div
-                        className="h-full rounded-full bg-[#6366f1] shadow-[0_0_10px_rgba(99,102,241,0.6)] transition-all duration-300"
+                        className="h-full rounded-full bg-[#6366f1] shadow-[0_0_10px_rgba(99,102,241,0.6)] transition-all duration-150"
                         style={{ width: `${skillsFocus}%` }}
                       />
+                      <input
+                        type="range"
+                        min={0}
+                        max={100}
+                        value={skillsFocus}
+                        onChange={(e) => setSkillsFocus(Number(e.target.value))}
+                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                      />
                     </div>
-                    <span className="w-12 text-right text-xs font-semibold text-ink num">{skillsFocus}%</span>
+                    <span className="w-12 text-right text-xs font-bold text-ink num">{skillsFocus}%</span>
                   </div>
 
                   {/* Experience Bar */}
                   <div className="flex items-center gap-4">
                     <span className="w-24 text-xs font-semibold text-ink shrink-0">Experience</span>
-                    <div className="relative h-2 grow rounded-full bg-[#171d32] overflow-hidden">
+                    <div className="relative h-3 grow rounded-full bg-[#171d32] overflow-hidden flex items-center">
                       <div
-                        className="h-full rounded-full bg-[#6366f1] shadow-[0_0_10px_rgba(99,102,241,0.6)] transition-all duration-300"
+                        className="h-full rounded-full bg-[#6366f1] shadow-[0_0_10px_rgba(99,102,241,0.6)] transition-all duration-150"
                         style={{ width: `${expFocus}%` }}
                       />
+                      <input
+                        type="range"
+                        min={0}
+                        max={100}
+                        value={expFocus}
+                        onChange={(e) => setExpFocus(Number(e.target.value))}
+                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                      />
                     </div>
-                    <span className="w-12 text-right text-xs font-semibold text-ink num">{expFocus}%</span>
+                    <span className="w-12 text-right text-xs font-bold text-ink num">{expFocus}%</span>
                   </div>
                 </div>
               </div>
