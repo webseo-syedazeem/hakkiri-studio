@@ -6,6 +6,7 @@ import Link from "next/link";
 import clsx from "clsx";
 import { Button, Crumbs, Icon, Panel } from "@/components/ui";
 import { pastedDocument, readDocument, type ReadDoc } from "./read-docs";
+import { CalendarPopup, TimePickerPopup } from "./DatePicker";
 
 /* ------------------------------------------------------------------ DocField (exported for RebuildFlow) */
 export function DocField({
@@ -219,6 +220,8 @@ export function InterviewSetup() {
 
   // Drag and drop tracking
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [activeDatePickerId, setActiveDatePickerId] = useState<string | null>(null);
+  const [activeTimePickerId, setActiveTimePickerId] = useState<string | null>(null);
 
   // Stage update helper
   const updateStage = (id: string, updates: Partial<StageItem>) => {
@@ -737,30 +740,64 @@ export function InterviewSetup() {
 
                         {/* Editable Date, Time, Format, Interviewer, and Status */}
                         <div className="flex flex-wrap items-center gap-2 text-xs">
-                          {/* Date Field */}
-                          <div className="flex items-center gap-1.5 rounded-lg bg-[#141620] px-2.5 py-1.5 text-muted border border-line/80 focus-within:border-blue-fill">
-                            <span className="text-[10px] text-dim font-medium uppercase tracking-wider">Date</span>
-                            <Icon name="cal" size={12} className="text-dim shrink-0" />
-                            <input
-                              type="text"
-                              value={stg.date}
-                              onChange={(e) => updateStage(stg.id, { date: e.target.value })}
-                              placeholder="12 Nov 2026"
-                              className="w-[88px] bg-transparent text-xs font-medium text-ink outline-none"
-                            />
+                          {/* Date Field with Interactive Calendar Popup */}
+                          <div className="relative">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveDatePickerId(activeDatePickerId === stg.id ? null : stg.id);
+                                setActiveTimePickerId(null);
+                              }}
+                              className={clsx(
+                                "flex items-center gap-1.5 rounded-lg bg-[#141620] px-2.5 py-1.5 text-muted border transition-all cursor-pointer",
+                                activeDatePickerId === stg.id
+                                  ? "border-blue-fill text-ink shadow-[0_0_12px_rgba(74,90,240,0.4)]"
+                                  : "border-line/80 hover:border-line hover:text-ink"
+                              )}
+                            >
+                              <span className="text-[10px] text-dim font-medium uppercase tracking-wider">Date</span>
+                              <Icon name="cal" size={13} className="text-blue-soft shrink-0" />
+                              <span className="text-xs font-semibold text-ink whitespace-nowrap">{stg.date}</span>
+                            </button>
+
+                            {activeDatePickerId === stg.id && (
+                              <CalendarPopup
+                                value={stg.date}
+                                onChange={(newDate) => updateStage(stg.id, { date: newDate })}
+                                onClose={() => setActiveDatePickerId(null)}
+                              />
+                            )}
                           </div>
 
-                          {/* Time Field */}
-                          <div className="flex items-center gap-1.5 rounded-lg bg-[#141620] px-2.5 py-1.5 text-muted border border-line/80 focus-within:border-blue-fill">
-                            <span className="text-[10px] text-dim font-medium uppercase tracking-wider">Time</span>
-                            <Icon name="clock" size={12} className="text-dim shrink-0" />
-                            <input
-                              type="text"
-                              value={stg.time}
-                              onChange={(e) => updateStage(stg.id, { time: e.target.value })}
-                              placeholder="09:30"
-                              className="w-[50px] bg-transparent text-xs font-medium text-ink outline-none"
-                            />
+                          {/* Time Field with Interactive Time Picker Popup */}
+                          <div className="relative">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveTimePickerId(activeTimePickerId === stg.id ? null : stg.id);
+                                setActiveDatePickerId(null);
+                              }}
+                              className={clsx(
+                                "flex items-center gap-1.5 rounded-lg bg-[#141620] px-2.5 py-1.5 text-muted border transition-all cursor-pointer",
+                                activeTimePickerId === stg.id
+                                  ? "border-blue-fill text-ink shadow-[0_0_12px_rgba(74,90,240,0.4)]"
+                                  : "border-line/80 hover:border-line hover:text-ink"
+                              )}
+                            >
+                              <span className="text-[10px] text-dim font-medium uppercase tracking-wider">Time</span>
+                              <Icon name="clock" size={13} className="text-blue-soft shrink-0" />
+                              <span className="text-xs font-semibold text-ink whitespace-nowrap">{stg.time}</span>
+                            </button>
+
+                            {activeTimePickerId === stg.id && (
+                              <TimePickerPopup
+                                value={stg.time}
+                                onChange={(newTime) => updateStage(stg.id, { time: newTime })}
+                                onClose={() => setActiveTimePickerId(null)}
+                              />
+                            )}
                           </div>
 
                           {/* Format Dropdown */}
@@ -1494,6 +1531,17 @@ export function InterviewSetup() {
           )}
         </div>
       </div>
+
+      {/* Click outside backdrop for open calendar or timepicker */}
+      {(activeDatePickerId || activeTimePickerId) && (
+        <div
+          className="fixed inset-0 z-40 bg-transparent"
+          onClick={() => {
+            setActiveDatePickerId(null);
+            setActiveTimePickerId(null);
+          }}
+        />
+      )}
     </div>
   );
 }
