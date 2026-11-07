@@ -22,7 +22,7 @@ import {
 import { GROUP_ORDER } from "@/lib/labels";
 import { displayHost, readLink } from "./links";
 import { closingQuestion, openingQuestion, templatePlan, templateQuestions, templateUnderstanding, toQuestions, type BuiltPlan } from "./plan";
-import { saveInterview, updateInterview } from "./store";
+import { saveInterview, saveInterviewAsync, updateInterview } from "./store";
 import { settingsOr, type SessionSettings } from "./settings";
 
 /**
@@ -167,6 +167,7 @@ export async function buildInterview(input: BuildInput): Promise<BuildResult> {
     setupNotes: notes,
   };
   saveInterview(interview);
+  void saveInterviewAsync(interview);
   return { interview, notes };
 }
 

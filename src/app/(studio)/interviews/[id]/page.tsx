@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import clsx from "clsx";
 import { ButtonLink, Icon, Meter, Panel, Sep, toneText } from "@/components/ui";
 import { londonToday } from "@/lib/dates";
-import { getInterview, isDemoInterview } from "@/lib/interviews/store";
+import { getInterview, getInterviewAsync, isDemoInterview } from "@/lib/interviews/store";
 import { devOr } from "@/lib/launch";
 import { understandingOf } from "@/lib/interviews/build";
 import { CATEGORY_ORDER, categoryLabel, leanTowards, settingsOr } from "@/lib/interviews/settings";
@@ -34,7 +34,7 @@ const verdictTone = { ready: "text-blue-soft", nearly: "text-lilac", "not-yet": 
 export default async function InterviewOverview({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ new?: string; rebuilt?: string }> }) {
   const { id } = await params;
   const { new: isNew, rebuilt } = await searchParams;
-  const interview = getInterview(id);
+  const interview = (await getInterviewAsync(id)) ?? getInterview(id);
   if (!interview) notFound();
 
   const micOk = (await cookies()).get("hk_mic_ok")?.value === "1";

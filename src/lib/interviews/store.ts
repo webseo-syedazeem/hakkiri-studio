@@ -74,6 +74,22 @@ export function listInterviews(today: string): Interview[] {
   return demo ? [...sorted, demo] : sorted;
 }
 
+export async function listInterviewsAsync(today: string): Promise<Interview[]> {
+  if (isMongoConfigured()) {
+    try {
+      const fromDb = await loadJsonAsync<Interview[]>(FILE, []);
+      if (Array.isArray(fromDb)) {
+        for (const item of fromDb) {
+          store.set(item.id, item);
+        }
+      }
+    } catch (err) {
+      console.warn("[interviews/store] MongoDB load list failed:", err);
+    }
+  }
+  return listInterviews(today);
+}
+
 /** The interview Home leads with: your soonest upcoming one, or the demo until you add your own. */
 export function featuredInterview(today: string): Interview | undefined {
   return listInterviews(today)[0];
@@ -83,6 +99,11 @@ export function saveInterview(i: Interview) {
   // Questions you add yourself live in their own store.
   store.set(i.id, { ...i, questions: i.questions.filter((q) => !q.custom) });
   persist();
+}
+
+export async function saveInterviewAsync(i: Interview) {
+  store.set(i.id, { ...i, questions: i.questions.filter((q) => !q.custom) });
+  await saveJsonAsync(FILE, [...store.values()]);
 }
 
 /** Changes a saved interview (or the demo) and returns it as getInterview would. */

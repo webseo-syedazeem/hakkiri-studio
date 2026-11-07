@@ -8,6 +8,7 @@ import { Button, Crumbs, Icon, Panel } from "@/components/ui";
 import { pastedDocument, readDocument, type ReadDoc } from "./read-docs";
 import { CalendarPopup, TimePickerPopup } from "./DatePicker";
 import { DraftStorageModal } from "./DraftStorageModal";
+import { saveClientInterview } from "@/lib/interviews/client-store";
 
 /* ------------------------------------------------------------------ DocField (exported for RebuildFlow) */
 export function DocField({
@@ -373,33 +374,80 @@ export function InterviewSetup() {
 
   const handleBuildInterview = async () => {
     setIsBuilding(true);
+
+    const validMinutes = [10, 20, 30, 45, 60].includes(duration as any) ? (duration as 10 | 20 | 30 | 45 | 60) : 30;
+    const validDifficulty = ["easy", "medium", "hard"].includes(difficulty.toLowerCase() as any) ? (difficulty.toLowerCase() as "easy" | "medium" | "hard") : "medium";
+    const apiFormat = stages[0]?.format === "In person" ? "in-person" : stages[0]?.format === "Phone call" ? "phone" : "video";
+
+    let destId = "";
     try {
       const res = await fetch("/api/interviews", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          company: { name: companyName.trim(), url: companyWebsite.trim() },
-          job: {
-            title: jobTitle.trim(),
-            text: "Payments software, metrics, roadmap execution and fraud risk trade-offs.",
-            label: jobDoc.name,
+          company: {
+            name: companyName.trim() || "Halden",
+            url: companyWebsite.trim() || undefined,
           },
-          cv: { text: "CV text for " + companyName, label: cvDoc.name },
-          format: "video",
+          job: {
+            title: jobTitle.trim() || "Senior Product Manager, Payments",
+            text: "Payments software, metrics, roadmap execution and fraud risk trade-offs.",
+            label: jobDoc?.name || "Job_description.pdf",
+          },
+          cv: {
+            text: "CV text for " + (companyName.trim() || "Halden"),
+            label: cvDoc?.name || "CV.pdf",
+          },
+          format: apiFormat,
           settings: {
-            difficulty: difficulty.toLowerCase(),
-            minutes: duration,
+            difficulty: validDifficulty,
+            minutes: validMinutes,
             preset: "balanced",
+            mix: { cv: 20, competency: 20, technical: 20, motivation: 20, curveball: 20 },
           },
         }),
       });
-      const data = (await res.json().catch(() => ({}))) as { id?: string };
-      const destId = data.id || "halden";
-      router.push(`/interviews/${destId}?new=1`);
-      router.refresh();
-    } catch {
-      router.push("/interviews/halden?new=1");
+      if (res.ok) {
+        const data = await res.json().catch(() => ({}));
+        destId = data.id;
+      }
+    } catch (err) {
+      console.warn("API build error:", err);
     }
+
+    if (!destId) {
+      const slug = (companyName.trim() || "interview").toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      destId = `${slug}-${Date.now().toString(36).slice(-4)}`;
+    }
+
+    // Persist to client store so it appears in the Interviews grid immediately
+    saveClientInterview({
+      id: destId,
+      company: companyName.trim() || "Halden",
+      companyInitial: (companyName.trim() || "H").charAt(0).toUpperCase(),
+      role: jobTitle.trim() || "Senior Product Manager, Payments",
+      date: stages[0]?.date || "12 Nov 2026",
+      time: stages[0]?.time || "10:00",
+      format: stages[0]?.format || "Video call",
+      settings: {
+        difficulty: validDifficulty,
+        minutes: validMinutes,
+        preset: "balanced",
+      },
+      stages,
+      createdAt: new Date().toISOString(),
+      freshCount: 0,
+    });
+
+    // Clear draft from localStorage
+    try {
+      localStorage.removeItem("hk_interview_wizard_draft");
+      window.dispatchEvent(new Event("hk_draft_updated"));
+    } catch {}
+
+    // Navigate to /interviews page so the user sees their new interview in the list!
+    router.push("/interviews");
+    router.refresh();
   };
 
   // Stepper Items
