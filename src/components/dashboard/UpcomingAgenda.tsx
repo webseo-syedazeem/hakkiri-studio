@@ -12,7 +12,7 @@ export interface UpcomingEvent {
   time: string;
   title: string;
   subtitle: string;
-  relative: string;
+  relative?: string;
   href: string;
   actionLabel: string;
 }
@@ -20,8 +20,8 @@ export interface UpcomingEvent {
 export function UpcomingAgenda({ events }: { events: UpcomingEvent[] }) {
   const [filter, setFilter] = useState<"this-week" | "all">("this-week");
 
-  // Show all 3 events on both views to fill the space cleanly and gracefully
-  const displayed = filter === "this-week" ? events.slice(0, 3) : events;
+  // In the mockup, "This week" shows the 2 upcoming items cleanly
+  const displayed = filter === "this-week" ? events.slice(0, 2) : events;
 
   return (
     <div className="flex h-full flex-col justify-between gap-5">
@@ -36,7 +36,9 @@ export function UpcomingAgenda({ events }: { events: UpcomingEvent[] }) {
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-blue" />
               </span>
             </div>
-            <p className="mt-0.5 text-[13px] text-muted">Your agenda for the next 7 days.</p>
+            <p className="mt-0.5 text-[13px] text-muted">
+              Your scheduled interviews and presentations.
+            </p>
           </div>
           <div className="inline-flex rounded-xl bg-panel-2 p-1 shadow-[inset_0_0_0_1px_var(--color-line)]">
             <button
@@ -67,7 +69,7 @@ export function UpcomingAgenda({ events }: { events: UpcomingEvent[] }) {
         </div>
 
         {/* Event List */}
-        <div className="mt-4 flex flex-col gap-3.5">
+        <div className="mt-4 flex flex-col gap-4">
           {displayed.map((item, idx) => (
             <div
               key={item.id}
@@ -77,41 +79,49 @@ export function UpcomingAgenda({ events }: { events: UpcomingEvent[] }) {
               <span className="mb-1.5 block text-xs font-semibold text-muted">
                 {item.dateGroup}
               </span>
-              <div className="group relative overflow-hidden flex items-center justify-between gap-3.5 rounded-[15px] bg-panel-2 p-4 shadow-[inset_0_0_0_1px_var(--color-line)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_28px_-6px_rgba(0,0,0,0.6),inset_0_0_0_1px_var(--color-line-strong)]">
+              <div className="group relative overflow-hidden flex items-center justify-between gap-3.5 rounded-[15px] bg-panel-2 p-4 shadow-[inset_0_0_0_1px_var(--color-line)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_28px_-6px_rgba(0,0,0,0.6),inset_0_0_0_1px_var(--color-line-strong)]">
                 {/* Subtle sheen highlight on hover */}
                 <div className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/[0.04] to-transparent transition-transform duration-700 group-hover:translate-x-full" />
 
-                {/* Time & date pill */}
-                <div className="shrink-0 text-left min-w-[70px]">
-                  <div className="text-sm font-bold text-ink">{item.time}</div>
-                  <div className="text-[11px] text-muted whitespace-nowrap mt-0.5">{item.dateGroup}</div>
+                {/* Squircle Icon & Time / Date */}
+                <div className="flex items-center gap-3 shrink-0">
+                  <div
+                    className={clsx(
+                      "flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] shadow-sm transition-transform duration-300 group-hover:scale-105",
+                      item.type === "interview"
+                        ? "bg-[#1a2238] text-[#818cf8]"
+                        : "bg-[#142825] text-[#34d399]"
+                    )}
+                  >
+                    <Icon name={item.type === "interview" ? "cal" : "present"} size={20} />
+                  </div>
+                  <div className="shrink-0 text-left">
+                    <div className="text-sm font-bold text-ink">{item.time}</div>
+                    <div className="text-[11px] text-muted whitespace-nowrap mt-0.5">{item.dateGroup}</div>
+                  </div>
                 </div>
 
                 {/* Details */}
                 <div className="min-w-0 grow px-1">
                   {item.type === "interview" ? (
-                    <span className="mb-1 inline-flex items-center gap-1.5 rounded-full bg-[#1e2544] px-2.5 py-0.5 text-[11px] font-semibold text-[#818cf8] shadow-sm">
-                      <Icon name="cal" size={11} /> Interview
+                    <span className="mb-1 inline-flex items-center gap-1.5 rounded-full bg-[#1e2544] px-2.5 py-0.5 text-[10px] font-semibold text-[#818cf8]">
+                      Interview
                     </span>
                   ) : (
-                    <span className="mb-1 inline-flex items-center gap-1.5 rounded-full bg-[#162a26] px-2.5 py-0.5 text-[11px] font-semibold text-[#34d399] shadow-sm">
-                      <Icon name="present" size={11} /> Presentation
+                    <span className="mb-1 inline-flex items-center gap-1.5 rounded-full bg-[#162a26] px-2.5 py-0.5 text-[10px] font-semibold text-[#34d399]">
+                      Presentation
                     </span>
                   )}
                   <Link
                     href={item.href}
-                    className="block text-[14px] font-semibold tracking-[-0.01em] text-ink hover:underline group-hover:text-blue-soft transition-colors leading-snug"
+                    className="block text-[14px] font-semibold tracking-[-0.01em] text-ink hover:underline group-hover:text-blue-soft transition-colors leading-snug truncate"
                   >
                     {item.title}
                   </Link>
-                  <div className="text-xs text-muted mt-0.5">{item.subtitle}</div>
-                  <div className="mt-1 flex items-center gap-1.5 text-[11px] text-muted">
-                    <Icon name="cal" size={11} className="text-dim" />
-                    <span>{item.relative}</span>
-                  </div>
+                  <div className="text-xs text-muted mt-0.5 truncate">{item.subtitle}</div>
                 </div>
 
-                {/* Action button with sheen and micro-bounce */}
+                {/* Action button */}
                 <Link
                   href={item.href}
                   className="group/btn relative overflow-hidden inline-flex items-center justify-center rounded-[10px] bg-blue-fill px-4 py-2 text-xs font-semibold text-white shadow-[0_2px_10px_rgba(74,90,240,0.3)] transition-all duration-200 hover:bg-blue-hover hover:shadow-[0_0_20px_rgba(90,105,255,0.6)] active:scale-95 shrink-0"
@@ -125,21 +135,14 @@ export function UpcomingAgenda({ events }: { events: UpcomingEvent[] }) {
         </div>
       </div>
 
-      {/* Bottom helper card to keep height balanced with other columns */}
-      <div className="flex items-center justify-between rounded-[13px] bg-panel-2/70 px-4 py-3 text-xs text-muted shadow-[inset_0_0_0_1px_var(--color-line)] transition-all duration-200 hover:bg-panel-2 hover:shadow-[inset_0_0_0_1px_var(--color-line-strong)]">
-        <span className="flex items-center gap-2">
-          <span className="relative flex h-2 w-2">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue opacity-75" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-blue shadow-[0_0_8px_var(--color-blue)]" />
-          </span>
-          <span className="font-medium text-ink">{displayed.length} sessions on your agenda</span>
-        </span>
+      {/* Bottom Link: View calendar */}
+      <div className="pt-2">
         <Link
-          href="/interviews/new"
-          className="group/link flex items-center gap-1 font-semibold text-blue-soft hover:underline transition-colors"
+          href="/interviews"
+          className="group inline-flex items-center gap-2 text-xs font-semibold text-muted hover:text-ink transition-colors"
         >
-          <Icon name="plus" size={13} strokeWidth={2.4} className="transition-transform duration-300 group-hover/link:rotate-90" />
-          <span>Add session</span>
+          <Icon name="cal" size={14} className="text-muted group-hover:text-blue-soft transition-colors" />
+          <span>View calendar →</span>
         </Link>
       </div>
     </div>

@@ -159,6 +159,7 @@ const paths = {
   x: "M6 6l12 12 M18 6L6 18",
   zap: "M13 2L3 14h9l-1 8 10-12h-9l1-8z",
   chevronRight: "M9 18l6-6-6-6",
+  chevronDown: "M6 9l6 6 6-6",
   code: "M16 18l6-6-6-6 M8 6l-6 6 6 6",
   users: "M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M23 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75",
   target: "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z M12 18a6 6 0 1 0 0-12 6 6 0 0 0 0 12z M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4z",
@@ -170,6 +171,10 @@ const paths = {
   layers: "M12 2L2 7l10 5 10-5-10-5z M2 17l10 5 10-5 M2 12l10 5 10-5",
   sparkle: "M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z",
   drag: "M9 6h.01 M15 6h.01 M9 12h.01 M15 12h.01 M9 18h.01 M15 18h.01",
+  archive: "M21 8v13H3V8 M1 3h22v5H1z M10 12h4",
+  chat: "M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z",
+  chart: "M18 20V10 M12 20V4 M6 20v-6",
+  user: "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z",
 } as const;
 
 export type IconName = keyof typeof paths;
