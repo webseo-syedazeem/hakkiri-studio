@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import clsx from "clsx";
 import { ButtonLink, Chip, Crumbs, Icon, Meter, Panel, Sep, toneText } from "@/components/ui";
 import { StartButton } from "@/components/interview/StartSession";
+import { BetaInterviewFeedbackModal } from "@/components/feedback/BetaInterviewFeedbackModal";
 import { getInterview, getInterviewAsync } from "@/lib/interviews/store";
 import { understandingOf } from "@/lib/interviews/build";
 import { categoryLabel, settingsLine } from "@/lib/interviews/settings";
@@ -508,6 +509,16 @@ export default async function SessionReportPage({ params, searchParams }: { para
           </div>
         }
       />
+
+      {/* Beta Survey Feedback Modal & Banner (£15 Amazon Voucher) */}
+      <div className="mt-5">
+        <BetaInterviewFeedbackModal
+          interviewId={interview.id}
+          mockId={mock.id}
+          company={interview.company}
+          role={interview.role}
+        />
+      </div>
 
       <div className="mt-5 grid grid-cols-[minmax(0,1fr)_520px] gap-5">
         <Panel aria-label="By category" className="animate-rise px-6 pb-3 pt-[18px] [animation-delay:0.05s]">
