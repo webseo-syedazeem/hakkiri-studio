@@ -27,6 +27,8 @@ import { getSettings } from "@/lib/settings/store";
 import { pruneRecordings } from "@/lib/answers/audio";
 import { alertsConfigured, recentProblems } from "@/lib/alerts/store";
 import { recentSurveys } from "@/lib/feedback/survey-store";
+import { listInterviewsAsync } from "@/lib/interviews/store";
+import { AdminInterviewsList } from "@/components/settings/AdminInterviewsList";
 import { TestAlert } from "@/components/settings/TestAlert";
 
 export const dynamic = "force-dynamic";
@@ -146,6 +148,26 @@ export default async function SettingsPage() {
   const problems = launch ? [] : recentProblems(8);
   const alerts = alertsConfigured();
   const surveys = recentSurveys(50);
+  const interviewsRaw = await listInterviewsAsync(today);
+  const adminInterviews = interviewsRaw.map((i) => ({
+    id: i.id,
+    company: i.company,
+    role: i.role,
+    seniority: i.seniority,
+    format: i.format,
+    date: i.date,
+    createdAt: i.createdAt,
+    jobSummary: i.jobSummary,
+    questionCount: i.questions?.length || 0,
+    questions: (i.questions || []).map((q) => ({
+      id: q.id,
+      group: q.group,
+      short: q.short,
+      text: q.text,
+      type: q.type,
+      slot: q.slot || null,
+    })),
+  }));
 
   return (
     <div className="flex grow flex-col">
@@ -455,6 +477,14 @@ export default async function SettingsPage() {
               )}
             </Section>
           )}
+
+          <Section
+            id="admin-interviews"
+            title="Candidate interviews & questions bank"
+            intro="Inspect job titles, target companies, and the AI questions generated for each interview (candidate answers excluded)."
+          >
+            <AdminInterviewsList interviews={adminInterviews} />
+          </Section>
 
           <Section
             id="beta-surveys"
