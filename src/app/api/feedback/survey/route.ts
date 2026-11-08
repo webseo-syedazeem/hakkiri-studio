@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { addSurveySubmission } from "@/lib/feedback/survey-store";
+import { addSurveySubmission, recentSurveys } from "@/lib/feedback/survey-store";
 import { clientKey, rateLimited } from "@/lib/usage/limits";
 
 export const runtime = "nodejs";
@@ -17,6 +17,55 @@ const Body = z.object({
   q6_changes: z.string().trim().min(1, "Please answer question 6").max(2000),
   q7_recommend: z.string().trim().min(1, "Please answer question 7").max(2000),
 });
+
+/** GET /api/feedback/survey: View recent surveys or export as CSV (?format=csv) */
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const surveys = recentSurveys(200);
+
+  if (searchParams.get("format") === "csv") {
+    const headers = [
+      "Submitted At",
+      "Voucher Email",
+      "Interview ID",
+      "Session ID",
+      "1. Realism",
+      "2. Questions & Follow-ups",
+      "3. Scores & Feedback",
+      "4. Confusing or Broken",
+      "5. Most & Least Liked",
+      "6. One Change",
+      "7. Recommend",
+    ];
+
+    const escapeCsv = (str: string) => `"${(str || "").replace(/"/g, '""').replace(/\n/g, ' ')}"`;
+
+    const rows = surveys.map((s) => [
+      escapeCsv(s.at),
+      escapeCsv(s.email),
+      escapeCsv(s.interviewId || ""),
+      escapeCsv(s.mockId || ""),
+      escapeCsv(s.q1_realism),
+      escapeCsv(s.q2_questions),
+      escapeCsv(s.q3_feedback),
+      escapeCsv(s.q4_issues),
+      escapeCsv(s.q5_likes_dislikes),
+      escapeCsv(s.q6_changes),
+      escapeCsv(s.q7_recommend),
+    ]);
+
+    const csvContent = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+
+    return new Response(csvContent, {
+      headers: {
+        "Content-Type": "text/csv; charset=utf-8",
+        "Content-Disposition": 'attachment; filename="hakkiri-beta-surveys.csv"',
+      },
+    });
+  }
+
+  return NextResponse.json({ count: surveys.length, surveys });
+}
 
 /** POST /api/feedback/survey: 7-question survey with £15 Amazon voucher reward */
 export async function POST(req: Request) {
@@ -36,3 +85,4 @@ export async function POST(req: Request) {
   const submission = await addSurveySubmission(parsed.data);
   return NextResponse.json({ ok: true, id: submission.id });
 }
+
