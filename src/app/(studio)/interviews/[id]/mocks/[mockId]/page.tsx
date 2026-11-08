@@ -462,6 +462,13 @@ export default async function SessionReportPage({ params, searchParams }: { para
   const drillMinutes = drills.reduce((n, x) => n + x.minutes, 0);
   const skipped = mock.skipped ?? [];
   const replacedCount = skipped.filter((s) => s.reason !== "by-choice").length;
+  const skippedByChoice = skipped.filter((s) => s.reason === "by-choice").length;
+  const endedEarly = report.questionCount < mock.planned - replacedCount - skippedByChoice;
+  const isFullInterview =
+    (mock.kind === "interview" || mock.kind === "full") &&
+    mock.status === "done" &&
+    !endedEarly &&
+    report.questionCount >= 2;
   const textOf = (qid: string) => interview.questions.find((q) => q.id === qid)?.text ?? "A question";
   const overallOf = (qid: string) => rows.find((r) => r.questionId === qid)?.overall ?? undefined;
 
@@ -517,6 +524,8 @@ export default async function SessionReportPage({ params, searchParams }: { para
           mockId={mock.id}
           company={interview.company}
           role={interview.role}
+          isEligible={isFullInterview}
+          ineligibleReason={endedEarly ? "ended-early" : "not-full-interview"}
         />
       </div>
 

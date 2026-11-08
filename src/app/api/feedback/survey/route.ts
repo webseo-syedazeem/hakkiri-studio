@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { addSurveySubmission, recentSurveys } from "@/lib/feedback/survey-store";
+import { findMock, findMockAsync } from "@/lib/mocks/store";
 import { clientKey, rateLimited } from "@/lib/usage/limits";
 
 export const runtime = "nodejs";
@@ -80,6 +81,29 @@ export async function POST(req: Request) {
       { error: "bad-request", details: parsed.error.issues },
       { status: 400 },
     );
+  }
+
+  // Validate that the session is a real full completed interview
+  if (parsed.data.mockId) {
+    const mock = (await findMockAsync(parsed.data.mockId)) ?? findMock(parsed.data.mockId);
+    if (mock) {
+      const isInterview = mock.kind === "interview" || mock.kind === "full";
+      const isDone = mock.status === "done";
+      const skippedByChoice = (mock.skipped ?? []).filter((s) => s.reason === "by-choice").length;
+      const replaced = (mock.skipped ?? []).filter((s) => s.reason !== "by-choice").length;
+      const answeredCount = mock.answerIds?.length ?? 0;
+      const endedEarly = mock.planned > 0 && answeredCount < (mock.planned - replaced - skippedByChoice);
+
+      if (!isInterview || !isDone || endedEarly || answeredCount < 2) {
+        return NextResponse.json(
+          {
+            error: "full-interview-required",
+            message: "The £15 Amazon voucher survey is only available after completing a full mock interview.",
+          },
+          { status: 403 },
+        );
+      }
+    }
   }
 
   const submission = await addSurveySubmission(parsed.data);
