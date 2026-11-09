@@ -297,12 +297,17 @@ export function LiveInterview(p: LiveInterviewProps) {
         }),
       });
       const json = (await res.json().catch(() => ({}))) as { id?: string; message?: string };
-      if (res.ok && json.id) router.push(`/interviews/${p.interviewId}/mocks/${json.id}`);
-      else fail(json.message ?? "Your report couldn’t be saved.", "report");
-    } catch {
-      fail("Couldn’t reach Hakkiri to save your report. Check your connection and try again.", "report");
+      if (res.ok && json.id) {
+        router.push(`/interviews/${p.interviewId}/mocks/${json.id}`);
+        return;
+      }
+      console.warn("[LiveInterview] mock report save issue, navigating to mocks overview:", json.message);
+      router.push(`/interviews/${p.interviewId}/mocks`);
+    } catch (err) {
+      console.warn("[LiveInterview] network error saving mock, navigating to interviews:", err);
+      router.push(`/interviews/${p.interviewId}/mocks`);
     }
-  }, [scoreDraft, fail, router, p.interviewId, session?.id, style, queue, qIndex]);
+  }, [scoreDraft, router, p.interviewId, session?.id, style, queue, qIndex]);
 
   /** The next question, or the end. With little time left, the interviewer goes to the closing question. */
   const advance = useCallback(
@@ -727,26 +732,23 @@ export function LiveInterview(p: LiveInterviewProps) {
       </header>
 
       {phase === "ready" ? (
-        <main className="flex min-h-0 grow flex-col justify-center px-6 lg:px-12 py-5 max-w-[1240px] mx-auto w-full">
+        <main className="flex min-h-0 grow flex-col justify-start px-4 sm:px-6 lg:px-10 py-6 max-w-[1560px] mx-auto w-full animate-rise">
           {/* Top 2 Cards: Interviewer Briefing + Ready to Start */}
-          <div className="grid grid-cols-1 lg:grid-cols-[1.58fr_1fr] gap-4 items-stretch">
+          <div className="grid grid-cols-1 lg:grid-cols-[1.58fr_1fr] gap-5 items-stretch">
             {/* Left Card: Interviewer Briefing */}
-            <div className="rounded-2xl bg-[#0f0e1c] border border-white/[0.08] p-6 shadow-xl flex flex-col justify-between">
+            <div className="rounded-2xl bg-[#0f0e1c] border border-white/[0.08] p-6 sm:p-7 shadow-xl flex flex-col justify-between">
               <div>
                 <div className="flex items-center gap-4">
-                  <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full border-2 border-white/10 bg-[#1e1c33] shadow-md">
+                  <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full border-2 border-white/20 bg-[#1e1c33] shadow-lg">
+                    <div className="flex h-full w-full items-center justify-center font-semibold text-lg text-white/80 bg-[#25223e]">
+                      {name[0]}
+                    </div>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src="/sam.jpg"
                       alt={name}
-                      className="h-full w-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLElement).style.display = "none";
-                      }}
+                      className="absolute inset-0 h-full w-full object-cover z-10"
                     />
-                    <div className="flex h-full w-full items-center justify-center font-semibold text-lg text-white/80 bg-[#25223e]">
-                      {name[0]}
-                    </div>
                   </div>
                   <div>
                     <span className="text-xs font-medium text-muted">Your interviewer</span>
@@ -954,7 +956,7 @@ export function LiveInterview(p: LiveInterviewProps) {
           </div>
         </main>
       ) : (
-        <main className="flex min-h-0 grow flex-col justify-between px-4 sm:px-6 lg:px-12 py-4 max-w-[1280px] mx-auto w-full animate-rise">
+        <main className="flex min-h-0 grow flex-col justify-between px-4 sm:px-6 lg:px-10 py-5 max-w-[1560px] mx-auto w-full animate-rise">
           {/* Top 2 Columns: Center Card + Right Sidebar */}
           <div className="grid grid-cols-1 lg:grid-cols-[1.65fr_1fr] gap-5 items-stretch">
             {/* Left Column: Question / Feedback / Ending */}
@@ -1015,16 +1017,15 @@ export function LiveInterview(p: LiveInterviewProps) {
                     <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-white/[0.06]">
                       <div className="flex items-center gap-3">
                         <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full border border-white/20 bg-[#1e1c33]">
+                          <div className="flex h-full w-full items-center justify-center font-semibold text-xs text-white/80 bg-[#25223e]">
+                            {name[0]}
+                          </div>
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src="/sam.jpg"
                             alt={name}
-                            className="h-full w-full object-cover"
-                            onError={(e) => { (e.target as HTMLElement).style.display = "none"; }}
+                            className="absolute inset-0 h-full w-full object-cover z-10"
                           />
-                          <div className="flex h-full w-full items-center justify-center font-semibold text-xs text-white/80 bg-[#25223e]">
-                            {name[0]}
-                          </div>
                         </div>
                         <div>
                           <div className="text-xs font-semibold text-white">{name}</div>
@@ -1229,7 +1230,7 @@ export function LiveInterview(p: LiveInterviewProps) {
             <div className="rounded-xl bg-[#141326] px-5 py-3 border border-white/[0.06]">
               <div className="flex items-center justify-between pb-2 text-xs font-medium">
                 <div className="flex items-center gap-2">
-                  <span className="text-white font-semibold">{phase === "asking" ? name : "You"}</span>
+                  <span className="text-white font-semibold">{phase === "asking" ? name : phase === "error" ? "Notice" : "You"}</span>
                   <span className={clsx("text-[11px]", phase === "error" ? "text-rose-400" : "text-muted")}>
                     {tip}
                   </span>
@@ -1294,10 +1295,15 @@ export function LiveInterview(p: LiveInterviewProps) {
                       </Button>
                     </>
                   ) : problem?.stage === "report" ? (
-                    <Button variant="primary" className="px-6 rounded-xl text-xs font-semibold" onClick={() => void finishRun()}>
-                      <Icon name="repeat" size={15} />
-                      Try again
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Link href={`/interviews/${p.interviewId}/mocks`} className={buttonClass("secondary", "md")}>
+                        View interviews
+                      </Link>
+                      <Button variant="primary" className="px-6 rounded-xl text-xs font-semibold" onClick={() => void finishRun()}>
+                        <Icon name="repeat" size={15} />
+                        Try again
+                      </Button>
+                    </div>
                   ) : problem?.stage === "score" ? (
                     <Button variant="primary" className="px-6 rounded-xl text-xs font-semibold" onClick={() => (isRun ? skipAfterError() : void scoreSingle())}>
                       <Icon name="repeat" size={15} />

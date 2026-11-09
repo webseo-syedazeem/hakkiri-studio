@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import { Button, buttonClass, Icon } from "@/components/ui";
 import { useMicrophone } from "@/components/audio/useMicrophone";
+import { speak } from "@/components/audio/speak";
 import { SlideView } from "./SlideView";
 import { mmss } from "@/lib/format";
 import { OPENING_SEC } from "@/lib/pitch/labels";
@@ -55,6 +56,8 @@ export function Rehearsal(p: RehearsalProps) {
   const [problem, setProblem] = useState<{ message: string; kind: "mic" | "score" | "keys" } | null>(null);
   const [scoringSec, setScoringSec] = useState(0);
   const [speakerNotesOpen, setSpeakerNotesOpen] = useState(true);
+  const [isSpeakingNotes, setIsSpeakingNotes] = useState(false);
+  const voiceRef = useRef<{ done: Promise<void>; cancel: () => void } | null>(null);
   const [checklist, setChecklist] = useState<Record<number, Record<number, boolean>>>({
     4: { 0: true, 1: false, 2: false },
   });
@@ -87,6 +90,8 @@ export function Rehearsal(p: RehearsalProps) {
   const go = useCallback(
     (to: number) => {
       if (to < 0 || to >= scope.length || to === index) return;
+      voiceRef.current?.cancel();
+      setIsSpeakingNotes(false);
       setIndex(to);
       if (phase === "running" || phase === "paused") {
         setMarks((ms) => [...ms, { n: scope[to].n, at: Math.round(mic.elapsed * 100) / 100 }]);
@@ -131,6 +136,8 @@ export function Rehearsal(p: RehearsalProps) {
   const finish = useCallback(async () => {
     if (finishing.current) return;
     finishing.current = true;
+    voiceRef.current?.cancel();
+    setIsSpeakingNotes(false);
     const totalSec = mic.elapsed;
     const blob = await mic.stop();
     if (!blob || blob.size < 2000 || totalSec < 5) {
@@ -158,7 +165,13 @@ export function Rehearsal(p: RehearsalProps) {
     setIndex(0);
     setMarks([{ n: scope[0]?.n ?? 1, at: 0 }]);
     setPhase("running");
-  }, [mic, scope]);
+    
+    // Voice Coach introduction out loud
+    voiceRef.current?.cancel();
+    const headingClean = p.heading.split(",")[0] || "your presentation";
+    const minutes = Math.max(1, Math.round(budget / 60));
+    voiceRef.current = speak(`Starting rehearsal for ${headingClean}. You have ${minutes} minutes for your slides. Start speaking whenever you're ready.`, { voice: "easy" });
+  }, [mic, scope, p.heading, budget]);
 
   const togglePause = useCallback(() => {
     if (phase === "running") {
@@ -190,14 +203,29 @@ export function Rehearsal(p: RehearsalProps) {
   }, [go, index, phase, start]);
 
   useEffect(() => {
-    if (phase !== "scoring") return;
-    const t = setInterval(() => setScoringSec((s) => s + 1), 1000);
-    return () => clearInterval(t);
-  }, [phase]);
+    return () => {
+      voiceRef.current?.cancel();
+    };
+  }, []);
 
   const live = phase === "running" || phase === "paused";
   const nextSlide = scope[index + 1];
   const slideNotes = slide?.notes ? slide.notes.split("\n").filter(Boolean) : DEFAULT_SPEAKER_NOTES[slide?.n] ?? ["Deliver the key point with clear evidence.", "Stay within the allotted time."];
+
+  const readNotesAloud = useCallback(() => {
+    if (isSpeakingNotes) {
+      voiceRef.current?.cancel();
+      setIsSpeakingNotes(false);
+      return;
+    }
+    const notesText = slideNotes.join(". ");
+    if (!notesText.trim()) return;
+    setIsSpeakingNotes(true);
+    voiceRef.current?.cancel();
+    const speech = speak(notesText, { voice: "easy" });
+    voiceRef.current = speech;
+    speech.done.then(() => setIsSpeakingNotes(false));
+  }, [isSpeakingNotes, slideNotes]);
 
   const currentChecklist = checklist[slide?.n] ?? { 0: false, 1: false, 2: false };
   const toggleCheck = (idx: number) => {
@@ -297,7 +325,7 @@ export function Rehearsal(p: RehearsalProps) {
       </header>
 
       {/* 2. MAIN LAYOUT (Slide area on Left, Cards on Right) */}
-      <main className="grid min-h-0 grow grid-cols-1 xl:grid-cols-[1.48fr_0.82fr] gap-6 p-6 lg:p-8 max-w-[1520px] mx-auto w-full items-start">
+      <main className="grid min-h-0 grow grid-cols-1 xl:grid-cols-[1.48fr_0.82fr] gap-6 p-6 lg:p-8 max-w-[1600px] mx-auto w-full items-start">
         {/* CENTER / LEFT: The Big Slide + Strip + Progress + Navigation */}
         <div className="flex flex-col gap-4 min-w-0">
           {/* Main Slide Card */}
@@ -529,21 +557,37 @@ export function Rehearsal(p: RehearsalProps) {
                 <Icon name="doc" size={15} className="text-indigo-400" />
                 <span>Speaker notes</span>
               </div>
-              <button
-                type="button"
-                onClick={() => setSpeakerNotesOpen((o) => !o)}
-                className={clsx(
-                  "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out",
-                  speakerNotesOpen ? "bg-indigo-600" : "bg-white/20"
-                )}
-              >
-                <span
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={readNotesAloud}
                   className={clsx(
-                    "pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
-                    speakerNotesOpen ? "translate-x-4" : "translate-x-0"
+                    "flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all border cursor-pointer",
+                    isSpeakingNotes
+                      ? "bg-rose-500/15 border-rose-500/30 text-rose-300 hover:bg-rose-500/25 animate-pulse"
+                      : "bg-indigo-500/15 border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/25"
                   )}
-                />
-              </button>
+                  title={isSpeakingNotes ? "Stop reading" : "Read speaker notes aloud"}
+                >
+                  <Icon name={isSpeakingNotes ? "pause" : "volume"} size={12} />
+                  <span>{isSpeakingNotes ? "Stop" : "Read aloud"}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSpeakerNotesOpen((o) => !o)}
+                  className={clsx(
+                    "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out",
+                    speakerNotesOpen ? "bg-indigo-600" : "bg-white/20"
+                  )}
+                >
+                  <span
+                    className={clsx(
+                      "pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
+                      speakerNotesOpen ? "translate-x-4" : "translate-x-0"
+                    )}
+                  />
+                </button>
+              </div>
             </div>
 
             {speakerNotesOpen && (

@@ -35,9 +35,9 @@ const ITEMS: {
   },
   {
     label: "Practice",
-    href: "/interviews/halden",
+    href: "/practice",
     icon: "zap",
-    match: (p) => p.startsWith("/mock") || p.startsWith("/rehearse"),
+    match: (p) => p.startsWith("/practice") || p.startsWith("/rehearse"),
   },
   {
     label: "Progress",
