@@ -27,7 +27,7 @@ export default async function PresentationWorkspace({ params }: { params: Promis
   ];
 
   return (
-    <div className="flex grow flex-col max-w-[1560px] mx-auto w-full pb-20 animate-rise text-white">
+    <div className="flex grow flex-col w-full pb-20 animate-rise text-white">
       {/* 1. HEADER (Matching Image 3) */}
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-5 border-b border-white/[0.08] pb-5">
         <div className="flex items-center gap-4">

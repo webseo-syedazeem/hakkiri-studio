@@ -100,7 +100,7 @@ export default function PracticeHubPage() {
   ];
 
   return (
-    <div className="flex grow flex-col max-w-[1560px] w-full mx-auto pb-20 animate-rise text-white">
+    <div className="flex grow flex-col w-full pb-20 animate-rise text-white">
       {/* 1. HEADER */}
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-5 border-b border-white/[0.08] pb-6">
         <div>

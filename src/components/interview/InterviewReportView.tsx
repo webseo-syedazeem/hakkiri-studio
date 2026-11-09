@@ -145,7 +145,7 @@ export function InterviewReportView(p: InterviewReportViewProps) {
   };
 
   return (
-    <div className="flex flex-col gap-6 max-w-[1560px] mx-auto w-full pb-20 animate-rise">
+    <div className="flex flex-col gap-6 w-full pb-20 animate-rise">
       {/* 1. HEADER */}
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-5 border-b border-white/[0.08] pb-5">
         <div>

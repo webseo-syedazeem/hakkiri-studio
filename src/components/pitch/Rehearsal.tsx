@@ -143,8 +143,7 @@ export function Rehearsal(p: RehearsalProps) {
     if (!blob || blob.size < 2000 || totalSec < 5) {
       finishing.current = false;
       if (p.demoReportHref) return router.push(p.demoReportHref);
-      setProblem({ message: "No recording was captured, so there’s nothing to score. Check your microphone and run it again.", kind: "mic" });
-      setPhase("error");
+      router.push(`/presentations/${p.presentationId}`);
       return;
     }
     recording.current = { blob, startedAt: startedAt.current, marks, totalSec: Math.round(totalSec * 10) / 10 };
@@ -325,7 +324,7 @@ export function Rehearsal(p: RehearsalProps) {
       </header>
 
       {/* 2. MAIN LAYOUT (Slide area on Left, Cards on Right) */}
-      <main className="grid min-h-0 grow grid-cols-1 xl:grid-cols-[1.48fr_0.82fr] gap-6 p-6 lg:p-8 max-w-[1600px] mx-auto w-full items-start">
+      <main className="grid min-h-0 grow grid-cols-1 xl:grid-cols-[1.65fr_0.85fr] gap-6 px-6 lg:px-10 py-6 w-full items-start">
         {/* CENTER / LEFT: The Big Slide + Strip + Progress + Navigation */}
         <div className="flex flex-col gap-4 min-w-0">
           {/* Main Slide Card */}

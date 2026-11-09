@@ -732,7 +732,7 @@ export function LiveInterview(p: LiveInterviewProps) {
       </header>
 
       {phase === "ready" ? (
-        <main className="flex min-h-0 grow flex-col justify-start px-4 sm:px-6 lg:px-10 py-6 max-w-[1560px] mx-auto w-full animate-rise">
+        <main className="flex min-h-0 grow flex-col justify-start px-6 lg:px-10 py-6 w-full animate-rise">
           {/* Top 2 Cards: Interviewer Briefing + Ready to Start */}
           <div className="grid grid-cols-1 lg:grid-cols-[1.58fr_1fr] gap-5 items-stretch">
             {/* Left Card: Interviewer Briefing */}
@@ -956,7 +956,7 @@ export function LiveInterview(p: LiveInterviewProps) {
           </div>
         </main>
       ) : (
-        <main className="flex min-h-0 grow flex-col justify-between px-4 sm:px-6 lg:px-10 py-5 max-w-[1560px] mx-auto w-full animate-rise">
+        <main className="flex min-h-0 grow flex-col justify-between px-6 lg:px-10 py-5 w-full animate-rise">
           {/* Top 2 Columns: Center Card + Right Sidebar */}
           <div className="grid grid-cols-1 lg:grid-cols-[1.65fr_1fr] gap-5 items-stretch">
             {/* Left Column: Question / Feedback / Ending */}
