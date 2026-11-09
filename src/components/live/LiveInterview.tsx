@@ -915,7 +915,7 @@ export function LiveInterview(p: LiveInterviewProps) {
 
                 {/* Target illuminated pill on track: 1:00 (33.3%) to 1:30 (50%) */}
                 <div
-                  className="absolute -top-3.5 left-[33.3%] flex h-8 w-[16.7%] min-w-[130px] items-center justify-center rounded-full bg-gradient-to-r from-[#4f5df7] to-[#6d55f4] text-[11px] font-semibold text-white shadow-lg shadow-indigo-500/30"
+                  className="absolute -top-3.5 left-[33.3%] flex h-8 w-[16.7%] min-w-[130px] items-center justify-center rounded-full bg-gradient-to-r from-[#4f5df7] via-[#5d55f5] to-[#6d55f4] text-[11px] font-semibold text-white shadow-[0_0_20px_rgba(99,102,241,0.55)] border border-white/20"
                 >
                   Target: 1:00 – 1:30
                 </div>
@@ -944,10 +944,10 @@ export function LiveInterview(p: LiveInterviewProps) {
               <button
                 type="button"
                 onClick={() => void start()}
-                className="flex items-center gap-2 rounded-xl bg-[#3866ff] hover:bg-[#4a75ff] px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                className="group flex items-center gap-2.5 rounded-xl bg-gradient-to-r from-[#4f52f8] via-[#5c5ffc] to-[#6d5eff] hover:from-[#5b5efd] hover:to-[#7b6dff] px-7 py-3 text-sm font-semibold text-white border border-white/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.3),0_6px_25px_-2px_rgba(79,82,248,0.55)] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_8px_32px_-2px_rgba(79,82,248,0.75)] transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] cursor-pointer"
               >
-                <Icon name="mic" size={17} strokeWidth={2.2} />
-                {begun.current ? "Carry on" : session?.mode === "drill" ? "Start drill" : "Start interview"}
+                <Icon name="mic" size={17} strokeWidth={2.2} className="group-hover:scale-110 transition-transform duration-200" />
+                <span>{begun.current ? "Carry on" : session?.mode === "drill" ? "Start drill" : "Start interview"}</span>
               </button>
             </div>
           </div>

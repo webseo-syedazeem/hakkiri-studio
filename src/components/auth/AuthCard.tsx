@@ -186,9 +186,7 @@ export function AuthCard({ initialMode = "signin" }: { initialMode?: "signin" | 
       <button
         type="button"
         onClick={() => {
-          setError(
-            "Google OAuth is configured for custom domain hakkiri.ai. You can sign in using email & password or continue as Guest below.",
-          );
+          window.location.href = "/api/auth/google";
         }}
         className="flex w-full items-center justify-center gap-2.5 rounded-xl border border-line bg-panel-2 py-2.5 text-[14px] font-medium text-ink transition-all duration-200 hover:bg-panel-2/80 hover:border-line-strong hover:scale-[1.01] active:scale-[0.98] cursor-pointer"
       >

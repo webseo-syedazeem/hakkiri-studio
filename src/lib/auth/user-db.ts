@@ -316,3 +316,91 @@ export async function deleteSession(token: string): Promise<void> {
     memSessions.delete(token);
   }
 }
+
+/**
+ * Find or create a user authenticated via Google or OAuth provider.
+ */
+export async function findOrCreateOAuthUser(profile: {
+  email: string;
+  name?: string;
+  picture?: string;
+  provider: "google";
+  providerId?: string;
+}): Promise<User> {
+  const normEmail = profile.email.trim().toLowerCase();
+  const { firstName, initials } = computeInitials(profile.name ?? "", normEmail);
+
+  if (isMongoConfigured()) {
+    try {
+      const db = await getMongoDb();
+      if (db) {
+        const usersCol = db.collection<DbUserRecord>("users");
+        let record = await usersCol.findOne({ email: normEmail });
+        if (!record) {
+          const userId = `usr_${crypto.randomBytes(12).toString("hex")}`;
+          record = {
+            _id: userId,
+            email: normEmail,
+            name: profile.name?.trim() || firstName,
+            firstName,
+            initials,
+            passwordHash: "oauth:google",
+            createdAt: new Date(),
+            trial: { interviewSecondsLeft: 10 * 60, pitchSecondsLeft: 10 * 60 },
+            tier: "beta",
+          };
+          await usersCol.insertOne(record);
+        }
+        return {
+          id: record._id,
+          email: record.email,
+          firstName: record.firstName,
+          initials: record.initials,
+          trial: record.trial,
+          tier: record.tier,
+          createdAt: record.createdAt instanceof Date ? record.createdAt.toISOString() : undefined,
+        };
+      }
+    } catch (err) {
+      console.error("[auth] findOrCreateOAuthUser error:", err);
+    }
+  }
+
+  // Fallback in-memory
+  for (const u of memUsers.values()) {
+    if (u.email === normEmail) {
+      return {
+        id: u._id,
+        email: u.email,
+        firstName: u.firstName,
+        initials: u.initials,
+        trial: u.trial,
+        tier: u.tier,
+        createdAt: u.createdAt.toISOString(),
+      };
+    }
+  }
+
+  const userId = `usr_${crypto.randomBytes(12).toString("hex")}`;
+  const userDoc: DbUserRecord = {
+    _id: userId,
+    email: normEmail,
+    name: profile.name?.trim() || firstName,
+    firstName,
+    initials,
+    passwordHash: "oauth:google",
+    createdAt: new Date(),
+    trial: { interviewSecondsLeft: 10 * 60, pitchSecondsLeft: 10 * 60 },
+    tier: "beta",
+  };
+  memUsers.set(userId, userDoc);
+  return {
+    id: userDoc._id,
+    email: userDoc.email,
+    firstName: userDoc.firstName,
+    initials: userDoc.initials,
+    trial: userDoc.trial,
+    tier: userDoc.tier,
+    createdAt: userDoc.createdAt.toISOString(),
+  };
+}

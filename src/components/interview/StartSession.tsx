@@ -47,6 +47,7 @@ export function StartButton({
   variant = "secondary",
   size = "md",
   className,
+  buttonClassName,
 }: {
   interviewId: string;
   micOk: boolean;
@@ -55,11 +56,18 @@ export function StartButton({
   variant?: "primary" | "secondary";
   size?: "sm" | "md" | "lg";
   className?: string;
+  buttonClassName?: string;
 }) {
   const { plan, busy, slow, error } = usePlan(interviewId, micOk);
   return (
     <span className={clsx("inline-flex flex-col items-end gap-1", className)}>
-      <Button variant={variant} size={size} disabled={busy} onClick={() => void plan(body)} className="w-full">
+      <Button
+        variant={variant}
+        size={size}
+        disabled={busy}
+        onClick={() => void plan(body)}
+        className={clsx("w-full cursor-pointer", buttonClassName)}
+      >
         {busy ? (slow && body.kind !== "rerun" ? "Writing your questions…" : "Starting…") : children}
       </Button>
       {error && (

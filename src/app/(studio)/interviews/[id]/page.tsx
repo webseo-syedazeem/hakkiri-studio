@@ -93,8 +93,9 @@ export default async function InterviewOverview({
           <div className="flex shrink-0 items-center gap-2.5">
             <Link
               href={`/interviews/${interview.id}/prep`}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-panel-2 px-3.5 py-2 text-xs font-semibold text-ink border border-line hover:bg-white/[0.08] transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-semibold text-white/90 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.08] hover:text-white hover:shadow-[0_4px_16px_rgba(0,0,0,0.3)] active:scale-[0.98]"
             >
+              <Icon name="doc" size={13} />
               <span>Prep sheet</span>
               <span className="text-[11px] text-muted">↗</span>
             </Link>
@@ -107,10 +108,11 @@ export default async function InterviewOverview({
                 settings,
               }}
               variant="primary"
-              className="bg-blue-fill hover:bg-blue-hover text-white shadow-md font-semibold text-xs px-3.5 py-2"
+              size="md"
+              buttonClassName="px-4 py-2 rounded-xl text-xs flex items-center gap-2 group shadow-[0_4px_20px_rgba(79,82,248,0.35)] hover:shadow-[0_6px_26px_rgba(79,82,248,0.6)]"
             >
-              <Icon name="play" size={13} />
-              Practise interview
+              <Icon name="play" size={13} className="group-hover:translate-x-0.5 transition-transform duration-200" />
+              <span>Practise interview</span>
             </StartButton>
           </div>
         </div>
@@ -177,10 +179,11 @@ export default async function InterviewOverview({
                     drill: { kind: "pay" },
                   }}
                   variant="primary"
-                  className="bg-blue-fill hover:bg-blue-hover text-white font-semibold text-xs px-4 py-2 shadow-md cursor-pointer whitespace-nowrap"
+                  size="md"
+                  buttonClassName="px-5 py-2.5 rounded-xl font-semibold text-sm flex items-center gap-2 group shadow-[0_4px_22px_rgba(79,82,248,0.45)] hover:shadow-[0_6px_28px_rgba(79,82,248,0.7)] transition-all duration-200"
                 >
-                  <Icon name="play" size={13} />
-                  Start practising
+                  <Icon name="play" size={14} className="group-hover:translate-x-0.5 transition-transform duration-200" />
+                  <span>Start practising</span>
                 </StartButton>
               </div>
             </div>
@@ -273,7 +276,7 @@ export default async function InterviewOverview({
                   <span className="font-semibold text-white num">3.5 / 5</span>
                   <Link
                     href={`/interviews/${interview.id}/mocks`}
-                    className="rounded-lg bg-panel-2 px-2.5 py-1 text-[11px] font-semibold text-ink border border-line hover:bg-white/[0.08] transition-colors"
+                    className="rounded-lg bg-white/[0.05] hover:bg-white/[0.12] px-3 py-1.5 text-[11px] font-semibold text-white/90 hover:text-white border border-white/10 hover:border-white/20 shadow-sm transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.97]"
                   >
                     View report
                   </Link>
@@ -295,7 +298,7 @@ export default async function InterviewOverview({
                   <span className="font-semibold text-white num">2.6 / 5</span>
                   <Link
                     href={`/interviews/${interview.id}/mocks`}
-                    className="rounded-lg bg-panel-2 px-2.5 py-1 text-[11px] font-semibold text-ink border border-line hover:bg-white/[0.08] transition-colors"
+                    className="rounded-lg bg-white/[0.05] hover:bg-white/[0.12] px-3 py-1.5 text-[11px] font-semibold text-white/90 hover:text-white border border-white/10 hover:border-white/20 shadow-sm transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.97]"
                   >
                     Review
                   </Link>
@@ -317,7 +320,7 @@ export default async function InterviewOverview({
                   <span className="font-semibold text-white num">3.8 / 5</span>
                   <Link
                     href={`/interviews/${interview.id}/mocks`}
-                    className="rounded-lg bg-panel-2 px-2.5 py-1 text-[11px] font-semibold text-ink border border-line hover:bg-white/[0.08] transition-colors"
+                    className="rounded-lg bg-white/[0.05] hover:bg-white/[0.12] px-3 py-1.5 text-[11px] font-semibold text-white/90 hover:text-white border border-white/10 hover:border-white/20 shadow-sm transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.97]"
                   >
                     Review
                   </Link>
@@ -394,10 +397,10 @@ export default async function InterviewOverview({
             <div className="space-y-2 pt-1">
               <Link
                 href={`/interviews/${interview.id}/mocks`}
-                className="flex items-center justify-between p-3 rounded-xl bg-panel-2 border border-line hover:border-line-strong hover:bg-white/[0.04] transition-all group"
+                className="flex items-center justify-between p-3.5 rounded-xl bg-panel-2 border border-line hover:border-indigo-500/40 hover:bg-white/[0.04] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(0,0,0,0.35)] group"
               >
                 <div className="flex items-center gap-3 text-xs">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-fill/15 text-blue-soft border border-blue-fill/25">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-fill/15 text-blue-soft border border-blue-fill/25 transition-transform duration-200 group-hover:scale-110">
                     <Icon name="play" size={13} />
                   </span>
                   <div>
@@ -407,15 +410,15 @@ export default async function InterviewOverview({
                     <p className="text-[11px] text-muted">A broader practise session across key topics</p>
                   </div>
                 </div>
-                <Icon name="chevronRight" size={14} className="text-muted group-hover:text-white transition-colors" />
+                <Icon name="chevronRight" size={14} className="text-muted group-hover:text-white group-hover:translate-x-1 transition-all" />
               </Link>
 
               <Link
                 href={`/interviews/${interview.id}/mocks`}
-                className="flex items-center justify-between p-3 rounded-xl bg-panel-2 border border-line hover:border-line-strong hover:bg-white/[0.04] transition-all group"
+                className="flex items-center justify-between p-3.5 rounded-xl bg-panel-2 border border-line hover:border-indigo-500/40 hover:bg-white/[0.04] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(0,0,0,0.35)] group"
               >
                 <div className="flex items-center gap-3 text-xs">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-purple-500/15 text-purple-400 border border-purple-500/25">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-500/15 text-purple-400 border border-purple-500/25 transition-transform duration-200 group-hover:scale-110">
                     <Icon name="doc" size={13} />
                   </span>
                   <div>
@@ -425,15 +428,15 @@ export default async function InterviewOverview({
                     <p className="text-[11px] text-muted">Revisit and improve answers you&apos;ve already tried</p>
                   </div>
                 </div>
-                <Icon name="chevronRight" size={14} className="text-muted group-hover:text-white transition-colors" />
+                <Icon name="chevronRight" size={14} className="text-muted group-hover:text-white group-hover:translate-x-1 transition-all" />
               </Link>
 
               <Link
                 href={`/interviews/${interview.id}/rebuild`}
-                className="flex items-center justify-between p-3 rounded-xl bg-panel-2 border border-line hover:border-line-strong hover:bg-white/[0.04] transition-all group"
+                className="flex items-center justify-between p-3.5 rounded-xl bg-panel-2 border border-line hover:border-indigo-500/40 hover:bg-white/[0.04] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(0,0,0,0.35)] group"
               >
                 <div className="flex items-center gap-3 text-xs">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-teal-500/15 text-teal-400 border border-teal-500/25">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-500/15 text-teal-400 border border-teal-500/25 transition-transform duration-200 group-hover:scale-110">
                     <Icon name="gear" size={13} />
                   </span>
                   <div>
@@ -443,7 +446,7 @@ export default async function InterviewOverview({
                     <p className="text-[11px] text-muted">Choose topics, question types and duration</p>
                   </div>
                 </div>
-                <Icon name="chevronRight" size={14} className="text-muted group-hover:text-white transition-colors" />
+                <Icon name="chevronRight" size={14} className="text-muted group-hover:text-white group-hover:translate-x-1 transition-all" />
               </Link>
             </div>
           </Panel>

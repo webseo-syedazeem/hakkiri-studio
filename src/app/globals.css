@@ -167,6 +167,22 @@
   .pro-btn:active {
     transform: scale(0.97);
   }
+  .pro-btn-glow {
+    position: relative;
+    overflow: hidden;
+  }
+  .pro-btn-glow::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.18), transparent);
+    transform: translateX(-100%);
+    transition: transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none;
+  }
+  .pro-btn-glow:hover::after {
+    transform: translateX(100%);
+  }
 }
 
 /* Legal pages: plain, readable prose. */

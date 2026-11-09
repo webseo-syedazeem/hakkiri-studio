@@ -31,17 +31,17 @@ export function PrepChecklist({
         return (
           <li
             key={item.id}
-            className="flex items-start justify-between gap-3 py-3 first:pt-1 last:pb-1"
+            className="flex items-start justify-between gap-3 py-3 -mx-2 px-2 rounded-xl transition-colors hover:bg-white/[0.02] first:pt-1.5 last:pb-1.5"
           >
             <div className="flex items-start gap-3 min-w-0">
               <button
                 type="button"
                 onClick={() => toggle(item.id)}
                 className={clsx(
-                  "mt-0.5 flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded border transition-colors cursor-pointer",
+                  "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-all duration-200 cursor-pointer active:scale-90",
                   isChecked
-                    ? "border-emerald-500 bg-emerald-500/20 text-emerald-400 font-bold"
-                    : "border-line bg-panel hover:border-line-strong text-transparent"
+                    ? "border-emerald-500 bg-emerald-500/20 text-emerald-400 font-bold shadow-[0_0_8px_rgba(16,185,129,0.25)] scale-105"
+                    : "border-white/15 bg-white/[0.04] hover:border-white/30 text-transparent"
                 )}
                 aria-label={`Toggle ${item.title}`}
               >
@@ -50,19 +50,19 @@ export function PrepChecklist({
               <div className="min-w-0 text-xs">
                 <span
                   className={clsx(
-                    "font-semibold transition-colors",
-                    isChecked ? "text-muted line-through" : "text-ink"
+                    "font-semibold transition-all duration-200",
+                    isChecked ? "text-muted line-through opacity-60" : "text-ink"
                   )}
                 >
                   {item.title}
                 </span>
-                <span className="text-muted"> — {item.description}</span>
+                <span className={clsx("transition-colors", isChecked ? "text-muted/60" : "text-muted")}> — {item.description}</span>
               </div>
             </div>
 
             <Link
               href={item.drillHref || `/interviews/${interviewId}`}
-              className="shrink-0 rounded-lg bg-panel-2 px-2.5 py-1 text-[11px] font-semibold text-ink border border-line hover:bg-white/[0.08] transition-colors"
+              className="shrink-0 rounded-lg bg-white/[0.04] hover:bg-white/[0.1] px-3 py-1.5 text-[11px] font-semibold text-white/90 hover:text-white border border-white/10 hover:border-white/20 shadow-sm transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.96]"
             >
               Practise
             </Link>

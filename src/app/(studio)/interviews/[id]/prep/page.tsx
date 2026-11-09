@@ -136,10 +136,11 @@ export default async function PrepSheetPage({
                 settings: settingsOr(interview.settings, interview.style),
               }}
               variant="primary"
-              className="bg-blue-fill hover:bg-blue-hover text-white shadow-md font-semibold text-xs px-3.5 py-2"
+              size="md"
+              buttonClassName="px-4 py-2 rounded-xl text-xs flex items-center gap-2 group shadow-[0_4px_20px_rgba(79,82,248,0.35)] hover:shadow-[0_6px_26px_rgba(79,82,248,0.6)]"
             >
-              <Icon name="play" size={13} />
-              Practise this interview
+              <Icon name="play" size={13} className="group-hover:translate-x-0.5 transition-transform duration-200" />
+              <span>Practise this interview</span>
             </StartButton>
           </div>
         </div>
