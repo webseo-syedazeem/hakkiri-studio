@@ -14,8 +14,8 @@ const Body = z.object({
   q2_questions: z.string().trim().min(1, "Please answer question 2").max(2000),
   q3_feedback: z.string().trim().min(1, "Please answer question 3").max(2000),
   q4_issues: z.string().trim().min(1, "Please answer question 4").max(2000),
-  q5_likes_dislikes: z.string().trim().min(1, "Please answer question 5").max(2000),
-  q6_changes: z.string().trim().min(1, "Please answer question 6").max(2000),
+  q5_likes_dislikes: z.string().trim().max(2000).optional().default(""),
+  q6_changes: z.string().trim().max(2000).optional().default(""),
   q7_recommend: z.string().trim().min(1, "Please answer question 7").max(2000),
 });
 

@@ -15,6 +15,40 @@ interface BetaInterviewFeedbackModalProps {
   ineligibleReason?: "ended-early" | "not-full-interview";
 }
 
+const Q1_OPTIONS = [
+  "Very realistic",
+  "Mostly realistic",
+  "A little robotic",
+  "The interview felt too rushed",
+];
+
+const Q2_OPTIONS = [
+  "Highly relevant and tailored",
+  "Mostly relevant",
+  "Too generic",
+  "Missed important skills or topics",
+];
+
+const Q3_OPTIONS = [
+  "Fair, accurate and constructive",
+  "Too critical",
+  "Too generous",
+  "Some scores or feedback felt inaccurate",
+];
+
+const Q4_OPTIONS = [
+  "Everything worked smoothly",
+  "Audio lag or interruptions",
+  "Feedback took too long to generate",
+  "Some features were confusing to use",
+];
+
+const Q7_OPTIONS = [
+  "Definitely!",
+  "Maybe, with a few improvements",
+  "Not yet",
+];
+
 export function BetaInterviewFeedbackModal({
   interviewId = "",
   mockId = "",
@@ -32,46 +66,57 @@ export function BetaInterviewFeedbackModal({
 
   // Form fields
   const [email, setEmail] = useState("");
-  const [q1, setQ1] = useState("");
-  const [q2, setQ2] = useState("");
-  const [q3, setQ3] = useState("");
-  const [q4, setQ4] = useState("");
-  const [q5, setQ5] = useState("");
-  const [q6, setQ6] = useState("");
-  const [q7, setQ7] = useState("");
+  const [q1Choice, setQ1Choice] = useState("");
+  const [q1More, setQ1More] = useState("");
 
-  const draftKey = `hk_beta_survey_draft_${mockId || interviewId || "default"}`;
+  const [q2Choice, setQ2Choice] = useState("");
+  const [q2More, setQ2More] = useState("");
+
+  const [q3Choice, setQ3Choice] = useState("");
+  const [q3More, setQ3More] = useState("");
+
+  const [q4Choices, setQ4Choices] = useState<string[]>([]);
+  const [q4More, setQ4More] = useState("");
+
+  const [q5LikesDislikes, setQ5LikesDislikes] = useState("");
+  const [q6Changes, setQ6Changes] = useState("");
+
+  const [q7Choice, setQ7Choice] = useState("");
+  const [q7More, setQ7More] = useState("");
+
+  const draftKey = `hk_beta_survey_draft_v2_${mockId || interviewId || "default"}`;
   const submittedKey = `hk_beta_survey_done_${mockId || interviewId || "default"}`;
   const dismissedKey = `hk_beta_survey_dismissed_${mockId || interviewId || "default"}`;
 
   useEffect(() => {
     setMounted(true);
 
-    // If not a full interview, do not prompt
     if (!isEligible) return;
 
-    // Check if already completed
     try {
       if (localStorage.getItem(submittedKey)) {
         setSubmitted(true);
         return;
       }
 
-      // Restore saved draft
       const saved = localStorage.getItem(draftKey);
       if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed.email) setEmail(parsed.email);
-        if (parsed.q1) setQ1(parsed.q1);
-        if (parsed.q2) setQ2(parsed.q2);
-        if (parsed.q3) setQ3(parsed.q3);
-        if (parsed.q4) setQ4(parsed.q4);
-        if (parsed.q5) setQ5(parsed.q5);
-        if (parsed.q6) setQ6(parsed.q6);
-        if (parsed.q7) setQ7(parsed.q7);
+        const p = JSON.parse(saved);
+        if (p.email) setEmail(p.email);
+        if (p.q1Choice) setQ1Choice(p.q1Choice);
+        if (p.q1More) setQ1More(p.q1More);
+        if (p.q2Choice) setQ2Choice(p.q2Choice);
+        if (p.q2More) setQ2More(p.q2More);
+        if (p.q3Choice) setQ3Choice(p.q3Choice);
+        if (p.q3More) setQ3More(p.q3More);
+        if (Array.isArray(p.q4Choices)) setQ4Choices(p.q4Choices);
+        if (p.q4More) setQ4More(p.q4More);
+        if (p.q5LikesDislikes) setQ5LikesDislikes(p.q5LikesDislikes);
+        if (p.q6Changes) setQ6Changes(p.q6Changes);
+        if (p.q7Choice) setQ7Choice(p.q7Choice);
+        if (p.q7More) setQ7More(p.q7More);
       }
 
-      // Auto-prompt after full interview report loads if not dismissed
       const dismissed = sessionStorage.getItem(dismissedKey);
       if (autoPrompt && !dismissed) {
         const timer = setTimeout(() => {
@@ -82,20 +127,64 @@ export function BetaInterviewFeedbackModal({
     } catch {}
   }, [autoPrompt, isEligible, draftKey, submittedKey, dismissedKey]);
 
-  // Persist draft on change
+  // Persist draft on changes
   useEffect(() => {
     if (!mounted || submitted || !isEligible) return;
     try {
-      const data = { email, q1, q2, q3, q4, q5, q6, q7 };
+      const data = {
+        email,
+        q1Choice,
+        q1More,
+        q2Choice,
+        q2More,
+        q3Choice,
+        q3More,
+        q4Choices,
+        q4More,
+        q5LikesDislikes,
+        q6Changes,
+        q7Choice,
+        q7More,
+      };
       localStorage.setItem(draftKey, JSON.stringify(data));
     } catch {}
-  }, [email, q1, q2, q3, q4, q5, q6, q7, mounted, draftKey, submitted, isEligible]);
+  }, [
+    email,
+    q1Choice,
+    q1More,
+    q2Choice,
+    q2More,
+    q3Choice,
+    q3More,
+    q4Choices,
+    q4More,
+    q5LikesDislikes,
+    q6Changes,
+    q7Choice,
+    q7More,
+    mounted,
+    draftKey,
+    submitted,
+    isEligible,
+  ]);
 
   const handleDismiss = () => {
     setIsOpen(false);
     try {
       sessionStorage.setItem(dismissedKey, "1");
     } catch {}
+  };
+
+  const toggleQ4Choice = (choice: string) => {
+    setQ4Choices((prev) => {
+      if (choice === "Everything worked smoothly") {
+        return prev.includes(choice) ? [] : [choice];
+      }
+      const filtered = prev.filter((c) => c !== "Everything worked smoothly");
+      return filtered.includes(choice)
+        ? filtered.filter((c) => c !== choice)
+        : [...filtered, choice];
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -107,17 +196,38 @@ export function BetaInterviewFeedbackModal({
       return;
     }
 
-    // Validation
     const cleanEmail = email.trim();
     if (!cleanEmail || !cleanEmail.includes("@") || !cleanEmail.includes(".")) {
       setErrorMessage("Please enter a valid email address so we can send your £15 Amazon voucher.");
       return;
     }
 
-    if (!q1.trim() || !q2.trim() || !q3.trim() || !q4.trim() || !q5.trim() || !q6.trim() || !q7.trim()) {
-      setErrorMessage("Please share a quick response for all 7 questions to qualify for the £15 voucher.");
+    if (!q1Choice) {
+      setErrorMessage("Please select an answer for Question 1 (How realistic did your mock interview feel?).");
       return;
     }
+    if (!q2Choice) {
+      setErrorMessage("Please select an answer for Question 2 (How relevant were the questions?).");
+      return;
+    }
+    if (!q3Choice) {
+      setErrorMessage("Please select an answer for Question 3 (How accurate and helpful were scores?).");
+      return;
+    }
+    if (!q4Choices.length) {
+      setErrorMessage("Please select at least one option for Question 4 (Technical issues or difficulties).");
+      return;
+    }
+    if (!q7Choice) {
+      setErrorMessage("Please select an answer for Question 7 (Would you recommend Hakkiri?).");
+      return;
+    }
+
+    const q1Full = q1Choice + (q1More.trim() ? ` — ${q1More.trim()}` : "");
+    const q2Full = q2Choice + (q2More.trim() ? ` — ${q2More.trim()}` : "");
+    const q3Full = q3Choice + (q3More.trim() ? ` — ${q3More.trim()}` : "");
+    const q4Full = q4Choices.join(", ") + (q4More.trim() ? ` — ${q4More.trim()}` : "");
+    const q7Full = q7Choice + (q7More.trim() ? ` — ${q7More.trim()}` : "");
 
     setIsSubmitting(true);
     try {
@@ -128,13 +238,13 @@ export function BetaInterviewFeedbackModal({
           email: cleanEmail,
           interviewId,
           mockId,
-          q1_realism: q1,
-          q2_questions: q2,
-          q3_feedback: q3,
-          q4_issues: q4,
-          q5_likes_dislikes: q5,
-          q6_changes: q6,
-          q7_recommend: q7,
+          q1_realism: q1Full,
+          q2_questions: q2Full,
+          q3_feedback: q3Full,
+          q4_issues: q4Full,
+          q5_likes_dislikes: q5LikesDislikes.trim(),
+          q6_changes: q6Changes.trim(),
+          q7_recommend: q7Full,
         }),
       });
 
@@ -152,14 +262,6 @@ export function BetaInterviewFeedbackModal({
       setErrorMessage(err.message || "Something went wrong sending your survey. Please try again.");
     } finally {
       setIsSubmitting(false);
-    }
-  };
-
-  const appendTag = (setter: React.Dispatch<React.SetStateAction<string>>, current: string, tag: string) => {
-    if (!current) {
-      setter(tag + " — ");
-    } else if (!current.includes(tag)) {
-      setter(`${tag}. ${current}`);
     }
   };
 
@@ -208,7 +310,7 @@ export function BetaInterviewFeedbackModal({
                 <p className="mt-1 text-xs text-muted leading-relaxed">
                   {submitted
                     ? `Thanks for your help! We're processing your £15 voucher to ${email || "your email"}.`
-                    : "Completed your full interview? Take 2 minutes to fill out our beta survey and we'll email you a £15 Amazon voucher."}
+                    : "Completed your full interview? Take 3–5 minutes to fill out our beta survey and we'll email you a £15 Amazon voucher."}
                 </p>
               </div>
             </div>
@@ -238,7 +340,7 @@ export function BetaInterviewFeedbackModal({
         mounted &&
         createPortal(
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-3 sm:p-6 backdrop-blur-md animate-fade-in"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-3 sm:p-6 backdrop-blur-md animate-fade-in"
             onClick={handleDismiss}
           >
             <div
@@ -246,10 +348,10 @@ export function BetaInterviewFeedbackModal({
               aria-modal="true"
               aria-labelledby="survey-title"
               onClick={(e) => e.stopPropagation()}
-              className="relative flex flex-col w-full max-w-[680px] max-h-[92vh] rounded-[20px] border border-line bg-[#151824] shadow-[0_25px_70px_rgba(0,0,0,0.85),0_0_35px_rgba(245,158,11,0.2)] animate-scale-in overflow-hidden"
+              className="relative flex flex-col w-full max-w-[720px] max-h-[92vh] rounded-[22px] border border-line bg-[#131622] shadow-[0_25px_70px_rgba(0,0,0,0.9),0_0_35px_rgba(245,158,11,0.2)] animate-scale-in overflow-hidden"
             >
               {/* Modal Header */}
-              <div className="relative border-b border-line bg-gradient-to-b from-[#211a12] via-[#1a1b26] to-[#151824] p-5 sm:p-6">
+              <div className="relative border-b border-line bg-gradient-to-b from-[#221c13] via-[#1a1b27] to-[#131622] p-5 sm:p-6">
                 <button
                   type="button"
                   onClick={handleDismiss}
@@ -266,16 +368,16 @@ export function BetaInterviewFeedbackModal({
                   <span className="rounded-full bg-[#f59e0b]/20 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-[#fbbf24] border border-[#f59e0b]/40">
                     £15 Amazon Voucher
                   </span>
-                  <span className="text-[11px] text-muted font-medium">Hakkiri Beta Survey</span>
+                  <span className="text-[11px] text-muted font-medium">Estimated time: 3–5 minutes</span>
                 </div>
 
-                <h2 id="survey-title" className="mt-2 text-xl font-bold text-white tracking-tight sm:text-2xl">
-                  {submitted ? "Survey Complete! 🎉" : "How was your mock interview?"}
+                <h2 id="survey-title" className="mt-2.5 text-xl font-bold text-white tracking-tight sm:text-2xl">
+                  {submitted ? "Survey Complete! 🎉" : "Help us make Hakkiri better"}
                 </h2>
-                <p className="mt-1 text-xs text-muted sm:text-sm">
+                <p className="mt-1 text-xs text-muted sm:text-sm leading-relaxed">
                   {submitted
                     ? "Thank you for helping us polish Hakkiri during the beta."
-                    : "Fill out the 7 quick questions below and we'll email you a £15 Amazon voucher to say thank you."}
+                    : "Thank you for testing Hakkiri! We'd love to hear about your experience. Your feedback will help us make Hakkiri more realistic, useful and enjoyable."}
                 </p>
               </div>
 
@@ -287,10 +389,13 @@ export function BetaInterviewFeedbackModal({
                       ✓
                     </div>
                     <h3 className="mt-4 text-xl font-bold text-white">We’ve received your feedback!</h3>
-                    <p className="mt-2 max-w-[440px] text-sm text-muted leading-relaxed">
+                    <p className="mt-2 max-w-[460px] text-sm text-muted leading-relaxed">
                       Your responses are saved. We will review your submission and email your{" "}
                       <b className="text-white">£15 Amazon voucher</b> code to{" "}
                       <span className="font-semibold text-blue-soft">{email}</span> within 24–48 hours.
+                    </p>
+                    <p className="mt-3 text-xs text-muted">
+                      Thank you for helping us shape the future of Hakkiri!
                     </p>
                     <div className="mt-6 flex gap-3">
                       <Button variant="primary" onClick={() => setIsOpen(false)} className="px-6">
@@ -308,209 +413,339 @@ export function BetaInterviewFeedbackModal({
                     )}
 
                     {/* Question 1 */}
-                    <div className="space-y-2 rounded-xl bg-panel-2 p-4 border border-line/80">
-                      <label className="block text-xs font-bold text-white sm:text-sm">
-                        1. Did the mock interview feel like a real one? What made it feel real or not?
-                      </label>
-                      <div className="flex flex-wrap gap-1.5">
-                        {["Very realistic", "Somewhat realistic", "A bit robotic", "Too fast"].map((tag) => (
+                    <div className="space-y-3 rounded-xl bg-panel-2 p-4 sm:p-5 border border-line">
+                      <div>
+                        <span className="block text-xs font-bold text-white sm:text-sm">
+                          1. How realistic did your mock interview feel?
+                        </span>
+                        <span className="text-[11px] text-muted">Select one answer.</span>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {Q1_OPTIONS.map((opt) => (
                           <button
-                            key={tag}
+                            key={opt}
                             type="button"
-                            onClick={() => appendTag(setQ1, q1, tag)}
-                            className="rounded-lg bg-panel px-2.5 py-1 text-[11px] text-muted hover:text-white hover:bg-white/10 border border-line transition-colors cursor-pointer"
+                            onClick={() => setQ1Choice(opt)}
+                            className={clsx(
+                              "rounded-lg p-2.5 text-left text-xs font-medium border transition-all cursor-pointer flex items-center gap-2",
+                              q1Choice === opt
+                                ? "border-blue-fill bg-blue-fill/15 text-white shadow-[0_0_12px_rgba(99,102,241,0.25)]"
+                                : "border-line bg-panel text-muted hover:border-line-strong hover:text-ink"
+                            )}
                           >
-                            + {tag}
+                            <span
+                              className={clsx(
+                                "flex h-4 w-4 shrink-0 items-center justify-center rounded-full border text-[10px]",
+                                q1Choice === opt
+                                  ? "border-blue-fill bg-blue-fill text-white"
+                                  : "border-line bg-transparent"
+                              )}
+                            >
+                              {q1Choice === opt && "•"}
+                            </span>
+                            <span>{opt}</span>
                           </button>
                         ))}
                       </div>
-                      <textarea
-                        rows={2}
-                        value={q1}
-                        onChange={(e) => setQ1(e.target.value)}
-                        placeholder="Tell us what felt natural (e.g. interviewer questions, follow-ups) or what felt artificial..."
-                        className="w-full rounded-lg bg-[#141620] p-2.5 text-xs text-white border border-line/80 focus:border-blue-fill focus:outline-none transition-colors"
-                      />
+                      <div className="pt-1">
+                        <label className="block text-[11px] font-medium text-muted mb-1">
+                          Tell us more (optional): What made the interview feel realistic or unrealistic?
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={q1More}
+                          onChange={(e) => setQ1More(e.target.value)}
+                          placeholder="What made the interview feel realistic or unrealistic?"
+                          className="w-full rounded-lg bg-[#0e111a] p-2.5 text-xs text-white border border-line focus:border-blue-fill focus:outline-none transition-colors"
+                        />
+                      </div>
                     </div>
 
                     {/* Question 2 */}
-                    <div className="space-y-2 rounded-xl bg-panel-2 p-4 border border-line/80">
-                      <label className="block text-xs font-bold text-white sm:text-sm">
-                        2. Were the questions and follow-ups right for the job?
-                      </label>
-                      <div className="flex flex-wrap gap-1.5">
-                        {["Spot on for the role", "Mostly relevant", "Too generic", "Missed core skills"].map((tag) => (
+                    <div className="space-y-3 rounded-xl bg-panel-2 p-4 sm:p-5 border border-line">
+                      <div>
+                        <span className="block text-xs font-bold text-white sm:text-sm">
+                          2. How relevant were the questions and follow-ups to your role?
+                        </span>
+                        <span className="text-[11px] text-muted">Select one answer.</span>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {Q2_OPTIONS.map((opt) => (
                           <button
-                            key={tag}
+                            key={opt}
                             type="button"
-                            onClick={() => appendTag(setQ2, q2, tag)}
-                            className="rounded-lg bg-panel px-2.5 py-1 text-[11px] text-muted hover:text-white hover:bg-white/10 border border-line transition-colors cursor-pointer"
+                            onClick={() => setQ2Choice(opt)}
+                            className={clsx(
+                              "rounded-lg p-2.5 text-left text-xs font-medium border transition-all cursor-pointer flex items-center gap-2",
+                              q2Choice === opt
+                                ? "border-blue-fill bg-blue-fill/15 text-white shadow-[0_0_12px_rgba(99,102,241,0.25)]"
+                                : "border-line bg-panel text-muted hover:border-line-strong hover:text-ink"
+                            )}
                           >
-                            + {tag}
+                            <span
+                              className={clsx(
+                                "flex h-4 w-4 shrink-0 items-center justify-center rounded-full border text-[10px]",
+                                q2Choice === opt
+                                  ? "border-blue-fill bg-blue-fill text-white"
+                                  : "border-line bg-transparent"
+                              )}
+                            >
+                              {q2Choice === opt && "•"}
+                            </span>
+                            <span>{opt}</span>
                           </button>
                         ))}
                       </div>
-                      <textarea
-                        rows={2}
-                        value={q2}
-                        onChange={(e) => setQ2(e.target.value)}
-                        placeholder="Did the questions match your seniority and industry? Did follow-ups dig into the right details?"
-                        className="w-full rounded-lg bg-[#141620] p-2.5 text-xs text-white border border-line/80 focus:border-blue-fill focus:outline-none transition-colors"
-                      />
+                      <div className="pt-1">
+                        <label className="block text-[11px] font-medium text-muted mb-1">
+                          Tell us more (optional): Were there any questions or topics you expected but didn&apos;t receive?
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={q2More}
+                          onChange={(e) => setQ2More(e.target.value)}
+                          placeholder="Were there any questions or topics you expected but didn't receive?"
+                          className="w-full rounded-lg bg-[#0e111a] p-2.5 text-xs text-white border border-line focus:border-blue-fill focus:outline-none transition-colors"
+                        />
+                      </div>
                     </div>
 
                     {/* Question 3 */}
-                    <div className="space-y-2 rounded-xl bg-panel-2 p-4 border border-line/80">
-                      <label className="block text-xs font-bold text-white sm:text-sm">
-                        3. Did the scores and feedback feel fair and useful? Any that were wrong?
-                      </label>
-                      <div className="flex flex-wrap gap-1.5">
-                        {["Fair & constructive", "Felt too harsh", "Felt too generous", "One score was wrong"].map((tag) => (
+                    <div className="space-y-3 rounded-xl bg-panel-2 p-4 sm:p-5 border border-line">
+                      <div>
+                        <span className="block text-xs font-bold text-white sm:text-sm">
+                          3. How accurate and helpful did you find your scores and feedback?
+                        </span>
+                        <span className="text-[11px] text-muted">Select one answer.</span>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {Q3_OPTIONS.map((opt) => (
                           <button
-                            key={tag}
+                            key={opt}
                             type="button"
-                            onClick={() => appendTag(setQ3, q3, tag)}
-                            className="rounded-lg bg-panel px-2.5 py-1 text-[11px] text-muted hover:text-white hover:bg-white/10 border border-line transition-colors cursor-pointer"
+                            onClick={() => setQ3Choice(opt)}
+                            className={clsx(
+                              "rounded-lg p-2.5 text-left text-xs font-medium border transition-all cursor-pointer flex items-center gap-2",
+                              q3Choice === opt
+                                ? "border-blue-fill bg-blue-fill/15 text-white shadow-[0_0_12px_rgba(99,102,241,0.25)]"
+                                : "border-line bg-panel text-muted hover:border-line-strong hover:text-ink"
+                            )}
                           >
-                            + {tag}
+                            <span
+                              className={clsx(
+                                "flex h-4 w-4 shrink-0 items-center justify-center rounded-full border text-[10px]",
+                                q3Choice === opt
+                                  ? "border-blue-fill bg-blue-fill text-white"
+                                  : "border-line bg-transparent"
+                              )}
+                            >
+                              {q3Choice === opt && "•"}
+                            </span>
+                            <span>{opt}</span>
                           </button>
                         ))}
                       </div>
-                      <textarea
-                        rows={2}
-                        value={q3}
-                        onChange={(e) => setQ3(e.target.value)}
-                        placeholder="Which feedback tip was most useful? Were any numbers or ratings off base?"
-                        className="w-full rounded-lg bg-[#141620] p-2.5 text-xs text-white border border-line/80 focus:border-blue-fill focus:outline-none transition-colors"
-                      />
-                    </div>
-
-                    {/* Question 4 */}
-                    <div className="space-y-2 rounded-xl bg-panel-2 p-4 border border-line/80">
-                      <label className="block text-xs font-bold text-white sm:text-sm">
-                        4. Was anything confusing, slow or broken?
-                      </label>
-                      <div className="flex flex-wrap gap-1.5">
-                        {["Ran smoothly", "Audio lag", "Scoring took too long", "UI confusing"].map((tag) => (
-                          <button
-                            key={tag}
-                            type="button"
-                            onClick={() => appendTag(setQ4, q4, tag)}
-                            className="rounded-lg bg-panel px-2.5 py-1 text-[11px] text-muted hover:text-white hover:bg-white/10 border border-line transition-colors cursor-pointer"
-                          >
-                            + {tag}
-                          </button>
-                        ))}
+                      <div className="pt-1">
+                        <label className="block text-[11px] font-medium text-muted mb-1">
+                          Tell us more (optional): Was there a particular score or piece of feedback you agreed or disagreed with?
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={q3More}
+                          onChange={(e) => setQ3More(e.target.value)}
+                          placeholder="Was there a particular score or piece of feedback you agreed or disagreed with?"
+                          className="w-full rounded-lg bg-[#0e111a] p-2.5 text-xs text-white border border-line focus:border-blue-fill focus:outline-none transition-colors"
+                        />
                       </div>
+                    </div>
+
+                    {/* Question 4 (ALLOW MULTIPLE SELECTIONS) */}
+                    <div className="space-y-3 rounded-xl bg-panel-2 p-4 sm:p-5 border border-line">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="block text-xs font-bold text-white sm:text-sm">
+                            4. Did you experience any technical issues or difficulties?
+                          </span>
+                          <span className="rounded bg-lilac/20 px-1.5 py-0.5 text-[10px] font-semibold text-lilac">
+                            Multiple selections allowed
+                          </span>
+                        </div>
+                        <span className="text-[11px] text-muted">Select all that apply.</span>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {Q4_OPTIONS.map((opt) => {
+                          const isSelected = q4Choices.includes(opt);
+                          return (
+                            <button
+                              key={opt}
+                              type="button"
+                              onClick={() => toggleQ4Choice(opt)}
+                              className={clsx(
+                                "rounded-lg p-2.5 text-left text-xs font-medium border transition-all cursor-pointer flex items-center gap-2",
+                                isSelected
+                                  ? "border-blue-fill bg-blue-fill/15 text-white shadow-[0_0_12px_rgba(99,102,241,0.25)]"
+                                  : "border-line bg-panel text-muted hover:border-line-strong hover:text-ink"
+                              )}
+                            >
+                              <span
+                                className={clsx(
+                                  "flex h-4 w-4 shrink-0 items-center justify-center rounded border text-[11px]",
+                                  isSelected
+                                    ? "border-blue-fill bg-blue-fill text-white font-bold"
+                                    : "border-line bg-transparent"
+                                )}
+                              >
+                                {isSelected && "✓"}
+                              </span>
+                              <span>{opt}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <div className="pt-1">
+                        <label className="block text-[11px] font-medium text-muted mb-1">
+                          Tell us more (optional): What happened, and how could we improve the experience?
+                        </label>
+                        <textarea
+                          rows={2}
+                          value={q4More}
+                          onChange={(e) => setQ4More(e.target.value)}
+                          placeholder="What happened, and how could we improve the experience?"
+                          className="w-full rounded-lg bg-[#0e111a] p-2.5 text-xs text-white border border-line focus:border-blue-fill focus:outline-none transition-colors"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Question 5 (Optional) */}
+                    <div className="space-y-2 rounded-xl bg-panel-2 p-4 sm:p-5 border border-line">
+                      <label className="block text-xs font-bold text-white sm:text-sm">
+                        5. What did you like most and least about Hakkiri? <span className="text-muted font-normal">(Optional)</span>
+                      </label>
+                      <p className="text-[11px] text-muted">
+                        Tell us what worked particularly well and what you think could be better.
+                      </p>
                       <textarea
-                        rows={2}
-                        value={q4}
-                        onChange={(e) => setQ4(e.target.value)}
-                        placeholder="Any bugs, lag in speech recognition, or confusing screens? (Write 'None' if all good)"
-                        className="w-full rounded-lg bg-[#141620] p-2.5 text-xs text-white border border-line/80 focus:border-blue-fill focus:outline-none transition-colors"
+                        rows={3}
+                        value={q5LikesDislikes}
+                        onChange={(e) => setQ5LikesDislikes(e.target.value)}
+                        placeholder="Tell us what worked particularly well and what you think could be better..."
+                        className="w-full rounded-lg bg-[#0e111a] p-2.5 text-xs text-white border border-line focus:border-blue-fill focus:outline-none transition-colors"
                       />
                     </div>
 
-                    {/* Question 5 */}
-                    <div className="space-y-2 rounded-xl bg-panel-2 p-4 border border-line/80">
+                    {/* Question 6 (Optional) */}
+                    <div className="space-y-2 rounded-xl bg-panel-2 p-4 sm:p-5 border border-line">
                       <label className="block text-xs font-bold text-white sm:text-sm">
-                        5. What did you like most, and what did you like least?
+                        6. If you could change or add one thing to Hakkiri, what would it be? <span className="text-muted font-normal">(Optional)</span>
                       </label>
+                      <p className="text-[11px] text-muted">
+                        We&apos;re open to any ideas, big or small!
+                      </p>
                       <textarea
                         rows={2}
-                        value={q5}
-                        onChange={(e) => setQ5(e.target.value)}
-                        placeholder="Liked most: ... / Liked least: ..."
-                        className="w-full rounded-lg bg-[#141620] p-2.5 text-xs text-white border border-line/80 focus:border-blue-fill focus:outline-none transition-colors"
-                      />
-                    </div>
-
-                    {/* Question 6 */}
-                    <div className="space-y-2 rounded-xl bg-panel-2 p-4 border border-line/80">
-                      <label className="block text-xs font-bold text-white sm:text-sm">
-                        6. What's one thing you'd change or add?
-                      </label>
-                      <textarea
-                        rows={2}
-                        value={q6}
-                        onChange={(e) => setQ6(e.target.value)}
-                        placeholder="A feature you wish existed, or something you would adjust..."
-                        className="w-full rounded-lg bg-[#141620] p-2.5 text-xs text-white border border-line/80 focus:border-blue-fill focus:outline-none transition-colors"
+                        value={q6Changes}
+                        onChange={(e) => setQ6Changes(e.target.value)}
+                        placeholder="We're open to any ideas, big or small..."
+                        className="w-full rounded-lg bg-[#0e111a] p-2.5 text-xs text-white border border-line focus:border-blue-fill focus:outline-none transition-colors"
                       />
                     </div>
 
                     {/* Question 7 */}
-                    <div className="space-y-2 rounded-xl bg-panel-2 p-4 border border-line/80">
-                      <label className="block text-xs font-bold text-white sm:text-sm">
-                        7. Would you recommend Hakkiri to a friend? Why or why not?
-                      </label>
-                      <div className="flex flex-wrap gap-1.5">
-                        {["Definitely yes ⭐", "Maybe / Needs polish", "Not yet"].map((tag) => (
+                    <div className="space-y-3 rounded-xl bg-panel-2 p-4 sm:p-5 border border-line">
+                      <div>
+                        <span className="block text-xs font-bold text-white sm:text-sm">
+                          7. Would you recommend Hakkiri to a friend or colleague?
+                        </span>
+                        <span className="text-[11px] text-muted">Select one answer.</span>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        {Q7_OPTIONS.map((opt) => (
                           <button
-                            key={tag}
+                            key={opt}
                             type="button"
-                            onClick={() => appendTag(setQ7, q7, tag)}
-                            className="rounded-lg bg-panel px-2.5 py-1 text-[11px] text-muted hover:text-white hover:bg-white/10 border border-line transition-colors cursor-pointer"
+                            onClick={() => setQ7Choice(opt)}
+                            className={clsx(
+                              "rounded-lg p-2.5 text-left text-xs font-medium border transition-all cursor-pointer flex items-center gap-2",
+                              q7Choice === opt
+                                ? "border-blue-fill bg-blue-fill/15 text-white shadow-[0_0_12px_rgba(99,102,241,0.25)]"
+                                : "border-line bg-panel text-muted hover:border-line-strong hover:text-ink"
+                            )}
                           >
-                            + {tag}
+                            <span
+                              className={clsx(
+                                "flex h-4 w-4 shrink-0 items-center justify-center rounded-full border text-[10px]",
+                                q7Choice === opt
+                                  ? "border-blue-fill bg-blue-fill text-white"
+                                  : "border-line bg-transparent"
+                              )}
+                            >
+                              {q7Choice === opt && "•"}
+                            </span>
+                            <span>{opt}</span>
                           </button>
                         ))}
                       </div>
-                      <textarea
-                        rows={2}
-                        value={q7}
-                        onChange={(e) => setQ7(e.target.value)}
-                        placeholder="Why or why not? What would make it an essential tool for your interview prep?"
-                        className="w-full rounded-lg bg-[#141620] p-2.5 text-xs text-white border border-line/80 focus:border-blue-fill focus:outline-none transition-colors"
-                      />
-                    </div>
-
-                    {/* £15 Voucher Email Input Card */}
-                    <div className="rounded-xl border border-[#f59e0b]/50 bg-gradient-to-r from-[#231b0c] to-[#181926] p-4.5 space-y-2 shadow-[0_0_20px_rgba(245,158,11,0.15)]">
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg">✉️</span>
-                        <label htmlFor="voucher-email" className="text-xs font-bold text-[#fbbf24] uppercase tracking-wider">
-                          Where should we email your £15 Amazon voucher?
+                      <div className="pt-1">
+                        <label className="block text-[11px] font-medium text-muted mb-1">
+                          What influenced your answer? (Optional)
                         </label>
+                        <textarea
+                          rows={2}
+                          value={q7More}
+                          onChange={(e) => setQ7More(e.target.value)}
+                          placeholder="What influenced your answer? (Optional)"
+                          className="w-full rounded-lg bg-[#0e111a] p-2.5 text-xs text-white border border-line focus:border-blue-fill focus:outline-none transition-colors"
+                        />
                       </div>
-                      <input
-                        id="voucher-email"
-                        type="email"
-                        required
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="your.email@example.com"
-                        className="w-full rounded-lg bg-[#141620] p-3 text-sm text-white placeholder-muted/60 border border-line focus:border-[#f59e0b] focus:outline-none transition-colors shadow-inner"
-                      />
-                      <p className="text-[11px] text-muted">
-                        We will only use this address to send your voucher code. We do not sell data or send spam.
-                      </p>
                     </div>
 
-                    {/* Submit Actions */}
-                    <div className="sticky bottom-0 -mx-5 -mb-5 border-t border-line bg-[#151824]/95 px-5 py-4 backdrop-blur-md flex items-center justify-between gap-3 sm:-mx-7 sm:-mb-6 sm:px-7">
-                      <button
-                        type="button"
-                        onClick={handleDismiss}
-                        className="text-xs font-semibold text-muted hover:text-white transition-colors cursor-pointer"
-                      >
-                        Maybe later
-                      </button>
+                    {/* Voucher Claim Section */}
+                    <div className="rounded-xl border border-[#f59e0b]/40 bg-gradient-to-r from-[#241a0b] via-[#1c1822] to-[#171a25] p-5 shadow-[0_0_25px_rgba(245,158,11,0.15)] space-y-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xl">🎁</span>
+                        <h4 className="text-sm font-bold text-white">Your £15 Amazon voucher</h4>
+                      </div>
+                      <p className="text-xs text-muted">
+                        Where should we send your £15 Amazon voucher?
+                      </p>
+                      <div>
+                        <label htmlFor="voucher-email-input" className="block text-xs font-semibold text-ink mb-1.5">
+                          Email address:
+                        </label>
+                        <input
+                          id="voucher-email-input"
+                          type="email"
+                          required
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          placeholder="you@example.com"
+                          className="w-full rounded-xl bg-[#0e111a] px-3.5 py-2.5 text-sm text-white border border-line focus:border-[#f59e0b] focus:outline-none transition-colors"
+                        />
+                        <p className="mt-1 text-[11px] text-muted">
+                          We&apos;ll only use this email address to send your voucher.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex flex-col gap-2 pt-2">
                       <button
                         type="submit"
                         disabled={isSubmitting}
-                        className="group relative flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#f59e0b] to-[#d97706] px-5 py-2.5 text-xs font-bold text-black shadow-[0_0_25px_rgba(245,158,11,0.4)] transition-all hover:brightness-110 active:scale-95 disabled:opacity-50 cursor-pointer"
+                        className="w-full rounded-xl bg-gradient-to-r from-[#f59e0b] to-[#d97706] py-3 text-sm font-bold text-black shadow-[0_0_20px_rgba(245,158,11,0.4)] hover:brightness-110 active:scale-[0.99] transition-all disabled:opacity-50 cursor-pointer"
                       >
-                        <span>{isSubmitting ? "Submitting survey…" : "Submit & Claim £15 Voucher"}</span>
-                        <span className="transition-transform group-hover:translate-x-0.5">→</span>
+                        {isSubmitting ? "Submitting feedback..." : "Submit feedback"}
                       </button>
+                      <p className="text-center text-[11px] text-dim">
+                        Thank you for helping us shape the future of Hakkiri!
+                      </p>
                     </div>
                   </form>
                 )}
               </div>
             </div>
           </div>,
-          document.body,
+          document.body
         )}
     </>
   );
