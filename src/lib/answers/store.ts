@@ -1,7 +1,7 @@
 import type { Answer } from "@/lib/types";
 import { answers as demoAnswers } from "@/lib/mock-data";
 import { loadJson, loadJsonAsync, saveJson, saveJsonAsync } from "@/lib/storage/disk";
-import { isMongoConfigured } from "@/lib/storage/mongodb";
+import { isMongoConfigured, saveToMongo, loadFromMongo } from "@/lib/storage/mongodb";
 
 /**
  * Scored answers (build plan: "Answers" table). Kept in memory and saved to
@@ -13,7 +13,34 @@ const g = globalThis as unknown as { __hakkiriAnswers?: Map<string, Answer> };
 const store = (g.__hakkiriAnswers ??= new Map<string, Answer>(loadJson<Answer[]>(FILE, []).map((a) => [a.id, a])));
 
 export function saveAnswer(answer: Answer) {
-  store.set(answer.id, { ...answer, createdAt: answer.createdAt ?? new Date().toISOString() });
+  const item = { ...answer, createdAt: answer.createdAt ?? new Date().toISOString() };
+  store.set(answer.id, item);
+  saveJson(FILE, [...store.values()]);
+  if (isMongoConfigured()) {
+    void saveAnswerAsync(answer);
+  }
+}
+
+export async function saveAnswerAsync(answer: Answer): Promise<void> {
+  const item = { ...answer, createdAt: answer.createdAt ?? new Date().toISOString() };
+  store.set(answer.id, item);
+  if (isMongoConfigured()) {
+    try {
+      // 1. Direct document persistence in "answers" collection
+      await saveToMongo("answers", item.id, item);
+
+      // 2. Safe merge into "storage" collection answers.json
+      const fromDb = await loadJsonAsync<Answer[]>(FILE, []);
+      const map = new Map<string, Answer>(Array.isArray(fromDb) ? fromDb.map((a) => [a.id, a]) : []);
+      for (const [k, v] of store.entries()) map.set(k, v);
+      map.set(item.id, item);
+      for (const [k, v] of map.entries()) store.set(k, v);
+      await saveJsonAsync(FILE, [...map.values()]);
+      return;
+    } catch (err) {
+      console.warn("[answers/store] saveAnswerAsync mongo failed:", err);
+    }
+  }
   saveJson(FILE, [...store.values()]);
 }
 
@@ -29,10 +56,19 @@ export async function findAnswerAsync(id: string): Promise<Answer | undefined> {
 
   if (isMongoConfigured()) {
     try {
+      // 1. Direct fetch from "answers" collection
+      const direct = await loadFromMongo<Answer>("answers", id);
+      if (direct && direct.id) {
+        const item = { ...direct, followUps: direct.followUps ?? [] };
+        store.set(direct.id, item);
+        return item;
+      }
+
+      // 2. Fall back to answers.json in storage collection
       const fromDb = await loadJsonAsync<Answer[]>(FILE, []);
       if (Array.isArray(fromDb)) {
         for (const item of fromDb) {
-          store.set(item.id, item);
+          store.set(item.id, { ...item, followUps: item.followUps ?? [] });
         }
         const found = findAnswer(id);
         if (found) return found;

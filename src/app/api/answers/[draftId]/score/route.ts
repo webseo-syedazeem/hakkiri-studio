@@ -3,7 +3,7 @@ import { mockAiEnabled, mockFollowUpScores, mockScore } from "@/lib/ai/mock";
 import { scoreAnswer } from "@/lib/ai/score";
 import { buildAnswer, buildFollowUp } from "@/lib/answers/build-answer";
 import { deleteDraft, deleteDraftAsync, getDraft, getDraftAsync } from "@/lib/answers/drafts";
-import { saveAnswer } from "@/lib/answers/store";
+import { saveAnswer, saveAnswerAsync } from "@/lib/answers/store";
 import { saveRecordings } from "@/lib/answers/audio";
 import { flushStorage } from "@/lib/storage/disk";
 import { notConfigured, scoringError } from "@/lib/answers/pipeline";
@@ -77,7 +77,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ draftI
       previousOverall: progressFor(interview).questions.get(question.id)?.score,
       followUps: followScores ? followTurns.map((t, k) => buildFollowUp({ kind: t.kind as FollowUpKind, asked: t.asked, words: t.words }, followScores.followUps[k])) : [],
     });
-    saveAnswer(answer);
+    await saveAnswerAsync(answer);
     saveRecordings(answer.id, draft.audio ?? []);
     await deleteDraftAsync(draft.id);
     await flushStorage();

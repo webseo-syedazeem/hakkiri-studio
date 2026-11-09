@@ -598,11 +598,14 @@ export function LiveInterview(p: LiveInterviewProps) {
       if (phase === "answering" || phase === "paused") {
         e.preventDefault();
         void finish();
+      } else if (phase === "ready") {
+        e.preventDefault();
+        void start();
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [phase, finish, wrong]);
+  }, [phase, finish, wrong, start]);
 
   useEffect(
     () => () => {
@@ -656,15 +659,28 @@ export function LiveInterview(p: LiveInterviewProps) {
     <div className="flex h-dvh min-h-[600px] flex-col">
       <header className="flex h-[68px] shrink-0 items-center justify-between gap-6 px-10">
         <div className="flex min-w-0 items-center gap-3.5">
-          <Mark size={26} />
-          <span className="shrink-0 text-sm font-semibold">{title}</span>
-          <span className="truncate text-sm text-muted">{p.heading}</span>
+          <Link href={`/interviews/${p.interviewId}`} className="flex items-center gap-2 hover:opacity-85 transition-opacity">
+            <span className="font-bold text-lg text-white tracking-tight">Hakkiri</span>
+          </Link>
+          <span className="text-white/20">|</span>
+          <div className="flex items-center gap-2 text-sm">
+            <Icon name="cal" size={15} className="text-muted" />
+            <span className="text-muted">Interview</span>
+            <span className="truncate font-medium text-white">{p.heading}</span>
+          </div>
         </div>
         {queue.length > 1 ? (
           <div role="img" aria-label={phase === "finishing" ? "Interview finished" : `Question ${current} of ${queue.length}`} className="flex shrink-0 items-center gap-3">
-            <div className="flex gap-1">
+            <div className="flex gap-1.5">
               {queue.map((_, k) => (
-                <span key={k} className={clsx("h-1 rounded-sm", queue.length > 10 ? "w-5" : "w-9", k === current - 1 ? "bg-white" : k < current - 1 ? "bg-muted" : "bg-white/20")} />
+                <span
+                  key={k}
+                  className={clsx(
+                    "h-1 rounded-sm",
+                    queue.length > 10 ? "w-5" : "w-8",
+                    k === current - 1 ? "bg-white" : k < current - 1 ? "bg-white/40" : "bg-white/20"
+                  )}
+                />
               ))}
             </div>
             <span className="num text-[13px] text-muted">{phase === "finishing" ? "Finished" : `Question ${current} of ${queue.length}`}</span>
@@ -692,7 +708,7 @@ export function LiveInterview(p: LiveInterviewProps) {
           {session && session.mode !== "drill" && phase !== "finishing" && (
             <Button size="sm" onClick={() => void openWrong()}>
               <Icon name="flag" size={14} strokeWidth={2} />
-              Something’s wrong
+              Report an issue
             </Button>
           )}
           {isRun && phase !== "ready" && phase !== "finishing" ? (
@@ -702,14 +718,243 @@ export function LiveInterview(p: LiveInterviewProps) {
           ) : (
             phase !== "finishing" && (
               <Link href={`/interviews/${p.interviewId}`} className={buttonClass("secondary", "sm")}>
-                {phase === "ready" ? "Back" : "End interview"}
+                Back
               </Link>
             )
           )}
         </div>
       </header>
 
-      <main className="grid min-h-0 grow grid-cols-[minmax(0,1fr)_320px] items-center gap-12 pl-[120px] pr-10">
+      {phase === "ready" ? (
+        <main className="flex min-h-0 grow flex-col justify-center px-6 lg:px-12 py-5 max-w-[1240px] mx-auto w-full">
+          {/* Top 2 Cards: Interviewer Briefing + Ready to Start */}
+          <div className="grid grid-cols-1 lg:grid-cols-[1.58fr_1fr] gap-4 items-stretch">
+            {/* Left Card: Interviewer Briefing */}
+            <div className="rounded-2xl bg-[#0f0e1c] border border-white/[0.08] p-6 shadow-xl flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-4">
+                  <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full border-2 border-white/10 bg-[#1e1c33] shadow-md">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="/sam.jpg"
+                      alt={name}
+                      className="h-full w-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLElement).style.display = "none";
+                      }}
+                    />
+                    <div className="flex h-full w-full items-center justify-center font-semibold text-lg text-white/80 bg-[#25223e]">
+                      {name[0]}
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-xs font-medium text-muted">Your interviewer</span>
+                    <h1 className="text-2xl font-bold tracking-tight text-white mt-0.5">
+                      Your interview with {name}
+                    </h1>
+                    <span className="mt-1.5 inline-block rounded-full bg-[#24213d] border border-[#3e3966] px-3 py-0.5 text-xs font-semibold text-[#a5a1ff]">
+                      {p.interviewer.title || "Hiring manager"}
+                    </span>
+                  </div>
+                </div>
+
+                <p className="mt-4 text-sm text-[#9b9ca8] leading-relaxed">
+                  A realistic, role-specific interview to help you build confidence and sharpen your answers.
+                </p>
+              </div>
+
+              {/* 3 Metric Pills */}
+              <div className="grid grid-cols-3 gap-3 mt-6">
+                <div className="flex items-center gap-3 rounded-xl bg-[#16152a] border border-white/[0.06] p-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#232043] text-[#a5a1ff]">
+                    <Icon name="clock" size={17} strokeWidth={2} />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold text-white truncate">
+                      {session?.minutes ?? 20} minutes
+                    </div>
+                    <div className="text-xs text-[#8c8d9e] truncate">Interview length</div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 rounded-xl bg-[#16152a] border border-white/[0.06] p-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#232043] text-[#a5a1ff]">
+                    <Icon name="list" size={17} strokeWidth={2} />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold text-white truncate">
+                      About {queue.length} questions
+                    </div>
+                    <div className="text-xs text-[#8c8d9e] truncate">Role-relevant questions</div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 rounded-xl bg-[#16152a] border border-white/[0.06] p-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#232043] text-[#a5a1ff]">
+                    <Icon name="target" size={17} strokeWidth={2} />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold text-white truncate">Balanced</div>
+                    <div className="text-xs text-[#8c8d9e] truncate">A mix of experience, skills and technical</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Card: You're ready to start */}
+            <div className="rounded-2xl bg-[#0f0e1c] border border-white/[0.08] p-6 shadow-xl flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#272348] text-[#a5a1ff]">
+                    <Icon name="sparkle" size={17} strokeWidth={2} />
+                  </div>
+                  <h2 className="text-base font-bold text-white">You&apos;re ready to start</h2>
+                </div>
+
+                <div className="mt-5 space-y-3.5">
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400">
+                      <Icon name="check" size={13} strokeWidth={2.6} />
+                    </div>
+                    <span className="text-sm text-white/90">Realistic, role-relevant questions.</span>
+                  </div>
+
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400">
+                      <Icon name="check" size={13} strokeWidth={2.6} />
+                    </div>
+                    <span className="text-sm text-white/90">Feedback at the end, like a real interview.</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-5 flex items-start gap-2.5 pt-3 border-t border-white/[0.06]">
+                <div className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-white/20 text-[10px] font-bold text-muted mt-0.5">
+                  i
+                </div>
+                <p className="text-xs leading-relaxed text-[#8c8d9e]">
+                  You can skip a question if it doesn&apos;t feel relevant. If something doesn&apos;t seem right, select{" "}
+                  <button onClick={() => void openWrong()} className="underline hover:text-white font-medium">
+                    Report an issue
+                  </button>.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Card: How it works */}
+          <div className="mt-4 rounded-2xl bg-[#0f0e1c] border border-white/[0.08] p-6 shadow-xl">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#24213d] text-[#a5a1ff]">
+                <Icon name="mic" size={16} strokeWidth={2} />
+              </div>
+              <h2 className="text-base font-bold text-white">How it works</h2>
+            </div>
+
+            {/* 3 Step Flow */}
+            <div className="mt-5 grid grid-cols-[1fr_auto_1fr_auto_1fr] items-center gap-4">
+              <div className="flex items-start gap-3">
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#1e2746] text-[#6d9dfd] text-xs font-bold mt-0.5">
+                  1
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-white">Get a question</div>
+                  <div className="text-xs text-[#8c8d9e] mt-0.5 leading-normal">
+                    {name} will ask a role-specific question out loud.
+                  </div>
+                </div>
+              </div>
+
+              <span className="text-white/20 text-base font-light px-1">›</span>
+
+              <div className="flex items-start gap-3">
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#1e2746] text-[#6d9dfd] text-xs font-bold mt-0.5">
+                  2
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-white">Give your answer</div>
+                  <div className="text-xs text-[#8c8d9e] mt-0.5 leading-normal">
+                    Aim for a clear and structured response (around 1–1½ minutes).
+                  </div>
+                </div>
+              </div>
+
+              <span className="text-white/20 text-base font-light px-1">›</span>
+
+              <div className="flex items-start gap-3">
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#1e2746] text-[#6d9dfd] text-xs font-bold mt-0.5">
+                  3
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-white">Get feedback</div>
+                  <div className="text-xs text-[#8c8d9e] mt-0.5 leading-normal">
+                    Receive a detailed score and personalised feedback at the end.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="my-5 border-t border-white/[0.08]" />
+
+            {/* Answer Time Slider */}
+            <div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-sm font-semibold text-white">Your answer time</span>
+                <span className="text-white/20">|</span>
+                <span className="text-xs text-[#8c8d9e]">
+                  Aim for around 1 to 1½ minutes per answer. You&apos;ll see a timer as you speak.
+                </span>
+              </div>
+
+              {/* Slider Track */}
+              <div className="relative mt-5 mb-2">
+                <div className="h-1.5 w-full rounded-full bg-white/10" />
+
+                {/* Left 0:00 Thumb */}
+                <div className="absolute -top-1.5 left-0 h-4 w-4 rounded-full bg-white shadow-md" />
+
+                {/* Target illuminated pill on track: 1:00 (33.3%) to 1:30 (50%) */}
+                <div
+                  className="absolute -top-3.5 left-[33.3%] flex h-8 w-[16.7%] min-w-[130px] items-center justify-center rounded-full bg-gradient-to-r from-[#4f5df7] to-[#6d55f4] text-[11px] font-semibold text-white shadow-lg shadow-indigo-500/30"
+                >
+                  Target: 1:00 – 1:30
+                </div>
+
+                {/* Time markers */}
+                <div className="mt-4 flex justify-between text-[11px] font-mono text-[#7b7c8e]">
+                  <span>0:00</span>
+                  <span className="translate-x-1">0:30</span>
+                  <span className="opacity-0">1:00 - 1:30</span>
+                  <span>2:00</span>
+                  <span>2:30</span>
+                  <span>3:00</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Row */}
+            <div className="mt-5 pt-3 flex items-center justify-between border-t border-white/[0.06]">
+              <div className="flex items-center gap-2 text-xs text-[#8c8d9e]">
+                <kbd className="rounded bg-[#19182d] border border-white/15 px-2.5 py-1 font-mono text-xs font-semibold text-white shadow-sm">
+                  Space
+                </kbd>
+                <span>Press Space to finish your answer</span>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => void start()}
+                className="flex items-center gap-2 rounded-xl bg-[#3866ff] hover:bg-[#4a75ff] px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              >
+                <Icon name="mic" size={17} strokeWidth={2.2} />
+                {begun.current ? "Carry on" : session?.mode === "drill" ? "Start drill" : "Start interview"}
+              </button>
+            </div>
+          </div>
+        </main>
+      ) : (
+        <>
+          <main className="grid min-h-0 grow grid-cols-[minmax(0,1fr)_320px] items-center gap-12 pl-[120px] pr-10">
         {phase === "finishing" || (phase === "error" && problem?.stage === "report") ? (
           <div key="end">
             <div className="animate-rise text-sm text-muted">
@@ -766,36 +1011,6 @@ export function LiveInterview(p: LiveInterviewProps) {
               </p>
             )}
           </div>
-        ) : phase === "ready" && session ? (
-          <div key="intro">
-            <div className="animate-rise text-sm text-muted">
-              {name}, {p.interviewer.title}
-            </div>
-            <h1 className="mt-3.5 animate-rise text-[clamp(34px,6.2vh,56px)] font-semibold leading-[1.07] tracking-[-0.03em] [animation-delay:0.1s]">
-              {session.mode === "interview" ? `Your interview with ${name}` : session.mode === "rerun" ? "Run it again" : session.drill?.title}
-            </h1>
-            {session.mode === "rerun" && session.focus?.length ? (
-              <div className="mt-5 animate-rise [animation-delay:0.2s]">
-                <div className="text-base text-muted">This time, try to:</div>
-                <ol className="mt-2 space-y-1.5">
-                  {session.focus.map((f, k) => (
-                    <li key={f} className="flex gap-3 text-lg">
-                      <span className="num text-dim">{k + 1}</span>
-                      {f}
-                    </li>
-                  ))}
-                </ol>
-                <p className="mt-3 text-sm text-muted">The same questions as {session.rerunOfWhen?.toLowerCase() ?? "last time"}. Follow-ups will differ: they react to what you say.</p>
-              </div>
-            ) : (
-              <p className="mt-5 animate-rise text-base text-muted [animation-delay:0.2s]">
-                {session.mode === "drill"
-                  ? (session.drill?.instruction ?? session.drill?.detail ?? "")
-                  : `${session.settingsText}. About ${queue.length} questions, and the questions stay hidden until ${name} asks them.`}
-              </p>
-            )}
-            {session.drill?.kind === "pay" && session.drill.detail && <p className="mt-3 max-w-[760px] animate-rise text-base text-lilac [animation-delay:0.25s]">{session.drill.detail}</p>}
-          </div>
         ) : turn.kind === "main" ? (
           <div key={`q${q.id}`}>
             <div className="animate-rise text-sm text-muted">
@@ -849,36 +1064,12 @@ export function LiveInterview(p: LiveInterviewProps) {
               <Mark size={34} live={phase === "asking" || phase === "answering"} />
               <div>
                 <div className="text-sm font-semibold">
-                  {name} is {phase === "asking" ? "asking" : phase === "ready" ? "ready" : phase === "thinking" ? "thinking" : phase === "error" ? "waiting" : "listening"}
+                  {name} is {phase === "asking" ? "asking" : phase === "thinking" ? "thinking" : phase === "error" ? "waiting" : "listening"}
                 </div>
                 <div className="text-[13px] text-muted">{session ? `${DIFFICULTY_LABEL[difficultyFor(style)]} interview` : `${capitalise(style)} style`}</div>
               </div>
             </div>
-            {phase === "ready" && !session && (
-              <div className="mt-3.5 border-t border-line pt-3.5">
-                <Segmented
-                  label="Interviewer style"
-                  value={style}
-                  onChange={setStyle}
-                  fullWidth
-                  options={[
-                    { value: "friendly", label: "Friendly" },
-                    { value: "realistic", label: "Realistic" },
-                    { value: "tough", label: "Tough" },
-                  ]}
-                />
-                <p className="mt-2.5 text-[13px] leading-normal text-muted">{STYLE_HINT[style]}</p>
-              </div>
-            )}
             <p className="mt-3.5 border-t border-line pt-3.5 text-[13px] leading-normal text-muted">{followUpsLine}</p>
-            {session && session.mode !== "drill" && phase === "ready" && (
-              <p className="mt-2 text-[13px] leading-normal text-muted">Skip any question that doesn’t fit you. If the whole interview feels wrong, press Something’s wrong.</p>
-            )}
-            {!session && phase === "ready" && q.followUps && (
-              <button type="button" onClick={() => setFollowUpsOn(!followUpsOn)} className="mt-2 text-[13px] font-semibold text-blue-soft hover:underline">
-                {followUpsOn ? "Turn follow-ups off" : "Turn follow-ups on"}
-              </button>
-            )}
           </aside>
         ) : (
           <aside className="animate-rise rounded-[14px] bg-panel px-5 py-5 shadow-[inset_0_0_0_1px_var(--color-line)]">
@@ -902,11 +1093,9 @@ export function LiveInterview(p: LiveInterviewProps) {
               {tip}
             </span>
           </div>
-          {phase !== "ready" && (
-            <div className={clsx("num text-[clamp(26px,3.8vh,34px)] font-semibold tracking-[-0.02em]", (phase === "asking" || phase === "finishing" || phase === "feedback") && "text-dim")} aria-live="off">
-              {mmss(shownSec)}
-            </div>
-          )}
+          <div className={clsx("num text-[clamp(26px,3.8vh,34px)] font-semibold tracking-[-0.02em]", (phase === "asking" || phase === "finishing" || phase === "feedback") && "text-dim")} aria-live="off">
+            {mmss(shownSec)}
+          </div>
         </div>
         <div className="ml-20 rounded-2xl bg-panel px-6 pb-3.5 pt-[clamp(14px,2.4vh,22px)] shadow-[inset_0_0_0_1px_var(--color-line)]">
           <div aria-hidden className="flex h-[clamp(64px,12vh,112px)] items-center justify-between">
@@ -938,12 +1127,7 @@ export function LiveInterview(p: LiveInterviewProps) {
           </span>
           <div className="flex gap-2.5">
             {canSkip && <SkipMenu simple={Boolean(q.slot)} onSkip={(r) => void skip(r)} />}
-            {phase === "ready" ? (
-              <Button variant="primary" className="px-[26px]" onClick={() => void start()}>
-                <Icon name="mic" size={17} strokeWidth={2} />
-                {begun.current ? "Carry on" : session?.mode === "drill" ? "Start drill" : "Start interview"}
-              </Button>
-            ) : phase === "feedback" ? (
+            {phase === "feedback" ? (
               <Button variant="primary" className="px-[26px]" onClick={afterFeedback}>
                 {feedback?.last ? "See your summary" : "Next question"}
               </Button>
@@ -1021,6 +1205,8 @@ export function LiveInterview(p: LiveInterviewProps) {
           </div>
         </div>
       </section>
+      </>
+      )}
 
       {wrong && <SomethingWrong initialReasons={wrong.reasons} skippedCount={skipped.current.filter((s) => s.reason !== "by-choice").length} busy={wrongBusy} error={wrongError} onFix={(r, n) => void fixAndRestart(r, n)} onCarryOn={carryOn} />}
     </div>
