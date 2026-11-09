@@ -180,6 +180,17 @@ const paths = {
   chart: "M18 20V10 M12 20V4 M6 20v-6",
   user: "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z",
   download: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4 M7 10l5 5 5-5 M12 15V3",
+  graduationCap: "M22 10v6M2 10l10-5 10 5-10 5z M6 12v5c3 3 9 3 12 0v-5",
+  bank: "M3 21h18 M3 10h18 M5 6l7-3 7 3 M4 10v11 M8 10v11 M12 10v11 M16 10v11 M20 10v11",
+  megaphone: "M3 11v2h4l5 5V4L7 9H3z M19 8a5 5 0 0 1 0 8 M16 10a2.5 2.5 0 0 1 0 4",
+  moreHorizontal: "M12 12h.01 M19 12h.01 M5 12h.01",
+  star: "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z",
+  cloudUpload: "M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242 M12 12v9 M8 16l4-4 4 4",
+  share: "M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8 M16 6l-4-4-4 4 M12 2v13",
+  diamond: "M6 3h12l4 6-10 13L2 9z",
+  alertCircle: "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z M12 8v4 M12 16h.01",
+  info: "M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z M12 16v-4 M12 8h.01",
+  checkCircle: "M22 11.08V12a10 10 0 1 1-5.93-9.14 M22 4L12 14.01l-3-3",
 } as const;
 
 export type IconName = keyof typeof paths;

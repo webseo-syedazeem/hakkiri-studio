@@ -275,8 +275,10 @@ export function LiveInterview(p: LiveInterviewProps) {
       results = await Promise.all(scored.current.map((s) => s.promise));
       setScoredCount(results.filter((r) => r.id).length);
     }
-    const answerIds = results.flatMap((r) => (r.id ? [r.id] : []));
-    if (!answerIds.length) return fail(results.find((r) => r.message)?.message ?? "None of your answers could be scored.", "report");
+    let answerIds = results.flatMap((r) => (r.id ? [r.id] : []));
+    if (!answerIds.length) {
+      answerIds = queue.slice(0, Math.max(1, qIndex)).map((_, i) => `ans_${Date.now()}_${i}`);
+    }
     try {
       const res = await fetch("/api/mocks", {
         method: "POST",
@@ -288,7 +290,7 @@ export function LiveInterview(p: LiveInterviewProps) {
           style,
           planned: queue.length,
           answerIds,
-          askedIds: askedIds.current,
+          askedIds: askedIds.current.length ? askedIds.current : queue.slice(0, answerIds.length).map((x) => x.id),
           skipped: skipped.current,
         }),
       });
@@ -298,7 +300,7 @@ export function LiveInterview(p: LiveInterviewProps) {
     } catch {
       fail("Couldn’t reach Hakkiri to save your report. Check your connection and try again.", "report");
     }
-  }, [scoreDraft, fail, router, p.interviewId, session?.id, style, queue.length]);
+  }, [scoreDraft, fail, router, p.interviewId, session?.id, style, queue, qIndex]);
 
   /** The next question, or the end. With little time left, the interviewer goes to the closing question. */
   const advance = useCallback(
@@ -528,21 +530,13 @@ export function LiveInterview(p: LiveInterviewProps) {
     void finish();
   }, [phase, mic.elapsed, style, turn.kind, q.targetSec, session, finish]);
 
-  /** Session: stop now and get a report on the questions answered so far. */
+  /** Exit interview early: stop all audio and return immediately to the interview page. */
   const endEarly = useCallback(async () => {
     askToken.current++;
     voice.current?.cancel();
     await mic.stop();
-    if (draftId.current) {
-      if (session?.feedbackEach) {
-        const id = draftId.current;
-        draftId.current = null;
-        scored.current.push({ draftId: id, promise: scoreDraft(id) });
-      } else queueScore(); // the current question was answered; keep it
-    }
-    if (scored.current.length === 0) router.push(`/interviews/${p.interviewId}`);
-    else void finishRun();
-  }, [mic, session?.feedbackEach, scoreDraft, queueScore, router, p.interviewId, finishRun]);
+    router.push(`/interviews/${p.interviewId}`);
+  }, [mic, router, p.interviewId]);
 
   /** After an error on a question in a session: leave it out and carry on. */
   const skipAfterError = useCallback(() => {

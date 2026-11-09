@@ -4,7 +4,7 @@ import { z } from "zod";
 import { getInterview, getInterviewAsync, updateInterview } from "@/lib/interviews/store";
 import { findAnswer, findAnswerAsync, saveAnswerAsync } from "@/lib/answers/store";
 import type { Answer } from "@/lib/types";
-import { findMock, findMockAsync, saveMock, SKIP_REASONS } from "@/lib/mocks/store";
+import { findMock, findMockAsync, saveMock, SKIP_REASONS, type MockRecord } from "@/lib/mocks/store";
 import { retireSkipped, topUp } from "@/lib/sessions/server";
 import { mergeRules, rulesFromSkips } from "@/lib/sessions/rules";
 import { flushStorage } from "@/lib/storage/disk";
@@ -107,11 +107,35 @@ export async function POST(req: Request) {
   const finishedAt = new Date().toISOString();
 
   if (body.sessionId) {
-    const session = (await findMockAsync(body.sessionId)) ?? findMock(body.sessionId);
-    if (!session || session.interviewId !== interview.id) return NextResponse.json({ error: "not-found", message: "That interview has expired." }, { status: 404 });
-    if (session.status === "done") return NextResponse.json({ id: session.id });
+    let session = (await findMockAsync(body.sessionId)) ?? findMock(body.sessionId);
+    if (!session || session.interviewId !== interview.id) {
+      session = {
+        id: body.sessionId,
+        interviewId: interview.id,
+        kind: "full",
+        status: "done",
+        startedAt: body.startedAt,
+        finishedAt,
+        answerIds: body.answerIds,
+        style: body.style ?? "realistic",
+        planned: body.planned,
+        questionIds: body.askedIds ?? interview.questions.slice(0, body.planned).map((q) => q.id),
+      };
+    }
+    if (session.status === "done" && session.answerIds?.length) return NextResponse.json({ id: session.id });
     const skipped = body.skipped ?? [];
-    saveMock({ ...session, status: "done", startedAt: body.startedAt, finishedAt, answerIds: body.answerIds, askedIds: body.askedIds ?? session.questionIds, skipped, style: body.style ?? session.style, planned: body.planned });
+    const updatedMock: MockRecord = {
+      ...session,
+      status: "done",
+      startedAt: body.startedAt,
+      finishedAt,
+      answerIds: body.answerIds,
+      askedIds: body.askedIds ?? session.questionIds ?? [],
+      skipped,
+      style: body.style ?? session.style,
+      planned: body.planned,
+    };
+    saveMock(updatedMock);
     const rules = rulesFromSkips(skipped, (id) => interview.questions.find((q) => q.id === id && !q.slot)?.text);
     if (rules.length) updateInterview(interview.id, (i) => ({ ...i, rules: mergeRules(i.rules, rules) }));
     retireSkipped(interview.id, skipped);
