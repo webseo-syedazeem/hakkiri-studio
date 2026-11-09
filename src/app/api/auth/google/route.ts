@@ -23,26 +23,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(`${rootUrl}?${qs.toString()}`);
   }
 
-  // 2. Seamless Instant Access:
-  // If GOOGLE_CLIENT_ID is not yet placed in environment variables,
-  // authenticate immediately as a Google User so testing works right away!
-  const demoEmail = req.nextUrl.searchParams.get("email") || "candidate@hakirri.studio";
-  const user = await findOrCreateOAuthUser({
-    email: demoEmail,
-    name: "Google Candidate",
-    provider: "google",
-  });
-  const sessionToken = await createSession(user.id ?? demoEmail, demoEmail);
-
-  const res = NextResponse.redirect(new URL("/", req.url));
-  res.cookies.set({
-    name: "hakkiri_session",
-    value: sessionToken,
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: 30 * 24 * 60 * 60,
-  });
-  return res;
+  // 2. If GOOGLE_CLIENT_ID is not configured in Vercel environment variables,
+  // redirect to the Google Sign-in screen where the candidate can enter their actual Google email and password:
+  return NextResponse.redirect(new URL("/login/google", req.url));
 }
