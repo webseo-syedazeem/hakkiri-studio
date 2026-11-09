@@ -152,6 +152,8 @@ export function LiveInterview(p: LiveInterviewProps) {
   const [wrong, setWrong] = useState<{ reasons: WrongReason[]; resume: "reask" | "resume" | "none" } | null>(null);
   const [wrongBusy, setWrongBusy] = useState(false);
   const [wrongError, setWrongError] = useState<string | null>(null);
+  const [checklist, setChecklist] = useState<Record<string, boolean>>({});
+  const toggleChecklist = (key: string) => setChecklist((prev) => ({ ...prev, [key]: !prev[key] }));
   const [, tick] = useState(0);
   const voice = useRef<{ cancel: () => void } | null>(null);
   /** Bumped to abandon a question that's still being asked (e.g. the interview ended). */
@@ -536,6 +538,11 @@ export function LiveInterview(p: LiveInterviewProps) {
     voice.current?.cancel();
     await mic.stop();
     router.push(`/interviews/${p.interviewId}`);
+    if (typeof window !== "undefined") {
+      setTimeout(() => {
+        window.location.href = `/interviews/${p.interviewId}`;
+      }, 50);
+    }
   }, [mic, router, p.interviewId]);
 
   /** After an error on a question in a session: leave it out and carry on. */
@@ -947,259 +954,415 @@ export function LiveInterview(p: LiveInterviewProps) {
           </div>
         </main>
       ) : (
-        <>
-          <main className="grid min-h-0 grow grid-cols-[minmax(0,1fr)_320px] items-center gap-12 pl-[120px] pr-10">
-        {phase === "finishing" || (phase === "error" && problem?.stage === "report") ? (
-          <div key="end">
-            <div className="animate-rise text-sm text-muted">
-              {name}, {p.interviewer.title}
-            </div>
-            <h1 className="mt-3.5 animate-rise text-[clamp(34px,6.2vh,56px)] font-semibold leading-[1.07] tracking-[-0.03em] [animation-delay:0.1s]">
-              {session?.mode === "drill" ? "That’s the drill done." : "Thank you. That’s the end of the interview."}
-            </h1>
-            <p className="mt-5 animate-rise text-base text-muted [animation-delay:0.2s]">Your report is being written now: every answer and follow-up, scored the same way.</p>
-          </div>
-        ) : phase === "feedback" && feedback && fb ? (
-          <div key={`fb${feedback.question.id}`}>
-            <div className="animate-rise text-sm text-muted">
-              Question {qIndex + 1} of {queue.length}: {feedback.question.short}
-            </div>
-            <div className="mt-3 flex animate-rise items-baseline gap-4 [animation-delay:0.05s]">
-              <span className="num text-[clamp(44px,8vh,72px)] font-semibold leading-none tracking-[-0.04em]">{fb.overall?.toFixed(1) ?? "n/a"}</span>
-              <span className="text-lg text-muted">{fb.overall != null ? scoreLabel(fb.overall) : ""}</span>
-              {before != null && fb.overall != null && (
-                <span className={clsx("text-base font-semibold", fb.overall > before ? "text-blue-soft" : "text-muted")}>
-                  {fb.overall > before ? `up from ${before.toFixed(1)}` : fb.overall < before ? `down from ${before.toFixed(1)}` : "the same as before"}
-                </span>
-              )}
-            </div>
-            {habit && (
-              <div className={clsx("mt-5 flex animate-rise items-start gap-2.5 text-base [animation-delay:0.1s]", rowHabit(fb, habit) ? "text-blue-soft" : "text-red-soft")}>
-                <Icon name={rowHabit(fb, habit) ? "check" : "x"} size={20} strokeWidth={2.4} className="mt-0.5 shrink-0" />
-                <span>
-                  <b className="font-semibold">{HABIT_LABEL[habit]}.</b> <span className="text-ink">{habitLine(fb, habit)}</span>
-                </span>
-              </div>
-            )}
-            {feedback.result.pay && (
-              <ul className="mt-5 animate-rise space-y-1.5 [animation-delay:0.1s]">
-                {feedback.result.pay.map((c) => (
-                  <li key={c.label} className={clsx("flex items-start gap-2.5 text-base", c.ok === true ? "text-blue-soft" : c.ok === false ? "text-red-soft" : "text-muted")}>
-                    <Icon name={c.ok === false ? "x" : c.ok === true ? "check" : "flag"} size={18} strokeWidth={2.4} className="mt-1 shrink-0" />
-                    <span>
-                      <span className="font-semibold">{c.label}.</span>
-                      {c.note && <span className="text-ink"> {c.note}</span>}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <p className="mt-4 animate-rise text-base leading-relaxed [animation-delay:0.15s]">
-              <span className="text-muted">One fix: </span>
-              {feedback.result.oneFix}
-            </p>
-            {feedback.result.strength && (
-              <p className="mt-1.5 animate-rise text-base leading-relaxed [animation-delay:0.2s]">
-                <span className="text-muted">Keep: </span>
-                {feedback.result.strength}
-              </p>
-            )}
-          </div>
-        ) : turn.kind === "main" ? (
-          <div key={`q${q.id}`}>
-            <div className="animate-rise text-sm text-muted">
-              {name}, {p.interviewer.title}, asks
-            </div>
-            <h1 className="mt-3.5 animate-rise text-[clamp(34px,6.2vh,56px)] font-semibold leading-[1.07] tracking-[-0.03em] [animation-delay:0.1s]">{q.text}</h1>
-            <p className="mt-5 animate-rise text-base text-muted [animation-delay:0.2s]">
-              {session?.drill?.instruction && (session.drill.kind === "fix" || session.drill.kind === "habit") ? session.drill.instruction : sameWords(q.contextLabel, q.text) ? q.contextHint : `${q.contextLabel}. ${q.contextHint}`}
-            </p>
-          </div>
-        ) : (
-          <div key={`f${q.id}-${turn.number}`}>
-            <div className="flex animate-rise items-center gap-2.5">
-              <Chip tone="blue">
-                Follow-up {turn.number} of {turn.of}
-              </Chip>
-              <span className="text-sm text-muted">
-                {name}, {p.interviewer.title}
-              </span>
-            </div>
-            <h1 className="mt-4 animate-rise text-[clamp(34px,6.2vh,56px)] font-semibold leading-[1.07] tracking-[-0.03em] [animation-delay:0.1s]">{turn.question}</h1>
-            <p className="mt-5 animate-rise text-base text-muted [animation-delay:0.2s]">
-              {phase === "asking" ? `Answer when ${name} finishes. ` : ""}Follow-ups are usually shorter: {mmss(target[0])} to {mmss(target[1])}.
-            </p>
-          </div>
-        )}
-
-        {phase === "finishing" || (phase === "error" && problem?.stage === "report") ? (
-          <aside className="animate-rise rounded-[14px] bg-panel px-5 py-5 shadow-[inset_0_0_0_1px_var(--color-line)]">
-            <div className="text-[13px] text-muted">Your report</div>
-            <div className="num mt-1 text-sm font-semibold">
-              {scoredCount} of {total} answers scored
-            </div>
-            <div className="mt-3 flex gap-[3px]" aria-hidden>
-              {Array.from({ length: total }, (_, k) => (
-                <span key={k} className={clsx("h-2 flex-1 rounded-[2px] transition-colors", k < scoredCount ? "bg-blue" : "bg-white/[0.08]")} />
-              ))}
-            </div>
-            <p className="mt-3.5 border-t border-line pt-3.5 text-[13px] leading-normal text-muted">Answers were scored in the background while you carried on, so this only takes a few seconds.</p>
-          </aside>
-        ) : phase === "feedback" ? (
-          <aside className="animate-rise rounded-[14px] bg-panel px-5 py-5 shadow-[inset_0_0_0_1px_var(--color-line)]">
-            <div className="text-[13px] text-muted">{feedback?.last ? "That was the last question" : "Next"}</div>
-            <div className="mt-1 text-sm font-semibold">{feedback?.last ? "See how the drill went" : session?.drill?.kind === "fix" && qIndex === 0 ? "A new question on the same skill" : `Question ${qIndex + 2} of ${queue.length}`}</div>
-            {session?.escalate && style !== p.interviewer.style && <p className="mt-2 text-[13px] text-lilac">Strong answer, so {name} gets tougher for the next one.</p>}
-            <p className="mt-3.5 border-t border-line pt-3.5 text-[13px] leading-normal text-muted">The full feedback for each answer is in your summary at the end.</p>
-          </aside>
-        ) : turn.kind === "main" ? (
-          <aside className="rounded-[14px] bg-panel px-5 py-5 shadow-[inset_0_0_0_1px_var(--color-line)]">
-            <div className="flex items-center gap-3">
-              <Mark size={34} live={phase === "asking" || phase === "answering"} />
-              <div>
-                <div className="text-sm font-semibold">
-                  {name} is {phase === "asking" ? "asking" : phase === "thinking" ? "thinking" : phase === "error" ? "waiting" : "listening"}
+        <main className="flex min-h-0 grow flex-col justify-between px-4 sm:px-6 lg:px-12 py-4 max-w-[1280px] mx-auto w-full animate-rise">
+          {/* Top 2 Columns: Center Card + Right Sidebar */}
+          <div className="grid grid-cols-1 lg:grid-cols-[1.65fr_1fr] gap-5 items-stretch">
+            {/* Left Column: Question / Feedback / Ending */}
+            <div className="flex flex-col justify-between gap-4">
+              {phase === "finishing" || (phase === "error" && problem?.stage === "report") ? (
+                <div className="rounded-2xl bg-[#0f0e1c] border border-white/[0.08] p-7 sm:p-9 shadow-xl flex flex-col justify-center min-h-[340px]">
+                  <div className="flex items-center gap-2.5 text-xs font-semibold text-blue-soft uppercase tracking-wider">
+                    <Icon name="checkCircle" size={16} className="text-blue-soft" />
+                    <span>Interview completed</span>
+                  </div>
+                  <h1 className="mt-3 text-2xl sm:text-3xl font-bold tracking-tight text-white leading-tight">
+                    {session?.mode === "drill" ? "That’s the drill done." : "Thank you. That’s the end of the interview."}
+                  </h1>
+                  <p className="mt-3 text-sm text-[#a1a2b3] leading-relaxed max-w-xl">
+                    Your report is being written now: every answer and follow-up, scored the same way.
+                  </p>
+                  <div className="mt-6 rounded-xl bg-[#141326] border border-white/10 p-5">
+                    <div className="flex items-center justify-between text-xs font-medium">
+                      <span className="text-white">Scoring your answers in background</span>
+                      <span className="num font-bold text-blue-soft">{scoredCount} of {total} scored</span>
+                    </div>
+                    <div className="mt-3 flex gap-1.5 h-2 w-full rounded-full bg-white/10 overflow-hidden">
+                      {Array.from({ length: total }, (_, k) => (
+                        <span key={k} className={clsx("h-full flex-1 rounded-sm transition-all duration-500", k < scoredCount ? "bg-gradient-to-r from-blue to-indigo-500" : "bg-white/[0.06]")} />
+                      ))}
+                    </div>
+                  </div>
                 </div>
-                <div className="text-[13px] text-muted">{session ? `${DIFFICULTY_LABEL[difficultyFor(style)]} interview` : `${capitalise(style)} style`}</div>
+              ) : phase === "feedback" && feedback && fb ? (
+                <div className="rounded-2xl bg-[#0f0e1c] border border-white/[0.08] p-7 sm:p-8 shadow-xl flex flex-col justify-between min-h-[340px]">
+                  <div>
+                    <div className="flex items-center justify-between text-xs text-muted pb-3 border-b border-white/[0.06]">
+                      <span>Question {qIndex + 1} of {queue.length}: {feedback.question.short}</span>
+                      <span className="px-2.5 py-0.5 rounded-full bg-blue/15 text-blue-soft font-semibold">Drill Feedback</span>
+                    </div>
+                    <div className="mt-4 flex items-baseline gap-4">
+                      <span className="num text-4xl sm:text-5xl font-bold text-white tracking-tight">{fb.overall?.toFixed(1) ?? "n/a"}</span>
+                      <span className="text-base text-muted font-medium">{fb.overall != null ? scoreLabel(fb.overall) : ""}</span>
+                      {before != null && fb.overall != null && (
+                        <span className={clsx("text-xs font-semibold px-2 py-0.5 rounded-full", fb.overall > before ? "bg-emerald-500/15 text-emerald-400" : "bg-white/10 text-muted")}>
+                          {fb.overall > before ? `↑ up from ${before.toFixed(1)}` : fb.overall < before ? `↓ down from ${before.toFixed(1)}` : "same as before"}
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-4 space-y-2 text-xs text-[#c9cad3] leading-relaxed">
+                      <p><b className="text-white">One fix: </b>{feedback.result.oneFix}</p>
+                      {feedback.result.strength && (
+                        <p><b className="text-emerald-400">Keep: </b>{feedback.result.strength}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* Primary Active Question Card */
+                <div className="rounded-2xl bg-[#0f0e1c] border border-white/[0.08] p-6 sm:p-8 shadow-xl flex flex-col justify-between min-h-[330px] relative overflow-hidden">
+                  <div>
+                    {/* Top row of card */}
+                    <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-white/[0.06]">
+                      <div className="flex items-center gap-3">
+                        <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full border border-white/20 bg-[#1e1c33]">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src="/sam.jpg"
+                            alt={name}
+                            className="h-full w-full object-cover"
+                            onError={(e) => { (e.target as HTMLElement).style.display = "none"; }}
+                          />
+                          <div className="flex h-full w-full items-center justify-center font-semibold text-xs text-white/80 bg-[#25223e]">
+                            {name[0]}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-xs font-semibold text-white">{name}</div>
+                          <div className="text-[11px] text-muted">{p.interviewer.title || "Hiring manager"} asks:</div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span className="rounded-full bg-[#24213d] border border-[#3e3966] px-2.5 py-0.5 text-[11px] font-semibold text-[#a5a1ff]">
+                          {q.contextLabel || "Role Question"}
+                        </span>
+                        <span className="rounded-full bg-[#1b2649] border border-[#2b3d75] px-2.5 py-0.5 text-[11px] font-semibold text-[#6d9dfd]">
+                          Target: {mmss(target[0])}–{mmss(target[1])}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Question text */}
+                    {turn.kind === "follow-up" ? (
+                      <div className="mt-5">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue/20 text-blue-soft border border-blue/30 text-[11px] font-bold uppercase tracking-wider mb-2">
+                          Follow-up {turn.number} of {turn.of}
+                        </span>
+                        <h1 className="text-xl sm:text-2xl lg:text-[28px] font-bold text-white tracking-tight leading-snug">
+                          {turn.question}
+                        </h1>
+                      </div>
+                    ) : (
+                      <h1 className="mt-5 text-xl sm:text-2xl lg:text-[30px] font-bold text-white tracking-tight leading-snug">
+                        {q.text}
+                      </h1>
+                    )}
+
+                    {/* Guidance / Hint Callout Box */}
+                    <div className="mt-6 rounded-xl bg-[#16152a] border border-white/[0.06] p-4 flex items-start gap-3">
+                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-amber-500/15 text-amber-400 mt-0.5">
+                        <Icon name="sparkle" size={14} />
+                      </div>
+                      <div className="text-xs text-[#a5a7b8] leading-relaxed">
+                        <b className="text-white">Guidance: </b>
+                        {session?.drill?.instruction && (session.drill.kind === "fix" || session.drill.kind === "habit")
+                          ? session.drill.instruction
+                          : sameWords(q.contextLabel, q.text)
+                          ? q.contextHint
+                          : `${q.contextLabel}. ${q.contextHint}`}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Progress Segment Bar below question card */}
+              <div className="rounded-xl bg-[#0f0e1c] border border-white/[0.08] p-4 shadow-lg">
+                <div className="flex items-center justify-between text-xs mb-2.5">
+                  <div className="flex items-center gap-1.5 font-semibold text-white">
+                    <span>Interview progress</span>
+                    <Icon name="info" size={13} className="text-muted" />
+                  </div>
+                  <div className="flex items-center gap-3 text-[11px] text-muted">
+                    <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-blue" /> Current</span>
+                    <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-emerald-400" /> Done</span>
+                    <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-white/20" /> Upcoming</span>
+                  </div>
+                </div>
+
+                <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${queue.length}, minmax(0, 1fr))` }}>
+                  {queue.map((item, idx) => {
+                    const isCurrent = idx === qIndex;
+                    const isDone = idx < qIndex;
+                    return (
+                      <div
+                        key={item.id}
+                        className={clsx(
+                          "flex flex-col items-center justify-center py-2 px-1 rounded-lg border text-center transition-all",
+                          isCurrent
+                            ? "bg-blue/20 border-blue text-white shadow-[0_0_12px_rgba(79,70,229,0.35)] font-bold"
+                            : isDone
+                            ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300 font-medium"
+                            : "bg-[#141326] border-white/5 text-muted opacity-60"
+                        )}
+                      >
+                        <span className="num text-xs font-bold">{idx + 1}</span>
+                        <span className="text-[10px] truncate max-w-full hidden sm:inline px-1">{item.short}</span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
-            <p className="mt-3.5 border-t border-line pt-3.5 text-[13px] leading-normal text-muted">{followUpsLine}</p>
-          </aside>
-        ) : (
-          <aside className="animate-rise rounded-[14px] bg-panel px-5 py-5 shadow-[inset_0_0_0_1px_var(--color-line)]">
-            <div className="text-[13px] text-muted">Your last answer</div>
-            <div className="mt-1 text-sm font-semibold">{q.short}</div>
-            <div className="num mt-0.5 text-[13px] text-muted">
-              {mmss(mainSec)}, {q.contextLabel.toLowerCase()}
-            </div>
-            <p className="mt-3.5 border-t border-line pt-3.5 text-[13px] leading-normal text-muted">
-              {isRun && !session?.feedbackEach ? "Feedback comes at the end, like a real interview." : "Feedback comes after the follow-ups, like a real interview."} Follow-up answers are scored too.
-            </p>
-          </aside>
-        )}
-      </main>
 
-      <section aria-label={phase === "asking" ? `${name} is speaking` : "Your answer so far"} className="shrink-0 px-10">
-        <div className="flex items-baseline justify-between pb-3.5 pl-20">
-          <div className="flex items-center gap-2.5">
-            <span className="text-sm font-semibold">{phase === "asking" ? name : "You"}</span>
-            <span className={clsx("text-[13px]", phase === "error" ? "text-red-soft" : "text-muted")} role={phase === "error" ? "alert" : undefined}>
-              {tip}
-            </span>
+            {/* Right Column: Sidebar with Coaching & Live State */}
+            <div className="space-y-4">
+              {/* Card 1: Current question status */}
+              <div className="rounded-2xl bg-[#0f0e1c] border border-white/[0.08] p-5 shadow-xl space-y-4">
+                <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
+                  <span className="text-xs font-bold text-white">Current question</span>
+                  <span className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-semibold text-white">
+                    {qIndex + 1} of {queue.length}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <div className="text-[11px] text-muted">Time on this question</div>
+                    <div className="mt-1 flex items-baseline gap-1.5">
+                      <span className={clsx("num text-2xl font-bold tracking-tight", shownSec > target[1] ? "text-rose-400" : "text-white")}>
+                        {mmss(shownSec)}
+                      </span>
+                      {shownSec > target[1] && (
+                        <span className="text-[10px] font-semibold text-rose-400">
+                          +{mmss(shownSec - target[1])}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] text-muted">Planned time</div>
+                    <div className="mt-1 num text-2xl font-bold text-white/70 tracking-tight">
+                      {mmss(target[1])}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-white/[0.06] pt-3 text-xs text-muted flex items-start gap-1.5">
+                  <span className="text-white font-medium shrink-0">→ Next:</span>
+                  <span className="truncate text-[#c9cad3]">
+                    {queue[qIndex + 1]?.short || "Final report & analysis"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Card 2: Interviewer presence */}
+              <div className="rounded-2xl bg-[#0f0e1c] border border-white/[0.08] p-5 shadow-xl space-y-3.5">
+                <div className="flex items-center gap-3">
+                  <div className={clsx(
+                    "relative h-11 w-11 shrink-0 overflow-hidden rounded-full border border-white/20 transition-all duration-300",
+                    phase === "asking" ? "ring-2 ring-blue shadow-[0_0_15px_rgba(79,82,248,0.5)]" : phase === "answering" ? "ring-2 ring-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)]" : "ring-0"
+                  )}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="/sam.jpg"
+                      alt={name}
+                      className="h-full w-full object-cover"
+                      onError={(e) => { (e.target as HTMLElement).style.display = "none"; }}
+                    />
+                    <div className="flex h-full w-full items-center justify-center font-semibold text-sm text-white/80 bg-[#25223e]">
+                      {name[0]}
+                    </div>
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-xs font-semibold text-white truncate">{name}</div>
+                    <div className="text-[11px] text-muted truncate">
+                      {phase === "asking" ? "● Speaking to you out loud..." : phase === "answering" ? "● Listening to your answer..." : phase === "thinking" ? "● Considering what you said..." : phase === "paused" ? "Interview paused" : "Waiting"}
+                    </div>
+                  </div>
+                </div>
+                <div className="text-xs text-[#8c8d9e] border-t border-white/[0.06] pt-2.5">
+                  {followUpsLine}
+                </div>
+              </div>
+
+              {/* Card 3: Interactive Answer Checklist */}
+              <div className="rounded-2xl bg-[#0f0e1c] border border-white/[0.08] p-5 shadow-xl space-y-3">
+                <div className="flex items-center gap-2 text-xs font-bold text-white">
+                  <Icon name="target" size={14} className="text-purple-400" />
+                  <span>Answer checklist</span>
+                </div>
+                <div className="space-y-2 text-xs">
+                  {[
+                    { id: "chk_1", label: "Cover the key situation & context" },
+                    { id: "chk_2", label: "State your specific actions & trade-offs" },
+                    { id: "chk_3", label: "Conclude with measurable impact" },
+                  ].map((chk) => {
+                    const isChecked = Boolean(checklist[`${q.id}_${chk.id}`]);
+                    return (
+                      <button
+                        key={chk.id}
+                        type="button"
+                        onClick={() => toggleChecklist(`${q.id}_${chk.id}`)}
+                        className="w-full flex items-center gap-2.5 text-left p-1.5 rounded-lg hover:bg-white/[0.03] transition-colors cursor-pointer group"
+                      >
+                        <span className={clsx(
+                          "flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors",
+                          isChecked ? "bg-emerald-500 border-emerald-500 text-white font-bold text-[10px]" : "border-white/20 bg-white/5 group-hover:border-white/40"
+                        )}>
+                          {isChecked ? "✓" : ""}
+                        </span>
+                        <span className={clsx("transition-colors", isChecked ? "text-muted line-through" : "text-[#c9cad3]")}>
+                          {chk.label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
           </div>
-          <div className={clsx("num text-[clamp(26px,3.8vh,34px)] font-semibold tracking-[-0.02em]", (phase === "asking" || phase === "finishing" || phase === "feedback") && "text-dim")} aria-live="off">
-            {mmss(shownSec)}
-          </div>
-        </div>
-        <div className="ml-20 rounded-2xl bg-panel px-6 pb-3.5 pt-[clamp(14px,2.4vh,22px)] shadow-[inset_0_0_0_1px_var(--color-line)]">
-          <div aria-hidden className="flex h-[clamp(64px,12vh,112px)] items-center justify-between">
-            {phase === "asking"
-              ? SPEAKER_BARS.map((v, i) => (
-                  <span key={i} className="w-[3px] animate-wave rounded-full bg-white/78" style={{ height: `max(4px, ${Math.round(v * 100)}%)`, animationDelay: `${-((i * 0.137) % 1.3).toFixed(2)}s` }} />
-                ))
-              : Array.from({ length: BARS }, (_, i) => {
-                  const v = i < mic.bars.length ? mic.bars[i] : i === mic.bars.length && phase === "answering" ? mic.level : null;
-                  return v == null ? (
-                    <span key={i} className="h-0.5 w-[3px] rounded-full bg-white/12" />
+
+          {/* Bottom Waveform & Control Console */}
+          <div className="mt-4 rounded-2xl bg-[#0f0e1c] border border-white/[0.08] p-5 shadow-xl space-y-3">
+            {/* Waveform Bar */}
+            <div className="rounded-xl bg-[#141326] px-5 py-3 border border-white/[0.06]">
+              <div className="flex items-center justify-between pb-2 text-xs font-medium">
+                <div className="flex items-center gap-2">
+                  <span className="text-white font-semibold">{phase === "asking" ? name : "You"}</span>
+                  <span className={clsx("text-[11px]", phase === "error" ? "text-rose-400" : "text-muted")}>
+                    {tip}
+                  </span>
+                </div>
+                <div className="num font-bold text-base text-white">
+                  {mmss(shownSec)}
+                </div>
+              </div>
+
+              {/* Waveform bars */}
+              <div aria-hidden className="flex h-12 items-center justify-between gap-[2px]">
+                {phase === "asking"
+                  ? SPEAKER_BARS.map((v, i) => (
+                      <span key={i} className="w-[3px] animate-wave rounded-full bg-gradient-to-t from-blue to-indigo-300" style={{ height: `max(4px, ${Math.round(v * 100)}%)`, animationDelay: `${-((i * 0.137) % 1.3).toFixed(2)}s` }} />
+                    ))
+                  : Array.from({ length: BARS }, (_, i) => {
+                      const v = i < mic.bars.length ? mic.bars[i] : i === mic.bars.length && phase === "answering" ? mic.level : null;
+                      return v == null ? (
+                        <span key={i} className="h-0.5 w-[3px] rounded-full bg-white/10" />
+                      ) : (
+                        <span key={i} className={clsx("w-[3px] rounded-full transition-all", i >= mic.bars.length - 8 && phase === "answering" ? "bg-gradient-to-t from-indigo-500 to-purple-400" : "bg-gradient-to-t from-blue to-indigo-400")} style={{ height: `max(4px, ${Math.round(v * 100)}%)` }} />
+                      );
+                    })}
+              </div>
+
+              {/* Target Rail */}
+              <div className="mt-2.5">
+                <TargetRail totalSec={totalSec} nowSec={shownSec} target={target} />
+              </div>
+            </div>
+
+            {/* Controls Row */}
+            <div className="flex flex-wrap items-center justify-between gap-4 pt-1">
+              <div className="flex items-center gap-2 text-xs text-muted">
+                <kbd className="rounded bg-[#19182d] border border-white/15 px-2.5 py-1 font-mono text-xs font-semibold text-white shadow-sm">
+                  Space
+                </kbd>
+                <span>{footNote ?? "Press Space to finish your answer"}</span>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2.5">
+                {canSkip && <SkipMenu simple={Boolean(q.slot)} onSkip={(r) => void skip(r)} />}
+                
+                {phase === "feedback" ? (
+                  <Button variant="primary" className="px-6 rounded-xl font-semibold text-xs" onClick={afterFeedback}>
+                    {feedback?.last ? "See your summary" : "Next question →"}
+                  </Button>
+                ) : phase === "thinking" || phase === "scoring" || phase === "finishing" ? (
+                  <Button variant="primary" className="px-6 rounded-xl font-semibold text-xs" disabled>
+                    <Icon name="repeat" size={14} className="animate-spin" />
+                    <span>{phase === "thinking" ? "One moment…" : phase === "finishing" ? "Writing your report…" : "Scoring answers…"}</span>
+                  </Button>
+                ) : phase === "error" ? (
+                  problem?.stage === "mic" ? (
+                    <>
+                      <Link href={`/mic-check?next=${encodeURIComponent(typeof window === "undefined" ? `/mock/${p.interviewId}` : window.location.pathname + window.location.search)}`} className={buttonClass("secondary", "md")}>
+                        Check your microphone
+                      </Link>
+                      <Button variant="primary" className="px-6 rounded-xl text-xs font-semibold" onClick={() => (begun.current ? answerAgain() : void start())}>
+                        <Icon name="mic" size={15} />
+                        Try again
+                      </Button>
+                    </>
+                  ) : problem?.stage === "report" ? (
+                    <Button variant="primary" className="px-6 rounded-xl text-xs font-semibold" onClick={() => void finishRun()}>
+                      <Icon name="repeat" size={15} />
+                      Try again
+                    </Button>
+                  ) : problem?.stage === "score" ? (
+                    <Button variant="primary" className="px-6 rounded-xl text-xs font-semibold" onClick={() => (isRun ? skipAfterError() : void scoreSingle())}>
+                      <Icon name="repeat" size={15} />
+                      {isRun ? "Carry on" : "Try scoring again"}
+                    </Button>
                   ) : (
-                    <span key={i} className={clsx("w-[3px] rounded-full", i >= mic.bars.length - 8 && phase === "answering" ? "bg-blue" : "bg-wave")} style={{ height: `max(4px, ${Math.round(v * 100)}%)` }} />
-                  );
-                })}
+                    <>
+                      {isRun ? (
+                        <Button onClick={skipAfterError}>{turn.kind === "follow-up" ? "Skip this follow-up" : "Skip this question"}</Button>
+                      ) : problem?.stage === "follow-up" ? (
+                        <Button onClick={() => void scoreSingle()}>Skip to feedback</Button>
+                      ) : p.demoFeedbackHref ? (
+                        <Link href={`${p.demoFeedbackHref}?demo=error`} className={buttonClass("secondary", "md")}>
+                          See demo feedback
+                        </Link>
+                      ) : null}
+                      <Button variant="primary" className="px-6 rounded-xl text-xs font-semibold" onClick={answerAgain}>
+                        <Icon name="mic" size={15} />
+                        Answer again
+                      </Button>
+                    </>
+                  )
+                ) : phase === "asking" ? (
+                  <>
+                    <Button disabled className="rounded-xl text-xs">
+                      <Icon name="repeat" size={14} />
+                      Repeat question
+                    </Button>
+                    <Button disabled className="rounded-xl text-xs">
+                      <Icon name="pause" size={14} />
+                      Pause
+                    </Button>
+                    <button
+                      type="button"
+                      onClick={() => voice.current?.cancel()}
+                      className="group flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#4f52f8] via-[#5c5ffc] to-[#6d5eff] hover:from-[#5b5efd] hover:to-[#7b6dff] px-6 py-2.5 text-xs font-semibold text-white border border-white/20 shadow-[0_4px_20px_rgba(79,82,248,0.45)] hover:shadow-[0_6px_26px_rgba(79,82,248,0.7)] transition-all cursor-pointer"
+                    >
+                      <Icon name="mic" size={15} className="group-hover:scale-110 transition-transform" />
+                      <span>Start answering</span>
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Button onClick={repeat} className="rounded-xl text-xs">
+                      <Icon name="repeat" size={14} />
+                      Repeat question
+                    </Button>
+                    <Button onClick={togglePause} className="rounded-xl text-xs">
+                      <Icon name={phase === "paused" ? "play" : "pause"} size={14} />
+                      {phase === "paused" ? "Resume" : "Pause"}
+                    </Button>
+                    <button
+                      type="button"
+                      onClick={() => void finish()}
+                      className="group flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#4f52f8] via-[#5c5ffc] to-[#6d5eff] hover:from-[#5b5efd] hover:to-[#7b6dff] px-6 py-2.5 text-xs font-semibold text-white border border-white/20 shadow-[0_4px_20px_rgba(79,82,248,0.45)] hover:shadow-[0_6px_26px_rgba(79,82,248,0.7)] transition-all cursor-pointer"
+                    >
+                      <Icon name="check" size={15} strokeWidth={2.4} className="group-hover:scale-110 transition-transform" />
+                      <span>Finish answer</span>
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
-          <div className="mt-4">
-            <TargetRail totalSec={totalSec} nowSec={shownSec} target={target} />
-          </div>
-          {mic.error && phase !== "error" && <p className="mt-1 text-[13px] text-red-soft">{mic.error}</p>}
-        </div>
-        <div className="mb-[clamp(16px,3.3vh,30px)] ml-20 mt-[clamp(12px,2.2vh,20px)] flex items-center justify-between gap-6">
-          <span className="text-[13px] text-muted">
-            {footNote ?? (
-              <>
-                Press <kbd className="rounded-md bg-panel-2 px-[7px] py-0.5 font-sans text-xs font-semibold text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)]">Space</kbd> to finish your answer
-              </>
-            )}
-          </span>
-          <div className="flex gap-2.5">
-            {canSkip && <SkipMenu simple={Boolean(q.slot)} onSkip={(r) => void skip(r)} />}
-            {phase === "feedback" ? (
-              <Button variant="primary" className="px-[26px]" onClick={afterFeedback}>
-                {feedback?.last ? "See your summary" : "Next question"}
-              </Button>
-            ) : phase === "thinking" || phase === "scoring" || phase === "finishing" ? (
-              <Button variant="primary" className="px-[26px]" disabled>
-                {phase === "thinking" ? "One moment…" : phase === "finishing" ? "Writing your report…" : turn.kind === "main" ? "Scoring your answer…" : "Scoring your answers…"}
-              </Button>
-            ) : phase === "error" ? (
-              problem?.stage === "mic" ? (
-                <>
-                  <Link href={`/mic-check?next=${encodeURIComponent(typeof window === "undefined" ? `/mock/${p.interviewId}` : window.location.pathname + window.location.search)}`} className={buttonClass("secondary", "md")}>
-                    Check your microphone
-                  </Link>
-                  <Button variant="primary" className="px-[26px]" onClick={() => (begun.current ? answerAgain() : void start())}>
-                    <Icon name="mic" size={17} strokeWidth={2} />
-                    Try again
-                  </Button>
-                </>
-              ) : problem?.stage === "report" ? (
-                <Button variant="primary" className="px-[26px]" onClick={() => void finishRun()}>
-                  <Icon name="repeat" size={17} strokeWidth={1.9} />
-                  Try again
-                </Button>
-              ) : problem?.stage === "score" ? (
-                <Button variant="primary" className="px-[26px]" onClick={() => (isRun ? skipAfterError() : void scoreSingle())}>
-                  <Icon name="repeat" size={17} strokeWidth={1.9} />
-                  {isRun ? "Carry on" : "Try scoring again"}
-                </Button>
-              ) : (
-                <>
-                  {isRun ? (
-                    <Button onClick={skipAfterError}>{turn.kind === "follow-up" ? "Skip this follow-up" : "Skip this question"}</Button>
-                  ) : problem?.stage === "follow-up" ? (
-                    <Button onClick={() => void scoreSingle()}>Skip to feedback</Button>
-                  ) : p.demoFeedbackHref ? (
-                    <Link href={`${p.demoFeedbackHref}?demo=error`} className={buttonClass("secondary", "md")}>
-                      See demo feedback
-                    </Link>
-                  ) : null}
-                  <Button variant="primary" className="px-[26px]" onClick={answerAgain}>
-                    <Icon name="mic" size={17} strokeWidth={2} />
-                    Answer again
-                  </Button>
-                </>
-              )
-            ) : phase === "asking" ? (
-              <>
-                <Button disabled>
-                  <Icon name="repeat" size={17} strokeWidth={1.9} />
-                  Repeat question
-                </Button>
-                <Button disabled>
-                  <Icon name="pause" size={17} strokeWidth={2.2} />
-                  Pause
-                </Button>
-                <Button variant="primary" className="px-[26px]" onClick={() => voice.current?.cancel()}>
-                  Start answering
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button onClick={repeat}>
-                  <Icon name="repeat" size={17} strokeWidth={1.9} />
-                  Repeat question
-                </Button>
-                <Button onClick={togglePause}>
-                  <Icon name={phase === "paused" ? "play" : "pause"} size={17} strokeWidth={2.2} />
-                  {phase === "paused" ? "Resume" : "Pause"}
-                </Button>
-                <Button variant="primary" className="px-[26px]" onClick={() => void finish()}>
-                  Finish answer
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
-      </section>
-      </>
+        </main>
       )}
 
       {wrong && <SomethingWrong initialReasons={wrong.reasons} skippedCount={skipped.current.filter((s) => s.reason !== "by-choice").length} busy={wrongBusy} error={wrongError} onFix={(r, n) => void fixAndRestart(r, n)} onCarryOn={carryOn} />}

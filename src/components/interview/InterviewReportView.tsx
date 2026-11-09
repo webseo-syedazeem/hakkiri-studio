@@ -477,14 +477,15 @@ export function InterviewReportView(p: InterviewReportViewProps) {
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="h-8 rounded-lg bg-[#141326] border border-white/10 px-3 text-xs text-white [color-scheme:dark] focus:border-blue focus:outline-none"
+              className="h-8.5 rounded-xl bg-[#141326] border border-white/10 hover:border-white/20 pl-3 pr-8 text-xs font-medium text-white appearance-none cursor-pointer [color-scheme:dark] focus:border-blue focus:outline-none transition-all shadow-sm"
             >
-              <option value="all">All categories ∨</option>
+              <option value="all">All categories</option>
               <option value="motivation">Motivation</option>
               <option value="competency">Skills</option>
               <option value="technical">Technical</option>
               <option value="cv">Experience</option>
             </select>
+            <Icon name="chevronDown" size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
           </div>
         </div>
 

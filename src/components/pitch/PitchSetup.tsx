@@ -480,17 +480,20 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
                 <label className="block text-xs font-semibold text-muted mb-2">
                   Audience size (optional)
                 </label>
-                <select
-                  value={audienceSize}
-                  onChange={(e) => setAudienceSize(e.target.value)}
-                  className="w-full h-10 rounded-xl bg-[#141326] border border-white/10 px-3 text-xs text-white [color-scheme:dark] focus:border-blue focus:outline-none"
-                >
-                  {AUDIENCE_SIZES.map((sz) => (
-                    <option key={sz} value={sz}>
-                      {sz}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <select
+                    value={audienceSize}
+                    onChange={(e) => setAudienceSize(e.target.value)}
+                    className="w-full h-10 rounded-xl bg-[#141326] border border-white/10 hover:border-white/20 pl-3.5 pr-8 text-xs text-white appearance-none cursor-pointer [color-scheme:dark] focus:border-blue focus:outline-none transition-all"
+                  >
+                    {AUDIENCE_SIZES.map((sz) => (
+                      <option key={sz} value={sz}>
+                        {sz}
+                      </option>
+                    ))}
+                  </select>
+                  <Icon name="chevronDown" size={13} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
+                </div>
               </div>
             </div>
 
@@ -549,7 +552,7 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
                 <select
                   value={limitMin}
                   onChange={(e) => setLimitMin(Number(e.target.value))}
-                  className="w-full h-11 rounded-xl bg-[#141326] border border-white/10 pl-9 pr-8 text-sm text-white [color-scheme:dark] focus:border-blue focus:outline-none"
+                  className="w-full h-11 rounded-xl bg-[#141326] border border-white/10 hover:border-white/20 pl-9 pr-9 text-sm text-white appearance-none cursor-pointer [color-scheme:dark] focus:border-blue focus:outline-none transition-all"
                 >
                   {LIMITS.map((m) => (
                     <option key={m} value={m}>
@@ -558,6 +561,7 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
                   ))}
                 </select>
                 <Icon name="clock" size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
+                <Icon name="chevronDown" size={14} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
               </div>
             </div>
 
@@ -571,7 +575,7 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
                 <select
                   value={qa}
                   onChange={(e) => setQa(e.target.value as QaStyle | "none")}
-                  className="w-full h-11 rounded-xl bg-[#141326] border border-white/10 pl-9 pr-8 text-sm text-white [color-scheme:dark] focus:border-blue focus:outline-none"
+                  className="w-full h-11 rounded-xl bg-[#141326] border border-white/10 hover:border-white/20 pl-9 pr-9 text-sm text-white appearance-none cursor-pointer [color-scheme:dark] focus:border-blue focus:outline-none transition-all"
                 >
                   <option value="sceptical">Challenging</option>
                   <option value="probing">Realistic</option>
@@ -579,6 +583,7 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
                   <option value="none">None</option>
                 </select>
                 <Icon name="chart" size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
+                <Icon name="chevronDown" size={14} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
               </div>
             </div>
 
