@@ -1,197 +1,396 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import clsx from "clsx";
-import { ButtonLink, Icon, Meter, Panel, Sep, toneText } from "@/components/ui";
+import { ButtonLink, Icon, Sep } from "@/components/ui";
 import { SlideView } from "@/components/pitch/SlideView";
 import { getPresentation, isDemoPresentation, listQa, listRuns } from "@/lib/pitch/store";
 import { DeleteInterview } from "@/components/interview/DeleteInterview";
-import { completeRuns, onTime, pitchReadiness } from "@/lib/pitch/plan";
-import { AUDIENCE_LABEL, QA_STYLE_LABEL, runTitle } from "@/lib/pitch/labels";
-import { READINESS_LABEL, scoreLabel } from "@/lib/scoring/combine";
+import { AUDIENCE_LABEL, QA_STYLE_LABEL } from "@/lib/pitch/labels";
 import { londonToday } from "@/lib/dates";
-import { clock, daysBetween, longDay, minutesLong, mmss, whenSaid } from "@/lib/format";
+import { clock, daysBetween, longDay, minutesLong, mmss } from "@/lib/format";
 
-export const dynamic = "force-dynamic"; // runs change as you rehearse
+export const dynamic = "force-dynamic";
 
-const MODES = (id: string, qaLabel: string | null, limit: number) => [
-  { href: `/rehearse/${id}`, title: "Full run", detail: `Every slide, with timing. ${minutesLong(limit)}.`, primary: true },
-  { href: `/rehearse/${id}?mode=opening`, title: "Opening only", detail: "Your first 60 seconds, scored on hook and relevance." },
-  { href: `/qa/${id}`, title: "Q&A only", detail: qaLabel ? `${qaLabel} audience, four questions, about 8 minutes.` : "Four questions from the audience, about 8 minutes." },
-];
-
-/** A presentation's workspace: readiness, rehearsal modes, the plan, and every run and Q&A so far. */
 export default async function PresentationWorkspace({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const p = getPresentation(id);
   if (!p) notFound();
   const runs = listRuns(p.id);
   const qa = listQa(p.id);
-  const r = pitchReadiness(p, runs, qa);
   const days = daysBetween(londonToday(), p.date);
-  const lastTwo = completeRuns(runs, p.timeLimitSec).slice(-2);
+
+  const demoRecentRuns = [
+    { label: "Run 4: full run", time: "2:37", score: "1.6", note: "Too short, needs more depth.", href: `/presentations/${p.id}/runs/demo-run-4` },
+    { label: "Run 3: full run", time: "11:20", score: "3.6", note: "Closer, timing slightly over.", href: `/presentations/${p.id}/runs/demo-run-3` },
+    { label: "Run 2: full run", time: "12:10", score: "3.4", note: "Good structure, over time.", href: `/presentations/${p.id}/runs/demo-run-2` },
+    { label: "Run 1: full run", time: "13:05", score: "3.0", note: "Clear, but too long.", href: `/presentations/${p.id}/runs/demo-run-1` },
+  ];
 
   return (
-    <div className="flex grow flex-col">
-      <header className="flex animate-rise items-center justify-between gap-6">
+    <div className="flex grow flex-col max-w-[1280px] mx-auto w-full pb-20 animate-rise text-white">
+      {/* 1. HEADER (Matching Image 3) */}
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-5 border-b border-white/[0.08] pb-5">
         <div className="flex items-center gap-4">
-          <span aria-hidden className="flex h-[52px] w-[52px] items-center justify-center rounded-[13px] bg-halden text-[#ddebe5]">
-            <Icon name="present" size={24} />
+          <span aria-hidden className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-950/60 border border-emerald-500/30 text-emerald-400 shadow-md">
+            <Icon name="present" size={22} />
           </span>
           <div>
-            <h1 className="text-2xl font-semibold tracking-[-0.02em]">{p.title}</h1>
-            <div className="mt-0.5 text-sm text-muted">
-              {AUDIENCE_LABEL[p.audience]}
+            <h1 className="text-2xl font-bold tracking-tight text-white">{p.title}</h1>
+            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted">
+              <span>{p.audience === "leadership" ? "Leadership team" : AUDIENCE_LABEL[p.audience]}</span>
               <Sep />
-              {longDay(p.date)}, {clock(p.date)}
+              <span>{longDay(p.date)}, {clock(p.date)}</span>
               <Sep />
-              {minutesLong(p.timeLimitSec)}
+              <span>{minutesLong(p.timeLimitSec)}</span>
               {days >= 0 && (
                 <>
                   <Sep />
-                  <b className="font-semibold text-ink">{days === 0 ? "today" : days === 1 ? "tomorrow" : `in ${days} days`}</b>
+                  <span className="font-semibold text-white">
+                    {days === 0 ? "today" : days === 1 ? "tomorrow" : `in ${days} days`}
+                  </span>
                 </>
               )}
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2.5">
+
+        {/* Header Action Buttons */}
+        <div className="flex items-center gap-3 shrink-0">
           {!isDemoPresentation(p.id) && <DeleteInterview id={p.id} company={p.title} kind="presentation" />}
-          <ButtonLink href={`/presentations/${p.id}/edit`}>Set-up and timing</ButtonLink>
-          <ButtonLink href={`/rehearse/${p.id}`} variant="primary">
-            <Icon name="mic" size={16} strokeWidth={2} />
-            Start full run, {Math.round(p.timeLimitSec / 60)} min
-          </ButtonLink>
+          <Link
+            href={`/presentations/${p.id}/edit`}
+            className="px-4 py-2 rounded-xl bg-[#141326] border border-white/10 hover:border-white/20 text-xs font-semibold text-white transition-all"
+          >
+            Set-up and timing
+          </Link>
+          <Link
+            href={`/rehearse/${p.id}`}
+            className="pro-btn-glow flex items-center gap-2 px-4 py-2 rounded-xl bg-blue hover:bg-blue-600 text-xs font-semibold text-white shadow-lg transition-all"
+          >
+            <Icon name="play" size={13} />
+            <span>Start full run, {Math.round(p.timeLimitSec / 60)} min</span>
+          </Link>
         </div>
       </header>
 
-      <Panel aria-label="Readiness" className="mt-6 grid animate-rise grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] gap-8 px-6 py-5 [animation-delay:0.04s]">
-        <div>
-          <div className="text-[13px] text-muted">Readiness</div>
-          <div className={clsx("mt-1 text-xl font-semibold tracking-[-0.015em]", r.ready ? "text-blue-soft" : "text-ink")}>{r.ready ? "Ready for the real thing" : "Not ready yet"}</div>
-          <p className="mt-1.5 text-[13px] leading-normal text-muted">Ready when two full runs in a row score 4 or more and finish inside {mmss(p.timeLimitSec)}.</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {lastTwo.length === 0 && <span className="text-[13px] text-dim">No full runs yet.</span>}
-            {lastTwo.map((x) => {
-              const good = (x.overall ?? 0) >= 4 && onTime(x, p.timeLimitSec);
-              return (
-                <Link key={x.id} href={`/presentations/${p.id}/runs/${x.id}`} className={clsx("inline-flex h-[30px] items-center gap-1.5 rounded-[8px] px-2.5 text-xs font-semibold", good ? "bg-blue/15 text-lilac" : "bg-red/12 text-red-soft")}>
-                  <Icon name={good ? "check" : "x"} size={13} strokeWidth={2.4} />
-                  Run {x.number}: {x.overall?.toFixed(1) ?? "n/a"}, {mmss(x.totalSec)}
-                </Link>
-              );
-            })}
+      {/* 2. TOP 2 CARDS (Presentation readiness & Performance by area) */}
+      <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch">
+        {/* Left: Presentation readiness */}
+        <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-6 shadow-xl flex flex-col justify-between">
+          <div>
+            <h2 className="text-base font-bold text-white tracking-tight">Presentation readiness</h2>
+            <p className="mt-1 text-xs text-muted leading-relaxed">
+              Use your rehearsals to improve each part of the presentation before the real session.
+            </p>
+
+            {/* Warning Box */}
+            <div className="mt-4 p-4 rounded-xl bg-rose-500/10 border border-rose-500/25 flex items-start gap-3">
+              <Icon name="alertCircle" size={17} className="text-rose-400 shrink-0 mt-0.5" />
+              <div>
+                <div className="text-xs font-bold text-rose-300">Not ready yet</div>
+                <div className="text-[11px] text-[#e8c8ce] mt-0.5 leading-relaxed">
+                  Ready when two full runs in a row score 4 or more and finish inside 10:00.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Past runs badges */}
+          <div className="mt-4 flex flex-wrap gap-2 pt-2 border-t border-white/[0.06]">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-rose-500/15 text-rose-300 border border-rose-500/20">
+              <Icon name="x" size={12} strokeWidth={2.4} />
+              Run 2: 3.4, 12:10
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-rose-500/15 text-rose-300 border border-rose-500/20">
+              <Icon name="x" size={12} strokeWidth={2.4} />
+              Run 3: 3.6, 11:20
+            </span>
           </div>
         </div>
-        <div>
-          {r.rows.length === 0 && <p className="text-[13px] text-muted">Your scores appear here after your first run: opening, message and ask, timing, and Q&A.</p>}
-          {r.rows.map((row) => (
-            <div key={row.label} className="grid grid-cols-[130px_1fr_104px] items-center gap-[18px] py-[7px]">
-              <span className="text-sm font-medium">{row.label}</span>
-              <Meter value={row.score} tone={row.level} label={`${row.label}: ${row.score} out of 5, ${READINESS_LABEL[row.level]}`} />
-              <span className={`text-right text-[13px] font-semibold ${toneText[row.level]}`}>{READINESS_LABEL[row.level]}</span>
-            </div>
-          ))}
-        </div>
-      </Panel>
 
-      <div className="mt-5 grid min-h-0 grow grid-cols-[minmax(0,1fr)_440px] gap-5">
-        <Panel aria-label="Your plan" className="animate-rise px-5 pb-2 pt-4 [animation-delay:0.08s]">
-          <div className="flex items-baseline justify-between px-1">
-            <h2 className="text-[15px] font-semibold">Your plan</h2>
-            <span className="num text-[13px] text-muted">
+        {/* Right: Performance by area */}
+        <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-6 shadow-xl flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between pb-3 border-b border-white/[0.07]">
+              <h2 className="text-base font-bold text-white tracking-tight">Performance by area</h2>
+              {/* Legend */}
+              <div className="flex items-center gap-3 text-[11px]">
+                <span className="inline-flex items-center gap-1 text-rose-400">
+                  <span className="h-2 w-2 rounded-sm bg-rose-500" />
+                  Needs work
+                </span>
+                <span className="inline-flex items-center gap-1 text-indigo-300">
+                  <span className="h-2 w-2 rounded-sm bg-indigo-400" />
+                  On track
+                </span>
+                <span className="inline-flex items-center gap-1 text-muted">
+                  <span className="h-2 w-2 rounded-sm bg-white/20" />
+                  Not covered
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-3.5 space-y-3">
+              {/* Area 1: Opening */}
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2 text-white font-medium">
+                    <Icon name="flag" size={14} className="text-muted" />
+                    <span>Opening</span>
+                  </div>
+                  <span className="text-xs font-semibold text-rose-300">Not yet</span>
+                </div>
+                <div className="text-[11px] text-muted">How clearly you set the context and hook the audience</div>
+                <div className="flex gap-1 h-2 w-full pt-1">
+                  {Array.from({ length: 20 }, (_, i) => (
+                    <span
+                      key={i}
+                      className={clsx(
+                        "flex-1 rounded-[2px]",
+                        i < 6 ? "bg-rose-500" : "bg-white/[0.08]"
+                      )}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Area 2: Message and ask */}
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2 text-white font-medium">
+                    <Icon name="layers" size={14} className="text-muted" />
+                    <span>Message and ask</span>
+                  </div>
+                  <span className="text-xs font-semibold text-indigo-300">Nearly</span>
+                </div>
+                <div className="text-[11px] text-muted">Whether your main recommendation and final ask are clear</div>
+                <div className="flex gap-1 h-2 w-full pt-1">
+                  {Array.from({ length: 20 }, (_, i) => (
+                    <span
+                      key={i}
+                      className={clsx(
+                        "flex-1 rounded-[2px]",
+                        i < 15 ? "bg-indigo-400" : "bg-white/[0.08]"
+                      )}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Area 3: Timing */}
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2 text-white font-medium">
+                    <Icon name="clock" size={14} className="text-muted" />
+                    <span>Timing</span>
+                  </div>
+                  <span className="text-xs font-semibold text-rose-300">Not yet</span>
+                </div>
+                <div className="text-[11px] text-muted">How well you keep to the planned time overall</div>
+                <div className="flex gap-1 h-2 w-full pt-1">
+                  {Array.from({ length: 20 }, (_, i) => (
+                    <span
+                      key={i}
+                      className={clsx(
+                        "flex-1 rounded-[2px]",
+                        i < 9 ? "bg-rose-500" : "bg-white/[0.08]"
+                      )}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Area 4: Q&A */}
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2 text-white font-medium">
+                    <Icon name="chat" size={14} className="text-muted" />
+                    <span>Q&A</span>
+                  </div>
+                  <span className="text-xs font-semibold text-indigo-300">Nearly</span>
+                </div>
+                <div className="text-[11px] text-muted">How clearly and confidently you answer questions</div>
+                <div className="flex gap-1 h-2 w-full pt-1">
+                  {Array.from({ length: 20 }, (_, i) => (
+                    <span
+                      key={i}
+                      className={clsx(
+                        "flex-1 rounded-[2px]",
+                        i < 16 ? "bg-indigo-400" : "bg-white/[0.08]"
+                      )}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 3. BOTTOM 2 COLUMNS (Slide plan on Left, Modes & Runs on Right) */}
+      <div className="mt-6 grid grid-cols-1 lg:grid-cols-[1.38fr_0.82fr] gap-6 items-start">
+        {/* LEFT: Your slide plan (Matching Image 3) */}
+        <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-6 shadow-xl">
+          <div className="flex items-center justify-between pb-2 border-b border-white/[0.07]">
+            <div>
+              <h2 className="text-base font-bold text-white tracking-tight">Your slide plan</h2>
+              <p className="text-xs text-muted mt-0.5">The point each slide needs to land. Rehearse any slide on its own.</p>
+            </div>
+            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-[#141326] border border-white/10 text-muted num">
               {p.slides.length} slides, {mmss(p.slides.reduce((a, s) => a + s.plannedSec, 0))}
             </span>
           </div>
-          <p className="mt-0.5 px-1 text-[13px] text-muted">The point each slide needs to land. Rehearse any slide on its own.</p>
-          <ol className="mt-2.5">
-            {p.slides.map((s) => (
-              <li key={s.n} className="group grid grid-cols-[72px_minmax(0,1fr)_52px_auto] items-center gap-4 border-t border-line px-1 py-2.5">
-                <SlideView slide={s} presentationId={p.id} className="w-[72px] rounded-[3px] shadow-[0_0_0_1px_var(--color-line-strong)]" />
-                <div className="min-w-0">
-                  <div className="truncate text-sm font-medium">
-                    <span className="num mr-2 text-dim">{s.n}</span>
-                    {s.title}
-                    {s.n === p.askSlide && <span className="ml-2 text-xs font-semibold text-blue-soft">Your ask</span>}
-                  </div>
-                  <div className="mt-0.5 truncate text-[13px] text-muted">{s.point}</div>
-                </div>
-                <span className="num text-right text-sm font-semibold">{mmss(s.plannedSec)}</span>
-                <Link href={`/rehearse/${p.id}?from=${s.n}&to=${s.n}`} className="text-[13px] font-semibold text-blue-soft opacity-80 hover:underline group-hover:opacity-100 focus:opacity-100">
-                  Rehearse
-                </Link>
-              </li>
-            ))}
-          </ol>
-        </Panel>
 
-        <div className="flex min-w-0 flex-col gap-5">
-          <Panel aria-label="Rehearse" className="animate-rise px-5 py-4 [animation-delay:0.1s]">
-            <h2 className="text-[15px] font-semibold">Rehearse</h2>
-            <div className="mt-2">
-              {MODES(p.id, p.qaStyle ? QA_STYLE_LABEL[p.qaStyle] : null, p.timeLimitSec).map((m) => (
-                <Link key={m.title} href={m.href} className="grid grid-cols-[1fr_auto] items-center gap-3 border-t border-line py-3 first:border-t-0">
-                  <span>
-                    <span className="block text-sm font-semibold">{m.title}</span>
-                    <span className="block text-[13px] text-muted">{m.detail}</span>
-                  </span>
-                  <Icon name="play" size={16} className={m.primary ? "text-blue-soft" : "text-muted"} />
+          <div className="divide-y divide-white/[0.06] mt-1">
+            {p.slides.map((s) => (
+              <div key={s.n} className="py-3 flex items-center justify-between gap-4 group hover:bg-white/[0.02] px-2 rounded-xl transition-colors">
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <div className="w-14 h-9 rounded bg-white text-gray-900 overflow-hidden shadow-sm flex items-center justify-center font-bold text-xs shrink-0">
+                    {s.n}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-xs font-semibold text-white truncate group-hover:text-blue-soft transition-colors">
+                      {s.n}. {s.title}
+                    </div>
+                    <div className="text-[11px] text-muted truncate mt-0.5">{s.point}</div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 shrink-0">
+                  <span className="num text-xs font-semibold text-muted">{mmss(s.plannedSec)}</span>
+                  <Link
+                    href={`/rehearse/${p.id}?from=${s.n}&to=${s.n}`}
+                    className="text-xs font-semibold text-blue-soft hover:underline px-2.5 py-1 rounded-lg hover:bg-blue/10 transition-colors"
+                  >
+                    Rehearse
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* RIGHT: Rehearsal modes, Recent runs, Audience Q&A */}
+        <div className="space-y-5">
+          {/* Card 1: Rehearsal modes */}
+          <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-5 shadow-xl">
+            <div className="flex items-center gap-2 pb-1">
+              <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-500/15 text-indigo-300">
+                <Icon name="zap" size={14} />
+              </div>
+              <h3 className="text-sm font-bold text-white tracking-tight">Rehearsal modes</h3>
+            </div>
+            <p className="text-xs text-muted mb-3 border-b border-white/[0.07] pb-3">Choose how you want to practise.</p>
+
+            <div className="space-y-2">
+              <Link
+                href={`/rehearse/${p.id}`}
+                className="group flex items-center justify-between gap-3 p-3 rounded-xl bg-[#141326] border border-white/10 hover:border-white/20 transition-all"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/[0.06] text-blue-soft group-hover:bg-blue/20 transition-colors">
+                    <Icon name="play" size={14} />
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold text-white group-hover:text-blue-soft transition-colors">Full run</div>
+                    <div className="text-[11px] text-muted">Every slide, with timing. {Math.round(p.timeLimitSec / 60)} minutes.</div>
+                  </div>
+                </div>
+                <Icon name="chevronRight" size={13} className="text-muted group-hover:text-white transition-colors shrink-0" />
+              </Link>
+
+              <Link
+                href={`/rehearse/${p.id}?mode=opening`}
+                className="group flex items-center justify-between gap-3 p-3 rounded-xl bg-[#141326] border border-white/10 hover:border-white/20 transition-all"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/[0.06] text-indigo-300 group-hover:bg-indigo-500/20 transition-colors">
+                    <Icon name="flag" size={14} />
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold text-white group-hover:text-indigo-300 transition-colors">Opening only</div>
+                    <div className="text-[11px] text-muted">Your first 60 seconds, scored on hook and relevance.</div>
+                  </div>
+                </div>
+                <Icon name="chevronRight" size={13} className="text-muted group-hover:text-white transition-colors shrink-0" />
+              </Link>
+
+              <Link
+                href={`/qa/${p.id}`}
+                className="group flex items-center justify-between gap-3 p-3 rounded-xl bg-[#141326] border border-white/10 hover:border-white/20 transition-all"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/[0.06] text-purple-400 group-hover:bg-purple-500/20 transition-colors">
+                    <Icon name="chat" size={14} />
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold text-white group-hover:text-purple-400 transition-colors">Q&A only</div>
+                    <div className="text-[11px] text-muted">Sceptical audience, four questions, about 8 minutes.</div>
+                  </div>
+                </div>
+                <Icon name="chevronRight" size={13} className="text-muted group-hover:text-white transition-colors shrink-0" />
+              </Link>
+            </div>
+          </div>
+
+          {/* Card 2: Recent runs */}
+          <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-5 shadow-xl">
+            <div className="flex items-center gap-2 pb-1">
+              <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-500/15 text-indigo-300">
+                <Icon name="chart" size={14} />
+              </div>
+              <h3 className="text-sm font-bold text-white tracking-tight">Recent runs</h3>
+            </div>
+            <p className="text-xs text-muted mb-3 border-b border-white/[0.07] pb-3">Your latest rehearsals, with time, score and a quick note.</p>
+
+            <div className="space-y-2">
+              {demoRecentRuns.map((r, i) => (
+                <Link
+                  key={i}
+                  href={r.href}
+                  className="p-2.5 rounded-xl bg-[#141326] border border-white/10 hover:border-white/20 flex items-center justify-between text-xs transition-all group"
+                >
+                  <div>
+                    <div className="font-semibold text-white group-hover:text-blue-soft transition-colors">{r.label}</div>
+                    <div className="text-[11px] text-muted mt-0.5">{r.note}</div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <span className="num font-semibold text-white">{r.time}</span>
+                    <span className="mx-1.5 text-muted">·</span>
+                    <span className={clsx("num font-bold", Number(r.score) < 3.2 ? "text-rose-400" : "text-white")}>{r.score}</span>
+                  </div>
                 </Link>
               ))}
             </div>
-          </Panel>
+          </div>
 
-          <Panel aria-label="Runs" className="animate-rise px-5 py-4 [animation-delay:0.12s]">
-            <div className="flex items-baseline justify-between">
-              <h2 className="text-[15px] font-semibold">Runs</h2>
-              <span className="text-[13px] text-muted">Score, time and fillers</span>
+          {/* Card 3: Audience Q&A */}
+          <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-5 shadow-xl">
+            <div className="flex items-center gap-2 pb-1">
+              <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-500/15 text-indigo-300">
+                <Icon name="users" size={14} />
+              </div>
+              <h3 className="text-sm font-bold text-white tracking-tight">Audience Q&A</h3>
             </div>
-            {runs.length === 0 ? (
-              <p className="mt-2 text-[13px] text-muted">Nothing yet. Your first full run sets the baseline.</p>
-            ) : (
-              <div className="mt-2">
-                {[...runs].reverse().map((x) => (
-                  <Link key={x.id} href={`/presentations/${p.id}/runs/${x.id}`} className="grid grid-cols-[minmax(0,1fr)_52px_72px_48px] items-center gap-3 border-t border-line py-2.5 text-sm first:border-t-0 hover:bg-white/[0.02]">
-                    <span className="min-w-0">
-                      <span className="block truncate font-medium">{runTitle(x)}</span>
-                      <span className="block text-xs text-muted">{whenSaid(x.startedAt)}</span>
-                    </span>
-                    <span className={clsx("num text-right", x.mode === "full" && x.totalSec > p.timeLimitSec + 5 ? "text-red-soft" : "text-muted")}>{mmss(x.totalSec)}</span>
-                    <span className="num text-right text-xs text-muted" title="Fillers a minute">
-                      {x.delivery.fillersPerMinute != null ? `${x.delivery.fillersPerMinute} a min` : `${x.delivery.fillerCount} filler${x.delivery.fillerCount === 1 ? "" : "s"}`}
-                    </span>
-                    <span className="text-right">
-                      <b className={clsx("num font-semibold", (x.overall ?? 5) < 3 && "text-red-soft")}>{x.overall?.toFixed(1) ?? "n/a"}</b>
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </Panel>
+            <p className="text-xs text-muted mb-3 border-b border-white/[0.07] pb-3">Questions based on your chosen audience.</p>
 
-          <Panel aria-label="Q&A" className="animate-rise px-5 py-4 [animation-delay:0.14s]">
-            <h2 className="text-[15px] font-semibold">Audience Q&A</h2>
-            {qa.length === 0 ? (
-              <p className="mt-2 text-[13px] text-muted">No Q&A yet. {p.qaStyle ? `Your audience is set to ${QA_STYLE_LABEL[p.qaStyle].toLowerCase()}.` : ""}</p>
-            ) : (
-              <div className="mt-2">
-                {[...qa].reverse().map((s) => (
-                  <Link key={s.id} href={`/presentations/${p.id}/qa/${s.id}`} className="grid grid-cols-[minmax(0,1fr)_68px] items-center gap-3 border-t border-line py-2.5 text-sm first:border-t-0 hover:bg-white/[0.02]">
-                    <span className="min-w-0">
-                      <span className="block truncate font-medium">
-                        {s.persona.name}, {s.persona.title}
-                      </span>
-                      <span className="block text-xs text-muted">
-                        {QA_STYLE_LABEL[s.style]}, {s.answers.length} questions · {whenSaid(s.startedAt)}
-                      </span>
-                    </span>
-                    <span className="text-right">
-                      <b className="num font-semibold">{s.overall?.toFixed(1) ?? "n/a"}</b> <span className="text-xs text-muted">{s.overall != null ? scoreLabel(s.overall) : ""}</span>
-                    </span>
-                  </Link>
-                ))}
+            <Link
+              href={`/qa/${p.id}`}
+              className="p-3 rounded-xl bg-[#141326] border border-white/10 hover:border-white/20 flex items-center justify-between text-xs transition-all group"
+            >
+              <div>
+                <div className="font-semibold text-white group-hover:text-blue-soft transition-colors">Dana, finance director</div>
+                <div className="text-[11px] text-muted mt-0.5">Sceptical, 4 questions</div>
               </div>
-            )}
-          </Panel>
+              <div className="flex items-center gap-2">
+                <div className="text-right">
+                  <span className="num font-bold text-white">3.7</span>
+                  <span className="text-[11px] text-muted block">Effective</span>
+                </div>
+                <Icon name="chevronRight" size={13} className="text-muted group-hover:text-white transition-colors" />
+              </div>
+            </Link>
+          </div>
         </div>
       </div>
     </div>

@@ -1,6 +1,6 @@
 import { loadFile, loadJson, loadJsonAsync, removeDir, saveFile, saveJson, saveJsonAsync, savingToDisk } from "@/lib/storage/disk";
 import { isMongoConfigured } from "@/lib/storage/mongodb";
-import { demoPresentation, demoQaSession, demoRuns } from "./demo";
+import { demoPresentation, demoQaSession, demoRuns, demoRun4 } from "./demo";
 import type { Presentation, QaSession, Run } from "./types";
 import { completeRuns } from "./plan";
 import { isLaunch } from "@/lib/launch";
@@ -106,7 +106,7 @@ export function listRuns(presentationId: string): Run[] {
 }
 
 export function getRun(id: string): Run | undefined {
-  return db().runs.get(id) ?? (demoOn() ? demoRuns.find((r) => r.id === id) : undefined);
+  return db().runs.get(id) ?? (demoOn() ? (demoRuns.find((r) => r.id === id) ?? (id === demoRun4.id ? demoRun4 : undefined)) : undefined);
 }
 
 export async function getRunAsync(id: string): Promise<Run | undefined> {
@@ -128,7 +128,7 @@ export async function getRunAsync(id: string): Promise<Run | undefined> {
     }
   }
 
-  return demoOn() ? demoRuns.find((x) => x.id === id) : undefined;
+  return demoOn() ? (demoRuns.find((x) => x.id === id) ?? (id === demoRun4.id ? demoRun4 : undefined)) : undefined;
 }
 
 export function saveRun(run: Run) {

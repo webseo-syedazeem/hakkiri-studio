@@ -112,6 +112,16 @@ const RUN_SPECS: DemoRunSpec[] = [
   { id: "demo-run-3", number: 3, dayOffset: -1, at: "12:40", durations: [32, 75, 40, 160, 70, 65, 50, 25, 50, 55, 48, 10], verdicts: "yyyp yyny yy yp", parts: { opening: 4, message: 3, structure: 4, audience: 4 } },
 ];
 
+export const demoRun4Spec: DemoRunSpec = {
+  id: "demo-run-4",
+  number: 4,
+  dayOffset: 0,
+  at: "12:58",
+  durations: [12, 44, 45, 56],
+  verdicts: "yyyp nnnn nnnn",
+  parts: { opening: 4, message: 3, structure: 4, audience: 4 },
+};
+
 const QUOTES: Record<number, string> = {
   1: "This is the plan for payments in Q1",
   2: "payment completion went from 41% to 58%.",
@@ -168,6 +178,22 @@ export const demoRuns: Run[] = RUN_SPECS.map((spec) => {
     model: demoModel(spec),
     hasAudio: false,
   });
+});
+
+export const demoRun4: Run = assembleRun({
+  id: demoRun4Spec.id,
+  presentation: demoPresentation,
+  number: demoRun4Spec.number,
+  mode: "full",
+  from: 1,
+  to: 4,
+  startedAt: londonIso(day(demoRun4Spec.dayOffset), demoRun4Spec.at),
+  finishedAt: new Date(Date.parse(londonIso(day(demoRun4Spec.dayOffset), demoRun4Spec.at)) + 157 * 1000 + 20_000).toISOString(),
+  totalSec: 157,
+  marks: marksFor(demoRun4Spec.durations).marks,
+  words: speakRun(marksFor(demoRun4Spec.durations).marks, 157, demoScript),
+  model: demoModel(demoRun4Spec),
+  hasAudio: false,
 });
 
 // ---------------------------------------------------------------------------

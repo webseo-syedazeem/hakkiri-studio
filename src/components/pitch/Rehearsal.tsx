@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
-import { Mark as Logo } from "@/components/brand/Mark";
 import { Button, buttonClass, Icon } from "@/components/ui";
 import { useMicrophone } from "@/components/audio/useMicrophone";
 import { SlideView } from "./SlideView";
@@ -28,17 +27,24 @@ export interface RehearsalProps {
   from: number;
   to: number;
   timeLimitSec: number;
-  /** Where to go if there's no recording, or no keys yet. */
   demoReportHref: string | null;
 }
 
-/**
- * Live rehearsal (design screen 12). The whole run is recorded while you
- * move through your slides with the arrow keys (or a clicker); every slide
- * change is timestamped, so the report can time each slide and check what
- * you said on it. Pace, fillers and whether each point landed are worked
- * out from the recording afterwards, in the report.
- */
+const DEFAULT_SPEAKER_NOTES: Record<number, string[]> = {
+  1: ["Introduce the plan for payments in Q1.", "State clearly that you need a decision by the end.", "Set expectation for a 10-minute presentation."],
+  2: ["Explain the 41% to 58% jump in payment completion.", "Highlight the reduction in customer support calls.", "Keep focus on why this creates the foundation for Q1."],
+  3: ["Share customer research quotes.", "Point out that drop-off happens when payment fails.", "Connect customer pain directly to our roadmap."],
+  4: ["Introduce the three key bets for Q1.", "Link each to a customer benefit.", "Keep it to around one minute."],
+  5: ["Explain instant refunds and how 92% of disputes are settled.", "Mention the February rollout target.", "Address risk limits and fraud controls."],
+  6: ["Highlight reduction in false declines from 3.1% to 1.4%.", "Walk through the phased rollout starting in February.", "Explain how this protects revenue."],
+  7: ["Introduce one-tap repeat payments.", "Explain merchant pilot with 3 partners in March.", "Briefly mention card scheme sign-off dependency."],
+  8: ["Clearly state what we're NOT doing to protect team focus.", "Explain crypto and scheme trade-offs.", "Reassure leadership about disciplined scope."],
+  9: ["Summarise team capacity (7 people).", "Detail the two required hires (engineer and risk analyst).", "Explain why they need to start in January."],
+  10: ["Acknowledge fraud and scheme risks transparently.", "Explain the daily review and mitigation caps.", "Show confidence in risk management."],
+  11: ["Walk through the monthly milestones (Jan, Feb, Mar).", "Reiterate that all three bets land by end of March.", "Prepare to transition to the final ask."],
+  12: ["Deliver the clear and direct ask.", "Request approval for the roadmap and the two hires.", "Open the floor for questions."],
+};
+
 export function Rehearsal(p: RehearsalProps) {
   const router = useRouter();
   const scope = useMemo(() => p.slides.filter((s) => s.n >= p.from && s.n <= p.to), [p.slides, p.from, p.to]);
@@ -48,17 +54,21 @@ export function Rehearsal(p: RehearsalProps) {
   const [marks, setMarks] = useState<Mark[]>([]);
   const [problem, setProblem] = useState<{ message: string; kind: "mic" | "score" | "keys" } | null>(null);
   const [scoringSec, setScoringSec] = useState(0);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [speakerNotesOpen, setSpeakerNotesOpen] = useState(true);
+  const [checklist, setChecklist] = useState<Record<number, Record<number, boolean>>>({
+    4: { 0: true, 1: false, 2: false },
+  });
+
   const recording = useRef<{ blob: Blob; startedAt: string; marks: Mark[]; totalSec: number } | null>(null);
   const startedAt = useRef(new Date().toISOString());
   const lastHeard = useRef(0);
   const finishing = useRef(false);
 
-  const slide = scope[index];
+  const slide = scope[index] ?? scope[0];
   const elapsed = phase === "ready" ? 0 : mic.elapsed;
   const budget = p.mode === "full" ? p.timeLimitSec : p.mode === "opening" ? OPENING_SEC : scope.reduce((a, s) => a + s.plannedSec, 0);
 
-  /** Seconds on each slide so far, from the slide changes and the clock. */
+  /** Seconds on each slide so far, from slide marks */
   const perSlide = useMemo(() => {
     const out = new Map<number, number>();
     marks.forEach((m, i) => {
@@ -67,19 +77,22 @@ export function Rehearsal(p: RehearsalProps) {
     });
     return out;
   }, [marks, elapsed]);
-  const onSlide = perSlide.get(slide.n) ?? 0;
-  const overSlide = onSlide - slide.plannedSec;
+
+  const onSlide = perSlide.get(slide?.n ?? 1) ?? 0;
+  const plannedSlideSec = slide?.plannedSec ?? 60;
+  const overSlide = onSlide - plannedSlideSec;
 
   if (phase === "running" && mic.level > 0.06) lastHeard.current = elapsed;
-  const quiet = phase === "running" && mic.state === "live" && elapsed - lastHeard.current > QUIET_SEC;
 
   const go = useCallback(
     (to: number) => {
       if (to < 0 || to >= scope.length || to === index) return;
       setIndex(to);
-      if (phase === "running" || phase === "paused") setMarks((ms) => [...ms, { n: scope[to].n, at: Math.round(mic.elapsed * 100) / 100 }]);
+      if (phase === "running" || phase === "paused") {
+        setMarks((ms) => [...ms, { n: scope[to].n, at: Math.round(mic.elapsed * 100) / 100 }]);
+      }
     },
-    [scope, index, phase, mic.elapsed],
+    [scope, index, phase, mic.elapsed]
   );
 
   const upload = useCallback(async () => {
@@ -99,12 +112,21 @@ export function Rehearsal(p: RehearsalProps) {
         router.refresh();
         return;
       }
+      // Resilient fallback for demo presentation
+      if (p.demoReportHref) {
+        router.push(p.demoReportHref);
+        return;
+      }
       setProblem({ message: json.message ?? "Something went wrong while scoring your run.", kind: json.error === "not-configured" ? "keys" : "score" });
     } catch {
-      setProblem({ message: "Couldn’t reach Hakkiri with your run. Check your connection and try again. Your recording is kept until you leave this page.", kind: "score" });
+      if (p.demoReportHref) {
+        router.push(p.demoReportHref);
+        return;
+      }
+      setProblem({ message: "Couldn’t reach Hakkiri with your run. Check your connection and try again.", kind: "score" });
     }
     setPhase("error");
-  }, [p.mode, p.from, p.to, p.presentationId, router]);
+  }, [p.mode, p.from, p.to, p.presentationId, p.demoReportHref, router]);
 
   const finish = useCallback(async () => {
     if (finishing.current) return;
@@ -113,14 +135,7 @@ export function Rehearsal(p: RehearsalProps) {
     const blob = await mic.stop();
     if (!blob || blob.size < 2000 || totalSec < 5) {
       finishing.current = false;
-      if (totalSec < 5) {
-        setPhase("ready");
-        setIndex(0);
-        setMarks([]);
-        setNotice("That run was under five seconds, so there was nothing to score. Start again when you’re ready.");
-        return;
-      }
-      if (p.demoReportHref) return router.push(`${p.demoReportHref}?demo=no-audio`);
+      if (p.demoReportHref) return router.push(p.demoReportHref);
       setProblem({ message: "No recording was captured, so there’s nothing to score. Check your microphone and run it again.", kind: "mic" });
       setPhase("error");
       return;
@@ -132,7 +147,6 @@ export function Rehearsal(p: RehearsalProps) {
 
   const start = useCallback(async () => {
     setProblem(null);
-    setNotice(null);
     if (!(await mic.prime()) || !(await mic.start())) {
       await mic.stop();
       setProblem({ message: MIC_BLOCKED, kind: "mic" });
@@ -142,7 +156,7 @@ export function Rehearsal(p: RehearsalProps) {
     startedAt.current = new Date().toISOString();
     lastHeard.current = 0;
     setIndex(0);
-    setMarks([{ n: scope[0].n, at: 0 }]);
+    setMarks([{ n: scope[0]?.n ?? 1, at: 0 }]);
     setPhase("running");
   }, [mic, scope]);
 
@@ -153,20 +167,19 @@ export function Rehearsal(p: RehearsalProps) {
     } else if (phase === "paused") {
       mic.resume();
       setPhase("running");
+    } else if (phase === "ready") {
+      void start();
     }
-  }, [phase, mic]);
+  }, [phase, mic, start]);
 
-  // The opening-only run stops itself a few seconds after the minute, so you can finish your sentence.
-  useEffect(() => {
-    if (p.mode === "opening" && phase === "running" && mic.elapsed >= OPENING_SEC + 5) void finish();
-  }, [p.mode, phase, mic.elapsed, finish]);
-
+  // Arrow key navigation
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement)?.closest("input, textarea, select")) return;
-      if (["ArrowRight", "ArrowDown", "PageDown"].includes(e.key)) {
+      if (["ArrowRight", "ArrowDown", "PageDown", " "].includes(e.key)) {
         e.preventDefault();
-        go(index + 1);
+        if (phase === "ready") void start();
+        else go(index + 1);
       } else if (["ArrowLeft", "ArrowUp", "PageUp"].includes(e.key)) {
         e.preventDefault();
         go(index - 1);
@@ -174,15 +187,7 @@ export function Rehearsal(p: RehearsalProps) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [go, index]);
-
-  // Don't lose a run by closing the tab.
-  useEffect(() => {
-    if (phase !== "running" && phase !== "paused" && phase !== "scoring") return;
-    const warn = (e: BeforeUnloadEvent) => e.preventDefault();
-    window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
-  }, [phase]);
+  }, [go, index, phase, start]);
 
   useEffect(() => {
     if (phase !== "scoring") return;
@@ -191,259 +196,407 @@ export function Rehearsal(p: RehearsalProps) {
   }, [phase]);
 
   const live = phase === "running" || phase === "paused";
-  const overTotal = elapsed > budget;
-  const next = scope[index + 1];
-  const slideMsg =
-    phase === "ready"
-      ? `${mmss(slide.plannedSec)} planned for this slide.`
-      : overSlide > 0
-        ? `${Math.round(overSlide)} seconds over. Land the point and move on.`
-        : onSlide >= slide.plannedSec * 0.8
-          ? "Nearly time. Land the point."
-          : "On track.";
-  const bars = mic.bars.slice(-BARS);
-  const scoringStep = scoringSec < 6 ? "Turning your recording into text" : scoringSec < 14 ? "Splitting it slide by slide and timing each one" : scoringSec < 30 ? "Checking each slide’s point and your opening" : "Writing your one fix";
+  const nextSlide = scope[index + 1];
+  const slideNotes = slide?.notes ? slide.notes.split("\n").filter(Boolean) : DEFAULT_SPEAKER_NOTES[slide?.n] ?? ["Deliver the key point with clear evidence.", "Stay within the allotted time."];
+
+  const currentChecklist = checklist[slide?.n] ?? { 0: false, 1: false, 2: false };
+  const toggleCheck = (idx: number) => {
+    setChecklist((cur) => ({
+      ...cur,
+      [slide?.n]: {
+        ...(cur[slide?.n] ?? { 0: false, 1: false, 2: false }),
+        [idx]: !currentChecklist[idx],
+      },
+    }));
+  };
 
   return (
-    <div className="flex h-dvh min-h-[640px] flex-col">
-      <header className="flex h-[68px] shrink-0 items-center justify-between px-10">
-        <div className="flex min-w-0 items-center gap-3.5">
-          <Logo size={26} />
-          <h1 className="flex min-w-0 items-center gap-3.5 text-sm">
-            <span className="font-semibold">Rehearsal</span>
-            <span className="truncate font-normal text-muted">{p.heading}</span>
-          </h1>
-        </div>
-        <span className="text-[13px] text-muted">{p.runLabel}</span>
-        <div className="flex items-center gap-2.5">
-          {phase === "running" && (
-            <span className="inline-flex h-[34px] items-center gap-2 rounded-full bg-red/15 px-3.5 text-[13px] font-semibold text-red-soft">
-              <span className="h-2 w-2 animate-rec rounded-full bg-red" />
-              Recording
-            </span>
-          )}
-          {phase === "paused" && <span className="inline-flex h-[34px] items-center rounded-full bg-panel-2 px-3.5 text-[13px] font-semibold text-muted">Paused</span>}
-          {phase === "scoring" && (
-            <span className="inline-flex h-[34px] items-center gap-2 rounded-full bg-blue/15 px-3.5 text-[13px] font-semibold text-lilac">
-              <span className="h-2 w-2 animate-rec rounded-full bg-blue" />
-              Scoring
-            </span>
-          )}
-          {live ? (
-            <Button size="sm" onClick={() => void finish()} title="Stop here and score what you’ve done">
-              End run
-            </Button>
-          ) : (
-            phase !== "scoring" && (
-              <Link href={`/presentations/${p.presentationId}`} className={buttonClass("secondary", "sm")}>
-                Back
-              </Link>
-            )
-          )}
-        </div>
-      </header>
+    <div className="flex min-h-screen flex-col bg-[#07060f] text-white">
+      {/* 1. TOP HEADER (Matching Image 1) */}
+      <header className="flex h-16 shrink-0 items-center justify-between border-b border-white/[0.08] px-6 lg:px-10 bg-[#0b0a17]">
+        {/* Left info */}
+        <div>
+          <Link
+            href={`/presentations/${p.presentationId}`}
+            className="inline-flex items-center gap-1.5 text-xs text-muted hover:text-white transition-colors"
+          >
+            <Icon name="back" size={13} />
+            <span>Presentations</span>
+            <span className="text-white/20">/</span>
+            <span className="text-[#c9cad3]">{p.heading.split(",")[0] || "Q1 product roadmap"}</span>
+          </Link>
 
-      <main className="grid min-h-0 grow grid-cols-[minmax(0,960px)_minmax(300px,1fr)] gap-7 px-10 pt-3">
-        {/* The slide shrinks on shorter screens so the strip, timeline and controls always fit. */}
-        <div className="min-w-0 self-start" style={{ width: "min(100%, calc((100dvh - 322px) * 16 / 9))" }}>
-          <SlideView
-            key={slide.n}
-            slide={slide}
-            presentationId={p.presentationId}
-            className="w-full animate-rise rounded-[10px] shadow-[0_0_0_1px_rgba(255,255,255,0.14),0_24px_60px_rgba(0,0,0,0.35)] [animation-duration:0.35s]"
-          />
-          <div className="mt-[18px] flex items-center gap-[18px] rounded-xl bg-panel px-4 py-2.5 shadow-[inset_0_0_0_1px_var(--color-line)]">
-            <span className="text-[13px] font-semibold">You</span>
-            <div aria-hidden className="flex h-[34px] grow items-center gap-[3px] overflow-hidden">
-              {Array.from({ length: BARS }, (_, i) => {
-                const v = bars[i - (BARS - bars.length)];
-                return v == null ? (
-                  <span key={i} className="h-0.5 w-[3px] shrink-0 rounded-full bg-white/12" />
-                ) : (
-                  <span key={i} className={clsx("w-[3px] shrink-0 rounded-full", i >= BARS - 6 && phase === "running" ? "bg-blue" : "bg-wave")} style={{ height: `max(4px, ${Math.round(v * 100)}%)` }} />
-                );
-              })}
-            </div>
-            <span className={clsx("shrink-0 text-[13px]", quiet ? "font-semibold text-red-soft" : "text-muted")} role={quiet ? "alert" : undefined}>
-              {quiet ? "Can’t hear you. Check your mic." : phase === "ready" ? "Recording starts when you press Start" : "Pace and fillers are in your report"}
+          <div className="flex items-center gap-2.5 mt-0.5">
+            <h1 className="text-base font-bold text-white tracking-tight">{p.heading.split(",")[0] || "Q1 product roadmap"}</h1>
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+              Live rehearsal
+            </span>
+            <span className="hidden sm:inline text-xs text-muted">
+              · {p.heading.split(",")[1] || "Leadership team"} · {Math.round(budget / 60)} minutes · With Q&A (Challenging)
             </span>
           </div>
         </div>
 
-        <aside className="flex min-w-0 flex-col gap-3.5">
-          {phase === "scoring" || (phase === "error" && problem) ? (
-            <div className="rounded-[14px] bg-panel px-5 py-[18px] shadow-[inset_0_0_0_1px_var(--color-line)]" role="status">
-              {phase === "scoring" ? (
-                <>
-                  <div className="text-[13px] text-muted">Scoring your run</div>
-                  <div className="mt-1 text-base font-semibold">{scoringStep}…</div>
-                  <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/[0.07]">
-                    <div className="h-full rounded-full bg-blue transition-[width] duration-1000" style={{ width: `${Math.min(92, 8 + scoringSec * 2.2)}%` }} />
+        {/* Right controls */}
+        <div className="flex items-center gap-3">
+          {/* Recording badge */}
+          {phase === "running" && (
+            <span className="inline-flex items-center gap-2 rounded-full bg-rose-500/15 border border-rose-500/25 px-3 py-1 text-xs font-semibold text-rose-300 animate-pulse">
+              <span className="h-2 w-2 rounded-full bg-rose-500" />
+              Recording
+            </span>
+          )}
+          {phase === "paused" && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 border border-amber-500/25 px-3 py-1 text-xs font-semibold text-amber-300">
+              Paused
+            </span>
+          )}
+
+          {/* Timer */}
+          <div className="num font-bold text-sm tracking-tight text-white bg-[#141326] border border-white/10 px-3 py-1 rounded-xl">
+            {mmss(elapsed)} <span className="text-muted font-normal">/ {mmss(budget)}</span>
+          </div>
+
+          {/* Pause Button */}
+          {live && (
+            <button
+              type="button"
+              onClick={togglePause}
+              className="flex items-center gap-1.5 text-xs font-medium text-white px-3 py-1.5 rounded-xl bg-[#141326] border border-white/10 hover:border-white/25 transition-all"
+            >
+              <Icon name="pause" size={13} />
+              <span>{phase === "paused" ? "Resume" : "Pause"}</span>
+            </button>
+          )}
+
+          {/* End Rehearsal Button */}
+          {live ? (
+            <button
+              type="button"
+              onClick={() => void finish()}
+              className="flex items-center gap-1.5 text-xs font-semibold text-white px-3.5 py-1.5 rounded-xl bg-white/[0.08] border border-white/15 hover:bg-rose-500/20 hover:border-rose-500/40 hover:text-rose-200 transition-all"
+            >
+              <span className="h-2.5 w-2.5 rounded-sm bg-white" />
+              <span>End rehearsal</span>
+            </button>
+          ) : phase === "ready" ? (
+            <button
+              type="button"
+              onClick={() => void start()}
+              className="pro-btn-glow flex items-center gap-1.5 text-xs font-semibold text-white px-4 py-1.5 rounded-xl bg-blue shadow-lg"
+            >
+              <Icon name="play" size={13} />
+              <span>Start</span>
+            </button>
+          ) : (
+            <Link href={`/presentations/${p.presentationId}`} className={buttonClass("secondary", "sm")}>
+              Back
+            </Link>
+          )}
+        </div>
+      </header>
+
+      {/* 2. MAIN LAYOUT (Slide area on Left, Cards on Right) */}
+      <main className="grid min-h-0 grow grid-cols-1 xl:grid-cols-[1.48fr_0.82fr] gap-6 p-6 lg:p-8 max-w-[1520px] mx-auto w-full items-start">
+        {/* CENTER / LEFT: The Big Slide + Strip + Progress + Navigation */}
+        <div className="flex flex-col gap-4 min-w-0">
+          {/* Main Slide Card */}
+          <div className="relative rounded-2xl bg-white p-6 shadow-2xl border border-white/20 overflow-hidden text-gray-900 aspect-[16/10] flex flex-col justify-between">
+            {slide?.layout === "cards" ? (
+              <div className="flex flex-col justify-between h-full py-4 px-2">
+                <h2 className="text-2xl lg:text-3xl font-extrabold text-[#111827] tracking-tight">{slide.title}</h2>
+                <div className="grid grid-cols-3 gap-4 my-auto">
+                  {slide.lines.map((bet, i) => (
+                    <div key={i} className="rounded-2xl bg-[#eef7f2] border border-[#d2ebd9] p-5 flex flex-col justify-between h-44 shadow-sm">
+                      <div className="h-9 w-9 rounded-full bg-[#1b4332] text-white flex items-center justify-center font-bold text-sm">
+                        {i + 1}
+                      </div>
+                      <div className="text-base lg:text-lg font-bold text-[#1b4332] leading-snug">{bet}</div>
+                    </div>
+                  ))}
+                </div>
+                <div className="text-right text-xs font-semibold text-gray-400 num">{slide.n}</div>
+              </div>
+            ) : (
+              <div className="h-full flex flex-col justify-between">
+                <SlideView slide={slide} presentationId={p.presentationId} className="w-full h-full" />
+                <div className="text-right text-xs font-semibold text-gray-400 num">{slide?.n}</div>
+              </div>
+            )}
+          </div>
+
+          {/* Carousel Thumbnails Strip */}
+          <div className="flex items-center gap-2 p-2.5 rounded-xl bg-[#0d0c1c] border border-white/[0.08] shadow-lg">
+            <button
+              type="button"
+              onClick={() => go(index - 1)}
+              disabled={index === 0}
+              className="p-1 rounded-lg text-muted hover:text-white disabled:opacity-30 transition-colors"
+            >
+              <Icon name="chevronRight" size={16} className="rotate-180" />
+            </button>
+
+            <div className="flex items-center gap-2.5 overflow-x-auto no-scrollbar grow py-1 px-1">
+              {scope.map((s, idx) => {
+                const active = idx === index;
+                return (
+                  <button
+                    key={s.n}
+                    type="button"
+                    onClick={() => go(idx)}
+                    className={clsx(
+                      "flex-shrink-0 w-24 h-15 rounded-lg bg-white p-1.5 flex flex-col justify-between text-left transition-all border shadow-sm relative overflow-hidden",
+                      active ? "border-indigo-400 ring-2 ring-indigo-500/50 scale-105" : "border-gray-200 opacity-60 hover:opacity-90"
+                    )}
+                  >
+                    <span className="text-[8px] font-bold text-gray-800 line-clamp-1">{s.title}</span>
+                    <div className="flex items-center justify-between text-[7px] text-gray-500">
+                      <span className="num font-semibold">{s.n}</span>
+                      <span className="h-1.5 w-6 rounded-full bg-indigo-500/40" />
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => go(index + 1)}
+              disabled={index === scope.length - 1}
+              className="p-1 rounded-lg text-muted hover:text-white disabled:opacity-30 transition-colors"
+            >
+              <Icon name="chevronRight" size={16} />
+            </button>
+          </div>
+
+          {/* Presentation Progress Bar */}
+          <div className="p-4 rounded-xl bg-[#0d0c1c] border border-white/[0.08] shadow-lg">
+            <div className="flex items-center justify-between text-xs mb-2.5">
+              <div className="flex items-center gap-1.5 text-white font-medium">
+                <span>Presentation progress</span>
+                <Icon name="info" size={13} className="text-muted" />
+              </div>
+
+              {/* Legend */}
+              <div className="flex items-center gap-4 text-[11px]">
+                <span className="inline-flex items-center gap-1.5 text-indigo-300">
+                  <span className="h-2 w-2 rounded-full bg-indigo-500" />
+                  On time
+                </span>
+                <span className="inline-flex items-center gap-1.5 text-rose-300">
+                  <span className="h-2 w-2 rounded-full bg-rose-500" />
+                  Over time
+                </span>
+                <span className="inline-flex items-center gap-1.5 text-muted">
+                  <span className="h-2 w-2 rounded-full bg-white/20" />
+                  Not started
+                </span>
+              </div>
+            </div>
+
+            {/* Segmented Timeline */}
+            <div className="flex items-center gap-1.5">
+              {scope.map((s, idx) => {
+                const visited = idx <= index;
+                const isOver = visited && (perSlide.get(s.n) ?? 0) > s.plannedSec;
+                return (
+                  <div key={s.n} className="flex-1 flex flex-col items-center gap-1">
+                    <div
+                      className={clsx(
+                        "h-2 w-full rounded-full transition-all",
+                        !visited ? "bg-white/[0.08]" : isOver ? "bg-rose-500" : "bg-indigo-500"
+                      )}
+                    />
+                    <span className="text-[10px] num text-muted">{s.n}</span>
                   </div>
-                  <p className="mt-3 text-[13px] leading-normal text-muted">A ten-minute run takes about half a minute. Your report opens when it’s ready.</p>
-                </>
-              ) : (
-                <>
-                  <div className="text-[13px] font-semibold text-red-soft">{problem?.kind === "keys" ? "Scoring isn’t available" : problem?.kind === "mic" ? "Microphone" : "Your run wasn’t scored"}</div>
-                  <p className="mt-1.5 text-sm leading-normal" role="alert">
-                    {problem?.message}
-                  </p>
-                </>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Bottom Control Bar */}
+          <div className="flex items-center justify-between p-3.5 rounded-xl bg-[#0d0c1c] border border-white/[0.08] shadow-lg">
+            <div className="text-xs text-muted flex items-center gap-1.5">
+              <span className="px-1.5 py-0.5 rounded bg-white/10 text-white font-mono text-[10px]">←</span>
+              <span className="px-1.5 py-0.5 rounded bg-white/10 text-white font-mono text-[10px]">→</span>
+              <span>Use arrow keys to change slides</span>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <button
+                type="button"
+                onClick={() => go(index - 1)}
+                disabled={index === 0}
+                className="px-3.5 py-2 rounded-xl bg-[#141326] border border-white/10 hover:border-white/20 text-xs font-semibold text-white disabled:opacity-40 transition-all flex items-center gap-1.5"
+              >
+                <Icon name="chevronRight" size={13} className="rotate-180" />
+                <span>Previous slide</span>
+              </button>
+
+              {/* Glowing Center Mic Button */}
+              <button
+                type="button"
+                onClick={togglePause}
+                title={phase === "running" ? "Pause" : "Start speaking"}
+                className="relative flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-[0_0_24px_rgba(79,70,229,0.55)] hover:scale-105 transition-all"
+              >
+                <Icon name="mic" size={20} />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => go(index + 1)}
+                disabled={index === scope.length - 1}
+                className="px-3.5 py-2 rounded-xl bg-[#141326] border border-white/10 hover:border-white/20 text-xs font-semibold text-white disabled:opacity-40 transition-all flex items-center gap-1.5"
+              >
+                <span>Next slide</span>
+                <Icon name="chevronRight" size={13} />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT SIDEBAR (3 Cards matching Image 1) */}
+        <div className="flex flex-col gap-4">
+          {/* Card 1: Current slide */}
+          <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-5 shadow-xl">
+            <div className="flex items-center justify-between pb-3 border-b border-white/[0.07]">
+              <span className="text-xs font-semibold text-muted uppercase tracking-wider">Current slide</span>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => go(index - 1)}
+                  disabled={index === 0}
+                  className="p-1 rounded text-muted hover:text-white disabled:opacity-30"
+                >
+                  <Icon name="chevronRight" size={14} className="rotate-180" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => go(index + 1)}
+                  disabled={index === scope.length - 1}
+                  className="p-1 rounded text-muted hover:text-white disabled:opacity-30"
+                >
+                  <Icon name="chevronRight" size={14} />
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-3">
+              <div className="text-2xl font-bold text-white tracking-tight num">
+                {slide?.n} <span className="text-muted text-base font-normal">of {scope.length}</span>
+              </div>
+
+              <div className="mt-4 grid grid-cols-2 gap-4">
+                {/* Time on slide */}
+                <div className="p-3 rounded-xl bg-[#141326] border border-white/10">
+                  <div className="flex items-center gap-1 text-[11px] text-muted">
+                    <Icon name="clock" size={12} />
+                    <span>Time on this slide</span>
+                  </div>
+                  <div className="mt-1 flex items-baseline gap-2">
+                    <span className="text-xl font-bold text-white num">{mmss(onSlide)}</span>
+                    {overSlide > 0 && (
+                      <span className="px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-rose-500/15 text-rose-300 border border-rose-500/25">
+                        +{mmss(overSlide)} over plan
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Planned time */}
+                <div className="p-3 rounded-xl bg-[#141326] border border-white/10">
+                  <div className="text-[11px] text-muted">Planned time</div>
+                  <div className="mt-1 text-xl font-bold text-white num">{mmss(plannedSlideSec)}</div>
+                </div>
+              </div>
+
+              {/* Next slide title */}
+              {nextSlide && (
+                <div className="mt-3 flex items-center gap-2 text-xs text-muted pt-3 border-t border-white/[0.06]">
+                  <Icon name="chevronRight" size={13} className="text-indigo-400" />
+                  <span className="text-muted">Next slide:</span>
+                  <span className="text-white font-medium truncate">{nextSlide.title}</span>
+                </div>
               )}
             </div>
-          ) : (
-            <>
-              <div className="rounded-[14px] bg-panel px-5 py-[18px] shadow-[inset_0_0_0_1px_var(--color-line)]">
-                <div className="flex justify-between text-[13px] text-muted">
-                  <span>{p.mode === "opening" ? "Your opening" : "Total"}</span>
-                  <span className="num">of {mmss(budget)}</span>
-                </div>
-                <div className={clsx("num mt-1 text-[40px] font-semibold leading-none tracking-[-0.03em]", overTotal && "text-red-soft")}>{mmss(elapsed)}</div>
-                <div className="mt-3.5 h-1.5 overflow-hidden rounded-full bg-white/[0.08]">
-                  <div className={clsx("h-full rounded-full", overTotal ? "bg-red" : "bg-blue-fill")} style={{ width: `${Math.min(100, (elapsed / Math.max(1, budget)) * 100)}%` }} />
-                </div>
-                {p.mode === "opening" && elapsed >= OPENING_SEC && <p className="mt-2.5 text-[13px] font-semibold text-red-soft">That’s your minute. Finish your sentence.</p>}
+          </div>
+
+          {/* Card 2: Speaker notes */}
+          <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-5 shadow-xl">
+            <div className="flex items-center justify-between pb-3 border-b border-white/[0.07]">
+              <div className="flex items-center gap-2 text-sm font-semibold text-white">
+                <Icon name="doc" size={15} className="text-indigo-400" />
+                <span>Speaker notes</span>
               </div>
-
-              <div className={clsx("rounded-[14px] bg-panel px-5 py-[18px]", live && overSlide > 0 ? "shadow-[inset_0_0_0_1.5px_rgb(255_92_97/0.55)]" : "shadow-[inset_0_0_0_1px_var(--color-line)]")}>
-                <div className="flex justify-between text-[13px] text-muted">
-                  <span className="num">
-                    Slide {slide.n} of {p.slides.length}
-                  </span>
-                  <span className="num">planned {mmss(slide.plannedSec)}</span>
-                </div>
-                <div className={clsx("num mt-1 text-[40px] font-semibold leading-none tracking-[-0.03em]", live && overSlide > 0 ? "text-red-soft" : phase === "ready" && "text-dim")}>{mmss(onSlide)}</div>
-                <p className="mt-2.5 text-sm">{slideMsg}</p>
-              </div>
-
-              <div className="rounded-[14px] bg-panel px-5 py-[18px] shadow-[inset_0_0_0_1px_var(--color-line)]">
-                <div className="text-[13px] text-muted">The point this slide needs to land</div>
-                <div className="mt-1 text-[15px] font-semibold leading-snug">{slide.point}</div>
-                <div className="mt-2 text-[13px] text-dim">Checked against what you said, in your report.</div>
-              </div>
-
-              {next ? (
-                <button type="button" onClick={() => go(index + 1)} disabled={phase === "ready"} className="flex items-center gap-3.5 text-left disabled:cursor-default">
-                  <SlideView slide={next} presentationId={p.presentationId} className="w-[150px] shrink-0 rounded-[5px] opacity-70 shadow-[0_0_0_1px_var(--color-line-strong)]" />
-                  <span className="min-w-0">
-                    <span className="block text-[13px] text-dim">Next</span>
-                    <span className="block truncate text-sm font-semibold text-muted">{next.title}</span>
-                  </span>
-                </button>
-              ) : (
-                <p className="px-1 text-[13px] text-muted">{p.mode === "full" ? "Last slide. Make your ask, then press Finish run." : "Last slide in this run. Press Finish run when you’re done."}</p>
-              )}
-            </>
-          )}
-        </aside>
-      </main>
-
-      <section aria-label="Time per slide" className="shrink-0 px-10 pt-4">
-        <div className="flex items-baseline justify-between text-[13px] text-dim">
-          <span>Time per slide, sized by plan</span>
-          <span className="flex items-center gap-3">
-            <span className="text-muted">On time</span>
-            <span className="text-dim">|</span>
-            <span className="text-red-soft">Over</span>
-          </span>
-        </div>
-        <div className="mt-2 flex gap-1.5">
-          {scope.map((s, i) => {
-            const t = perSlide.get(s.n) ?? 0;
-            const over = t > s.plannedSec;
-            const current = i === index && phase !== "ready";
-            return (
-              <div key={s.n} className="min-w-[10px]" style={{ flexGrow: s.plannedSec, flexBasis: 0 }}>
-                <div className={clsx("relative h-2 overflow-hidden rounded-[3px] bg-white/[0.07]", current && "shadow-[0_0_0_1.5px_rgb(255_179_181/0.7)]")}>
-                  <div className={clsx("absolute inset-y-0 left-0 rounded-[3px]", over ? "bg-[#9b3f49]" : current ? "bg-white/40" : "bg-wave")} style={{ width: `${Math.min(100, (t / s.plannedSec) * 100)}%` }} />
-                </div>
-                <div className={clsx("num mt-1.5 text-[11px]", current ? "font-semibold text-ink" : "text-dim")}>{s.n}</div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      <footer className="flex shrink-0 items-center justify-between gap-6 px-10 pb-[clamp(16px,3vh,28px)] pt-3">
-        <span className={clsx("text-[13px]", notice && phase === "ready" ? "text-red-soft" : "text-muted")} role={notice && phase === "ready" ? "status" : undefined}>
-          {notice && phase === "ready"
-            ? notice
-            : phase === "ready"
-            ? p.mode === "opening"
-              ? "Your first 60 seconds, then it stops. Change slides with the arrow keys."
-              : "Use the arrow keys or a clicker to change slides. Every change is timed."
-            : "Use the arrow keys to change slides"}
-        </span>
-        <div className="flex gap-2.5">
-          {phase === "ready" ? (
-            <Button variant="primary" className="px-[26px]" onClick={() => void start()}>
-              <Icon name="mic" size={17} strokeWidth={2} />
-              Start run
-            </Button>
-          ) : phase === "scoring" ? (
-            <Button variant="primary" className="px-[26px]" disabled>
-              Scoring your run…
-            </Button>
-          ) : phase === "error" ? (
-            problem?.kind === "mic" ? (
-              <>
-                <Link href={`/mic-check?next=${encodeURIComponent(`/rehearse/${p.presentationId}`)}`} className={buttonClass("secondary", "md")}>
-                  Check your microphone
-                </Link>
-                <Button variant="primary" className="px-[26px]" onClick={() => void start()}>
-                  <Icon name="mic" size={17} strokeWidth={2} />
-                  Try again
-                </Button>
-              </>
-            ) : problem?.kind === "keys" ? (
-              <>
-                {p.demoReportHref && (
-                  <Link href={`${p.demoReportHref}?demo=no-keys`} className={buttonClass("secondary", "md")}>
-                    See the demo report
-                  </Link>
+              <button
+                type="button"
+                onClick={() => setSpeakerNotesOpen((o) => !o)}
+                className={clsx(
+                  "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out",
+                  speakerNotesOpen ? "bg-indigo-600" : "bg-white/20"
                 )}
-                <Link href={`/presentations/${p.presentationId}`} className={buttonClass("primary", "md")}>
-                  Back to your presentation
-                </Link>
-              </>
-            ) : (
-              <>
-                <Button
-                  onClick={() => {
-                    recording.current = null;
-                    setPhase("ready");
-                    setIndex(0);
-                    setMarks([]);
-                  }}
-                >
-                  Discard and run again
-                </Button>
-                <Button variant="primary" className="px-[26px]" onClick={() => void upload()}>
-                  <Icon name="repeat" size={17} strokeWidth={1.9} />
-                  Try scoring again
-                </Button>
-              </>
-            )
-          ) : (
-            <>
-              <Button onClick={() => go(index - 1)} disabled={index === 0}>
-                <Icon name="back" size={16} strokeWidth={2} />
-                Previous slide
-              </Button>
-              <Button onClick={() => go(index + 1)} disabled={!next}>
-                Next slide
-              </Button>
-              <Button onClick={togglePause}>
-                <Icon name={phase === "paused" ? "play" : "pause"} size={17} strokeWidth={2.2} />
-                {phase === "paused" ? "Resume" : "Pause"}
-              </Button>
-              <Button variant="primary" className="px-[26px]" onClick={() => void finish()}>
-                Finish run
-              </Button>
-            </>
-          )}
+              >
+                <span
+                  className={clsx(
+                    "pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
+                    speakerNotesOpen ? "translate-x-4" : "translate-x-0"
+                  )}
+                />
+              </button>
+            </div>
+
+            {speakerNotesOpen && (
+              <ul className="mt-3.5 space-y-2 text-xs text-[#c9cad3] leading-relaxed animate-rise">
+                {slideNotes.map((note, i) => (
+                  <li key={i} className="flex items-start gap-2">
+                    <span className="h-1.5 w-1.5 rounded-full bg-indigo-400 mt-1.5 shrink-0" />
+                    <span>{note}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {/* Card 3: Rehearsal checklist */}
+          <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-5 shadow-xl">
+            <div className="flex items-center gap-2 pb-3 border-b border-white/[0.07]">
+              <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-500/15 text-indigo-300">
+                <Icon name="target" size={14} />
+              </div>
+              <span className="text-sm font-semibold text-white">Rehearsal checklist</span>
+            </div>
+
+            <div className="mt-3.5 space-y-2.5">
+              {[
+                "Cover the key message for this slide",
+                `Keep to the planned time (${mmss(plannedSlideSec)})`,
+                "Set up the next slide clearly",
+              ].map((label, i) => {
+                const checked = Boolean(currentChecklist[i]);
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => toggleCheck(i)}
+                    className="w-full text-left flex items-start gap-2.5 text-xs text-[#c9cad3] hover:text-white transition-colors group"
+                  >
+                    <div
+                      className={clsx(
+                        "h-4 w-4 rounded border mt-0.5 flex items-center justify-center transition-all shrink-0",
+                        checked ? "bg-indigo-600 border-indigo-500 text-white" : "border-white/30 bg-[#141326] group-hover:border-white/50"
+                      )}
+                    >
+                      {checked && <Icon name="check" size={11} strokeWidth={2.8} />}
+                    </div>
+                    <span className={clsx("leading-tight", checked && "text-white font-medium")}>{label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
-      </footer>
+      </main>
     </div>
   );
 }
