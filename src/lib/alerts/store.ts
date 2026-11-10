@@ -54,7 +54,12 @@ export function alertsConfigured(): { webhook: boolean; email: boolean } {
 }
 
 async function sendAlert(p: Problem): Promise<void> {
-  const title = `Hakkiri ${p.source === "spending" ? "spending alert" : p.source === "feedback" ? "beta feedback" : "problem"}: ${p.where}`;
+  const title =
+    p.source === "spending"
+      ? `Hakkiri spending alert: ${p.where}`
+      : p.source === "feedback"
+        ? `[Hakkiri Voucher & Feedback] ${p.where}`
+        : `Hakkiri problem: ${p.where}`;
   const body = `${p.message}${p.count > 1 ? `\n(${p.count} times since ${p.first.slice(0, 16).replace("T", " ")})` : ""}`;
   const jobs: Promise<unknown>[] = [];
   const hook = process.env.ALERT_WEBHOOK_URL;
@@ -80,7 +85,8 @@ async function sendAlert(p: Problem): Promise<void> {
 /** Records a problem and alerts if it's new (or hasn't alerted for 30 minutes). Never throws. */
 export async function reportProblem(input: { source: ProblemSource; where: string; message: string; stack?: string }, now = new Date()): Promise<Problem | null> {
   try {
-    const message = clip(input.message.trim() || "Unknown error", 400);
+    const maxLen = input.source === "feedback" ? 4000 : 400;
+    const message = clip(input.message.trim() || "Unknown error", maxLen);
     const key = `${input.source}|${input.where}|${shape(message)}`;
     const at = now.toISOString();
     let p = problems.find((x) => x.key === key);

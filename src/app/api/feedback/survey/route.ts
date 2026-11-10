@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { addSurveySubmission, recentSurveys } from "@/lib/feedback/survey-store";
+import { addSurveySubmission, recentSurveysAsync } from "@/lib/feedback/survey-store";
 import { findMock, findMockAsync } from "@/lib/mocks/store";
 import { clientKey, rateLimited } from "@/lib/usage/limits";
 
@@ -22,7 +22,7 @@ const Body = z.object({
 /** GET /api/feedback/survey: View recent surveys or export as CSV (?format=csv) */
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
-  const surveys = recentSurveys(200);
+  const surveys = await recentSurveysAsync(200);
 
   if (searchParams.get("format") === "csv") {
     const headers = [
