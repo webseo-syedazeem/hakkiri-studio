@@ -6,6 +6,7 @@ import clsx from "clsx";
 import { Icon, Panel } from "@/components/ui";
 import { Segmented } from "@/components/ui/Segmented";
 import {
+  DIFFICULTY_HINT,
   DIFFICULTY_LABEL,
   totalQuestionCount,
   type Difficulty,
@@ -599,37 +600,42 @@ export function InterviewOverviewClient({
               <StageDropdown stages={stages} value={activeStage.id} onChange={setStageId} />
             </div>
 
-            {/* Difficulty & Interview length side-by-side */}
-            <div className="grid grid-cols-1 sm:grid-cols-[1fr_1.65fr] gap-3 items-start">
-              <div className="space-y-1.5 min-w-0">
-                <div className="text-xs font-medium text-muted">Difficulty</div>
-                <Segmented<Difficulty>
-                  label="Difficulty"
-                  fullWidth
-                  value={difficulty}
-                  onChange={setDifficulty}
-                  options={DIFFICULTIES.map((d) => ({ value: d, label: DIFFICULTY_LABEL[d] }))}
-                />
+            {/* Difficulty */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-medium text-muted">Difficulty</span>
+                <span className="font-semibold text-indigo-300">{DIFFICULTY_LABEL[difficulty]}</span>
               </div>
+              <Segmented<Difficulty>
+                label="Difficulty"
+                fullWidth
+                value={difficulty}
+                onChange={setDifficulty}
+                options={DIFFICULTIES.map((d) => ({ value: d, label: DIFFICULTY_LABEL[d] }))}
+              />
+            </div>
 
-              <div className="space-y-1.5 min-w-0">
-                <div className="text-xs font-medium text-muted">Interview length</div>
-                <Segmented<`${PracticeMinutes}`>
-                  label="Interview length"
-                  fullWidth
-                  value={`${minutes}`}
-                  onChange={(m) => setMinutes(Number(m) as PracticeMinutes)}
-                  options={PRACTICE_LENGTHS.map((m) => ({
-                    value: `${m}` as `${PracticeMinutes}`,
-                    label: `${m} min`,
-                  }))}
-                />
+            {/* Interview length */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-medium text-muted">Interview length</span>
+                <span className="font-semibold text-ink">{minutes} min</span>
               </div>
+              <Segmented<`${PracticeMinutes}`>
+                label="Interview length"
+                fullWidth
+                value={`${minutes}`}
+                onChange={(m) => setMinutes(Number(m) as PracticeMinutes)}
+                options={PRACTICE_LENGTHS.map((m) => ({
+                  value: `${m}` as `${PracticeMinutes}`,
+                  label: `${m} min`,
+                }))}
+              />
             </div>
 
             <div className="pt-2 border-t border-line/60 flex items-center gap-1.5 text-[11px] text-muted">
               <Icon name="info" size={13} className="shrink-0" />
-              <span>Adjust the difficulty and length to match your preparation needs.</span>
+              <span>{DIFFICULTY_HINT[difficulty]}</span>
             </div>
           </Panel>
 

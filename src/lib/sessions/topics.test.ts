@@ -54,4 +54,25 @@ describe("topic-specific practice drills", () => {
     const firstQ = halden.questions.find((q) => q.id === picked.questionIds[0]);
     expect(firstQ?.group).toBe("technical");
   });
+
+  it("separates easy and hard topic questions cleanly and avoids repeating already answered ones", () => {
+    for (const id of Object.keys(DRILL_TOPICS)) {
+      const easy = topicQuestions(id, halden.questions, { difficulty: "easy", limit: 4 });
+      const hard = topicQuestions(id, halden.questions, { difficulty: "hard", limit: 4 });
+      expect(easy.length).toBeGreaterThanOrEqual(3);
+      expect(hard.length).toBeGreaterThanOrEqual(3);
+      const easyIds = new Set(easy.map((q) => q.id));
+      expect(hard.some((q) => easyIds.has(q.id))).toBe(false);
+    }
+
+    const firstRun = topicQuestions("stakeholder-management", halden.questions, { difficulty: "hard", limit: 2 });
+    const seen = new Map(firstRun.map((q) => [q.id, "2026-11-12T20:00:00.000Z"]));
+    const secondRun = topicQuestions("stakeholder-management", halden.questions, {
+      difficulty: "hard",
+      limit: 2,
+      lastAsked: seen,
+    });
+    expect(secondRun).toHaveLength(2);
+    expect(secondRun.some((q) => seen.has(q.id))).toBe(false);
+  });
 });

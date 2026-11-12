@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getInterview } from "@/lib/interviews/store";
+import { getInterview, getInterviewAsync } from "@/lib/interviews/store";
 import { mixIsValid, presetFor } from "@/lib/interviews/settings";
 import { SettingsBody } from "@/lib/interviews/settings-schema";
 import { PlanError, planDrill, planInterview, planRerun } from "@/lib/sessions/server";
@@ -40,7 +40,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const blocked = guard(req, "plan", { practice: true });
   if (blocked) return blocked;
   setUsageContext({ interviewId: id, feature: "questions" });
-  if (!getInterview(id)) return NextResponse.json({ error: "not-found", message: "That interview doesn’t exist any more." }, { status: 404 });
+  if (!((await getInterviewAsync(id)) ?? getInterview(id))) return NextResponse.json({ error: "not-found", message: "That interview doesn’t exist any more." }, { status: 404 });
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "bad-request", message: "Those settings couldn’t be used. Check them and try again." }, { status: 400 });
   const body = parsed.data;

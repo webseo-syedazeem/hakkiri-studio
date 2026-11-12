@@ -1,15 +1,15 @@
 import "server-only";
 import type { Interview, QuestionGroup } from "@/lib/types";
 import { limitReached } from "@/lib/usage/limits";
-import { getInterview, updateInterview } from "@/lib/interviews/store";
+import { getInterview, getInterviewAsync, saveInterviewAsync, updateInterview } from "@/lib/interviews/store";
 import { addQuestions, rethink, understandingOf } from "@/lib/interviews/build";
 import { aiConfig } from "@/lib/ai/config";
 import { mockAiEnabled } from "@/lib/ai/mock";
 import { CATEGORY_ORDER, enabledGroups, settingsOr, styleFor, type SessionSettings } from "@/lib/interviews/settings";
 import { buildReport, categoryScores, type MockReport, type MockRow, type Verdict } from "@/lib/mocks/report";
-import { createSession, doneSessions, findMock, isFresh, lastAskedMap, listMocks, rerunOf, rowsFor, saveMock, type MockRecord, type SkipRecord } from "@/lib/mocks/store";
+import { createSession, doneSessions, findMock, isFresh, lastAskedMap, lastAskedMapAsync, listMocks, rerunOf, rowsFor, saveMock, saveMockAsync, type MockRecord, type SkipRecord } from "@/lib/mocks/store";
 import { drillQuestions, suggestDrills, type DrillSpec, type DrillSuggestion } from "./drills";
-import { needsAny, pickQuestions, questionsNeeded } from "./pick";
+import { matchesDifficulty, needsAny, pickQuestions, questionsNeeded } from "./pick";
 import type { WrongReason } from "@/lib/ai/interview/questions";
 import { mergeRules } from "./rules";
 import { roundFor } from "@/lib/ai/interview/build-plan";
@@ -102,13 +102,14 @@ function withLock<T>(interviewId: string, work: () => Promise<T>): Promise<T> {
  */
 export function topUp(interviewId: string, settings?: SessionSettings): Promise<void> {
   return withLock(interviewId, async () => {
-    const interview = getInterview(interviewId);
+    const interview = (await getInterviewAsync(interviewId)) ?? getInterview(interviewId);
     if (!interview) return;
     // A background nicety: skip it once a spending limit is reached, rather than spend more.
     if (limitReached()) return;
     const s = settings ?? settingsOr(interview.settings, interview.style);
-    const need = questionsNeeded(pickQuestions(interview.questions, s, lastAskedMap(interviewId)));
-    if (needsAny(need)) await addQuestions(interview, need);
+    const lastAsked = await lastAskedMapAsync(interviewId);
+    const need = questionsNeeded(pickQuestions(interview.questions, s, lastAsked));
+    if (needsAny(need)) await addQuestions(interview, need, { difficulty: s.difficulty });
   });
 }
 
@@ -119,26 +120,29 @@ export class PlanError extends Error {}
 /** An interview with new questions. Writes more first if the bank is short. */
 export async function planInterview(interviewId: string, settings: SessionSettings): Promise<MockRecord> {
   await settled(interviewId);
-  let interview = getInterview(interviewId);
+  let interview = (await getInterviewAsync(interviewId)) ?? getInterview(interviewId);
   if (!interview) throw new PlanError("That interview doesn’t exist any more.");
   // Remember these settings for next time.
   // A named mix sets the round too (it decides how the pay drill talks about pay).
   interview = updateInterview(interviewId, (i) => ({ ...i, settings, style: styleFor(settings.difficulty), round: settings.preset === "custom" ? i.round : roundFor(settings.preset) })) ?? interview;
-  const lastAsked = lastAskedMap(interviewId);
+  await saveInterviewAsync(interview);
+  const lastAsked = await lastAskedMapAsync(interviewId);
   let picked = pickQuestions(interview.questions, settings, lastAsked);
   const need = questionsNeeded(picked);
   if (needsAny(need)) {
     await withLock(interviewId, async () => {
-      const fresh = getInterview(interviewId)!;
-      await addQuestions(fresh, need);
+      const fresh = (await getInterviewAsync(interviewId)) ?? getInterview(interviewId)!;
+      await addQuestions(fresh, need, { difficulty: settings.difficulty });
     });
     interview = getInterview(interviewId)!;
     picked = pickQuestions(interview.questions, settings, lastAsked);
   }
-  // Still short (the standard set ran out without a key): bring back the ones you had longest ago.
+  // Still short (the standard set ran out without a key): bring back the ones you had longest ago (same difficulty only).
   if (CATEGORY_ORDER.some((c) => picked.short[c] > 0)) picked = pickQuestions(interview.questions, settings, lastAsked, { allowRepeats: true });
   if (picked.questionIds.length === 0) throw new PlanError("There are no questions for these settings yet.");
-  return createSession({ interviewId, kind: "interview", settings, questionIds: picked.questionIds, spareIds: picked.spareIds, style: styleFor(settings.difficulty) });
+  const session = createSession({ interviewId, kind: "interview", settings, questionIds: picked.questionIds, spareIds: picked.spareIds, style: styleFor(settings.difficulty) });
+  await saveMockAsync(session);
+  return session;
 }
 
 /** "Run it again": the same main questions as that interview, once. */
@@ -178,22 +182,26 @@ export function ensurePayQuestions(interviewId: string): Interview | undefined {
 /** A drill: its questions come from the bank (writing more for a category drill if needed). */
 export async function planDrill(interviewId: string, spec: DrillSpec): Promise<MockRecord> {
   await settled(interviewId);
-  let interview = spec.kind === "pay" ? ensurePayQuestions(interviewId) : getInterview(interviewId);
+  let interview = spec.kind === "pay" ? ensurePayQuestions(interviewId) : ((await getInterviewAsync(interviewId)) ?? getInterview(interviewId));
   if (!interview) throw new PlanError("That interview doesn’t exist any more.");
   const settings = settingsOr(interview.settings, interview.style);
-  const lastAsked = lastAskedMap(interviewId);
+  const lastAsked = await lastAskedMapAsync(interviewId);
   if (spec.kind === "category" && spec.group) {
-    const unheard = interview.questions.filter((q) => q.group === spec.group && !q.slot && !q.retired && !lastAsked.has(q.id)).length;
+    const unheard = interview.questions.filter(
+      (q) => q.group === spec.group && !q.slot && !q.retired && !q.pay && matchesDifficulty(q, settings.difficulty) && !lastAsked.has(q.id),
+    ).length;
     if (unheard < 3 && canWrite()) {
-      await withLock(interviewId, () => addQuestions(getInterview(interviewId)!, { [spec.group!]: 3 - unheard }));
+      await withLock(interviewId, () => addQuestions(getInterview(interviewId)!, { [spec.group!]: 3 - unheard }, { difficulty: settings.difficulty }));
       interview = getInterview(interviewId)!;
     }
   }
-  const ids = drillQuestions(spec, interview.questions, lastAsked, enabledGroups(settings.mix));
+  const ids = drillQuestions(spec, interview.questions, lastAsked, enabledGroups(settings.mix), settings.difficulty);
   if (!ids.length) throw new PlanError("There are no questions for that focused practice yet.");
   // A category drill starts at your difficulty and gets harder as you do well; a pressure drill is always tough.
   const style = spec.kind === "pressure" ? "tough" : styleFor(settings.difficulty);
-  return createSession({ interviewId, kind: "drill", drill: spec, settings, questionIds: ids, spareIds: [], style });
+  const rec = createSession({ interviewId, kind: "drill", drill: spec, settings, questionIds: ids, spareIds: [], style });
+  await saveMockAsync(rec);
+  return rec;
 }
 
 /* ---------------------------------------------------------------- skipping */
@@ -257,10 +265,10 @@ export async function rebuildAndPlan(interviewId: string, change: { understandin
     documents: change.documents && i.documents ? { ...i.documents, ...change.documents } : i.documents,
     sources: change.sources ? { ...i.sources, ...change.sources } : i.sources,
   }))!;
-  const heard = [...lastAskedMap(interviewId).keys()];
+  const heard = [...(await lastAskedMapAsync(interviewId)).keys()];
   const settings = settingsOr(updated.settings, updated.style);
-  const need = questionsNeeded(pickQuestions(updated.questions.map((q) => (q.slot || heard.includes(q.id) ? q : { ...q, retired: true })), settings, lastAskedMap(interviewId)));
-  await withLock(interviewId, () => addQuestions(updated, need, { retireExcept: heard, templatesOnly: change.templates }));
+  const need = questionsNeeded(pickQuestions(updated.questions.map((q) => (q.slot || heard.includes(q.id) ? q : { ...q, retired: true })), settings, await lastAskedMapAsync(interviewId)));
+  await withLock(interviewId, () => addQuestions(updated, need, { retireExcept: heard, templatesOnly: change.templates, difficulty: settings.difficulty }));
   if (change.templates) updateInterview(interviewId, (i) => ({ ...i, planBy: "templates" }));
   const session = opts.start ? await planInterview(interviewId, settings) : null;
   return { interview: getInterview(interviewId)!, session };

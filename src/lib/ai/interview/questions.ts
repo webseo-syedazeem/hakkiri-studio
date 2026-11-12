@@ -54,6 +54,7 @@ export function buildNewQuestionsPrompt(input: NewQuestionsInput): { system: str
     `Write exactly: ${wanted.map((g) => `${input.counts[g]} ${g}`).join(", ")}. No other categories.`,
     ...CATEGORY_RULES.filter((r) => wanted.some((g) => r.startsWith(`- ${g}`))),
     `- ${DIFFICULTY_GUIDE[input.difficulty]}`,
+    `- Target difficulty level strictly: ${input.difficulty.toUpperCase()}. Write questions calibrated solely for ${input.difficulty} — never reuse or soften/harden questions from another difficulty tier.`,
     "- Every question must be new: not one of the questions listed as already written, and not the same question reworded.",
     "- One question each, in plain spoken English, ending with a question mark (or a full stop for an instruction).",
     "- Use only facts from the documents. Never invent a number, a product, a customer or an achievement.",

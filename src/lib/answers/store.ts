@@ -86,6 +86,22 @@ export function listAnswers(interviewId: string): Answer[] {
   return [...store.values()].filter((a) => a.interviewId === interviewId).map((a) => ({ ...a, followUps: a.followUps ?? [] }));
 }
 
+export async function listAnswersAsync(interviewId: string): Promise<Answer[]> {
+  if (isMongoConfigured()) {
+    try {
+      const fromDb = await loadJsonAsync<Answer[]>(FILE, []);
+      if (Array.isArray(fromDb)) {
+        for (const item of fromDb) {
+          if (item?.id) store.set(item.id, { ...item, followUps: item.followUps ?? [] });
+        }
+      }
+    } catch (err) {
+      console.warn("[answers/store] MongoDB listAnswers failed:", err);
+    }
+  }
+  return listAnswers(interviewId);
+}
+
 /** Deletes every answer to an interview; returns their ids (for their recordings). */
 export function deleteAnswersFor(interviewId: string): string[] {
   const ids = [...store.values()].filter((a) => a.interviewId === interviewId).map((a) => a.id);

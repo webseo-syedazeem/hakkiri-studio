@@ -47,6 +47,22 @@ describe("choosing an interview's questions", () => {
     expect(p.questionIds).not.toContain("close");
     expect(p.questionIds).not.toContain("m1");
   });
+
+  it("never shares regular questions between Easy and Hard difficulties", () => {
+    const easy = pickQuestions(halden.questions, { ...DEFAULT_SETTINGS, minutes: 30, difficulty: "easy" }, new Map());
+    const hard = pickQuestions(halden.questions, { ...DEFAULT_SETTINGS, minutes: 30, difficulty: "hard" }, new Map());
+    const easyMiddle = new Set(easy.questionIds.filter((id) => id !== "open" && id !== "close"));
+    const hardMiddle = hard.questionIds.filter((id) => id !== "open" && id !== "close");
+    expect(easyMiddle.size).toBeGreaterThan(0);
+    expect(hardMiddle.length).toBeGreaterThan(0);
+    expect(hardMiddle.some((id) => easyMiddle.has(id))).toBe(false);
+    for (const id of [...easyMiddle, ...easy.spareIds]) {
+      expect(halden.questions.find((q) => q.id === id)?.difficulty).toBe("easy");
+    }
+    for (const id of [...hardMiddle, ...hard.spareIds]) {
+      expect(halden.questions.find((q) => q.id === id)?.difficulty).toBe("hard");
+    }
+  });
 });
 
 describe("drills", () => {

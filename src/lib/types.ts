@@ -1,4 +1,4 @@
-import type { SessionSettings } from "@/lib/interviews/settings";
+import type { Difficulty, SessionSettings } from "@/lib/interviews/settings";
 
 /**
  * Domain types for Hakkiri Studio.
@@ -54,6 +54,8 @@ export interface Question {
   pay?: boolean;
   /** Built-in topic-drill questions: only asked in their matching topic drill. */
   drillOnly?: boolean;
+  /** Difficulty tier this question is calibrated for ("easy" | "medium" | "hard"). */
+  difficulty?: Difficulty;
 }
 
 /** The six kinds of follow-up in the spec ("Follow-up questions"). */

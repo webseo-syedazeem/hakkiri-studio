@@ -9,6 +9,7 @@ import { flushStorage } from "@/lib/storage/disk";
 import { notConfigured, scoringError } from "@/lib/answers/pipeline";
 import { getInterview, getInterviewAsync } from "@/lib/interviews/store";
 import { resolveInterviewQuestion } from "@/lib/sessions/topics";
+import { recordAskedQuestionAsync } from "@/lib/mocks/store";
 import { profileFor } from "@/lib/scoring/profiles";
 import type { FollowUpKind } from "@/lib/types";
 import { progressFor } from "@/lib/progress";
@@ -100,6 +101,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ draftI
       followUps: followScores ? followTurns.map((t, k) => buildFollowUp({ kind: t.kind as FollowUpKind, asked: t.asked, words: t.words }, followScores.followUps[k])) : [],
     });
     await saveAnswerAsync(answer);
+    await recordAskedQuestionAsync(draft.sessionId, answer.questionId);
     saveRecordings(answer.id, draft.audio ?? []);
     await deleteDraftAsync(draft.id);
     await flushStorage();

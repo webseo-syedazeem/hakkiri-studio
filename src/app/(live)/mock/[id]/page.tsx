@@ -4,12 +4,12 @@ import { demoMock, roadmapAnswer } from "@/lib/mock-data";
 import { isLaunch } from "@/lib/launch";
 import { getInterview, getInterviewAsync } from "@/lib/interviews/store";
 import { understandingOf } from "@/lib/interviews/build";
-import { categoryLabel, settingsLine, styleFor, type Difficulty } from "@/lib/interviews/settings";
+import { categoryLabel, difficultyFor, settingsLine, styleFor, type Difficulty } from "@/lib/interviews/settings";
 import { profileFor } from "@/lib/scoring/profiles";
 import { followUpLimit } from "@/lib/followups";
 import { mmss, whenSaid } from "@/lib/format";
 import { buildReport } from "@/lib/mocks/report";
-import { findMock, findMockAsync, rowsFor } from "@/lib/mocks/store";
+import { findMock, findMockAsync, lastAskedMapAsync, rowsFor } from "@/lib/mocks/store";
 import { openSession } from "@/lib/sessions/server";
 import { drillTitle, HABIT_INSTRUCTION } from "@/lib/sessions/drills";
 import { getTopic, resolveInterviewQuestion, topicQuestions } from "@/lib/sessions/topics";
@@ -93,6 +93,7 @@ export default async function MockInterviewPage({
     if (mode === "interview" && m.settings) {
       live.minutes = m.settings.minutes;
       live.settingsText = settingsLine(m.settings);
+      live.settings = m.settings;
     }
     if (mode === "rerun" && m.rerunOf) {
       const source = findMock(m.rerunOf);
@@ -165,10 +166,12 @@ export default async function MockInterviewPage({
 
   const topicSpec = getTopic(topic);
   if (topicSpec) {
-    const questions = topicQuestions(topicSpec.id, interview.questions);
+    const topicDifficulty = difficultyParam ?? interview.settings?.difficulty ?? difficultyFor(interview.style);
+    const lastAsked = await lastAskedMapAsync(interview.id);
+    const questions = topicQuestions(topicSpec.id, interview.questions, { difficulty: topicDifficulty, lastAsked });
     if (questions.length) {
       const live: LiveSession = {
-        id: `topic_${topicSpec.id}_${Date.now()}`,
+        id: `topic_${topicSpec.id}_${topicDifficulty}`,
         mode: "drill",
         minutes: topicSpec.minutes,
         feedbackEach: true,
@@ -187,7 +190,7 @@ export default async function MockInterviewPage({
           interviewer={{
             ...interview.interviewer,
             title: topicSpec.id === "technical" ? "Technical interviewer" : `${topicSpec.focusLabel} practice`,
-            style: styleOverride ?? interview.style,
+            style: styleOverride ?? styleFor(topicDifficulty),
           }}
           run={{ kind: "session", session: live }}
           questions={questions.map((x, k) => toLive(x, k + 1))}

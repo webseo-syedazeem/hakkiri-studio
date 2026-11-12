@@ -1,7 +1,8 @@
 import type { Question, QuestionGroup } from "@/lib/types";
 import type { Fix, MockRow } from "@/lib/mocks/report";
-import { categoryLabel, type TechnicalLabel } from "@/lib/interviews/settings";
+import { categoryLabel, type Difficulty, type TechnicalLabel } from "@/lib/interviews/settings";
 import { mmss } from "@/lib/format";
+import { matchesDifficulty } from "./pick";
 import { getTopic, topicQuestions } from "./topics";
 
 /**
@@ -213,8 +214,8 @@ const lastAskedOrder = (lastAsked: Map<string, string>) => (a: Question, b: Ques
  * The questions for a drill, from the bank: questions you haven't had come
  * first, then the ones you had longest ago. Returns question ids in order.
  */
-export function drillQuestions(spec: DrillSpec, bank: Question[], lastAsked: Map<string, string>, enabled: QuestionGroup[]): string[] {
-  const pool = bank.filter((q) => !q.slot && !q.retired && !q.pay && !q.drillOnly);
+export function drillQuestions(spec: DrillSpec, bank: Question[], lastAsked: Map<string, string>, enabled: QuestionGroup[], difficulty?: Difficulty): string[] {
+  const pool = bank.filter((q) => !q.slot && !q.retired && !q.pay && !q.drillOnly && (!difficulty || matchesDifficulty(q, difficulty)));
   const fresh = (qs: Question[]) => [...qs.filter((q) => !lastAsked.has(q.id)), ...qs.filter((q) => lastAsked.has(q.id)).sort(lastAskedOrder(lastAsked))];
   switch (spec.kind) {
     case "fix": {
@@ -240,6 +241,6 @@ export function drillQuestions(spec: DrillSpec, bank: Question[], lastAsked: Map
     case "pay":
       return bank.filter((q) => q.pay).map((q) => q.id);
     case "topic":
-      return topicQuestions(spec.topic ?? "", bank).map((q) => q.id);
+      return topicQuestions(spec.topic ?? "", bank, { lastAsked, difficulty }).map((q) => q.id);
   }
 }

@@ -1,6 +1,16 @@
 import type { Question, QuestionGroup } from "@/lib/types";
-import { allocate, ASK_ORDER, hasClosing, mixQuestionCount, type SessionSettings } from "@/lib/interviews/settings";
+import { allocate, ASK_ORDER, hasClosing, mixQuestionCount, type Difficulty, type SessionSettings } from "@/lib/interviews/settings";
 import { GROUP_ORDER } from "@/lib/labels";
+
+/**
+ * Matches a question to the requested difficulty level so Easy and Hard pools stay separated.
+ * Legacy untagged non-custom bank questions default to "medium"; custom user questions without a tier stay eligible.
+ */
+export function matchesDifficulty(q: Question, difficulty: Difficulty): boolean {
+  if (q.custom && !q.difficulty) return true;
+  if (q.difficulty) return q.difficulty === difficulty;
+  return difficulty === "medium";
+}
 
 /**
  * Choosing the questions for an interview: "Tell me about yourself" first,
@@ -40,7 +50,9 @@ export function pickQuestions(
     settings.preset === "technical" ? ["technical", ...ASK_ORDER.filter((g) => g !== "technical")] : ASK_ORDER;
   for (const g of order) {
     if (alloc[g] === 0) continue;
-    const pool = bank.filter((q) => q.group === g && !q.slot && !q.retired && !q.pay && !q.drillOnly);
+    const pool = bank.filter(
+      (q) => q.group === g && !q.slot && !q.retired && !q.pay && !q.drillOnly && matchesDifficulty(q, settings.difficulty),
+    );
     const unheard = [...pool.filter((q) => q.custom && !lastAsked.has(q.id)), ...pool.filter((q) => !q.custom && !lastAsked.has(q.id))];
     const chosen = unheard.slice(0, alloc[g]);
     if (chosen.length < alloc[g] && opts.allowRepeats) {

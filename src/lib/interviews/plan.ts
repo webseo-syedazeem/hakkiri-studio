@@ -2,7 +2,7 @@ import type { CompanyBrief, ContextType, Question, QuestionGroup, RoleUnderstand
 import { GROUP_ORDER } from "@/lib/labels";
 import { shortTitle } from "@/lib/questions/store";
 import { TYPES_FOR_GROUP, normText } from "@/lib/ai/interview/build-plan";
-import { isTechRole } from "./settings";
+import { isTechRole, type Difficulty } from "./settings";
 import { withArticle } from "@/lib/format";
 
 /**
@@ -24,7 +24,7 @@ export interface BuiltPlan {
   questionsToAsk: string[];
   stories: Omit<Story, "id">[];
   gaps: { skill: string; question: string }[];
-  questions: { group: QuestionGroup; type: ContextType; text: string; short: string }[];
+  questions: { group: QuestionGroup; type: ContextType; text: string; short: string; difficulty?: Difficulty }[];
 }
 
 export const PREFIX: Record<QuestionGroup, string> = { motivation: "m", competency: "c", technical: "t", cv: "v", curveball: "b" };
@@ -46,7 +46,7 @@ function nextNumber(existing: Question[], g: QuestionGroup): number {
  * per category, ids continuing after the bank's (m1, c1, t1, v1, b1…), each type
  * one its category allows, and nothing that repeats a question already in the bank.
  */
-export function toQuestions(qs: BuiltPlan["questions"], counts: Record<QuestionGroup, number>, existing: Question[] = []): Question[] {
+export function toQuestions(qs: BuiltPlan["questions"], counts: Record<QuestionGroup, number>, existing: Question[] = [], difficulty?: Difficulty): Question[] {
   const out: Question[] = [];
   const seen = new Set(existing.map((q) => normText(q.text)));
   for (const g of GROUP_ORDER) {
@@ -58,7 +58,8 @@ export function toQuestions(qs: BuiltPlan["questions"], counts: Record<QuestionG
       if (seen.has(normText(text))) continue;
       seen.add(normText(text));
       const type = TYPES_FOR_GROUP[g].includes(q.type) ? q.type : TYPES_FOR_GROUP[g][0];
-      out.push({ id: `${PREFIX[g]}${n++}`, group: g, type, text, short: q.short.trim() || shortTitle(text) });
+      const level = q.difficulty ?? difficulty;
+      out.push({ id: `${PREFIX[g]}${n++}`, group: g, type, text, short: q.short.trim() || shortTitle(text), ...(level ? { difficulty: level } : {}) });
     }
   }
   return out;
@@ -130,10 +131,107 @@ export function templateUnderstanding(input: { company: string; role: string; sk
   };
 }
 
-/** Standard questions for each category, with the company and role filled in. */
-export function templateBank(company: string, role: string): Record<QuestionGroup, [ContextType, string][]> {
+/** Standard questions for each category and difficulty, with the company and role filled in. */
+export function templateBank(company: string, role: string, difficulty: Difficulty = "medium"): Record<QuestionGroup, [ContextType, string][]> {
   const c = company.trim();
   const r = role.trim() || "this role";
+  const aRole = `${/^[aeiou]/i.test(r) ? "an" : "a"} ${r}`;
+  if (difficulty === "easy") {
+    return {
+      motivation: [
+        ["why-us", `What initially drew you to apply at ${c}?`],
+        ["why-us", `Which aspect of being ${aRole} excites you most?`],
+        ["why-us", `How would you describe ${c}’s mission to a friend?`],
+        ["why-us", "What kind of team culture brings out your best work?"],
+        ["tell-me-about-yourself", "What are you hoping to learn in your next role?"],
+        ["why-us", `What caught your attention in the ${r} job description?`],
+        ["why-us", "What motivates you day to day in this type of work?"],
+      ],
+      competency: [
+        ["competency", "Tell me about a project that went smoothly and what helped it succeed."],
+        ["competency", "How do you keep colleagues updated when priorities shift slightly?"],
+        ["competency", "Describe a time you helped a teammate solve a tricky problem."],
+        ["competency", "Tell me about a piece of feedback you applied straight away."],
+        ["competency", "How do you organise your week when several smaller tasks land together?"],
+        ["competency", "Tell me about a goal you hit and how you tracked progress."],
+        ["competency", "Give an example of working closely with people outside your immediate team."],
+      ],
+      technical: [
+        ["technical", `In plain English, what are the core responsibilities of ${aRole} day to day?`],
+        ["technical", "Walk me through a straightforward piece of work you delivered recently."],
+        ["technical", "Which simple checks do you run to make sure your work is accurate before sharing it?"],
+        ["situational", "How would you explain a key part of your work to someone joining the team this week?"],
+        ["technical", "What tools or methods do you rely on most in this area, and why?"],
+        ["technical", "How do you verify a customer problem before jumping to a solution?"],
+        ["technical", "What is one metric you always check first in a routine weekly review?"],
+      ],
+      cv: [
+        ["competency", "Which role on your CV did you enjoy the most, and why?"],
+        ["competency", "Walk me through your most recent role from start to finish."],
+        ["competency", "What core strength from your CV would you lean on most at " + c + "?"],
+        ["competency", "Tell me about a skill on your CV that you built on the job."],
+        ["competency", "What kind of projects have made up most of your recent work?"],
+        ["competency", "What are you proudest of achieving in your last role?"],
+      ],
+      curveball: [
+        ["situational", `What would you focus on learning in your first two weeks at ${c}?`],
+        ["situational", "If a colleague asked you for help while you were busy, how would you respond?"],
+        ["situational", "What is one habit that keeps you calm on a busy day?"],
+        ["situational", "How do you prefer to receive constructive feedback from your manager?"],
+        ["situational", "What is a product or service you admire, and why does it work well?"],
+        ["situational", "If you spotted a small mistake just before a release, what would you do first?"],
+        ["situational", "What motivates you when a routine week feels repetitive?"],
+      ],
+    };
+  }
+  if (difficulty === "hard") {
+    return {
+      motivation: [
+        ["why-us", `Where is ${c} most exposed competitively over the next two years, and why join knowing that?`],
+        ["why-us", `If ${c}’s leadership asked you to bet against a current priority, where would you push back first?`],
+        ["why-us", `Why is this ${r} role the highest-leverage move for you right now, rather than a broader remit elsewhere?`],
+        ["why-us", `What hard trade-off inside ${c}’s business model will matter most for this team this year?`],
+        ["tell-me-about-yourself", "What kind of ambiguity or organisational friction usually breaks strong hires in this role?"],
+        ["why-us", `What would make you seriously question taking an offer from ${c} at final stage?`],
+        ["why-us", `How do you distinguish sustainable advantage from short-term growth at ${c}?`],
+      ],
+      competency: [
+        ["competency", "Tell me about a flagship decision where senior stakeholders disagreed sharply — what evidence settled it, and what did you give up?"],
+        ["competency", "Describe an initiative you shut down despite heavy sunk cost and vocal sponsorship. How did you manage the fallout?"],
+        ["competency", "Give an example where you owned an outcome with zero formal authority across conflicting incentives."],
+        ["competency", "Tell me about a high-stakes failure where you were directly accountable. What second-order changes did you ship?"],
+        ["competency", "Describe a time your numbers contradicted executive intuition. How did you win or adapt without stalling delivery?"],
+        ["competency", "Tell me about the hardest performance or boundary conversation you had with a key partner."],
+        ["competency", "Walk me through a complex multi-quarter bet where the constraints changed mid-flight."],
+      ],
+      technical: [
+        ["technical", `Diagnose a sudden 15% drop in a critical ${r} metric while top-line volume stays flat: what isolates cause from noise in hour one?`],
+        ["technical", "When short-term conversion conflicts with reliability, compliance or margin guardrails, how do you model the net trade-off?"],
+        ["technical", "Walk me through a high-risk technical or operational architecture call you owned, including failure modes you accepted."],
+        ["situational", "Two urgent regulatory and commercial demands collide 48 hours before launch. What do you delay, ring-fence, or cut?"],
+        ["technical", "What leading indicator in your work detects silent degradation before lagging KPIs move?"],
+        ["technical", "How do you decide between building in-house capability versus buying or partnering when switching costs are high?"],
+        ["technical", "Stress-test your end-to-end measurement design: how could your primary metric look green while customer value drops?"],
+      ],
+      cv: [
+        ["competency", "Take the biggest metric on your CV: separate baseline growth, team luck, and what broke without your intervention."],
+        ["competency", "Looking critically at your CV moves, what pattern could make a sceptical panel question your staying power?"],
+        ["competency", "Which claim on your CV would be hardest to defend under an audit of the underlying data?"],
+        ["competency", "When have you outgrown a role fastest, and what tension did that create before you left?"],
+        ["competency", "Tell me about a gap, pivot, or short chapter on your CV in candid detail — no spin."],
+        ["competency", "What guardrail or teammate cost paid the price for your biggest CV win?"],
+      ],
+      curveball: [
+        ["situational", "Compliance or engineering flags a structural flaw 48 hours before our biggest launch. What exact call do you make?"],
+        ["situational", `A top customer threatens to churn unless we ship a one-off change that breaks ${c}’s core roadmap. How do you handle them?`],
+        ["situational", "Every dashboard KPI is green this quarter, yet retention is sliding silently. Where do you investigate first?"],
+        ["situational", "You realise three months in that the strategy you endorsed at hiring is flawed. How do you pivot credibly?"],
+        ["situational", "Two senior leaders issue mutually exclusive mandates by Friday. Walk me through your next 24 hours."],
+        ["situational", `Challenge ${c}’s flagship product right now: what would you rip out and rebuild first?`],
+        ["situational", "What blind spot of yours has actually cost a team time or results in the past?"],
+      ],
+    };
+  }
   return {
     motivation: [
       ["why-us", `Why do you want to work at ${c}?`],
@@ -156,11 +254,11 @@ export function templateBank(company: string, role: string): Record<QuestionGrou
     ],
     technical: [
       ["technical", "Walk me through a piece of work you’re proud of, and the trade-offs you made."],
-      ["technical", `How would you measure success in your first 90 days as ${/^[aeiou]/i.test(r) ? "an" : "a"} ${r}?`],
+      ["technical", `How would you measure success in your first 90 days as ${aRole}?`],
       ["technical", "A key number you’re responsible for drops sharply overnight. What do you do first?"],
       ["situational", "What would you do if a senior stakeholder asked for something you thought was wrong?"],
       ["technical", "Explain something complex from your work to someone new to it."],
-      ["technical", `Which numbers would you watch most closely in this role, and why?`],
+      ["technical", "Which numbers would you watch most closely in this role, and why?"],
       ["technical", "Talk me through how you’d approach a typical problem in this job, step by step."],
     ],
     cv: [
@@ -183,21 +281,29 @@ export function templateBank(company: string, role: string): Record<QuestionGrou
   };
 }
 
-/** Up to `n` template questions in a category that aren't already in `avoid`. */
-export function templateQuestions(company: string, role: string, group: QuestionGroup, n: number, avoid: string[]): BuiltPlan["questions"] {
+/** Up to `n` template questions in a category that aren't already in `avoid`, calibrated for `difficulty`. */
+export function templateQuestions(
+  company: string,
+  role: string,
+  group: QuestionGroup,
+  n: number,
+  avoid: string[],
+  difficulty: Difficulty = "medium",
+): BuiltPlan["questions"] {
   const seen = new Set(avoid.map(normText));
-  return templateBank(company, role)
+  return templateBank(company, role, difficulty)
     [group].filter(([, text]) => !seen.has(normText(text)))
     .slice(0, n)
-    .map(([type, text]) => ({ group, type, text, short: shortTitle(text) }));
+    .map(([type, text]) => ({ group, type, text, short: shortTitle(text), difficulty }));
 }
 
 /** Standard questions and a plain understanding of the job, with the company and role filled in. */
-export function templatePlan(input: { company: string; role: string; counts: Record<QuestionGroup, number>; interviewerTitle: string; job?: string; site?: string }): BuiltPlan {
+export function templatePlan(input: { company: string; role: string; counts: Record<QuestionGroup, number>; interviewerTitle: string; job?: string; site?: string; difficulty?: Difficulty }): BuiltPlan {
   const c = input.company.trim();
   const job = input.job?.trim() ?? "";
   const skills = skillsIn(job);
-  const questions = GROUP_ORDER.flatMap((g) => templateQuestions(c, input.role, g, input.counts[g], []));
+  const difficulty = input.difficulty ?? "medium";
+  const questions = GROUP_ORDER.flatMap((g) => templateQuestions(c, input.role, g, input.counts[g], [], difficulty));
   return {
     company: c,
     role: input.role.trim(),

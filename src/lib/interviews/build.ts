@@ -23,7 +23,7 @@ import { GROUP_ORDER } from "@/lib/labels";
 import { displayHost, readLink } from "./links";
 import { closingQuestion, openingQuestion, templatePlan, templateQuestions, templateUnderstanding, toQuestions, type BuiltPlan } from "./plan";
 import { saveInterview, saveInterviewAsync, updateInterview } from "./store";
-import { settingsOr, type SessionSettings } from "./settings";
+import { settingsOr, type Difficulty, type SessionSettings } from "./settings";
 
 /**
  * Builds an interview from what you gave at set-up, and adds questions later:
@@ -118,9 +118,9 @@ export async function buildInterview(input: BuildInput): Promise<BuildResult> {
   } else if (!mockAiEnabled()) {
     notes.push(devOr("Add GEMINI_API_KEY or ANTHROPIC_API_KEY to .env.local to build questions from your CV and the job spec. For now you have a standard set.", "Your questions couldn’t be tailored this time, so you have a standard set for now. Use “Something’s wrong” in the interview to rebuild them later."));
   }
-  plan ??= templatePlan({ company: planInput.company, role: planInput.role, counts, interviewerTitle: INTERVIEWER_FOR_ROUND[round], job, site });
+  plan ??= templatePlan({ company: planInput.company, role: planInput.role, counts, interviewerTitle: INTERVIEWER_FOR_ROUND[round], job, site, difficulty: settings.difficulty });
 
-  let questions = toQuestions(plan.questions, counts);
+  let questions = toQuestions(plan.questions, counts, [], settings.difficulty);
   // Spares cover anything the check drops: keep what the first interview needs.
   const firstNeeds = Object.fromEntries(GROUP_ORDER.map((g) => [g, Math.max(0, counts[g] - 2)])) as Record<QuestionGroup, number>;
   questions = (await reviewQuestions(questions, plan.understanding, [], firstNeeds)).kept;
@@ -184,7 +184,7 @@ export function understandingOf(interview: Interview): RoleUnderstanding {
  * Returns the updated interview and how many questions it couldn't find
  * (only possible without a key, when the standard set runs out).
  */
-export async function addQuestions(interview: Interview, need: Partial<Record<QuestionGroup, number>>, opts: { retireExcept?: string[]; templatesOnly?: boolean } = {}): Promise<{ interview: Interview; added: Question[]; short: number }> {
+export async function addQuestions(interview: Interview, need: Partial<Record<QuestionGroup, number>>, opts: { retireExcept?: string[]; templatesOnly?: boolean; difficulty?: Difficulty } = {}): Promise<{ interview: Interview; added: Question[]; short: number }> {
   // Questions you added yourself live in their own store; the bank is the rest.
   let bank = interview.questions.filter((q) => !q.custom);
   if (opts.retireExcept) {
@@ -195,27 +195,42 @@ export async function addQuestions(interview: Interview, need: Partial<Record<Qu
   const wanted = GROUP_ORDER.reduce((n, g) => n + counts[g], 0);
   if (wanted === 0 && !opts.retireExcept) return { interview, added: [], short: 0 };
 
+  const difficulty = opts.difficulty ?? settingsOr(interview.settings, interview.style).difficulty;
   const understanding = understandingOf(interview);
   const rules = interview.rules ?? [];
   const avoid = bank.filter((q) => !q.slot && !q.pay).map((q) => q.text);
+  const docs =
+    interview.documents ??
+    ({
+      cv: [
+        interview.role,
+        ...(interview.skills ?? []),
+        ...(interview.brief?.whyYou ?? []),
+        ...(interview.probes?.map((p) => p.ask) ?? []),
+      ]
+        .filter(Boolean)
+        .join("\n"),
+      job: [interview.jobSummary, ...(interview.brief?.toKnow ?? [])].filter(Boolean).join("\n"),
+      site: interview.brief?.whatTheyDo,
+    } satisfies NonNullable<Interview["documents"]>);
+
   let written: BuiltPlan["questions"] | null = null;
-  if (useModel() && !opts.templatesOnly && wanted > 0 && interview.documents) {
-    const settings = settingsOr(interview.settings, interview.style);
+  if (useModel() && !opts.templatesOnly && wanted > 0 && (docs.cv || docs.job)) {
     // Ask for one spare per category, so the relevance check can drop one without leaving a gap.
     const asking = Object.fromEntries(GROUP_ORDER.map((g) => [g, counts[g] > 0 ? counts[g] + 1 : 0])) as Record<QuestionGroup, number>;
-    const input = { company: interview.company, understanding, difficulty: settings.difficulty, counts: asking, rules, avoid, documents: interview.documents };
+    const input = { company: interview.company, understanding, difficulty, counts: asking, rules, avoid, documents: docs };
     const { system, user } = buildNewQuestionsPrompt(input);
     const reply = await ask({ model: aiConfig.mainModel, system, user, maxTokens: 3000, temperature: 0.5, timeoutMs: 90_000, schema: NewQuestionsSchema, check: (r) => checkNewQuestions(r, input), label: "new-questions" });
     written = reply?.questions ?? null;
   }
-  written ??= GROUP_ORDER.flatMap((g) => templateQuestions(interview.company, interview.role, g, counts[g], avoid));
+  written ??= GROUP_ORDER.flatMap((g) => templateQuestions(interview.company, interview.role, g, counts[g], avoid, difficulty));
 
   const asking = Object.fromEntries(GROUP_ORDER.map((g) => [g, counts[g] > 0 ? counts[g] + 1 : 0])) as Record<QuestionGroup, number>;
-  let fresh = toQuestions(written, asking, bank);
+  let fresh = toQuestions(written, asking, bank, difficulty);
   fresh = (await reviewQuestions(fresh, understanding, rules, counts)).kept;
   // Keep only what was asked for.
   fresh = GROUP_ORDER.flatMap((g) => fresh.filter((q) => q.group === g).slice(0, counts[g]));
-  const added = fresh.map((q) => ({ ...q, addedAt: new Date().toISOString() }));
+  const added = fresh.map((q) => ({ ...q, difficulty, addedAt: new Date().toISOString() }));
   const opening = bank.filter((q) => q.slot === "opening");
   const closing = bank.filter((q) => q.slot === "closing");
   const middle = bank.filter((q) => !q.slot);
@@ -223,7 +238,9 @@ export async function addQuestions(interview: Interview, need: Partial<Record<Qu
   // The model call above can take a minute. Save only the questions, onto the interview as it
   // is now (rules, settings or retired flags may have changed meanwhile), and not at all if it
   // was deleted while we waited.
-  const updated: Interview = updateInterview(interview.id, (now) => ({ ...now, questions, groupCounts: countGroups(questions) })) ?? { ...interview, questions, groupCounts: countGroups(questions) };
+  const saved = updateInterview(interview.id, (now) => ({ ...now, questions, groupCounts: countGroups(questions) }));
+  if (saved) await saveInterviewAsync(saved);
+  const updated: Interview = saved ?? { ...interview, questions, groupCounts: countGroups(questions) };
   const short = GROUP_ORDER.reduce((n, g) => n + Math.max(0, counts[g] - added.filter((q) => q.group === g).length), 0);
   return { interview: updated, added, short };
 }

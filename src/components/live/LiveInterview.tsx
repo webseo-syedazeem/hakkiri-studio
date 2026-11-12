@@ -16,7 +16,7 @@ import { followUpLimit } from "@/lib/followups";
 import { STYLE_HINT } from "@/lib/labels";
 import { scoreLabel } from "@/lib/scoring/combine";
 import { habitLine, rowHabit, HABIT_LABEL, type DrillKind, type Habit } from "@/lib/sessions/drills";
-import { DIFFICULTY_HINT, DIFFICULTY_LABEL, difficultyFor, styleFor, type Difficulty } from "@/lib/interviews/settings";
+import { DIFFICULTY_HINT, DIFFICULTY_LABEL, difficultyFor, styleFor, type Difficulty, type SessionSettings } from "@/lib/interviews/settings";
 import type { PayCheck } from "@/lib/sessions/pay";
 import type { MockRow } from "@/lib/mocks/report";
 import type { SkipReason, SkipRecord } from "@/lib/mocks/store";
@@ -67,6 +67,8 @@ export interface LiveSession {
   minutes?: number;
   /** "Medium · 20 min · Balanced" */
   settingsText?: string;
+  /** Session settings for re-planning difficulty cleanly from the pre-start briefing card. */
+  settings?: SessionSettings;
   /** Drills: feedback after every answer instead of one report at the end. */
   feedbackEach?: boolean;
   drill?: { kind: DrillKind; title: string; habit?: Habit; topic?: string; focusLabel?: string; instruction?: string; detail?: string };
@@ -148,6 +150,36 @@ export function LiveInterview(p: LiveInterviewProps) {
   const [mainSec, setMainSec] = useState(0);
   const [followUpsOn, setFollowUpsOn] = useState(q.followUps);
   const [style, setStyle] = useState<InterviewerStyle>(p.interviewer.style);
+  const [switchingDifficulty, setSwitchingDifficulty] = useState(false);
+  useEffect(() => {
+    if (phase !== "ready") return;
+    setQueue(p.questions);
+    setQIndex(0);
+    setStyle(p.interviewer.style);
+    sparesLeft.current = session?.spares ?? [];
+  }, [session?.id, p.questions, p.interviewer.style, session?.spares, phase]);
+  const changeReadyDifficulty = async (d: Difficulty) => {
+    setStyle(styleFor(d));
+    if (phase !== "ready" || switchingDifficulty) return;
+    if (session?.drill?.kind === "topic" && session.drill.topic) {
+      router.replace(`/mock/${p.interviewId}?topic=${session.drill.topic}&difficulty=${d}`);
+      return;
+    }
+    if (session?.mode === "interview" && session.settings && session.settings.difficulty !== d) {
+      setSwitchingDifficulty(true);
+      try {
+        const res = await fetch(`/api/interviews/${p.interviewId}/sessions`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ kind: "interview", settings: { ...session.settings, difficulty: d } }),
+        });
+        const data = (await res.json().catch(() => null)) as { href?: string } | null;
+        if (res.ok && data?.href) router.replace(data.href);
+      } finally {
+        setSwitchingDifficulty(false);
+      }
+    }
+  };
   /** The interviewer's voice follows the difficulty (a firmer voice when it gets tougher). */
   const voiceName = useRef<VoiceName>(voiceFor(p.interviewer.style));
   useEffect(() => {
@@ -882,11 +914,11 @@ export function LiveInterview(p: LiveInterviewProps) {
                     fullWidth
                     options={DIFFICULTIES}
                     value={difficultyFor(style)}
-                    onChange={(d) => setStyle(styleFor(d))}
+                    onChange={(d) => void changeReadyDifficulty(d)}
                     className="!bg-[#16152a] !shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"
                   />
                   <p className="mt-2 text-[11px] leading-relaxed text-[#8c8d9e]">
-                    {DIFFICULTY_HINT[difficultyFor(style)]}
+                    {switchingDifficulty ? "Loading questions calibrated for this difficulty..." : DIFFICULTY_HINT[difficultyFor(style)]}
                   </p>
                 </div>
               </div>

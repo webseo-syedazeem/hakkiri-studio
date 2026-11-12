@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { SKIP_REASONS } from "@/lib/mocks/store";
+import { findMockAsync, saveMockAsync, SKIP_REASONS } from "@/lib/mocks/store";
+import { getInterview, saveInterviewAsync } from "@/lib/interviews/store";
 import { PlanError, stopSession } from "@/lib/sessions/server";
+import { flushStorage } from "@/lib/storage/disk";
 
 export const runtime = "nodejs";
 
@@ -21,7 +23,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ session
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "bad-request", message: "Your feedback couldn’t be saved. Try again." }, { status: 400 });
   try {
+    await findMockAsync(sessionId);
     const m = stopSession(sessionId, parsed.data);
+    await saveMockAsync(m);
+    const updatedInt = getInterview(m.interviewId);
+    if (updatedInt && parsed.data.skipped.length) await saveInterviewAsync(updatedInt);
+    await flushStorage();
     return NextResponse.json({ href: `/interviews/${m.interviewId}/rebuild?from=${m.id}` });
   } catch (err) {
     if (err instanceof PlanError) return NextResponse.json({ error: "cant-stop", message: err.message }, { status: 409 });

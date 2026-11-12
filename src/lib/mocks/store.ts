@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { InterviewerStyle, QuestionGroup } from "@/lib/types";
 import { demoMock, roadmapAnswer } from "@/lib/mock-data";
 import { getInterview, getInterviewAsync } from "@/lib/interviews/store";
-import { findAnswer, findAnswerAsync } from "@/lib/answers/store";
+import { findAnswer, findAnswerAsync, listAnswers, listAnswersAsync } from "@/lib/answers/store";
 import { rowFromAnswer, mockScore, type MockRow } from "./report";
 import { loadJson, loadJsonAsync, saveJson, saveJsonAsync } from "@/lib/storage/disk";
 import { isMongoConfigured } from "@/lib/storage/mongodb";
@@ -91,6 +91,34 @@ export function saveMock(m: MockRecord) {
   persist();
 }
 
+export async function saveMockAsync(m: MockRecord): Promise<void> {
+  store.set(m.id, m);
+  if (isMongoConfigured()) {
+    try {
+      const fromDb = await loadJsonAsync<MockRecord[]>(FILE, []);
+      const map = new Map<string, MockRecord>(Array.isArray(fromDb) ? fromDb.map((x) => [x.id, x]) : []);
+      for (const [k, v] of store.entries()) map.set(k, v);
+      map.set(m.id, m);
+      for (const [k, v] of map.entries()) store.set(k, v);
+      await saveJsonAsync(FILE, [...map.values()]);
+      return;
+    } catch (err) {
+      console.warn("[mocks/store] saveMockAsync mongo failed:", err);
+    }
+  }
+  persist();
+}
+
+/** Records a question as already presented/answered on an active planned session so even mid-session exits won't repeat it. */
+export async function recordAskedQuestionAsync(sessionId: string | undefined, questionId: string): Promise<void> {
+  if (!sessionId || !questionId) return;
+  const existing = (await findMockAsync(sessionId)) ?? findMock(sessionId);
+  if (!existing) return;
+  const prev = existing.askedIds ?? [];
+  if (prev.includes(questionId)) return;
+  await saveMockAsync({ ...existing, askedIds: [...prev, questionId] });
+}
+
 /** Plans a session: its questions and spares are fixed now, so the live screen and the report agree. */
 export function createSession(s: Omit<MockRecord, "id" | "status" | "startedAt" | "finishedAt" | "answerIds" | "planned">): MockRecord {
   const now = new Date().toISOString();
@@ -131,6 +159,22 @@ export function listMocks(interviewId: string): MockRecord[] {
   return [...store.values(), ...demoHere].filter((m) => m.interviewId === interviewId).sort((a, b) => b.startedAt.localeCompare(a.startedAt));
 }
 
+export async function listMocksAsync(interviewId: string): Promise<MockRecord[]> {
+  if (isMongoConfigured()) {
+    try {
+      const fromDb = await loadJsonAsync<MockRecord[]>(FILE, []);
+      if (Array.isArray(fromDb)) {
+        for (const item of fromDb) {
+          if (item?.id) store.set(item.id, item);
+        }
+      }
+    } catch (err) {
+      console.warn("[mocks/store] MongoDB listMocks failed:", err);
+    }
+  }
+  return listMocks(interviewId);
+}
+
 export const isDone = (m: MockRecord) => (m.status ?? "done") === "done";
 
 /** Interviews with new questions: the only ones that count towards your verdict. */
@@ -142,17 +186,34 @@ export function doneSessions(interviewId: string): MockRecord[] {
 }
 
 /**
- * When each question was last asked, across every session that got going
- * (stopped ones included: you heard those questions).
+ * When each question was last asked, across finished/stopped sessions, any
+ * questions already reached in an in-progress session, and saved answers
+ * (covering single questions, topic drills and mid-session exits).
  */
 export function lastAskedMap(interviewId: string): Map<string, string> {
   const out = new Map<string, string>();
   for (const m of [...listMocks(interviewId)].reverse()) {
-    if (m.status === "planned") continue;
+    if (m.status === "planned") {
+      const seenPlanned = [
+        ...(m.askedIds ?? []),
+        ...(m.skipped ?? []).map((s) => s.questionId),
+        ...m.answerIds.map((id) => findAnswer(id)?.questionId ?? ""),
+      ].filter(Boolean);
+      for (const id of seenPlanned) out.set(id, m.startedAt);
+      continue;
+    }
     const asked = m.askedIds ?? (m.rows ?? []).map((r) => r.questionId).concat(m.answerIds.map((id) => findAnswer(id)?.questionId ?? "")).filter(Boolean);
     for (const id of asked) out.set(id, m.startedAt);
   }
+  for (const a of listAnswers(interviewId)) {
+    if (a.questionId) out.set(a.questionId, a.createdAt ?? new Date().toISOString());
+  }
   return out;
+}
+
+export async function lastAskedMapAsync(interviewId: string): Promise<Map<string, string>> {
+  await Promise.all([listMocksAsync(interviewId), listAnswersAsync(interviewId)]);
+  return lastAskedMap(interviewId);
 }
 
 /** The re-run of an interview, if you've done (or started) one. */

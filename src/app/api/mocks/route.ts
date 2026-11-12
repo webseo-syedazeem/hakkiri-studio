@@ -1,10 +1,10 @@
 import { NextResponse, after } from "next/server";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
-import { getInterview, getInterviewAsync, updateInterview } from "@/lib/interviews/store";
+import { getInterview, getInterviewAsync, saveInterviewAsync, updateInterview } from "@/lib/interviews/store";
 import { findAnswer, findAnswerAsync, saveAnswerAsync } from "@/lib/answers/store";
 import type { Answer } from "@/lib/types";
-import { findMock, findMockAsync, saveMock, SKIP_REASONS, type MockRecord } from "@/lib/mocks/store";
+import { findMock, findMockAsync, saveMockAsync, SKIP_REASONS, type MockRecord } from "@/lib/mocks/store";
 import { retireSkipped, topUp } from "@/lib/sessions/server";
 import { resolveInterviewQuestion } from "@/lib/sessions/topics";
 import { mergeRules, rulesFromSkips } from "@/lib/sessions/rules";
@@ -149,17 +149,22 @@ export async function POST(req: Request) {
       style: body.style ?? session.style,
       planned: body.planned,
     };
-    saveMock(updatedMock);
+    await saveMockAsync(updatedMock);
     const rules = rulesFromSkips(skipped, (id) => interview.questions.find((q) => q.id === id && !q.slot)?.text);
-    if (rules.length) updateInterview(interview.id, (i) => ({ ...i, rules: mergeRules(i.rules, rules) }));
+    if (rules.length) {
+      const updatedInt = updateInterview(interview.id, (i) => ({ ...i, rules: mergeRules(i.rules, rules) }));
+      if (updatedInt) await saveInterviewAsync(updatedInt);
+    }
     retireSkipped(interview.id, skipped);
+    const refreshed = getInterview(interview.id);
+    if (refreshed && skipped.length) await saveInterviewAsync(refreshed);
     after(() => withUsageContext({ interviewId: interview.id, feature: "questions" }, () => topUp(interview.id)).catch((err) => console.warn("[sessions] top-up failed:", err)));
     await flushStorage();
     return NextResponse.json({ id: session.id });
   }
 
   const id = randomUUID();
-  saveMock({ id, interviewId: interview.id, kind: body.kind ?? "full", status: "done", group: body.group, startedAt: body.startedAt, style: body.style, finishedAt, answerIds: body.answerIds, planned: body.planned });
+  await saveMockAsync({ id, interviewId: interview.id, kind: body.kind ?? "full", status: "done", group: body.group, startedAt: body.startedAt, style: body.style, finishedAt, answerIds: body.answerIds, askedIds: body.askedIds, planned: body.planned });
   await flushStorage();
   return NextResponse.json({ id });
 }

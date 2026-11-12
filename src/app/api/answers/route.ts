@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { mockTranscript } from "@/lib/ai/mock";
 import { getInterview, getInterviewAsync } from "@/lib/interviews/store";
 import { resolveInterviewQuestion } from "@/lib/sessions/topics";
+import { recordAskedQuestionAsync } from "@/lib/mocks/store";
 import { saveDraft, saveDraftAsync, type Draft } from "@/lib/answers/drafts";
 import { MAX_AUDIO_BYTES, nextFollowUp, notConfigured, scoringError, transcribe } from "@/lib/answers/pipeline";
 import { soundsLikeCorrection } from "@/lib/ai/follow-up";
@@ -69,6 +70,7 @@ export async function POST(req: Request) {
     const { followUp, correction } = await nextFollowUp(draft);
     if (correction && form.get("session")) return NextResponse.json({ correction: true });
     await saveDraftAsync(draft);
+    await recordAskedQuestionAsync(sessionId, question.id);
     return NextResponse.json({ draftId: draft.id, followUp });
   } catch (err) {
     return scoringError(err);

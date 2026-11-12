@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { planRerun, PlanError, retireSkipped } from "./server";
+import { planInterview, planRerun, PlanError, retireSkipped } from "./server";
 import { pickQuestions } from "./pick";
 import { getInterview } from "@/lib/interviews/store";
-import { findMock, saveMock, type MockRecord } from "@/lib/mocks/store";
+import { findMock, lastAskedMap, recordAskedQuestionAsync, saveMock, type MockRecord } from "@/lib/mocks/store";
 import type { MockRow } from "@/lib/mocks/report";
 import { DEFAULT_SETTINGS } from "@/lib/interviews/settings";
 
@@ -71,5 +71,31 @@ describe("skipped questions", () => {
     const heardAll = new Map(halden.questions.map((q) => [q.id, "2026-10-01"]));
     const p = pickQuestions(halden.questions, { ...DEFAULT_SETTINGS, minutes: 60 }, heardAll, { allowRepeats: true });
     expect(p.questionIds).not.toContain("c2");
+  });
+});
+
+describe("no-repeat persistence across difficulty levels", () => {
+  it("tracks asked questions in incomplete sessions and keeps Easy separate from Hard", async () => {
+    const easyRun1 = await planInterview("halden", { ...DEFAULT_SETTINGS, minutes: 20, difficulty: "easy" });
+    const firstNonSlot = (easyRun1.questionIds ?? []).filter((id) => id !== "open" && id !== "close");
+    expect(firstNonSlot.length).toBeGreaterThan(0);
+
+    // Simulate user answering questions mid-session and leaving before full mock completion
+    for (const qid of firstNonSlot) {
+      await recordAskedQuestionAsync(easyRun1.id, qid);
+    }
+    expect(lastAskedMap("halden").has(firstNonSlot[0])).toBe(true);
+
+    const easyRun2 = await planInterview("halden", { ...DEFAULT_SETTINGS, minutes: 20, difficulty: "easy" });
+    const secondNonSlot = (easyRun2.questionIds ?? []).filter((id) => id !== "open" && id !== "close");
+    expect(secondNonSlot.some((id) => firstNonSlot.includes(id))).toBe(false);
+
+    const hardRun = await planInterview("halden", { ...DEFAULT_SETTINGS, minutes: 20, difficulty: "hard" });
+    const hardNonSlot = (hardRun.questionIds ?? []).filter((id) => id !== "open" && id !== "close");
+    expect(hardNonSlot.some((id) => firstNonSlot.includes(id) || secondNonSlot.includes(id))).toBe(false);
+    const bank = getInterview("halden")!.questions;
+    for (const id of hardNonSlot) {
+      expect(bank.find((q) => q.id === id)?.difficulty).toBe("hard");
+    }
   });
 });
