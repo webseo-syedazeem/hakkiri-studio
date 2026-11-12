@@ -16,6 +16,7 @@ import { buildReport, countsLine, VERDICT_LABEL, type MockRow } from "@/lib/mock
 import { compareRuns } from "@/lib/sessions/compare";
 import { HABIT_FOR_FIX, HABIT_LABEL, habitLine, rowHabit, suggestDrills } from "@/lib/sessions/drills";
 import { roleWithLevel, sessionTitle } from "@/lib/sessions/labels";
+import { resolveInterviewQuestion } from "@/lib/sessions/topics";
 import { WRONG_REASON_LABEL } from "@/lib/ai/interview/questions";
 import { PAY_STAGE_LABEL, PAY_TIPS, payChecks, payStage } from "@/lib/sessions/pay";
 import { readinessFor, readinessText, scoreLabel } from "@/lib/scoring/combine";
@@ -134,7 +135,7 @@ export default async function SessionReportPage({ params, searchParams }: { para
   const lengthSec = Math.max(0, (Date.parse(mock.finishedAt) - Date.parse(mock.startedAt)) / 1000);
   const title = sessionTitle(mock, interview);
   const answerHref = (answerId: string, followUps = false) => `/interviews/${interview.id}/answers/${answerId}?mock=${mock.id}${followUps ? "&tab=follow-ups" : ""}`;
-  const shortOf = (qid: string) => interview.questions.find((q) => q.id === qid)?.short ?? "this question";
+  const shortOf = (qid: string) => resolveInterviewQuestion(interview, qid)?.short ?? "this question";
 
   const demoNote = null;
 

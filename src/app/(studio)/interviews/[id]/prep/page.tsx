@@ -60,30 +60,31 @@ export default async function PrepSheetPage({
         : "Stage 2: Hiring manager interview";
 
   // Dynamic knowledge checklist items
+  const hasQ = (qid: string) => interview.questions.some((q) => q.id === qid);
   const checklistItems = [
     {
       id: "chk-1",
       title: "Payment fundamentals",
       description: "Authorisation, checkout, settlement, chargebacks and fraud controls.",
-      drillHref: `/interviews/${interview.id}`,
+      drillHref: `/mock/${interview.id}?topic=payment-fundamentals`,
     },
     {
       id: "chk-2",
       title: "Product metrics",
       description: "Conversion, payment success rate, transaction failures and fraud losses.",
-      drillHref: `/interviews/${interview.id}`,
+      drillHref: `/mock/${interview.id}?topic=product-metrics`,
     },
     {
       id: "chk-3",
       title: "Commercial judgement",
       description: "Balancing growth with risk, cost, regulation and customer experience.",
-      drillHref: `/interviews/${interview.id}`,
+      drillHref: `/mock/${interview.id}?topic=commercial-judgement`,
     },
     {
       id: "chk-4",
       title: "Stakeholder management",
       description: "Working with engineering, compliance, operations and commercial teams.",
-      drillHref: `/interviews/${interview.id}`,
+      drillHref: `/mock/${interview.id}?topic=stakeholder-management`,
     },
   ];
 
@@ -330,7 +331,10 @@ export default async function PrepSheetPage({
               </div>
 
               {/* Row 1 */}
-              <div className="grid grid-cols-[1.2fr_1.8fr] gap-3 py-3 items-start text-xs group cursor-pointer hover:bg-white/[0.02] rounded-lg transition-colors px-1">
+              <Link
+                href={`/mock/${interview.id}?topic=commercial-judgement`}
+                className="grid grid-cols-[1.2fr_1.8fr] gap-3 py-3 items-start text-xs group hover:bg-white/[0.02] rounded-lg transition-colors px-1"
+              >
                 <span className="font-semibold text-ink group-hover:text-blue-soft transition-colors">
                   How would you balance conversion and fraud risk?
                 </span>
@@ -338,12 +342,15 @@ export default async function PrepSheetPage({
                   <span>
                     Explain how you assess customer impact, fraud losses and trade-offs, including guardrails (e.g. risk thresholds) and when to escalate.
                   </span>
-                  <Icon name="chevronRight" size={13} className="shrink-0 text-dim mt-0.5" />
+                  <Icon name="chevronRight" size={13} className="shrink-0 text-dim mt-0.5 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
                 </div>
-              </div>
+              </Link>
 
               {/* Row 2 */}
-              <div className="grid grid-cols-[1.2fr_1.8fr] gap-3 py-3 items-start text-xs group cursor-pointer hover:bg-white/[0.02] rounded-lg transition-colors px-1">
+              <Link
+                href={hasQ("c1") ? `/mock/${interview.id}?q=c1` : `/mock/${interview.id}?topic=star`}
+                className="grid grid-cols-[1.2fr_1.8fr] gap-3 py-3 items-start text-xs group hover:bg-white/[0.02] rounded-lg transition-colors px-1"
+              >
                 <span className="font-semibold text-ink group-hover:text-blue-soft transition-colors">
                   Tell me about a time you changed a roadmap.
                 </span>
@@ -351,12 +358,15 @@ export default async function PrepSheetPage({
                   <span>
                     Cover the original assumption, evidence that challenged it, options considered, stakeholders influenced and the measurable outcome.
                   </span>
-                  <Icon name="chevronRight" size={13} className="shrink-0 text-dim mt-0.5" />
+                  <Icon name="chevronRight" size={13} className="shrink-0 text-dim mt-0.5 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
                 </div>
-              </div>
+              </Link>
 
               {/* Row 3 */}
-              <div className="grid grid-cols-[1.2fr_1.8fr] gap-3 py-3 items-start text-xs group cursor-pointer hover:bg-white/[0.02] rounded-lg transition-colors px-1">
+              <Link
+                href={`/mock/${interview.id}?topic=stakeholder-management`}
+                className="grid grid-cols-[1.2fr_1.8fr] gap-3 py-3 items-start text-xs group hover:bg-white/[0.02] rounded-lg transition-colors px-1"
+              >
                 <span className="font-semibold text-ink group-hover:text-blue-soft transition-colors">
                   How do you influence engineers who disagree?
                 </span>
@@ -364,9 +374,9 @@ export default async function PrepSheetPage({
                   <span>
                     Give a real example of disagreement, how you built alignment and the result. Show respect for different perspectives.
                   </span>
-                  <Icon name="chevronRight" size={13} className="shrink-0 text-dim mt-0.5" />
+                  <Icon name="chevronRight" size={13} className="shrink-0 text-dim mt-0.5 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
                 </div>
-              </div>
+              </Link>
             </div>
           </Panel>
 

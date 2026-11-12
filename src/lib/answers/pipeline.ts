@@ -11,6 +11,7 @@ import { ClaudeInterviewerBrain, RuleInterviewerBrain } from "@/lib/ai/brain";
 import type { FollowUpInput, InterviewerBrain } from "@/lib/ai/types";
 import { followUpLimit } from "@/lib/followups";
 import { getInterview } from "@/lib/interviews/store";
+import { resolveInterviewQuestion } from "@/lib/sessions/topics";
 import type { Draft } from "./drafts";
 
 /**
@@ -44,7 +45,7 @@ export function brain(): InterviewerBrain {
 /** Everything the interviewer needs to decide on a follow-up for this draft. */
 export function followUpInput(draft: Draft): FollowUpInput | null {
   const interview = getInterview(draft.interviewId);
-  const question = interview?.questions.find((q) => q.id === draft.questionId);
+  const question = resolveInterviewQuestion(interview, draft.questionId);
   if (!interview || !question) return null;
   return {
     question: question.text,

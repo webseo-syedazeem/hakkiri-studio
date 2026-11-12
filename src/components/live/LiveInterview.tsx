@@ -16,7 +16,7 @@ import { followUpLimit } from "@/lib/followups";
 import { STYLE_HINT } from "@/lib/labels";
 import { scoreLabel } from "@/lib/scoring/combine";
 import { habitLine, rowHabit, HABIT_LABEL, type DrillKind, type Habit } from "@/lib/sessions/drills";
-import { DIFFICULTY_LABEL, difficultyFor } from "@/lib/interviews/settings";
+import { DIFFICULTY_HINT, DIFFICULTY_LABEL, difficultyFor, styleFor, type Difficulty } from "@/lib/interviews/settings";
 import type { PayCheck } from "@/lib/sessions/pay";
 import type { MockRow } from "@/lib/mocks/report";
 import type { SkipReason, SkipRecord } from "@/lib/mocks/store";
@@ -29,6 +29,12 @@ type Phase = "ready" | "asking" | "answering" | "paused" | "thinking" | "scoring
 type Turn = { kind: "main" } | { kind: "follow-up"; followUpKind: FollowUpKind; question: string; number: number; of: number };
 type ApiFollowUp = { kind: FollowUpKind; question: string; number: number; of: number } | null;
 type Stage = "main" | "follow-up" | "score" | "report" | "mic";
+
+const DIFFICULTIES: { value: Difficulty; label: string }[] = [
+  { value: "easy", label: DIFFICULTY_LABEL.easy },
+  { value: "medium", label: DIFFICULTY_LABEL.medium },
+  { value: "hard", label: DIFFICULTY_LABEL.hard },
+];
 
 const MIC_BLOCKED =
   "Hakkiri can’t hear your microphone. Click the lock or mic icon in the address bar, allow the microphone, then press Try again.";
@@ -63,7 +69,7 @@ export interface LiveSession {
   settingsText?: string;
   /** Drills: feedback after every answer instead of one report at the end. */
   feedbackEach?: boolean;
-  drill?: { kind: DrillKind; title: string; habit?: Habit; instruction?: string; detail?: string };
+  drill?: { kind: DrillKind; title: string; habit?: Habit; topic?: string; focusLabel?: string; instruction?: string; detail?: string };
   /** Re-run: "This time, try to…" */
   focus?: string[];
   /** Drills set the follow-ups: 0 for quick questions, 3 for the pressure drill. */
@@ -288,6 +294,10 @@ export function LiveInterview(p: LiveInterviewProps) {
         body: JSON.stringify({
           interviewId: p.interviewId,
           sessionId: session?.id,
+          kind: session?.mode === "drill" ? "drill" : undefined,
+          drill: session?.drill
+            ? { kind: session.drill.kind, topic: session.drill.topic, habit: session.drill.habit }
+            : undefined,
           startedAt: startedAt.current,
           style,
           planned: queue.length,
@@ -751,9 +761,11 @@ export function LiveInterview(p: LiveInterviewProps) {
                     />
                   </div>
                   <div>
-                    <span className="text-xs font-medium text-muted">Your interviewer</span>
+                    <span className="text-xs font-medium text-muted">
+                      {session?.mode === "drill" ? `Focused drill with ${name}` : "Your interviewer"}
+                    </span>
                     <h1 className="text-2xl font-bold tracking-tight text-white mt-0.5">
-                      Your interview with {name}
+                      {session?.mode === "drill" && session.drill?.title ? session.drill.title : `Your interview with ${name}`}
                     </h1>
                     <span className="mt-1.5 inline-block rounded-full bg-[#24213d] border border-[#3e3966] px-3 py-0.5 text-xs font-semibold text-[#a5a1ff]">
                       {p.interviewer.title || "Hiring manager"}
@@ -762,8 +774,24 @@ export function LiveInterview(p: LiveInterviewProps) {
                 </div>
 
                 <p className="mt-4 text-sm text-[#9b9ca8] leading-relaxed">
-                  A realistic, role-specific interview to help you build confidence and sharpen your answers.
+                  {session?.mode === "drill" && session.drill?.instruction
+                    ? session.drill.instruction
+                    : "A realistic, role-specific interview to help you build confidence and sharpen your answers."}
                 </p>
+
+                {session?.mode === "drill" && queue.length > 0 && (
+                  <div className="mt-4 flex flex-wrap items-center gap-1.5">
+                    <span className="text-[11px] font-medium text-muted mr-1">Questions included:</span>
+                    {queue.map((item) => (
+                      <span
+                        key={item.id}
+                        className="rounded-lg bg-white/[0.04] border border-white/10 px-2.5 py-1 text-[11px] font-medium text-white/85"
+                      >
+                        {item.short}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* 3 Metric Pills */}
@@ -774,9 +802,11 @@ export function LiveInterview(p: LiveInterviewProps) {
                   </div>
                   <div className="min-w-0">
                     <div className="text-sm font-semibold text-white truncate">
-                      {session?.minutes ?? 20} minutes
+                      {session?.minutes ?? (session?.mode === "drill" ? 6 : 20)} minutes
                     </div>
-                    <div className="text-xs text-[#8c8d9e] truncate">Interview length</div>
+                    <div className="text-xs text-[#8c8d9e] truncate">
+                      {session?.mode === "drill" ? "Drill length" : "Interview length"}
+                    </div>
                   </div>
                 </div>
 
@@ -786,9 +816,11 @@ export function LiveInterview(p: LiveInterviewProps) {
                   </div>
                   <div className="min-w-0">
                     <div className="text-sm font-semibold text-white truncate">
-                      About {queue.length} questions
+                      {session?.mode === "drill" ? `${queue.length} questions` : `About ${queue.length} questions`}
                     </div>
-                    <div className="text-xs text-[#8c8d9e] truncate">Role-relevant questions</div>
+                    <div className="text-xs text-[#8c8d9e] truncate">
+                      {session?.mode === "drill" ? "Topic-specific" : "Role-relevant questions"}
+                    </div>
                   </div>
                 </div>
 
@@ -797,8 +829,12 @@ export function LiveInterview(p: LiveInterviewProps) {
                     <Icon name="target" size={17} strokeWidth={2} />
                   </div>
                   <div className="min-w-0">
-                    <div className="text-sm font-semibold text-white truncate">Balanced</div>
-                    <div className="text-xs text-[#8c8d9e] truncate">A mix of experience, skills and technical</div>
+                    <div className="text-sm font-semibold text-white truncate">
+                      {session?.mode === "drill" ? (session.drill?.focusLabel ?? "Focused") : "Balanced"}
+                    </div>
+                    <div className="text-xs text-[#8c8d9e] truncate">
+                      {session?.mode === "drill" ? "Selected topic focus" : "A mix of experience, skills and technical"}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -819,15 +855,39 @@ export function LiveInterview(p: LiveInterviewProps) {
                     <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400">
                       <Icon name="check" size={13} strokeWidth={2.6} />
                     </div>
-                    <span className="text-sm text-white/90">Realistic, role-relevant questions.</span>
+                    <span className="text-sm text-white/90">
+                      {session?.mode === "drill" ? "Focused, topic-relevant questions." : "Realistic, role-relevant questions."}
+                    </span>
                   </div>
 
                   <div className="flex items-center gap-2.5">
                     <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400">
                       <Icon name="check" size={13} strokeWidth={2.6} />
                     </div>
-                    <span className="text-sm text-white/90">Feedback at the end, like a real interview.</span>
+                    <span className="text-sm text-white/90">
+                      {session?.feedbackEach ? "Instant feedback after each answer." : "Feedback at the end, like a real interview."}
+                    </span>
                   </div>
+                </div>
+
+                <div className="mt-5 pt-4 border-t border-white/[0.06]">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <span className="text-xs font-semibold text-white">Difficulty</span>
+                    <span className="text-[11px] font-medium text-[#a5a1ff]">
+                      {DIFFICULTY_LABEL[difficultyFor(style)]}
+                    </span>
+                  </div>
+                  <Segmented<Difficulty>
+                    label="Difficulty"
+                    fullWidth
+                    options={DIFFICULTIES}
+                    value={difficultyFor(style)}
+                    onChange={(d) => setStyle(styleFor(d))}
+                    className="!bg-[#16152a] !shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"
+                  />
+                  <p className="mt-2 text-[11px] leading-relaxed text-[#8c8d9e]">
+                    {DIFFICULTY_HINT[difficultyFor(style)]}
+                  </p>
                 </div>
               </div>
 
@@ -1066,7 +1126,7 @@ export function LiveInterview(p: LiveInterviewProps) {
                       </div>
                       <div className="text-xs text-[#a5a7b8] leading-relaxed">
                         <b className="text-white">Guidance: </b>
-                        {session?.drill?.instruction && (session.drill.kind === "fix" || session.drill.kind === "habit")
+                        {session?.drill?.instruction && (session.drill.kind === "fix" || session.drill.kind === "habit" || session.drill.kind === "topic")
                           ? session.drill.instruction
                           : sameWords(q.contextLabel, q.text)
                           ? q.contextHint
@@ -1184,6 +1244,20 @@ export function LiveInterview(p: LiveInterviewProps) {
                 </div>
                 <div className="text-xs text-[#8c8d9e] border-t border-white/[0.06] pt-2.5">
                   {followUpsLine}
+                </div>
+                <div className="border-t border-white/[0.06] pt-3 space-y-2">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="font-medium text-muted">Difficulty</span>
+                    <span className="font-semibold text-[#a5a1ff]">{DIFFICULTY_LABEL[difficultyFor(style)]}</span>
+                  </div>
+                  <Segmented<Difficulty>
+                    label="Session difficulty"
+                    fullWidth
+                    options={DIFFICULTIES}
+                    value={difficultyFor(style)}
+                    onChange={(d) => setStyle(styleFor(d))}
+                    className="!bg-[#16152a] !shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"
+                  />
                 </div>
               </div>
 

@@ -6,6 +6,7 @@ import { HearButton } from "@/components/feedback/HearButton";
 import { ButtonLink, Chip, Crumbs, Icon, Panel, Pin } from "@/components/ui";
 import { getInterview, getInterviewAsync } from "@/lib/interviews/store";
 import { findAnswer, findAnswerAsync } from "@/lib/answers/store";
+import { resolveInterviewQuestion } from "@/lib/sessions/topics";
 import { SCORE_LABELS } from "@/lib/scoring/combine";
 import { scoreAnswerView } from "@/lib/answers/view";
 import { findMock, findMockAsync } from "@/lib/mocks/store";
@@ -47,7 +48,7 @@ export default async function AnswerFeedbackPage({
   const interview = (await getInterviewAsync(id)) ?? getInterview(id);
   const answer = (await findAnswerAsync(answerId)) ?? findAnswer(answerId);
   if (!interview || !answer || answer.interviewId !== interview.id) notFound();
-  const question = interview.questions.find((q) => q.id === answer.questionId);
+  const question = resolveInterviewQuestion(interview, answer.questionId);
   if (!question) notFound(); // the question was removed after it was answered
   // Delivery is measured in code from the word timings (for the answer and each
   // follow-up reply); content and structure come from the model.

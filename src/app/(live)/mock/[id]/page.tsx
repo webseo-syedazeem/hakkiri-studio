@@ -2,16 +2,17 @@ import { notFound, redirect } from "next/navigation";
 import { LiveInterview, type LiveQuestion, type LiveSession } from "@/components/live/LiveInterview";
 import { demoMock, roadmapAnswer } from "@/lib/mock-data";
 import { isLaunch } from "@/lib/launch";
-import { getInterview } from "@/lib/interviews/store";
+import { getInterview, getInterviewAsync } from "@/lib/interviews/store";
 import { understandingOf } from "@/lib/interviews/build";
-import { categoryLabel, settingsLine } from "@/lib/interviews/settings";
+import { categoryLabel, settingsLine, styleFor, type Difficulty } from "@/lib/interviews/settings";
 import { profileFor } from "@/lib/scoring/profiles";
 import { followUpLimit } from "@/lib/followups";
 import { mmss, whenSaid } from "@/lib/format";
 import { buildReport } from "@/lib/mocks/report";
-import { findMock, rowsFor } from "@/lib/mocks/store";
+import { findMock, findMockAsync, rowsFor } from "@/lib/mocks/store";
 import { openSession } from "@/lib/sessions/server";
 import { drillTitle, HABIT_INSTRUCTION } from "@/lib/sessions/drills";
+import { getTopic, resolveInterviewQuestion, topicQuestions } from "@/lib/sessions/topics";
 import type { Question } from "@/lib/types";
 import { PAY_STAGE_LABEL, PAY_TIPS, payStage } from "@/lib/sessions/pay";
 
@@ -19,6 +20,7 @@ export const dynamic = "force-dynamic";
 
 /**
  * /mock/{interview}?session={id}   a planned interview, re-run or drill (see /api/interviews/{id}/sessions)
+ * /mock/{interview}?topic={slug}   a focused topic drill (e.g. stakeholder-management)
  * /mock/{interview}?q=c1           one question, then its feedback (?followups=off to start without follow-ups)
  * /mock/{interview}                back to the interview, where you choose your settings and start
  */
@@ -27,11 +29,14 @@ export default async function MockInterviewPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ q?: string; followups?: string; session?: string }>;
+  searchParams: Promise<{ q?: string; followups?: string; session?: string; topic?: string; difficulty?: string }>;
 }) {
   const { id } = await params;
-  const { q, followups, session: sessionId } = await searchParams;
-  const interview = getInterview(id);
+  const { q, followups, session: sessionId, topic, difficulty } = await searchParams;
+  const difficultyParam =
+    difficulty === "easy" || difficulty === "medium" || difficulty === "hard" ? (difficulty as Difficulty) : null;
+  const styleOverride = difficultyParam ? styleFor(difficultyParam) : null;
+  const interview = (await getInterviewAsync(id)) ?? getInterview(id);
   if (!interview) notFound();
 
   const toLive = (question: Question, number: number, follow = true): LiveQuestion => {
@@ -58,10 +63,10 @@ export default async function MockInterviewPage({
     demoFeedbackHref: isLaunch() ? undefined : `/interviews/${demoMock.interviewId}/answers/${roadmapAnswer.id}`,
     demoReportHref: isLaunch() ? undefined : `/interviews/${demoMock.interviewId}/mocks/${demoMock.id}`,
   };
-  const byId = (qid: string) => interview.questions.find((x) => x.id === qid);
+  const byId = (qid: string) => resolveInterviewQuestion(interview, qid);
 
   if (sessionId) {
-    const found = openSession(interview.id, sessionId);
+    const found = (await findMockAsync(sessionId)) ?? openSession(interview.id, sessionId);
     const m = found ?? ({
       id: sessionId,
       interviewId: interview.id,
@@ -121,22 +126,79 @@ export default async function MockInterviewPage({
       } else if (d.kind === "pressure") {
         live.drill.instruction = `One question, then three follow-ups that dig deeper. Stay specific: what you did, why, and what changed.`;
         live.followUpLimit = 3;
+      } else if (d.kind === "topic") {
+        const t = getTopic(d.topic);
+        if (t) {
+          live.minutes = t.minutes;
+          live.drill.topic = t.id;
+          live.drill.focusLabel = t.focusLabel;
+          live.drill.instruction = t.instruction;
+        }
       }
     }
-    const style = m.style ?? interview.style;
+    const style = styleOverride ?? m.style ?? interview.style;
+    const sessionRoleTitle =
+      mode === "drill"
+        ? m.drill?.kind === "topic" && m.drill.topic === "technical"
+          ? "Technical interviewer"
+          : m.drill?.kind === "category" && m.drill.group === "technical"
+            ? "Technical interviewer"
+            : live.drill?.focusLabel
+              ? `${live.drill.focusLabel} drill`
+              : "Focused drill"
+        : m.settings?.preset === "technical"
+          ? "Technical interviewer"
+          : m.settings?.preset === "screening"
+            ? "Recruiter"
+            : m.settings?.preset === "final"
+              ? "Final panel"
+              : interview.interviewer.title;
     return (
       <LiveInterview
         {...common}
-        interviewer={{ ...interview.interviewer, style }}
+        interviewer={{ ...interview.interviewer, title: sessionRoleTitle, style }}
         run={{ kind: "session", session: live }}
         questions={questions.map((x, k) => toLive(x, k + 1))}
       />
     );
   }
 
+  const topicSpec = getTopic(topic);
+  if (topicSpec) {
+    const questions = topicQuestions(topicSpec.id, interview.questions);
+    if (questions.length) {
+      const live: LiveSession = {
+        id: `topic_${topicSpec.id}_${Date.now()}`,
+        mode: "drill",
+        minutes: topicSpec.minutes,
+        feedbackEach: true,
+        spares: [],
+        drill: {
+          kind: "topic",
+          topic: topicSpec.id,
+          title: `${topicSpec.title} drill`,
+          focusLabel: topicSpec.focusLabel,
+          instruction: topicSpec.instruction,
+        },
+      };
+      return (
+        <LiveInterview
+          {...common}
+          interviewer={{
+            ...interview.interviewer,
+            title: topicSpec.id === "technical" ? "Technical interviewer" : `${topicSpec.focusLabel} drill`,
+            style: styleOverride ?? interview.style,
+          }}
+          run={{ kind: "session", session: live }}
+          questions={questions.map((x, k) => toLive(x, k + 1))}
+        />
+      );
+    }
+  }
+
   const single = q ? byId(q) : undefined;
   if (single) {
-    return <LiveInterview {...common} interviewer={{ ...interview.interviewer, style: interview.style }} run={{ kind: "single" }} questions={[toLive(single, 1, followups !== "off")]} />;
+    return <LiveInterview {...common} interviewer={{ ...interview.interviewer, style: styleOverride ?? interview.style }} run={{ kind: "single" }} questions={[toLive(single, 1, followups !== "off")]} />;
   }
 
   redirect(`/interviews/${interview.id}`);

@@ -6,6 +6,7 @@ import { findAnswer, findAnswerAsync, saveAnswerAsync } from "@/lib/answers/stor
 import type { Answer } from "@/lib/types";
 import { findMock, findMockAsync, saveMock, SKIP_REASONS, type MockRecord } from "@/lib/mocks/store";
 import { retireSkipped, topUp } from "@/lib/sessions/server";
+import { resolveInterviewQuestion } from "@/lib/sessions/topics";
 import { mergeRules, rulesFromSkips } from "@/lib/sessions/rules";
 import { flushStorage } from "@/lib/storage/disk";
 import { guard } from "@/lib/usage/limits";
@@ -19,7 +20,16 @@ const Body = z.object({
   interviewId: z.string(),
   /** The planned session this finishes (interviews, re-runs and drills). */
   sessionId: z.string().optional(),
-  kind: z.enum(["full", "group", "first"]).optional(),
+  kind: z.enum(["full", "group", "first", "drill"]).optional(),
+  drill: z
+    .object({
+      kind: z.enum(["fix", "category", "habit", "pressure", "pay", "topic"]),
+      questionId: z.string().optional(),
+      group: z.enum(["motivation", "competency", "technical", "cv", "curveball"]).optional(),
+      habit: z.enum(["lead", "ownership", "numbers", "short", "fillers", "full"]).optional(),
+      topic: z.string().max(80).optional(),
+    })
+    .optional(),
   group: z.enum(["motivation", "competency", "technical", "cv", "curveball"]).optional(),
   startedAt: z.iso.datetime(),
   style: z.enum(["friendly", "realistic", "tough"]).optional(),
@@ -62,7 +72,7 @@ export async function POST(req: Request) {
     if (!a || a.interviewId !== interview.id) {
       console.warn(`[mocks] synthesizing fallback answer for missing id ${aid} in interview ${interview.id}`);
       const qid = body.askedIds?.[i] ?? interview.questions[i]?.id ?? `q_${i + 1}`;
-      const q = interview.questions.find((x) => x.id === qid) ?? interview.questions[i] ?? interview.questions[0];
+      const q = resolveInterviewQuestion(interview, qid) ?? interview.questions[i] ?? interview.questions[0];
       const fallbackAnswer: Answer = {
         id: aid,
         interviewId: interview.id,
@@ -115,7 +125,8 @@ export async function POST(req: Request) {
       session = {
         id: body.sessionId,
         interviewId: interview.id,
-        kind: "full",
+        kind: body.kind ?? "full",
+        drill: body.drill,
         status: "done",
         startedAt: body.startedAt,
         finishedAt,

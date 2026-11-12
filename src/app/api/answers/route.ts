@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
 import { mockTranscript } from "@/lib/ai/mock";
 import { getInterview, getInterviewAsync } from "@/lib/interviews/store";
+import { resolveInterviewQuestion } from "@/lib/sessions/topics";
 import { saveDraft, saveDraftAsync, type Draft } from "@/lib/answers/drafts";
 import { MAX_AUDIO_BYTES, nextFollowUp, notConfigured, scoringError, transcribe } from "@/lib/answers/pipeline";
 import { soundsLikeCorrection } from "@/lib/ai/follow-up";
@@ -33,7 +34,7 @@ export async function POST(req: Request) {
   const audio = form.get("audio");
   const interviewId = String(form.get("interviewId") ?? "");
   const interview = (await getInterviewAsync(interviewId)) ?? getInterview(interviewId);
-  const question = interview?.questions.find((q) => q.id === String(form.get("questionId") ?? ""));
+  const question = resolveInterviewQuestion(interview, String(form.get("questionId") ?? ""));
   if (!(audio instanceof Blob) || !interview || !question) {
     return NextResponse.json({ error: "bad-request", message: "Missing the recording or the question." }, { status: 400 });
   }

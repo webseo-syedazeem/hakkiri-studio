@@ -8,6 +8,7 @@ import { loadJson, loadJsonAsync, saveJson, saveJsonAsync } from "@/lib/storage/
 import { isMongoConfigured } from "@/lib/storage/mongodb";
 import type { SessionSettings } from "@/lib/interviews/settings";
 import type { DrillSpec } from "@/lib/sessions/drills";
+import { resolveInterviewQuestion } from "@/lib/sessions/topics";
 import type { WrongReason } from "@/lib/ai/interview/questions";
 
 /**
@@ -164,7 +165,7 @@ export function rowsFor(m: MockRecord): MockRow[] {
   const interview = getInterview(m.interviewId);
   const fromAnswers = m.answerIds.flatMap((id) => {
     const a = findAnswer(id);
-    const q = a && interview?.questions.find((x) => x.id === a.questionId);
+    const q = a ? resolveInterviewQuestion(interview, a.questionId) : undefined;
     return a && q ? [rowFromAnswer(a, q, a.questionNumber)] : [];
   });
   // Numbered 1, 2, 3… in the order answered (a skipped opening leaves no gap).
@@ -177,7 +178,7 @@ export async function rowsForAsync(m: MockRecord): Promise<MockRow[]> {
     await Promise.all(
       m.answerIds.map(async (id) => {
         const a = (await findAnswerAsync(id)) ?? findAnswer(id);
-        const q = a && interview?.questions.find((x) => x.id === a.questionId);
+        const q = a ? resolveInterviewQuestion(interview, a.questionId) : undefined;
         return a && q ? [rowFromAnswer(a, q, a.questionNumber)] : [];
       })
     )

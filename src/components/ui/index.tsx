@@ -145,6 +145,7 @@ const paths = {
   present: "M3 4h18v12H3z M12 16v4 M8 20h8",
   book: "M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z M4 5v16",
   gear: "M12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6z M12 2v3 M12 19v3 M2 12h3 M19 12h3 M4.9 4.9l2.1 2.1 M17 17l2.1 2.1 M4.9 19.1L7 17 M17 7l2.1-2.1",
+  sliders: "M4 21v-7 M4 10V3 M12 21v-9 M12 8V3 M20 21v-5 M20 12V3 M1 14h6 M9 8h6 M17 16h6",
   plus: "M12 5v14 M5 12h14",
   mic: "M9 3h6v11H9z M5 11a7 7 0 0 0 14 0 M12 18v3",
   play: "M8 5.5v13l11-6.5z",

@@ -2,6 +2,7 @@ import type { Question, QuestionGroup } from "@/lib/types";
 import type { Fix, MockRow } from "@/lib/mocks/report";
 import { categoryLabel, type TechnicalLabel } from "@/lib/interviews/settings";
 import { mmss } from "@/lib/format";
+import { getTopic, topicQuestions } from "./topics";
 
 /**
  * Drills: short practice on one thing, with feedback after every answer.
@@ -14,7 +15,7 @@ import { mmss } from "@/lib/format";
  * Safe to import in the browser.
  */
 
-export type DrillKind = "fix" | "category" | "habit" | "pressure" | "story" | "pay";
+export type DrillKind = "fix" | "category" | "habit" | "pressure" | "story" | "pay" | "topic";
 export type Habit = "lead" | "ownership" | "numbers" | "short" | "fillers" | "full";
 
 export interface DrillSpec {
@@ -25,6 +26,8 @@ export interface DrillSpec {
   group?: QuestionGroup;
   /** habit (and fix: the one change to make). */
   habit?: Habit;
+  /** topic: focused domain/skill drill (e.g. "stakeholder-management"). */
+  topic?: string;
   /** story: the skill to build a story for, and the question that tests it. */
   skill?: string;
   question?: string;
@@ -56,7 +59,7 @@ export const HABIT_INSTRUCTION: Record<Habit, string> = {
 /** Which habit fixes each repeated problem in the report. */
 export const HABIT_FOR_FIX: Record<Fix["id"], Habit> = { lead: "lead", ownership: "ownership", result: "numbers", over: "short", fillers: "fillers", under: "full" };
 
-export const DRILL_MINUTES: Record<DrillKind, number> = { fix: 4, category: 8, habit: 5, pressure: 5, story: 5, pay: 6 };
+export const DRILL_MINUTES: Record<DrillKind, number> = { fix: 4, category: 8, habit: 5, pressure: 5, story: 5, pay: 6, topic: 6 };
 
 /** Whether one answer did the habit: true, false, or null when it can't be told (too short, or not measured). */
 export function rowHabit(row: Pick<MockRow, "pointFirst" | "we" | "i" | "lengthStatus" | "lengthSec" | "fillerCount" | "followUps"> & { hasNumber?: boolean }, habit: Habit): boolean | null {
@@ -197,6 +200,10 @@ export function drillTitle(spec: DrillSpec, shortOf: (id: string) => string, tec
       return `Build a story: ${(spec.skill ?? "").toLowerCase()}`;
     case "pay":
       return "Talking about pay";
+    case "topic": {
+      const t = getTopic(spec.topic);
+      return t ? `${t.title} drill` : "Focused topic drill";
+    }
   }
 }
 
@@ -207,7 +214,7 @@ const lastAskedOrder = (lastAsked: Map<string, string>) => (a: Question, b: Ques
  * first, then the ones you had longest ago. Returns question ids in order.
  */
 export function drillQuestions(spec: DrillSpec, bank: Question[], lastAsked: Map<string, string>, enabled: QuestionGroup[]): string[] {
-  const pool = bank.filter((q) => !q.slot && !q.retired && !q.pay);
+  const pool = bank.filter((q) => !q.slot && !q.retired && !q.pay && !q.drillOnly);
   const fresh = (qs: Question[]) => [...qs.filter((q) => !lastAsked.has(q.id)), ...qs.filter((q) => lastAsked.has(q.id)).sort(lastAskedOrder(lastAsked))];
   switch (spec.kind) {
     case "fix": {
@@ -232,5 +239,7 @@ export function drillQuestions(spec: DrillSpec, bank: Question[], lastAsked: Map
       return [];
     case "pay":
       return bank.filter((q) => q.pay).map((q) => q.id);
+    case "topic":
+      return topicQuestions(spec.topic ?? "", bank).map((q) => q.id);
   }
 }

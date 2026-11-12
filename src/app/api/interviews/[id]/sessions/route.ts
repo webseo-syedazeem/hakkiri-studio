@@ -19,10 +19,11 @@ const Body = z.discriminatedUnion("kind", [
   z.object({
     kind: z.literal("drill"),
     drill: z.object({
-      kind: z.enum(["fix", "category", "habit", "pressure", "pay"]),
+      kind: z.enum(["fix", "category", "habit", "pressure", "pay", "topic"]),
       questionId: z.string().optional(),
       group: Group.optional(),
       habit: z.enum(["lead", "ownership", "numbers", "short", "fillers", "full"]).optional(),
+      topic: z.string().max(80).optional(),
       fromSession: z.string().optional(),
       before: z.number().optional(),
     }),

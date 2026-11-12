@@ -3,6 +3,7 @@ import { DIFFICULTY_LABEL } from "@/lib/interviews/settings";
 import { GROUP_QUESTIONS } from "@/lib/labels";
 import { capitalise, clock, daysBetween, longDay, shortDay, withArticle } from "@/lib/format";
 import { drillTitle } from "./drills";
+import { resolveInterviewQuestion } from "./topics";
 import type { MockRecord } from "@/lib/mocks/store";
 
 /** "Interview", "Run it again", "Technical drill", and the older kinds. */
@@ -13,7 +14,7 @@ export function sessionTitle(m: Pick<MockRecord, "kind" | "drill" | "group">, in
     case "rerun":
       return "Run it again";
     case "drill":
-      return m.drill ? drillTitle(m.drill, (id) => interview.questions.find((q) => q.id === id)?.short ?? "this question", interview.understanding?.technicalLabel) : "Drill";
+      return m.drill ? drillTitle(m.drill, (id) => resolveInterviewQuestion(interview, id)?.short ?? "this question", interview.understanding?.technicalLabel) : "Drill";
     case "full":
       return "Full mock interview";
     case "first":

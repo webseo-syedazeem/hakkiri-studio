@@ -3,11 +3,13 @@ import clsx from "clsx";
 import { Icon, Panel } from "@/components/ui";
 import { getInterview } from "@/lib/interviews/store";
 import { getPresentation } from "@/lib/pitch/store";
+import { CHECKLIST_TOPICS, DRILL_TOPICS } from "@/lib/sessions/topics";
 
 export const dynamic = "force-dynamic";
 
 export default function PracticeHubPage() {
   const interview = getInterview("halden");
+  const interviewId = interview?.id ?? "halden";
   const presentation = getPresentation("q1-roadmap");
 
   const drillCategories = [
@@ -20,7 +22,7 @@ export default function PracticeHubPage() {
       icon: "star" as const,
       color: "from-amber-500/20 to-orange-500/20 text-amber-300 border-amber-500/30",
       description: "Structure complex experience and behavioural stories with crisp Situation, Task, Action, and measurable Result.",
-      href: "/mock/halden",
+      href: `/mock/${interviewId}?topic=star`,
       badge: "Most recommended",
     },
     {
@@ -32,7 +34,7 @@ export default function PracticeHubPage() {
       icon: "target" as const,
       color: "from-blue-500/20 to-indigo-500/20 text-blue-300 border-blue-500/30",
       description: "Balance user conversion, payment fraud loss limits, and business growth trade-offs under probing follow-ups.",
-      href: "/mock/halden",
+      href: `/mock/${interviewId}?topic=commercial-judgement`,
       badge: "Priority area",
     },
     {
@@ -44,7 +46,7 @@ export default function PracticeHubPage() {
       icon: "code" as const,
       color: "from-purple-500/20 to-pink-500/20 text-purple-300 border-purple-500/30",
       description: "Explain technical architecture choices, idempotency, latency constraints, and handling disagreements with senior engineers.",
-      href: "/mock/halden",
+      href: `/mock/${interviewId}?topic=technical`,
     },
     {
       id: "curveball",
@@ -55,7 +57,7 @@ export default function PracticeHubPage() {
       icon: "chat" as const,
       color: "from-emerald-500/20 to-teal-500/20 text-emerald-300 border-emerald-500/30",
       description: "Handle unexpected scenarios, gap explanations, and compensation expectations with poise and confidence.",
-      href: "/mock/halden",
+      href: `/mock/${interviewId}?topic=curveball`,
     },
   ];
 
@@ -92,12 +94,19 @@ export default function PracticeHubPage() {
     },
   ];
 
-  const knowledgeChecklist = [
-    { name: "Payment fundamentals", topic: "Authorisation, checkout, settlement & fraud controls", status: "Ready" },
-    { name: "Product metrics", topic: "Conversion, transaction failure rates & fraud losses", status: "Review" },
-    { name: "Commercial judgement", topic: "Balancing growth with risk, regulation & costs", status: "Priority" },
-    { name: "Stakeholder management", topic: "Aligning engineering, compliance & commercial teams", status: "Ready" },
-  ];
+  const checklistStatus: Record<(typeof CHECKLIST_TOPICS)[number], string> = {
+    "payment-fundamentals": "Ready",
+    "product-metrics": "Review",
+    "commercial-judgement": "Priority",
+    "stakeholder-management": "Ready",
+  };
+  const knowledgeChecklist = CHECKLIST_TOPICS.map((topicId) => ({
+    id: topicId,
+    name: DRILL_TOPICS[topicId].title,
+    topic: DRILL_TOPICS[topicId].subtitle,
+    status: checklistStatus[topicId],
+    href: `/mock/${interviewId}?topic=${topicId}`,
+  }));
 
   return (
     <div className="flex grow flex-col w-full pb-20 animate-rise text-white">
@@ -301,7 +310,7 @@ export default function PracticeHubPage() {
                   {item.status}
                 </span>
                 <Link
-                  href="/mock/halden"
+                  href={item.href}
                   className="px-3 py-1.5 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] text-xs font-semibold text-white border border-white/10 transition-colors"
                 >
                   Practise

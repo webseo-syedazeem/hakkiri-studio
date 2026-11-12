@@ -25,15 +25,22 @@ export interface Picked {
 
 const zero = (): Record<QuestionGroup, number> => ({ motivation: 0, competency: 0, technical: 0, cv: 0, curveball: 0 });
 
-export function pickQuestions(bank: Question[], settings: Pick<SessionSettings, "minutes" | "difficulty" | "mix">, lastAsked: Map<string, string>, opts: { allowRepeats?: boolean } = {}): Picked {
+export function pickQuestions(
+  bank: Question[],
+  settings: Pick<SessionSettings, "minutes" | "difficulty" | "mix"> & { preset?: SessionSettings["preset"] },
+  lastAsked: Map<string, string>,
+  opts: { allowRepeats?: boolean } = {},
+): Picked {
   const alloc = allocate(settings.mix, mixQuestionCount(settings.minutes, settings.difficulty));
   const short = zero();
   const sparesShort = zero();
   const main: string[] = [];
   const spares: string[] = [];
-  for (const g of ASK_ORDER) {
+  const order: QuestionGroup[] =
+    settings.preset === "technical" ? ["technical", ...ASK_ORDER.filter((g) => g !== "technical")] : ASK_ORDER;
+  for (const g of order) {
     if (alloc[g] === 0) continue;
-    const pool = bank.filter((q) => q.group === g && !q.slot && !q.retired && !q.pay);
+    const pool = bank.filter((q) => q.group === g && !q.slot && !q.retired && !q.pay && !q.drillOnly);
     const unheard = [...pool.filter((q) => q.custom && !lastAsked.has(q.id)), ...pool.filter((q) => !q.custom && !lastAsked.has(q.id))];
     const chosen = unheard.slice(0, alloc[g]);
     if (chosen.length < alloc[g] && opts.allowRepeats) {
@@ -47,7 +54,8 @@ export function pickQuestions(bank: Question[], settings: Pick<SessionSettings, 
     main.push(...chosen.map((q) => q.id));
     spares.push(...spare.map((q) => q.id));
   }
-  const opening = bank.find((q) => q.slot === "opening");
+  // Technical round starts straight with technical questions rather than "Tell me about yourself".
+  const opening = settings.preset === "technical" ? undefined : bank.find((q) => q.slot === "opening");
   const closing = hasClosing(settings.minutes) ? bank.find((q) => q.slot === "closing") : undefined;
   return { questionIds: [...(opening ? [opening.id] : []), ...main, ...(closing ? [closing.id] : [])], spareIds: spares, short, sparesShort };
 }

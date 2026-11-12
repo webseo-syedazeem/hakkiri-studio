@@ -52,6 +52,8 @@ export interface Question {
   addedAt?: string;
   /** One of the four "Talking about pay" questions: only asked in that drill. */
   pay?: boolean;
+  /** Built-in topic-drill questions: only asked in their matching topic drill. */
+  drillOnly?: boolean;
 }
 
 /** The six kinds of follow-up in the spec ("Follow-up questions"). */

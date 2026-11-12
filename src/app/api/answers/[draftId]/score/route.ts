@@ -8,6 +8,7 @@ import { saveRecordings } from "@/lib/answers/audio";
 import { flushStorage } from "@/lib/storage/disk";
 import { notConfigured, scoringError } from "@/lib/answers/pipeline";
 import { getInterview, getInterviewAsync } from "@/lib/interviews/store";
+import { resolveInterviewQuestion } from "@/lib/sessions/topics";
 import { profileFor } from "@/lib/scoring/profiles";
 import type { FollowUpKind } from "@/lib/types";
 import { progressFor } from "@/lib/progress";
@@ -34,7 +35,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ draftI
   if (limited) return limited;
   const draft = (await getDraftAsync(draftId)) ?? getDraft(draftId);
   const interview = draft ? ((await getInterviewAsync(draft.interviewId)) ?? getInterview(draft.interviewId)) : undefined;
-  const question = interview?.questions.find((q) => q.id === draft?.questionId);
+  const question = draft ? resolveInterviewQuestion(interview, draft.questionId) : undefined;
   if (!draft || !interview || !question) {
     // Resilient fallback: rather than failing with 404 expired on serverless cold starts or missing drafts,
     // synthesize a valid scored answer so the user's interview completes seamlessly.

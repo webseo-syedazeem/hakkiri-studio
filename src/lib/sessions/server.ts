@@ -41,7 +41,7 @@ export interface Standing {
   sessions: MockRecord[];
 }
 
-const sameDrill = (a: DrillSpec, b: DrillSpec) => a.kind === b.kind && a.questionId === b.questionId && a.group === b.group && a.habit === b.habit && a.skill === b.skill;
+const sameDrill = (a: DrillSpec, b: DrillSpec) => a.kind === b.kind && a.questionId === b.questionId && a.group === b.group && a.habit === b.habit && a.topic === b.topic && a.skill === b.skill;
 
 export function standing(interview: Interview): Standing {
   const sessions = doneSessions(interview.id);
