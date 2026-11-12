@@ -14,7 +14,6 @@ import {
   type SessionMinutes,
   type SessionSettings,
 } from "@/lib/interviews/settings";
-import type { TopicSpec } from "@/lib/sessions/topics";
 import { InterviewTabs } from "./InterviewTabs";
 import { StartButton } from "./StartSession";
 
@@ -80,7 +79,7 @@ export function InterviewOverviewClient({
   initialStageId: string;
   stages: OverviewStageOption[];
   scoreCategories: OverviewScoreCategory[];
-  topics: TopicSpec[];
+  topics: { id: string; title: string }[];
   roleSummary: string;
   inputsSummary: string;
 }) {

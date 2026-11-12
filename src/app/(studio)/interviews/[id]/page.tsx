@@ -129,7 +129,7 @@ export default async function InterviewOverview({
       initialStageId={initialStageId}
       stages={stages}
       scoreCategories={scoreCategories}
-      topics={Object.values(DRILL_TOPICS)}
+      topics={Object.values(DRILL_TOPICS).map((t) => ({ id: t.id, title: t.title }))}
       roleSummary={roleSummary}
       inputsSummary={inputsSummary}
     />
