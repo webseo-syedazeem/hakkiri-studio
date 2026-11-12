@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import clsx from "clsx";
 import { Icon, Panel } from "@/components/ui";
 import { Segmented } from "@/components/ui/Segmented";
@@ -44,6 +44,128 @@ const DIFFICULTIES: Difficulty[] = ["easy", "medium", "hard"];
 
 function isPracticeMinutes(m: SessionMinutes): m is PracticeMinutes {
   return m === 10 || m === 20 || m === 30 || m === 45;
+}
+
+function StageDropdown({
+  stages,
+  value,
+  onChange,
+}: {
+  stages: OverviewStageOption[];
+  value: string;
+  onChange: (id: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const active = stages.find((s) => s.id === value) ?? stages[0];
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointer = (e: PointerEvent) => {
+      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onPointer);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  return (
+    <div ref={rootRef} className="relative">
+      <button
+        id="overview-stage-select"
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+        className={clsx(
+          "flex w-full items-center justify-between gap-3 rounded-xl px-3.5 py-2.5 text-left text-xs font-semibold text-white transition-all cursor-pointer border",
+          "bg-[#141526] hover:bg-[#191a30]",
+          open
+            ? "border-indigo-400/75 ring-2 ring-indigo-500/20 shadow-[0_4px_18px_rgba(79,82,248,0.18)]"
+            : "border-white/[0.12] hover:border-white/25",
+        )}
+      >
+        <span className="flex items-center gap-2 min-w-0">
+          <span className="truncate">{active.selectLabel}</span>
+          {active.status === "next" && (
+            <span className="rounded bg-indigo-500/20 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-indigo-300 shrink-0">
+              Next
+            </span>
+          )}
+        </span>
+        <Icon
+          name="chevronDown"
+          size={14}
+          className={clsx("shrink-0 text-muted transition-transform duration-200", open && "rotate-180 text-indigo-300")}
+        />
+      </button>
+
+      {open && (
+        <ul
+          role="listbox"
+          aria-labelledby="overview-stage-select"
+          className="absolute left-0 right-0 z-30 mt-2 rounded-xl border border-white/[0.12] bg-[#121324]/95 backdrop-blur-xl p-1.5 shadow-[0_16px_44px_rgba(0,0,0,0.65)] space-y-0.5 animate-rise"
+        >
+          {stages.map((st) => {
+            const selected = st.id === active.id;
+            return (
+              <li key={st.id} role="option" aria-selected={selected}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onChange(st.id);
+                    setOpen(false);
+                  }}
+                  className={clsx(
+                    "flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-xs transition-colors cursor-pointer",
+                    selected
+                      ? "bg-indigo-500/18 text-white font-semibold border border-indigo-500/30"
+                      : "text-[#c9cad6] hover:bg-white/[0.06] hover:text-white border border-transparent",
+                  )}
+                >
+                  <span className="flex items-center gap-2 min-w-0">
+                    <span
+                      className={clsx(
+                        "h-1.5 w-1.5 rounded-full shrink-0",
+                        st.status === "completed"
+                          ? "bg-emerald-400"
+                          : st.status === "next"
+                            ? "bg-indigo-400"
+                            : "bg-white/25",
+                      )}
+                    />
+                    <span className="truncate">{st.selectLabel}</span>
+                  </span>
+
+                  <span className="flex items-center gap-2 shrink-0">
+                    <span
+                      className={clsx(
+                        "text-[10px] font-medium",
+                        st.status === "completed"
+                          ? "text-emerald-400/90"
+                          : st.status === "next"
+                            ? "text-indigo-300"
+                            : "text-dim",
+                      )}
+                    >
+                      {st.status === "completed" ? "Completed" : st.status === "next" ? "Next" : "Upcoming"}
+                    </span>
+                    {selected && <Icon name="check" size={13} strokeWidth={2.5} className="text-indigo-300" />}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
 }
 
 export function InterviewOverviewClient({
@@ -460,7 +582,7 @@ export function InterviewOverviewClient({
           </Panel>
 
           {/* Card 5: Practice settings */}
-          <Panel className="p-5 sm:p-6 space-y-4">
+          <Panel className="relative z-20 p-5 sm:p-6 space-y-4">
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h2 className="text-sm font-bold text-white">Practice settings</h2>
@@ -474,25 +596,7 @@ export function InterviewOverviewClient({
               <label htmlFor="overview-stage-select" className="block text-xs font-medium text-muted">
                 Interview stage
               </label>
-              <div className="relative">
-                <select
-                  id="overview-stage-select"
-                  value={activeStage.id}
-                  onChange={(e) => setStageId(e.target.value)}
-                  className="w-full appearance-none rounded-xl bg-panel-2 border border-line-strong px-3.5 py-2.5 pr-9 text-xs font-semibold text-white focus:border-indigo-400 focus:outline-none cursor-pointer transition-colors"
-                >
-                  {stages.map((st) => (
-                    <option key={st.id} value={st.id} className="bg-[#141522] text-white">
-                      {st.selectLabel}
-                    </option>
-                  ))}
-                </select>
-                <Icon
-                  name="chevronDown"
-                  size={14}
-                  className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted"
-                />
-              </div>
+              <StageDropdown stages={stages} value={activeStage.id} onChange={setStageId} />
             </div>
 
             {/* Difficulty & Interview length side-by-side */}
