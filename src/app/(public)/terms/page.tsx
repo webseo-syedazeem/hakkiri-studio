@@ -66,7 +66,7 @@ export default function TermsPage() {
           body: (
             <p>
               Questions, follow-ups, scores, stronger versions of your answers and other feedback are produced by AI and can be wrong, incomplete or not right for your situation. Use your own judgement. Make sure what you say in a real interview is true: the
-              stronger versions are examples, not facts about you. Guidance in the pay drill is general and isn’t advice about any particular offer.
+              stronger versions are examples, not facts about you. Guidance in the pay practice is general and isn’t advice about any particular offer.
             </p>
           ),
         },

@@ -119,7 +119,7 @@ export default function PracticeHubPage() {
           </div>
           <h1 className="text-3xl font-bold tracking-tight text-white">Practice Hub</h1>
           <p className="mt-1.5 text-sm text-[#a1a2b3] max-w-2xl leading-relaxed">
-            Targeted practice drills and executive presentation workouts. Focus on your weakest areas with immediate feedback after each answer.
+            Focused practice sessions and executive presentation workouts. Focus on your weakest areas with immediate feedback after each answer.
           </p>
         </div>
 
@@ -180,8 +180,8 @@ export default function PracticeHubPage() {
       <div className="mt-8">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-lg font-bold text-white tracking-tight">Interview Question Drills</h2>
-            <p className="text-xs text-muted">Short 3–5 minute focused workouts with instant scoring and actionable feedback.</p>
+            <h2 className="text-lg font-bold text-white tracking-tight">Focused Question Practice</h2>
+            <p className="text-xs text-muted">Short 3–5 minute focused sessions with instant scoring and actionable feedback.</p>
           </div>
         </div>
 
@@ -224,7 +224,7 @@ export default function PracticeHubPage() {
                   href={drill.href}
                   className="pro-btn-glow flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#141326] border border-white/10 hover:border-white/25 hover:bg-[#1a1932] text-xs font-semibold text-white transition-all"
                 >
-                  <span>Start drill</span>
+                  <span>Start practice</span>
                   <Icon name="chevronRight" size={13} />
                 </Link>
               </div>

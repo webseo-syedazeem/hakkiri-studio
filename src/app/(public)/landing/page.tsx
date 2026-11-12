@@ -57,7 +57,7 @@ export default function LandingPage() {
         steps={[
           { title: "Add the job and your CV", body: "Paste the job description or a link, and add your CV. Hakkiri shows what it understood about the role, so you can correct it before you start." },
           { title: "Practise out loud", body: "A real-length interview with follow-up questions. Skip one that doesn’t fit you, or say something’s wrong and it rebuilds the interview." },
-          { title: "Fix what matters most", body: "Ready, Nearly or Not yet, your top three fixes, and short drills for each. Then run it again and see the before and after." },
+          { title: "Fix what matters most", body: "Ready, Nearly or Not yet, your top three fixes, and short focused practice for each. Then run it again and see the before and after." },
         ]}
         cta={CTA}
         reassure={REASSURE}
@@ -67,10 +67,10 @@ export default function LandingPage() {
         id="interviews"
         kicker="Your report"
         title="Ready, Nearly or Not yet. For this job."
-        body="After each interview: a verdict for the level of this job, a score for every category, and the three changes that would raise your score most, each with a short drill."
-        points={["A score for each category", "Your top three fixes", "A drill for each fix", "Run it again and see the before and after"]}
+        body="After each interview: a verdict for the level of this job, a score for every category, and the three changes that would raise your score most, each with short focused practice."
+        points={["A score for each category", "Your top three fixes", "Focused practice for each fix", "Run it again and see the before and after"]}
         mist
-        shot={<Device src="/landing/report-full.webp" width={2710} height={1445} alt="A Hakkiri report: Nearly ready at 3.5, a score for each category, the three changes that would raise the score most, and three drills to train them." />}
+        shot={<Device src="/landing/report-full.webp" width={2710} height={1445} alt="A Hakkiri report: Nearly ready at 3.5, a score for each category, the three changes that would raise the score most, and three focused practice options to train them." />}
       />
 
       <Feature
@@ -131,7 +131,7 @@ export default function LandingPage() {
         hoursLine="An hour is about two 30-minute interviews, or six run-throughs of a 10-minute talk."
         hoursPoints={[
           "You choose each interview’s length, from 10 to 60 minutes.",
-          "Hours count only while you practise: interviews, drills, rehearsals and Q&A.",
+          "Hours count only while you practise: interviews, focused practice, rehearsals and Q&A.",
           "Reading your reports, feedback and prep sheet is free.",
           "Job search hours last all 3 months. Monthly hours reset each month.",
         ]}

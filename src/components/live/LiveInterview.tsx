@@ -634,7 +634,7 @@ export function LiveInterview(p: LiveInterviewProps) {
   const howMany = (n: number) => `${inWords(n)} follow-up${n > 1 ? "s" : ""}`;
   const followUpsLine = session
     ? session.followUpLimit === 0
-      ? "No follow-ups in this drill: quick questions, feedback after each."
+      ? "No follow-ups in this session: quick questions, feedback after each."
       : session.followUpLimit
         ? `Up to ${howMany(session.followUpLimit)} after your answer, each digging deeper.`
         : `Up to ${howMany(Math.max(...queue.map((x) => followUpLimit(style, x.type)), 1))} after each answer. ${session.feedbackEach ? "Feedback after every answer." : "Feedback comes at the end, like a real interview."}`
@@ -665,7 +665,7 @@ export function LiveInterview(p: LiveInterviewProps) {
 
   const current = phase === "finishing" ? queue.length + 1 : qIndex + 1;
   const total = scored.current.length;
-  const title = !session ? "Practice question" : session.mode === "interview" ? "Interview" : session.mode === "rerun" ? "Run it again" : `Drill: ${session.drill?.title ?? ""}`;
+  const title = !session ? "Practice question" : session.mode === "interview" ? "Interview" : session.mode === "rerun" ? "Run it again" : `Focused practice: ${session.drill?.title ?? ""}`;
   const canSkip = Boolean(session) && turn.kind === "main" && (phase === "asking" || phase === "answering" || phase === "paused");
   const before = session?.before?.[q.id];
   const fb = feedback?.result.row;
@@ -729,7 +729,7 @@ export function LiveInterview(p: LiveInterviewProps) {
           )}
           {isRun && phase !== "ready" && phase !== "finishing" ? (
             <Button size="sm" onClick={() => void endEarly()}>
-              {session?.mode === "drill" ? "End drill" : "End interview"}
+              {session?.mode === "drill" ? "End practice" : "End interview"}
             </Button>
           ) : (
             phase !== "finishing" && (
@@ -762,7 +762,7 @@ export function LiveInterview(p: LiveInterviewProps) {
                   </div>
                   <div>
                     <span className="text-xs font-medium text-muted">
-                      {session?.mode === "drill" ? `Focused drill with ${name}` : "Your interviewer"}
+                      {session?.mode === "drill" ? `Focused practice with ${name}` : "Your interviewer"}
                     </span>
                     <h1 className="text-2xl font-bold tracking-tight text-white mt-0.5">
                       {session?.mode === "drill" && session.drill?.title ? session.drill.title : `Your interview with ${name}`}
@@ -805,7 +805,7 @@ export function LiveInterview(p: LiveInterviewProps) {
                       {session?.minutes ?? (session?.mode === "drill" ? 6 : 20)} minutes
                     </div>
                     <div className="text-xs text-[#8c8d9e] truncate">
-                      {session?.mode === "drill" ? "Drill length" : "Interview length"}
+                      {session?.mode === "drill" ? "Practice length" : "Interview length"}
                     </div>
                   </div>
                 </div>
@@ -1010,7 +1010,7 @@ export function LiveInterview(p: LiveInterviewProps) {
                 className="group flex items-center gap-2.5 rounded-xl bg-gradient-to-r from-[#4f52f8] via-[#5c5ffc] to-[#6d5eff] hover:from-[#5b5efd] hover:to-[#7b6dff] px-7 py-3 text-sm font-semibold text-white border border-white/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.3),0_6px_25px_-2px_rgba(79,82,248,0.55)] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_8px_32px_-2px_rgba(79,82,248,0.75)] transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] cursor-pointer"
               >
                 <Icon name="mic" size={17} strokeWidth={2.2} className="group-hover:scale-110 transition-transform duration-200" />
-                <span>{begun.current ? "Carry on" : session?.mode === "drill" ? "Start drill" : "Start interview"}</span>
+                <span>{begun.current ? "Carry on" : session?.mode === "drill" ? "Start practice" : "Start interview"}</span>
               </button>
             </div>
           </div>
@@ -1028,7 +1028,7 @@ export function LiveInterview(p: LiveInterviewProps) {
                     <span>Interview completed</span>
                   </div>
                   <h1 className="mt-3 text-2xl sm:text-3xl font-bold tracking-tight text-white leading-tight">
-                    {session?.mode === "drill" ? "That’s the drill done." : "Thank you. That’s the end of the interview."}
+                    {session?.mode === "drill" ? "That’s the focused practice done." : "Thank you. That’s the end of the interview."}
                   </h1>
                   <p className="mt-3 text-sm text-[#a1a2b3] leading-relaxed max-w-xl">
                     Your report is being written now: every answer and follow-up, scored the same way.
@@ -1050,7 +1050,7 @@ export function LiveInterview(p: LiveInterviewProps) {
                   <div>
                     <div className="flex items-center justify-between text-xs text-muted pb-3 border-b border-white/[0.06]">
                       <span>Question {qIndex + 1} of {queue.length}: {feedback.question.short}</span>
-                      <span className="px-2.5 py-0.5 rounded-full bg-blue/15 text-blue-soft font-semibold">Drill Feedback</span>
+                      <span className="px-2.5 py-0.5 rounded-full bg-blue/15 text-blue-soft font-semibold">Focused Feedback</span>
                     </div>
                     <div className="mt-4 flex items-baseline gap-4">
                       <span className="num text-4xl sm:text-5xl font-bold text-white tracking-tight">{fb.overall?.toFixed(1) ?? "n/a"}</span>

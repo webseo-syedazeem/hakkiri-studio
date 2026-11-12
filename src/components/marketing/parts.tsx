@@ -815,7 +815,7 @@ function BetaPricing({ plans }: { plans: Plan[] }) {
     `${BETA.hoursPerTester} hours of practice a month: about twenty 30-minute interviews, or sixty run-throughs of a 10-minute talk`,
     "Interviews built from your job and CV, with follow-ups",
     "Presentations and audience Q&A",
-    "Reports, feedback on every answer, drills, story bank, prep sheet",
+    "Reports, feedback on every answer, focused practice, story bank, prep sheet",
     "The natural interviewer voice",
     "Download or delete everything you’ve made, any time",
   ];
@@ -949,7 +949,7 @@ export function Privacy({ points }: { points: string[] }) {
 const BETA_FAQ: Record<string, { q: string; a: string } | null> = {
   "What do I get for free?": {
     q: "What do I get for free?",
-    a: `Everything, for ${BETA.hoursPerTester} hours of practice a month during the beta. Interviews built from your CV and the job, presentations, reports, feedback on every answer, drills and the story bank. No card needed.`,
+    a: `Everything, for ${BETA.hoursPerTester} hours of practice a month during the beta. Interviews built from your CV and the job, presentations, reports, feedback on every answer, focused practice and the story bank. No card needed.`,
   },
   "What happens if I run out of hours?": {
     q: "What happens when I’ve used my hours?",

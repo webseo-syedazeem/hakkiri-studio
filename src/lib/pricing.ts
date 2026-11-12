@@ -57,7 +57,7 @@ export const PLANS: Plan[] = [
       "30 hours of practice, to use any time in 3 months",
       "Interviews from 10 to 60 minutes, for any number of jobs",
       "Natural interviewer voice",
-      "Drills, re-runs and practice talking about pay",
+      "Focused practice, re-runs and talking about pay",
       "Your prep sheet and story bank",
       "Presentations and audience Q&A",
       "Paid once. It doesn’t renew",

@@ -14,7 +14,7 @@ export function sessionTitle(m: Pick<MockRecord, "kind" | "drill" | "group">, in
     case "rerun":
       return "Run it again";
     case "drill":
-      return m.drill ? drillTitle(m.drill, (id) => resolveInterviewQuestion(interview, id)?.short ?? "this question", interview.understanding?.technicalLabel) : "Drill";
+      return m.drill ? drillTitle(m.drill, (id) => resolveInterviewQuestion(interview, id)?.short ?? "this question", interview.understanding?.technicalLabel) : "Focused practice";
     case "full":
       return "Full mock interview";
     case "first":

@@ -253,7 +253,7 @@ export function DashboardClientView({
                   </div>
                   <div className="min-w-0 grow">
                     <div className="text-[14px] font-semibold text-ink group-hover:underline group-hover:text-blue-soft transition-colors leading-snug">
-                      Technical drill
+                      Technical focused practice
                     </div>
                     <div className="truncate text-xs text-muted mt-0.5">
                       8 min · Last practised yesterday

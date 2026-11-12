@@ -144,8 +144,8 @@ export default async function MockInterviewPage({
           : m.drill?.kind === "category" && m.drill.group === "technical"
             ? "Technical interviewer"
             : live.drill?.focusLabel
-              ? `${live.drill.focusLabel} drill`
-              : "Focused drill"
+              ? `${live.drill.focusLabel} practice`
+              : "Focused practice"
         : m.settings?.preset === "technical"
           ? "Technical interviewer"
           : m.settings?.preset === "screening"
@@ -176,7 +176,7 @@ export default async function MockInterviewPage({
         drill: {
           kind: "topic",
           topic: topicSpec.id,
-          title: `${topicSpec.title} drill`,
+          title: topicSpec.title,
           focusLabel: topicSpec.focusLabel,
           instruction: topicSpec.instruction,
         },
@@ -186,7 +186,7 @@ export default async function MockInterviewPage({
           {...common}
           interviewer={{
             ...interview.interviewer,
-            title: topicSpec.id === "technical" ? "Technical interviewer" : `${topicSpec.focusLabel} drill`,
+            title: topicSpec.id === "technical" ? "Technical interviewer" : `${topicSpec.focusLabel} practice`,
             style: styleOverride ?? interview.style,
           }}
           run={{ kind: "session", session: live }}

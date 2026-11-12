@@ -349,7 +349,7 @@ export function InterviewSetup() {
           },
           {
             id: "p2",
-            name: "Technical & role drill",
+            name: "Technical & role practice",
             date: "",
             time: "",
             format: "Video call",

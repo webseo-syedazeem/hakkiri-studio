@@ -130,7 +130,7 @@ export default function PresentPage() {
         promises={["No card needed for the free run", "Cancel Monthly any time", "3 months is paid once and never renews"]}
         hoursLine="An hour is about six run-throughs of a 10-minute talk."
         hoursPoints={[
-          "Hours count only while you practise: rehearsals, Q&A, interviews and drills.",
+          "Hours count only while you practise: rehearsals, Q&A, interviews and focused practice.",
           "A full run takes as long as your talk. One slide or the opening takes a minute or two.",
           "Reading your reports and feedback is free.",
           "Monthly hours reset each month. 3-month hours last all 3 months.",

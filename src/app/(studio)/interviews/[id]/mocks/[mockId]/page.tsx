@@ -338,7 +338,7 @@ export default async function SessionReportPage({ params, searchParams }: { para
         <Header
           interview={interview}
           mock={mock}
-          title={`Drill: ${title}`}
+          title={`Focused practice: ${title}`}
           meta={
             <>
               {whenSaid(mock.startedAt)}

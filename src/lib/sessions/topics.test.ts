@@ -31,7 +31,7 @@ describe("topic-specific practice drills", () => {
 
   it("integrates with drillQuestions, drillTitle and resolveInterviewQuestion", () => {
     const spec = { kind: "topic" as const, topic: "stakeholder-management" };
-    expect(drillTitle(spec, (id) => id)).toBe("Stakeholder management drill");
+    expect(drillTitle(spec, (id) => id)).toBe("Stakeholder management");
     const ids = drillQuestions(spec, halden.questions, new Map(), ["competency"]);
     expect(ids.length).toBeGreaterThanOrEqual(3);
     for (const id of ids) {

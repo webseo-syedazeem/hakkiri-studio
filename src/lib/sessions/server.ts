@@ -190,7 +190,7 @@ export async function planDrill(interviewId: string, spec: DrillSpec): Promise<M
     }
   }
   const ids = drillQuestions(spec, interview.questions, lastAsked, enabledGroups(settings.mix));
-  if (!ids.length) throw new PlanError("There are no questions for that drill yet.");
+  if (!ids.length) throw new PlanError("There are no questions for that focused practice yet.");
   // A category drill starts at your difficulty and gets harder as you do well; a pressure drill is always tough.
   const style = spec.kind === "pressure" ? "tough" : styleFor(settings.difficulty);
   return createSession({ interviewId, kind: "drill", drill: spec, settings, questionIds: ids, spareIds: [], style });
@@ -292,6 +292,6 @@ export function interviewNextStep(interview: Interview, st: Standing = standing(
   if (drill?.spec.kind === "story") {
     return { label: drill.title, detail: `${drill.minutes} min`, href: `/interviews/${interview.id}/story?skill=${encodeURIComponent(drill.spec.skill ?? "")}&question=${encodeURIComponent(drill.spec.question ?? "")}` };
   }
-  if (drill) return { label: drill.title, detail: `Drill, ${drill.minutes} min`, drill: drill.spec };
+  if (drill) return { label: drill.title, detail: `Focused practice, ${drill.minutes} min`, drill: drill.spec };
   return { label: "New questions", detail: st.verdict === "ready" ? "Keep it fresh before the day" : "Leans towards your weakest category", href: `/interviews/${interview.id}#new-questions` };
 }

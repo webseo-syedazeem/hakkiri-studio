@@ -142,7 +142,7 @@ export function suggestDrills(s: SuggestInput, limit = 3): DrillSuggestion[] {
     const [group, score] = cats[0];
     out.push({
       spec: { kind: "category", group, fromSession: s.sessionId },
-      title: `${categoryLabel(group, s.technicalLabel)} drill`,
+      title: `${categoryLabel(group, s.technicalLabel)} practice`,
       detail: `Your lowest category (${score.toFixed(1)}). Three new questions, feedback after each, harder as you improve.`,
       minutes: DRILL_MINUTES.category,
       gain: (4.5 - score) * 1.2,
@@ -191,7 +191,7 @@ export function drillTitle(spec: DrillSpec, shortOf: (id: string) => string, tec
     case "fix":
       return `Fix “${shortOf(spec.questionId ?? "")}”`;
     case "category":
-      return `${categoryLabel(spec.group ?? "competency", technicalLabel)} drill`;
+      return `${categoryLabel(spec.group ?? "competency", technicalLabel)} practice`;
     case "habit":
       return HABIT_LABEL[spec.habit ?? "lead"];
     case "pressure":
@@ -202,7 +202,7 @@ export function drillTitle(spec: DrillSpec, shortOf: (id: string) => string, tec
       return "Talking about pay";
     case "topic": {
       const t = getTopic(spec.topic);
-      return t ? `${t.title} drill` : "Focused topic drill";
+      return t ? t.title : "Topic practice";
     }
   }
 }

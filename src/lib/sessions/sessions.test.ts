@@ -56,7 +56,7 @@ describe("drills", () => {
     const d = suggestDrills({ sessionId: "demo-full", rows, fixes: report.fixes, categories: report.categories, gaps: halden.gaps!, technicalLabel: "Technical", shortOf: (id) => halden.questions.find((q) => q.id === id)!.short });
     expect(d.length).toBe(3);
     expect(d[0].spec.kind).toBe("category");
-    expect(d[0].title).toBe("Technical drill");
+    expect(d[0].title).toBe("Technical practice");
     expect(d.map((x) => x.spec.kind)).toContain("fix");
     expect(d.reduce((n, x) => n + x.minutes, 0)).toBeLessThanOrEqual(20);
   });

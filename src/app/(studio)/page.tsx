@@ -49,7 +49,7 @@ export default async function HomePage() {
       type: "interview",
       dateGroup: "Mon 16 Nov",
       time: "14:00",
-      title: "Case Interview & Metrics Drill",
+      title: "Case Interview & Metrics Practice",
       subtitle: "Halden · Stage 3 Prep",
       relative: "in 9 days",
       href: "/interviews/halden",

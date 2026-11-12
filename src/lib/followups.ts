@@ -9,7 +9,7 @@ export const FOLLOW_UP_KIND_LABEL: Record<FollowUpKind, string> = {
   ownership: "Your part",
   result: "The result",
   challenge: "Challenge",
-  technical: "Technical drill-down",
+  technical: "Technical deep-dive",
   cv: "From your CV",
   clarify: "Clarify",
 };
