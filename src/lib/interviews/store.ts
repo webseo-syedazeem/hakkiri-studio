@@ -28,10 +28,28 @@ export function isDemoInterview(id: string): boolean {
   return id === DEMO_INTERVIEW_ID;
 }
 
+/** Merges built-in Halden difficulty pools (`easy`/`medium`/`hard`) if an older stored Halden copy lacks them. */
+function withDemoPool(base: Interview): Interview {
+  if (base.id !== halden.id) return base;
+  const builtInById = new Map(halden.questions.map((q) => [q.id, q]));
+  const existingIds = new Set(base.questions.map((q) => q.id));
+  const merged = base.questions.map((q) => {
+    const ref = builtInById.get(q.id);
+    return ref?.difficulty && !q.difficulty ? { ...q, difficulty: ref.difficulty } : q;
+  });
+  for (const q of halden.questions) {
+    if (!existingIds.has(q.id)) merged.push(q);
+  }
+  return merged.length === base.questions.length && merged.every((q, idx) => q === base.questions[idx])
+    ? base
+    : { ...base, questions: merged };
+}
+
 /** An interview with its plan, including any questions you've added yourself. */
 export function getInterview(id: string): Interview | undefined {
-  const base = store.get(id) ?? demoBase(id);
-  if (!base) return undefined;
+  const raw = store.get(id) ?? demoBase(id);
+  if (!raw) return undefined;
+  const base = withDemoPool(raw);
   const extra = customQuestions(id);
   if (!extra.length) return base;
   const questions = [...base.questions, ...extra];
@@ -108,9 +126,9 @@ export async function saveInterviewAsync(i: Interview) {
 
 /** Changes a saved interview (or the demo) and returns it as getInterview would. */
 export function updateInterview(id: string, change: (i: Interview) => Interview): Interview | undefined {
-  const base = store.get(id) ?? demoBase(id);
-  if (!base) return undefined;
-  saveInterview(change(base));
+  const raw = store.get(id) ?? demoBase(id);
+  if (!raw) return undefined;
+  saveInterview(change(withDemoPool(raw)));
   return getInterview(id);
 }
 
