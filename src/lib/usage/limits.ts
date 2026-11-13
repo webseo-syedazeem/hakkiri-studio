@@ -50,14 +50,14 @@ export interface Standing {
   minutesMonth?: number;
 }
 
-export function limitStanding(today = londonToday()): Standing {
-  const t = real(usageOn(today));
+export function limitStanding(today = londonToday(), userId?: string): Standing {
+  const t = real(usageOn(today, userId));
   return {
     minutesToday: t.reduce((s, e) => s + (e.seconds ?? 0), 0) / 60,
     spentToday: t.reduce((s, e) => s + e.costUsd, 0),
-    spentMonth: real(usageInMonth(today)).reduce((s, e) => s + e.costUsd, 0),
+    spentMonth: real(usageInMonth(today, userId)).reduce((s, e) => s + e.costUsd, 0),
     minutesMonth: LIMITS.monthlyMinutes
-      ? real(usageInMonth(today)).reduce((s, e) => s + (e.seconds ?? 0), 0) / 60
+      ? real(usageInMonth(today, userId)).reduce((s, e) => s + (e.seconds ?? 0), 0) / 60
       : undefined,
   };
 }

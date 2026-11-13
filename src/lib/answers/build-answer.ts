@@ -97,6 +97,7 @@ export function buildFollowUp(turn: { kind: FollowUpKind; asked: string; words: 
 
 export interface BuildAnswerInput {
   id: string;
+  userId?: string;
   interviewId: string;
   questionId: string;
   questionNumber: number;
@@ -129,6 +130,7 @@ export function buildAnswer(input: BuildAnswerInput): Answer {
 
   return {
     id: input.id,
+    userId: input.userId,
     interviewId: input.interviewId,
     questionId: input.questionId,
     questionNumber: input.questionNumber,

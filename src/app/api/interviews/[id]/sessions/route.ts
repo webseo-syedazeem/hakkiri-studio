@@ -47,8 +47,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const { id } = await params;
   const blocked = guard(req, "plan", { practice: true });
   if (blocked) return blocked;
-  setUsageContext({ interviewId: id, feature: "questions" });
-  if (!((await getInterviewAsync(id)) ?? getInterview(id))) return NextResponse.json({ error: "not-found", message: "That interview doesn’t exist any more." }, { status: 404 });
+  setUsageContext({ userId: user.id, interviewId: id, feature: "questions" });
+  if (!((await getInterviewAsync(id, user.id)) ?? getInterview(id, user.id))) return NextResponse.json({ error: "not-found", message: "That interview doesn’t exist any more." }, { status: 404 });
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "bad-request", message: "Those settings couldn’t be used. Check them and try again." }, { status: 400 });
   const body = parsed.data;
@@ -57,11 +57,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     if (body.kind === "interview") {
       if (!mixIsValid(body.settings.mix)) return NextResponse.json({ error: "bad-request", message: "The question mix has to add up to 100%." }, { status: 400 });
       const settings = { ...body.settings, preset: presetFor(body.settings.mix) };
-      sessionId = (await planInterview(id, settings)).id;
+      sessionId = (await planInterview(id, settings, user.id)).id;
     } else if (body.kind === "rerun") {
-      sessionId = planRerun(id, body.sessionId).id;
+      sessionId = planRerun(id, body.sessionId, user.id).id;
     } else {
-      sessionId = (await planDrill(id, body.drill)).id;
+      sessionId = (await planDrill(id, body.drill, user.id)).id;
     }
     await flushStorage();
     return NextResponse.json({ id: sessionId, href: `/mock/${id}?session=${sessionId}` });

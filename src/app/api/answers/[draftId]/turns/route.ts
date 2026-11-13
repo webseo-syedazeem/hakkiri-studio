@@ -29,8 +29,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ draftId
   const limited = guard(req, "answer", { inSession: true });
   if (limited) return limited;
   const draft = (await getDraftAsync(draftId)) ?? getDraft(draftId);
-  if (draft) setUsageContext({ interviewId: draft.interviewId, sessionId: draft.sessionId, feature: draft.sessionId ? "interview" : "single question" });
-  if (!draft) return NextResponse.json({ error: "not-found", message: "This answer has expired. Start the question again." }, { status: 404 });
+  if (!draft || (draft.userId && draft.userId !== user.id)) return NextResponse.json({ error: "not-found", message: "This answer has expired. Start the question again." }, { status: 404 });
+  setUsageContext({ userId: user.id, interviewId: draft.interviewId, sessionId: draft.sessionId, feature: draft.sessionId ? "interview" : "single question" });
   if (!draft.pending) return NextResponse.json({ error: "no-follow-up", message: "There’s no follow-up waiting for a reply." }, { status: 409 });
 
   const form = await req.formData().catch(() => null);

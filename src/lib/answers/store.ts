@@ -45,9 +45,10 @@ export async function saveAnswerAsync(answer: Answer, userId?: string): Promise<
 }
 
 export function findAnswer(id: string, userId?: string): Answer | undefined {
-  const a = store.get(id) ?? demoAnswers.find((x) => x.id === id);
+  const isDemo = demoAnswers.some((x) => x.id === id);
+  const a = store.get(id) ?? (isDemo ? demoAnswers.find((x) => x.id === id) : undefined);
   if (!a) return undefined;
-  if (userId && a.userId && a.userId !== userId && !demoAnswers.some((x) => x.id === a.id)) {
+  if (!isDemo && (userId && a.userId !== userId)) {
     return undefined;
   }
   // Answers saved before follow-ups existed have no followUps list.
@@ -88,7 +89,7 @@ export async function findAnswerAsync(id: string, userId?: string): Promise<Answ
 /** Answers you've recorded for an interview, oldest first (demo answers not included). */
 export function listAnswers(interviewId: string, userId?: string): Answer[] {
   return [...store.values()]
-    .filter((a) => a.interviewId === interviewId && (!userId || !a.userId || a.userId === userId))
+    .filter((a) => a.interviewId === interviewId && (!userId || a.userId === userId))
     .map((a) => ({ ...a, followUps: a.followUps ?? [] }));
 }
 
@@ -111,7 +112,7 @@ export async function listAnswersAsync(interviewId: string, userId?: string): Pr
 /** Deletes every answer to an interview; returns their ids (for their recordings). */
 export function deleteAnswersFor(interviewId: string, userId?: string): string[] {
   const ids = [...store.values()]
-    .filter((a) => a.interviewId === interviewId && (!userId || !a.userId || a.userId === userId))
+    .filter((a) => a.interviewId === interviewId && (!userId || a.userId === userId))
     .map((a) => a.id);
   for (const id of ids) store.delete(id);
   saveJson(FILE, [...store.values()]);
@@ -119,7 +120,7 @@ export function deleteAnswersFor(interviewId: string, userId?: string): string[]
 }
 
 export function allAnswers(userId?: string): Answer[] {
-  return [...store.values()].filter((a) => !userId || !a.userId || a.userId === userId);
+  return userId ? [...store.values()].filter((a) => a.userId === userId) : [...store.values()];
 }
 
 /** "Delete all my data". */

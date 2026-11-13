@@ -42,9 +42,12 @@ export async function POST(req: Request) {
 
   const audio = form.get("audio");
   const interviewId = String(form.get("interviewId") ?? "");
-  const interview = (await getInterviewAsync(interviewId)) ?? getInterview(interviewId);
+  const interview = (await getInterviewAsync(interviewId, user.id)) ?? getInterview(interviewId, user.id);
+  if (!interview) {
+    return NextResponse.json({ error: "not-found", message: "That interview doesn’t exist." }, { status: 404 });
+  }
   const question = resolveInterviewQuestion(interview, String(form.get("questionId") ?? ""));
-  if (!(audio instanceof Blob) || !interview || !question) {
+  if (!(audio instanceof Blob) || !question) {
     return NextResponse.json({ error: "bad-request", message: "Missing the recording or the question." }, { status: 400 });
   }
   if (audio.size > MAX_AUDIO_BYTES) {
@@ -52,7 +55,7 @@ export async function POST(req: Request) {
   }
 
   const sessionId = String(form.get("session") ?? "") || undefined;
-  setUsageContext({ interviewId: interview.id, sessionId, feature: sessionId ? "interview" : "single question" });
+  setUsageContext({ userId: user.id, interviewId: interview.id, sessionId, feature: sessionId ? "interview" : "single question" });
   try {
     const words = await transcribe(audio, mockTranscript);
     // "I've never worked there": the question doesn't apply, so it's skipped rather than scored.
@@ -62,6 +65,7 @@ export async function POST(req: Request) {
     }
     const draft: Draft = {
       id: randomUUID(),
+      userId: user.id,
       interviewId: interview.id,
       questionId: question.id,
       sessionId,

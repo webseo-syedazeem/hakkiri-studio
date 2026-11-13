@@ -30,6 +30,7 @@ import { recentSurveys } from "@/lib/feedback/survey-store";
 import { listInterviewsAsync } from "@/lib/interviews/store";
 import { AdminInterviewsList } from "@/components/settings/AdminInterviewsList";
 import { TestAlert } from "@/components/settings/TestAlert";
+import { requirePageUser } from "@/lib/auth/require";
 
 export const dynamic = "force-dynamic";
 
@@ -119,6 +120,7 @@ function Section({
 
 /** Settings: microphone, interviewer voice, practice and usage, your data. */
 export default async function SettingsPage() {
+  const user = await requirePageUser();
   const jar = await cookies();
   const micOk = jar.get("hk_mic_ok")?.value === "1";
   const voiceChoice =
@@ -135,20 +137,31 @@ export default async function SettingsPage() {
         ? "Test mode is on (HAKKIRI_MOCK_AI=1), so the browser voice is used. Turn test mode off and add ELEVENLABS_API_KEY to .env.local for the natural voice."
         : "Add ELEVENLABS_API_KEY to .env.local and restart for the natural voice.";
 
+  const userEmail = user.email?.toLowerCase() ?? "";
+  const isAdmin = Boolean(
+    userEmail &&
+      ((process.env.ADMIN_EMAILS &&
+        process.env.ADMIN_EMAILS.split(",")
+          .map((e) => e.trim().toLowerCase())
+          .includes(userEmail)) ||
+        (process.env.ADMIN_EMAIL &&
+          process.env.ADMIN_EMAIL.trim().toLowerCase() === userEmail))
+  );
+
   pruneRecordings();
   const today = londonToday();
-  const standing = limitStanding(today);
-  const todayT = totals(usageOn(today));
-  const month = usageInMonth(today);
+  const standing = limitStanding(today, user.id);
+  const todayT = totals(usageOn(today, user.id));
+  const month = usageInMonth(today, user.id);
   const monthT = totals(month);
   const features = byFeature(month);
-  const days = dailyCosts(today, 14);
-  const counts = dataCounts();
-  const settings = getSettings();
-  const problems = launch ? [] : recentProblems(8);
+  const days = dailyCosts(today, 14, user.id);
+  const counts = dataCounts(user.id);
+  const settings = getSettings(user.id);
+  const problems = launch || !isAdmin ? [] : recentProblems(8);
   const alerts = alertsConfigured();
-  const surveys = recentSurveys(50);
-  const interviewsRaw = await listInterviewsAsync(today);
+  const surveys = isAdmin ? recentSurveys(50) : [];
+  const interviewsRaw = isAdmin ? await listInterviewsAsync(today) : [];
   const adminInterviews = interviewsRaw.map((i) => ({
     id: i.id,
     company: i.company,
@@ -432,7 +445,7 @@ export default async function SettingsPage() {
             )}
           </Section>
 
-          {!launch && (
+            {!launch && isAdmin && (
             <Section
               id="problems"
               title="Problems and alerts"
@@ -478,69 +491,73 @@ export default async function SettingsPage() {
             </Section>
           )}
 
-          <Section
-            id="admin-interviews"
-            title="Candidate interviews & questions bank"
-            intro="Inspect job titles, target companies, and the AI questions generated for each interview (candidate answers excluded)."
-          >
-            <AdminInterviewsList interviews={adminInterviews} />
-          </Section>
+          {isAdmin && (
+            <Section
+              id="admin-interviews"
+              title="Candidate interviews & questions bank"
+              intro="Inspect job titles, target companies, and the AI questions generated for each interview (candidate answers excluded)."
+            >
+              <AdminInterviewsList interviews={adminInterviews} />
+            </Section>
+          )}
 
-          <Section
-            id="beta-surveys"
-            title="Beta feedback surveys (£15 Amazon vouchers)"
-            intro="Detailed candidate evaluation responses submitted after full mock interviews."
-          >
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-3">
-              <div>
-                <span className="text-sm font-semibold text-ink">
-                  {surveys.length} {surveys.length === 1 ? "survey response" : "survey responses"}
-                </span>
-                <p className="text-xs text-muted">
-                  Review answers and send Amazon e-vouchers to recipient emails.
-                </p>
+          {isAdmin && (
+            <Section
+              id="beta-surveys"
+              title="Beta feedback surveys (£15 Amazon vouchers)"
+              intro="Detailed candidate evaluation responses submitted after full mock interviews."
+            >
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-3">
+                <div>
+                  <span className="text-sm font-semibold text-ink">
+                    {surveys.length} {surveys.length === 1 ? "survey response" : "survey responses"}
+                  </span>
+                  <p className="text-xs text-muted">
+                    Review answers and send Amazon e-vouchers to recipient emails.
+                  </p>
+                </div>
+                <a
+                  href="/api/feedback/survey?format=csv"
+                  download="hakkiri-beta-surveys.csv"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-panel-2 px-3 py-1.5 text-xs font-semibold text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-[#2b2d38] transition-colors"
+                >
+                  <Icon name="download" size={13} />
+                  Download CSV
+                </a>
               </div>
-              <a
-                href="/api/feedback/survey?format=csv"
-                download="hakkiri-beta-surveys.csv"
-                className="inline-flex items-center gap-1.5 rounded-lg bg-panel-2 px-3 py-1.5 text-xs font-semibold text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-[#2b2d38] transition-colors"
-              >
-                <Icon name="download" size={13} />
-                Download CSV
-              </a>
-            </div>
 
-            {surveys.length ? (
-              <ul className="mt-3 divide-y divide-line text-xs">
-                {surveys.slice(0, 15).map((s) => (
-                  <li key={s.id} className="py-3.5 space-y-2">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <span className="rounded-full bg-[#f59e0b]/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#fbbf24] border border-[#f59e0b]/40">
-                          £15 Voucher
-                        </span>
-                        <span className="font-semibold text-white">{s.email}</span>
+              {surveys.length ? (
+                <ul className="mt-3 divide-y divide-line text-xs">
+                  {surveys.slice(0, 15).map((s) => (
+                    <li key={s.id} className="py-3.5 space-y-2">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="rounded-full bg-[#f59e0b]/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#fbbf24] border border-[#f59e0b]/40">
+                            £15 Voucher
+                          </span>
+                          <span className="font-semibold text-white">{s.email}</span>
+                        </div>
+                        <span className="text-[11px] text-dim">{s.at.slice(0, 16).replace("T", " ")}</span>
                       </div>
-                      <span className="text-[11px] text-dim">{s.at.slice(0, 16).replace("T", " ")}</span>
-                    </div>
-                    <div className="grid grid-cols-1 gap-1.5 text-muted pl-1">
-                      <div><b className="text-ink">1. Realism:</b> {s.q1_realism}</div>
-                      <div><b className="text-ink">2. Questions:</b> {s.q2_questions}</div>
-                      <div><b className="text-ink">3. Feedback:</b> {s.q3_feedback}</div>
-                      <div><b className="text-ink">4. Issues:</b> {s.q4_issues}</div>
-                      <div><b className="text-ink">5. Likes / Dislikes:</b> {s.q5_likes_dislikes}</div>
-                      <div><b className="text-ink">6. Change:</b> {s.q6_changes}</div>
-                      <div><b className="text-ink">7. Recommend:</b> {s.q7_recommend}</div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="mt-3 text-sm text-muted">
-                No surveys submitted yet. Completed interview surveys will appear here.
-              </p>
-            )}
-          </Section>
+                      <div className="grid grid-cols-1 gap-1.5 text-muted pl-1">
+                        <div><b className="text-ink">1. Realism:</b> {s.q1_realism}</div>
+                        <div><b className="text-ink">2. Questions:</b> {s.q2_questions}</div>
+                        <div><b className="text-ink">3. Feedback:</b> {s.q3_feedback}</div>
+                        <div><b className="text-ink">4. Issues:</b> {s.q4_issues}</div>
+                        <div><b className="text-ink">5. Likes / Dislikes:</b> {s.q5_likes_dislikes}</div>
+                        <div><b className="text-ink">6. Change:</b> {s.q6_changes}</div>
+                        <div><b className="text-ink">7. Recommend:</b> {s.q7_recommend}</div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-3 text-sm text-muted">
+                  No surveys submitted yet. Completed interview surveys will appear here.
+                </p>
+              )}
+            </Section>
+          )}
 
           <Section id="account" title="Account">
             <AccountControls />

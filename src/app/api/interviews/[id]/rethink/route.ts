@@ -26,11 +26,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const { id } = await params;
   const blocked = guard(req, "ai");
   if (blocked) return blocked;
-  setUsageContext({ interviewId: id, feature: "questions" });
+  setUsageContext({ userId: user.id, interviewId: id, feature: "questions" });
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "bad-request", message: "There’s nothing to rebuild from." }, { status: 400 });
   try {
-    return NextResponse.json(await rethinkFrom(id, parsed.data.sessionId));
+    return NextResponse.json(await rethinkFrom(id, parsed.data.sessionId, user.id));
   } catch (err) {
     if (err instanceof PlanError) return NextResponse.json({ error: "cant-rethink", message: err.message }, { status: 409 });
     console.error("[rethink] failed:", err);

@@ -2,15 +2,17 @@ import { notFound } from "next/navigation";
 import { Crumbs } from "@/components/ui";
 import { PitchSetup } from "@/components/pitch/PitchSetup";
 import { slideImageSrc } from "@/components/pitch/SlideView";
-import { getPresentation } from "@/lib/pitch/store";
+import { getPresentation, getPresentationAsync } from "@/lib/pitch/store";
 import { clock } from "@/lib/format";
+import { requirePageUser } from "@/lib/auth/require";
 
 export const dynamic = "force-dynamic";
 
 /** Change a presentation's slides, plan, audience, ask or date (design screen 11 again). */
 export default async function EditPresentationPage({ params }: { params: Promise<{ id: string }> }) {
+  const user = await requirePageUser();
   const { id } = await params;
-  const p = getPresentation(id);
+  const p = (await getPresentationAsync(id, user.id)) ?? getPresentation(id, user.id);
   if (!p) notFound();
   return (
     <div className="flex min-h-[calc(100vh-56px)] grow flex-col">

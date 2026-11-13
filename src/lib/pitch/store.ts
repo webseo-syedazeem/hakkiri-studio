@@ -31,12 +31,16 @@ function db() {
 
 export const isDemoPresentation = (id: string) => id === demoPresentation.id && !db().presentations.has(id);
 
-export function getPresentation(id: string): Presentation | undefined {
-  return db().presentations.get(id) ?? (id === demoPresentation.id && demoOn() ? demoPresentation : undefined);
+export function getPresentation(id: string, userId?: string): Presentation | undefined {
+  if (id === demoPresentation.id && demoOn()) return demoPresentation;
+  const p = db().presentations.get(id);
+  if (!p) return undefined;
+  if (userId && p.userId !== userId) return undefined;
+  return p;
 }
 
-export async function getPresentationAsync(id: string): Promise<Presentation | undefined> {
-  const p = getPresentation(id);
+export async function getPresentationAsync(id: string, userId?: string): Promise<Presentation | undefined> {
+  const p = getPresentation(id, userId);
   if (p && p.id !== demoPresentation.id) return p;
 
   if (isMongoConfigured()) {
@@ -46,7 +50,7 @@ export async function getPresentationAsync(id: string): Promise<Presentation | u
         for (const item of fromDb) {
           db().presentations.set(item.id, item);
         }
-        const found = getPresentation(id);
+        const found = getPresentation(id, userId);
         if (found) return found;
       }
     } catch (err) {
@@ -54,31 +58,46 @@ export async function getPresentationAsync(id: string): Promise<Presentation | u
     }
   }
 
-  return getPresentation(id);
+  return getPresentation(id, userId);
 }
 
 /** Every presentation, soonest first; ones in the past go last. */
-export function listPresentations(): Presentation[] {
-  const all = new Map<string, Presentation>([...(demoOn() ? ([[demoPresentation.id, demoPresentation]] as const) : []), ...db().presentations]);
+export function listPresentations(userId?: string): Presentation[] {
+  const userPres = userId
+    ? [...db().presentations.values()].filter((p) => p.userId === userId)
+    : [...db().presentations.values()];
+  const all = new Map<string, Presentation>([
+    ...(demoOn() ? ([[demoPresentation.id, demoPresentation]] as const) : []),
+    ...userPres.map((p) => [p.id, p] as const),
+  ]);
   const now = Date.now();
   return [...all.values()].sort((a, b) => {
-    const pa = Date.parse(a.date) < now ? 1 : 0;
-    const pb = Date.parse(b.date) < now ? 1 : 0;
-    return pa - pb || a.date.localeCompare(b.date);
+    const da = a.date ? Date.parse(a.date) : 0;
+    const dbTime = b.date ? Date.parse(b.date) : 0;
+    const pa = da && da < now ? 1 : 0;
+    const pb = dbTime && dbTime < now ? 1 : 0;
+    return pa - pb || (a.date ?? "").localeCompare(b.date ?? "");
   });
 }
 
 /** The presentation Home is about: your soonest upcoming one, or the demo until you add your own. */
-export function featuredPresentation(): Presentation | undefined {
-  const all = listPresentations();
+export function featuredPresentation(userId?: string): Presentation | undefined {
+  const all = listPresentations(userId);
   const mine = all.filter((p) => p.id !== demoPresentation.id || db().presentations.has(p.id));
-  const upcoming = (p: Presentation) => Date.parse(p.date) >= Date.now() - 12 * 3600_000;
+  const upcoming = (p: Presentation) => (p.date ? Date.parse(p.date) >= Date.now() - 12 * 3600_000 : false);
   return mine.find(upcoming) ?? all.find(upcoming) ?? all[0];
 }
 
-export function savePresentation(p: Presentation) {
-  db().presentations.set(p.id, p);
+export function savePresentation(p: Presentation, userId?: string) {
+  const item = { ...p, userId: userId || p.userId };
+  db().presentations.set(item.id, item);
   saveJson("presentations.json", [...db().presentations.values()]);
+}
+
+export async function savePresentationAsync(p: Presentation, userId?: string): Promise<void> {
+  const item = { ...p, userId: userId || p.userId };
+  db().presentations.set(item.id, item);
+  await saveJsonAsync("presentations.json", [...db().presentations.values()]);
 }
 
 /** Pictures of slides (PDF pages, or pictures from PowerPoint slides). */
@@ -100,17 +119,25 @@ function memoryImages() {
 // --------------------------------------------------------------------- runs
 
 /** Runs of a presentation, oldest first. */
-export function listRuns(presentationId: string): Run[] {
+export function listRuns(presentationId: string, userId?: string): Run[] {
   const demo = presentationId === demoPresentation.id && demoOn() ? demoRuns : [];
-  return [...demo, ...[...db().runs.values()].filter((r) => r.presentationId === presentationId)].sort((a, b) => a.number - b.number);
+  const stored = [...db().runs.values()].filter(
+    (r) => r.presentationId === presentationId && (!userId || r.userId === userId || db().presentations.get(presentationId)?.userId === userId)
+  );
+  return [...demo, ...stored].sort((a, b) => a.number - b.number);
 }
 
-export function getRun(id: string): Run | undefined {
-  return db().runs.get(id) ?? (demoOn() ? (demoRuns.find((r) => r.id === id) ?? (id === demoRun4.id ? demoRun4 : undefined)) : undefined);
-}
-
-export async function getRunAsync(id: string): Promise<Run | undefined> {
+export function getRun(id: string, userId?: string): Run | undefined {
+  const isDemo = demoOn() && (demoRuns.some((r) => r.id === id) || id === demoRun4.id);
+  if (isDemo) return demoRuns.find((r) => r.id === id) ?? (id === demoRun4.id ? demoRun4 : undefined);
   const r = db().runs.get(id);
+  if (!r) return undefined;
+  if (userId && r.userId && r.userId !== userId) return undefined;
+  return r;
+}
+
+export async function getRunAsync(id: string, userId?: string): Promise<Run | undefined> {
+  const r = getRun(id, userId);
   if (r) return r;
 
   if (isMongoConfigured()) {
@@ -120,7 +147,7 @@ export async function getRunAsync(id: string): Promise<Run | undefined> {
         for (const run of fromDb) {
           db().runs.set(run.id, run);
         }
-        const found = db().runs.get(id);
+        const found = getRun(id, userId);
         if (found) return found;
       }
     } catch (err) {
@@ -128,42 +155,52 @@ export async function getRunAsync(id: string): Promise<Run | undefined> {
     }
   }
 
-  return demoOn() ? (demoRuns.find((x) => x.id === id) ?? (id === demoRun4.id ? demoRun4 : undefined)) : undefined;
+  return getRun(id, userId);
 }
 
-export function saveRun(run: Run) {
-  db().runs.set(run.id, run);
+export function saveRun(run: Run, userId?: string) {
+  const item = { ...run, userId: userId || run.userId };
+  db().runs.set(item.id, item);
   saveJson("runs.json", [...db().runs.values()]);
 }
 
-export async function saveRunAsync(run: Run): Promise<void> {
-  db().runs.set(run.id, run);
+export async function saveRunAsync(run: Run, userId?: string): Promise<void> {
+  const item = { ...run, userId: userId || run.userId };
+  db().runs.set(item.id, item);
   await saveJsonAsync("runs.json", [...db().runs.values()]);
 }
 
-export function nextRunNumber(presentationId: string): number {
-  return listRuns(presentationId).reduce((n, r) => Math.max(n, r.number), 0) + 1;
+export function nextRunNumber(presentationId: string, userId?: string): number {
+  return listRuns(presentationId, userId).reduce((n, r) => Math.max(n, r.number), 0) + 1;
 }
 
 /** The latest full run that reached the last slide. */
-export function latestFullRun(presentationId: string): Run | undefined {
-  const p = getPresentation(presentationId);
-  return p ? completeRuns(listRuns(presentationId), p.timeLimitSec).pop() : undefined;
+export function latestFullRun(presentationId: string, userId?: string): Run | undefined {
+  const p = getPresentation(presentationId, userId);
+  return p ? completeRuns(listRuns(presentationId, userId), p.timeLimitSec).pop() : undefined;
 }
 
 // ---------------------------------------------------------------------- Q&A
 
-export function listQa(presentationId: string): QaSession[] {
+export function listQa(presentationId: string, userId?: string): QaSession[] {
   const demo = presentationId === demoQaSession.presentationId && demoOn() ? [demoQaSession] : [];
-  return [...demo, ...[...db().qa.values()].filter((s) => s.presentationId === presentationId)].sort((a, b) => a.finishedAt.localeCompare(b.finishedAt));
+  const stored = [...db().qa.values()].filter(
+    (s) => s.presentationId === presentationId && (!userId || s.userId === userId || db().presentations.get(presentationId)?.userId === userId)
+  );
+  return [...demo, ...stored].sort((a, b) => a.finishedAt.localeCompare(b.finishedAt));
 }
 
-export function getQa(id: string): QaSession | undefined {
-  return db().qa.get(id) ?? (id === demoQaSession.id && demoOn() ? demoQaSession : undefined);
-}
-
-export async function getQaAsync(id: string): Promise<QaSession | undefined> {
+export function getQa(id: string, userId?: string): QaSession | undefined {
+  const isDemo = demoOn() && id === demoQaSession.id;
+  if (isDemo) return demoQaSession;
   const s = db().qa.get(id);
+  if (!s) return undefined;
+  if (userId && s.userId && s.userId !== userId) return undefined;
+  return s;
+}
+
+export async function getQaAsync(id: string, userId?: string): Promise<QaSession | undefined> {
+  const s = getQa(id, userId);
   if (s) return s;
 
   if (isMongoConfigured()) {
@@ -173,7 +210,7 @@ export async function getQaAsync(id: string): Promise<QaSession | undefined> {
         for (const item of fromDb) {
           db().qa.set(item.id, item);
         }
-        const found = db().qa.get(id);
+        const found = getQa(id, userId);
         if (found) return found;
       }
     } catch (err) {
@@ -181,16 +218,18 @@ export async function getQaAsync(id: string): Promise<QaSession | undefined> {
     }
   }
 
-  return demoOn() ? (id === demoQaSession.id ? demoQaSession : undefined) : undefined;
+  return getQa(id, userId);
 }
 
-export function saveQa(s: QaSession) {
-  db().qa.set(s.id, s);
+export function saveQa(s: QaSession, userId?: string) {
+  const item = { ...s, userId: userId || s.userId };
+  db().qa.set(item.id, item);
   saveJson("qa.json", [...db().qa.values()]);
 }
 
-export async function saveQaAsync(s: QaSession): Promise<void> {
-  db().qa.set(s.id, s);
+export async function saveQaAsync(s: QaSession, userId?: string): Promise<void> {
+  const item = { ...s, userId: userId || s.userId };
+  db().qa.set(item.id, item);
   await saveJsonAsync("qa.json", [...db().qa.values()]);
 }
 
@@ -198,17 +237,26 @@ export async function saveQaAsync(s: QaSession): Promise<void> {
 
 /** Your presentations, runs and Q&A sessions (not the demo's). */
 export function allPitchData(userId?: string): { presentations: Presentation[]; runs: Run[]; qa: QaSession[] } {
-  const presentations = [...db().presentations.values()].filter((p) => !userId || !p.userId || p.userId === userId);
+  if (!userId) {
+    return {
+      presentations: [...db().presentations.values()],
+      runs: [...db().runs.values()],
+      qa: [...db().qa.values()],
+    };
+  }
+  const presentations = [...db().presentations.values()].filter((p) => p.userId === userId);
   const userPresIds = new Set(presentations.map((p) => p.id));
-  const runs = [...db().runs.values()].filter((r) => !userId || userPresIds.has(r.presentationId) || (!r.userId || r.userId === userId));
-  const qa = [...db().qa.values()].filter((s) => !userId || userPresIds.has(s.presentationId) || (!s.userId || s.userId === userId));
+  const runs = [...db().runs.values()].filter((r) => r.userId === userId || userPresIds.has(r.presentationId));
+  const qa = [...db().qa.values()].filter((s) => s.userId === userId || userPresIds.has(s.presentationId));
   return { presentations, runs, qa };
 }
 
 /** Deletes one presentation with its slide pictures, runs and Q&A rounds. Returns the ids of its answers, so their recordings can go too. */
-export function deletePresentation(id: string): { runIds: string[]; answerIds: string[] } | null {
+export function deletePresentation(id: string, userId?: string): { runIds: string[]; answerIds: string[] } | null {
   const d = db();
-  if (!d.presentations.has(id)) return null;
+  const existing = d.presentations.get(id);
+  if (!existing) return null;
+  if (userId && existing.userId && existing.userId !== userId) return null;
   const runIds = [...d.runs.values()].filter((r) => r.presentationId === id).map((r) => r.id);
   const answerIds = [...d.qa.values()].filter((s) => s.presentationId === id).flatMap((s) => s.answers.map((a) => a.id));
   for (const r of runIds) d.runs.delete(r);
@@ -228,7 +276,7 @@ export function clearPitch(userId?: string) {
     const d = db();
     const toDeletePres = [...d.presentations.values()].filter((p) => p.userId === userId);
     for (const p of toDeletePres) {
-      deletePresentation(p.id);
+      deletePresentation(p.id, userId);
     }
   } else {
     db().presentations.clear();

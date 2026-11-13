@@ -4,6 +4,7 @@ import { getPresentation, latestFullRun, nextRunNumber } from "@/lib/pitch/store
 import { AUDIENCE_TO } from "@/lib/pitch/labels";
 import { DEMO_PRESENTATION_ID } from "@/lib/pitch/demo";
 import type { RunMode } from "@/lib/pitch/types";
+import { requirePageUser } from "@/lib/auth/require";
 
 export const dynamic = "force-dynamic";
 
@@ -13,9 +14,10 @@ export const dynamic = "force-dynamic";
  * /rehearse/{id}?mode=opening     the opening only: the first 60 seconds
  */
 export default async function RehearsePage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ mode?: string; from?: string; to?: string }> }) {
+  const user = await requirePageUser();
   const { id } = await params;
   const sp = await searchParams;
-  const p = getPresentation(id);
+  const p = getPresentation(id, user.id);
   if (!p) notFound();
   const n = p.slides.length;
   const clamp = (v: string | undefined, d: number) => Math.min(n, Math.max(1, Number.parseInt(v ?? "", 10) || d));
@@ -28,9 +30,9 @@ export default async function RehearsePage({ params, searchParams }: { params: P
     if (from === 1 && to === n) mode = "full";
   }
   if (mode === "opening") to = Math.min(n, 3);
-  const number = nextRunNumber(p.id);
+  const number = nextRunNumber(p.id, user.id);
   const label = mode === "full" ? "full run" : mode === "opening" ? "opening only" : from === to ? `slide ${from}` : `slides ${from} to ${to}`;
-  const demoRun = p.id === DEMO_PRESENTATION_ID ? latestFullRun(p.id) : undefined;
+  const demoRun = p.id === DEMO_PRESENTATION_ID ? latestFullRun(p.id, user.id) : undefined;
   return (
     <Rehearsal
       presentationId={p.id}

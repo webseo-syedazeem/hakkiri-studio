@@ -12,6 +12,7 @@ import { scoreAnswerView } from "@/lib/answers/view";
 import { findMock, findMockAsync } from "@/lib/mocks/store";
 import { hasRecording } from "@/lib/answers/audio";
 import { inWords } from "@/lib/format";
+import { requirePageUser } from "@/lib/auth/require";
 
 function PartScore({ label, score }: { label: string; score: number | null }) {
   return (
@@ -43,10 +44,11 @@ export default async function AnswerFeedbackPage({
   params: Promise<{ id: string; answerId: string }>;
   searchParams: Promise<{ demo?: string; tab?: string; mock?: string }>;
 }) {
+  const user = await requirePageUser();
   const { id, answerId } = await params;
   const { demo, tab, mock: mockId } = await searchParams;
-  const interview = (await getInterviewAsync(id)) ?? getInterview(id);
-  const answer = (await findAnswerAsync(answerId)) ?? findAnswer(answerId);
+  const interview = (await getInterviewAsync(id, user.id)) ?? getInterview(id, user.id);
+  const answer = (await findAnswerAsync(answerId, user.id)) ?? findAnswer(answerId, user.id);
   if (!interview || !answer || answer.interviewId !== interview.id) notFound();
   const question = resolveInterviewQuestion(interview, answer.questionId);
   if (!question) notFound(); // the question was removed after it was answered

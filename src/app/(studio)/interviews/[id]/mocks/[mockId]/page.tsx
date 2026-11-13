@@ -25,6 +25,7 @@ import type { Interview } from "@/lib/types";
 import { devOr, isLaunch } from "@/lib/launch";
 import { totals, usageFor } from "@/lib/usage/store";
 import { dollars } from "@/lib/usage/prices";
+import { requirePageUser } from "@/lib/auth/require";
 
 export const dynamic = "force-dynamic";
 
@@ -118,10 +119,11 @@ function Header({ interview, mock, title, meta, right }: { interview: Interview;
  *  - a drill: how each answer did on the one thing you practised.
  */
 export default async function SessionReportPage({ params, searchParams }: { params: Promise<{ id: string; mockId: string }>; searchParams: Promise<{ demo?: string }> }) {
+  const user = await requirePageUser();
   const { id, mockId } = await params;
   const { demo } = await searchParams;
-  const interview = (await getInterviewAsync(id)) ?? getInterview(id);
-  let mock = (await findMockAsync(mockId)) ?? findMock(mockId);
+  const interview = (await getInterviewAsync(id, user.id)) ?? getInterview(id, user.id);
+  let mock = (await findMockAsync(mockId, user.id)) ?? findMock(mockId, user.id);
   if (!mock && interview?.id === "halden" && !isLaunch()) {
     mock = { ...demoMock, answerIds: [roadmapAnswer.id], planned: 6, id: mockId };
   }

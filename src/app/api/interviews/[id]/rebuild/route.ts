@@ -40,7 +40,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const { id } = await params;
   const blocked = guard(req, "ai", { practice: true });
   if (blocked) return blocked;
-  setUsageContext({ interviewId: id, feature: "questions" });
+  setUsageContext({ userId: user.id, interviewId: id, feature: "questions" });
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "bad-request", message: "Check what Hakkiri understood: every field needs a few words." }, { status: 400 });
   const b = parsed.data;
@@ -55,6 +55,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         sources: { ...(b.cv ? { cv: b.cv.label } : {}), ...(b.job ? { job: b.job.label } : {}) },
       },
       { start: b.start },
+      user.id,
     );
     return NextResponse.json({ href: session ? `/mock/${id}?session=${session.id}` : `/interviews/${id}?rebuilt=1` });
   } catch (err) {

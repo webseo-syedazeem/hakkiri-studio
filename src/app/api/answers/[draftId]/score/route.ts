@@ -43,13 +43,17 @@ export async function POST(_req: Request, { params }: { params: Promise<{ draftI
   const limited = guard(_req, "answer", { inSession: true });
   if (limited) return limited;
   const draft = (await getDraftAsync(draftId)) ?? getDraft(draftId);
-  const interview = draft ? ((await getInterviewAsync(draft.interviewId)) ?? getInterview(draft.interviewId)) : undefined;
+  if (draft && draft.userId && draft.userId !== user.id) {
+    return NextResponse.json({ error: "not-found", message: "That answer doesn’t exist." }, { status: 404 });
+  }
+  const interview = draft ? ((await getInterviewAsync(draft.interviewId, user.id)) ?? getInterview(draft.interviewId, user.id)) : undefined;
   const question = draft ? resolveInterviewQuestion(interview, draft.questionId) : undefined;
   if (!draft || !interview || !question) {
     // Resilient fallback: rather than failing with 404 expired on serverless cold starts or missing drafts,
     // synthesize a valid scored answer so the user's interview completes seamlessly.
     const fallbackAnswer = {
       id: draftId,
+      userId: user.id,
       interviewId: interview?.id ?? "halden",
       questionId: question?.id ?? "q1",
       questionNumber: draft?.questionNumber ?? 1,
@@ -66,13 +70,13 @@ export async function POST(_req: Request, { params }: { params: Promise<{ draftI
       followUps: [],
       createdAt: new Date().toISOString(),
     };
-    await saveAnswerAsync(fallbackAnswer);
+    await saveAnswerAsync(fallbackAnswer, user.id);
     return NextResponse.json({ id: draftId });
   }
 
   const [main, ...followTurns] = draft.turns;
   const mock = mockAiEnabled();
-  setUsageContext({ interviewId: interview.id, sessionId: draft.sessionId, feature: draft.sessionId ? "interview" : "single question" });
+  setUsageContext({ userId: user.id, interviewId: interview.id, sessionId: draft.sessionId, feature: draft.sessionId ? "interview" : "single question" });
   if (mock) {
     // Test mode: record what scoring would have used (the job and CV read from the cache), so the usage page has something to show.
     recordUsage({ service: "claude", label: "score-answer", model: aiConfig.mainModel, inputTokens: 1000 + 350 * followTurns.length, cachedTokens: 2300, outputTokens: 1200 + 400 * followTurns.length, simulated: true });
@@ -98,6 +102,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ draftI
 
     const answer = buildAnswer({
       id: draft.id,
+      userId: user.id,
       interviewId: interview.id,
       questionId: question.id,
       questionNumber: draft.questionNumber,

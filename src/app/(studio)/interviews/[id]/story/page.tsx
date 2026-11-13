@@ -4,14 +4,16 @@ import { Crumbs } from "@/components/ui";
 import { StoryBuilder } from "@/components/interview/StoryBuilder";
 import { getInterview } from "@/lib/interviews/store";
 import { skillInSentence } from "@/lib/interviews/plan";
+import { requirePageUser } from "@/lib/auth/require";
 
 export const dynamic = "force-dynamic";
 
 /** /interviews/{id}/story?skill=…&question=…  Build a story for a skill none of yours covers yet. */
 export default async function StoryPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ skill?: string; question?: string; from?: string }> }) {
+  const user = await requirePageUser();
   const { id } = await params;
   const { skill, question, from } = await searchParams;
-  const interview = getInterview(id);
+  const interview = getInterview(id, user.id);
   if (!interview) notFound();
   const gap = (interview.gaps ?? []).find((g) => g.skill === skill) ?? (interview.gaps ?? [])[0];
   const s = (skill || gap?.skill || "").trim();

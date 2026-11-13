@@ -19,8 +19,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ draftId:
   }
 
   const { draftId, turn } = await params;
-  const ans = findAnswer(draftId);
-  if (ans && ans.userId && ans.userId !== user.id) {
+  const ans = findAnswer(draftId, user.id);
+  if (!ans) {
     return new Response("Not found", { status: 404 });
   }
 

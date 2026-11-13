@@ -12,6 +12,7 @@ import { isMongoConfigured, getMongoDb } from "@/lib/storage/mongodb";
  */
 export interface QaDraft {
   id: string;
+  userId?: string;
   presentationId: string;
   style: QaStyle;
   persona: { name: string; title: string };
@@ -34,6 +35,7 @@ function serializeQaDraft(d: QaDraft) {
   return {
     _id: d.id,
     id: d.id,
+    userId: d.userId,
     presentationId: d.presentationId,
     style: d.style,
     persona: d.persona,
@@ -60,6 +62,7 @@ function serializeQaDraft(d: QaDraft) {
 function deserializeQaDraft(doc: any): QaDraft {
   return {
     id: doc._id || doc.id,
+    userId: doc.userId,
     presentationId: doc.presentationId,
     style: doc.style,
     persona: doc.persona,
@@ -168,6 +171,12 @@ export async function deleteQaDraftAsync(id: string): Promise<void> {
 }
 
 /** "Delete all my data": answers still being scored. */
-export function clearQaDrafts() {
-  drafts.clear();
+export function clearQaDrafts(userId?: string) {
+  if (userId) {
+    for (const [id, d] of drafts) {
+      if (d.userId === userId) drafts.delete(id);
+    }
+  } else {
+    drafts.clear();
+  }
 }

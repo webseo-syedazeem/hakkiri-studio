@@ -49,7 +49,10 @@ function withDemoPool(base: Interview): Interview {
 export function getInterview(id: string, userId?: string): Interview | undefined {
   const raw = store.get(id) ?? demoBase(id);
   if (!raw) return undefined;
-  if (userId && raw.userId && raw.userId !== userId && !isDemoInterview(raw.id)) {
+  if (isDemoInterview(raw.id)) {
+    // Demo interview is public to all authenticated users
+  } else if (userId && raw.userId !== userId) {
+    // Strictly require ownership when userId is provided
     return undefined;
   }
   const base = withDemoPool(raw);
@@ -89,7 +92,7 @@ export async function getInterviewAsync(id: string, userId?: string): Promise<In
  */
 export function listInterviews(today: string, userId?: string): Interview[] {
   const mine = [...store.values()]
-    .filter((i) => !isDemoInterview(i.id) && (!userId || !i.userId || i.userId === userId))
+    .filter((i) => !isDemoInterview(i.id) && (!userId || i.userId === userId))
     .map((i) => getInterview(i.id, userId)!)
     .filter(Boolean);
   const rank = (i: Interview) => (!i.date ? 1 : daysBetween(today, i.date) >= 0 ? 0 : 2);
@@ -144,14 +147,14 @@ export async function saveInterviewAsync(i: Interview, userId?: string) {
 export function updateInterview(id: string, change: (i: Interview) => Interview, userId?: string): Interview | undefined {
   const raw = store.get(id) ?? demoBase(id);
   if (!raw) return undefined;
-  if (userId && raw.userId && raw.userId !== userId && !isDemoInterview(raw.id)) return undefined;
+  if (!isDemoInterview(raw.id) && (userId && raw.userId !== userId)) return undefined;
   saveInterview(change(withDemoPool(raw)), userId || raw.userId);
   return getInterview(id, userId);
 }
 
 /** Every interview you've set up or practised on (with the demo's saved copy if you practised it). */
 export function allSavedInterviews(userId?: string): Interview[] {
-  return [...store.values()].filter((i) => !userId || !i.userId || i.userId === userId);
+  return userId ? [...store.values()].filter((i) => i.userId === userId) : [...store.values()];
 }
 
 /** "Delete all my data". */
@@ -167,10 +170,9 @@ export function clearInterviews(userId?: string) {
 }
 
 export function deleteInterview(id: string, userId?: string): boolean {
-  if (userId) {
-    const existing = store.get(id);
-    if (existing && existing.userId && existing.userId !== userId) return false;
-  }
+  const existing = store.get(id);
+  if (!existing) return false;
+  if (userId && existing.userId !== userId) return false;
   const had = store.delete(id);
   if (had) persist();
   return had;

@@ -3,20 +3,22 @@ import { notFound } from "next/navigation";
 import clsx from "clsx";
 import { ButtonLink, Icon, Sep } from "@/components/ui";
 import { SlideView } from "@/components/pitch/SlideView";
-import { getPresentation, isDemoPresentation, listQa, listRuns } from "@/lib/pitch/store";
+import { getPresentation, getPresentationAsync, isDemoPresentation, listQa, listRuns } from "@/lib/pitch/store";
 import { DeleteInterview } from "@/components/interview/DeleteInterview";
 import { AUDIENCE_LABEL, QA_STYLE_LABEL } from "@/lib/pitch/labels";
 import { londonToday } from "@/lib/dates";
 import { clock, daysBetween, longDay, minutesLong, mmss } from "@/lib/format";
+import { requirePageUser } from "@/lib/auth/require";
 
 export const dynamic = "force-dynamic";
 
 export default async function PresentationWorkspace({ params }: { params: Promise<{ id: string }> }) {
+  const user = await requirePageUser();
   const { id } = await params;
-  const p = getPresentation(id);
+  const p = (await getPresentationAsync(id, user.id)) ?? getPresentation(id, user.id);
   if (!p) notFound();
-  const runs = listRuns(p.id);
-  const qa = listQa(p.id);
+  const runs = listRuns(p.id, user.id);
+  const qa = listQa(p.id, user.id);
   const days = daysBetween(londonToday(), p.date);
 
   const demoRecentRuns = [

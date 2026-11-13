@@ -36,11 +36,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   const limited = guard(req, "answer", { practice: true });
   if (limited) return limited;
-  setUsageContext({ presentationId: (await params).id, feature: "presentation" });
+  setUsageContext({ userId: user.id, presentationId: (await params).id, feature: "presentation" });
   const blocked = notConfigured();
   if (blocked) return blocked;
   const { id } = await params;
-  const p = getPresentation(id);
+  const p = getPresentation(id, user.id);
   if (!p) return NextResponse.json({ error: "not-found", message: "That presentation doesn’t exist." }, { status: 404 });
 
   const form = await req.formData().catch(() => null);
@@ -58,7 +58,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (audio.size > MAX_AUDIO_BYTES * 2) return NextResponse.json({ error: "too-large", message: "That recording is too long to score in one go." }, { status: 413 });
 
   try {
-    const run = await recordRun({ presentation: p, ...meta, audio, transcribe });
+    const run = await recordRun({ presentation: p, userId: user.id, ...meta, audio, transcribe });
     if ("error" in run) return NextResponse.json({ error: "no-speech", message: "We couldn’t hear anything in that run. Check your mic and try again." }, { status: 422 });
     await flushStorage();
     return NextResponse.json({ id: run.id });

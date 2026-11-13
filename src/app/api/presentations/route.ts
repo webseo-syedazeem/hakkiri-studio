@@ -21,6 +21,6 @@ export async function POST(req: Request) {
   const p = await presentationFromForm(form, id);
   if ("message" in p) return NextResponse.json({ error: "bad-request", message: p.message }, { status: 400 });
   p.userId = user.id;
-  savePresentation(p);
+  savePresentation(p, user.id);
   return NextResponse.json({ id });
 }

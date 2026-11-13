@@ -12,6 +12,7 @@ import { isMongoConfigured, getMongoDb } from "@/lib/storage/mongodb";
  */
 export interface Draft {
   id: string;
+  userId?: string;
   interviewId: string;
   questionId: string;
   questionNumber: number;
@@ -34,6 +35,7 @@ function serializeDraft(d: Draft) {
   return {
     _id: d.id,
     id: d.id,
+    userId: d.userId,
     interviewId: d.interviewId,
     questionId: d.questionId,
     questionNumber: d.questionNumber,
@@ -61,6 +63,7 @@ function serializeDraft(d: Draft) {
 function deserializeDraft(doc: any): Draft {
   return {
     id: doc._id || doc.id,
+    userId: doc.userId,
     interviewId: doc.interviewId,
     questionId: doc.questionId,
     questionNumber: doc.questionNumber,
@@ -169,6 +172,12 @@ export async function deleteDraftAsync(id: string): Promise<void> {
 }
 
 /** "Delete all my data": answers still being scored. */
-export function clearDrafts() {
-  drafts.clear();
+export function clearDrafts(userId?: string) {
+  if (userId) {
+    for (const [id, d] of drafts) {
+      if (d.userId === userId) drafts.delete(id);
+    }
+  } else {
+    drafts.clear();
+  }
 }

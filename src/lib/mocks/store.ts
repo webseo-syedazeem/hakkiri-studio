@@ -123,17 +123,19 @@ export async function recordAskedQuestionAsync(sessionId: string | undefined, qu
 }
 
 /** Plans a session: its questions and spares are fixed now, so the live screen and the report agree. */
-export function createSession(s: Omit<MockRecord, "id" | "status" | "startedAt" | "finishedAt" | "answerIds" | "planned">): MockRecord {
+export function createSession(s: Omit<MockRecord, "id" | "status" | "startedAt" | "finishedAt" | "answerIds" | "planned">, userId?: string): MockRecord {
   const now = new Date().toISOString();
-  const rec: MockRecord = { ...s, id: randomUUID(), status: "planned", startedAt: now, finishedAt: now, answerIds: [], planned: s.questionIds?.length ?? 0 };
-  saveMock(rec);
+  const effectiveUserId = userId || s.userId;
+  const rec: MockRecord = { ...s, userId: effectiveUserId, id: randomUUID(), status: "planned", startedAt: now, finishedAt: now, answerIds: [], planned: s.questionIds?.length ?? 0 };
+  saveMock(rec, effectiveUserId);
   return rec;
 }
 
 export function findMock(id: string, userId?: string): MockRecord | undefined {
-  const m = store.get(id) ?? (id === demo.id ? demo : undefined);
+  const isDemo = id === demo.id;
+  const m = store.get(id) ?? (isDemo ? demo : undefined);
   if (!m) return undefined;
-  if (userId && m.userId && m.userId !== userId && m.id !== demo.id) return undefined;
+  if (!isDemo && (userId && m.userId !== userId)) return undefined;
   return m;
 }
 
@@ -161,13 +163,14 @@ export async function findMockAsync(id: string, userId?: string): Promise<MockRe
 
 /** Every session for an interview, newest first (planned ones included). */
 export function listMocks(interviewId: string, userId?: string): MockRecord[] {
-  const demoHere = !store.has(demo.id) ? [demo] : [];
+  const isDemo = interviewId === "halden";
+  const demoHere = (!store.has(demo.id) && isDemo) ? [demo] : [];
   return [...store.values(), ...demoHere]
-    .filter((m) => m.interviewId === interviewId && (!userId || !m.userId || m.userId === userId))
+    .filter((m) => m.interviewId === interviewId && (m.id === demo.id || (!userId || m.userId === userId)))
     .sort((a, b) => b.startedAt.localeCompare(a.startedAt));
 }
 
-export async function listMocksAsync(interviewId: string): Promise<MockRecord[]> {
+export async function listMocksAsync(interviewId: string, userId?: string): Promise<MockRecord[]> {
   if (isMongoConfigured()) {
     try {
       const fromDb = await loadJsonAsync<MockRecord[]>(FILE, []);
@@ -180,7 +183,7 @@ export async function listMocksAsync(interviewId: string): Promise<MockRecord[]>
       console.warn("[mocks/store] MongoDB listMocks failed:", err);
     }
   }
-  return listMocks(interviewId);
+  return listMocks(interviewId, userId);
 }
 
 export const isDone = (m: MockRecord) => (m.status ?? "done") === "done";
@@ -189,8 +192,8 @@ export const isDone = (m: MockRecord) => (m.status ?? "done") === "done";
 export const isFresh = (m: MockRecord) => isDone(m) && (m.kind === "interview" || m.kind === "full" || m.kind === "first");
 
 /** Finished sessions, newest first. */
-export function doneSessions(interviewId: string): MockRecord[] {
-  return listMocks(interviewId).filter(isDone);
+export function doneSessions(interviewId: string, userId?: string): MockRecord[] {
+  return listMocks(interviewId, userId).filter(isDone);
 }
 
 /**
@@ -198,30 +201,30 @@ export function doneSessions(interviewId: string): MockRecord[] {
  * questions already reached in an in-progress session, and saved answers
  * (covering single questions, topic drills and mid-session exits).
  */
-export function lastAskedMap(interviewId: string): Map<string, string> {
+export function lastAskedMap(interviewId: string, userId?: string): Map<string, string> {
   const out = new Map<string, string>();
-  for (const m of [...listMocks(interviewId)].reverse()) {
+  for (const m of [...listMocks(interviewId, userId)].reverse()) {
     if (m.status === "planned") {
       const seenPlanned = [
         ...(m.askedIds ?? []),
         ...(m.skipped ?? []).map((s) => s.questionId),
-        ...m.answerIds.map((id) => findAnswer(id)?.questionId ?? ""),
+        ...m.answerIds.map((id) => findAnswer(id, userId)?.questionId ?? ""),
       ].filter(Boolean);
       for (const id of seenPlanned) out.set(id, m.startedAt);
       continue;
     }
-    const asked = m.askedIds ?? (m.rows ?? []).map((r) => r.questionId).concat(m.answerIds.map((id) => findAnswer(id)?.questionId ?? "")).filter(Boolean);
+    const asked = m.askedIds ?? (m.rows ?? []).map((r) => r.questionId).concat(m.answerIds.map((id) => findAnswer(id, userId)?.questionId ?? "")).filter(Boolean);
     for (const id of asked) out.set(id, m.startedAt);
   }
-  for (const a of listAnswers(interviewId)) {
+  for (const a of listAnswers(interviewId, userId)) {
     if (a.questionId) out.set(a.questionId, a.createdAt ?? new Date().toISOString());
   }
   return out;
 }
 
-export async function lastAskedMapAsync(interviewId: string): Promise<Map<string, string>> {
-  await Promise.all([listMocksAsync(interviewId), listAnswersAsync(interviewId)]);
-  return lastAskedMap(interviewId);
+export async function lastAskedMapAsync(interviewId: string, userId?: string): Promise<Map<string, string>> {
+  await Promise.all([listMocksAsync(interviewId, userId), listAnswersAsync(interviewId, userId)]);
+  return lastAskedMap(interviewId, userId);
 }
 
 /** The re-run of an interview, if you've done (or started) one. */
@@ -269,7 +272,7 @@ export function deleteMocksFor(interviewId: string) {
 }
 
 export function allMocks(userId?: string): MockRecord[] {
-  return [...store.values()].filter((m) => !userId || !m.userId || m.userId === userId);
+  return userId ? [...store.values()].filter((m) => m.userId === userId) : [...store.values()];
 }
 
 /** "Delete all my data". */

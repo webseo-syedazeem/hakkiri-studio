@@ -22,10 +22,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ session
   const limited = guard(req, "answer", { inSession: true });
   if (limited) return limited;
   const draft = (await getQaDraftAsync(sessionId)) ?? getQaDraft(sessionId);
-  setUsageContext({ sessionId, presentationId: draft?.presentationId, feature: "q&a" });
-  const p = draft && getPresentation(draft.presentationId);
+  if (!draft || (draft.userId && draft.userId !== user.id)) return NextResponse.json({ error: "not-found", message: "This Q&A has expired." }, { status: 404 });
+  setUsageContext({ userId: user.id, sessionId, presentationId: draft.presentationId, feature: "q&a" });
+  const p = getPresentation(draft.presentationId, user.id);
   const body = (await req.json().catch(() => ({}))) as { k?: number };
-  if (!draft || !p || typeof body.k !== "number" || !draft.turns[body.k]) return NextResponse.json({ error: "not-found", message: "This Q&A has expired." }, { status: 404 });
+  if (!p || typeof body.k !== "number" || !draft.turns[body.k]) return NextResponse.json({ error: "not-found", message: "This Q&A has expired." }, { status: 404 });
   const answer = await scoreQaQuestion(draft, p, body.k);
   return answer ? NextResponse.json({ ok: true }) : NextResponse.json({ error: "scoring-failed", message: "That answer couldn’t be scored yet. It will be tried again at the end." }, { status: 502 });
 }

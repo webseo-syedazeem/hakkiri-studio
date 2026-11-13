@@ -30,9 +30,13 @@ export interface DbSessionRecord {
   expiresAt: Date;
 }
 
-// In-memory fallback if MongoDB is not configured or in local test mocks
-const memUsers = new Map<string, DbUserRecord>();
-const memSessions = new Map<string, DbSessionRecord>();
+// In-memory fallback if MongoDB is not configured or in local test mocks (stored on globalThis to persist across Next.js route contexts)
+const globalForMem = globalThis as unknown as {
+  __hakkiri_memUsers?: Map<string, DbUserRecord>;
+  __hakkiri_memSessions?: Map<string, DbSessionRecord>;
+};
+const memUsers = globalForMem.__hakkiri_memUsers ?? (globalForMem.__hakkiri_memUsers = new Map<string, DbUserRecord>());
+const memSessions = globalForMem.__hakkiri_memSessions ?? (globalForMem.__hakkiri_memSessions = new Map<string, DbSessionRecord>());
 
 export function hashPassword(password: string): string {
   const salt = crypto.randomBytes(16).toString("hex");

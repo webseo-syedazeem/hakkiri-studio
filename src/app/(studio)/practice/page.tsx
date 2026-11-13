@@ -4,13 +4,15 @@ import { Icon, Panel } from "@/components/ui";
 import { getInterview } from "@/lib/interviews/store";
 import { getPresentation } from "@/lib/pitch/store";
 import { CHECKLIST_TOPICS, DRILL_TOPICS } from "@/lib/sessions/topics";
+import { requirePageUser } from "@/lib/auth/require";
 
 export const dynamic = "force-dynamic";
 
-export default function PracticeHubPage() {
-  const interview = getInterview("halden");
+export default async function PracticeHubPage() {
+  const user = await requirePageUser();
+  const interview = getInterview("halden", user.id);
   const interviewId = interview?.id ?? "halden";
-  const presentation = getPresentation("q1-roadmap");
+  const presentation = getPresentation("q1-roadmap", user.id);
 
   const drillCategories = [
     {

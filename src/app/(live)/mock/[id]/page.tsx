@@ -15,6 +15,7 @@ import { drillTitle, HABIT_INSTRUCTION } from "@/lib/sessions/drills";
 import { getTopic, resolveInterviewQuestion, topicQuestions } from "@/lib/sessions/topics";
 import type { Question } from "@/lib/types";
 import { PAY_STAGE_LABEL, PAY_TIPS, payStage } from "@/lib/sessions/pay";
+import { requirePageUser } from "@/lib/auth/require";
 
 export const dynamic = "force-dynamic";
 
@@ -31,12 +32,13 @@ export default async function MockInterviewPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ q?: string; followups?: string; session?: string; topic?: string; difficulty?: string }>;
 }) {
+  const user = await requirePageUser();
   const { id } = await params;
   const { q, followups, session: sessionId, topic, difficulty } = await searchParams;
   const difficultyParam =
     difficulty === "easy" || difficulty === "medium" || difficulty === "hard" ? (difficulty as Difficulty) : null;
   const styleOverride = difficultyParam ? styleFor(difficultyParam) : null;
-  const interview = (await getInterviewAsync(id)) ?? getInterview(id);
+  const interview = (await getInterviewAsync(id, user.id)) ?? getInterview(id, user.id);
   if (!interview) notFound();
 
   const toLive = (question: Question, number: number, follow = true): LiveQuestion => {
@@ -66,7 +68,7 @@ export default async function MockInterviewPage({
   const byId = (qid: string) => resolveInterviewQuestion(interview, qid);
 
   if (sessionId) {
-    const found = (await findMockAsync(sessionId)) ?? openSession(interview.id, sessionId);
+    const found = (await findMockAsync(sessionId, user.id)) ?? openSession(interview.id, sessionId, user.id);
     const m = found ?? ({
       id: sessionId,
       interviewId: interview.id,
@@ -96,7 +98,7 @@ export default async function MockInterviewPage({
       live.settings = m.settings;
     }
     if (mode === "rerun" && m.rerunOf) {
-      const source = findMock(m.rerunOf);
+      const source = findMock(m.rerunOf, user.id);
       const rows = source ? rowsFor(source) : [];
       const report = buildReport(rows, interview.interviewer.name);
       live.focus = report.fixes.map((f) => f.title);
@@ -167,7 +169,7 @@ export default async function MockInterviewPage({
   const topicSpec = getTopic(topic);
   if (topicSpec) {
     const topicDifficulty = difficultyParam ?? interview.settings?.difficulty ?? difficultyFor(interview.style);
-    const lastAsked = await lastAskedMapAsync(interview.id);
+    const lastAsked = await lastAskedMapAsync(interview.id, user.id);
     const questions = topicQuestions(topicSpec.id, interview.questions, { difficulty: topicDifficulty, lastAsked });
     if (questions.length) {
       const live: LiveSession = {

@@ -26,13 +26,14 @@ export async function POST(req: Request, { params }: { params: Promise<{ session
 
   const limited = guard(req, "answer", { inSession: true });
   if (limited) return limited;
-  setUsageContext({ sessionId: (await params).sessionId, feature: "q&a" });
+  setUsageContext({ userId: user.id, sessionId: (await params).sessionId, feature: "q&a" });
   const blocked = notConfigured();
   if (blocked) return blocked;
   const { sessionId } = await params;
   const draft = (await getQaDraftAsync(sessionId)) ?? getQaDraft(sessionId);
-  const p = draft && getPresentation(draft.presentationId);
-  if (!draft || !p) return NextResponse.json({ error: "not-found", message: "This Q&A has expired. Start it again." }, { status: 404 });
+  if (!draft || (draft.userId && draft.userId !== user.id)) return NextResponse.json({ error: "not-found", message: "This Q&A has expired. Start it again." }, { status: 404 });
+  const p = getPresentation(draft.presentationId, user.id);
+  if (!p) return NextResponse.json({ error: "not-found", message: "This Q&A has expired. Start it again." }, { status: 404 });
 
   const form = await req.formData().catch(() => null);
   const audio = form?.get("audio");

@@ -25,10 +25,10 @@ export async function POST(req: Request) {
 
   const blocked = guard(req, "plan", { practice: true });
   if (blocked) return blocked;
-  setUsageContext({ feature: "q&a" });
+  setUsageContext({ userId: user.id, feature: "q&a" });
   const parsed = Body.safeParse(await req.json().catch(() => null));
-  const p = parsed.success ? getPresentation(parsed.data.presentationId) : undefined;
-  if (!parsed.success || !p) return NextResponse.json({ error: "bad-request", message: "That presentation doesn’t exist." }, { status: 400 });
-  const draft = await startQa(p, parsed.data.style);
+  const p = parsed.success ? getPresentation(parsed.data.presentationId, user.id) : undefined;
+  if (!parsed.success || !p) return NextResponse.json({ error: "not-found", message: "That presentation doesn’t exist." }, { status: 404 });
+  const draft = await startQa(p, parsed.data.style, user.id);
   return NextResponse.json({ sessionId: draft.id, persona: draft.persona, questions: draft.questions });
 }

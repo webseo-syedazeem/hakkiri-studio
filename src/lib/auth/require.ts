@@ -1,9 +1,22 @@
 import "server-only";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { validateSession } from "./user-db";
 import type { User } from "@/lib/types";
 
 export type { User };
+
+/**
+ * Ensures a valid user session for Server Components / Pages.
+ * Redirects immediately to /login if unauthenticated, preventing parallel RSC streaming leaks.
+ */
+export async function requirePageUser(): Promise<User> {
+  const user = await getCurrentUser();
+  if (!user || !user.id) {
+    redirect("/login");
+  }
+  return user;
+}
 
 /**
  * Retrieves the currently authenticated user from the session cookie, or null if unauthenticated.

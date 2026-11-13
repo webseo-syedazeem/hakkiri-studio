@@ -6,6 +6,7 @@ import { understandingOf } from "@/lib/interviews/build";
 import { PRESETS, settingsOr } from "@/lib/interviews/settings";
 import { interviewWhen } from "@/lib/sessions/labels";
 import { DRILL_TOPICS } from "@/lib/sessions/topics";
+import { requirePageUser } from "@/lib/auth/require";
 import {
   InterviewOverviewClient,
   type OverviewScoreCategory,
@@ -21,9 +22,10 @@ export default async function InterviewOverview({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ new?: string; rebuilt?: string }>;
 }) {
+  const user = await requirePageUser();
   const { id } = await params;
   const { new: isNew, rebuilt } = await searchParams;
-  const interview = (await getInterviewAsync(id)) ?? getInterview(id);
+  const interview = (await getInterviewAsync(id, user.id)) ?? getInterview(id, user.id);
   if (!interview) notFound();
 
   const micOk = (await cookies()).get("hk_mic_ok")?.value === "1";

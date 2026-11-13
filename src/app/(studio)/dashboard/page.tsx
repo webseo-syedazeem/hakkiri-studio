@@ -9,16 +9,18 @@ import { longDay } from "@/lib/format";
 import { DashboardClientView } from "@/components/dashboard/DashboardClientView";
 import { HomeHeaderActions } from "@/components/dashboard/HomeHeaderActions";
 import type { UpcomingEvent } from "@/components/dashboard/UpcomingAgenda";
+import { requirePageUser } from "@/lib/auth/require";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
+  const user = await requirePageUser();
   const jar = await cookies();
   // First visit: start at the welcome screen.
   if (!jar.get("hk_welcomed")) redirect("/welcome");
 
-  const interviews = listInterviews(londonToday());
-  const presentations = listPresentations();
+  const interviews = listInterviews(londonToday(), user.id);
+  const presentations = listPresentations(user.id);
 
   // Upcoming items for the agenda matching mockup
   const agendaEvents: UpcomingEvent[] = [

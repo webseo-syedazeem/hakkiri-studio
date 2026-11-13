@@ -5,6 +5,7 @@ import { RebuildFlow } from "@/components/interview/RebuildFlow";
 import { getInterview } from "@/lib/interviews/store";
 import { understandingOf } from "@/lib/interviews/build";
 import { findMock } from "@/lib/mocks/store";
+import { requirePageUser } from "@/lib/auth/require";
 
 export const dynamic = "force-dynamic";
 
@@ -13,11 +14,12 @@ export const dynamic = "force-dynamic";
  * /interviews/{id}/rebuild?edit=1           "Not right? Edit it" from the overview
  */
 export default async function RebuildPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ from?: string; edit?: string }> }) {
+  const user = await requirePageUser();
   const { id } = await params;
   const { from } = await searchParams;
-  const interview = getInterview(id);
+  const interview = getInterview(id, user.id);
   if (!interview) notFound();
-  const stopped = from ? findMock(from) : undefined;
+  const stopped = from ? findMock(from, user.id) : undefined;
   if (from && (!stopped || stopped.interviewId !== interview.id || stopped.status !== "stopped")) redirect(`/interviews/${interview.id}`);
   const micOk = (await cookies()).get("hk_mic_ok")?.value === "1";
   const attempt = (interview.rebuilds ?? 0) + 1;

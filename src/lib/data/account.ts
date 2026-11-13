@@ -2,7 +2,7 @@ import "server-only";
 import JSZip from "jszip";
 import { allSavedInterviews, clearInterviews } from "@/lib/interviews/store";
 import { allAnswers, clearAnswers } from "@/lib/answers/store";
-import { allRecordings, clearRecordings, getRecording, recordingCount } from "@/lib/answers/audio";
+import { allRecordings, clearRecordings, deleteRecordings, getRecording, recordingCount } from "@/lib/answers/audio";
 import { clearDrafts } from "@/lib/answers/drafts";
 import { allMocks, clearMocks } from "@/lib/mocks/store";
 import { allCustomQuestions, clearQuestions } from "@/lib/questions/store";
@@ -76,7 +76,7 @@ export async function exportAll(userId?: string): Promise<Uint8Array> {
     presentations: pitch.presentations,
     rehearsals: pitch.runs,
     audienceQa: pitch.qa,
-    usage: allUsage(),
+    usage: allUsage(userId),
     settings: getSettings(userId),
   };
   zip.file("data.json", JSON.stringify(data, null, 2));
@@ -103,14 +103,30 @@ export async function exportAll(userId?: string): Promise<Uint8Array> {
  * unlinked from you, because they hold the spending limits in place.
  */
 export function deleteAll(userId?: string) {
-  clearDrafts();
-  clearQaDrafts();
-  clearAnswers(userId);
-  clearMocks(userId);
-  clearQuestions(userId);
-  clearInterviews(userId);
-  clearPitch(userId);
-  if (!userId) {
+  if (userId) {
+    const userAnswers = allAnswers(userId);
+    const pitch = allPitchData(userId);
+    const userRecordingIds = [
+      ...userAnswers.map((a) => a.id),
+      ...pitch.runs.map((r) => `run-${r.id}`),
+      ...pitch.qa.flatMap((q) => q.answers.map((a) => a.id)),
+    ];
+    deleteRecordings(userRecordingIds);
+    clearDrafts(userId);
+    clearQaDrafts(userId);
+    clearAnswers(userId);
+    clearMocks(userId);
+    clearQuestions(userId);
+    clearInterviews(userId);
+    clearPitch(userId);
+  } else {
+    clearDrafts();
+    clearQaDrafts();
+    clearAnswers();
+    clearMocks();
+    clearQuestions();
+    clearInterviews();
+    clearPitch();
     clearRecordings();
     removeDir("voice-cache");
     anonymiseUsage();

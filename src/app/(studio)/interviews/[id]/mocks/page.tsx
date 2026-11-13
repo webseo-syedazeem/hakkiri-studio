@@ -9,15 +9,17 @@ import { countsLine, mockScore } from "@/lib/mocks/report";
 import { sessionSettingsText, sessionTitle } from "@/lib/sessions/labels";
 import { scoreLabel } from "@/lib/scoring/combine";
 import { minutesLong, whenSaid } from "@/lib/format";
+import { requirePageUser } from "@/lib/auth/require";
 
 export const dynamic = "force-dynamic";
 
 /** Every interview, re-run and drill for this job, newest first. */
 export default async function PastSessionsPage({ params }: { params: Promise<{ id: string }> }) {
+  const user = await requirePageUser();
   const { id } = await params;
-  const interview = getInterview(id);
+  const interview = getInterview(id, user.id);
   if (!interview) notFound();
-  const sessions = listMocks(interview.id).filter((m) => m.status !== "planned");
+  const sessions = listMocks(interview.id, user.id).filter((m) => m.status !== "planned");
   const started = sessions.some(isFresh);
 
   return (

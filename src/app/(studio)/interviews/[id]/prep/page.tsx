@@ -15,6 +15,7 @@ import { buildReport } from "@/lib/mocks/report";
 import { interviewWhen } from "@/lib/sessions/labels";
 import { londonToday } from "@/lib/dates";
 import type { Answer } from "@/lib/types";
+import { requirePageUser } from "@/lib/auth/require";
 
 export const dynamic = "force-dynamic";
 
@@ -23,21 +24,22 @@ export default async function PrepSheetPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const user = await requirePageUser();
   const { id } = await params;
-  const interview = getInterview(id);
+  const interview = getInterview(id, user.id);
   if (!interview) notFound();
   const micOk = (await cookies()).get("hk_mic_ok")?.value === "1";
-  const sessions = doneSessions(interview.id);
+  const sessions = doneSessions(interview.id, user.id);
   const fresh = sessions.filter(isFresh);
   const when = interviewWhen(interview.date, londonToday());
 
   // Aggregate answers
   const byId = new Map<string, Answer>();
-  for (const a of listAnswers(interview.id)) byId.set(a.id, a);
+  for (const a of listAnswers(interview.id, user.id)) byId.set(a.id, a);
   for (const m of sessions)
     for (const aid of m.answerIds)
       if (!byId.has(aid)) {
-        const a = findAnswer(aid);
+        const a = findAnswer(aid, user.id);
         if (a) byId.set(aid, a);
       }
   const latest = fresh[0];

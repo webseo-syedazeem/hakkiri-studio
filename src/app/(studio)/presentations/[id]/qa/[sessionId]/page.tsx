@@ -14,6 +14,7 @@ import { scoreAnswerView } from "@/lib/answers/view";
 import { hasRecording } from "@/lib/answers/audio";
 import { scoreLabel } from "@/lib/scoring/combine";
 import { mmss, whenSaid } from "@/lib/format";
+import { requirePageUser } from "@/lib/auth/require";
 
 export const dynamic = "force-dynamic";
 
@@ -33,10 +34,11 @@ function Score({ value }: { value: number | null }) {
 
 /** Q&A report: each answer scored (answer first, honest, linked back to your ask), and a stronger version of your weakest. */
 export default async function QaReportPage({ params, searchParams }: { params: Promise<{ id: string; sessionId: string }>; searchParams: Promise<{ q?: string; demo?: string }> }) {
+  const user = await requirePageUser();
   const { id, sessionId } = await params;
   const { q: qParam, demo } = await searchParams;
-  const p = (await getPresentationAsync(id)) ?? getPresentation(id);
-  let s = (await getQaAsync(sessionId)) ?? getQa(sessionId);
+  const p = (await getPresentationAsync(id, user.id)) ?? getPresentation(id, user.id);
+  let s = (await getQaAsync(sessionId, user.id)) ?? getQa(sessionId, user.id);
   if (!s && p?.id === "q1-roadmap" && !isLaunch()) {
     s = { ...demoQaSession, id: sessionId };
   }

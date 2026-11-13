@@ -13,6 +13,7 @@ import { costOf } from "./prices";
 export type Service = "claude" | "deepgram" | "elevenlabs";
 
 export interface UsageContext {
+  userId?: string;
   interviewId?: string;
   sessionId?: string;
   presentationId?: string;
@@ -76,8 +77,8 @@ export function recordUsage(e: Omit<UsageEntry, "at" | "costUsd"> & { at?: strin
   return entry;
 }
 
-export function allUsage(): readonly UsageEntry[] {
-  return entries;
+export function allUsage(userId?: string): readonly UsageEntry[] {
+  return userId ? entries.filter((e) => e.userId === userId) : entries;
 }
 
 /** London calendar day of an ISO time. */
@@ -111,13 +112,13 @@ export function totals(list: readonly UsageEntry[]): UsageTotals {
   return t;
 }
 
-export function usageOn(dayIso: string): UsageEntry[] {
-  return entries.filter((e) => day(e.at) === dayIso);
+export function usageOn(dayIso: string, userId?: string): UsageEntry[] {
+  return entries.filter((e) => day(e.at) === dayIso && (!userId || e.userId === userId));
 }
 
-export function usageInMonth(dayIso: string): UsageEntry[] {
+export function usageInMonth(dayIso: string, userId?: string): UsageEntry[] {
   const month = dayIso.slice(0, 7);
-  return entries.filter((e) => day(e.at).startsWith(month));
+  return entries.filter((e) => day(e.at).startsWith(month) && (!userId || e.userId === userId));
 }
 
 export function usageFor(filter: UsageContext): UsageEntry[] {
@@ -138,12 +139,12 @@ export function byFeature(list: readonly UsageEntry[]): { feature: string; costU
 }
 
 /** Last N days, oldest first, for the usage chart. */
-export function dailyCosts(todayIso: string, n = 14): { day: string; costUsd: number; minutes: number }[] {
+export function dailyCosts(todayIso: string, n = 14, userId?: string): { day: string; costUsd: number; minutes: number }[] {
   const out: { day: string; costUsd: number; minutes: number }[] = [];
   const base = new Date(`${todayIso}T12:00:00Z`);
   for (let k = n - 1; k >= 0; k--) {
     const d = new Date(base.getTime() - k * 86_400_000).toISOString().slice(0, 10);
-    const list = usageOn(d);
+    const list = usageOn(d, userId);
     out.push({ day: d, costUsd: list.reduce((s, e) => s + e.costUsd, 0), minutes: list.reduce((s, e) => s + (e.seconds ?? 0), 0) / 60 });
   }
   return out;

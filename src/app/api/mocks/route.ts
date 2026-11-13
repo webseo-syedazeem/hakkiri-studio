@@ -57,19 +57,19 @@ export async function POST(req: Request) {
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "bad-request", message: "That interview couldn’t be saved." }, { status: 400 });
   const body = parsed.data;
-  let interview = (await getInterviewAsync(body.interviewId)) ?? getInterview(body.interviewId);
-  if (!interview) {
-    interview = (await getInterviewAsync("halden")) ?? getInterview("halden");
+  let interview = (await getInterviewAsync(body.interviewId, user.id)) ?? getInterview(body.interviewId, user.id);
+  if (!interview && body.interviewId === "halden") {
+    interview = (await getInterviewAsync("halden", user.id)) ?? getInterview("halden", user.id);
   }
   if (!interview) {
     return NextResponse.json({ error: "not-found", message: "That interview has expired." }, { status: 404 });
   }
 
   // Resilient answer loading: fetch answers with retry for serverless DB replication lag
-  let answers = await Promise.all(body.answerIds.map(async (id) => (await findAnswerAsync(id)) ?? findAnswer(id)));
+  let answers = await Promise.all(body.answerIds.map(async (id) => (await findAnswerAsync(id, user.id)) ?? findAnswer(id, user.id)));
   if (answers.some((a) => !a)) {
     await new Promise((resolve) => setTimeout(resolve, 350));
-    answers = await Promise.all(body.answerIds.map(async (id) => (await findAnswerAsync(id)) ?? findAnswer(id)));
+    answers = await Promise.all(body.answerIds.map(async (id) => (await findAnswerAsync(id, user.id)) ?? findAnswer(id, user.id)));
   }
 
   // Resilient safeguard: if any answer failed to score or persist across Lambdas,
@@ -83,6 +83,7 @@ export async function POST(req: Request) {
       const q = resolveInterviewQuestion(interview, qid) ?? interview.questions[i] ?? interview.questions[0];
       const fallbackAnswer: Answer = {
         id: aid,
+        userId: user.id,
         interviewId: interview.id,
         questionId: q?.id ?? qid,
         questionNumber: i + 1,
@@ -121,17 +122,18 @@ export async function POST(req: Request) {
         followUps: [],
         createdAt: new Date().toISOString(),
       };
-      await saveAnswerAsync(fallbackAnswer);
+      await saveAnswerAsync(fallbackAnswer, user.id);
       answers[i] = fallbackAnswer;
     }
   }
   const finishedAt = new Date().toISOString();
 
   if (body.sessionId) {
-    let session = (await findMockAsync(body.sessionId)) ?? findMock(body.sessionId);
+    let session = (await findMockAsync(body.sessionId, user.id)) ?? findMock(body.sessionId, user.id);
     if (!session || session.interviewId !== interview.id) {
       session = {
         id: body.sessionId,
+        userId: user.id,
         interviewId: interview.id,
         kind: body.kind ?? "full",
         drill: body.drill,
@@ -148,6 +150,7 @@ export async function POST(req: Request) {
     const skipped = body.skipped ?? [];
     const updatedMock: MockRecord = {
       ...session,
+      userId: user.id,
       status: "done",
       startedAt: body.startedAt,
       finishedAt,
@@ -157,22 +160,22 @@ export async function POST(req: Request) {
       style: body.style ?? session.style,
       planned: body.planned,
     };
-    await saveMockAsync(updatedMock);
+    await saveMockAsync(updatedMock, user.id);
     const rules = rulesFromSkips(skipped, (id) => interview.questions.find((q) => q.id === id && !q.slot)?.text);
     if (rules.length) {
-      const updatedInt = updateInterview(interview.id, (i) => ({ ...i, rules: mergeRules(i.rules, rules) }));
-      if (updatedInt) await saveInterviewAsync(updatedInt);
+      const updatedInt = updateInterview(interview.id, (i) => ({ ...i, rules: mergeRules(i.rules, rules) }), user.id);
+      if (updatedInt) await saveInterviewAsync(updatedInt, user.id);
     }
     retireSkipped(interview.id, skipped);
-    const refreshed = getInterview(interview.id);
-    if (refreshed && skipped.length) await saveInterviewAsync(refreshed);
-    after(() => withUsageContext({ interviewId: interview.id, feature: "questions" }, () => topUp(interview.id)).catch((err) => console.warn("[sessions] top-up failed:", err)));
+    const refreshed = getInterview(interview.id, user.id);
+    if (refreshed && skipped.length) await saveInterviewAsync(refreshed, user.id);
+    after(() => withUsageContext({ userId: user.id, interviewId: interview.id, feature: "questions" }, () => topUp(interview.id)).catch((err) => console.warn("[sessions] top-up failed:", err)));
     await flushStorage();
     return NextResponse.json({ id: session.id });
   }
 
   const id = randomUUID();
-  await saveMockAsync({ id, interviewId: interview.id, kind: body.kind ?? "full", status: "done", group: body.group, startedAt: body.startedAt, style: body.style, finishedAt, answerIds: body.answerIds, askedIds: body.askedIds, planned: body.planned });
+  await saveMockAsync({ id, userId: user.id, interviewId: interview.id, kind: body.kind ?? "full", status: "done", group: body.group, startedAt: body.startedAt, style: body.style, finishedAt, answerIds: body.answerIds, askedIds: body.askedIds, planned: body.planned }, user.id);
   await flushStorage();
   return NextResponse.json({ id });
 }

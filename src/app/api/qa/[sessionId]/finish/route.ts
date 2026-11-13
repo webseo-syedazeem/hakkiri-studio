@@ -24,10 +24,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ session
   const limited = guard(req, "answer", { inSession: true });
   if (limited) return limited;
   const draft = (await getQaDraftAsync(sessionId)) ?? getQaDraft(sessionId);
-  setUsageContext({ sessionId, presentationId: draft?.presentationId, feature: "q&a" });
-  const p = draft && getPresentation(draft.presentationId);
-  if (!draft || !p) return NextResponse.json({ error: "not-found", message: "This Q&A has expired. Start it again." }, { status: 404 });
-  const session = await finishQa(draft, p);
+  if (!draft || (draft.userId && draft.userId !== user.id)) return NextResponse.json({ error: "not-found", message: "This Q&A has expired. Start it again." }, { status: 404 });
+  setUsageContext({ userId: user.id, sessionId, presentationId: draft.presentationId, feature: "q&a" });
+  const p = getPresentation(draft.presentationId, user.id);
+  if (!p) return NextResponse.json({ error: "not-found", message: "This Q&A has expired. Start it again." }, { status: 404 });
+  const session = await finishQa(draft, p, user.id);
   if (!session) return NextResponse.json({ error: "scoring-failed", message: devOr("None of your answers could be scored. Check your keys and connection, then try again.", "None of your answers could be scored just now. Try again in a minute.") }, { status: 502 });
   await flushStorage();
   return NextResponse.json({ id: session.id });

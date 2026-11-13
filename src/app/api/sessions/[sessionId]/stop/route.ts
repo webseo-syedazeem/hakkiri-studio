@@ -31,11 +31,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ session
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "bad-request", message: "Your feedback couldn’t be saved. Try again." }, { status: 400 });
   try {
-    await findMockAsync(sessionId);
-    const m = stopSession(sessionId, parsed.data);
-    await saveMockAsync(m);
-    const updatedInt = getInterview(m.interviewId);
-    if (updatedInt && parsed.data.skipped.length) await saveInterviewAsync(updatedInt);
+    await findMockAsync(sessionId, user.id);
+    const m = stopSession(sessionId, parsed.data, user.id);
+    await saveMockAsync(m, user.id);
+    const updatedInt = getInterview(m.interviewId, user.id);
+    if (updatedInt && parsed.data.skipped.length) await saveInterviewAsync(updatedInt, user.id);
     await flushStorage();
     return NextResponse.json({ href: `/interviews/${m.interviewId}/rebuild?from=${m.id}` });
   } catch (err) {

@@ -7,6 +7,7 @@ import { londonToday } from "@/lib/dates";
 import { DraftInterviewCard } from "@/components/interview/DraftInterviewCard";
 import { InterviewsHeaderControls } from "@/components/interview/InterviewsHeaderControls";
 import { InterviewsGrid } from "@/components/interview/InterviewsGrid";
+import { requirePageUser } from "@/lib/auth/require";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,8 @@ const verdictTone = { ready: "text-blue-soft", nearly: "text-lilac", "not-yet": 
 
 /** Your interviews, soonest first, then the demo. */
 export default async function InterviewsPage() {
-  const all = await listInterviewsAsync(londonToday());
+  const user = await requirePageUser();
+  const all = await listInterviewsAsync(londonToday(), user.id);
   const serialized = all.map((iv) => {
     const st = standing(iv);
     const when = interviewWhen(iv.date, londonToday());

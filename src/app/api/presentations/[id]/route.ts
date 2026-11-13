@@ -16,8 +16,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   }
 
   const { id } = await params;
-  const existing = getPresentation(id);
-  if (!existing || (existing.userId && existing.userId !== user.id)) {
+  const existing = getPresentation(id, user.id);
+  if (!existing) {
     return NextResponse.json({ error: "not-found", message: "That presentation doesn’t exist." }, { status: 404 });
   }
   const form = await req.formData().catch(() => null);
@@ -25,7 +25,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   const p = await presentationFromForm(form, id, existing);
   if ("message" in p) return NextResponse.json({ error: "bad-request", message: p.message }, { status: 400 });
   p.userId = user.id;
-  savePresentation(p);
+  savePresentation(p, user.id);
   return NextResponse.json({ id });
 }
 
@@ -39,11 +39,11 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
   }
 
   const { id } = await params;
-  const existing = getPresentation(id);
-  if (!existing || (existing.userId && existing.userId !== user.id)) {
+  const existing = getPresentation(id, user.id);
+  if (!existing) {
     return NextResponse.json({ error: "not-found", message: "That presentation doesn’t exist." }, { status: 404 });
   }
-  const removed = deletePresentation(id);
+  const removed = deletePresentation(id, user.id);
   if (!removed) return NextResponse.json({ error: "demo", message: "The demo presentation can’t be deleted." }, { status: 400 });
   // Run recordings are saved under run-<id>; Q&A answers under their own ids.
   deleteRecordings([...removed.runIds.map((r) => `run-${r}`), ...removed.answerIds]);

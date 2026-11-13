@@ -1,11 +1,13 @@
 import { Crumbs } from "@/components/ui";
 import { PitchSetup } from "@/components/pitch/PitchSetup";
 import { addDays, londonToday } from "@/lib/dates";
+import { requirePageUser } from "@/lib/auth/require";
 
 export const dynamic = "force-dynamic"; // the default date moves with the calendar
 
 /** New presentation (design screen 11). */
-export default function NewPresentationPage() {
+export default async function NewPresentationPage() {
+  await requirePageUser();
   return (
     <div className="flex min-h-[calc(100vh-56px)] grow flex-col">
       <header className="animate-rise pb-2">

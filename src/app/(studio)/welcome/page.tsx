@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Mark } from "@/components/brand/Mark";
 import { MiniWave } from "@/components/audio/MiniWave";
 import { buttonClass } from "@/components/ui";
-import { user } from "@/lib/mock-data";
+import { requirePageUser } from "@/lib/auth/require";
 
 const PLANNED = [30, 60, 45, 60, 60, 60, 60, 30, 45, 45, 45, 60];
 const ACTUAL = [32, 75, 40, 160, 70, 65, 50, 25, 50, 55, 48, 10];
@@ -35,7 +35,8 @@ function Choice({ href, title, body, cta, children, delay }: { href: string; tit
   );
 }
 
-export default function WelcomePage() {
+export default async function WelcomePage() {
+  const user = await requirePageUser();
   return (
     <div className="mx-auto flex w-full max-w-[1120px] grow flex-col justify-center">
       <div className="text-[15px] text-muted">Welcome to Hakkiri Studio, {user.firstName}</div>

@@ -7,12 +7,14 @@ import { pitchReadiness } from "@/lib/pitch/plan";
 import { AUDIENCE_LABEL } from "@/lib/pitch/labels";
 import { londonToday } from "@/lib/dates";
 import { clock, daysBetween, longDay } from "@/lib/format";
+import { requirePageUser } from "@/lib/auth/require";
 
 export const dynamic = "force-dynamic";
 
 /** Your presentations and pitches, soonest first. */
-export default function PresentationsPage() {
-  const all = listPresentations();
+export default async function PresentationsPage() {
+  const user = await requirePageUser();
+  const all = listPresentations(user.id);
   return (
     <div className="flex grow flex-col">
       <header className="flex animate-rise items-end justify-between gap-6">
@@ -38,8 +40,8 @@ export default function PresentationsPage() {
 
       <div className="mt-6 grid grid-cols-[repeat(auto-fill,minmax(400px,1fr))] gap-5">
         {all.map((p, i) => {
-          const runs = listRuns(p.id);
-          const r = pitchReadiness(p, runs, listQa(p.id));
+          const runs = listRuns(p.id, user.id);
+          const r = pitchReadiness(p, runs, listQa(p.id, user.id));
           const days = daysBetween(londonToday(), p.date);
           return (
             <Link key={p.id} href={`/presentations/${p.id}`} className="group block animate-rise" style={{ animationDelay: `${0.05 * i}s` }}>
