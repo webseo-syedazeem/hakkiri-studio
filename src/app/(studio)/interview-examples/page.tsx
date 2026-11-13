@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import clsx from "clsx";
 import { CustomSelect, Icon, Panel } from "@/components/ui";
+import { ImportFromCvModal } from "@/components/examples/ImportFromCvModal";
 import {
   loadExamples,
   toggleExampleFavorite,
@@ -16,6 +17,8 @@ export default function InterviewExamplesPage() {
   const [search, setSearch] = useState("");
   const [selectedTag, setSelectedTag] = useState("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   useEffect(() => {
     setExamples(loadExamples());
@@ -70,7 +73,7 @@ export default function InterviewExamplesPage() {
         <div className="flex items-center gap-2.5 shrink-0">
           <button
             type="button"
-            onClick={() => alert("CV Import: Your CV experiences have been extracted and mapped to STAR examples.")}
+            onClick={() => setShowImportModal(true)}
             className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-semibold text-white/90 hover:bg-white/[0.08] hover:text-white transition-all cursor-pointer"
           >
             <Icon name="download" size={13} className="rotate-180" />
@@ -339,6 +342,26 @@ export default function InterviewExamplesPage() {
           </Panel>
         </div>
       </div>
+
+      {/* Import from CV Modal */}
+      <ImportFromCvModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        onSuccess={(count) => {
+          setToastMessage(`Successfully imported ${count} STAR examples from your CV!`);
+          setTimeout(() => setToastMessage(null), 4500);
+        }}
+      />
+
+      {/* Success Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 rounded-xl bg-[#142328] border border-emerald-500/40 px-4 py-3 text-xs font-semibold text-emerald-200 shadow-[0_12px_32px_rgba(0,0,0,0.6)] backdrop-blur-md animate-slide-up">
+          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-black text-[11px] font-bold">
+            ✓
+          </span>
+          <span>{toastMessage}</span>
+        </div>
+      )}
     </div>
   );
 }

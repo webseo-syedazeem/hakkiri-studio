@@ -153,6 +153,23 @@ export function saveExample(example: Omit<InterviewExample, "id" | "createdAt">)
   return newEx;
 }
 
+export function saveExamplesBatch(
+  newExamples: Omit<InterviewExample, "id" | "createdAt">[]
+): InterviewExample[] {
+  const current = loadExamples();
+  const created: InterviewExample[] = newExamples.map((ex, i) => ({
+    ...ex,
+    id: `ex-cv-${Date.now()}-${i}`,
+    createdAt: new Date().toISOString(),
+  }));
+  const updated = [...created, ...current];
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    window.dispatchEvent(new Event("hk_examples_updated"));
+  } catch {}
+  return created;
+}
+
 export function toggleExampleFavorite(id: string): void {
   const current = loadExamples();
   const updated = current.map((ex) => (ex.id === id ? { ...ex, isFavorite: !ex.isFavorite } : ex));
