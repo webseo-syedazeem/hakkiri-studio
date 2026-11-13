@@ -79,8 +79,8 @@ export async function createUser(
   if (!normEmail || !normEmail.includes("@")) {
     return { ok: false, error: "Please enter a valid email address." };
   }
-  if (!password || password.length < 6) {
-    return { ok: false, error: "Password must be at least 6 characters long." };
+  if (!password || password.length < 8) {
+    return { ok: false, error: "Password must be at least 8 characters long." };
   }
 
   const { firstName, initials } = computeInitials(name, normEmail);

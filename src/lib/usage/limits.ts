@@ -171,7 +171,8 @@ export function rateLimited(
  * client can send that header; otherwise every request counts as one caller.
  */
 export function clientKey(req: Request): string {
-  if (process.env.HAKKIRI_TRUST_PROXY !== "1") return "local";
+  const trustProxy = process.env.HAKKIRI_TRUST_PROXY === "1" || Boolean(process.env.VERCEL);
+  if (!trustProxy) return "local";
   return (
     req.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
     req.headers.get("x-real-ip") ||

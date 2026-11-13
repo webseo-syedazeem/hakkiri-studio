@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
@@ -785,11 +786,13 @@ export function LiveInterview(p: LiveInterviewProps) {
                     <div className="flex h-full w-full items-center justify-center font-semibold text-lg text-white/80 bg-[#25223e]">
                       {name[0]}
                     </div>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
+                    <Image
                       src="/sam.jpg"
                       alt={name}
-                      className="absolute inset-0 h-full w-full object-cover z-10"
+                      fill
+                      sizes="80px"
+                      className="object-cover z-10"
+                      priority
                     />
                   </div>
                   <div>
@@ -1112,11 +1115,12 @@ export function LiveInterview(p: LiveInterviewProps) {
                           <div className="flex h-full w-full items-center justify-center font-semibold text-xs text-white/80 bg-[#25223e]">
                             {name[0]}
                           </div>
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
+                          <Image
                             src="/sam.jpg"
                             alt={name}
-                            className="absolute inset-0 h-full w-full object-cover z-10"
+                            fill
+                            sizes="32px"
+                            className="object-cover z-10"
                           />
                         </div>
                         <div>
@@ -1256,12 +1260,12 @@ export function LiveInterview(p: LiveInterviewProps) {
                     "relative h-11 w-11 shrink-0 overflow-hidden rounded-full border border-white/20 transition-all duration-300",
                     phase === "asking" ? "ring-2 ring-blue shadow-[0_0_15px_rgba(79,82,248,0.5)]" : phase === "answering" ? "ring-2 ring-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)]" : "ring-0"
                   )}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
+                    <Image
                       src="/sam.jpg"
                       alt={name}
-                      className="h-full w-full object-cover"
-                      onError={(e) => { (e.target as HTMLElement).style.display = "none"; }}
+                      fill
+                      sizes="44px"
+                      className="object-cover"
                     />
                     <div className="flex h-full w-full items-center justify-center font-semibold text-sm text-white/80 bg-[#25223e]">
                       {name[0]}

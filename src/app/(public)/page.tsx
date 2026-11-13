@@ -27,6 +27,47 @@ const FAQ: { q: string; a: string }[] = [
 export default function LandingPage() {
   return (
     <div>
+      {/* Structured Data (JSON-LD) for Search Engines */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify([
+            {
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              name: "Hakkiri",
+              url: "https://hakkiri.studio",
+              logo: "https://hakkiri.studio/landing/interview.webp",
+            },
+            {
+              "@context": "https://schema.org",
+              "@type": "SoftwareApplication",
+              name: "Hakkiri Studio",
+              applicationCategory: "EducationalApplication",
+              operatingSystem: "Web, All",
+              offers: {
+                "@type": "Offer",
+                price: "0",
+                priceCurrency: "GBP",
+                description: "Free 10-minute AI interview practice with personalized questions and instant feedback",
+              },
+            },
+            {
+              "@context": "https://schema.org",
+              "@type": "FAQPage",
+              mainEntity: FAQ.map((item) => ({
+                "@type": "Question",
+                name: item.q,
+                acceptedAnswer: {
+                  "@type": "Answer",
+                  text: item.a,
+                },
+              })),
+            },
+          ]),
+        }}
+      />
+
       <DraftNote show={!isLaunch()} />
 
       <Hero

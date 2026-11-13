@@ -1,10 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateUser, createSession } from "@/lib/auth/user-db";
+import { clientKey, rateLimited } from "@/lib/usage/limits";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = clientKey(req);
+    // Max 10 login attempts per minute per IP
+    if (rateLimited(`auth:login:${ip}`, 10, 60_000)) {
+      return NextResponse.json(
+        { ok: false, error: "Too many login attempts. Please wait a minute and try again." },
+        { status: 429 },
+      );
+    }
+
     const body = (await req.json()) as { email?: string; password?: string };
     const { email, password } = body;
 
