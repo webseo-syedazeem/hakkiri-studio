@@ -1,11 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createUser, createSession } from "@/lib/auth/user-db";
 import { clientKey, rateLimited } from "@/lib/usage/limits";
+import { isBeta } from "@/lib/launch";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {
+    if (isBeta()) {
+      return NextResponse.json(
+        { ok: false, error: "Sign-up is closed during the beta." },
+        { status: 403 },
+      );
+    }
+
     const ip = clientKey(req);
     // Max 5 signup attempts per 10 minutes per IP
     if (rateLimited(`auth:signup:${ip}`, 5, 10 * 60_000)) {

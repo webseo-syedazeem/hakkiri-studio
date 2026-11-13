@@ -33,6 +33,7 @@ import { settingsOr, type Difficulty, type SessionSettings } from "./settings";
  */
 
 export interface BuildInput {
+  userId?: string;
   company: { name: string; url?: string; siteText?: string };
   job: { title: string; text?: string; url?: string; label?: string };
   cv: { text: string; label: string };
@@ -130,6 +131,7 @@ export async function buildInterview(input: BuildInput): Promise<BuildResult> {
   const company = input.company.name.trim() || plan.company;
   const interview: Interview = {
     id: `${slug(company)}-${randomUUID().slice(0, 4)}`,
+    userId: input.userId,
     company,
     companyInitial: company.charAt(0).toUpperCase(),
     companyUrl: input.company.url ? displayHost(input.company.url) : undefined,
@@ -176,8 +178,8 @@ export async function buildInterview(input: BuildInput): Promise<BuildResult> {
     createdAt: new Date().toISOString(),
     setupNotes: notes,
   };
-  saveInterview(interview);
-  void saveInterviewAsync(interview);
+  saveInterview(interview, input.userId);
+  void saveInterviewAsync(interview, input.userId);
   return { interview, notes };
 }
 

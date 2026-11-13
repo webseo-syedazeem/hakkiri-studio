@@ -197,8 +197,12 @@ export async function saveQaAsync(s: QaSession): Promise<void> {
 // ------------------------------------------------------------- your data
 
 /** Your presentations, runs and Q&A sessions (not the demo's). */
-export function allPitchData(): { presentations: Presentation[]; runs: Run[]; qa: QaSession[] } {
-  return { presentations: [...db().presentations.values()], runs: [...db().runs.values()], qa: [...db().qa.values()] };
+export function allPitchData(userId?: string): { presentations: Presentation[]; runs: Run[]; qa: QaSession[] } {
+  const presentations = [...db().presentations.values()].filter((p) => !userId || !p.userId || p.userId === userId);
+  const userPresIds = new Set(presentations.map((p) => p.id));
+  const runs = [...db().runs.values()].filter((r) => !userId || userPresIds.has(r.presentationId) || (!r.userId || r.userId === userId));
+  const qa = [...db().qa.values()].filter((s) => !userId || userPresIds.has(s.presentationId) || (!s.userId || s.userId === userId));
+  return { presentations, runs, qa };
 }
 
 /** Deletes one presentation with its slide pictures, runs and Q&A rounds. Returns the ids of its answers, so their recordings can go too. */
@@ -219,13 +223,21 @@ export function deletePresentation(id: string): { runIds: string[]; answerIds: s
 }
 
 /** "Delete all my data": presentations, slide pictures, runs and Q&A. */
-export function clearPitch() {
-  db().presentations.clear();
-  db().runs.clear();
-  db().qa.clear();
-  memoryImages().clear();
-  saveJson("presentations.json", []);
-  saveJson("runs.json", []);
-  saveJson("qa.json", []);
-  removeDir("pitch");
+export function clearPitch(userId?: string) {
+  if (userId) {
+    const d = db();
+    const toDeletePres = [...d.presentations.values()].filter((p) => p.userId === userId);
+    for (const p of toDeletePres) {
+      deletePresentation(p.id);
+    }
+  } else {
+    db().presentations.clear();
+    db().runs.clear();
+    db().qa.clear();
+    memoryImages().clear();
+    saveJson("presentations.json", []);
+    saveJson("runs.json", []);
+    saveJson("qa.json", []);
+    removeDir("pitch");
+  }
 }

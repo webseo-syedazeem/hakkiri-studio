@@ -4,6 +4,7 @@ import { findMockAsync, saveMockAsync, SKIP_REASONS } from "@/lib/mocks/store";
 import { getInterview, saveInterviewAsync } from "@/lib/interviews/store";
 import { PlanError, stopSession } from "@/lib/sessions/server";
 import { flushStorage } from "@/lib/storage/disk";
+import { requireUser } from "@/lib/auth/require";
 
 export const runtime = "nodejs";
 
@@ -19,6 +20,13 @@ const Body = z.object({
  * isn't scored, and your feedback is kept for the rebuild.
  */
 export async function POST(req: Request, { params }: { params: Promise<{ sessionId: string }> }) {
+  let user;
+  try {
+    user = await requireUser();
+  } catch (r) {
+    return r as Response;
+  }
+
   const { sessionId } = await params;
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "bad-request", message: "Your feedback couldn’t be saved. Try again." }, { status: 400 });

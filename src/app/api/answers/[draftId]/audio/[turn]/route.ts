@@ -1,4 +1,6 @@
 import { getRecording } from "@/lib/answers/audio";
+import { findAnswer } from "@/lib/answers/store";
+import { requireUser } from "@/lib/auth/require";
 
 export const runtime = "nodejs";
 
@@ -9,7 +11,19 @@ export const runtime = "nodejs";
  * (The folder is named [draftId] because a scored answer keeps its draft's id.)
  */
 export async function GET(req: Request, { params }: { params: Promise<{ draftId: string; turn: string }> }) {
+  let user;
+  try {
+    user = await requireUser();
+  } catch (r) {
+    return r as Response;
+  }
+
   const { draftId, turn } = await params;
+  const ans = findAnswer(draftId);
+  if (ans && ans.userId && ans.userId !== user.id) {
+    return new Response("Not found", { status: 404 });
+  }
+
   const rec = getRecording(draftId, Number(turn));
   if (!rec) return new Response("Not found", { status: 404 });
   const bytes = new Uint8Array(rec.data);

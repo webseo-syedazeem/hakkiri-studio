@@ -9,6 +9,7 @@ import { loadFile, saveFile } from "@/lib/storage/disk";
 import { guard } from "@/lib/usage/limits";
 import { recordUsage } from "@/lib/usage/store";
 import { reportProblem } from "@/lib/alerts/store";
+import { requireUser } from "@/lib/auth/require";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -23,6 +24,13 @@ const Body = z.object({ text: z.string().trim().min(1).max(700), voice: z.enum([
  * 501 and the browser uses its own voice.
  */
 export async function POST(req: Request) {
+  let user;
+  try {
+    user = await requireUser();
+  } catch (r) {
+    return r as Response;
+  }
+
   const elevenKey = elevenLabsKey();
   const deepgramKey = aiConfig.deepgramKey;
   if ((!elevenKey && !deepgramKey) || mockAiEnabled()) {

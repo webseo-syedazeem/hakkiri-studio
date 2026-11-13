@@ -37,7 +37,7 @@ export default function LandingPage() {
               "@type": "Organization",
               name: "Hakkiri",
               url: "https://hakkiri.studio",
-              logo: "https://hakkiri.studio/landing/interview.webp",
+              logo: "https://hakkiri.studio/icon.png",
             },
             {
               "@context": "https://schema.org",

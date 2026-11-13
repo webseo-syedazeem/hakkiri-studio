@@ -18,6 +18,7 @@ import { recordUsage, setUsageContext } from "@/lib/usage/store";
 import { aiConfig } from "@/lib/ai/config";
 import { isPayType, payChecks, payStage } from "@/lib/sessions/pay";
 import { guard } from "@/lib/usage/limits";
+import { requireUser } from "@/lib/auth/require";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -28,6 +29,13 @@ export const maxDuration = 120;
  * results in code, and save the answer for the feedback screen.
  */
 export async function POST(_req: Request, { params }: { params: Promise<{ draftId: string }> }) {
+  let user;
+  try {
+    user = await requireUser();
+  } catch (r) {
+    return r as Response;
+  }
+
   const blocked = notConfigured();
   if (blocked) return blocked;
 
@@ -100,7 +108,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ draftI
       previousOverall: progressFor(interview).questions.get(question.id)?.score,
       followUps: followScores ? followTurns.map((t, k) => buildFollowUp({ kind: t.kind as FollowUpKind, asked: t.asked, words: t.words }, followScores.followUps[k])) : [],
     });
-    await saveAnswerAsync(answer);
+    await saveAnswerAsync(answer, user.id);
     await recordAskedQuestionAsync(draft.sessionId, answer.questionId);
     saveRecordings(answer.id, draft.audio ?? []);
     await deleteDraftAsync(draft.id);

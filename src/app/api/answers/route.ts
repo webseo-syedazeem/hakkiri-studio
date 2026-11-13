@@ -9,6 +9,7 @@ import { MAX_AUDIO_BYTES, nextFollowUp, notConfigured, scoringError, transcribe 
 import { soundsLikeCorrection } from "@/lib/ai/follow-up";
 import { setUsageContext } from "@/lib/usage/store";
 import { guard } from "@/lib/usage/limits";
+import { requireUser } from "@/lib/auth/require";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -24,6 +25,13 @@ export const maxDuration = 60;
  * and POST /api/answers/{draftId}/score when the interviewer moves on.
  */
 export async function POST(req: Request) {
+  let user;
+  try {
+    user = await requireUser();
+  } catch (r) {
+    return r as Response;
+  }
+
   const blocked = notConfigured();
   if (blocked) return blocked;
   // A body that isn't a form (a wrong client, or a probe) is a 400, not a crash.

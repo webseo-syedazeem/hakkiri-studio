@@ -6,6 +6,7 @@ import { DEFAULT_SETTINGS, mixIsValid, presetFor } from "@/lib/interviews/settin
 import { guard } from "@/lib/usage/limits";
 import { setUsageContext } from "@/lib/usage/store";
 import { flushStorage } from "@/lib/storage/disk";
+import { requireUser } from "@/lib/auth/require";
 
 export const runtime = "nodejs";
 export const maxDuration = 180;
@@ -39,6 +40,13 @@ const Body = z.object({
  * (set-up), and returns its id.
  */
 export async function POST(req: Request) {
+  let user;
+  try {
+    user = await requireUser();
+  } catch (r) {
+    return r as Response;
+  }
+
   const blocked = guard(req, "build");
   if (blocked) return blocked;
   setUsageContext({ feature: "set-up" });
@@ -62,7 +70,7 @@ export async function POST(req: Request) {
   }
   const settings = parsed.data.settings && mixIsValid(parsed.data.settings.mix) ? { ...parsed.data.settings, preset: presetFor(parsed.data.settings.mix) } : DEFAULT_SETTINGS;
   try {
-    const { interview, notes } = await buildInterview({ ...parsed.data, settings });
+    const { interview, notes } = await buildInterview({ ...parsed.data, settings, userId: user.id });
     await flushStorage();
     return NextResponse.json({
       id: interview.id,

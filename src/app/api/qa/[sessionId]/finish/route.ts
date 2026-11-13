@@ -6,12 +6,20 @@ import { finishQa } from "@/lib/pitch/server";
 import { guard } from "@/lib/usage/limits";
 import { setUsageContext } from "@/lib/usage/store";
 import { flushStorage } from "@/lib/storage/disk";
+import { requireUser } from "@/lib/auth/require";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
 
 /** POST /api/qa/{sessionId}/finish: waits for every answer's score and saves the Q&A for its report. */
 export async function POST(req: Request, { params }: { params: Promise<{ sessionId: string }> }) {
+  let user;
+  try {
+    user = await requireUser();
+  } catch (r) {
+    return r as Response;
+  }
+
   const { sessionId } = await params;
   const limited = guard(req, "answer", { inSession: true });
   if (limited) return limited;

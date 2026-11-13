@@ -44,6 +44,7 @@ export interface SkipRecord {
 
 export interface MockRecord {
   id: string;
+  userId?: string;
   interviewId: string;
   kind: SessionKind;
   /** Missing on older records, which are all done. */
@@ -86,19 +87,21 @@ const demo: MockRecord = {
 
 const persist = () => saveJson(FILE, [...store.values()]);
 
-export function saveMock(m: MockRecord) {
-  store.set(m.id, m);
+export function saveMock(m: MockRecord, userId?: string) {
+  const item = { ...m, userId: userId || m.userId };
+  store.set(m.id, item);
   persist();
 }
 
-export async function saveMockAsync(m: MockRecord): Promise<void> {
-  store.set(m.id, m);
+export async function saveMockAsync(m: MockRecord, userId?: string): Promise<void> {
+  const item = { ...m, userId: userId || m.userId };
+  store.set(m.id, item);
   if (isMongoConfigured()) {
     try {
       const fromDb = await loadJsonAsync<MockRecord[]>(FILE, []);
       const map = new Map<string, MockRecord>(Array.isArray(fromDb) ? fromDb.map((x) => [x.id, x]) : []);
       for (const [k, v] of store.entries()) map.set(k, v);
-      map.set(m.id, m);
+      map.set(item.id, item);
       for (const [k, v] of map.entries()) store.set(k, v);
       await saveJsonAsync(FILE, [...map.values()]);
       return;
@@ -127,12 +130,15 @@ export function createSession(s: Omit<MockRecord, "id" | "status" | "startedAt" 
   return rec;
 }
 
-export function findMock(id: string): MockRecord | undefined {
-  return store.get(id) ?? (id === demo.id ? demo : undefined);
+export function findMock(id: string, userId?: string): MockRecord | undefined {
+  const m = store.get(id) ?? (id === demo.id ? demo : undefined);
+  if (!m) return undefined;
+  if (userId && m.userId && m.userId !== userId && m.id !== demo.id) return undefined;
+  return m;
 }
 
-export async function findMockAsync(id: string): Promise<MockRecord | undefined> {
-  const cached = findMock(id);
+export async function findMockAsync(id: string, userId?: string): Promise<MockRecord | undefined> {
+  const cached = findMock(id, userId);
   if (cached) return cached;
 
   if (isMongoConfigured()) {
@@ -142,7 +148,7 @@ export async function findMockAsync(id: string): Promise<MockRecord | undefined>
         for (const item of fromDb) {
           store.set(item.id, item);
         }
-        const found = findMock(id);
+        const found = findMock(id, userId);
         if (found) return found;
       }
     } catch (err) {
@@ -150,13 +156,15 @@ export async function findMockAsync(id: string): Promise<MockRecord | undefined>
     }
   }
 
-  return findMock(id);
+  return findMock(id, userId);
 }
 
 /** Every session for an interview, newest first (planned ones included). */
-export function listMocks(interviewId: string): MockRecord[] {
+export function listMocks(interviewId: string, userId?: string): MockRecord[] {
   const demoHere = !store.has(demo.id) ? [demo] : [];
-  return [...store.values(), ...demoHere].filter((m) => m.interviewId === interviewId).sort((a, b) => b.startedAt.localeCompare(a.startedAt));
+  return [...store.values(), ...demoHere]
+    .filter((m) => m.interviewId === interviewId && (!userId || !m.userId || m.userId === userId))
+    .sort((a, b) => b.startedAt.localeCompare(a.startedAt));
 }
 
 export async function listMocksAsync(interviewId: string): Promise<MockRecord[]> {
@@ -260,12 +268,18 @@ export function deleteMocksFor(interviewId: string) {
   persist();
 }
 
-export function allMocks(): MockRecord[] {
-  return [...store.values()];
+export function allMocks(userId?: string): MockRecord[] {
+  return [...store.values()].filter((m) => !userId || !m.userId || m.userId === userId);
 }
 
 /** "Delete all my data". */
-export function clearMocks() {
-  store.clear();
+export function clearMocks(userId?: string) {
+  if (userId) {
+    for (const [id, m] of store.entries()) {
+      if (m.userId === userId) store.delete(id);
+    }
+  } else {
+    store.clear();
+  }
   persist();
 }

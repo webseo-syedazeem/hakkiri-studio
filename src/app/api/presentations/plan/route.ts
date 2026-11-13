@@ -3,6 +3,7 @@ import { z } from "zod";
 import { suggestPlan } from "@/lib/pitch/server";
 import { guard } from "@/lib/usage/limits";
 import { setUsageContext } from "@/lib/usage/store";
+import { requireUser } from "@/lib/auth/require";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -25,6 +26,13 @@ const Body = z.object({
  * add up to your limit.
  */
 export async function POST(req: Request) {
+  let user;
+  try {
+    user = await requireUser();
+  } catch (r) {
+    return r as Response;
+  }
+
   const blocked = guard(req, "ai");
   if (blocked) return blocked;
   setUsageContext({ feature: "presentation" });

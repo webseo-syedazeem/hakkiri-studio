@@ -119,8 +119,9 @@ export function saveFile(rel: string, data: ArrayBuffer) {
 export function loadFile(rel: string): ArrayBuffer | null {
   if (!enabled) return null;
   try {
+    const resolvedDir = path.resolve(/*turbopackIgnore: true*/ DIR);
     const fullPath = path.resolve(/*turbopackIgnore: true*/ DIR, rel);
-    if (!fullPath.startsWith(path.resolve(/*turbopackIgnore: true*/ DIR))) {
+    if (!fullPath.startsWith(resolvedDir + path.sep) && fullPath !== resolvedDir) {
       console.warn(`[storage] path traversal attempt blocked: ${rel}`);
       return null;
     }
@@ -134,8 +135,9 @@ export function loadFile(rel: string): ArrayBuffer | null {
 export function removeFile(rel: string) {
   if (!enabled) return;
   try {
+    const resolvedDir = path.resolve(/*turbopackIgnore: true*/ DIR);
     const fullPath = path.resolve(/*turbopackIgnore: true*/ DIR, rel);
-    if (!fullPath.startsWith(path.resolve(/*turbopackIgnore: true*/ DIR))) {
+    if (!fullPath.startsWith(resolvedDir + path.sep) && fullPath !== resolvedDir) {
       console.warn(`[storage] path traversal delete attempt blocked: ${rel}`);
       return;
     }

@@ -4,6 +4,10 @@ import { AuthCard } from "@/components/auth/AuthCard";
 export const metadata: Metadata = {
   title: "Create Account · Hakkiri Studio",
   description: "Create your free Hakkiri Studio account for interview and presentation practice.",
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export default function SignupPage() {

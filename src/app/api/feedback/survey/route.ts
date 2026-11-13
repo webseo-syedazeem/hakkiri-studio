@@ -1,10 +1,21 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import crypto from "node:crypto";
 import { addSurveySubmission, recentSurveysAsync } from "@/lib/feedback/survey-store";
 import { findMock, findMockAsync } from "@/lib/mocks/store";
 import { clientKey, rateLimited } from "@/lib/usage/limits";
+import { getCurrentUser } from "@/lib/auth/require";
 
 export const runtime = "nodejs";
+
+function isTimingSafeBearer(header: string | null, secret: string | undefined): boolean {
+  if (!header || !secret) return false;
+  const expected = `Bearer ${secret}`;
+  const headerBuf = Buffer.from(header);
+  const expectedBuf = Buffer.from(expected);
+  if (headerBuf.length !== expectedBuf.length) return false;
+  return crypto.timingSafeEqual(headerBuf, expectedBuf);
+}
 
 const Body = z.object({
   email: z.string().trim().email().max(200),
@@ -19,8 +30,25 @@ const Body = z.object({
   q7_recommend: z.string().trim().min(1, "Please answer question 7").max(2000),
 });
 
-/** GET /api/feedback/survey: View recent surveys or export as CSV (?format=csv) */
+/** GET /api/feedback/survey: View recent surveys or export as CSV (?format=csv) - Protected by admin */
 export async function GET(req: Request) {
+  const authHeader = req.headers.get("authorization");
+  const adminSecret = process.env.ADMIN_SECRET_KEY;
+  const isSecretValid = isTimingSafeBearer(authHeader, adminSecret);
+  const user = await getCurrentUser();
+  const userEmail = user?.email?.toLowerCase() ?? "";
+  const isAdminUser = Boolean(
+    userEmail &&
+      process.env.ADMIN_EMAILS &&
+      process.env.ADMIN_EMAILS.split(",")
+        .map((e) => e.trim().toLowerCase())
+        .includes(userEmail)
+  );
+
+  if (!isSecretValid && !isAdminUser) {
+    return NextResponse.json({ error: "unauthorised", message: "Admin access required to view survey submissions." }, { status: 403 });
+  }
+
   const { searchParams } = new URL(req.url);
   const surveys = await recentSurveysAsync(200);
 

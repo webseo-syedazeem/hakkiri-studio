@@ -7,6 +7,7 @@ import { PlanError, planDrill, planInterview, planRerun } from "@/lib/sessions/s
 import { guard } from "@/lib/usage/limits";
 import { setUsageContext } from "@/lib/usage/store";
 import { flushStorage } from "@/lib/storage/disk";
+import { requireUser } from "@/lib/auth/require";
 
 export const runtime = "nodejs";
 export const maxDuration = 180;
@@ -36,6 +37,13 @@ const Body = z.discriminatedUnion("kind", [
  * interview may write new questions first, which takes up to a minute.
  */
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  let user;
+  try {
+    user = await requireUser();
+  } catch (r) {
+    return r as Response;
+  }
+
   const { id } = await params;
   const blocked = guard(req, "plan", { practice: true });
   if (blocked) return blocked;

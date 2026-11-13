@@ -11,6 +11,7 @@ import { mergeRules, rulesFromSkips } from "@/lib/sessions/rules";
 import { flushStorage } from "@/lib/storage/disk";
 import { guard } from "@/lib/usage/limits";
 import { withUsageContext } from "@/lib/usage/store";
+import { requireUser } from "@/lib/auth/require";
 
 export const runtime = "nodejs";
 
@@ -46,6 +47,13 @@ const Body = z.object({
  * your next interview doesn't wait.
  */
 export async function POST(req: Request) {
+  let user;
+  try {
+    user = await requireUser();
+  } catch (r) {
+    return r as Response;
+  }
+
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "bad-request", message: "That interview couldn’t be saved." }, { status: 400 });
   const body = parsed.data;

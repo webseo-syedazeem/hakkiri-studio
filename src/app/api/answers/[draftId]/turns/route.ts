@@ -4,6 +4,7 @@ import { getDraft, getDraftAsync, saveDraft, saveDraftAsync } from "@/lib/answer
 import { MAX_AUDIO_BYTES, nextFollowUp, notConfigured, scoringError, transcribe } from "@/lib/answers/pipeline";
 import { guard } from "@/lib/usage/limits";
 import { setUsageContext } from "@/lib/usage/store";
+import { requireUser } from "@/lib/auth/require";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -14,6 +15,13 @@ export const maxDuration = 60;
  * to follow up again (never more than the style allows).
  */
 export async function POST(req: Request, { params }: { params: Promise<{ draftId: string }> }) {
+  let user;
+  try {
+    user = await requireUser();
+  } catch (r) {
+    return r as Response;
+  }
+
   const blocked = notConfigured();
   if (blocked) return blocked;
 

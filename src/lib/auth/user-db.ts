@@ -190,15 +190,32 @@ export async function authenticateUser(
   return { ok: true, user };
 }
 
+export function hashToken(token: string): string {
+  return crypto.createHash("sha256").update(token).digest("hex");
+}
+
+let _ttlIndexEnsured = false;
+async function ensureSessionIndex(sessionsCol: any) {
+  if (_ttlIndexEnsured) return;
+  try {
+    await sessionsCol.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+    _ttlIndexEnsured = true;
+  } catch {
+    // index creation silently ignored if already exists
+  }
+}
+
 /**
  * Create a session token with 30-day validity.
+ * Raw token is returned to caller for httpOnly cookie; hashed token is stored in DB.
  */
 export async function createSession(userId: string, email: string): Promise<string> {
   const token = `ses_${crypto.randomBytes(32).toString("hex")}`;
+  const tokenHash = hashToken(token);
   const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
 
   const sessionDoc: DbSessionRecord = {
-    _id: token,
+    _id: tokenHash,
     userId,
     email,
     createdAt: new Date(),
@@ -210,13 +227,14 @@ export async function createSession(userId: string, email: string): Promise<stri
       const db = await getMongoDb();
       if (db) {
         const sessionsCol = db.collection<DbSessionRecord>("sessions");
+        await ensureSessionIndex(sessionsCol);
         await sessionsCol.insertOne(sessionDoc);
       }
     } catch (err) {
       console.error("[auth] error creating session:", err);
     }
   } else {
-    memSessions.set(token, sessionDoc);
+    memSessions.set(tokenHash, sessionDoc);
   }
 
   return token;
@@ -228,6 +246,7 @@ export async function createSession(userId: string, email: string): Promise<stri
 export async function validateSession(token: string): Promise<User | null> {
   if (!token) return null;
 
+  const tokenHash = hashToken(token);
   let session: DbSessionRecord | null = null;
 
   if (isMongoConfigured()) {
@@ -235,14 +254,15 @@ export async function validateSession(token: string): Promise<User | null> {
       const db = await getMongoDb();
       if (db) {
         const sessionsCol = db.collection<DbSessionRecord>("sessions");
-        session = await sessionsCol.findOne({ _id: token });
+        await ensureSessionIndex(sessionsCol);
+        session = await sessionsCol.findOne({ $or: [{ _id: tokenHash }, { _id: token }] });
       }
     } catch (err) {
       console.error("[auth] error validating session:", err);
       return null;
     }
   } else {
-    session = memSessions.get(token) ?? null;
+    session = memSessions.get(tokenHash) ?? memSessions.get(token) ?? null;
   }
 
   if (!session) return null;
@@ -296,18 +316,20 @@ export async function validateSession(token: string): Promise<User | null> {
  */
 export async function deleteSession(token: string): Promise<void> {
   if (!token) return;
+  const tokenHash = hashToken(token);
 
   if (isMongoConfigured()) {
     try {
       const db = await getMongoDb();
       if (db) {
         const sessionsCol = db.collection<DbSessionRecord>("sessions");
-        await sessionsCol.deleteOne({ _id: token });
+        await sessionsCol.deleteMany({ $or: [{ _id: tokenHash }, { _id: token }] });
       }
     } catch (err) {
       console.error("[auth] error deleting session:", err);
     }
   } else {
+    memSessions.delete(tokenHash);
     memSessions.delete(token);
   }
 }

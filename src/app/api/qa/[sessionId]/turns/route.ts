@@ -6,6 +6,7 @@ import { mockQaTranscript } from "@/lib/ai/pitch/mock";
 import { MAX_AUDIO_BYTES, notConfigured, scoringError, transcribe } from "@/lib/answers/pipeline";
 import { guard } from "@/lib/usage/limits";
 import { setUsageContext } from "@/lib/usage/store";
+import { requireUser } from "@/lib/auth/require";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -16,6 +17,13 @@ export const maxDuration = 60;
  * cutIn=1 means a time-pressed exec stopped you, so they ask for the short answer.
  */
 export async function POST(req: Request, { params }: { params: Promise<{ sessionId: string }> }) {
+  let user;
+  try {
+    user = await requireUser();
+  } catch (r) {
+    return r as Response;
+  }
+
   const limited = guard(req, "answer", { inSession: true });
   if (limited) return limited;
   setUsageContext({ sessionId: (await params).sessionId, feature: "q&a" });

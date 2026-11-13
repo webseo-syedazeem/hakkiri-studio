@@ -1,9 +1,25 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, beforeAll } from "vitest";
 import { GET } from "./route";
 
 describe("admin interviews API (/api/admin/interviews)", () => {
-  it("returns list of interviews with company, role, and questions without answers", async () => {
+  const adminSecret = "test-admin-secret-key-12345";
+
+  beforeAll(() => {
+    process.env.ADMIN_SECRET_KEY = adminSecret;
+  });
+
+  it("rejects unauthorized access without valid admin secret or admin session", async () => {
     const req = new Request("http://localhost:3000/api/admin/interviews");
+    const res = await GET(req);
+    expect(res.status).toBe(403);
+    const data = await res.json();
+    expect(data.error).toBe("unauthorised");
+  });
+
+  it("returns list of interviews with company, role, and questions when authorized", async () => {
+    const req = new Request("http://localhost:3000/api/admin/interviews", {
+      headers: { authorization: `Bearer ${adminSecret}` },
+    });
     const res = await GET(req);
 
     expect(res.status).toBe(200);
@@ -24,8 +40,10 @@ describe("admin interviews API (/api/admin/interviews)", () => {
     expect(first).not.toHaveProperty("transcripts");
   });
 
-  it("exports CSV formatted data with questions and job roles", async () => {
-    const req = new Request("http://localhost:3000/api/admin/interviews?format=csv");
+  it("exports CSV formatted data with questions and job roles when authorized", async () => {
+    const req = new Request("http://localhost:3000/api/admin/interviews?format=csv", {
+      headers: { authorization: `Bearer ${adminSecret}` },
+    });
     const res = await GET(req);
 
     expect(res.status).toBe(200);

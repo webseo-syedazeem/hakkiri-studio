@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { addFeedback } from "@/lib/feedback/store";
 import { clientKey, rateLimited } from "@/lib/usage/limits";
+import { getCurrentUser } from "@/lib/auth/require";
 
 export const runtime = "nodejs";
 
@@ -20,6 +21,8 @@ export async function POST(req: Request) {
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success)
     return NextResponse.json({ error: "bad-request" }, { status: 400 });
-  const f = await addFeedback(parsed.data);
+
+  const user = await getCurrentUser();
+  const f = await addFeedback({ ...parsed.data, userId: user?.id });
   return NextResponse.json({ id: f.id });
 }

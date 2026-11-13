@@ -4,12 +4,20 @@ import { getQaDraft, getQaDraftAsync } from "@/lib/pitch/qa-drafts";
 import { scoreQaQuestion } from "@/lib/pitch/server";
 import { guard } from "@/lib/usage/limits";
 import { setUsageContext } from "@/lib/usage/store";
+import { requireUser } from "@/lib/auth/require";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
 /** POST /api/qa/{sessionId}/score: score question k while the Q&A carries on. */
 export async function POST(req: Request, { params }: { params: Promise<{ sessionId: string }> }) {
+  let user;
+  try {
+    user = await requireUser();
+  } catch (r) {
+    return r as Response;
+  }
+
   const { sessionId } = await params;
   const limited = guard(req, "answer", { inSession: true });
   if (limited) return limited;

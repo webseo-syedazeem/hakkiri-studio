@@ -6,6 +6,7 @@ import { MAX_AUDIO_BYTES, notConfigured, scoringError, transcribe } from "@/lib/
 import { flushStorage } from "@/lib/storage/disk";
 import { guard } from "@/lib/usage/limits";
 import { setUsageContext } from "@/lib/usage/store";
+import { requireUser } from "@/lib/auth/require";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -26,6 +27,13 @@ const Meta = z.object({
  * the report (design screen 13).
  */
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  let user;
+  try {
+    user = await requireUser();
+  } catch (r) {
+    return r as Response;
+  }
+
   const limited = guard(req, "answer", { practice: true });
   if (limited) return limited;
   setUsageContext({ presentationId: (await params).id, feature: "presentation" });

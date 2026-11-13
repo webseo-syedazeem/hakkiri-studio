@@ -17,15 +17,18 @@ export interface AppSettings {
 
 const FILE = "settings.json";
 const DEFAULTS: AppSettings = { retentionDays: 90 };
-const g = globalThis as unknown as { __hakkiriSettings?: AppSettings };
-const current = (g.__hakkiriSettings ??= { ...DEFAULTS, ...loadJson<Partial<AppSettings>>(FILE, {}) });
+const g = globalThis as unknown as { __hakkiriSettings?: Record<string, AppSettings> };
+const currentMap = (g.__hakkiriSettings ??= loadJson<Record<string, AppSettings>>(FILE, {}));
 
-export function getSettings(): AppSettings {
-  return { ...current };
+export function getSettings(userId?: string): AppSettings {
+  const key = userId || "default";
+  const userSettings = currentMap[key] || currentMap["default"];
+  return { ...DEFAULTS, ...userSettings };
 }
 
-export function saveSettings(change: Partial<AppSettings>): AppSettings {
-  Object.assign(current, change);
-  saveJson(FILE, current);
-  return getSettings();
+export function saveSettings(change: Partial<AppSettings>, userId?: string): AppSettings {
+  const key = userId || "default";
+  currentMap[key] = { ...getSettings(userId), ...change };
+  saveJson(FILE, currentMap);
+  return { ...currentMap[key] };
 }

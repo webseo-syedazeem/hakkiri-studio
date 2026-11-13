@@ -119,6 +119,7 @@ export interface InterviewCustomStage {
 
 export interface Interview {
   id: string;
+  userId?: string;
   company: string;
   companyInitial: string;
   /** The company's website, e.g. "halden.com". */
@@ -200,6 +201,7 @@ export interface ScoreParts {
 
 export interface Answer {
   id: string;
+  userId?: string;
   interviewId: string;
   questionId: string;
   questionNumber: number;
@@ -224,6 +226,7 @@ export interface Answer {
 
 export interface Story {
   id: string;
+  userId?: string;
   title: string;
   source: string;
   /** Which situation-task-action-result parts are solid. */

@@ -1,9 +1,19 @@
 import { NextResponse } from "next/server";
+import crypto from "node:crypto";
 import { listInterviewsAsync } from "@/lib/interviews/store";
 import { londonToday } from "@/lib/dates";
 import { getCurrentUser } from "@/lib/auth/require";
 
 export const runtime = "nodejs";
+
+function isTimingSafeBearer(header: string | null, secret: string | undefined): boolean {
+  if (!header || !secret) return false;
+  const expected = `Bearer ${secret}`;
+  const headerBuf = Buffer.from(header);
+  const expectedBuf = Buffer.from(expected);
+  if (headerBuf.length !== expectedBuf.length) return false;
+  return crypto.timingSafeEqual(headerBuf, expectedBuf);
+}
 
 /**
  * GET /api/admin/interviews:
@@ -13,28 +23,25 @@ export const runtime = "nodejs";
  * Protected by admin authorization.
  */
 export async function GET(req: Request) {
-  // Allow test environment to run or verify admin session / token
-  const isTest = process.env.NODE_ENV === "test";
-  if (!isTest) {
-    const user = await getCurrentUser();
-    const authHeader = req.headers.get("authorization");
-    const adminSecret = process.env.ADMIN_SECRET_KEY || process.env.AUTH_SECRET;
-    const isSecretValid = adminSecret && authHeader === `Bearer ${adminSecret}`;
-    const userEmail = user?.email?.toLowerCase() ?? "";
-    const isAdminUser = Boolean(
-      userEmail &&
-        process.env.ADMIN_EMAILS &&
-        process.env.ADMIN_EMAILS.split(",")
-          .map((e) => e.trim().toLowerCase())
-          .includes(userEmail)
-    );
+  const authHeader = req.headers.get("authorization");
+  const adminSecret = process.env.ADMIN_SECRET_KEY;
+  const isSecretValid = isTimingSafeBearer(authHeader, adminSecret);
 
-    if (!isSecretValid && !isAdminUser) {
-      return NextResponse.json(
-        { error: "unauthorised", message: "Admin access required to view aggregated interviews." },
-        { status: 403 }
-      );
-    }
+  const user = await getCurrentUser();
+  const userEmail = user?.email?.toLowerCase() ?? "";
+  const isAdminUser = Boolean(
+    userEmail &&
+      process.env.ADMIN_EMAILS &&
+      process.env.ADMIN_EMAILS.split(",")
+        .map((e) => e.trim().toLowerCase())
+        .includes(userEmail)
+  );
+
+  if (!isSecretValid && !isAdminUser) {
+    return NextResponse.json(
+      { error: "unauthorised", message: "Admin access required to view aggregated interviews." },
+      { status: 403 }
+    );
   }
 
   const { searchParams } = new URL(req.url);

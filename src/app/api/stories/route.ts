@@ -4,6 +4,7 @@ import { completeStory } from "@/lib/stories/bank";
 import { londonToday } from "@/lib/dates";
 import { guard } from "@/lib/usage/limits";
 import { setUsageContext } from "@/lib/usage/store";
+import { requireUser } from "@/lib/auth/require";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -16,6 +17,13 @@ const Body = z.object({
 
 /** POST /api/stories: "Fill in the gaps" on a story in the story bank. Redrafts it from your words and saves it everywhere it's used. */
 export async function POST(req: Request) {
+  let user;
+  try {
+    user = await requireUser();
+  } catch (r) {
+    return r as Response;
+  }
+
   const blocked = guard(req, "ai");
   if (blocked) return blocked;
   setUsageContext({ feature: "stories" });

@@ -46,9 +46,12 @@ function withDemoPool(base: Interview): Interview {
 }
 
 /** An interview with its plan, including any questions you've added yourself. */
-export function getInterview(id: string): Interview | undefined {
+export function getInterview(id: string, userId?: string): Interview | undefined {
   const raw = store.get(id) ?? demoBase(id);
   if (!raw) return undefined;
+  if (userId && raw.userId && raw.userId !== userId && !isDemoInterview(raw.id)) {
+    return undefined;
+  }
   const base = withDemoPool(raw);
   const extra = customQuestions(id);
   if (!extra.length) return base;
@@ -58,8 +61,8 @@ export function getInterview(id: string): Interview | undefined {
   return { ...base, questions, groupCounts };
 }
 
-export async function getInterviewAsync(id: string): Promise<Interview | undefined> {
-  const cached = getInterview(id);
+export async function getInterviewAsync(id: string, userId?: string): Promise<Interview | undefined> {
+  const cached = getInterview(id, userId);
   if (cached && !isDemoInterview(cached.id)) return cached;
 
   if (isMongoConfigured()) {
@@ -69,7 +72,7 @@ export async function getInterviewAsync(id: string): Promise<Interview | undefin
         for (const item of fromDb) {
           store.set(item.id, item);
         }
-        const found = getInterview(id);
+        const found = getInterview(id, userId);
         if (found) return found;
       }
     } catch (err) {
@@ -77,22 +80,25 @@ export async function getInterviewAsync(id: string): Promise<Interview | undefin
     }
   }
 
-  return getInterview(id);
+  return getInterview(id, userId);
 }
 
 /**
  * Your interviews first, then the demo. Ones with an upcoming date come
  * first (soonest first), then ones without a date (newest first), then past ones.
  */
-export function listInterviews(today: string): Interview[] {
-  const mine = [...store.values()].filter((i) => !isDemoInterview(i.id)).map((i) => getInterview(i.id)!);
+export function listInterviews(today: string, userId?: string): Interview[] {
+  const mine = [...store.values()]
+    .filter((i) => !isDemoInterview(i.id) && (!userId || !i.userId || i.userId === userId))
+    .map((i) => getInterview(i.id, userId)!)
+    .filter(Boolean);
   const rank = (i: Interview) => (!i.date ? 1 : daysBetween(today, i.date) >= 0 ? 0 : 2);
   const sorted = mine.sort((a, b) => rank(a) - rank(b) || (rank(a) === 1 ? (b.createdAt ?? "").localeCompare(a.createdAt ?? "") : (a.date ?? "").localeCompare(b.date ?? "")));
   const demo = getInterview(halden.id);
   return demo ? [...sorted, demo] : sorted;
 }
 
-export async function listInterviewsAsync(today: string): Promise<Interview[]> {
+export async function listInterviewsAsync(today: string, userId?: string): Promise<Interview[]> {
   if (isMongoConfigured()) {
     try {
       const fromDb = await loadJsonAsync<Interview[]>(FILE, []);
@@ -105,45 +111,66 @@ export async function listInterviewsAsync(today: string): Promise<Interview[]> {
       console.warn("[interviews/store] MongoDB load list failed:", err);
     }
   }
-  return listInterviews(today);
+  return listInterviews(today, userId);
 }
 
 /** The interview Home leads with: your soonest upcoming one, or the demo until you add your own. */
-export function featuredInterview(today: string): Interview | undefined {
-  return listInterviews(today)[0];
+export function featuredInterview(today: string, userId?: string): Interview | undefined {
+  return listInterviews(today, userId)[0];
 }
 
-export function saveInterview(i: Interview) {
+export function saveInterview(i: Interview, userId?: string) {
   // Questions you add yourself live in their own store.
-  store.set(i.id, { ...i, questions: i.questions.filter((q) => !q.custom) });
+  const toSave = {
+    ...i,
+    userId: userId || i.userId,
+    questions: i.questions.filter((q) => !q.custom),
+  };
+  store.set(i.id, toSave);
   persist();
 }
 
-export async function saveInterviewAsync(i: Interview) {
-  store.set(i.id, { ...i, questions: i.questions.filter((q) => !q.custom) });
+export async function saveInterviewAsync(i: Interview, userId?: string) {
+  const toSave = {
+    ...i,
+    userId: userId || i.userId,
+    questions: i.questions.filter((q) => !q.custom),
+  };
+  store.set(i.id, toSave);
   await saveJsonAsync(FILE, [...store.values()]);
 }
 
 /** Changes a saved interview (or the demo) and returns it as getInterview would. */
-export function updateInterview(id: string, change: (i: Interview) => Interview): Interview | undefined {
+export function updateInterview(id: string, change: (i: Interview) => Interview, userId?: string): Interview | undefined {
   const raw = store.get(id) ?? demoBase(id);
   if (!raw) return undefined;
-  saveInterview(change(withDemoPool(raw)));
-  return getInterview(id);
+  if (userId && raw.userId && raw.userId !== userId && !isDemoInterview(raw.id)) return undefined;
+  saveInterview(change(withDemoPool(raw)), userId || raw.userId);
+  return getInterview(id, userId);
 }
 
 /** Every interview you've set up or practised on (with the demo's saved copy if you practised it). */
-export function allSavedInterviews(): Interview[] {
-  return [...store.values()];
+export function allSavedInterviews(userId?: string): Interview[] {
+  return [...store.values()].filter((i) => !userId || !i.userId || i.userId === userId);
 }
 
 /** "Delete all my data". */
-export function clearInterviews() {
-  store.clear();
+export function clearInterviews(userId?: string) {
+  if (userId) {
+    for (const [id, i] of store.entries()) {
+      if (i.userId === userId) store.delete(id);
+    }
+  } else {
+    store.clear();
+  }
   persist();
 }
 
-export function deleteInterview(id: string): boolean {
+export function deleteInterview(id: string, userId?: string): boolean {
+  if (userId) {
+    const existing = store.get(id);
+    if (existing && existing.userId && existing.userId !== userId) return false;
+  }
   const had = store.delete(id);
   if (had) persist();
   return had;

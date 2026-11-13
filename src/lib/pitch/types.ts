@@ -39,6 +39,7 @@ export interface Slide {
 
 export interface Presentation {
   id: string;
+  userId?: string;
   title: string;
   audience: Audience;
   /** What you want them to do, e.g. "Approve the Q1 roadmap and two new hires". */
@@ -106,6 +107,7 @@ export interface Mark {
 
 export interface Run {
   id: string;
+  userId?: string;
   presentationId: string;
   /** Run 1, Run 2… across every mode. */
   number: number;
@@ -147,6 +149,7 @@ export interface QaQuestion {
 
 export interface QaSession {
   id: string;
+  userId?: string;
   presentationId: string;
   style: QaStyle;
   persona: { name: string; title: string };

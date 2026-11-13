@@ -6,7 +6,7 @@ import { loadJson, saveJson } from "@/lib/storage/disk";
  * Questions you add to an interview plan yourself ("Add your own question").
  * Saved to the local data folder until the database lands.
  */
-export type CustomQuestion = Question & { interviewId: string };
+export type CustomQuestion = Question & { interviewId: string; userId?: string };
 
 /** How a question in each group is scored, until the fast model labels types. */
 const TYPE_FOR_GROUP: Record<QuestionGroup, ContextType> = {
@@ -52,12 +52,18 @@ export function removeQuestionsFor(interviewId: string) {
   saveJson(FILE, all);
 }
 
-export function allCustomQuestions(): readonly CustomQuestion[] {
-  return all;
+export function allCustomQuestions(userId?: string): readonly CustomQuestion[] {
+  return userId ? all.filter((q) => !q.userId || q.userId === userId) : all;
 }
 
 /** "Delete all my data". */
-export function clearQuestions() {
-  all.length = 0;
+export function clearQuestions(userId?: string) {
+  if (userId) {
+    for (let i = all.length - 1; i >= 0; i--) {
+      if (all[i].userId === userId) all.splice(i, 1);
+    }
+  } else {
+    all.length = 0;
+  }
   saveJson(FILE, all);
 }

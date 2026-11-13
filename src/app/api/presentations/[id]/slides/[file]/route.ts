@@ -1,4 +1,5 @@
-import { loadSlideImage } from "@/lib/pitch/store";
+import { getPresentation, loadSlideImage } from "@/lib/pitch/store";
+import { requireUser } from "@/lib/auth/require";
 
 export const runtime = "nodejs";
 
@@ -6,7 +7,19 @@ const TYPE: Record<string, string> = { jpg: "image/jpeg", png: "image/png", webp
 
 /** GET /api/presentations/{id}/slides/{file}: a slide picture saved at set-up. */
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string; file: string }> }) {
+  let user;
+  try {
+    user = await requireUser();
+  } catch (r) {
+    return r as Response;
+  }
+
   const { id, file } = await params;
+  const p = getPresentation(id);
+  if (!p || (p.userId && p.userId !== user.id)) {
+    return new Response("Not found", { status: 404 });
+  }
+
   if (!/^[\w-]+$/.test(id) || !/^[\w-]+\.(jpg|png|webp)$/.test(file)) {
     return new Response("Not found", { status: 404 });
   }

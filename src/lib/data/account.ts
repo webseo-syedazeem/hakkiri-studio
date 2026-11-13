@@ -28,12 +28,12 @@ export interface DataCounts {
   rehearsals: number;
 }
 
-export function dataCounts(): DataCounts {
-  const pitch = allPitchData();
+export function dataCounts(userId?: string): DataCounts {
+  const pitch = allPitchData(userId);
   return {
-    interviews: allSavedInterviews().length,
-    sessions: allMocks().length,
-    answers: allAnswers().length,
+    interviews: allSavedInterviews(userId).length,
+    sessions: allMocks(userId).length,
+    answers: allAnswers(userId).length,
     recordings: recordingCount(),
     presentations: pitch.presentations.length,
     rehearsals: pitch.runs.length + pitch.qa.length,
@@ -59,27 +59,34 @@ recordings/ holds the audio of your answers that is still kept
 (see "Keep recordings for" in Settings).
 `;
 
-/** A zip of everything: data.json, a README, and the recordings. */
-export async function exportAll(): Promise<Uint8Array> {
+/** A zip of everything: data.json, a README, and the recordings (scoped to user if userId provided). */
+export async function exportAll(userId?: string): Promise<Uint8Array> {
   const zip = new JSZip();
-  const pitch = allPitchData();
+  const pitch = allPitchData(userId);
+  const userInterviews = allSavedInterviews(userId);
+  const userQuestions = allCustomQuestions(userId);
+  const userSessions = allMocks(userId);
+  const userAnswers = allAnswers(userId);
   const data = {
     exportedAt: new Date().toISOString(),
-    interviews: allSavedInterviews(),
-    questions: allCustomQuestions(),
-    sessions: allMocks(),
-    answers: allAnswers(),
+    interviews: userInterviews,
+    questions: userQuestions,
+    sessions: userSessions,
+    answers: userAnswers,
     presentations: pitch.presentations,
     rehearsals: pitch.runs,
     audienceQa: pitch.qa,
     usage: allUsage(),
-    settings: getSettings(),
+    settings: getSettings(userId),
   };
   zip.file("data.json", JSON.stringify(data, null, 2));
   zip.file("README.txt", README);
+  const allowedAnswerIds = new Set(userAnswers.map((a) => a.id));
   for (const r of allRecordings()) {
-    const rec = getRecording(r.answerId, r.turn);
-    if (rec) zip.file(r.file, rec.data);
+    if (!userId || allowedAnswerIds.has(r.answerId)) {
+      const rec = getRecording(r.answerId, r.turn);
+      if (rec) zip.file(r.file, rec.data);
+    }
   }
   // Pictures of your slides, where a presentation had them.
   for (const p of pitch.presentations) {
@@ -95,16 +102,18 @@ export async function exportAll(): Promise<Uint8Array> {
  * Deletes everything you've given Hakkiri or made in it. Usage records stay,
  * unlinked from you, because they hold the spending limits in place.
  */
-export function deleteAll() {
+export function deleteAll(userId?: string) {
   clearDrafts();
   clearQaDrafts();
-  clearRecordings();
-  clearAnswers();
-  clearMocks();
-  clearQuestions();
-  clearInterviews();
-  clearPitch();
-  removeDir("voice-cache");
-  anonymiseUsage();
-  clearFeedback();
+  clearAnswers(userId);
+  clearMocks(userId);
+  clearQuestions(userId);
+  clearInterviews(userId);
+  clearPitch(userId);
+  if (!userId) {
+    clearRecordings();
+    removeDir("voice-cache");
+    anonymiseUsage();
+    clearFeedback();
+  }
 }

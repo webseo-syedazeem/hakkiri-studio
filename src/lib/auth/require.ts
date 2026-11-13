@@ -16,7 +16,9 @@ export async function getCurrentUser(): Promise<User | null> {
     return await validateSession(token);
   } catch (err: any) {
     if (err?.digest === "DYNAMIC_SERVER_USAGE") throw err;
-    console.error("[requireUser] Error validating session cookie:", err);
+    if (process.env.NODE_ENV !== "test") {
+      console.error("[requireUser] Error validating session cookie:", err);
+    }
     return null;
   }
 }

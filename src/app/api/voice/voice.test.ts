@@ -2,6 +2,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { POST } from "./route";
 import { usageFor, allUsage } from "@/lib/usage/store";
 
+vi.mock("@/lib/auth/require", () => ({
+  requireUser: vi.fn(async () => ({ id: "usr_test", email: "test@example.com", initials: "TE", firstName: "Test", trial: { interviewSecondsLeft: 600, pitchSecondsLeft: 600 } })),
+  getCurrentUser: vi.fn(async () => ({ id: "usr_test", email: "test@example.com", initials: "TE", firstName: "Test", trial: { interviewSecondsLeft: 600, pitchSecondsLeft: 600 } })),
+}));
+
 const call = (body: unknown, ip = "198.51.100.7") => POST(new Request("http://x/api/voice", { method: "POST", headers: { "content-type": "application/json", "x-forwarded-for": ip }, body: JSON.stringify(body) }));
 
 afterEach(() => {

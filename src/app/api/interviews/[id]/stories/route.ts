@@ -4,6 +4,7 @@ import { getInterview } from "@/lib/interviews/store";
 import { buildStory } from "@/lib/interviews/stories";
 import { guard } from "@/lib/usage/limits";
 import { setUsageContext } from "@/lib/usage/store";
+import { requireUser } from "@/lib/auth/require";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -17,6 +18,13 @@ const Body = z.object({
 
 /** POST /api/interviews/{id}/stories: the story builder. Drafts your story in your words and saves it. */
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  let user;
+  try {
+    user = await requireUser();
+  } catch (r) {
+    return r as Response;
+  }
+
   const { id } = await params;
   const blocked = guard(req, "ai");
   if (blocked) return blocked;

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { PlanError, rethinkFrom } from "@/lib/sessions/server";
 import { guard } from "@/lib/usage/limits";
 import { setUsageContext } from "@/lib/usage/store";
+import { requireUser } from "@/lib/auth/require";
 
 export const runtime = "nodejs";
 export const maxDuration = 90;
@@ -15,6 +16,13 @@ const Body = z.object({ sessionId: z.string() });
  * now, plus rules for the next questions. Nothing is saved until you confirm.
  */
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  let user;
+  try {
+    user = await requireUser();
+  } catch (r) {
+    return r as Response;
+  }
+
   const { id } = await params;
   const blocked = guard(req, "ai");
   if (blocked) return blocked;
