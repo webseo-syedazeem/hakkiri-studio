@@ -81,12 +81,12 @@ export default function AddInterviewExamplePage() {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-[900px] grow flex-col pb-16 animate-rise">
+    <div className="flex w-full grow flex-col pb-12 animate-rise">
       {/* Back Link & Header */}
-      <div className="mb-6">
+      <div className="mb-4">
         <Link
           href="/interview-examples"
-          className="inline-flex items-center gap-1.5 text-xs font-medium text-muted hover:text-white transition-colors mb-3"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-muted hover:text-white transition-colors mb-2"
         >
           <Icon name="back" size={13} />
           <span>Interview examples</span>
@@ -98,8 +98,8 @@ export default function AddInterviewExamplePage() {
       </div>
 
       {/* Main Form Panel */}
-      <Panel className="p-6 sm:p-7 space-y-6 rounded-[20px] border border-line shadow-xl">
-        <form onSubmit={handleSave} className="space-y-6">
+      <Panel className="w-full p-6 sm:p-7 space-y-5 rounded-[20px] border border-line shadow-xl">
+        <form onSubmit={handleSave} className="space-y-5">
           {error && (
             <div className="rounded-xl bg-rose-500/15 border border-rose-500/30 p-3 text-xs text-rose-300">
               {error}
