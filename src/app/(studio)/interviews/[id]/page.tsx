@@ -39,16 +39,37 @@ export default async function InterviewOverview({
   const companyName = interview.company || "Halden";
   const isPaymentsRole = /payment|fintech|checkout|halden/i.test(`${companyName} ${roleTitle}`);
 
-  const initialStageId =
-    interview.round === "screening"
-      ? "screening"
-      : interview.round === "technical"
-        ? "technical"
-        : interview.round === "final"
-          ? "final"
-          : "hiring-manager";
+  const customStages: OverviewStageOption[] = (interview.stages && interview.stages.length > 0)
+    ? interview.stages.map((st, idx) => {
+        const id = st.id || `stage-${idx + 1}`;
+        const label = st.name || `Stage ${idx + 1}`;
+        const lName = label.toLowerCase();
+        const isPresetScreen = lName.includes("screen") || lName.includes("recruiter");
+        const isPresetTech = lName.includes("tech") || lName.includes("case") || lName.includes("code");
+        const isPresetFinal = lName.includes("final") || lName.includes("panel") || lName.includes("lead");
+        const preset = isPresetScreen ? "screening" : isPresetTech ? "technical" : isPresetFinal ? "final" : "balanced";
 
-  const stages: OverviewStageOption[] = [
+        const hasExplicitNext = interview.stages?.some((x) => x.status === "next");
+        const isNext = st.status === "next" || (!hasExplicitNext && idx === 0);
+        const isCompleted = st.status === "completed";
+        const status = isCompleted ? "completed" : isNext ? "next" : "upcoming";
+        const subtitle = st.date ? `${st.date}${st.time ? `, ${st.time}` : ""}` : isCompleted ? "Completed" : "Upcoming";
+
+        return {
+          id,
+          label,
+          selectLabel: label,
+          titlePhrase: label.toLowerCase(),
+          description: `Focus on ${label.toLowerCase()} questions, tailored to ${roleTitle} at ${companyName}.`,
+          status,
+          subtitle,
+          preset,
+          mix: PRESETS[preset].mix,
+        };
+      })
+    : [];
+
+  const defaultHaldenStages: OverviewStageOption[] = [
     {
       id: "screening",
       label: "Recruiter screen",
@@ -101,13 +122,19 @@ export default async function InterviewOverview({
     },
   ];
 
-  const scoreCategories: OverviewScoreCategory[] = [
-    { name: "Experience", score: 4.0, delta: "+0.4", positive: true, tone: "purple" },
-    { name: "Skills", score: 3.4, delta: "+0.2", positive: true, tone: "purple" },
-    { name: "Technical", score: 2.5, delta: "-0.3", positive: false, tone: "red" },
-    { name: "Motivation", score: 4.4, delta: "+0.3", positive: true, tone: "purple" },
-    { name: "Situational", score: 3.1, delta: "+0.2", positive: true, tone: "purple" },
-  ];
+  const stages = customStages.length > 0 ? customStages : defaultHaldenStages;
+  const initialStage = stages.find((s) => s.status === "next") ?? stages[0];
+  const initialStageId = initialStage.id;
+
+  const scoreCategories: OverviewScoreCategory[] = interview.id === "halden"
+    ? [
+        { name: "Experience", score: 4.0, delta: "+0.4", positive: true, tone: "purple" },
+        { name: "Skills", score: 3.4, delta: "+0.2", positive: true, tone: "purple" },
+        { name: "Technical", score: 2.5, delta: "-0.3", positive: false, tone: "red" },
+        { name: "Motivation", score: 4.4, delta: "+0.3", positive: true, tone: "purple" },
+        { name: "Situational", score: 3.1, delta: "+0.2", positive: true, tone: "purple" },
+      ]
+    : [];
 
   const roleSummary = `${u.role}, ${u.level.toLowerCase()}: ${u.field}`;
   const inputsSummary =

@@ -1,7 +1,7 @@
 import { devOr } from "@/lib/launch";
 import "server-only";
 import { randomUUID } from "node:crypto";
-import type { Interview, InterviewFormat, Question, QuestionGroup, RoleUnderstanding } from "@/lib/types";
+import type { Interview, InterviewCustomStage, InterviewFormat, Question, QuestionGroup, RoleUnderstanding } from "@/lib/types";
 import { aiConfig } from "@/lib/ai/config";
 import { ask } from "@/lib/ai/ask";
 import { mockAiEnabled } from "@/lib/ai/mock";
@@ -40,6 +40,7 @@ export interface BuildInput {
   date?: string;
   format: InterviewFormat;
   settings: SessionSettings;
+  stages?: InterviewCustomStage[];
 }
 
 export interface BuildResult {
@@ -137,6 +138,15 @@ export async function buildInterview(input: BuildInput): Promise<BuildResult> {
     round,
     format: input.format,
     date: input.date,
+    stages: input.stages?.map((s, idx) => ({
+      id: s.id || `stage-${idx + 1}`,
+      name: s.name,
+      date: s.date,
+      time: s.time,
+      format: s.format,
+      interviewer: s.interviewer,
+      status: s.status || (idx === 0 ? "next" : "not_scheduled"),
+    })),
     style: settings.difficulty === "easy" ? "friendly" : settings.difficulty === "hard" ? "tough" : "realistic",
     interviewer: { name: "Sam", title: plan.interviewerTitle || "hiring manager" },
     groupScores: emptyCounts(),

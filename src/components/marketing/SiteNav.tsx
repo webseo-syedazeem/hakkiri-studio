@@ -9,9 +9,9 @@ import { useAuth } from "@/lib/auth/AuthContext";
 export function SiteNav() {
   const path = usePathname();
   const { user } = useAuth();
-  const base = path === "/present" ? "/present" : "/landing";
+  const base = path === "/present" ? "/present" : "";
   const links: [string, string, boolean][] = [
-    ["/landing", "Interviews", path === "/landing"],
+    ["/", "Interviews", path === "/" || path === "/landing"],
     ["/present", "Presentations", path === "/present"],
     [`${base}#pricing`, "Pricing", false],
     [`${base}#faq`, "Questions", false],
@@ -35,7 +35,7 @@ export function SiteNav() {
       ))}
       {user ? (
         <Link
-          href="/"
+          href="/dashboard"
           className="ml-1 rounded-full bg-mk-cta px-4 py-1.5 font-medium text-white transition-all duration-200 hover:scale-[1.04] active:scale-[0.97] hover:bg-mk-cta-hover hover:shadow-md hover:shadow-mk-cta/25"
         >
           Open Studio ({user.initials})
@@ -49,7 +49,7 @@ export function SiteNav() {
             Log in
           </Link>
           <Link
-            href="/signup"
+            href="/dashboard"
             className="ml-1 rounded-full bg-mk-cta px-4 py-1.5 font-medium text-white transition-all duration-200 hover:scale-[1.04] active:scale-[0.97] hover:bg-mk-cta-hover hover:shadow-md hover:shadow-mk-cta/25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mk-cta"
           >
             Start free

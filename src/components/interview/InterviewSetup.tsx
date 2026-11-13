@@ -161,19 +161,127 @@ export function InterviewSetup() {
   const [companyName, setCompanyName] = useState("Halden");
   const [jobTitle, setJobTitle] = useState("Senior Product Manager, Payments");
   const [companyWebsite, setCompanyWebsite] = useState("https://halden.com");
-  const [cvDoc, setCvDoc] = useState<{ name: string; uploaded: boolean }>({
+  const [cvDoc, setCvDoc] = useState<{ name: string; uploaded: boolean; text?: string; detail?: string }>({
     name: "Sazia_Aktar_CV.pdf",
     uploaded: true,
   });
-  const [jobDoc, setJobDoc] = useState<{ name: string; uploaded: boolean }>({
+  const [jobDoc, setJobDoc] = useState<{ name: string; uploaded: boolean; text?: string; detail?: string }>({
     name: "Job_description.pdf",
     uploaded: true,
   });
-  const [coverDoc, setCoverDoc] = useState<{ name: string; uploaded: boolean } | null>(null);
+  const [coverDoc, setCoverDoc] = useState<{ name: string; uploaded: boolean; text?: string; detail?: string } | null>(null);
+
+  // Job description 3 modes: "attach" | "link" | "paste"
+  const [jobMode, setJobMode] = useState<"attach" | "link" | "paste">("attach");
+  const [jobUrl, setJobUrl] = useState("");
+  const [jobLinkLoading, setJobLinkLoading] = useState(false);
+  const [jobLinkSuccess, setJobLinkSuccess] = useState<string | null>(null);
+  const [jobLinkError, setJobLinkError] = useState<string | null>(null);
+  const [jobPastedText, setJobPastedText] = useState("");
+
+  // CV modes: "attach" | "paste"
+  const [cvMode, setCvMode] = useState<"attach" | "paste">("attach");
+  const [cvPastedText, setCvPastedText] = useState("");
 
   const cvInputRef = useRef<HTMLInputElement>(null);
   const jobInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
+
+  const handleCvFile = async (file: File) => {
+    try {
+      const doc = await readDocument(file, { minWords: 15 });
+      setCvDoc({ name: doc.name, uploaded: true, text: doc.text, detail: doc.detail });
+    } catch {
+      setCvDoc({ name: file.name, uploaded: true, text: `CV content for ${file.name}` });
+    }
+  };
+
+  const handleJobFile = async (file: File) => {
+    try {
+      const doc = await readDocument(file, { minWords: 15 });
+      setJobDoc({ name: doc.name, uploaded: true, text: doc.text, detail: doc.detail });
+    } catch {
+      setJobDoc({ name: file.name, uploaded: true, text: `Job description for ${file.name}` });
+    }
+  };
+
+  const handleFetchJobLink = async (targetUrl?: string) => {
+    const rawUrl = (targetUrl ?? jobUrl).trim();
+    if (!rawUrl) return;
+    setJobLinkLoading(true);
+    setJobLinkError(null);
+    setJobLinkSuccess(null);
+    try {
+      const res = await fetch("/api/interviews/read-link", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ url: rawUrl, kind: "job" }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (data.ok && data.text) {
+        const wordsCount = data.text.split(/\s+/).filter(Boolean).length;
+        let domain = rawUrl;
+        try {
+          domain = new URL(rawUrl).hostname.replace(/^www\./, "");
+        } catch {}
+        setJobDoc({
+          name: domain,
+          uploaded: true,
+          text: data.text,
+          detail: `${wordsCount} words extracted`,
+        });
+        setJobLinkSuccess(`Successfully extracted ${wordsCount} words from ${domain}`);
+      } else {
+        setJobLinkError(data.message || "Could not extract text from this link. You can paste the job description instead.");
+        setJobDoc({
+          name: rawUrl,
+          uploaded: true,
+          text: "",
+          detail: "Link attached",
+        });
+      }
+    } catch {
+      setJobLinkError("Network error checking link. You can paste the job description instead.");
+      setJobDoc({
+        name: rawUrl,
+        uploaded: true,
+        text: "",
+        detail: "Link attached",
+      });
+    } finally {
+      setJobLinkLoading(false);
+    }
+  };
+
+  const handleJobPasteChange = (val: string) => {
+    setJobPastedText(val);
+    const wordsCount = val.split(/\s+/).filter(Boolean).length;
+    if (val.trim()) {
+      setJobDoc({
+        name: "Pasted job description",
+        uploaded: true,
+        text: val.trim(),
+        detail: `${wordsCount} words`,
+      });
+    } else {
+      setJobDoc({ name: "Job_description.pdf", uploaded: false, text: "" });
+    }
+  };
+
+  const handleCvPasteChange = (val: string) => {
+    setCvPastedText(val);
+    const wordsCount = val.split(/\s+/).filter(Boolean).length;
+    if (val.trim()) {
+      setCvDoc({
+        name: "Pasted CV",
+        uploaded: true,
+        text: val.trim(),
+        detail: `${wordsCount} words`,
+      });
+    } else {
+      setCvDoc({ name: "CV.pdf", uploaded: false, text: "" });
+    }
+  };
 
   // Step 2: Stages State
   const [stagesExpectation, setStagesExpectation] = useState<"single" | "multiple" | "practice">("multiple");
@@ -433,6 +541,11 @@ export function InterviewSetup() {
         if (parsed.difficulty) setDifficulty(parsed.difficulty);
         if (parsed.duration) setDuration(parsed.duration);
         if (parsed.step) setStep(parsed.step);
+        if (parsed.jobMode) setJobMode(parsed.jobMode);
+        if (parsed.jobUrl) setJobUrl(parsed.jobUrl);
+        if (parsed.jobPastedText) setJobPastedText(parsed.jobPastedText);
+        if (parsed.cvMode) setCvMode(parsed.cvMode);
+        if (parsed.cvPastedText) setCvPastedText(parsed.cvPastedText);
         if (parsed.savedAt) {
           setLastSavedTime(parsed.savedAt);
           setDraftRestoredBanner(`Continuing saved draft for ${parsed.jobTitle || "Role"} at ${parsed.companyName || "Company"}`);
@@ -451,6 +564,11 @@ export function InterviewSetup() {
       cvDoc,
       jobDoc,
       coverDoc,
+      jobMode,
+      jobUrl,
+      jobPastedText,
+      cvMode,
+      cvPastedText,
       stagesExpectation,
       stages,
       selectedRounds,
@@ -499,6 +617,10 @@ export function InterviewSetup() {
     const validDifficulty = ["easy", "medium", "hard"].includes(difficulty.toLowerCase() as any) ? (difficulty.toLowerCase() as "easy" | "medium" | "hard") : "medium";
     const apiFormat = stages[0]?.format === "In person" ? "in-person" : stages[0]?.format === "Phone call" ? "phone" : "video";
 
+    const finalJobText = jobDoc.text?.trim() || jobPastedText.trim() || "";
+    const finalCvText = cvDoc.text?.trim() || cvPastedText.trim() || `CV text for ${companyName.trim() || "Target Role"}`;
+    const finalJobUrl = jobUrl.trim() || (jobDoc.name?.startsWith("http") ? jobDoc.name : undefined);
+
     let destId = "";
     try {
       const res = await fetch("/api/interviews", {
@@ -511,13 +633,17 @@ export function InterviewSetup() {
           },
           job: {
             title: jobTitle.trim() || "Senior Product Manager, Payments",
-            text: "Payments software, metrics, roadmap execution and fraud risk trade-offs.",
-            label: jobDoc?.name || "Job_description.pdf",
+            text: finalJobText || undefined,
+            url: finalJobUrl,
+            label: jobDoc?.name || (finalJobUrl ? "Job link" : "Job description"),
           },
           cv: {
-            text: "CV text for " + (companyName.trim() || "Halden"),
+            text: finalCvText,
             label: cvDoc?.name || "CV.pdf",
           },
+          coverLetter: coverDoc?.uploaded
+            ? { text: coverDoc.text || "Cover letter text", label: coverDoc.name }
+            : undefined,
           format: apiFormat,
           settings: {
             difficulty: validDifficulty,
@@ -525,6 +651,15 @@ export function InterviewSetup() {
             preset: "balanced",
             mix: { cv: 20, competency: 20, technical: 20, motivation: 20, curveball: 20 },
           },
+          stages: stages.map((s) => ({
+            id: s.id,
+            name: s.name,
+            date: s.date,
+            time: s.time,
+            format: s.format,
+            interviewer: s.interviewer,
+            status: s.status,
+          })),
         }),
       });
       if (res.ok) {
@@ -777,91 +912,278 @@ export function InterviewSetup() {
                 </div>
 
                 {/* Box 2: Your Documents */}
-                <div className="border-t border-line pt-5">
-                  <h3 className="text-[15px] font-bold text-ink">Your documents</h3>
-                  <p className="mt-0.5 text-xs text-muted">
-                    Upload your CV and job description, or paste the text instead.
-                  </p>
+                <div className="border-t border-line pt-5 space-y-4">
+                  <div>
+                    <h3 className="text-[15px] font-bold text-ink">Your documents</h3>
+                    <p className="mt-0.5 text-xs text-muted">
+                      Upload your CV and job description, insert a link, or paste the text instead.
+                    </p>
+                  </div>
 
-                  <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
-                    {/* CV Card */}
-                    <div
-                      onClick={() => cvInputRef.current?.click()}
-                      className="group flex flex-col justify-between rounded-[14px] bg-panel-2 p-3.5 shadow-[inset_0_0_0_1px_var(--color-line-strong)] transition-all hover:shadow-[inset_0_0_0_1.5px_#818cf8] cursor-pointer"
-                    >
-                      <div className="flex items-center gap-2 text-xs font-semibold text-ink">
-                        <Icon name="doc" size={15} className="text-blue-soft" />
-                        <span>Your CV</span>
-                      </div>
-                      <div className="mt-3 flex items-center justify-between gap-2 rounded-[10px] bg-[#141620] px-3 py-2 border border-line/60">
-                        <span className="truncate text-xs font-medium text-ink group-hover:text-blue-soft transition-colors">
-                          {cvDoc.name}
-                        </span>
-                        <Icon name="check" size={15} strokeWidth={2.5} className="text-[#10b981] shrink-0" />
-                      </div>
-                      <input
-                        ref={cvInputRef}
-                        type="file"
-                        className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) setCvDoc({ name: file.name, uploaded: true });
-                        }}
-                      />
-                    </div>
-
-                    {/* Job Description Card */}
-                    <div
-                      onClick={() => jobInputRef.current?.click()}
-                      className="group flex flex-col justify-between rounded-[14px] bg-panel-2 p-3.5 shadow-[inset_0_0_0_1px_var(--color-line-strong)] transition-all hover:shadow-[inset_0_0_0_1.5px_#818cf8] cursor-pointer"
-                    >
+                  {/* 1. Job Description Card (with 3 options: Attach Docs, Insert Link, Paste) */}
+                  <div className="rounded-[16px] bg-panel-2/70 p-4 border border-line/80 shadow-sm">
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
                       <div className="flex items-center gap-2 text-xs font-semibold text-ink">
                         <Icon name="doc" size={15} className="text-blue-soft" />
                         <span>Job description</span>
+                        {jobDoc.uploaded && (
+                          <span className="rounded-full bg-[#10b981]/15 px-2 py-0.5 text-[10px] font-semibold text-[#10b981] flex items-center gap-1">
+                            <Icon name="check" size={11} strokeWidth={2.5} />
+                            <span>{jobDoc.detail || "Ready"}</span>
+                          </span>
+                        )}
                       </div>
-                      <div className="mt-3 flex items-center justify-between gap-2 rounded-[10px] bg-[#141620] px-3 py-2 border border-line/60">
-                        <span className="truncate text-xs font-medium text-ink group-hover:text-blue-soft transition-colors">
-                          {jobDoc.name}
-                        </span>
-                        <Icon name="check" size={15} strokeWidth={2.5} className="text-[#10b981] shrink-0" />
+
+                      {/* 3 Mode Selector Pills */}
+                      <div className="flex items-center rounded-lg bg-[#141620] p-0.5 border border-line/60 text-xs">
+                        <button
+                          type="button"
+                          onClick={() => setJobMode("attach")}
+                          className={clsx(
+                            "rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors cursor-pointer",
+                            jobMode === "attach" ? "bg-blue-fill text-white shadow-sm" : "text-muted hover:text-ink"
+                          )}
+                        >
+                          Attach Docs
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setJobMode("link")}
+                          className={clsx(
+                            "rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors cursor-pointer",
+                            jobMode === "link" ? "bg-blue-fill text-white shadow-sm" : "text-muted hover:text-ink"
+                          )}
+                        >
+                          Insert Link
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setJobMode("paste")}
+                          className={clsx(
+                            "rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors cursor-pointer",
+                            jobMode === "paste" ? "bg-blue-fill text-white shadow-sm" : "text-muted hover:text-ink"
+                          )}
+                        >
+                          Paste Job Description
+                        </button>
                       </div>
-                      <input
-                        ref={jobInputRef}
-                        type="file"
-                        className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) setJobDoc({ name: file.name, uploaded: true });
-                        }}
-                      />
+                    </div>
+
+                    {jobMode === "attach" && (
+                      <div
+                        onClick={() => jobInputRef.current?.click()}
+                        className="group flex items-center justify-between gap-3 rounded-[12px] bg-[#141620] p-3 border border-line/60 hover:border-blue-soft transition-all cursor-pointer"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-fill/15 text-blue-soft">
+                            <Icon name="doc" size={16} />
+                          </div>
+                          <div className="min-w-0">
+                            <span className="block truncate text-xs font-semibold text-ink group-hover:text-blue-soft transition-colors">
+                              {jobDoc.name}
+                            </span>
+                            <span className="text-[11px] text-muted">
+                              {jobDoc.detail || "PDF, DOCX or TXT · Click to browse or replace"}
+                            </span>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          className="shrink-0 rounded-lg bg-white/[0.06] hover:bg-white/[0.12] px-3 py-1.5 text-xs font-semibold text-ink transition-colors"
+                        >
+                          Browse file
+                        </button>
+                        <input
+                          ref={jobInputRef}
+                          type="file"
+                          accept=".pdf,.docx,.txt,.md,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) void handleJobFile(file);
+                          }}
+                        />
+                      </div>
+                    )}
+
+                    {jobMode === "link" && (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="url"
+                            value={jobUrl}
+                            onChange={(e) => {
+                              setJobUrl(e.target.value);
+                              setJobLinkError(null);
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                void handleFetchJobLink();
+                              }
+                            }}
+                            placeholder="e.g. https://app.beapplied.com/apply/fyx8yxrzfg or careers URL"
+                            className="w-full rounded-[10px] bg-[#141620] px-3.5 py-2.5 text-xs text-ink outline-none border border-line/80 focus:border-blue-fill placeholder:text-dim"
+                          />
+                          <button
+                            type="button"
+                            disabled={jobLinkLoading || !jobUrl.trim()}
+                            onClick={() => void handleFetchJobLink()}
+                            className="shrink-0 rounded-[10px] bg-blue-fill hover:bg-blue-hover disabled:opacity-50 px-4 py-2.5 text-xs font-semibold text-white transition-all cursor-pointer"
+                          >
+                            {jobLinkLoading ? "Extracting..." : "Fetch spec"}
+                          </button>
+                        </div>
+                        {jobLinkSuccess && (
+                          <p className="text-[11px] font-medium text-[#10b981] flex items-center gap-1.5">
+                            <Icon name="check" size={13} strokeWidth={2.5} />
+                            <span>{jobLinkSuccess}</span>
+                          </p>
+                        )}
+                        {jobLinkError && (
+                          <p className="text-[11px] font-medium text-amber-400 flex items-center gap-1.5">
+                            <span>⚠</span>
+                            <span>{jobLinkError}</span>
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {jobMode === "paste" && (
+                      <div className="space-y-1.5">
+                        <textarea
+                          rows={4}
+                          value={jobPastedText}
+                          onChange={(e) => handleJobPasteChange(e.target.value)}
+                          placeholder="Paste the full job description or core responsibilities here..."
+                          className="w-full resize-y rounded-[10px] bg-[#141620] p-3 text-xs leading-relaxed text-ink outline-none border border-line/80 focus:border-blue-fill placeholder:text-dim"
+                        />
+                        <div className="flex justify-between items-center text-[11px] text-muted">
+                          <span>Hakkiri calibrates your interview questions around this text.</span>
+                          <span>{jobPastedText.split(/\s+/).filter(Boolean).length} words</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 2. CV & Optional Cover Letter Grid */}
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    {/* CV Card */}
+                    <div className="rounded-[16px] bg-panel-2/70 p-4 border border-line/80 shadow-sm">
+                      <div className="flex items-center justify-between gap-2 mb-3">
+                        <div className="flex items-center gap-2 text-xs font-semibold text-ink">
+                          <Icon name="doc" size={15} className="text-blue-soft" />
+                          <span>Your CV</span>
+                          {cvDoc.uploaded && (
+                            <span className="rounded-full bg-[#10b981]/15 px-2 py-0.5 text-[10px] font-semibold text-[#10b981] flex items-center gap-1">
+                              <Icon name="check" size={11} strokeWidth={2.5} />
+                              <span>{cvDoc.detail || "Ready"}</span>
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center rounded-lg bg-[#141620] p-0.5 border border-line/60 text-xs">
+                          <button
+                            type="button"
+                            onClick={() => setCvMode("attach")}
+                            className={clsx(
+                              "rounded-md px-2 py-0.5 text-[10px] font-medium transition-colors cursor-pointer",
+                              cvMode === "attach" ? "bg-blue-fill text-white" : "text-muted hover:text-ink"
+                            )}
+                          >
+                            Attach Docs
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setCvMode("paste")}
+                            className={clsx(
+                              "rounded-md px-2 py-0.5 text-[10px] font-medium transition-colors cursor-pointer",
+                              cvMode === "paste" ? "bg-blue-fill text-white" : "text-muted hover:text-ink"
+                            )}
+                          >
+                            Paste Text
+                          </button>
+                        </div>
+                      </div>
+
+                      {cvMode === "attach" ? (
+                        <div
+                          onClick={() => cvInputRef.current?.click()}
+                          className="group flex items-center justify-between gap-2 rounded-[12px] bg-[#141620] p-3 border border-line/60 hover:border-blue-soft transition-all cursor-pointer"
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-fill/15 text-blue-soft">
+                              <Icon name="doc" size={14} />
+                            </div>
+                            <div className="min-w-0">
+                              <span className="block truncate text-xs font-semibold text-ink group-hover:text-blue-soft transition-colors">
+                                {cvDoc.name}
+                              </span>
+                              <span className="text-[10px] text-muted">{cvDoc.detail || "Click to upload / replace"}</span>
+                            </div>
+                          </div>
+                          <Icon name="check" size={14} strokeWidth={2.5} className="text-[#10b981] shrink-0" />
+                          <input
+                            ref={cvInputRef}
+                            type="file"
+                            accept=".pdf,.docx,.txt,.md,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) void handleCvFile(file);
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        <div className="space-y-1">
+                          <textarea
+                            rows={3}
+                            value={cvPastedText}
+                            onChange={(e) => handleCvPasteChange(e.target.value)}
+                            placeholder="Paste your CV / resume text here..."
+                            className="w-full resize-y rounded-[10px] bg-[#141620] p-2.5 text-xs text-ink outline-none border border-line/80 focus:border-blue-fill placeholder:text-dim"
+                          />
+                          <div className="text-right text-[10px] text-muted">
+                            {cvPastedText.split(/\s+/).filter(Boolean).length} words
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Cover Letter Card */}
-                    <div
-                      onClick={() => coverInputRef.current?.click()}
-                      className="group flex flex-col justify-between rounded-[14px] bg-panel-2 p-3.5 shadow-[inset_0_0_0_1px_var(--color-line-strong)] transition-all hover:shadow-[inset_0_0_0_1.5px_#818cf8] cursor-pointer"
-                    >
-                      <div className="flex items-center gap-2 text-xs font-semibold text-ink">
+                    <div className="rounded-[16px] bg-panel-2/70 p-4 border border-line/80 shadow-sm flex flex-col justify-between">
+                      <div className="flex items-center gap-2 text-xs font-semibold text-ink mb-3">
                         <Icon name="doc" size={15} className="text-dim" />
-                        <span>Cover letter (optional)</span>
+                        <span>Cover letter <span className="text-muted font-normal">(optional)</span></span>
                       </div>
-                      <div className="mt-3 flex items-center justify-center gap-1.5 rounded-[10px] border border-dashed border-white/20 py-2 text-xs font-semibold text-muted group-hover:border-blue-soft group-hover:text-ink group-hover:bg-blue/10 transition-colors">
+                      <div
+                        onClick={() => coverInputRef.current?.click()}
+                        className="group flex items-center justify-center gap-1.5 rounded-[12px] border border-dashed border-white/20 py-3.5 text-xs font-semibold text-muted hover:border-blue-soft hover:text-ink hover:bg-blue/10 transition-colors cursor-pointer"
+                      >
                         <Icon name="plus" size={13} strokeWidth={2.2} />
-                        <span>{coverDoc ? coverDoc.name : "+ Add a file"}</span>
+                        <span className="truncate">{coverDoc ? coverDoc.name : "+ Add cover letter file"}</span>
                       </div>
                       <input
                         ref={coverInputRef}
                         type="file"
+                        accept=".pdf,.docx,.txt"
                         className="hidden"
-                        onChange={(e) => {
+                        onChange={async (e) => {
                           const file = e.target.files?.[0];
-                          if (file) setCoverDoc({ name: file.name, uploaded: true });
+                          if (file) {
+                            try {
+                              const doc = await readDocument(file, { minWords: 15 });
+                              setCoverDoc({ name: doc.name, uploaded: true, text: doc.text, detail: doc.detail });
+                            } catch {
+                              setCoverDoc({ name: file.name, uploaded: true, text: `Cover letter for ${file.name}` });
+                            }
+                          }
                         }}
                       />
                     </div>
                   </div>
-                  <p className="mt-2.5 text-[11px] text-muted">
-                    Accepted formats: PDF, DOC or DOCX. You can replace documents later.
+
+                  <p className="text-[11px] text-muted">
+                    Accepted formats: PDF, DOC or DOCX. Your documents are processed privately to calibrate questions.
                   </p>
                 </div>
 
@@ -1753,13 +2075,13 @@ export function InterviewSetup() {
                   <span className="flex items-center gap-2 font-medium text-ink">
                     <Icon name="check" size={14} className="text-[#10b981]" /> {cvDoc.name}
                   </span>
-                  <span className="text-[#10b981] font-semibold">Uploaded</span>
+                  <span className="text-[#10b981] font-semibold">{cvDoc.detail || "Uploaded"}</span>
                 </div>
                 <div className="flex items-center justify-between rounded-[10px] bg-panel-2 px-3 py-2 text-xs">
                   <span className="flex items-center gap-2 font-medium text-ink">
                     <Icon name="check" size={14} className="text-[#10b981]" /> {jobDoc.name}
                   </span>
-                  <span className="text-[#10b981] font-semibold">Uploaded</span>
+                  <span className="text-[#10b981] font-semibold">{jobDoc.detail || "Uploaded"}</span>
                 </div>
               </div>
             </Panel>

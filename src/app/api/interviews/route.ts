@@ -12,6 +12,16 @@ export const maxDuration = 180;
 
 const Doc = z.object({ text: z.string().trim().min(1).max(25_000), label: z.string().max(200) });
 
+const StageSchema = z.object({
+  id: z.string().optional(),
+  name: z.string().trim().min(1).max(120),
+  date: z.string().optional(),
+  time: z.string().optional(),
+  format: z.string().optional(),
+  interviewer: z.string().optional(),
+  status: z.string().optional(),
+});
+
 const Body = z.object({
   company: z.object({ name: z.string().trim().min(1).max(80), url: z.string().max(500).optional(), siteText: z.string().max(20_000).optional() }),
   job: z.object({ title: z.string().trim().max(120), text: z.string().max(25_000).optional(), url: z.string().max(500).optional(), label: z.string().max(200).optional() }),
@@ -20,6 +30,7 @@ const Body = z.object({
   date: z.iso.datetime().optional(),
   format: z.enum(["in-person", "video", "phone"]),
   settings: SettingsBody.optional(),
+  stages: z.array(StageSchema).optional(),
 });
 
 /**

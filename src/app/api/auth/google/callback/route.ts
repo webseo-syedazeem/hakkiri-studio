@@ -13,12 +13,12 @@ export async function GET(req: NextRequest) {
   if (error || !code) {
     console.warn("[google/callback] OAuth error or missing code, falling back to instant Google login:", error);
     const user = await findOrCreateOAuthUser({
-      email: "candidate@hakirri.studio",
+      email: "candidate@hakkiri.studio",
       name: "Google Candidate",
       provider: "google",
     });
-    const sessionToken = await createSession(user.id ?? "candidate@hakirri.studio", "candidate@hakirri.studio");
-    const res = NextResponse.redirect(new URL("/", origin));
+    const sessionToken = await createSession(user.id ?? "candidate@hakkiri.studio", "candidate@hakkiri.studio");
+    const res = NextResponse.redirect(new URL("/dashboard", origin));
     res.cookies.set({
       name: "hakkiri_session",
       value: sessionToken,
@@ -37,12 +37,12 @@ export async function GET(req: NextRequest) {
   if (!clientId || !clientSecret) {
     console.warn("[google/callback] Missing client ID/secret, logging in Google Candidate");
     const user = await findOrCreateOAuthUser({
-      email: "candidate@hakirri.studio",
+      email: "candidate@hakkiri.studio",
       name: "Google Candidate",
       provider: "google",
     });
-    const sessionToken = await createSession(user.id ?? "candidate@hakirri.studio", "candidate@hakirri.studio");
-    const res = NextResponse.redirect(new URL("/", origin));
+    const sessionToken = await createSession(user.id ?? "candidate@hakkiri.studio", "candidate@hakkiri.studio");
+    const res = NextResponse.redirect(new URL("/dashboard", origin));
     res.cookies.set({
       name: "hakkiri_session",
       value: sessionToken,
@@ -78,7 +78,7 @@ export async function GET(req: NextRequest) {
         provider: "google",
       });
       const sessionToken = await createSession(user.id ?? "candidate@hakirri.studio", "candidate@hakirri.studio");
-      const res = NextResponse.redirect(new URL("/", origin));
+      const res = NextResponse.redirect(new URL("/dashboard", origin));
       res.cookies.set({
         name: "hakkiri_session",
         value: sessionToken,
@@ -120,7 +120,7 @@ export async function GET(req: NextRequest) {
     // 4. Create session and set cookie
     const sessionToken = await createSession(user.id ?? profile.email, profile.email);
 
-    const res = NextResponse.redirect(new URL("/", origin));
+    const res = NextResponse.redirect(new URL("/dashboard", origin));
     res.cookies.set({
       name: "hakkiri_session",
       value: sessionToken,
@@ -135,12 +135,12 @@ export async function GET(req: NextRequest) {
   } catch (err) {
     console.error("[google/callback] OAuth callback failure, falling back to Google candidate session:", err);
     const user = await findOrCreateOAuthUser({
-      email: "candidate@hakirri.studio",
+      email: "candidate@hakkiri.studio",
       name: "Google Candidate",
       provider: "google",
     });
-    const sessionToken = await createSession(user.id ?? "candidate@hakirri.studio", "candidate@hakirri.studio");
-    const res = NextResponse.redirect(new URL("/", origin));
+    const sessionToken = await createSession(user.id ?? "candidate@hakkiri.studio", "candidate@hakkiri.studio");
+    const res = NextResponse.redirect(new URL("/dashboard", origin));
     res.cookies.set({
       name: "hakkiri_session",
       value: sessionToken,

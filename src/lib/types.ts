@@ -107,6 +107,16 @@ export interface RoleUnderstanding {
   meanings: Record<QuestionGroup, string>;
 }
 
+export interface InterviewCustomStage {
+  id?: string;
+  name: string;
+  date?: string;
+  time?: string;
+  format?: string;
+  interviewer?: string;
+  status?: string;
+}
+
 export interface Interview {
   id: string;
   company: string;
@@ -118,6 +128,8 @@ export interface Interview {
   seniority?: string;
   round: InterviewRound;
   format?: InterviewFormat;
+  /** Custom interview stages configured for this role. */
+  stages?: InterviewCustomStage[];
   /** ISO date-time of the real interview, if you added it. */
   date?: string;
   style: InterviewerStyle;

@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
   } catch (err) {
     console.error("[api/auth/logout] error:", err);
   }
-  const response = NextResponse.redirect(new URL("/landing", req.url));
+  const response = NextResponse.redirect(new URL("/", req.url));
   response.cookies.delete("hakkiri_session");
   return response;
 }

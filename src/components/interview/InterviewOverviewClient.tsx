@@ -8,6 +8,7 @@ import { Segmented } from "@/components/ui/Segmented";
 import {
   DIFFICULTY_HINT,
   DIFFICULTY_LABEL,
+  PRESETS,
   totalQuestionCount,
   type Difficulty,
   type Mix,
@@ -206,14 +207,54 @@ export function InterviewOverviewClient({
   roleSummary: string;
   inputsSummary: string;
 }) {
+  const [activeStages, setActiveStages] = useState<OverviewStageOption[]>(stages);
   const [stageId, setStageId] = useState<string>(initialStageId);
   const [difficulty, setDifficulty] = useState<Difficulty>(initialSettings.difficulty);
   const [minutes, setMinutes] = useState<PracticeMinutes>(
     isPracticeMinutes(initialSettings.minutes) ? initialSettings.minutes : 10,
   );
 
-  const activeStage = stages.find((s) => s.id === stageId) ?? stages[0];
-  const nextStage = stages.find((s) => s.status === "next") ?? activeStage;
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("hk_custom_interviews");
+      if (raw) {
+        const list = JSON.parse(raw);
+        const match = Array.isArray(list) ? list.find((it: any) => it.id === interviewId) : null;
+        if (match && Array.isArray(match.stages) && match.stages.length > 0) {
+          const mapped: OverviewStageOption[] = match.stages.map((st: any, idx: number) => {
+            const id = st.id || `stage-${idx + 1}`;
+            const label = st.name || `Stage ${idx + 1}`;
+            const lName = label.toLowerCase();
+            const isPresetScreen = lName.includes("screen") || lName.includes("recruiter");
+            const isPresetTech = lName.includes("tech") || lName.includes("case") || lName.includes("code");
+            const isPresetFinal = lName.includes("final") || lName.includes("panel") || lName.includes("lead");
+            const preset: SessionSettings["preset"] = isPresetScreen ? "screening" : isPresetTech ? "technical" : isPresetFinal ? "final" : "balanced";
+            const isNext = st.status === "next" || (idx === 0 && !match.stages.some((x: any) => x.status === "next"));
+            const isCompleted = st.status === "completed";
+            return {
+              id,
+              label,
+              selectLabel: label,
+              titlePhrase: label.toLowerCase(),
+              description: `Focus on ${label.toLowerCase()} questions, tailored to ${roleTitle} at ${companyName}.`,
+              status: isCompleted ? "completed" : isNext ? "next" : "upcoming",
+              subtitle: st.date ? `${st.date}${st.time ? `, ${st.time}` : ""}` : isCompleted ? "Completed" : "Upcoming",
+              preset,
+              mix: PRESETS[preset].mix,
+            };
+          });
+          setActiveStages(mapped);
+          if (!mapped.some((s) => s.id === stageId)) {
+            const nextOne = mapped.find((s) => s.status === "next") ?? mapped[0];
+            if (nextOne) setStageId(nextOne.id);
+          }
+        }
+      }
+    } catch {}
+  }, [interviewId, roleTitle, companyName]);
+
+  const activeStage = activeStages.find((s) => s.id === stageId) ?? activeStages[0] ?? stages[0];
+  const nextStage = activeStages.find((s) => s.status === "next") ?? activeStage;
   const estQuestions = Math.max(3, totalQuestionCount(minutes, difficulty));
 
   const currentSettings: SessionSettings = {
@@ -248,7 +289,7 @@ export function InterviewOverviewClient({
               <div className="mt-0.5 text-xs text-muted flex flex-wrap items-center gap-2">
                 <span>{companyName}</span>
                 <span>·</span>
-                <span>{stages.length} interview stages</span>
+                <span>{activeStages.length} interview stages</span>
                 <span>·</span>
                 <span>Next: {nextStage.label}</span>
                 <span>·</span>
@@ -375,135 +416,167 @@ export function InterviewOverviewClient({
             <div className="flex items-center justify-between border-b border-line pb-3">
               <div>
                 <h2 className="text-sm font-bold text-white">Latest practice results</h2>
-                <p className="text-xs text-muted">Full mock interview · Yesterday, 11:05</p>
+                <p className="text-xs text-muted">
+                  {scoreCategories.length > 0 ? "Full mock interview · Yesterday, 11:05" : "No practice scores recorded yet"}
+                </p>
               </div>
-              <Link
-                href={`/interviews/${interviewId}/mocks`}
-                className="text-xs font-semibold text-blue-soft hover:underline flex items-center gap-1"
-              >
-                <span>View full report</span>
-                <span>→</span>
-              </Link>
+              {scoreCategories.length > 0 && (
+                <Link
+                  href={`/interviews/${interviewId}/mocks`}
+                  className="text-xs font-semibold text-blue-soft hover:underline flex items-center gap-1"
+                >
+                  <span>View full report</span>
+                  <span>→</span>
+                </Link>
+              )}
             </div>
 
-            <div className="space-y-3 pt-1">
-              {scoreCategories.map((cat) => {
-                const pct = (cat.score / 5) * 100;
-                return (
-                  <div key={cat.name} className="space-y-1">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-medium text-ink">{cat.name}</span>
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-white num">{cat.score.toFixed(1)}/5</span>
-                        <span
-                          className={clsx(
-                            "text-[11px] font-bold num",
-                            cat.positive ? "text-emerald-400" : "text-rose-400",
-                          )}
-                        >
-                          {cat.positive ? "▲" : "▼"} {cat.delta}
-                        </span>
+            {scoreCategories.length > 0 ? (
+              <>
+                <div className="space-y-3 pt-1">
+                  {scoreCategories.map((cat) => {
+                    const pct = (cat.score / 5) * 100;
+                    return (
+                      <div key={cat.name} className="space-y-1">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-medium text-ink">{cat.name}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-white num">{cat.score.toFixed(1)}/5</span>
+                            <span
+                              className={clsx(
+                                "text-[11px] font-bold num",
+                                cat.positive ? "text-emerald-400" : "text-rose-400",
+                              )}
+                            >
+                              {cat.positive ? "▲" : "▼"} {cat.delta}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="h-2 w-full overflow-hidden rounded-full bg-white/[0.07]">
+                          <div
+                            className={clsx(
+                              "h-full rounded-full transition-all duration-500",
+                              cat.tone === "red"
+                                ? "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]"
+                                : "bg-indigo-400 shadow-[0_0_8px_rgba(129,140,248,0.5)]",
+                            )}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
                       </div>
-                    </div>
-                    <div className="h-2 w-full overflow-hidden rounded-full bg-white/[0.07]">
-                      <div
-                        className={clsx(
-                          "h-full rounded-full transition-all duration-500",
-                          cat.tone === "red"
-                            ? "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]"
-                            : "bg-indigo-400 shadow-[0_0_8px_rgba(129,140,248,0.5)]",
-                        )}
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                    );
+                  })}
+                </div>
 
-            <p className="pt-2 text-[11px] text-muted border-t border-line/60 flex items-center gap-1.5">
-              <span>ⓘ</span>
-              <span>Scores reflect your latest mock interview, not your likelihood of receiving an offer.</span>
-            </p>
+                <p className="pt-2 text-[11px] text-muted border-t border-line/60 flex items-center gap-1.5">
+                  <span>ⓘ</span>
+                  <span>Scores reflect your latest mock interview, not your likelihood of receiving an offer.</span>
+                </p>
+              </>
+            ) : (
+              <div className="py-5 text-center text-xs text-muted">
+                <div className="flex h-9 w-9 mx-auto items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 mb-2">
+                  <Icon name="chart" size={15} />
+                </div>
+                <p className="font-semibold text-white">Baseline scores appear after your first session</p>
+                <p className="mt-1 text-dim max-w-sm mx-auto">
+                  Practise a round above to generate rubric scores across Experience, Skills, Technical depth, Motivation and Situational questions.
+                </p>
+              </div>
+            )}
           </Panel>
 
           {/* Card 3: Recent practice */}
           <Panel className="p-5 sm:p-6 space-y-3">
             <div className="flex items-center justify-between border-b border-line pb-3">
               <h2 className="text-sm font-bold text-white">Recent practice</h2>
-              <Link
-                href={`/interviews/${interviewId}/mocks`}
-                className="text-xs font-semibold text-blue-soft hover:underline flex items-center gap-1"
-              >
-                <span>See all</span>
-                <span>→</span>
-              </Link>
+              {interviewId === "halden" && (
+                <Link
+                  href={`/interviews/${interviewId}/mocks`}
+                  className="text-xs font-semibold text-blue-soft hover:underline flex items-center gap-1"
+                >
+                  <span>See all</span>
+                  <span>→</span>
+                </Link>
+              )}
             </div>
 
-            <ul className="divide-y divide-line/60 text-xs">
-              <li className="flex items-center justify-between py-3 first:pt-1">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/[0.06] text-ink border border-white/10">
-                    <Icon name="play" size={12} />
-                  </span>
-                  <div>
-                    <span className="font-semibold text-white">Full mock interview</span>
-                    <p className="text-[11px] text-muted">Yesterday · 30 min</p>
+            {interviewId === "halden" ? (
+              <ul className="divide-y divide-line/60 text-xs">
+                <li className="flex items-center justify-between py-3 first:pt-1">
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/[0.06] text-ink border border-white/10">
+                      <Icon name="play" size={12} />
+                    </span>
+                    <div>
+                      <span className="font-semibold text-white">Full mock interview</span>
+                      <p className="text-[11px] text-muted">Yesterday · 30 min</p>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="font-semibold text-white num">3.5 / 5</span>
-                  <Link
-                    href={`/interviews/${interviewId}/mocks`}
-                    className="rounded-lg bg-white/[0.05] hover:bg-white/[0.12] px-3 py-1.5 text-[11px] font-semibold text-white/90 hover:text-white border border-white/10 hover:border-white/20 shadow-sm transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.97]"
-                  >
-                    View report
-                  </Link>
-                </div>
-              </li>
+                  <div className="flex items-center gap-3">
+                    <span className="font-semibold text-white num">3.5 / 5</span>
+                    <Link
+                      href={`/interviews/${interviewId}/mocks`}
+                      className="rounded-lg bg-white/[0.05] hover:bg-white/[0.12] px-3 py-1.5 text-[11px] font-semibold text-white/90 hover:text-white border border-white/10 hover:border-white/20 shadow-sm transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.97]"
+                    >
+                      View report
+                    </Link>
+                  </div>
+                </li>
 
-              <li className="flex items-center justify-between py-3">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/[0.06] text-ink border border-white/10">
-                    <Icon name="play" size={12} />
-                  </span>
-                  <div>
-                    <span className="font-semibold text-white">Technical questions</span>
-                    <p className="text-[11px] text-muted">Wed 5 Nov · 8 min</p>
+                <li className="flex items-center justify-between py-3">
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/[0.06] text-ink border border-white/10">
+                      <Icon name="play" size={12} />
+                    </span>
+                    <div>
+                      <span className="font-semibold text-white">Technical questions</span>
+                      <p className="text-[11px] text-muted">Wed 5 Nov · 8 min</p>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="font-semibold text-white num">2.6 / 5</span>
-                  <Link
-                    href={`/interviews/${interviewId}/mocks`}
-                    className="rounded-lg bg-white/[0.05] hover:bg-white/[0.12] px-3 py-1.5 text-[11px] font-semibold text-white/90 hover:text-white border border-white/10 hover:border-white/20 shadow-sm transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.97]"
-                  >
-                    Review
-                  </Link>
-                </div>
-              </li>
+                  <div className="flex items-center gap-3">
+                    <span className="font-semibold text-white num">2.6 / 5</span>
+                    <Link
+                      href={`/interviews/${interviewId}/mocks`}
+                      className="rounded-lg bg-white/[0.05] hover:bg-white/[0.12] px-3 py-1.5 text-[11px] font-semibold text-white/90 hover:text-white border border-white/10 hover:border-white/20 shadow-sm transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.97]"
+                    >
+                      Review
+                    </Link>
+                  </div>
+                </li>
 
-              <li className="flex items-center justify-between py-3 last:pb-1">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/[0.06] text-ink border border-white/10">
-                    <Icon name="play" size={12} />
-                  </span>
-                  <div>
-                    <span className="font-semibold text-white">&ldquo;A payments metric drops&rdquo; (follow-ups)</span>
-                    <p className="text-[11px] text-muted">Tue 4 Nov · 5 min</p>
+                <li className="flex items-center justify-between py-3 last:pb-1">
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/[0.06] text-ink border border-white/10">
+                      <Icon name="play" size={12} />
+                    </span>
+                    <div>
+                      <span className="font-semibold text-white">&ldquo;A payments metric drops&rdquo; (follow-ups)</span>
+                      <p className="text-[11px] text-muted">Tue 4 Nov · 5 min</p>
+                    </div>
                   </div>
+                  <div className="flex items-center gap-3">
+                    <span className="font-semibold text-white num">3.8 / 5</span>
+                    <Link
+                      href={`/interviews/${interviewId}/mocks`}
+                      className="rounded-lg bg-white/[0.05] hover:bg-white/[0.12] px-3 py-1.5 text-[11px] font-semibold text-white/90 hover:text-white border border-white/10 hover:border-white/20 shadow-sm transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.97]"
+                    >
+                      Review
+                    </Link>
+                  </div>
+                </li>
+              </ul>
+            ) : (
+              <div className="py-7 text-center text-xs text-muted">
+                <div className="flex h-10 w-10 mx-auto items-center justify-center rounded-xl bg-white/[0.04] text-muted border border-white/10 mb-2.5">
+                  <Icon name="play" size={14} />
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="font-semibold text-white num">3.8 / 5</span>
-                  <Link
-                    href={`/interviews/${interviewId}/mocks`}
-                    className="rounded-lg bg-white/[0.05] hover:bg-white/[0.12] px-3 py-1.5 text-[11px] font-semibold text-white/90 hover:text-white border border-white/10 hover:border-white/20 shadow-sm transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.97]"
-                  >
-                    Review
-                  </Link>
-                </div>
-              </li>
-            </ul>
+                <p className="font-semibold text-white">No practice sessions yet</p>
+                <p className="mt-1 text-dim max-w-sm mx-auto">
+                  Your practice answers, scoring and feedback reports for {roleTitle} will appear here after your first session.
+                </p>
+              </div>
+            )}
           </Panel>
         </div>
 
@@ -517,7 +590,7 @@ export function InterviewOverviewClient({
             </div>
 
             <div className="relative pl-6 space-y-3.5 before:absolute before:left-2.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-line pt-2">
-              {stages.map((st) => {
+              {activeStages.map((st) => {
                 const selected = st.id === activeStage.id;
                 return (
                   <button
@@ -597,7 +670,7 @@ export function InterviewOverviewClient({
               <label htmlFor="overview-stage-select" className="block text-xs font-medium text-muted">
                 Interview stage
               </label>
-              <StageDropdown stages={stages} value={activeStage.id} onChange={setStageId} />
+              <StageDropdown stages={activeStages} value={activeStage.id} onChange={setStageId} />
             </div>
 
             {/* Difficulty */}

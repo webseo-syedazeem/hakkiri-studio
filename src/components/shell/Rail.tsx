@@ -17,9 +17,9 @@ const ITEMS: {
 }[] = [
   {
     label: "Home",
-    href: "/",
+    href: "/dashboard",
     icon: "home",
-    match: (p) => p === "/" || p.startsWith("/welcome"),
+    match: (p) => p === "/dashboard" || p === "/" || p.startsWith("/welcome"),
   },
   {
     label: "Interviews",

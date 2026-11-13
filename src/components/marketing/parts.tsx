@@ -31,7 +31,7 @@ export function Cta({
 }) {
   return (
     <Link
-      href="/"
+      href="/dashboard"
       className={clsx(
         "inline-flex items-center justify-center rounded-full bg-mk-cta font-medium text-white transition-all duration-200 hover:scale-[1.03] active:scale-[0.98] hover:bg-mk-cta-hover hover:shadow-lg hover:shadow-mk-cta/25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mk-cta",
         size === "lg" ? "px-7 py-3.5 text-[17px]" : "px-5 py-2.5 text-[15px]",

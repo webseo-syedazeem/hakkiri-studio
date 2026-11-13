@@ -1,9 +1,43 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import clsx from "clsx";
 import { Icon } from "@/components/ui";
+
+interface StageInfo {
+  num: number;
+  title: string;
+  defaultCompletedText: string;
+  upcomingText: string;
+}
+
+const DEFAULT_STAGES: StageInfo[] = [
+  {
+    num: 1,
+    title: "Stage 1 · Recruiter screen",
+    defaultCompletedText: "Completed · 4 Nov",
+    upcomingText: "Completed · 4 Nov",
+  },
+  {
+    num: 2,
+    title: "Stage 2 · Hiring manager",
+    defaultCompletedText: "Completed · 12 Nov",
+    upcomingText: "Upcoming · 12 Nov, 10:00",
+  },
+  {
+    num: 3,
+    title: "Stage 3 · Case interview",
+    defaultCompletedText: "Completed · 19 Nov",
+    upcomingText: "Upcoming · 19 Nov, 14:00",
+  },
+  {
+    num: 4,
+    title: "Stage 4 · Final panel",
+    defaultCompletedText: "Completed · 26 Nov",
+    upcomingText: "Upcoming · 26 Nov, 11:00",
+  },
+];
 
 export function StageTracker({
   onArchiveRole,
@@ -11,16 +45,37 @@ export function StageTracker({
   onArchiveRole?: (reason: string) => void;
 }) {
   const [currentStage, setCurrentStage] = useState<number>(2);
-  const [stage1Feedback, setStage1Feedback] = useState<string>(
-    "Priya showed very strong domain depth in payments checkout flows. Clear structure on metric ownership. Advanced to hiring manager round with Sam."
-  );
+  const [stageFeedback, setStageFeedback] = useState<Record<number, string>>({
+    1: "Priya showed very strong domain depth in payments checkout flows. Clear structure on metric ownership. Advanced to hiring manager round with Sam.",
+  });
+  const [activeFeedbackStage, setActiveFeedbackStage] = useState<number>(1);
   const [showFeedbackModal, setShowFeedbackModal] = useState<boolean>(false);
   const [newFeedbackText, setNewFeedbackText] = useState<string>("");
   const [isSuccessfulNotice, setIsSuccessfulNotice] = useState<boolean>(false);
 
+  useEffect(() => {
+    try {
+      const savedStage = localStorage.getItem("hk_stage_tracker_current_stage");
+      if (savedStage) {
+        const parsed = parseInt(savedStage, 10);
+        if (parsed >= 1 && parsed <= 4) {
+          setCurrentStage(parsed);
+        }
+      }
+      const savedFeedback = localStorage.getItem("hk_stage_tracker_feedback");
+      if (savedFeedback) {
+        setStageFeedback(JSON.parse(savedFeedback));
+      }
+    } catch {}
+  }, []);
+
   const handleMarkSuccessful = () => {
     if (currentStage < 4) {
-      setCurrentStage((prev) => prev + 1);
+      const nextStage = currentStage + 1;
+      setCurrentStage(nextStage);
+      try {
+        localStorage.setItem("hk_stage_tracker_current_stage", String(nextStage));
+      } catch {}
       setIsSuccessfulNotice(true);
       setTimeout(() => setIsSuccessfulNotice(false), 3000);
     }
@@ -29,7 +84,16 @@ export function StageTracker({
   const handleAddFeedback = (e: React.FormEvent) => {
     e.preventDefault();
     if (newFeedbackText.trim()) {
-      setStage1Feedback((prev) => prev + " | " + newFeedbackText.trim());
+      setStageFeedback((prev) => {
+        const updated = {
+          ...prev,
+          [activeFeedbackStage]: (prev[activeFeedbackStage] ? prev[activeFeedbackStage] + " | " : "") + newFeedbackText.trim(),
+        };
+        try {
+          localStorage.setItem("hk_stage_tracker_feedback", JSON.stringify(updated));
+        } catch {}
+        return updated;
+      });
       setNewFeedbackText("");
       setShowFeedbackModal(false);
     }
@@ -111,108 +175,99 @@ export function StageTracker({
         </div>
 
         {/* Timeline Stepper */}
-        <div className="mt-4 flex flex-col">
-          {/* Stage 1 */}
-          <div className="flex items-start gap-3">
-            <div className="flex flex-col items-center">
-              <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#10b981] text-[10px] font-bold text-[#0d1e18] shadow-[0_0_10px_rgba(16,185,129,0.3)]">
-                <Icon name="check" size={11} strokeWidth={3} />
-              </div>
-              <div className="h-7 w-[2px] bg-[#10b981]" />
-            </div>
-            <div className="-mt-0.5 flex min-w-0 grow items-center justify-between gap-2 pb-1.5">
-              <div>
-                <div className="text-[13px] font-semibold text-ink">
-                  Stage 1 · Recruiter screen
-                </div>
-                <div className="text-xs text-muted">Completed · 4 Nov</div>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <span className="rounded-full bg-[#10b981]/20 px-2.5 py-0.5 text-[11px] font-semibold text-[#10b981]">
-                  Successful
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setShowFeedbackModal(true)}
-                  className="flex items-center gap-1 rounded-lg bg-panel-2 px-2 py-0.5 text-[11px] font-medium text-muted hover:text-ink hover:bg-[#282a38] transition-colors cursor-pointer"
-                >
-                  <Icon name="chat" size={12} />
-                  <span>Feedback</span>
-                </button>
-              </div>
-            </div>
-          </div>
+        <div className="mt-4 flex flex-col gap-1">
+          {DEFAULT_STAGES.map((s, idx) => {
+            const isCompleted = s.num < currentStage;
+            const isCurrent = s.num === currentStage;
+            const isLast = idx === DEFAULT_STAGES.length - 1;
 
-          {/* Stage 2 (Current) */}
-          <div
-            className={clsx(
-              "my-1 rounded-[13px] p-3 transition-all duration-300",
-              currentStage === 2
-                ? "bg-[#1c2237] shadow-[0_0_20px_rgba(99,102,241,0.15),inset_0_0_0_1.5px_#6366f1]"
-                : "bg-panel-2 shadow-[inset_0_0_0_1px_var(--color-line)]"
-            )}
-          >
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-start gap-3 min-w-0">
-                <div className="relative flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-[#818cf8] bg-panel-2 mt-0.5">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#818cf8] opacity-60" />
-                  <span className="relative h-2 w-2 rounded-full bg-[#818cf8]" />
-                </div>
-                <div className="min-w-0">
-                  <div className="text-[13px] font-bold text-ink">
-                    Stage 2 · Hiring manager
-                  </div>
-                  <div className="text-xs font-medium text-[#818cf8]">
-                    Upcoming · 12 Nov, 10:00
+            if (isCurrent) {
+              return (
+                <div key={s.num} className="my-1">
+                  <div className="rounded-[13px] p-3 transition-all duration-300 bg-[#1c2237] shadow-[0_0_20px_rgba(99,102,241,0.15),inset_0_0_0_1.5px_#6366f1]">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-start gap-3 min-w-0">
+                        <div className="relative flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-[#818cf8] bg-panel-2 mt-0.5">
+                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#818cf8] opacity-60" />
+                          <span className="relative h-2 w-2 rounded-full bg-[#818cf8]" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="text-[13px] font-bold text-ink">
+                            {s.title}
+                          </div>
+                          <div className="text-xs font-medium text-[#818cf8]">
+                            {s.upcomingText}
+                          </div>
+                        </div>
+                      </div>
+                      <Link
+                        href="/interviews/halden"
+                        className="group/btn relative overflow-hidden inline-flex items-center justify-center rounded-[10px] bg-blue-fill px-4 py-1.5 text-xs font-semibold text-white shadow-[0_2px_10px_rgba(74,90,240,0.3)] hover:bg-blue-hover active:scale-95 transition-all shrink-0"
+                      >
+                        <span className="relative z-10">Prepare</span>
+                        <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 group-hover/btn:translate-x-full" />
+                      </Link>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <Link
-                href="/interviews/halden"
-                className="group/btn relative overflow-hidden inline-flex items-center justify-center rounded-[10px] bg-blue-fill px-4 py-1.5 text-xs font-semibold text-white shadow-[0_2px_10px_rgba(74,90,240,0.3)] hover:bg-blue-hover active:scale-95 transition-all shrink-0"
-              >
-                <span className="relative z-10">Prepare</span>
-                <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 group-hover/btn:translate-x-full" />
-              </Link>
-            </div>
-          </div>
+              );
+            }
 
-          {/* Stage 3 */}
-          <div className="flex items-start gap-3 mt-1">
-            <div className="flex flex-col items-center">
-              <div
-                className={clsx(
-                  "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 bg-transparent",
-                  currentStage >= 3 ? "border-[#818cf8]" : "border-white/[0.22]"
-                )}
-              />
-              <div className="h-7 w-[2px] bg-white/[0.12]" />
-            </div>
-            <div className="-mt-0.5 min-w-0 grow pb-1.5">
-              <div className="text-[13px] font-medium text-muted">
-                Stage 3 · Case interview
-              </div>
-              <div className="text-xs text-dim">Not scheduled</div>
-            </div>
-          </div>
+            if (isCompleted) {
+              return (
+                <div key={s.num} className="flex items-start gap-3">
+                  <div className="flex flex-col items-center">
+                    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#10b981] text-[10px] font-bold text-[#0d1e18] shadow-[0_0_10px_rgba(16,185,129,0.3)]">
+                      <Icon name="check" size={11} strokeWidth={3} />
+                    </div>
+                    {!isLast && <div className="h-7 w-[2px] bg-[#10b981]" />}
+                  </div>
+                  <div className="-mt-0.5 flex min-w-0 grow items-center justify-between gap-2 pb-1.5">
+                    <div>
+                      <div className="text-[13px] font-semibold text-ink">
+                        {s.title}
+                      </div>
+                      <div className="text-xs text-muted">
+                        {s.defaultCompletedText}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="rounded-full bg-[#10b981]/20 px-2.5 py-0.5 text-[11px] font-semibold text-[#10b981]">
+                        Successful
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveFeedbackStage(s.num);
+                          setShowFeedbackModal(true);
+                        }}
+                        className="flex items-center gap-1 rounded-lg bg-panel-2 px-2 py-0.5 text-[11px] font-medium text-muted hover:text-ink hover:bg-[#282a38] transition-colors cursor-pointer"
+                      >
+                        <Icon name="chat" size={12} />
+                        <span>Feedback</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
 
-          {/* Stage 4 */}
-          <div className="flex items-start gap-3">
-            <div className="flex flex-col items-center">
-              <div
-                className={clsx(
-                  "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 bg-transparent",
-                  currentStage >= 4 ? "border-[#818cf8]" : "border-white/[0.22]"
-                )}
-              />
-            </div>
-            <div className="-mt-0.5 min-w-0 grow">
-              <div className="text-[13px] font-medium text-muted">
-                Stage 4 · Final panel
+            // Upcoming
+            return (
+              <div key={s.num} className="flex items-start gap-3 mt-1">
+                <div className="flex flex-col items-center">
+                  <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-white/[0.22] bg-transparent" />
+                  {!isLast && <div className="h-7 w-[2px] bg-white/[0.12]" />}
+                </div>
+                <div className="-mt-0.5 min-w-0 grow pb-1.5">
+                  <div className="text-[13px] font-medium text-muted">
+                    {s.title}
+                  </div>
+                  <div className="text-xs text-dim">Not scheduled</div>
+                </div>
               </div>
-              <div className="text-xs text-dim">Not scheduled</div>
-            </div>
-          </div>
+            );
+          })}
         </div>
       </div>
 
@@ -266,8 +321,10 @@ export function StageTracker({
 
             <div className="mt-4 flex flex-col gap-3 text-xs">
               <div className="rounded-[12px] bg-panel-2 p-3 text-muted border border-line">
-                <span className="font-semibold text-ink block mb-1">Recruiter Screen Feedback (4 Nov):</span>
-                {stage1Feedback}
+                <span className="font-semibold text-ink block mb-1">
+                  Stage {activeFeedbackStage} Feedback & Notes:
+                </span>
+                {stageFeedback[activeFeedbackStage] || "No feedback recorded yet for this stage."}
               </div>
 
               <form onSubmit={handleAddFeedback} className="mt-2 flex flex-col gap-2.5">
