@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import clsx from "clsx";
-import { Icon, Panel } from "@/components/ui";
+import { CustomSelect, Icon, Panel } from "@/components/ui";
 import {
   loadExamples,
   toggleExampleFavorite,
@@ -146,18 +146,18 @@ export default function InterviewExamplesPage() {
             <span className="absolute left-2.5 top-2 text-dim text-xs">🔍</span>
           </div>
 
-          <select
-            value={selectedTag}
-            onChange={(e) => setSelectedTag(e.target.value)}
-            className="rounded-xl bg-panel-2 px-3 py-1.5 text-xs text-ink outline-none border border-line focus:border-blue-fill cursor-pointer"
-          >
-            <option value="all">All tags</option>
-            {allTags.map((t) => (
-              <option key={t} value={t}>
-                {t}
-              </option>
-            ))}
-          </select>
+          <div className="w-36">
+            <CustomSelect
+              size="sm"
+              value={selectedTag}
+              onChange={setSelectedTag}
+              options={[
+                { value: "all", label: "All tags" },
+                ...allTags.map((t) => ({ value: t, label: t })),
+              ]}
+              menuClassName="right-0 left-auto w-44"
+            />
+          </div>
         </div>
       </div>
 

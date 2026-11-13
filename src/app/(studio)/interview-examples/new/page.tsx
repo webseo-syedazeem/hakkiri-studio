@@ -4,8 +4,40 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import clsx from "clsx";
-import { Icon, Panel } from "@/components/ui";
+import { CustomSelect, Icon, Panel } from "@/components/ui";
 import { saveExample } from "@/lib/examples/store";
+
+const COMPETENCY_OPTIONS = [
+  { value: "Leadership", label: "Leadership" },
+  { value: "Problem-solving", label: "Problem-solving" },
+  { value: "Influencing", label: "Influencing" },
+  { value: "Communication", label: "Communication" },
+  { value: "Continuous improvement", label: "Continuous improvement" },
+  { value: "Strategic thinking", label: "Strategic thinking" },
+  { value: "Analytical thinking", label: "Analytical thinking" },
+  { value: "Collaboration", label: "Collaboration" },
+  { value: "Delivery", label: "Delivery" },
+  { value: "Stakeholder management", label: "Stakeholder management" },
+  { value: "Risk management", label: "Risk management" },
+  { value: "Decision-making", label: "Decision-making" },
+];
+
+const ROLE_OPTIONS = [
+  { value: "Senior Adviser, Policy & Strategy", label: "Senior Adviser, Policy & Strategy" },
+  { value: "Senior Product Manager", label: "Senior Product Manager" },
+  { value: "Operations / Delivery Lead", label: "Operations / Delivery Lead" },
+  { value: "Engineering / Technical Lead", label: "Engineering / Technical Lead" },
+  { value: "General / Universal", label: "General / Universal" },
+];
+
+const INTERVIEW_TYPE_OPTIONS = [
+  { value: "Competency", label: "Competency round" },
+  { value: "Hiring manager", label: "Hiring manager interview" },
+  { value: "Technical", label: "Technical round" },
+  { value: "Final panel", label: "Final panel" },
+  { value: "Recruiter screen", label: "Recruiter screen" },
+  { value: "Case interview", label: "Case interview" },
+];
 
 const PRESET_TAGS = [
   "Leadership",
@@ -106,94 +138,37 @@ export default function AddInterviewExamplePage() {
             </div>
           )}
 
-          {/* Row 1: 3 Select Dropdowns */}
+          {/* Row 1: 3 Animated Custom Select Dropdowns */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {/* 1. Competency Dropdown */}
-            <div className="space-y-1.5">
-              <label className="flex items-center gap-1 text-xs font-semibold text-white">
-                <span>Competency</span>
-                <span className="text-dim text-[11px]" title="The core skill or behavior assessed">ⓘ</span>
-              </label>
-              <div className="relative">
-                <select
-                  value={competency}
-                  onChange={(e) => setCompetency(e.target.value)}
-                  className="w-full appearance-none rounded-[12px] bg-panel-2 px-3 py-2.5 pl-8 text-xs text-ink outline-none border border-line focus:border-indigo-500 transition-colors cursor-pointer"
-                >
-                  <option value="">Select competency</option>
-                  <option value="Leadership">Leadership</option>
-                  <option value="Problem-solving">Problem-solving</option>
-                  <option value="Influencing">Influencing</option>
-                  <option value="Communication">Communication</option>
-                  <option value="Continuous improvement">Continuous improvement</option>
-                  <option value="Strategic thinking">Strategic thinking</option>
-                  <option value="Analytical thinking">Analytical thinking</option>
-                  <option value="Collaboration">Collaboration</option>
-                  <option value="Delivery">Delivery</option>
-                </select>
-                <div className="pointer-events-none absolute left-2.5 top-3 text-muted">
-                  <Icon name="target" size={14} />
-                </div>
-                <div className="pointer-events-none absolute right-3 top-3.5 text-[10px] text-muted">
-                  ▾
-                </div>
-              </div>
-            </div>
+            <CustomSelect
+              label="Competency"
+              tooltip="The core skill or behavior assessed"
+              icon="target"
+              placeholder="Select competency"
+              value={competency}
+              onChange={setCompetency}
+              options={COMPETENCY_OPTIONS}
+            />
 
-            {/* 2. Role Dropdown */}
-            <div className="space-y-1.5">
-              <label className="flex items-center gap-1 text-xs font-semibold text-white">
-                <span>Role</span>
-                <span className="text-dim text-[11px]" title="Role or job category this example belongs to">ⓘ</span>
-              </label>
-              <div className="relative">
-                <select
-                  value={role}
-                  onChange={(e) => setRole(e.target.value)}
-                  className="w-full appearance-none rounded-[12px] bg-panel-2 px-3 py-2.5 pl-8 text-xs text-ink outline-none border border-line focus:border-indigo-500 transition-colors cursor-pointer"
-                >
-                  <option value="">Select role</option>
-                  <option value="Senior Adviser, Policy & Strategy">Senior Adviser, Policy & Strategy</option>
-                  <option value="Senior Product Manager">Senior Product Manager</option>
-                  <option value="Operations / Delivery Lead">Operations / Delivery Lead</option>
-                  <option value="General / Universal">General / Universal</option>
-                </select>
-                <div className="pointer-events-none absolute left-2.5 top-3 text-muted">
-                  <Icon name="user" size={14} />
-                </div>
-                <div className="pointer-events-none absolute right-3 top-3.5 text-[10px] text-muted">
-                  ▾
-                </div>
-              </div>
-            </div>
+            <CustomSelect
+              label="Role"
+              tooltip="Role or job category this example belongs to"
+              icon="user"
+              placeholder="Select role"
+              value={role}
+              onChange={setRole}
+              options={ROLE_OPTIONS}
+            />
 
-            {/* 3. Interview Type Dropdown */}
-            <div className="space-y-1.5">
-              <label className="flex items-center gap-1 text-xs font-semibold text-white">
-                <span>Interview type</span>
-                <span className="text-dim text-[11px]" title="Which interview stage or format this fits best">ⓘ</span>
-              </label>
-              <div className="relative">
-                <select
-                  value={interviewType}
-                  onChange={(e) => setInterviewType(e.target.value)}
-                  className="w-full appearance-none rounded-[12px] bg-panel-2 px-3 py-2.5 pl-8 text-xs text-ink outline-none border border-line focus:border-indigo-500 transition-colors cursor-pointer"
-                >
-                  <option value="">Select interview type</option>
-                  <option value="Competency">Competency round</option>
-                  <option value="Hiring manager">Hiring manager interview</option>
-                  <option value="Technical">Technical round</option>
-                  <option value="Final panel">Final panel</option>
-                  <option value="Recruiter screen">Recruiter screen</option>
-                </select>
-                <div className="pointer-events-none absolute left-2.5 top-3 text-muted">
-                  <Icon name="layers" size={14} />
-                </div>
-                <div className="pointer-events-none absolute right-3 top-3.5 text-[10px] text-muted">
-                  ▾
-                </div>
-              </div>
-            </div>
+            <CustomSelect
+              label="Interview type"
+              tooltip="Which interview stage or format this fits best"
+              icon="layers"
+              placeholder="Select interview type"
+              value={interviewType}
+              onChange={setInterviewType}
+              options={INTERVIEW_TYPE_OPTIONS}
+            />
           </div>
 
           {/* Field 2: Interview Question */}

@@ -205,3 +205,5 @@ export function Icon({ name, size = 18, className, strokeWidth = 1.8 }: { name: 
     </svg>
   );
 }
+
+export { CustomSelect, type CustomSelectOption, type CustomSelectProps } from "./CustomSelect";
