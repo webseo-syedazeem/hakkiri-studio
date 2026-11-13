@@ -34,16 +34,16 @@ const ITEMS: {
     match: (p) => p.startsWith("/presentations"),
   },
   {
-    label: "Practice",
-    href: "/practice",
-    icon: "zap",
-    match: (p) => p.startsWith("/practice") || p.startsWith("/rehearse"),
+    label: "Interview examples",
+    href: "/interview-examples",
+    icon: "layers",
+    match: (p) => p.startsWith("/interview-examples") || p.startsWith("/story-bank"),
   },
   {
     label: "Progress",
-    href: "/story-bank",
+    href: "/practice",
     icon: "chart",
-    match: (p) => p.startsWith("/story-bank"),
+    match: (p) => p.startsWith("/practice") || p.startsWith("/rehearse"),
   },
   {
     label: "Profile",
