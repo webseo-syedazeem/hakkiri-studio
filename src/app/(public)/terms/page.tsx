@@ -15,7 +15,7 @@ export default function TermsPage() {
       draft={DRAFT}
       intro={
         <p>
-          These terms are the agreement between you and [Company name] Ltd (“we”, “us”) for using Hakkiri. Please read them; by using Hakkiri you agree to them. Our <Link href="/privacy">privacy policy</Link> explains how we handle your data. If you’re a
+          These terms are the agreement between you and Hakkiri Ltd (“we”, “us”) for using Hakkiri. Please read them; by using Hakkiri you agree to them. Our <Link href="/privacy">privacy policy</Link> explains how we handle your data. If you’re a
           consumer, nothing here affects your legal rights.
         </p>
       }
@@ -33,14 +33,14 @@ export default function TermsPage() {
         {
           id: "eligibility",
           title: "Who can use it",
-          body: <p>You must be [16] or over. If you use Hakkiri for an organisation, you confirm you’re allowed to accept these terms for it.</p>,
+          body: <p>You must be 16 or over. If you use Hakkiri for an organisation, you confirm you’re allowed to accept these terms for it.</p>,
         },
         {
           id: "account",
           title: "Your account",
           body: (
             <p>
-              [Once accounts launch:] you sign in with an email link or with Google. Keep access to your email account secure: anyone who can open your sign-in emails can get into your Hakkiri account. Tell us straight away at [support@hakkiri.com] if you
+              You sign in with your email or with Google. Keep access to your account secure: anyone who can access your account can view your interview practice. Tell us straight away at <a href="mailto:support@hakkiri.studio">support@hakkiri.studio</a> if you
               think someone else has used it.
             </p>
           ),
@@ -112,7 +112,7 @@ export default function TermsPage() {
         {
           id: "ending",
           title: "Ending",
-          body: <p>You can stop using Hakkiri and delete your data at any time in Settings. We can end these terms with [30] days’ notice, or straight away if you seriously break them. When the agreement ends, we delete your data as our privacy policy says.</p>,
+          body: <p>You can stop using Hakkiri and delete your data at any time in Settings. We can end these terms with 30 days’ notice, or straight away if you seriously break them. When the agreement ends, we delete your data as our privacy policy says.</p>,
         },
         {
           id: "liability",
@@ -120,7 +120,7 @@ export default function TermsPage() {
           body: (
             <p>
               If we fail to meet these terms, we’re responsible for loss you suffer that was a foreseeable result. We’re not responsible for loss that wasn’t foreseeable, for business losses, or for the outcome of any interview or job application. Nothing here
-              limits our responsibility for death or personal injury caused by our negligence, for fraud, or for anything else the law doesn’t allow us to limit. [Liability cap, if any, to be set by the solicitor.]
+              limits our responsibility for death or personal injury caused by our negligence, for fraud, or for anything else the law doesn’t allow us to limit.
             </p>
           ),
         },
@@ -129,7 +129,7 @@ export default function TermsPage() {
           title: "Law and disputes",
           body: (
             <p>
-              These terms are governed by the law of England and Wales. If you live in Scotland or Northern Ireland, you can also bring a claim there. If you have a complaint, email [support@hakkiri.com] first: we’ll do our best to sort it out.
+              These terms are governed by the law of England and Wales. If you live in Scotland or Northern Ireland, you can also bring a claim there. If you have a complaint, email <a href="mailto:support@hakkiri.studio">support@hakkiri.studio</a> first: we’ll do our best to sort it out.
             </p>
           ),
         },
@@ -138,7 +138,7 @@ export default function TermsPage() {
           title: "Contact",
           body: (
             <p>
-              [Company name] Ltd, [registered address]. Email <a href="mailto:[support@hakkiri.com]">[support@hakkiri.com]</a>.
+              Hakkiri Ltd, 71-75 Shelton Street, Covent Garden, London, WC2H 9JQ, United Kingdom. Email <a href="mailto:support@hakkiri.studio">support@hakkiri.studio</a>.
             </p>
           ),
         },

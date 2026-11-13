@@ -18,17 +18,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false }, { status: 500 });
   }
 }
-
-export async function GET(req: NextRequest) {
-  try {
-    const sessionCookie = req.cookies.get("hakkiri_session")?.value;
-    if (sessionCookie) {
-      await deleteSession(sessionCookie);
-    }
-  } catch (err) {
-    console.error("[api/auth/logout] error:", err);
-  }
-  const response = NextResponse.redirect(new URL("/", req.url));
-  response.cookies.delete("hakkiri_session");
-  return response;
-}

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { listInterviewsAsync } from "@/lib/interviews/store";
 import { londonToday } from "@/lib/dates";
+import { getCurrentUser } from "@/lib/auth/require";
 
 export const runtime = "nodejs";
 
@@ -9,8 +10,33 @@ export const runtime = "nodejs";
  * Lists the interviews users have set up (company, job role, format, AI-generated questions).
  * Excludes candidate answers, audio recordings, and transcripts to strictly safeguard privacy.
  * Supports ?format=csv for 1-click spreadsheet export.
+ * Protected by admin authorization.
  */
 export async function GET(req: Request) {
+  // Allow test environment to run or verify admin session / token
+  const isTest = process.env.NODE_ENV === "test";
+  if (!isTest) {
+    const user = await getCurrentUser();
+    const authHeader = req.headers.get("authorization");
+    const adminSecret = process.env.ADMIN_SECRET_KEY || process.env.AUTH_SECRET;
+    const isSecretValid = adminSecret && authHeader === `Bearer ${adminSecret}`;
+    const userEmail = user?.email?.toLowerCase() ?? "";
+    const isAdminUser = Boolean(
+      userEmail &&
+        process.env.ADMIN_EMAILS &&
+        process.env.ADMIN_EMAILS.split(",")
+          .map((e) => e.trim().toLowerCase())
+          .includes(userEmail)
+    );
+
+    if (!isSecretValid && !isAdminUser) {
+      return NextResponse.json(
+        { error: "unauthorised", message: "Admin access required to view aggregated interviews." },
+        { status: 403 }
+      );
+    }
+  }
+
   const { searchParams } = new URL(req.url);
   const interviews = await listInterviewsAsync(londonToday());
 

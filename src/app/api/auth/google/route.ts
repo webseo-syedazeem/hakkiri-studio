@@ -24,6 +24,6 @@ export async function GET(req: NextRequest) {
   }
 
   // 2. If GOOGLE_CLIENT_ID is not configured in Vercel environment variables,
-  // redirect to the Google Sign-in screen where the candidate can enter their actual Google email and password:
-  return NextResponse.redirect(new URL("/login/google", req.url));
+  // redirect to login with a clear informational error message:
+  return NextResponse.redirect(new URL("/login?error=google_not_configured", req.url));
 }

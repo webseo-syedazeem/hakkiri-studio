@@ -25,7 +25,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
       </main>
       <footer className="bg-mk-mist">
         <div className="mx-auto flex w-full max-w-[1120px] flex-col gap-3 border-t border-mk-line/70 px-4 py-6 text-[12px] text-mk-slate sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <span>© {new Date().getFullYear()} [Company name] Ltd. Hakkiri never judges your accent.</span>
+          <span>© {new Date().getFullYear()} Hakkiri Ltd. Hakkiri never judges your accent.</span>
           <nav aria-label="Legal" className="flex flex-wrap gap-x-5 gap-y-2">
             <Link href="/" className="hover:text-mk-ink">
               Interview practice

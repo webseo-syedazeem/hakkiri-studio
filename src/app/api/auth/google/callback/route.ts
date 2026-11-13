@@ -11,48 +11,16 @@ export async function GET(req: NextRequest) {
   const redirectUri = `${origin}/api/auth/google/callback`;
 
   if (error || !code) {
-    console.warn("[google/callback] OAuth error or missing code, falling back to instant Google login:", error);
-    const user = await findOrCreateOAuthUser({
-      email: "candidate@hakkiri.studio",
-      name: "Google Candidate",
-      provider: "google",
-    });
-    const sessionToken = await createSession(user.id ?? "candidate@hakkiri.studio", "candidate@hakkiri.studio");
-    const res = NextResponse.redirect(new URL("/dashboard", origin));
-    res.cookies.set({
-      name: "hakkiri_session",
-      value: sessionToken,
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: 30 * 24 * 60 * 60,
-    });
-    return res;
+    console.warn("[google/callback] OAuth error or missing code:", error);
+    return NextResponse.redirect(new URL("/login?error=google_cancelled", origin));
   }
 
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
 
   if (!clientId || !clientSecret) {
-    console.warn("[google/callback] Missing client ID/secret, logging in Google Candidate");
-    const user = await findOrCreateOAuthUser({
-      email: "candidate@hakkiri.studio",
-      name: "Google Candidate",
-      provider: "google",
-    });
-    const sessionToken = await createSession(user.id ?? "candidate@hakkiri.studio", "candidate@hakkiri.studio");
-    const res = NextResponse.redirect(new URL("/dashboard", origin));
-    res.cookies.set({
-      name: "hakkiri_session",
-      value: sessionToken,
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: 30 * 24 * 60 * 60,
-    });
-    return res;
+    console.error("[google/callback] Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET");
+    return NextResponse.redirect(new URL("/login?error=google_not_configured", origin));
   }
 
   try {
@@ -71,24 +39,8 @@ export async function GET(req: NextRequest) {
 
     if (!tokenRes.ok) {
       const errJson = await tokenRes.json().catch(() => ({}));
-      console.warn("[google/callback] Token exchange error, logging in as Google Candidate:", errJson);
-      const user = await findOrCreateOAuthUser({
-        email: "candidate@hakirri.studio",
-        name: "Google Candidate",
-        provider: "google",
-      });
-      const sessionToken = await createSession(user.id ?? "candidate@hakirri.studio", "candidate@hakirri.studio");
-      const res = NextResponse.redirect(new URL("/dashboard", origin));
-      res.cookies.set({
-        name: "hakkiri_session",
-        value: sessionToken,
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/",
-        maxAge: 30 * 24 * 60 * 60,
-      });
-      return res;
+      console.error("[google/callback] Token exchange error:", errJson);
+      return NextResponse.redirect(new URL("/login?error=google_token_failed", origin));
     }
 
     const tokens = await tokenRes.json();
@@ -100,17 +52,29 @@ export async function GET(req: NextRequest) {
     });
 
     if (!userRes.ok) {
-      return NextResponse.redirect(new URL("/login?error=Failed+to+fetch+Google+profile", origin));
+      console.error("[google/callback] Failed to fetch Google profile");
+      return NextResponse.redirect(new URL("/login?error=google_profile_failed", origin));
     }
 
-    const profile = (await userRes.json()) as { email: string; name?: string; picture?: string; sub?: string };
+    const profile = (await userRes.json()) as {
+      email: string;
+      email_verified?: boolean;
+      name?: string;
+      picture?: string;
+      sub?: string;
+    };
+
     if (!profile.email) {
-      return NextResponse.redirect(new URL("/login?error=No+email+provided+by+Google", origin));
+      return NextResponse.redirect(new URL("/login?error=no_email_provided", origin));
+    }
+
+    if (profile.email_verified === false) {
+      return NextResponse.redirect(new URL("/login?error=google_email_unverified", origin));
     }
 
     // 3. Find or create user in MongoDB
     const user = await findOrCreateOAuthUser({
-      email: profile.email,
+      email: profile.email.toLowerCase().trim(),
       name: profile.name,
       picture: profile.picture,
       provider: "google",
@@ -133,23 +97,7 @@ export async function GET(req: NextRequest) {
 
     return res;
   } catch (err) {
-    console.error("[google/callback] OAuth callback failure, falling back to Google candidate session:", err);
-    const user = await findOrCreateOAuthUser({
-      email: "candidate@hakkiri.studio",
-      name: "Google Candidate",
-      provider: "google",
-    });
-    const sessionToken = await createSession(user.id ?? "candidate@hakkiri.studio", "candidate@hakkiri.studio");
-    const res = NextResponse.redirect(new URL("/dashboard", origin));
-    res.cookies.set({
-      name: "hakkiri_session",
-      value: sessionToken,
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: 30 * 24 * 60 * 60,
-    });
-    return res;
+    console.error("[google/callback] OAuth callback exception:", err);
+    return NextResponse.redirect(new URL("/login?error=google_failed", origin));
   }
 }

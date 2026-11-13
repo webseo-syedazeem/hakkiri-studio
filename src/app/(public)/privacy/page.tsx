@@ -32,11 +32,10 @@ export default function PrivacyPage() {
           body: (
             <>
               <p>
-                Hakkiri is run by [Company name] Ltd, a company registered in [England and Wales] (company number [number]), at [registered address]. We are the controller of your personal data. We are registered with the Information Commissioner’s Office
-                (registration number [ICO number]).
+                Hakkiri is run by Hakkiri Ltd, a company registered in England and Wales, at 71-75 Shelton Street, Covent Garden, London, WC2H 9JQ, United Kingdom. We are the controller of your personal data.
               </p>
               <p>
-                Questions about your data: <a href="mailto:[privacy@hakkiri.com]">[privacy@hakkiri.com]</a>.
+                Questions about your data: <a href="mailto:support@hakkiri.studio">support@hakkiri.studio</a>.
               </p>
             </>
           ),

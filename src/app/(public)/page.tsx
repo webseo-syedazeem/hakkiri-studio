@@ -3,8 +3,6 @@ import { isLaunch } from "@/lib/launch";
 import { PLANS } from "@/lib/pricing";
 import { COMMON_FAQ, Compare, Device, DraftNote, Faq, Feature, FinalCta, Hero, PRESENTATION_USES, Pricing, Privacy, PRIVACY_POINTS, PROMISES, Stage, Statement, Steps, StickyCta, Tiles } from "@/components/marketing/parts";
 
-export const dynamic = "force-dynamic"; // the draft notes depend on HAKKIRI_LAUNCH at run time
-
 export const metadata: Metadata = {
   title: "Hakkiri · Practise for the interview you actually have",
   description: "Add the job description and your CV, practise out loud with an interviewer who follows up, and find out exactly what to fix before the real thing. Your first 10-minute interview is free. Feedback on what you say, never your accent.",

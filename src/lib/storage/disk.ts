@@ -119,7 +119,12 @@ export function saveFile(rel: string, data: ArrayBuffer) {
 export function loadFile(rel: string): ArrayBuffer | null {
   if (!enabled) return null;
   try {
-    const buf = fs.readFileSync(/*turbopackIgnore: true*/ path.join(/*turbopackIgnore: true*/ DIR, rel));
+    const fullPath = path.resolve(/*turbopackIgnore: true*/ DIR, rel);
+    if (!fullPath.startsWith(path.resolve(/*turbopackIgnore: true*/ DIR))) {
+      console.warn(`[storage] path traversal attempt blocked: ${rel}`);
+      return null;
+    }
+    const buf = fs.readFileSync(/*turbopackIgnore: true*/ fullPath);
     return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer;
   } catch {
     return null;
@@ -129,7 +134,12 @@ export function loadFile(rel: string): ArrayBuffer | null {
 export function removeFile(rel: string) {
   if (!enabled) return;
   try {
-    fs.rmSync(/*turbopackIgnore: true*/ path.join(/*turbopackIgnore: true*/ DIR, rel), { force: true });
+    const fullPath = path.resolve(/*turbopackIgnore: true*/ DIR, rel);
+    if (!fullPath.startsWith(path.resolve(/*turbopackIgnore: true*/ DIR))) {
+      console.warn(`[storage] path traversal delete attempt blocked: ${rel}`);
+      return;
+    }
+    fs.rmSync(/*turbopackIgnore: true*/ fullPath, { force: true });
   } catch (err) {
     console.warn(`[storage] couldn't delete ${rel}:`, err instanceof Error ? err.message : err);
   }

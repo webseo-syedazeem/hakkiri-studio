@@ -113,8 +113,7 @@ export async function createUser(
       await usersCol.insertOne(userDoc);
     } catch (err) {
       console.error("[auth] error creating user:", err);
-      const msg = err instanceof Error ? err.message : String(err);
-      return { ok: false, error: `Could not create account: ${msg}` };
+      return { ok: false, error: "Could not create account. Please try again." };
     }
   } else {
     // In-memory fallback
@@ -162,8 +161,7 @@ export async function authenticateUser(
       }
     } catch (err) {
       console.error("[auth] error looking up user:", err);
-      const msg = err instanceof Error ? err.message : String(err);
-      return { ok: false, error: `Login error: ${msg}` };
+      return { ok: false, error: "Authentication service temporarily unavailable. Please try again." };
     }
   } else {
     for (const u of memUsers.values()) {
@@ -174,12 +172,9 @@ export async function authenticateUser(
     }
   }
 
-  if (!record) {
-    return { ok: false, error: "No account found with this email. Please check or create an account." };
-  }
-
-  if (!verifyPassword(password, record.passwordHash)) {
-    return { ok: false, error: "Incorrect password. Please try again." };
+  // Generic message for both unknown email and bad password to eliminate account enumeration
+  if (!record || !verifyPassword(password, record.passwordHash)) {
+    return { ok: false, error: "Email or password is incorrect. Please try again." };
   }
 
   const user: User = {

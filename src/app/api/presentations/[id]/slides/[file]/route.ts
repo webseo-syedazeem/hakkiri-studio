@@ -7,6 +7,9 @@ const TYPE: Record<string, string> = { jpg: "image/jpeg", png: "image/png", webp
 /** GET /api/presentations/{id}/slides/{file}: a slide picture saved at set-up. */
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string; file: string }> }) {
   const { id, file } = await params;
+  if (!/^[\w-]+$/.test(id) || !/^[\w-]+\.(jpg|png|webp)$/.test(file)) {
+    return new Response("Not found", { status: 404 });
+  }
   const ext = file.match(/^[\w-]+\.(jpg|png|webp)$/)?.[1];
   const data = ext ? loadSlideImage(id, file) : null;
   if (!data || !ext) return new Response("Not found", { status: 404 });
