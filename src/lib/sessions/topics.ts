@@ -11,6 +11,8 @@ import { matchesDifficulty } from "./pick";
 export type TopicId =
   | "civil-service-competencies"
   | "civil-service-strengths"
+  | "clinical-judgement"
+  | "nursing-competency"
   | "stakeholder-management"
   | "payment-fundamentals"
   | "product-metrics"
@@ -246,6 +248,196 @@ export const DRILL_TOPICS: Record<TopicId, TopicSpec> = {
         difficulty: "hard",
         text: "When an ambiguous problem has no precedent, how do you decide which principle to stand by?",
         short: "Unprecedented ambiguity",
+        drillOnly: true,
+      },
+    ],
+  },
+  "clinical-judgement": {
+    id: "clinical-judgement",
+    title: "Technical & Clinical Judgement",
+    focusLabel: "Clinical Judgement",
+    subtitle: "Patient safety, ABCDE assessment, NEWS2 deterioration & escalation protocols.",
+    instruction:
+      "Practising clinical judgement: ABCDE assessment, timely NEWS2 deterioration recognition, safe medication administration, and clinical escalation under pressure.",
+    group: "technical",
+    minutes: 5,
+    matchPattern: /\b(clinical|nurse|nursing|patient|news2|abcde|deteriorat|medication|escalat|safeguard|vital signs|acute)\b/i,
+    preferredBankIds: ["t1", "t2"],
+    questions: [
+      {
+        id: "topic-cj-e1",
+        group: "technical",
+        type: "technical",
+        difficulty: "easy",
+        text: "In plain terms, walk me through the primary steps of the ABCDE assessment when assessing an unwell patient.",
+        short: "ABCDE assessment",
+        drillOnly: true,
+      },
+      {
+        id: "topic-cj-e2",
+        group: "technical",
+        type: "technical",
+        difficulty: "easy",
+        text: "How do you verify medication dosages and adhere to the 6 rights of safe drug administration?",
+        short: "Safe medication administration",
+        drillOnly: true,
+      },
+      {
+        id: "topic-cj-e3",
+        group: "technical",
+        type: "technical",
+        difficulty: "easy",
+        text: "What are the earliest signs of clinical deterioration or sepsis that would prompt you to calculate a NEWS2 score?",
+        short: "Early deterioration signs",
+        drillOnly: true,
+      },
+      {
+        id: "topic-cj-m1",
+        group: "technical",
+        type: "technical",
+        difficulty: "medium",
+        text: "Walk me through how you would handle a situation where a patient's NEWS2 score rises from 2 to 6 within one hour.",
+        short: "NEWS2 clinical escalation",
+        drillOnly: true,
+      },
+      {
+        id: "topic-cj-m2",
+        group: "technical",
+        type: "technical",
+        difficulty: "medium",
+        text: "How do you manage patient safety and infection control when nursing an acutely confused, barrier-nursed patient?",
+        short: "Barrier nursing & safety",
+        drillOnly: true,
+      },
+      {
+        id: "topic-cj-m3",
+        group: "technical",
+        type: "technical",
+        difficulty: "medium",
+        text: "Describe the clinical escalation pathway and SBAR handover protocol when a doctor is delayed and a patient is deteriorating.",
+        short: "SBAR handover escalation",
+        drillOnly: true,
+      },
+      {
+        id: "topic-cj-h1",
+        group: "technical",
+        type: "technical",
+        difficulty: "hard",
+        text: "A post-op patient develops sudden dyspnoea, hypotension, and tachycardia while their relative is panicking. How do you triage interventions in minute one?",
+        short: "Acute post-op triage",
+        drillOnly: true,
+      },
+      {
+        id: "topic-cj-h2",
+        group: "technical",
+        type: "technical",
+        difficulty: "hard",
+        text: "Describe a complex clinical dilemma where patient autonomy and duty of care came into conflict. What guided your decision?",
+        short: "Autonomy vs duty of care",
+        drillOnly: true,
+      },
+      {
+        id: "topic-cj-h3",
+        group: "technical",
+        type: "technical",
+        difficulty: "hard",
+        text: "A senior prescriber orders a dose of medication that exceeds standard safe BNF guidance. How do you challenge and escalate safely?",
+        short: "Challenging medication orders",
+        drillOnly: true,
+      },
+    ],
+  },
+  "nursing-competency": {
+    id: "nursing-competency",
+    title: "Competency & Healthcare Setting",
+    focusLabel: "Healthcare Competencies",
+    subtitle: "Deteriorating patient management, advocating for safety, and multidisciplinary care.",
+    instruction:
+      "Practising healthcare competencies: using real ward examples to demonstrate advocacy for patient safety, compassionate communication, and multidisciplinary coordination.",
+    group: "competency",
+    minutes: 5,
+    matchPattern: /\b(nurse|nursing|patient|advoca|compassion|deteriorat|multidisciplinary|ward|teamwork|care)\b/i,
+    preferredBankIds: ["c1", "c2"],
+    questions: [
+      {
+        id: "topic-nc-e1",
+        group: "competency",
+        type: "competency",
+        difficulty: "easy",
+        text: "Tell me about a time you worked effectively as part of a multidisciplinary healthcare team to deliver compassionate care.",
+        short: "Multidisciplinary teamwork",
+        drillOnly: true,
+      },
+      {
+        id: "topic-nc-e2",
+        group: "competency",
+        type: "competency",
+        difficulty: "easy",
+        text: "Describe a situation where you had to comfort an anxious patient or their distressed family member.",
+        short: "Comforting distressed family",
+        drillOnly: true,
+      },
+      {
+        id: "topic-nc-e3",
+        group: "competency",
+        type: "competency",
+        difficulty: "easy",
+        text: "How do you ensure clear, structured communication during bedside clinical shift handovers?",
+        short: "Structured bedside handover",
+        drillOnly: true,
+      },
+      {
+        id: "topic-nc-m1",
+        group: "competency",
+        type: "competency",
+        difficulty: "medium",
+        text: "Tell me about a time you managed a deteriorating patient and coordinated emergency clinical escalation.",
+        short: "Managing deteriorating patient",
+        drillOnly: true,
+      },
+      {
+        id: "topic-nc-m2",
+        group: "competency",
+        type: "competency",
+        difficulty: "medium",
+        text: "Describe a situation where you had to advocate firmly for a patient's safety or best interests against resistance.",
+        short: "Advocating for patient safety",
+        drillOnly: true,
+      },
+      {
+        id: "topic-nc-m3",
+        group: "competency",
+        type: "competency",
+        difficulty: "medium",
+        text: "Give an example of how you prioritised patient care when assigned multiple acutely dependent patients on a short-staffed shift.",
+        short: "Short-staffed ward prioritisation",
+        drillOnly: true,
+      },
+      {
+        id: "topic-nc-h1",
+        group: "competency",
+        type: "competency",
+        difficulty: "hard",
+        text: "Tell me about a critical clinical incident that did not go as planned. What was your immediate response, how did you support the team, and what systemic changes did you implement?",
+        short: "Critical clinical incident learning",
+        drillOnly: true,
+      },
+      {
+        id: "topic-nc-h2",
+        group: "competency",
+        type: "competency",
+        difficulty: "hard",
+        text: "Describe a high-stakes conflict between clinical team members during an emergency escalation. How did you maintain patient safety and de-escalate?",
+        short: "Clinical team conflict de-escalation",
+        drillOnly: true,
+      },
+      {
+        id: "topic-nc-h3",
+        group: "competency",
+        type: "competency",
+        difficulty: "hard",
+        text: "Give an example of leading a difficult end-of-life or resuscitation discussion with emotional family members.",
+        short: "Difficult end-of-life discussion",
         drillOnly: true,
       },
     ],
@@ -879,11 +1071,22 @@ export function getTopicsForInterview(interview?: {
   const stagesText = interview.stages ? interview.stages.map((s) => `${s.name ?? ""} ${s.label ?? ""}`).join(" ") : "";
   const text = `${interview.role ?? ""} ${interview.company ?? ""} ${interview.sources?.job ?? ""} ${interview.sources?.company ?? ""} ${stagesText} ${interview.jobSummary ?? ""} ${interview.brief?.whatTheyDo ?? ""} ${interview.understanding?.field ?? ""}`.toLowerCase();
 
+  const isNursing = /\b(nurse|nursing|nhs|clinical|healthcare|hospital|ward|patient|medical|doctor)\b/i.test(text);
   const isPayments = /\b(payment|checkout|fintech|banking|stripe|adyen|visa|mastercard|card|psp|settlement|chargeback)\b/i.test(text);
-  const isCivilService = /\b(civil service|hmrc|dwp|gov|government|ministry|public sector|nhs|home office|cabinet office|success profiles?|strengths?|competenc|behaviour|behavior)\b/i.test(text);
+  const isCivilService = /\b(civil service|hmrc|dwp|gov|government|ministry|public sector|home office|cabinet office|success profiles?|strengths?|competenc|behaviour|behavior)\b/i.test(text);
   const isPM = /\b(product manager|associate product manager|pm|product lead|product owner)\b/i.test(text);
 
   const list: TopicSpec[] = [];
+
+  if (isNursing) {
+    if (DRILL_TOPICS["clinical-judgement"]) list.push(DRILL_TOPICS["clinical-judgement"]);
+    if (DRILL_TOPICS["nursing-competency"]) list.push(DRILL_TOPICS["nursing-competency"]);
+    if (DRILL_TOPICS["civil-service-strengths"]) list.push(DRILL_TOPICS["civil-service-strengths"]);
+    list.push(DRILL_TOPICS["stakeholder-management"]);
+    list.push(DRILL_TOPICS["star"]);
+    list.push(DRILL_TOPICS["curveball"]);
+    return list;
+  }
 
   if (isCivilService) {
     if (DRILL_TOPICS["civil-service-competencies"]) list.push(DRILL_TOPICS["civil-service-competencies"]);

@@ -1,5 +1,5 @@
 import type { Interview, QuestionGroup } from "@/lib/types";
-import { halden } from "@/lib/mock-data";
+import { halden, staffNurse, hmrc } from "@/lib/mock-data";
 import { customQuestions } from "@/lib/questions/store";
 import { loadJson, loadJsonAsync, saveJson, saveJsonAsync } from "@/lib/storage/disk";
 import { isMongoConfigured, saveToMongo, loadFromMongo, deleteFromMongo } from "@/lib/storage/mongodb";
@@ -20,12 +20,18 @@ const store = (g.__hakkiriInterviews ??= new Map<string, Interview>(loadJson<Int
 
 const persist = () => saveJson(FILE, [...store.values()]);
 
-/** The Halden demo, while building. Hidden once launched: real people start with their own. */
-const demoBase = (id: string) => (id === halden.id && !isLaunch() ? halden : undefined);
+/** The Halden, Staff Nurse, and HMRC demos, while building. Hidden once launched: real people start with their own. */
+const demoBase = (id: string) => {
+  if (isLaunch()) return undefined;
+  if (id === halden.id) return halden;
+  if (id === staffNurse.id) return staffNurse;
+  if (id === hmrc.id) return hmrc;
+  return undefined;
+};
 
-/** The Halden demo stays the demo even after you practise on it (practice saves a copy). */
+/** The demo interviews stay demos even after you practise on them (practice saves a copy). */
 export function isDemoInterview(id: string): boolean {
-  return id === DEMO_INTERVIEW_ID;
+  return id === DEMO_INTERVIEW_ID || id === staffNurse.id || id === hmrc.id;
 }
 
 /** Merges built-in Halden difficulty pools (`easy`/`medium`/`hard`) if an older stored Halden copy lacks them. */
@@ -106,8 +112,11 @@ export function listInterviews(today: string, userId?: string): Interview[] {
     .filter(Boolean);
   const rank = (i: Interview) => (!i.date ? 1 : daysBetween(today, i.date) >= 0 ? 0 : 2);
   const sorted = mine.sort((a, b) => rank(a) - rank(b) || (rank(a) === 1 ? (b.createdAt ?? "").localeCompare(a.createdAt ?? "") : (a.date ?? "").localeCompare(b.date ?? "")));
-  const demo = getInterview(halden.id);
-  return demo ? [...sorted, demo] : sorted;
+  const existingIds = new Set(sorted.map((i) => i.id));
+  const demos = [getInterview(staffNurse.id), getInterview(hmrc.id), getInterview(halden.id)].filter(
+    (i): i is Interview => Boolean(i && !existingIds.has(i.id)),
+  );
+  return [...sorted, ...demos];
 }
 
 export async function listInterviewsAsync(today: string, userId?: string): Promise<Interview[]> {

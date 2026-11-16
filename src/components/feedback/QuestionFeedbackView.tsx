@@ -700,21 +700,41 @@ export function QuestionFeedbackView({
 
           {/* Bottom Actions Row */}
           <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-white/[0.08]">
-            <Link
-              href={`/mock/${interviewId}?q=${question.id}`}
-              className="inline-flex items-center gap-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 px-4 py-2.5 text-xs font-semibold text-white transition-colors cursor-pointer"
-            >
-              <Icon name="repeat" size={14} />
-              <span>Practise again</span>
-            </Link>
+            <div className="flex items-center gap-2.5">
+              <Link
+                href="/practice"
+                className="inline-flex items-center gap-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 px-4 py-2.5 text-xs font-semibold text-white transition-colors cursor-pointer"
+              >
+                <Icon name="chevronRight" size={13} className="rotate-180" />
+                <span>Practice Hub</span>
+              </Link>
 
-            <Link
-              href={`/mock/${interviewId}?q=${question.id}&record=1`}
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:brightness-110 px-5 py-2.5 text-xs font-semibold text-white shadow-lg shadow-indigo-500/25 transition-all cursor-pointer"
-            >
-              <Icon name="mic" size={14} />
-              <span>Record improved answer</span>
-            </Link>
+              <Link
+                href={`/mock/${interviewId}?q=${question.id}`}
+                className="inline-flex items-center gap-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 px-4 py-2.5 text-xs font-semibold text-white transition-colors cursor-pointer"
+              >
+                <Icon name="repeat" size={14} />
+                <span>Practise again</span>
+              </Link>
+            </div>
+
+            <div className="flex items-center gap-2.5">
+              <Link
+                href={`/mock/${interviewId}?practice=1&topic=civil-service-strengths&next=1`}
+                className="inline-flex items-center gap-2 rounded-xl bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/35 px-4 py-2.5 text-xs font-semibold text-indigo-200 transition-colors cursor-pointer"
+              >
+                <span>Next question</span>
+                <Icon name="chevronRight" size={13} />
+              </Link>
+
+              <Link
+                href={`/mock/${interviewId}?q=${question.id}&record=1`}
+                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:brightness-110 px-5 py-2.5 text-xs font-semibold text-white shadow-lg shadow-indigo-500/25 transition-all cursor-pointer"
+              >
+                <Icon name="mic" size={14} />
+                <span>Record improved answer</span>
+              </Link>
+            </div>
           </div>
         </div>
       )}
