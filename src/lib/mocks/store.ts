@@ -5,7 +5,7 @@ import { getInterview, getInterviewAsync } from "@/lib/interviews/store";
 import { findAnswer, findAnswerAsync, listAnswers, listAnswersAsync } from "@/lib/answers/store";
 import { rowFromAnswer, mockScore, type MockRow } from "./report";
 import { loadJson, loadJsonAsync, saveJson, saveJsonAsync } from "@/lib/storage/disk";
-import { isMongoConfigured } from "@/lib/storage/mongodb";
+import { isMongoConfigured, saveToMongo, loadFromMongo, deleteFromMongo } from "@/lib/storage/mongodb";
 import type { SessionSettings } from "@/lib/interviews/settings";
 import type { DrillSpec } from "@/lib/sessions/drills";
 import { resolveInterviewQuestion } from "@/lib/sessions/topics";
@@ -98,6 +98,10 @@ export async function saveMockAsync(m: MockRecord, userId?: string): Promise<voi
   store.set(m.id, item);
   if (isMongoConfigured()) {
     try {
+      // 1. Direct document persistence in "mocks" collection
+      await saveToMongo("mocks", item.id, item);
+
+      // 2. Safe merge into "storage" collection mocks.json
       const fromDb = await loadJsonAsync<MockRecord[]>(FILE, []);
       const map = new Map<string, MockRecord>(Array.isArray(fromDb) ? fromDb.map((x) => [x.id, x]) : []);
       for (const [k, v] of store.entries()) map.set(k, v);
@@ -145,6 +149,15 @@ export async function findMockAsync(id: string, userId?: string): Promise<MockRe
 
   if (isMongoConfigured()) {
     try {
+      // 1. Direct document fetch from "mocks" collection
+      const direct = await loadFromMongo<MockRecord>("mocks", id);
+      if (direct && direct.id) {
+        store.set(direct.id, direct);
+        const res = findMock(id, userId);
+        if (res) return res;
+      }
+
+      // 2. Fallback to FILE array in storage collection
       const fromDb = await loadJsonAsync<MockRecord[]>(FILE, []);
       if (Array.isArray(fromDb)) {
         for (const item of fromDb) {

@@ -2,7 +2,7 @@ import type { Interview, QuestionGroup } from "@/lib/types";
 import { halden } from "@/lib/mock-data";
 import { customQuestions } from "@/lib/questions/store";
 import { loadJson, loadJsonAsync, saveJson, saveJsonAsync } from "@/lib/storage/disk";
-import { isMongoConfigured } from "@/lib/storage/mongodb";
+import { isMongoConfigured, saveToMongo, loadFromMongo, deleteFromMongo } from "@/lib/storage/mongodb";
 import { daysBetween } from "@/lib/format";
 import { isLaunch } from "@/lib/launch";
 
@@ -70,6 +70,15 @@ export async function getInterviewAsync(id: string, userId?: string): Promise<In
 
   if (isMongoConfigured()) {
     try {
+      // 1. Direct document lookup in "interviews" collection
+      const direct = await loadFromMongo<Interview>("interviews", id);
+      if (direct && direct.id) {
+        store.set(direct.id, direct);
+        const res = getInterview(id, userId);
+        if (res) return res;
+      }
+
+      // 2. Fallback to FILE array in storage collection
       const fromDb = await loadJsonAsync<Interview[]>(FILE, []);
       if (Array.isArray(fromDb)) {
         for (const item of fromDb) {
@@ -140,6 +149,23 @@ export async function saveInterviewAsync(i: Interview, userId?: string) {
     questions: i.questions.filter((q) => !q.custom),
   };
   store.set(i.id, toSave);
+  if (isMongoConfigured()) {
+    try {
+      // 1. Direct document persistence in "interviews" collection
+      await saveToMongo("interviews", toSave.id, toSave);
+
+      // 2. Safe merge into "storage" collection interviews.json
+      const fromDb = await loadJsonAsync<Interview[]>(FILE, []);
+      const map = new Map<string, Interview>(Array.isArray(fromDb) ? fromDb.map((x) => [x.id, x]) : []);
+      for (const [k, v] of store.entries()) map.set(k, v);
+      map.set(toSave.id, toSave);
+      for (const [k, v] of map.entries()) store.set(k, v);
+      await saveJsonAsync(FILE, [...map.values()]);
+      return;
+    } catch (err) {
+      console.warn("[interviews/store] saveInterviewAsync mongo failed:", err);
+    }
+  }
   await saveJsonAsync(FILE, [...store.values()]);
 }
 
@@ -174,6 +200,11 @@ export function deleteInterview(id: string, userId?: string): boolean {
   if (!existing) return false;
   if (userId && existing.userId !== userId) return false;
   const had = store.delete(id);
-  if (had) persist();
+  if (had) {
+    persist();
+    if (isMongoConfigured()) {
+      void deleteFromMongo("interviews", id);
+    }
+  }
   return had;
 }

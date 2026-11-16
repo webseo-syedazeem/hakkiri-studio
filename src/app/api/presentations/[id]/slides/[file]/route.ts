@@ -1,4 +1,4 @@
-import { getPresentation, loadSlideImage } from "@/lib/pitch/store";
+import { getPresentation, loadSlideImage, loadSlideImageAsync } from "@/lib/pitch/store";
 import { requireUser } from "@/lib/auth/require";
 
 export const runtime = "nodejs";
@@ -24,7 +24,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     return new Response("Not found", { status: 404 });
   }
   const ext = file.match(/^[\w-]+\.(jpg|png|webp)$/)?.[1];
-  const data = ext ? loadSlideImage(id, file) : null;
+  const data = ext ? ((await loadSlideImageAsync(id, file)) ?? loadSlideImage(id, file)) : null;
   if (!data || !ext) return new Response("Not found", { status: 404 });
   return new Response(new Uint8Array(data), { headers: { "content-type": TYPE[ext], "cache-control": "private, max-age=86400, immutable" } });
 }

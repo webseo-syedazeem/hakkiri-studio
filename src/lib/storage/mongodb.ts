@@ -85,6 +85,22 @@ export async function loadFromMongo<T>(collectionName: string, docId: string): P
 }
 
 /**
+ * Delete JSON data from MongoDB collection.
+ */
+export async function deleteFromMongo(collectionName: string, docId: string): Promise<void> {
+  if (!isMongoConfigured()) return;
+  try {
+    const db = await getMongoDb();
+    if (!db) return;
+    const col = db.collection(collectionName);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await col.deleteOne({ _id: docId as any });
+  } catch (err) {
+    console.warn(`[mongodb] delete error for ${collectionName}/${docId}:`, err instanceof Error ? err.message : err);
+  }
+}
+
+/**
  * Sync all stored documents from MongoDB to local cache directory on startup.
  */
 export async function hydrateFromMongo(targetDir: string): Promise<void> {

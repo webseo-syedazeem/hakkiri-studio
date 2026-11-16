@@ -1,4 +1,4 @@
-import { loadFile, loadJson, loadJsonAsync, removeDir, saveFile, saveJson, saveJsonAsync, savingToDisk } from "@/lib/storage/disk";
+import { loadFile, loadFileAsync, loadJson, loadJsonAsync, removeDir, saveFile, saveJson, saveJsonAsync, savingToDisk } from "@/lib/storage/disk";
 import { isMongoConfigured } from "@/lib/storage/mongodb";
 import { demoPresentation, demoQaSession, demoRuns, demoRun4 } from "./demo";
 import type { Presentation, QaSession, Run } from "./types";
@@ -108,6 +108,14 @@ export function saveSlideImage(presentationId: string, file: string, data: Array
 
 export function loadSlideImage(presentationId: string, file: string): ArrayBuffer | null {
   return memoryImages().get(`${presentationId}/${file}`) ?? loadFile(`pitch/${presentationId}/${file}`);
+}
+
+export async function loadSlideImageAsync(presentationId: string, file: string): Promise<ArrayBuffer | null> {
+  const mem = memoryImages().get(`${presentationId}/${file}`);
+  if (mem) return mem;
+  const local = loadFile(`pitch/${presentationId}/${file}`);
+  if (local) return local;
+  return loadFileAsync(`pitch/${presentationId}/${file}`);
 }
 
 /** Keeps images when saving to disk is off (tests, HAKKIRI_SAVE=off). */
