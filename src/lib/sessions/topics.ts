@@ -867,15 +867,20 @@ export const CHECKLIST_TOPICS = [
  * payment fundamentals is excluded in favor of relevant competencies and frameworks.
  */
 export function getTopicsForInterview(interview?: {
-  role?: string;
-  company?: string;
-  sources?: { job?: string; company?: string; cv?: string };
-}): TopicSpec[] {
+  role?: string | null;
+  company?: string | null;
+  stages?: { name?: string; label?: string }[] | null;
+  sources?: { job?: string; company?: string; cv?: string } | null;
+  jobSummary?: string | null;
+  brief?: { whatTheyDo?: string } | null;
+  understanding?: { field?: string } | null;
+} | null): TopicSpec[] {
   if (!interview) return Object.values(DRILL_TOPICS);
-  const text = `${interview.role ?? ""} ${interview.company ?? ""} ${interview.sources?.job ?? ""} ${interview.sources?.company ?? ""}`.toLowerCase();
+  const stagesText = interview.stages ? interview.stages.map((s) => `${s.name ?? ""} ${s.label ?? ""}`).join(" ") : "";
+  const text = `${interview.role ?? ""} ${interview.company ?? ""} ${interview.sources?.job ?? ""} ${interview.sources?.company ?? ""} ${stagesText} ${interview.jobSummary ?? ""} ${interview.brief?.whatTheyDo ?? ""} ${interview.understanding?.field ?? ""}`.toLowerCase();
 
   const isPayments = /\b(payment|checkout|fintech|banking|stripe|adyen|visa|mastercard|card|psp|settlement|chargeback)\b/i.test(text);
-  const isCivilService = /\b(civil service|hmrc|dwp|gov|government|ministry|public sector|nhs|home office|cabinet office)\b/i.test(text);
+  const isCivilService = /\b(civil service|hmrc|dwp|gov|government|ministry|public sector|nhs|home office|cabinet office|success profiles?|strengths?|competenc|behaviour|behavior)\b/i.test(text);
   const isPM = /\b(product manager|associate product manager|pm|product lead|product owner)\b/i.test(text);
 
   const list: TopicSpec[] = [];
@@ -897,12 +902,16 @@ export function getTopicsForInterview(interview?: {
     list.push(DRILL_TOPICS["product-metrics"]);
     list.push(DRILL_TOPICS["commercial-judgement"]);
     list.push(DRILL_TOPICS["star"]);
+    if (DRILL_TOPICS["civil-service-competencies"]) list.push(DRILL_TOPICS["civil-service-competencies"]);
+    if (DRILL_TOPICS["civil-service-strengths"]) list.push(DRILL_TOPICS["civil-service-strengths"]);
     list.push(DRILL_TOPICS["technical"]);
     list.push(DRILL_TOPICS["curveball"]);
     return list;
   }
 
   // Standard / General / Tech roles (NEVER show payment fundamentals):
+  if (DRILL_TOPICS["civil-service-competencies"]) list.push(DRILL_TOPICS["civil-service-competencies"]);
+  if (DRILL_TOPICS["civil-service-strengths"]) list.push(DRILL_TOPICS["civil-service-strengths"]);
   list.push(DRILL_TOPICS["stakeholder-management"]);
   if (isPM) list.push(DRILL_TOPICS["product-metrics"]);
   list.push(DRILL_TOPICS["star"]);

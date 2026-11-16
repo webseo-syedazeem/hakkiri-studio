@@ -16,6 +16,30 @@ export default async function PracticeHubPage() {
 
   const drillCategories = [
     {
+      id: "cs-competencies",
+      title: "Civil Service Behaviours (STAR)",
+      category: "Civil Service Success Profiles",
+      duration: "4–6 mins",
+      difficulty: "Realistic",
+      icon: "star" as const,
+      color: "from-indigo-500/20 to-violet-500/20 text-indigo-300 border-indigo-500/30",
+      description: "Practise government Success Profile behaviours: Delivering at pace, Communicating & influencing, Making effective decisions, and Seeing the big picture.",
+      href: `/mock/${interviewId}?topic=civil-service-competencies`,
+      badge: "Civil Service",
+    },
+    {
+      id: "cs-strengths",
+      title: "Civil Service Strengths Workout",
+      category: "Spontaneous Strengths",
+      duration: "3–4 mins",
+      difficulty: "Fast-paced",
+      icon: "zap" as const,
+      color: "from-emerald-500/20 to-teal-500/20 text-emerald-300 border-emerald-500/30",
+      description: "Fast-paced spontaneous strengths questions assessing natural engagement, motivations, problem-solving, and working style under pressure.",
+      href: `/mock/${interviewId}?topic=civil-service-strengths`,
+      badge: "Strengths",
+    },
+    {
       id: "star",
       title: "STAR Framework Workout",
       category: "Competency & Leadership",
