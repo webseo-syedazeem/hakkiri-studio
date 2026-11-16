@@ -620,12 +620,13 @@ export function InterviewReportView(p: InterviewReportViewProps) {
                 const categoryPillLabel = r.group === "cv" ? "Experience" : r.group === "competency" ? "Skills" : r.group === "motivation" ? "Motivation" : r.group === "technical" ? "Technical" : "Situational";
                 const positiveFeedback = r.overall && r.overall >= 4.0 ? "Clear career interest and relevance." : "Described the issue and your actions.";
                 const improveFeedback = r.overall && r.overall >= 4.0 ? "Add stronger, role-specific reasons and impact." : "Add more detail on the outcome and what you learnt.";
+                const answerHref = `/interviews/${interview.id}/answers/${r.answerId || r.questionId || `q-${r.number}`}?mock=${mock.id}&q=${r.questionId}`;
 
                 return (
                   <tr key={r.number} className="hover:bg-white/[0.03] transition-colors group">
                     <td className="py-4 px-3 num text-muted">{r.number}</td>
                     <td className="py-4 px-3 font-medium text-white max-w-[340px]">
-                      <Link href={`/interviews/${interview.id}/answers/${r.answerId || "demo"}?mock=${mock.id}`} className="hover:text-blue-soft transition-colors">
+                      <Link href={answerHref} className="hover:text-blue-soft transition-colors">
                         {r.question}
                       </Link>
                     </td>
@@ -651,7 +652,7 @@ export function InterviewReportView(p: InterviewReportViewProps) {
                     </td>
                     <td className="py-4 px-3 text-right whitespace-nowrap">
                       <Link
-                        href={`/interviews/${interview.id}/answers/${r.answerId || "demo"}?mock=${mock.id}`}
+                        href={answerHref}
                         className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-[#252048] hover:bg-[#322a61] border border-indigo-500/30 hover:border-indigo-400/60 text-xs font-semibold text-white whitespace-nowrap transition-all shadow-sm shrink-0 group/btn"
                       >
                         <span className="whitespace-nowrap">Review answer</span>
