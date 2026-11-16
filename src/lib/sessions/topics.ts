@@ -10,6 +10,7 @@ import { matchesDifficulty } from "./pick";
 
 export type TopicId =
   | "civil-service-competencies"
+  | "civil-service-strengths"
   | "stakeholder-management"
   | "payment-fundamentals"
   | "product-metrics"
@@ -36,12 +37,12 @@ export const DRILL_TOPICS: Record<TopicId, TopicSpec> = {
     id: "civil-service-competencies",
     title: "Civil Service behaviours & strengths",
     focusLabel: "Civil Service",
-    subtitle: "Delivering at pace, making effective decisions, leadership & working together.",
+    subtitle: "Communicating & influencing, delivering at pace, making effective decisions & strengths.",
     instruction:
-      "Practising Civil Service Success Profiles: delivering at pace, communicating and influencing, making effective decisions, and managing a quality service. Feedback after every answer.",
+      "Practising Civil Service Success Profiles: delivering at pace, communicating and influencing, making effective decisions, managing a quality service, and spontaneous strengths reflections.",
     group: "competency",
     minutes: 6,
-    matchPattern: /\b(civil service|hmrc|delivering at pace|making effective decisions|communicating and influencing|working together|public sector|governance|policy)\b/i,
+    matchPattern: /\b(civil service|hmrc|delivering at pace|making effective decisions|communicating and influencing|working together|public sector|governance|policy|strengths?)\b/i,
     preferredBankIds: ["c1", "c2"],
     questions: [
       {
@@ -49,7 +50,7 @@ export const DRILL_TOPICS: Record<TopicId, TopicSpec> = {
         group: "competency",
         type: "competency",
         difficulty: "easy",
-        text: "Tell me about a time you had to deliver a piece of work at pace under tight deadlines.",
+        text: "Tell us about a time you delivered a complex piece of work under significant time pressure and competing demands.",
         short: "Delivering at pace",
         drillOnly: true,
       },
@@ -58,8 +59,8 @@ export const DRILL_TOPICS: Record<TopicId, TopicSpec> = {
         group: "competency",
         type: "competency",
         difficulty: "easy",
-        text: "How do you explain complex policy or process requirements to citizens or operational colleagues?",
-        short: "Communicating & influencing",
+        text: "Give an example of how you brought together different teams or organisations to achieve a shared outcome.",
+        short: "Working together",
         drillOnly: true,
       },
       {
@@ -67,8 +68,8 @@ export const DRILL_TOPICS: Record<TopicId, TopicSpec> = {
         group: "competency",
         type: "competency",
         difficulty: "easy",
-        text: "Give an example of collaborating effectively with colleagues from another department or agency.",
-        short: "Working together",
+        text: "Do you enjoy working with people who have different viewpoints?",
+        short: "Different viewpoints (Strength)",
         drillOnly: true,
       },
       {
@@ -76,8 +77,8 @@ export const DRILL_TOPICS: Record<TopicId, TopicSpec> = {
         group: "competency",
         type: "competency",
         difficulty: "medium",
-        text: "Describe a situation where you had to make an effective decision with incomplete data or conflicting evidence.",
-        short: "Making effective decisions",
+        text: "Tell us about a time you influenced senior stakeholders who had conflicting priorities or disagreed with your recommendation.",
+        short: "Communicating and influencing",
         drillOnly: true,
       },
       {
@@ -85,8 +86,8 @@ export const DRILL_TOPICS: Record<TopicId, TopicSpec> = {
         group: "competency",
         type: "competency",
         difficulty: "medium",
-        text: "Tell me about a time you led an initiative or took personal responsibility for improving a public service.",
-        short: "Leadership & public service",
+        text: "Describe a situation where you had to make a difficult recommendation using incomplete or conflicting evidence.",
+        short: "Making effective decisions",
         drillOnly: true,
       },
       {
@@ -94,8 +95,26 @@ export const DRILL_TOPICS: Record<TopicId, TopicSpec> = {
         group: "competency",
         type: "competency",
         difficulty: "medium",
-        text: "How do you handle a situation where policy or operational priorities suddenly change mid-project?",
-        short: "Adapting to changing priorities",
+        text: "Give an example of how you aligned a programme or policy decision with wider organisational or government priorities.",
+        short: "Seeing the big picture",
+        drillOnly: true,
+      },
+      {
+        id: "topic-cs-m4",
+        group: "competency",
+        type: "competency",
+        difficulty: "medium",
+        text: "What motivates you when working under pressure?",
+        short: "Motivation under pressure (Strength)",
+        drillOnly: true,
+      },
+      {
+        id: "topic-cs-m5",
+        group: "competency",
+        type: "competency",
+        difficulty: "medium",
+        text: "Do you prefer making decisions independently or collaboratively?",
+        short: "Decision style (Strength)",
         drillOnly: true,
       },
       {
@@ -103,8 +122,8 @@ export const DRILL_TOPICS: Record<TopicId, TopicSpec> = {
         group: "competency",
         type: "competency",
         difficulty: "hard",
-        text: "Describe a major challenge you faced delivering public value while balancing strict regulatory constraints and conflicting stakeholder expectations.",
-        short: "Public value & regulatory constraints",
+        text: "Describe a time you challenged an established approach and introduced a more effective way of working.",
+        short: "Changing and improving",
         drillOnly: true,
       },
       {
@@ -112,8 +131,8 @@ export const DRILL_TOPICS: Record<TopicId, TopicSpec> = {
         group: "competency",
         type: "competency",
         difficulty: "hard",
-        text: "Tell me about a time you influenced senior civil servants or external partners to change their strategic approach.",
-        short: "Influencing senior civil servants",
+        text: "Tell us about a time you led others through uncertainty or a significant change.",
+        short: "Leadership through change",
         drillOnly: true,
       },
       {
@@ -121,8 +140,112 @@ export const DRILL_TOPICS: Record<TopicId, TopicSpec> = {
         group: "competency",
         type: "competency",
         difficulty: "hard",
-        text: "Tell me about a high-profile failure or policy blocker in your delivery, and how you managed ministerial scrutiny and systemic remediations.",
-        short: "Managing high-profile policy scrutiny",
+        text: "Describe how you identified and addressed an issue affecting the quality of a service.",
+        short: "Managing a quality service",
+        drillOnly: true,
+      },
+      {
+        id: "topic-cs-h4",
+        group: "competency",
+        type: "competency",
+        difficulty: "hard",
+        text: "How do you respond when someone challenges your ideas?",
+        short: "Challenged ideas (Strength)",
+        drillOnly: true,
+      },
+    ],
+  },
+  "civil-service-strengths": {
+    id: "civil-service-strengths",
+    title: "Civil Service strengths workout",
+    focusLabel: "Strengths",
+    subtitle: "Different viewpoints, novel problems, motivation under pressure & decision style.",
+    instruction:
+      "Practising Civil Service strengths: authentic reflections on what you do well, enjoy doing and use regularly, rather than long STAR scripts.",
+    group: "curveball",
+    minutes: 5,
+    matchPattern: /\b(strength|strengths|prefer|motivation|enjoy|viewpoint|mindset|collaborative)\b/i,
+    preferredBankIds: ["b1", "b2"],
+    questions: [
+      {
+        id: "topic-str-1",
+        group: "curveball",
+        type: "situational",
+        difficulty: "easy",
+        text: "Do you enjoy working with people who have different viewpoints?",
+        short: "Different viewpoints",
+        drillOnly: true,
+      },
+      {
+        id: "topic-str-2",
+        group: "curveball",
+        type: "situational",
+        difficulty: "easy",
+        text: "How do you approach a problem you've never encountered before?",
+        short: "Novel problems",
+        drillOnly: true,
+      },
+      {
+        id: "topic-str-3",
+        group: "curveball",
+        type: "situational",
+        difficulty: "easy",
+        text: "Do you find it easy to stay energized when learning a completely unfamiliar system?",
+        short: "Energized learning",
+        drillOnly: true,
+      },
+      {
+        id: "topic-str-4",
+        group: "curveball",
+        type: "situational",
+        difficulty: "medium",
+        text: "What motivates you when working under pressure?",
+        short: "Motivation under pressure",
+        drillOnly: true,
+      },
+      {
+        id: "topic-str-5",
+        group: "curveball",
+        type: "situational",
+        difficulty: "medium",
+        text: "Do you prefer making decisions independently or collaboratively?",
+        short: "Decision style",
+        drillOnly: true,
+      },
+      {
+        id: "topic-str-6",
+        group: "curveball",
+        type: "situational",
+        difficulty: "medium",
+        text: "How do you stay motivated when an initiative requires long, repetitive groundwork?",
+        short: "Sustained groundwork",
+        drillOnly: true,
+      },
+      {
+        id: "topic-str-7",
+        group: "curveball",
+        type: "situational",
+        difficulty: "hard",
+        text: "How do you respond when someone challenges your ideas?",
+        short: "Challenged ideas",
+        drillOnly: true,
+      },
+      {
+        id: "topic-str-8",
+        group: "curveball",
+        type: "situational",
+        difficulty: "hard",
+        text: "What do you enjoy most about improving how an organisation works?",
+        short: "Improving organisations",
+        drillOnly: true,
+      },
+      {
+        id: "topic-str-9",
+        group: "curveball",
+        type: "situational",
+        difficulty: "hard",
+        text: "When an ambiguous problem has no precedent, how do you decide which principle to stand by?",
+        short: "Unprecedented ambiguity",
         drillOnly: true,
       },
     ],
@@ -759,6 +882,7 @@ export function getTopicsForInterview(interview?: {
 
   if (isCivilService) {
     if (DRILL_TOPICS["civil-service-competencies"]) list.push(DRILL_TOPICS["civil-service-competencies"]);
+    if (DRILL_TOPICS["civil-service-strengths"]) list.push(DRILL_TOPICS["civil-service-strengths"]);
     list.push(DRILL_TOPICS["stakeholder-management"]);
     list.push(DRILL_TOPICS["star"]);
     list.push(DRILL_TOPICS["commercial-judgement"]);

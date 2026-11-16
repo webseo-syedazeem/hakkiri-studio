@@ -609,18 +609,22 @@ export function LiveInterview(p: LiveInterviewProps) {
     void finish();
   }, [phase, mic.elapsed, style, turn.kind, q.targetSec, session, finish]);
 
-  /** Exit interview early: stop all audio and return immediately to the interview page. */
+  /** Exit interview early: if answers were recorded, finish the session so report is generated; otherwise return to interview. */
   const endEarly = useCallback(async () => {
     askToken.current++;
     voice.current?.cancel();
     await mic.stop();
-    router.push(`/interviews/${p.interviewId}`);
-    if (typeof window !== "undefined") {
-      setTimeout(() => {
-        window.location.href = `/interviews/${p.interviewId}`;
-      }, 50);
+    if (scored.current.length > 0) {
+      void finishRun();
+    } else {
+      router.push(`/interviews/${p.interviewId}`);
+      if (typeof window !== "undefined") {
+        setTimeout(() => {
+          window.location.href = `/interviews/${p.interviewId}`;
+        }, 50);
+      }
     }
-  }, [mic, router, p.interviewId]);
+  }, [mic, finishRun, router, p.interviewId]);
 
   /** After an error on a question in a session: leave it out and carry on. */
   const skipAfterError = useCallback(() => {
@@ -629,6 +633,37 @@ export function LiveInterview(p: LiveInterviewProps) {
     draftId.current = null;
     advance();
   }, [turn.kind, moveOn, advance]);
+
+  const [rephrasedText, setRephrasedText] = useState<string | null>(null);
+  const [isRephrasing, setIsRephrasing] = useState(false);
+
+  // Clear rephrase when moving to a new question or follow-up
+  useEffect(() => {
+    setRephrasedText(null);
+  }, [qIndex, turn.kind]);
+
+  const rephrase = useCallback(async () => {
+    if (isRephrasing) return;
+    if (phase === "answering") mic.pause();
+    setIsRephrasing(true);
+    try {
+      const res = await fetch("/api/questions/rephrase", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: asked, group: q.group, hint: q.contextHint }),
+      });
+      const data = await res.json().catch(() => ({}));
+      const textToUse = data.rephrased || `In simple terms: ${asked}`;
+      setRephrasedText(textToUse);
+      void ask(`In other words: ${textToUse}`, "resume");
+    } catch {
+      const textToUse = `In simple terms: ${asked}`;
+      setRephrasedText(textToUse);
+      void ask(`In other words: ${textToUse}`, "resume");
+    } finally {
+      setIsRephrasing(false);
+    }
+  }, [isRephrasing, phase, mic, asked, q.group, q.contextHint, ask]);
 
   const repeat = useCallback(() => {
     if (phase === "answering") mic.pause();
@@ -1184,6 +1219,19 @@ export function LiveInterview(p: LiveInterviewProps) {
                       </h1>
                     )}
 
+                    {/* Rephrased Question Banner */}
+                    {rephrasedText && (
+                      <div className="mt-4 rounded-xl bg-indigo-500/15 border border-indigo-500/35 p-4 flex items-start gap-3 animate-fade-in shadow-md">
+                        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-indigo-500/30 text-indigo-300 mt-0.5">
+                          <Icon name="sparkle" size={13} />
+                        </div>
+                        <div className="text-xs text-indigo-200 leading-relaxed">
+                          <span className="font-bold text-indigo-300 uppercase tracking-wide mr-2 text-[11px]">Rephrased question:</span>
+                          <span className="text-white font-medium text-[13px]">{rephrasedText}</span>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Guidance / Hint Callout Box */}
                     <div className="mt-6 rounded-xl bg-[#16152a] border border-white/[0.06] p-4 flex items-start gap-3">
                       <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-amber-500/15 text-amber-400 mt-0.5">
@@ -1468,6 +1516,10 @@ export function LiveInterview(p: LiveInterviewProps) {
                 ) : phase === "asking" ? (
                   <>
                     <Button disabled className="rounded-xl text-xs">
+                      <Icon name="sparkle" size={14} />
+                      Rephrase question
+                    </Button>
+                    <Button disabled className="rounded-xl text-xs">
                       <Icon name="repeat" size={14} />
                       Repeat question
                     </Button>
@@ -1486,6 +1538,10 @@ export function LiveInterview(p: LiveInterviewProps) {
                   </>
                 ) : (
                   <>
+                    <Button onClick={rephrase} disabled={isRephrasing} className="rounded-xl text-xs">
+                      <Icon name="sparkle" size={14} className={isRephrasing ? "animate-spin" : ""} />
+                      {isRephrasing ? "Rephrasing…" : "Rephrase question"}
+                    </Button>
                     <Button onClick={repeat} className="rounded-xl text-xs">
                       <Icon name="repeat" size={14} />
                       Repeat question

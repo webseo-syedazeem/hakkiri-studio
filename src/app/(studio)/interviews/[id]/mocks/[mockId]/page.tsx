@@ -142,14 +142,14 @@ export default async function SessionReportPage({ params, searchParams }: { para
   const demoNote = null;
 
   /* ------------------------------------------------------------ stopped */
-  if (mock.status === "stopped" || mock.status === "planned") {
+  if ((mock.status === "stopped" || mock.status === "planned") && rows.length === 0) {
     return (
       <div className="flex grow flex-col">
         <Header interview={interview} mock={mock} title={title} meta={<>{whenSaid(mock.startedAt)}</>} />
         <Panel className="mt-5 max-w-[720px] animate-rise px-6 py-5">
           <h2 className="text-[15px] font-semibold">{mock.status === "planned" ? "Not finished" : "Stopped: rebuilt"}</h2>
           <p className="mt-1 text-sm text-muted">
-            {mock.status === "planned" ? "This session was set up but never finished, so there’s nothing to report." : "You pressed Something’s wrong, so this interview wasn’t scored and the questions were rebuilt."}
+            {mock.status === "planned" ? "This session was set up but no questions were answered, so there’s nothing to report." : "You pressed Something’s wrong, so this interview wasn’t scored and the questions were rebuilt."}
           </p>
           {mock.feedback && (
             <div className="mt-3 rounded-[9px] bg-panel-2 px-3.5 py-3 text-sm">

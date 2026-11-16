@@ -199,7 +199,8 @@ export async function listMocksAsync(interviewId: string, userId?: string): Prom
   return listMocks(interviewId, userId);
 }
 
-export const isDone = (m: MockRecord) => (m.status ?? "done") === "done";
+export const isDone = (m: MockRecord) =>
+  (m.status ?? "done") === "done" || (m.answerIds && m.answerIds.length > 0) || (m.rows && m.rows.length > 0);
 
 /** Interviews with new questions: the only ones that count towards your verdict. */
 export const isFresh = (m: MockRecord) => isDone(m) && (m.kind === "interview" || m.kind === "full" || m.kind === "first");
