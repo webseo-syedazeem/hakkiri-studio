@@ -153,38 +153,52 @@ export function CalendarPopup({
         })}
       </div>
 
-      {/* Quick Picks & Done */}
+      {/* Quick Picks & Clear / Done */}
       <div className="mt-3 flex items-center justify-between border-t border-line/60 pt-2 text-[11px]">
-        <button
-          type="button"
-          onClick={() => {
-            const today = new Date();
-            onChange(formatDateString(today.getDate(), today.getMonth(), today.getFullYear()));
-            onClose();
-          }}
-          className="font-semibold text-blue-soft hover:underline cursor-pointer"
-        >
-          Today
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            const nextWeek = new Date();
-            nextWeek.setDate(nextWeek.getDate() + 7);
-            onChange(formatDateString(nextWeek.getDate(), nextWeek.getMonth(), nextWeek.getFullYear()));
-            onClose();
-          }}
-          className="text-muted hover:text-ink cursor-pointer"
-        >
-          In 1 week
-        </button>
-        <button
-          type="button"
-          onClick={onClose}
-          className="rounded-md bg-panel-2 px-2 py-0.5 text-muted hover:text-ink cursor-pointer"
-        >
-          Done
-        </button>
+        <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => {
+              const today = new Date();
+              onChange(formatDateString(today.getDate(), today.getMonth(), today.getFullYear()));
+              onClose();
+            }}
+            className="font-semibold text-blue-soft hover:underline cursor-pointer"
+          >
+            Today
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              const nextWeek = new Date();
+              nextWeek.setDate(nextWeek.getDate() + 7);
+              onChange(formatDateString(nextWeek.getDate(), nextWeek.getMonth(), nextWeek.getFullYear()));
+              onClose();
+            }}
+            className="text-muted hover:text-ink cursor-pointer"
+          >
+            In 1 week
+          </button>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              onChange("");
+              onClose();
+            }}
+            className="text-rose-400/90 hover:text-rose-300 hover:underline cursor-pointer font-medium"
+          >
+            Clear date
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-md bg-panel-2 px-2 py-0.5 text-muted hover:text-ink cursor-pointer"
+          >
+            Done
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -213,13 +227,25 @@ export function TimePickerPopup({
     >
       <div className="flex items-center justify-between pb-2 border-b border-line/60 text-xs font-bold text-ink">
         <span>Select Time</span>
-        <button
-          type="button"
-          onClick={onClose}
-          className="text-muted hover:text-ink cursor-pointer"
-        >
-          <Icon name="x" size={13} />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              onChange("");
+              onClose();
+            }}
+            className="text-[11px] text-rose-400/90 hover:text-rose-300 hover:underline cursor-pointer font-medium"
+          >
+            Clear time
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-muted hover:text-ink cursor-pointer"
+          >
+            <Icon name="x" size={13} />
+          </button>
+        </div>
       </div>
 
       <div className="mt-2 max-h-48 overflow-y-auto pr-1 flex flex-col gap-1">

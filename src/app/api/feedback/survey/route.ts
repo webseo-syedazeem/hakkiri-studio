@@ -20,7 +20,7 @@ function isTimingSafeBearer(header: string | null, secret: string | undefined): 
 const Body = z.object({
   email: z.string().trim().email().max(200),
   interviewId: z.string().max(100).optional(),
-  mockId: z.string().max(100).optional(),
+  mockId: z.string().min(1, "Completed mock interview session ID is required").max(100),
   q1_realism: z.string().trim().min(1, "Please answer question 1").max(2000),
   q2_questions: z.string().trim().min(1, "Please answer question 2").max(2000),
   q3_feedback: z.string().trim().min(1, "Please answer question 3").max(2000),
@@ -102,6 +102,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "slow-down" }, { status: 429 });
   }
 
+  // 1. Enforce user authentication
+  const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json(
+      { error: "unauthorised", message: "Sign in required to claim the £15 beta voucher reward." },
+      { status: 401 }
+    );
+  }
+
   const json = await req.json().catch(() => null);
   const parsed = Body.safeParse(json);
   if (!parsed.success) {
@@ -111,27 +120,57 @@ export async function POST(req: Request) {
     );
   }
 
-  // Validate that the session is a real full completed interview
-  if (parsed.data.mockId) {
-    const mock = (await findMockAsync(parsed.data.mockId)) ?? findMock(parsed.data.mockId);
-    if (mock) {
-      const isInterview = mock.kind === "interview" || mock.kind === "full";
-      const isDone = mock.status === "done";
-      const skippedByChoice = (mock.skipped ?? []).filter((s) => s.reason === "by-choice").length;
-      const replaced = (mock.skipped ?? []).filter((s) => s.reason !== "by-choice").length;
-      const answeredCount = mock.answerIds?.length ?? 0;
-      const endedEarly = mock.planned > 0 && answeredCount < (mock.planned - replaced - skippedByChoice);
+  // 2. Validate that the session is a real full completed interview belonging to this user
+  const mock = (await findMockAsync(parsed.data.mockId)) ?? findMock(parsed.data.mockId);
+  if (!mock) {
+    return NextResponse.json(
+      { error: "mock-not-found", message: "Interview session not found." },
+      { status: 404 }
+    );
+  }
 
-      if (!isInterview || !isDone || endedEarly || answeredCount < 2) {
-        return NextResponse.json(
-          {
-            error: "full-interview-required",
-            message: "The £15 Amazon voucher survey is only available after completing a full mock interview.",
-          },
-          { status: 403 },
-        );
-      }
-    }
+  if (mock.userId && mock.userId !== user.id) {
+    return NextResponse.json(
+      { error: "forbidden", message: "This session belongs to another tester." },
+      { status: 403 }
+    );
+  }
+
+  const isInterview = mock.kind === "interview" || mock.kind === "full";
+  const isDone = mock.status === "done";
+  const skippedByChoice = (mock.skipped ?? []).filter((s) => s.reason === "by-choice").length;
+  const replaced = (mock.skipped ?? []).filter((s) => s.reason !== "by-choice").length;
+  const answeredCount = mock.answerIds?.length ?? 0;
+  const endedEarly = mock.planned > 0 && answeredCount < (mock.planned - replaced - skippedByChoice);
+
+  if (!isInterview || !isDone || endedEarly || answeredCount < 2) {
+    return NextResponse.json(
+      {
+        error: "full-interview-required",
+        message: "The £15 Amazon voucher survey is only available after completing a full mock interview.",
+      },
+      { status: 403 },
+    );
+  }
+
+  // 3. Prevent duplicate submissions per session or email address
+  const existingSurveys = await recentSurveysAsync(1000);
+  const normalizedEmail = parsed.data.email.toLowerCase().trim();
+  const alreadyClaimed = existingSurveys.some(
+    (s) =>
+      s.mockId === parsed.data.mockId ||
+      s.email.toLowerCase().trim() === normalizedEmail ||
+      (user.email && s.email.toLowerCase().trim() === user.email.toLowerCase().trim())
+  );
+
+  if (alreadyClaimed) {
+    return NextResponse.json(
+      {
+        error: "already-claimed",
+        message: "A £15 voucher claim has already been submitted for this session or email address.",
+      },
+      { status: 409 }
+    );
   }
 
   const submission = await addSurveySubmission(parsed.data);

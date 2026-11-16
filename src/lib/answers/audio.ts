@@ -1,4 +1,4 @@
-import { fileTime, loadFile, loadJson, removeDir, removeFile, saveFile, saveJson, savingToDisk } from "@/lib/storage/disk";
+import { fileTime, loadFile, loadFileAsync, loadJson, removeDir, removeFile, saveFile, saveJson, savingToDisk } from "@/lib/storage/disk";
 import { getSettings } from "@/lib/settings/store";
 
 /**
@@ -42,6 +42,15 @@ export function getRecording(answerId: string, turn: number): Recording | null {
   const saved = index[answerId]?.[turn];
   const data = saved ? loadFile(saved.file) : null;
   return saved && data ? { data, type: saved.type } : null;
+}
+
+export async function getRecordingAsync(answerId: string, turn: number): Promise<Recording | null> {
+  const inMemory = memory.get(answerId)?.[turn];
+  if (inMemory) return inMemory;
+  const saved = index[answerId]?.[turn];
+  if (!saved) return null;
+  const data = (await loadFileAsync(saved.file)) ?? loadFile(saved.file);
+  return data ? { data, type: saved.type } : null;
 }
 
 export function hasRecording(answerId: string, turn = 0): boolean {

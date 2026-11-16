@@ -201,7 +201,7 @@ const RATE: Record<GuardKind, [number, number]> = {
 export function guard(
   req: Request,
   kind: GuardKind,
-  opts: { practice?: boolean; inSession?: boolean } = {},
+  opts: { practice?: boolean; inSession?: boolean; userId?: string } = {},
 ): NextResponse | null {
   const [limit, windowMs] = RATE[kind];
   if (rateLimited(`${kind}:${clientKey(req)}`, limit, windowMs)) {
@@ -215,7 +215,7 @@ export function guard(
     );
   }
   if (kind === "read") return null;
-  const standing = limitStanding();
+  const standing = limitStanding(londonToday(), opts.userId);
   checkSpendAlerts(londonToday(), standing);
   const why = limitReached(
     { practice: opts.practice, grace: opts.inSession ? 1.25 : 1 },

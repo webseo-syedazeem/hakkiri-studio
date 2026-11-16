@@ -1,5 +1,5 @@
-import { getRecording } from "@/lib/answers/audio";
-import { findAnswer } from "@/lib/answers/store";
+import { getRecording, getRecordingAsync } from "@/lib/answers/audio";
+import { findAnswer, findAnswerAsync } from "@/lib/answers/store";
 import { requireUser } from "@/lib/auth/require";
 
 export const runtime = "nodejs";
@@ -19,12 +19,12 @@ export async function GET(req: Request, { params }: { params: Promise<{ draftId:
   }
 
   const { draftId, turn } = await params;
-  const ans = findAnswer(draftId, user.id);
+  const ans = (await findAnswerAsync(draftId, user.id)) ?? findAnswer(draftId, user.id);
   if (!ans) {
     return new Response("Not found", { status: 404 });
   }
 
-  const rec = getRecording(draftId, Number(turn));
+  const rec = (await getRecordingAsync(draftId, Number(turn))) ?? getRecording(draftId, Number(turn));
   if (!rec) return new Response("Not found", { status: 404 });
   const bytes = new Uint8Array(rec.data);
   const headers = { "content-type": rec.type || "audio/webm", "accept-ranges": "bytes", "cache-control": "private, max-age=3600" };

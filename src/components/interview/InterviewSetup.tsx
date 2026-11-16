@@ -157,18 +157,12 @@ export function InterviewSetup() {
   // Wizard Step (1: Job details, 2: Stages, 3: Practice setup, 4: Review)
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
 
-  // Step 1: Job Details State
-  const [companyName, setCompanyName] = useState("Halden");
-  const [jobTitle, setJobTitle] = useState("Senior Product Manager, Payments");
-  const [companyWebsite, setCompanyWebsite] = useState("https://halden.com");
-  const [cvDoc, setCvDoc] = useState<{ name: string; uploaded: boolean; text?: string; detail?: string }>({
-    name: "Sazia_Aktar_CV.pdf",
-    uploaded: true,
-  });
-  const [jobDoc, setJobDoc] = useState<{ name: string; uploaded: boolean; text?: string; detail?: string }>({
-    name: "Job_description.pdf",
-    uploaded: true,
-  });
+  // Step 1: Job Details State (starts empty for new interview setup)
+  const [companyName, setCompanyName] = useState("");
+  const [jobTitle, setJobTitle] = useState("");
+  const [companyWebsite, setCompanyWebsite] = useState("");
+  const [cvDoc, setCvDoc] = useState<{ name: string; uploaded: boolean; text?: string; detail?: string } | null>(null);
+  const [jobDoc, setJobDoc] = useState<{ name: string; uploaded: boolean; text?: string; detail?: string } | null>(null);
   const [coverDoc, setCoverDoc] = useState<{ name: string; uploaded: boolean; text?: string; detail?: string } | null>(null);
 
   // Job description 3 modes: "attach" | "link" | "paste"
@@ -283,48 +277,18 @@ export function InterviewSetup() {
     }
   };
 
-  // Step 2: Stages State
-  const [stagesExpectation, setStagesExpectation] = useState<"single" | "multiple" | "practice">("multiple");
+  // Step 2: Stages State (dates, times and interviewers are completely optional)
+  const [stagesExpectation, setStagesExpectation] = useState<"single" | "multiple" | "practice">("single");
   const [stages, setStages] = useState<StageItem[]>([
     {
       id: "1",
-      name: "Recruiter screen",
-      date: "12 Nov 2026",
-      time: "09:30",
+      name: "Interview stage 1",
+      date: "",
+      time: "",
       format: "Video call",
-      interviewer: "Recruiter",
-      status: "completed",
-      icon: "phone",
-    },
-    {
-      id: "2",
-      name: "Hiring manager interview",
-      date: "12 Nov 2026",
-      time: "10:00",
-      format: "Video call",
-      interviewer: "Hiring manager",
+      interviewer: "",
       status: "next",
       icon: "code",
-    },
-    {
-      id: "3",
-      name: "Technical round",
-      date: "13 Nov 2026",
-      time: "11:00",
-      format: "Video call",
-      interviewer: "Tech lead",
-      status: "not_scheduled",
-      icon: "present",
-    },
-    {
-      id: "4",
-      name: "Final panel",
-      date: "14 Nov 2026",
-      time: "15:00",
-      format: "Video call",
-      interviewer: "Leadership",
-      status: "not_scheduled",
-      icon: "users",
     },
   ]);
 
@@ -355,11 +319,11 @@ export function InterviewSetup() {
     const num = stages.length + 1;
     const newStage: StageItem = {
       id: `stage-${Date.now()}`,
-      name: stagesExpectation === "practice" ? `Practice Round ${num}` : `Custom Stage ${num}`,
-      date: "15 Nov 2026",
-      time: "11:00",
+      name: stagesExpectation === "practice" ? `Practice Round ${num}` : `Interview Stage ${num}`,
+      date: "",
+      time: "",
       format: "Video call",
-      interviewer: stagesExpectation === "practice" ? "" : "Hiring Manager",
+      interviewer: "",
       status: stagesExpectation === "practice" ? "next" : "not_scheduled",
       icon: "code",
     };
@@ -385,10 +349,10 @@ export function InterviewSetup() {
         const single: StageItem = {
           id: "1",
           name: "Single stage interview",
-          date: "12 Nov 2026",
-          time: "10:00",
+          date: "",
+          time: "",
           format: "Video call",
-          interviewer: "Hiring manager",
+          interviewer: "",
           status: "next",
           icon: "code",
         };
@@ -401,46 +365,46 @@ export function InterviewSetup() {
           {
             id: "1",
             name: "Recruiter screen",
-            date: "12 Nov 2026",
-            time: "09:30",
+            date: "",
+            time: "",
             format: "Video call",
-            interviewer: "Recruiter",
+            interviewer: "",
             status: "completed",
             icon: "phone",
           },
           {
             id: "2",
             name: "Hiring manager interview",
-            date: "12 Nov 2026",
-            time: "10:00",
+            date: "",
+            time: "",
             format: "Video call",
-            interviewer: "Hiring manager",
+            interviewer: "",
             status: "next",
             icon: "code",
           },
           {
             id: "3",
             name: "Technical round",
-            date: "13 Nov 2026",
-            time: "11:00",
+            date: "",
+            time: "",
             format: "Video call",
-            interviewer: "Tech lead",
+            interviewer: "",
             status: "not_scheduled",
             icon: "present",
           },
           {
             id: "4",
             name: "Final panel",
-            date: "14 Nov 2026",
-            time: "15:00",
+            date: "",
+            time: "",
             format: "Video call",
-            interviewer: "Leadership",
+            interviewer: "",
             status: "not_scheduled",
             icon: "users",
           },
         ];
         setStages(defaultMulti);
-        setSelectedRounds(["1", "3"]);
+        setSelectedRounds(["1", "2"]);
       }
     } else if (opt === "practice") {
       if (stages.length <= 1) {
@@ -617,9 +581,9 @@ export function InterviewSetup() {
     const validDifficulty = ["easy", "medium", "hard"].includes(difficulty.toLowerCase() as any) ? (difficulty.toLowerCase() as "easy" | "medium" | "hard") : "medium";
     const apiFormat = stages[0]?.format === "In person" ? "in-person" : stages[0]?.format === "Phone call" ? "phone" : "video";
 
-    const finalJobText = jobDoc.text?.trim() || jobPastedText.trim() || "";
-    const finalCvText = cvDoc.text?.trim() || cvPastedText.trim() || `CV text for ${companyName.trim() || "Target Role"}`;
-    const finalJobUrl = jobUrl.trim() || (jobDoc.name?.startsWith("http") ? jobDoc.name : undefined);
+    const finalJobText = jobDoc?.text?.trim() || jobPastedText.trim() || "";
+    const finalCvText = cvDoc?.text?.trim() || cvPastedText.trim() || `CV text for ${companyName.trim() || "Target Role"}`;
+    const finalJobUrl = jobUrl.trim() || (jobDoc?.name?.startsWith("http") ? jobDoc.name : undefined);
 
     let destId = "";
     try {
@@ -871,7 +835,7 @@ export function InterviewSetup() {
                         type="text"
                         value={companyName}
                         onChange={(e) => setCompanyName(e.target.value)}
-                        placeholder="e.g. Halden"
+                        placeholder="e.g. HMRC, Monzo, Google"
                         className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-dim"
                       />
                     </div>
@@ -886,7 +850,7 @@ export function InterviewSetup() {
                         type="text"
                         value={jobTitle}
                         onChange={(e) => setJobTitle(e.target.value)}
-                        placeholder="e.g. Senior Product Manager, Payments"
+                        placeholder="e.g. Associate Product Manager"
                         className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-dim"
                       />
                     </div>
@@ -902,7 +866,7 @@ export function InterviewSetup() {
                       type="text"
                       value={companyWebsite}
                       onChange={(e) => setCompanyWebsite(e.target.value)}
-                      placeholder="https://halden.com"
+                      placeholder="https://example.com (optional)"
                       className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-dim"
                     />
                   </div>
@@ -926,7 +890,7 @@ export function InterviewSetup() {
                       <div className="flex items-center gap-2 text-xs font-semibold text-ink">
                         <Icon name="doc" size={15} className="text-blue-soft" />
                         <span>Job description</span>
-                        {jobDoc.uploaded && (
+                        {jobDoc?.uploaded && (
                           <span className="rounded-full bg-[#10b981]/15 px-2 py-0.5 text-[10px] font-semibold text-[#10b981] flex items-center gap-1">
                             <Icon name="check" size={11} strokeWidth={2.5} />
                             <span>{jobDoc.detail || "Ready"}</span>
@@ -980,10 +944,10 @@ export function InterviewSetup() {
                           </div>
                           <div className="min-w-0">
                             <span className="block truncate text-xs font-semibold text-ink group-hover:text-blue-soft transition-colors">
-                              {jobDoc.name}
+                              {jobDoc?.name || "Upload job description"}
                             </span>
                             <span className="text-[11px] text-muted">
-                              {jobDoc.detail || "PDF, DOCX or TXT · Click to browse or replace"}
+                              {jobDoc?.detail || "PDF, DOCX or TXT · Click to browse"}
                             </span>
                           </div>
                         </div>
@@ -1074,7 +1038,7 @@ export function InterviewSetup() {
                         <div className="flex items-center gap-2 text-xs font-semibold text-ink">
                           <Icon name="doc" size={15} className="text-blue-soft" />
                           <span>Your CV</span>
-                          {cvDoc.uploaded && (
+                          {cvDoc?.uploaded && (
                             <span className="rounded-full bg-[#10b981]/15 px-2 py-0.5 text-[10px] font-semibold text-[#10b981] flex items-center gap-1">
                               <Icon name="check" size={11} strokeWidth={2.5} />
                               <span>{cvDoc.detail || "Ready"}</span>
@@ -1116,9 +1080,9 @@ export function InterviewSetup() {
                             </div>
                             <div className="min-w-0">
                               <span className="block truncate text-xs font-semibold text-ink group-hover:text-blue-soft transition-colors">
-                                {cvDoc.name}
+                                {cvDoc?.name || "Upload your CV"}
                               </span>
-                              <span className="text-[10px] text-muted">{cvDoc.detail || "Click to upload / replace"}</span>
+                              <span className="text-[10px] text-muted">{cvDoc?.detail || "Click to upload / browse"}</span>
                             </div>
                           </div>
                           <Icon name="check" size={14} strokeWidth={2.5} className="text-[#10b981] shrink-0" />
@@ -1388,8 +1352,10 @@ export function InterviewSetup() {
                                   )}
                                 >
                                   <span className="text-[10px] text-dim font-medium uppercase tracking-wider">Date</span>
-                                  <Icon name="cal" size={13} className="text-blue-soft shrink-0" />
-                                  <span className="text-xs font-semibold text-ink whitespace-nowrap">{stg.date}</span>
+                                  <Icon name="cal" size={13} className={stg.date ? "text-blue-soft shrink-0" : "text-muted/60 shrink-0"} />
+                                  <span className={clsx("text-xs whitespace-nowrap", stg.date ? "font-semibold text-ink" : "text-muted/70 font-normal")}>
+                                    {stg.date || "Date (optional)"}
+                                  </span>
                                 </button>
 
                                 {activeDatePickerId === stg.id && (
@@ -1420,8 +1386,10 @@ export function InterviewSetup() {
                                   )}
                                 >
                                   <span className="text-[10px] text-dim font-medium uppercase tracking-wider">Time</span>
-                                  <Icon name="clock" size={13} className="text-blue-soft shrink-0" />
-                                  <span className="text-xs font-semibold text-ink whitespace-nowrap">{stg.time}</span>
+                                  <Icon name="clock" size={13} className={stg.time ? "text-blue-soft shrink-0" : "text-muted/60 shrink-0"} />
+                                  <span className={clsx("text-xs whitespace-nowrap", stg.time ? "font-semibold text-ink" : "text-muted/70 font-normal")}>
+                                    {stg.time || "Time (optional)"}
+                                  </span>
                                 </button>
 
                                 {activeTimePickerId === stg.id && (
@@ -1566,8 +1534,8 @@ export function InterviewSetup() {
                                 type="text"
                                 value={stg.interviewer}
                                 onChange={(e) => updateStage(stg.id, { interviewer: e.target.value })}
-                                placeholder="Recruiter"
-                                className="w-[85px] bg-transparent text-xs font-medium text-ink outline-none"
+                                placeholder="Interviewer (optional)"
+                                className="w-[125px] bg-transparent text-xs font-medium text-ink outline-none placeholder:text-muted/60"
                               />
                             </div>
                           )}
@@ -2073,15 +2041,15 @@ export function InterviewSetup() {
               <div className="mt-3 flex flex-col gap-2">
                 <div className="flex items-center justify-between rounded-[10px] bg-panel-2 px-3 py-2 text-xs">
                   <span className="flex items-center gap-2 font-medium text-ink">
-                    <Icon name="check" size={14} className="text-[#10b981]" /> {cvDoc.name}
+                    <Icon name="check" size={14} className={cvDoc?.uploaded ? "text-[#10b981]" : "text-muted"} /> {cvDoc?.name || "CV (optional)"}
                   </span>
-                  <span className="text-[#10b981] font-semibold">{cvDoc.detail || "Uploaded"}</span>
+                  <span className={cvDoc?.uploaded ? "text-[#10b981] font-semibold" : "text-muted"}>{cvDoc?.detail || (cvDoc ? "Attached" : "Not provided")}</span>
                 </div>
                 <div className="flex items-center justify-between rounded-[10px] bg-panel-2 px-3 py-2 text-xs">
                   <span className="flex items-center gap-2 font-medium text-ink">
-                    <Icon name="check" size={14} className="text-[#10b981]" /> {jobDoc.name}
+                    <Icon name="check" size={14} className={jobDoc?.uploaded ? "text-[#10b981]" : "text-muted"} /> {jobDoc?.name || "Job description"}
                   </span>
-                  <span className="text-[#10b981] font-semibold">{jobDoc.detail || "Uploaded"}</span>
+                  <span className={jobDoc?.uploaded ? "text-[#10b981] font-semibold" : "text-muted"}>{jobDoc?.detail || (jobDoc ? "Attached" : "Not provided")}</span>
                 </div>
               </div>
             </Panel>

@@ -72,59 +72,13 @@ export async function POST(req: Request) {
     answers = await Promise.all(body.answerIds.map(async (id) => (await findAnswerAsync(id, user.id)) ?? findAnswer(id, user.id)));
   }
 
-  // Resilient safeguard: if any answer failed to score or persist across Lambdas,
-  // synthesize a scored answer so the user's completed interview session NEVER fails.
-  for (let i = 0; i < body.answerIds.length; i++) {
-    const aid = body.answerIds[i];
-    let a = answers[i];
-    if (!a || a.interviewId !== interview.id) {
-      console.warn(`[mocks] synthesizing fallback answer for missing id ${aid} in interview ${interview.id}`);
-      const qid = body.askedIds?.[i] ?? interview.questions[i]?.id ?? `q_${i + 1}`;
-      const q = resolveInterviewQuestion(interview, qid) ?? interview.questions[i] ?? interview.questions[0];
-      const fallbackAnswer: Answer = {
-        id: aid,
-        userId: user.id,
-        interviewId: interview.id,
-        questionId: q?.id ?? qid,
-        questionNumber: i + 1,
-        questionsInMock: body.answerIds.length,
-        words: [
-          { text: "I", start: 0, end: 0.3 },
-          { text: "focused", start: 0.4, end: 0.8 },
-          { text: "on", start: 0.9, end: 1.0 },
-          { text: "clear", start: 1.1, end: 1.3 },
-          { text: "priorities,", start: 1.4, end: 1.8 },
-          { text: "stakeholder", start: 1.9, end: 2.3 },
-          { text: "collaboration", start: 2.4, end: 2.9 },
-          { text: "and", start: 3.0, end: 3.1 },
-          { text: "delivering", start: 3.2, end: 3.6 },
-          { text: "measurable", start: 3.7, end: 4.1 },
-          { text: "impact.", start: 4.2, end: 4.6 },
-        ],
-        pointWordIndex: 0,
-        highlights: [{ kind: "good", from: 0, to: 10 }],
-        notes: [
-          {
-            id: 1,
-            tone: "strength",
-            title: "Structured answer",
-            body: "Directly addressed the key elements with clear logic.",
-            pinAfter: 10,
-          },
-        ],
-        scores: { content: 3.8, structure: 3.8, delivery: null },
-        strength: "Clear structure and relevant context for the role.",
-        oneFix: "Include specific metrics or commercial trade-offs to make your answer even more compelling.",
-        strongerVersion: [
-          { start: 0, text: "In this scenario, I prioritised measurable outcomes, aligned team stakeholders, and evaluated key trade-offs to achieve tangible improvements." },
-        ],
-        strongerLengthSec: 45,
-        followUps: [],
-        createdAt: new Date().toISOString(),
-      };
-      await saveAnswerAsync(fallbackAnswer, user.id);
-      answers[i] = fallbackAnswer;
-    }
+  // Filter for real recorded answers belonging to this interview and user
+  const realAnswers = answers.filter((a): a is Answer => Boolean(a && a.interviewId === interview.id));
+  if (realAnswers.length === 0) {
+    return NextResponse.json(
+      { error: "no-recorded-answers", message: "No recorded answers were found for this session." },
+      { status: 400 }
+    );
   }
   const finishedAt = new Date().toISOString();
 

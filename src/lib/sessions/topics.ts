@@ -9,6 +9,7 @@ import { matchesDifficulty } from "./pick";
  */
 
 export type TopicId =
+  | "civil-service-competencies"
   | "stakeholder-management"
   | "payment-fundamentals"
   | "product-metrics"
@@ -31,6 +32,101 @@ export interface TopicSpec {
 }
 
 export const DRILL_TOPICS: Record<TopicId, TopicSpec> = {
+  "civil-service-competencies": {
+    id: "civil-service-competencies",
+    title: "Civil Service behaviours & strengths",
+    focusLabel: "Civil Service",
+    subtitle: "Delivering at pace, making effective decisions, leadership & working together.",
+    instruction:
+      "Practising Civil Service Success Profiles: delivering at pace, communicating and influencing, making effective decisions, and managing a quality service. Feedback after every answer.",
+    group: "competency",
+    minutes: 6,
+    matchPattern: /\b(civil service|hmrc|delivering at pace|making effective decisions|communicating and influencing|working together|public sector|governance|policy)\b/i,
+    preferredBankIds: ["c1", "c2"],
+    questions: [
+      {
+        id: "topic-cs-e1",
+        group: "competency",
+        type: "competency",
+        difficulty: "easy",
+        text: "Tell me about a time you had to deliver a piece of work at pace under tight deadlines.",
+        short: "Delivering at pace",
+        drillOnly: true,
+      },
+      {
+        id: "topic-cs-e2",
+        group: "competency",
+        type: "competency",
+        difficulty: "easy",
+        text: "How do you explain complex policy or process requirements to citizens or operational colleagues?",
+        short: "Communicating & influencing",
+        drillOnly: true,
+      },
+      {
+        id: "topic-cs-e3",
+        group: "competency",
+        type: "competency",
+        difficulty: "easy",
+        text: "Give an example of collaborating effectively with colleagues from another department or agency.",
+        short: "Working together",
+        drillOnly: true,
+      },
+      {
+        id: "topic-cs-m1",
+        group: "competency",
+        type: "competency",
+        difficulty: "medium",
+        text: "Describe a situation where you had to make an effective decision with incomplete data or conflicting evidence.",
+        short: "Making effective decisions",
+        drillOnly: true,
+      },
+      {
+        id: "topic-cs-m2",
+        group: "competency",
+        type: "competency",
+        difficulty: "medium",
+        text: "Tell me about a time you led an initiative or took personal responsibility for improving a public service.",
+        short: "Leadership & public service",
+        drillOnly: true,
+      },
+      {
+        id: "topic-cs-m3",
+        group: "competency",
+        type: "competency",
+        difficulty: "medium",
+        text: "How do you handle a situation where policy or operational priorities suddenly change mid-project?",
+        short: "Adapting to changing priorities",
+        drillOnly: true,
+      },
+      {
+        id: "topic-cs-h1",
+        group: "competency",
+        type: "competency",
+        difficulty: "hard",
+        text: "Describe a major challenge you faced delivering public value while balancing strict regulatory constraints and conflicting stakeholder expectations.",
+        short: "Public value & regulatory constraints",
+        drillOnly: true,
+      },
+      {
+        id: "topic-cs-h2",
+        group: "competency",
+        type: "competency",
+        difficulty: "hard",
+        text: "Tell me about a time you influenced senior civil servants or external partners to change their strategic approach.",
+        short: "Influencing senior civil servants",
+        drillOnly: true,
+      },
+      {
+        id: "topic-cs-h3",
+        group: "competency",
+        type: "competency",
+        difficulty: "hard",
+        text: "Tell me about a high-profile failure or policy blocker in your delivery, and how you managed ministerial scrutiny and systemic remediations.",
+        short: "Managing high-profile policy scrutiny",
+        drillOnly: true,
+      },
+    ],
+  },
   "stakeholder-management": {
     id: "stakeholder-management",
     title: "Stakeholder management",
@@ -641,6 +737,74 @@ export const CHECKLIST_TOPICS = [
   "commercial-judgement",
   "stakeholder-management",
 ] as const satisfies readonly TopicId[];
+
+/**
+ * Returns topics tailored specifically to the interview's role, company, and JD.
+ * For non-payment roles (e.g. HMRC / Civil Service, general tech, marketing),
+ * payment fundamentals is excluded in favor of relevant competencies and frameworks.
+ */
+export function getTopicsForInterview(interview?: {
+  role?: string;
+  company?: string;
+  sources?: { job?: string; company?: string; cv?: string };
+}): TopicSpec[] {
+  if (!interview) return Object.values(DRILL_TOPICS);
+  const text = `${interview.role ?? ""} ${interview.company ?? ""} ${interview.sources?.job ?? ""} ${interview.sources?.company ?? ""}`.toLowerCase();
+
+  const isPayments = /\b(payment|checkout|fintech|banking|stripe|adyen|visa|mastercard|card|psp|settlement|chargeback)\b/i.test(text);
+  const isCivilService = /\b(civil service|hmrc|dwp|gov|government|ministry|public sector|nhs|home office|cabinet office)\b/i.test(text);
+  const isPM = /\b(product manager|associate product manager|pm|product lead|product owner)\b/i.test(text);
+
+  const list: TopicSpec[] = [];
+
+  if (isCivilService) {
+    if (DRILL_TOPICS["civil-service-competencies"]) list.push(DRILL_TOPICS["civil-service-competencies"]);
+    list.push(DRILL_TOPICS["stakeholder-management"]);
+    list.push(DRILL_TOPICS["star"]);
+    list.push(DRILL_TOPICS["commercial-judgement"]);
+    if (isPM && DRILL_TOPICS["product-metrics"]) list.push(DRILL_TOPICS["product-metrics"]);
+    list.push(DRILL_TOPICS["curveball"]);
+    return list;
+  }
+
+  if (isPayments) {
+    list.push(DRILL_TOPICS["stakeholder-management"]);
+    list.push(DRILL_TOPICS["payment-fundamentals"]);
+    list.push(DRILL_TOPICS["product-metrics"]);
+    list.push(DRILL_TOPICS["commercial-judgement"]);
+    list.push(DRILL_TOPICS["star"]);
+    list.push(DRILL_TOPICS["technical"]);
+    list.push(DRILL_TOPICS["curveball"]);
+    return list;
+  }
+
+  // Standard / General / Tech roles (NEVER show payment fundamentals):
+  list.push(DRILL_TOPICS["stakeholder-management"]);
+  if (isPM) list.push(DRILL_TOPICS["product-metrics"]);
+  list.push(DRILL_TOPICS["star"]);
+  list.push(DRILL_TOPICS["commercial-judgement"]);
+  list.push(DRILL_TOPICS["technical"]);
+  list.push(DRILL_TOPICS["curveball"]);
+  return list;
+}
+
+/**
+ * Returns dynamic checklist items for the prep sheet based on role relevance.
+ */
+export function getChecklistForInterview(interview?: {
+  id?: string;
+  role?: string;
+  company?: string;
+  sources?: { job?: string; company?: string; cv?: string };
+}) {
+  const topics = getTopicsForInterview(interview);
+  return topics.slice(0, 4).map((t, idx) => ({
+    id: `chk-${t.id}-${idx}`,
+    title: t.title,
+    description: t.subtitle,
+    drillHref: `/mock/${interview?.id ?? "1"}?topic=${t.id}`,
+  }));
+}
 
 const ALL_TOPIC_QUESTIONS: Question[] = Object.values(DRILL_TOPICS).flatMap((t) => t.questions);
 

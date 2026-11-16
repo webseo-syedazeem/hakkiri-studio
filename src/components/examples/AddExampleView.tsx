@@ -91,11 +91,15 @@ export function AddExampleView() {
       return;
     }
 
-    const titleCandidate =
+    let titleCandidate =
       answer
         .split(/[.\n]/)[0]
         ?.replace(/^(situation|task|action|result|in my role|i)\s*[:,-]?\s*/i, "")
-        ?.trim() || question.trim();
+        ?.trim();
+
+    if (!titleCandidate || titleCandidate.toLowerCase().includes("star method") || titleCandidate.length < 8) {
+      titleCandidate = question.trim();
+    }
 
     saveExample({
       title: titleCandidate.length > 70 ? `${titleCandidate.slice(0, 70)}...` : titleCandidate,

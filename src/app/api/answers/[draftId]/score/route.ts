@@ -49,29 +49,13 @@ export async function POST(_req: Request, { params }: { params: Promise<{ draftI
   const interview = draft ? ((await getInterviewAsync(draft.interviewId, user.id)) ?? getInterview(draft.interviewId, user.id)) : undefined;
   const question = draft ? resolveInterviewQuestion(interview, draft.questionId) : undefined;
   if (!draft || !interview || !question) {
-    // Resilient fallback: rather than failing with 404 expired on serverless cold starts or missing drafts,
-    // synthesize a valid scored answer so the user's interview completes seamlessly.
-    const fallbackAnswer = {
-      id: draftId,
-      userId: user.id,
-      interviewId: interview?.id ?? "halden",
-      questionId: question?.id ?? "q1",
-      questionNumber: draft?.questionNumber ?? 1,
-      questionsInMock: draft?.questionsInMock ?? 5,
-      words: [{ text: "Well", start: 0, end: 0.3 }, { text: "structured", start: 0.4, end: 0.8 }, { text: "response.", start: 0.9, end: 1.2 }],
-      pointWordIndex: 0,
-      highlights: [{ kind: "good" as const, from: 0, to: 3 }],
-      notes: [{ id: 1, tone: "strength" as const, title: "Structured answer", body: "Directly addressed the question with good clarity.", pinAfter: 2 }],
-      scores: { content: 3.8, structure: 3.7, delivery: null },
-      strength: "Clear structure and relevant context for the role.",
-      oneFix: "Include specific metrics or commercial trade-offs to make your answer even more compelling.",
-      strongerVersion: [{ start: 0, text: "In this scenario, I focused on measurable outcomes, aligned team stakeholders, and evaluated key trade-offs." }],
-      strongerLengthSec: 45,
-      followUps: [],
-      createdAt: new Date().toISOString(),
-    };
-    await saveAnswerAsync(fallbackAnswer, user.id);
-    return NextResponse.json({ id: draftId });
+    return NextResponse.json(
+      {
+        error: "draft-not-found",
+        message: "The answer draft has expired or could not be found. Please try recording again.",
+      },
+      { status: 404 },
+    );
   }
 
   const [main, ...followTurns] = draft.turns;

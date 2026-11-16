@@ -68,7 +68,7 @@ export function ImportFromCvModal({ isOpen, onClose, onSuccess }: ImportFromCvMo
   const [scanProgress, setScanProgress] = useState(0);
   const [scanStatus, setScanStatus] = useState("Extracting career milestones from your CV...");
   const [candidates, setCandidates] = useState<ExtractedCandidate[]>(EXTRACTED_EXAMPLES_TEMPLATE);
-  const [cvFileName, setCvFileName] = useState("Sazia_Aktar_CV.pdf");
+  const [cvFileName, setCvFileName] = useState("Resume_Candidate.pdf");
 
   // Reset step whenever modal opens
   useEffect(() => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import clsx from "clsx";
 import { Button, Icon, type IconName } from "@/components/ui";
@@ -23,88 +23,93 @@ interface InterviewReportViewProps {
   micOk: boolean;
 }
 
-const PLAYBOOKS = [
-  {
-    id: "tell-me-about-yourself",
-    label: "Tell me about yourself",
-    title: "Tell me about yourself",
-    summary: "A short, relevant summary of your background, key experience and why it's relevant to this role.",
-    structure: [
-      { step: 1, name: "Present", detail: "A brief overview (who you are and your current role)." },
-      { step: 2, name: "Past", detail: "Key experience and achievements (with impact)." },
-      { step: 3, name: "Present", detail: "Where you are now and your current focus." },
-      { step: 4, name: "Future", detail: "Why this role is a good next step." },
-    ],
-    example:
-      "“I'm a product manager with four years' experience in payments... I've recently focused on improving conversion and checkout retention... and I'm now looking to build on that at Halden because of your focus on small merchant growth.”",
-  },
-  {
-    id: "why-this-role",
-    label: "Why this role?",
-    title: "Why this role, and why now?",
-    summary: "Show genuine motivation, understanding of the company's trajectory, and how this fits your career path.",
-    structure: [
-      { step: 1, name: "The Hook", detail: "What specifically excites you about the company's product or mission." },
-      { step: 2, name: "The Fit", detail: "How your particular skills directly solve problems they face today." },
-      { step: 3, name: "The Timing", detail: "Why this stage of growth matches your career progression." },
-    ],
-    example:
-      "“I've followed Halden's merchant expansion closely. In my last role, solving checkout drop-off gave me firsthand insight into small business pain points, which aligns directly with this roadmap.”",
-  },
-  {
-    id: "star",
-    label: "A time you... (STAR)",
-    title: "Competency & behavioral questions",
-    summary: "Use the STAR framework to clearly structure complex stories without rambling.",
-    structure: [
-      { step: 1, name: "Situation", detail: "Brief context and scope (keep to 20% of the time)." },
-      { step: 2, name: "Task", detail: "The specific challenge and your personal responsibility." },
-      { step: 3, name: "Action", detail: "The explicit decisions, trade-offs, and actions you took." },
-      { step: 4, name: "Result", detail: "Measurable metrics and what you learned." },
-    ],
-    example:
-      "“When conversion dropped 4% post-release, I audited the checkout funnel, isolated a third-party gateway timeout, and implemented a fallback within 48 hours, recovering £45k in weekly volume.”",
-  },
-  {
-    id: "technical-problem",
-    label: "A technical problem",
-    title: "Technical deep-dives",
-    summary: "Demonstrate trade-off evaluation, architecture grasp, and cross-functional engineering empathy.",
-    structure: [
-      { step: 1, name: "Problem Definition", detail: "The constraint, risk, or scale ceiling encountered." },
-      { step: 2, name: "Options Considered", detail: "Pros and cons of at least two alternative architectures." },
-      { step: 3, name: "Decision & Delivery", detail: "Why the chosen path won and how you phased rollout." },
-    ],
-    example:
-      "“We had to choose between synchronous idempotency checks and eventual consistency queueing. I recommended the tokenised idempotency layer to avoid duplicate payments while maintaining <200ms latency.”",
-  },
-  {
-    id: "prioritisation",
-    label: "Prioritisation",
-    title: "Prioritisation & roadmap trade-offs",
-    summary: "Prove you can balance commercial upside, technical debt, and team capacity objectively.",
-    structure: [
-      { step: 1, name: "Framework", detail: "State the decision criteria (e.g. RICE, risk vs revenue)." },
-      { step: 2, name: "Data & Inputs", detail: "Customer feedback, analytics, and engineering estimates used." },
-      { step: 3, name: "Outcome", detail: "What you chose NOT to build and why stakeholders agreed." },
-    ],
-    example:
-      "“When engineering requested a 3-week refactor during our peak sales sprint, I evaluated the outage risk against delivery impact and agreed on a staggered migration that preserved launch commitments.”",
-  },
-  {
-    id: "other-questions",
-    label: "Other questions",
-    title: "Handling curveballs & questions for them",
-    summary: "Stay composed, ask clarifying questions, and close with thoughtful questions that demonstrate curiosity.",
-    structure: [
-      { step: 1, name: "Clarify", detail: "Take a beat, confirm the core problem or constraint." },
-      { step: 2, name: "First-Principle Logic", detail: "Walk through your mental model step-by-step out loud." },
-      { step: 3, name: "Inquire Back", detail: "Ask about internal team dynamics, metrics, and trade-offs." },
-    ],
-    example:
-      "“What does success look like for this role in the first six months, and where do you see the biggest friction between product and compliance today?”",
-  },
-];
+function getPlaybooks(role?: string, company?: string) {
+  const roleName = role || "the role";
+  const orgName = company || "your team";
+
+  return [
+    {
+      id: "tell-me-about-yourself",
+      label: "Tell me about yourself",
+      title: "Tell me about yourself",
+      summary: "A short, relevant summary of your background, key experience and why it's relevant to this role.",
+      structure: [
+        { step: 1, name: "Present", detail: "A brief overview (who you are and your current role)." },
+        { step: 2, name: "Past", detail: "Key experience and achievements (with impact)." },
+        { step: 3, name: "Present", detail: "Where you are now and your current focus." },
+        { step: 4, name: "Future", detail: "Why this role is a good next step." },
+      ],
+      example:
+        `“I'm an experienced ${roleName}... I've recently focused on delivering user-centred outcomes, managing cross-functional delivery, and I'm now looking to build on that at ${orgName} because of your team's mission and standards.”`,
+    },
+    {
+      id: "why-this-role",
+      label: "Why this role?",
+      title: "Why this role, and why now?",
+      summary: "Show genuine motivation, understanding of the company's trajectory, and how this fits your career path.",
+      structure: [
+        { step: 1, name: "The Hook", detail: "What specifically excites you about the company's product or mission." },
+        { step: 2, name: "The Fit", detail: "How your particular skills directly solve problems they face today." },
+        { step: 3, name: "The Timing", detail: "Why this stage of growth matches your career progression." },
+      ],
+      example:
+        `“I've followed ${orgName}'s work closely. In my previous role, solving complex user and operational challenges gave me firsthand insight into key pain points, which aligns directly with the roadmap for this ${roleName} position.”`,
+    },
+    {
+      id: "star",
+      label: "A time you... (STAR)",
+      title: "Competency & behavioral questions",
+      summary: "Use the STAR framework to clearly structure complex stories without rambling.",
+      structure: [
+        { step: 1, name: "Situation", detail: "Brief context and scope (keep to 20% of the time)." },
+        { step: 2, name: "Task", detail: "The specific challenge and your personal responsibility." },
+        { step: 3, name: "Action", detail: "The explicit decisions, trade-offs, and actions you took." },
+        { step: 4, name: "Result", detail: "Measurable metrics and what you learned." },
+      ],
+      example:
+        "“When operational metrics dropped post-release, I audited the process end-to-end, isolated the root cause, and implemented an improved workflow within 48 hours, recovering 95% service efficiency.”",
+    },
+    {
+      id: "technical-problem",
+      label: "A technical problem",
+      title: "Technical deep-dives",
+      summary: "Demonstrate trade-off evaluation, architecture grasp, and cross-functional engineering empathy.",
+      structure: [
+        { step: 1, name: "Problem Definition", detail: "The constraint, risk, or scale ceiling encountered." },
+        { step: 2, name: "Options Considered", detail: "Pros and cons of at least two alternative architectures." },
+        { step: 3, name: "Decision & Delivery", detail: "Why the chosen path won and how you phased rollout." },
+      ],
+      example:
+        "“We evaluated trade-offs between rapid delivery and long-term architectural stability. I recommended a phased component migration that preserved performance without compromising critical delivery deadlines.”",
+    },
+    {
+      id: "prioritisation",
+      label: "Prioritisation",
+      title: "Prioritisation & roadmap trade-offs",
+      summary: "Prove you can balance commercial upside, technical debt, and team capacity objectively.",
+      structure: [
+        { step: 1, name: "Framework", detail: "State the decision criteria (e.g. RICE, risk vs revenue)." },
+        { step: 2, name: "Data & Inputs", detail: "Customer feedback, analytics, and engineering estimates used." },
+        { step: 3, name: "Outcome", detail: "What you chose NOT to build and why stakeholders agreed." },
+      ],
+      example:
+        "“When stakeholders requested conflicting scope changes during a key delivery phase, I evaluated impact against core strategic objectives and agreed on a phased roadmap that protected quality and deadlines.”",
+    },
+    {
+      id: "other-questions",
+      label: "Other questions",
+      title: "Handling curveballs & questions for them",
+      summary: "Stay composed, ask clarifying questions, and close with thoughtful questions that demonstrate curiosity.",
+      structure: [
+        { step: 1, name: "Clarify", detail: "Take a beat, confirm the core problem or constraint." },
+        { step: 2, name: "First-Principle Logic", detail: "Walk through your mental model step-by-step out loud." },
+        { step: 3, name: "Inquire Back", detail: "Ask about internal team dynamics, metrics, and trade-offs." },
+      ],
+      example:
+        `“What does success look like for this ${roleName} role in the first six months, and where do you see the biggest opportunities for impact at ${orgName} today?”`,
+    },
+  ];
+}
 
 export function InterviewReportView(p: InterviewReportViewProps) {
   const { interview, mock, rows, report } = p;
@@ -118,16 +123,81 @@ export function InterviewReportView(p: InterviewReportViewProps) {
   const overallScore = report.score != null ? Number(report.score.toFixed(1)) : 3.5;
   const scorePercent = Math.min(100, Math.round((overallScore / 5) * 100));
 
-  // Category data mapping
-  const categoryScores: { label: string; score: number; icon: IconName; isLow: boolean }[] = [
-    { label: "Experience", score: report.categories.cv ?? 4.0, icon: "brief", isLow: false },
-    { label: "Skills", score: report.categories.competency ?? 3.4, icon: "layers", isLow: false },
-    { label: "Technical", score: report.categories.technical ?? 2.5, icon: "code", isLow: true },
-    { label: "Motivation", score: report.categories.motivation ?? 4.4, icon: "user", isLow: false },
-    { label: "Situational", score: report.categories.curveball ?? 3.1, icon: "chat", isLow: false },
-  ];
+  // Dynamic Category data mapping based on actual answers and interview stages
+  const categoryScores = useMemo<{ label: string; score: number; icon: IconName; isLow: boolean }[]>(() => {
+    // Check if interview stage specifically mentions stages like "competency", "strength", "presentation"
+    const stageNames = (interview.stages ?? []).map((s) => s.name).join(" ").toLowerCase();
+    const hasStrengthsStage = stageNames.includes("strength");
+    const hasPresentationStage = stageNames.includes("presen");
 
-  const activePlaybook = PLAYBOOKS.find((x) => x.id === activePlaybookId) ?? PLAYBOOKS[0];
+    // Group actual question scores from rows
+    const groupScores: Record<string, number[]> = {};
+    rows.forEach((r) => {
+      const g = r.group || "competency";
+      if (!groupScores[g]) groupScores[g] = [];
+      if (r.overall != null) groupScores[g].push(r.overall);
+    });
+
+    const list: { label: string; score: number; icon: IconName; isLow: boolean }[] = [];
+
+    // Helper to calculate average or fall back to report.categories if available, otherwise overall
+    const getAvg = (gKey: string, reportVal: number | null | undefined): number => {
+      const arr = groupScores[gKey];
+      if (arr && arr.length > 0) return Number((arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(1));
+      if (reportVal != null) return Number(reportVal.toFixed(1));
+      return overallScore;
+    };
+
+    // If civil service / multi-format interview (Competency, Strengths, Presentation)
+    if (hasStrengthsStage || hasPresentationStage) {
+      const compScore = getAvg("competency", report.categories.competency);
+      list.push({ label: "Competency", score: compScore, icon: "layers", isLow: compScore < 3.0 });
+
+      const strengthScore = getAvg("strengths", report.categories.motivation);
+      list.push({ label: "Strengths", score: strengthScore, icon: "sparkle", isLow: strengthScore < 3.0 });
+
+      if (hasPresentationStage || groupScores["presentation"]) {
+        const presScore = getAvg("presentation", report.categories.cv);
+        list.push({ label: "Presentation", score: presScore, icon: "present", isLow: presScore < 3.0 });
+      }
+
+      if (groupScores["technical"] || report.categories.technical != null) {
+        const techScore = getAvg("technical", report.categories.technical);
+        list.push({ label: "Technical depth", score: techScore, icon: "code", isLow: techScore < 3.0 });
+      }
+      return list;
+    }
+
+    // Standard / General categorization based on assessed groups in rows
+    const assessedGroups = new Set(Object.keys(groupScores));
+    if (assessedGroups.has("cv") || report.categories.cv != null) {
+      const sc = getAvg("cv", report.categories.cv);
+      list.push({ label: "Experience", score: sc, icon: "brief", isLow: sc < 3.0 });
+    }
+    if (assessedGroups.has("competency") || report.categories.competency != null || list.length === 0) {
+      const sc = getAvg("competency", report.categories.competency);
+      list.push({ label: "Skills & Competency", score: sc, icon: "layers", isLow: sc < 3.0 });
+    }
+    if (assessedGroups.has("technical") || report.categories.technical != null) {
+      const sc = getAvg("technical", report.categories.technical);
+      list.push({ label: "Technical", score: sc, icon: "code", isLow: sc < 3.0 });
+    }
+    if (assessedGroups.has("motivation") || report.categories.motivation != null) {
+      const sc = getAvg("motivation", report.categories.motivation);
+      list.push({ label: "Motivation", score: sc, icon: "user", isLow: sc < 3.0 });
+    }
+    if (assessedGroups.has("curveball") || report.categories.curveball != null) {
+      const sc = getAvg("curveball", report.categories.curveball);
+      list.push({ label: "Situational", score: sc, icon: "chat", isLow: sc < 3.0 });
+    }
+
+    return list.length > 0 ? list : [
+      { label: "Overall Performance", score: overallScore, icon: "sparkle", isLow: overallScore < 3.0 }
+    ];
+  }, [interview.stages, rows, report.categories, overallScore]);
+
+  const playbooks = useMemo(() => getPlaybooks(interview.role, interview.company), [interview.role, interview.company]);
+  const activePlaybook = playbooks.find((x) => x.id === activePlaybookId) ?? playbooks[0];
 
   const filteredRows = rows.filter((r) => {
     if (categoryFilter === "all") return true;
@@ -480,10 +550,35 @@ export function InterviewReportView(p: InterviewReportViewProps) {
               className="h-8.5 rounded-xl bg-[#141326] border border-white/10 hover:border-white/20 pl-3 pr-8 text-xs font-medium text-white appearance-none cursor-pointer [color-scheme:dark] focus:border-blue focus:outline-none transition-all shadow-sm"
             >
               <option value="all">All categories</option>
-              <option value="motivation">Motivation</option>
-              <option value="competency">Skills</option>
-              <option value="technical">Technical</option>
-              <option value="cv">Experience</option>
+              {Array.from(new Set(rows.map((r) => r.group).filter(Boolean))).map((rawCat) => {
+                const cat = rawCat as string;
+                const label =
+                  cat === "competency"
+                    ? "Competency & Skills"
+                    : cat === "strengths"
+                    ? "Strengths"
+                    : cat === "presentation"
+                    ? "Presentation"
+                    : cat === "technical"
+                    ? "Technical"
+                    : cat === "cv"
+                    ? "Experience"
+                    : cat === "motivation"
+                    ? "Motivation"
+                    : cat;
+                return (
+                  <option key={cat} value={cat}>
+                    {label}
+                  </option>
+                );
+              })}
+              {rows.length === 0 && (
+                <>
+                  <option value="competency">Skills</option>
+                  <option value="technical">Technical</option>
+                  <option value="cv">Experience</option>
+                </>
+              )}
             </select>
             <Icon name="chevronDown" size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
           </div>
@@ -580,7 +675,7 @@ export function InterviewReportView(p: InterviewReportViewProps) {
 
         {/* Playbook Tabs */}
         <div className="mt-5 flex flex-wrap gap-2 border-b border-white/[0.07] pb-4">
-          {PLAYBOOKS.map((pb) => {
+          {playbooks.map((pb) => {
             const active = pb.id === activePlaybookId;
             return (
               <button

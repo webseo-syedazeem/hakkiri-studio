@@ -339,6 +339,50 @@ export async function deleteSession(token: string): Promise<void> {
 }
 
 /**
+ * Look up an existing user by email address.
+ */
+export async function findUserByEmail(email: string): Promise<User | null> {
+  const normEmail = email.trim().toLowerCase();
+  if (isMongoConfigured()) {
+    try {
+      const db = await getMongoDb();
+      if (db) {
+        const usersCol = db.collection<DbUserRecord>("users");
+        const record = await usersCol.findOne({ email: normEmail });
+        if (record) {
+          return {
+            id: record._id,
+            email: record.email,
+            firstName: record.firstName,
+            initials: record.initials,
+            trial: record.trial,
+            tier: record.tier,
+            createdAt: record.createdAt instanceof Date ? record.createdAt.toISOString() : undefined,
+          };
+        }
+      }
+    } catch (err) {
+      console.error("[auth] findUserByEmail error:", err);
+    }
+  }
+
+  for (const u of memUsers.values()) {
+    if (u.email === normEmail) {
+      return {
+        id: u._id,
+        email: u.email,
+        firstName: u.firstName,
+        initials: u.initials,
+        trial: u.trial,
+        tier: u.tier,
+        createdAt: u.createdAt.toISOString(),
+      };
+    }
+  }
+  return null;
+}
+
+/**
  * Find or create a user authenticated via Google or OAuth provider.
  */
 export async function findOrCreateOAuthUser(profile: {

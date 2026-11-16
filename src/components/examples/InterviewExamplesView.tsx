@@ -230,21 +230,21 @@ export function InterviewExamplesView() {
 
                   {/* Expandable STAR Details */}
                   {isExpanded && (
-                    <div className="mt-4 pt-3.5 border-t border-line/70 space-y-3 text-xs animate-fade-in">
-                      <div>
-                        <span className="font-semibold text-indigo-300 block mb-0.5">Question it answers:</span>
+                    <div className="mt-4 pt-3.5 border-t border-line/70 space-y-3.5 text-xs animate-fade-in">
+                      <div className="rounded-xl bg-[#111320] p-3.5 border border-white/[0.05]">
+                        <span className="font-semibold text-indigo-300 block mb-1 text-[11px] uppercase tracking-wider">Question it answers:</span>
                         <p className="text-white font-medium">{ex.question}</p>
                       </div>
 
-                      <div>
-                        <span className="font-semibold text-muted block mb-0.5">Example Answer (STAR):</span>
-                        <p className="text-muted leading-relaxed whitespace-pre-line">{ex.answer}</p>
+                      <div className="rounded-xl bg-[#111320] p-3.5 border border-white/[0.05]">
+                        <span className="font-semibold text-muted block mb-1 text-[11px] uppercase tracking-wider">Example Answer (STAR):</span>
+                        <p className="text-[#c9cad8] leading-relaxed whitespace-pre-line">{ex.answer}</p>
                       </div>
 
-                      <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-line/40 text-[11px] text-dim">
-                        <span>Role: <b className="text-muted font-normal">{ex.role}</b></span>
-                        <span>Competency: <b className="text-muted font-normal">{ex.competency}</b></span>
-                        <span>Type: <b className="text-muted font-normal">{ex.interviewType}</b></span>
+                      <div className="flex flex-wrap items-center justify-between gap-3 pt-2 text-[11px] text-muted">
+                        <span>Role: <b className="text-white font-medium">{ex.role}</b></span>
+                        <span>Competency: <b className="text-white font-medium">{ex.competency}</b></span>
+                        <span>Type: <b className="text-white font-medium">{ex.interviewType}</b></span>
                       </div>
                     </div>
                   )}

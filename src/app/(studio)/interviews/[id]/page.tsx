@@ -5,7 +5,7 @@ import { getInterview, getInterviewAsync } from "@/lib/interviews/store";
 import { understandingOf } from "@/lib/interviews/build";
 import { PRESETS, settingsOr } from "@/lib/interviews/settings";
 import { interviewWhen } from "@/lib/sessions/labels";
-import { DRILL_TOPICS } from "@/lib/sessions/topics";
+import { DRILL_TOPICS, getTopicsForInterview } from "@/lib/sessions/topics";
 import { requirePageUser } from "@/lib/auth/require";
 import {
   InterviewOverviewClient,
@@ -158,7 +158,7 @@ export default async function InterviewOverview({
       initialStageId={initialStageId}
       stages={stages}
       scoreCategories={scoreCategories}
-      topics={Object.values(DRILL_TOPICS).map((t) => ({ id: t.id, title: t.title }))}
+      topics={getTopicsForInterview(interview).map((t) => ({ id: t.id, title: t.title }))}
       roleSummary={roleSummary}
       inputsSummary={inputsSummary}
     />

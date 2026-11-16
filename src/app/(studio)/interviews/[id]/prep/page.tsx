@@ -14,6 +14,7 @@ import { doneSessions, isFresh, rowsFor } from "@/lib/mocks/store";
 import { buildReport } from "@/lib/mocks/report";
 import { interviewWhen } from "@/lib/sessions/labels";
 import { londonToday } from "@/lib/dates";
+import { getChecklistForInterview } from "@/lib/sessions/topics";
 import type { Answer } from "@/lib/types";
 import { requirePageUser } from "@/lib/auth/require";
 
@@ -63,32 +64,7 @@ export default async function PrepSheetPage({
 
   // Dynamic knowledge checklist items
   const hasQ = (qid: string) => interview.questions.some((q) => q.id === qid);
-  const checklistItems = [
-    {
-      id: "chk-1",
-      title: "Payment fundamentals",
-      description: "Authorisation, checkout, settlement, chargebacks and fraud controls.",
-      drillHref: `/mock/${interview.id}?topic=payment-fundamentals`,
-    },
-    {
-      id: "chk-2",
-      title: "Product metrics",
-      description: "Conversion, payment success rate, transaction failures and fraud losses.",
-      drillHref: `/mock/${interview.id}?topic=product-metrics`,
-    },
-    {
-      id: "chk-3",
-      title: "Commercial judgement",
-      description: "Balancing growth with risk, cost, regulation and customer experience.",
-      drillHref: `/mock/${interview.id}?topic=commercial-judgement`,
-    },
-    {
-      id: "chk-4",
-      title: "Stakeholder management",
-      description: "Working with engineering, compliance, operations and commercial teams.",
-      drillHref: `/mock/${interview.id}?topic=stakeholder-management`,
-    },
-  ];
+  const checklistItems = getChecklistForInterview(interview);
 
   return (
     <div className="flex grow flex-col pb-12">

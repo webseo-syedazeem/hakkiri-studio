@@ -106,6 +106,17 @@ export async function flushStorage(): Promise<void> {
 }
 
 export function saveFile(rel: string, data: ArrayBuffer) {
+  if (isMongoConfigured()) {
+    try {
+      const base64 = Buffer.from(data).toString("base64");
+      const p = saveToMongo("files", rel.replace(/[\/\\]/g, "_"), { rel, base64, at: new Date().toISOString() })
+        .catch((err) => console.warn(`[storage] mongo saveFile error for ${rel}:`, err))
+        .finally(() => pendingSaves.delete(p));
+      pendingSaves.add(p);
+    } catch (err) {
+      console.warn(`[storage] mongo saveFile error for ${rel}:`, err);
+    }
+  }
   if (!enabled) return;
   try {
     const file = path.join(/*turbopackIgnore: true*/ DIR, rel);
@@ -125,11 +136,32 @@ export function loadFile(rel: string): ArrayBuffer | null {
       console.warn(`[storage] path traversal attempt blocked: ${rel}`);
       return null;
     }
-    const buf = fs.readFileSync(/*turbopackIgnore: true*/ fullPath);
-    return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer;
+    if (fs.existsSync(fullPath)) {
+      const buf = fs.readFileSync(/*turbopackIgnore: true*/ fullPath);
+      return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer;
+    }
   } catch {
-    return null;
+    // try fallback
   }
+  return null;
+}
+
+export async function loadFileAsync(rel: string): Promise<ArrayBuffer | null> {
+  const local = loadFile(rel);
+  if (local) return local;
+  if (isMongoConfigured()) {
+    try {
+      const doc = await loadFromMongo<{ rel: string; base64: string }>("files", rel.replace(/[\/\\]/g, "_"));
+      if (doc?.base64) {
+        const buf = Buffer.from(doc.base64, "base64");
+        saveFile(rel, buf.buffer);
+        return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer;
+      }
+    } catch (err) {
+      console.warn(`[storage] mongo loadFile error for ${rel}:`, err);
+    }
+  }
+  return null;
 }
 
 export function removeFile(rel: string) {
