@@ -8,6 +8,8 @@ import { ImportFromCvModal } from "@/components/examples/ImportFromCvModal";
 import {
   loadExamples,
   toggleExampleFavorite,
+  updateExample,
+  deleteExample,
   type InterviewExample,
 } from "@/lib/examples/store";
 
@@ -19,6 +21,54 @@ export function InterviewExamplesView() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [showImportModal, setShowImportModal] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Edit response state
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editQuestion, setEditQuestion] = useState("");
+  const [editAnswer, setEditAnswer] = useState("");
+  const [editRole, setEditRole] = useState("");
+  const [editInterviewType, setEditInterviewType] = useState("");
+  const [editCompetency, setEditCompetency] = useState("");
+
+  const startEditing = (ex: InterviewExample, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingId(ex.id);
+    setEditQuestion(ex.question);
+    setEditAnswer(ex.answer);
+    setEditRole(ex.role);
+    setEditInterviewType(ex.interviewType);
+    setEditCompetency(ex.competency);
+  };
+
+  const cancelEditing = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingId(null);
+  };
+
+  const handleSaveEdit = (id: string, e: React.FormEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (!editQuestion.trim() || !editAnswer.trim()) return;
+    updateExample(id, {
+      question: editQuestion.trim(),
+      answer: editAnswer.trim(),
+      role: editRole.trim() || "General",
+      interviewType: editInterviewType.trim() || "Competency",
+      competency: editCompetency || "Leadership",
+    });
+    setEditingId(null);
+    setToastMessage("Example response updated! ✓");
+    setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  const handleDeleteExample = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    deleteExample(id);
+    if (expandedId === id) setExpandedId(null);
+    if (editingId === id) setEditingId(null);
+    setToastMessage("Example removed.");
+    setTimeout(() => setToastMessage(null), 3000);
+  };
 
   useEffect(() => {
     setExamples(loadExamples());
@@ -61,6 +111,13 @@ export function InterviewExamplesView() {
 
   return (
     <div className="flex grow flex-col pb-16">
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 rounded-xl bg-emerald-500/20 border border-emerald-500/40 px-4 py-2.5 text-xs font-semibold text-emerald-300 shadow-2xl animate-rise flex items-center gap-2 backdrop-blur-md">
+          <span>✓</span>
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-rise">
         <div>
@@ -228,24 +285,135 @@ export function InterviewExamplesView() {
                     </div>
                   </div>
 
-                  {/* Expandable STAR Details */}
+                  {/* Expandable STAR Details & Edit Response */}
                   {isExpanded && (
-                    <div className="mt-4 pt-3.5 border-t border-line/70 space-y-3.5 text-xs animate-fade-in">
-                      <div className="rounded-xl bg-[#111320] p-3.5 border border-white/[0.05]">
-                        <span className="font-semibold text-indigo-300 block mb-1 text-[11px] uppercase tracking-wider">Question it answers:</span>
-                        <p className="text-white font-medium">{ex.question}</p>
-                      </div>
+                    <div
+                      className="mt-4 pt-3.5 border-t border-line/70 space-y-3.5 text-xs animate-fade-in"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {editingId === ex.id ? (
+                        <form onSubmit={(e) => handleSaveEdit(ex.id, e)} className="space-y-3.5">
+                          <div>
+                            <label className="block text-[11px] font-semibold text-indigo-300 uppercase tracking-wider mb-1">
+                              Question it answers
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              value={editQuestion}
+                              onChange={(e) => setEditQuestion(e.target.value)}
+                              className="w-full rounded-xl bg-[#111320] px-3.5 py-2 text-xs text-white border border-indigo-500/50 outline-none focus:border-indigo-400"
+                            />
+                          </div>
 
-                      <div className="rounded-xl bg-[#111320] p-3.5 border border-white/[0.05]">
-                        <span className="font-semibold text-muted block mb-1 text-[11px] uppercase tracking-wider">Example Answer (STAR):</span>
-                        <p className="text-[#c9cad8] leading-relaxed whitespace-pre-line">{ex.answer}</p>
-                      </div>
+                          <div>
+                            <label className="block text-[11px] font-semibold text-muted uppercase tracking-wider mb-1">
+                              Example Answer / Response (STAR)
+                            </label>
+                            <textarea
+                              rows={5}
+                              required
+                              value={editAnswer}
+                              onChange={(e) => setEditAnswer(e.target.value)}
+                              className="w-full rounded-xl bg-[#111320] p-3.5 text-xs text-white leading-relaxed border border-indigo-500/50 outline-none focus:border-indigo-400"
+                            />
+                          </div>
 
-                      <div className="flex flex-wrap items-center justify-between gap-3 pt-2 text-[11px] text-muted">
-                        <span>Role: <b className="text-white font-medium">{ex.role}</b></span>
-                        <span>Competency: <b className="text-white font-medium">{ex.competency}</b></span>
-                        <span>Type: <b className="text-white font-medium">{ex.interviewType}</b></span>
-                      </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div>
+                              <label className="block text-[11px] font-semibold text-muted mb-1">Role (free text)</label>
+                              <input
+                                type="text"
+                                value={editRole}
+                                onChange={(e) => setEditRole(e.target.value)}
+                                placeholder="e.g. Associate Product Manager"
+                                className="w-full rounded-lg bg-[#111320] px-3 py-1.5 text-xs text-white border border-white/10 outline-none focus:border-indigo-400"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-semibold text-muted mb-1">Interview type (free text)</label>
+                              <input
+                                type="text"
+                                value={editInterviewType}
+                                onChange={(e) => setEditInterviewType(e.target.value)}
+                                placeholder="e.g. Competency, Case interview"
+                                className="w-full rounded-lg bg-[#111320] px-3 py-1.5 text-xs text-white border border-white/10 outline-none focus:border-indigo-400"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-semibold text-muted mb-1">Competency</label>
+                              <input
+                                type="text"
+                                value={editCompetency}
+                                onChange={(e) => setEditCompetency(e.target.value)}
+                                placeholder="e.g. Leadership, Analytical"
+                                className="w-full rounded-lg bg-[#111320] px-3 py-1.5 text-xs text-white border border-white/10 outline-none focus:border-indigo-400"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-white/10">
+                            <button
+                              type="button"
+                              onClick={cancelEditing}
+                              className="rounded-lg px-3 py-1.5 text-xs font-semibold text-muted hover:text-white transition-colors cursor-pointer"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="submit"
+                              className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors cursor-pointer"
+                            >
+                              <Icon name="check" size={12} strokeWidth={2.5} />
+                              <span>Save response</span>
+                            </button>
+                          </div>
+                        </form>
+                      ) : (
+                        <>
+                          <div className="rounded-xl bg-[#111320] p-3.5 border border-white/[0.05]">
+                            <span className="font-semibold text-indigo-300 block mb-1 text-[11px] uppercase tracking-wider">
+                              Question it answers:
+                            </span>
+                            <p className="text-white font-medium">{ex.question}</p>
+                          </div>
+
+                          <div className="rounded-xl bg-[#111320] p-3.5 border border-white/[0.05]">
+                            <span className="font-semibold text-muted block mb-1 text-[11px] uppercase tracking-wider">
+                              Example Answer (STAR):
+                            </span>
+                            <p className="text-[#c9cad8] leading-relaxed whitespace-pre-line">{ex.answer}</p>
+                          </div>
+
+                          <div className="flex flex-wrap items-center justify-between gap-3 pt-1 text-[11px] text-muted">
+                            <div className="flex flex-wrap items-center gap-4">
+                              <span>Role: <b className="text-white font-medium">{ex.role}</b></span>
+                              <span>Competency: <b className="text-white font-medium">{ex.competency}</b></span>
+                              <span>Type: <b className="text-white font-medium">{ex.interviewType}</b></span>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={(e) => startEditing(ex, e)}
+                                className="inline-flex items-center gap-1 rounded-lg border border-indigo-500/40 bg-indigo-500/10 hover:bg-indigo-500/20 px-2.5 py-1 text-xs font-semibold text-indigo-300 transition-colors cursor-pointer"
+                              >
+                                <Icon name="edit" size={11} />
+                                <span>Edit response</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={(e) => handleDeleteExample(ex.id, e)}
+                                className="inline-flex items-center gap-1 rounded-lg border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 px-2.5 py-1 text-xs font-semibold text-rose-300 transition-colors cursor-pointer"
+                              >
+                                <Icon name="trash" size={11} />
+                                <span>Delete</span>
+                              </button>
+                            </div>
+                          </div>
+                        </>
+                      )}
                     </div>
                   )}
                 </div>

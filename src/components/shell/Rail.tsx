@@ -40,7 +40,7 @@ const ITEMS: {
     match: (p) => p.startsWith("/interview-examples") || p.startsWith("/story-bank"),
   },
   {
-    label: "Progress",
+    label: "Practice Hub",
     href: "/practice",
     icon: "chart",
     match: (p) => p.startsWith("/practice") || p.startsWith("/rehearse"),

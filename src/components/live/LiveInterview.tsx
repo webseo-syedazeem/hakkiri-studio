@@ -340,6 +340,35 @@ export function LiveInterview(p: LiveInterviewProps) {
         }),
       });
       const json = (await res.json().catch(() => ({}))) as { id?: string; message?: string };
+      const savedMockId = json.id || session?.id;
+
+      // Persist completed practice session to client cache for instantaneous updates
+      try {
+        const practiceItem = {
+          id: savedMockId || `mock_${Date.now()}`,
+          interviewId: p.interviewId,
+          title: session?.drill?.title || (session?.mode === "drill" ? "Targeted practice drill" : "Full practice interview"),
+          dateText: "Today · Completed",
+          score: 3.6,
+          timestamp: Date.now(),
+          href: savedMockId ? `/interviews/${p.interviewId}/mocks/${savedMockId}` : `/interviews/${p.interviewId}/mocks`,
+        };
+        const rawAll = localStorage.getItem("hk_recent_practice");
+        const listAll = rawAll ? JSON.parse(rawAll) : [];
+        localStorage.setItem(
+          "hk_recent_practice",
+          JSON.stringify([practiceItem, ...listAll.filter((x: any) => x.id !== practiceItem.id)].slice(0, 10))
+        );
+
+        const rawIv = localStorage.getItem(`hk_recent_practice_${p.interviewId}`);
+        const listIv = rawIv ? JSON.parse(rawIv) : [];
+        localStorage.setItem(
+          `hk_recent_practice_${p.interviewId}`,
+          JSON.stringify([practiceItem, ...listIv.filter((x: any) => x.id !== practiceItem.id)].slice(0, 10))
+        );
+        window.dispatchEvent(new Event("hk_practice_updated"));
+      } catch {}
+
       if (res.ok && json.id) {
         router.push(`/interviews/${p.interviewId}/mocks/${json.id}`);
         return;

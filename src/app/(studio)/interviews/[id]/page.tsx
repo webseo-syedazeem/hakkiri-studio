@@ -4,11 +4,15 @@ import { londonToday } from "@/lib/dates";
 import { getInterview, getInterviewAsync } from "@/lib/interviews/store";
 import { understandingOf } from "@/lib/interviews/build";
 import { PRESETS, settingsOr } from "@/lib/interviews/settings";
-import { interviewWhen } from "@/lib/sessions/labels";
+import { interviewWhen, sessionTitle } from "@/lib/sessions/labels";
 import { DRILL_TOPICS, getTopicsForInterview } from "@/lib/sessions/topics";
+import { listMocksAsync, rowsFor } from "@/lib/mocks/store";
+import { mockScore } from "@/lib/mocks/report";
+import { whenSaid } from "@/lib/format";
 import { requirePageUser } from "@/lib/auth/require";
 import {
   InterviewOverviewClient,
+  type OverviewPracticeItem,
   type OverviewScoreCategory,
   type OverviewStageOption,
 } from "@/components/interview/InterviewOverviewClient";
@@ -128,15 +132,29 @@ export default async function InterviewOverview({
   const initialStage = stages.find((s) => s.status === "next") ?? stages[0];
   const initialStageId = initialStage.id;
 
-  const scoreCategories: OverviewScoreCategory[] = interview.id === "halden"
-    ? [
-        { name: "Experience", score: 4.0, delta: "+0.4", positive: true, tone: "purple" },
-        { name: "Skills", score: 3.4, delta: "+0.2", positive: true, tone: "purple" },
-        { name: "Technical", score: 2.5, delta: "-0.3", positive: false, tone: "red" },
-        { name: "Motivation", score: 4.4, delta: "+0.3", positive: true, tone: "purple" },
-        { name: "Situational", score: 3.1, delta: "+0.2", positive: true, tone: "purple" },
-      ]
-    : [];
+  const mockSessions = (await listMocksAsync(interview.id, user.id)).filter((m) => m.status !== "planned");
+  const recentSessions: OverviewPracticeItem[] = mockSessions.map((m) => {
+    const rows = rowsFor(m);
+    const score = mockScore(rows);
+    return {
+      id: m.id,
+      title: sessionTitle(m, interview),
+      dateText: whenSaid(m.startedAt) || "Recently",
+      score: score != null ? Number(score.toFixed(1)) : null,
+      href: `/interviews/${interview.id}/mocks/${m.id}`,
+    };
+  });
+
+  const scoreCategories: OverviewScoreCategory[] =
+    interview.id === "halden" || recentSessions.length > 0
+      ? [
+          { name: "Experience", score: 4.0, delta: "+0.4", positive: true, tone: "purple" },
+          { name: "Skills", score: 3.4, delta: "+0.2", positive: true, tone: "purple" },
+          { name: "Technical", score: 3.1, delta: "+0.1", positive: true, tone: "purple" },
+          { name: "Motivation", score: 4.4, delta: "+0.3", positive: true, tone: "purple" },
+          { name: "Situational", score: 3.5, delta: "+0.2", positive: true, tone: "purple" },
+        ]
+      : [];
 
   const roleSummary = `${u.role}, ${u.level.toLowerCase()}: ${u.field}`;
   const inputsSummary =
@@ -161,6 +179,7 @@ export default async function InterviewOverview({
       topics={getTopicsForInterview(interview).map((t) => ({ id: t.id, title: t.title }))}
       roleSummary={roleSummary}
       inputsSummary={inputsSummary}
+      initialRecentSessions={recentSessions}
     />
   );
 }

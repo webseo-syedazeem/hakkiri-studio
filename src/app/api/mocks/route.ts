@@ -74,12 +74,7 @@ export async function POST(req: Request) {
 
   // Filter for real recorded answers belonging to this interview and user
   const realAnswers = answers.filter((a): a is Answer => Boolean(a && a.interviewId === interview.id));
-  if (realAnswers.length === 0) {
-    return NextResponse.json(
-      { error: "no-recorded-answers", message: "No recorded answers were found for this session." },
-      { status: 400 }
-    );
-  }
+  const effectiveAnswerIds = realAnswers.map((a) => a.id);
   const finishedAt = new Date().toISOString();
 
   if (body.sessionId) {
@@ -94,7 +89,7 @@ export async function POST(req: Request) {
         status: "done",
         startedAt: body.startedAt,
         finishedAt,
-        answerIds: body.answerIds,
+        answerIds: effectiveAnswerIds,
         style: body.style ?? "realistic",
         planned: body.planned,
         questionIds: body.askedIds ?? interview.questions.slice(0, body.planned).map((q) => q.id),
@@ -108,7 +103,7 @@ export async function POST(req: Request) {
       status: "done",
       startedAt: body.startedAt,
       finishedAt,
-      answerIds: body.answerIds,
+      answerIds: effectiveAnswerIds,
       askedIds: body.askedIds ?? session.questionIds ?? [],
       skipped,
       style: body.style ?? session.style,
@@ -129,7 +124,7 @@ export async function POST(req: Request) {
   }
 
   const id = randomUUID();
-  await saveMockAsync({ id, userId: user.id, interviewId: interview.id, kind: body.kind ?? "full", status: "done", group: body.group, startedAt: body.startedAt, style: body.style, finishedAt, answerIds: body.answerIds, askedIds: body.askedIds, planned: body.planned }, user.id);
+  await saveMockAsync({ id, userId: user.id, interviewId: interview.id, kind: body.kind ?? "full", status: "done", group: body.group, startedAt: body.startedAt, style: body.style, finishedAt, answerIds: effectiveAnswerIds, askedIds: body.askedIds, planned: body.planned }, user.id);
   await flushStorage();
   return NextResponse.json({ id });
 }

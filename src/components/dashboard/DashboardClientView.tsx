@@ -4,29 +4,52 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Icon, Panel } from "@/components/ui";
 import { UpcomingAgenda, type UpcomingEvent } from "./UpcomingAgenda";
-import { StageTracker } from "./StageTracker";
+import { StageTracker, type StageTrackerInterview } from "./StageTracker";
 import { ArchiveModal, type ArchivedItem } from "./ArchiveModal";
 import { loadArchivedItems, saveArchivedItems } from "@/lib/interviews/archive-store";
+import type { OverviewPracticeItem } from "@/components/interview/InterviewOverviewClient";
 
 export function DashboardClientView({
   upcomingInterviewsCount,
   upcomingPresentationsCount,
   agendaEvents,
+  activeInterview,
+  initialRecentPractices,
 }: {
   upcomingInterviewsCount: number;
   upcomingPresentationsCount: number;
   agendaEvents: UpcomingEvent[];
+  activeInterview?: StageTrackerInterview | null;
+  initialRecentPractices?: OverviewPracticeItem[];
 }) {
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
   const [archivedItems, setArchivedItems] = useState<ArchivedItem[]>([]);
   const [isHaldenArchived, setIsHaldenArchived] = useState(false);
   const [archiveToast, setArchiveToast] = useState<string | null>(null);
+  const [recentPractices, setRecentPractices] = useState<OverviewPracticeItem[]>(initialRecentPractices ?? []);
 
   useEffect(() => {
     setArchivedItems(loadArchivedItems());
     const handleUpdate = () => setArchivedItems(loadArchivedItems());
     window.addEventListener("hk_archive_updated", handleUpdate);
     return () => window.removeEventListener("hk_archive_updated", handleUpdate);
+  }, []);
+
+  useEffect(() => {
+    const updateRecent = () => {
+      try {
+        const raw = localStorage.getItem("hk_recent_practice");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setRecentPractices(parsed);
+          }
+        }
+      } catch {}
+    };
+    updateRecent();
+    window.addEventListener("hk_practice_updated", updateRecent);
+    return () => window.removeEventListener("hk_practice_updated", updateRecent);
   }, []);
 
   const handleArchiveHalden = (reason: string) => {
@@ -223,7 +246,7 @@ export function DashboardClientView({
               </div>
             </div>
           ) : (
-            <StageTracker onArchiveRole={handleArchiveHalden} />
+            <StageTracker interview={activeInterview} onArchiveRole={handleArchiveHalden} />
           )}
         </Panel>
 
@@ -343,64 +366,42 @@ export function DashboardClientView({
               Your completed practice sessions.
             </p>
 
-            <div className="mt-3.5 flex flex-col divide-y divide-white/[0.06]">
-              {/* Recent 1 */}
-              <Link
-                href="/interviews/halden"
-                className="flex items-center justify-between py-3 px-2.5 -mx-2.5 rounded-xl transition-all duration-200 hover:bg-panel-2/80 hover:translate-x-1.5 group"
-              >
-                <div className="min-w-0 grow">
-                  <div className="text-[14px] font-semibold text-ink group-hover:underline group-hover:text-blue-soft transition-colors leading-snug">
-                    Technical questions
-                  </div>
-                  <div className="truncate text-xs text-muted mt-0.5">Halden</div>
+            {recentPractices.length > 0 ? (
+              <div className="mt-3.5 flex flex-col divide-y divide-white/[0.06]">
+                {recentPractices.slice(0, 5).map((rp) => (
+                  <Link
+                    key={rp.id}
+                    href={rp.href || (activeInterview ? `/interviews/${activeInterview.id}` : "/interviews/halden")}
+                    className="flex items-center justify-between py-3 px-2.5 -mx-2.5 rounded-xl transition-all duration-200 hover:bg-panel-2/80 hover:translate-x-1.5 group"
+                  >
+                    <div className="min-w-0 grow">
+                      <div className="text-[14px] font-semibold text-ink group-hover:underline group-hover:text-blue-soft transition-colors leading-snug truncate">
+                        {rp.title}
+                      </div>
+                      <div className="truncate text-xs text-muted mt-0.5">
+                        {activeInterview?.company || "HMRC"}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2.5 shrink-0">
+                      <span className="text-xs text-muted">{rp.dateText}</span>
+                      <span className="inline-flex items-center rounded-full bg-[#1e2544] px-2.5 py-0.5 text-[11px] font-semibold text-[#818cf8] shadow-sm">
+                        {rp.score != null ? `${rp.score} / 5` : "Completed"}
+                      </span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-4 py-8 text-center text-xs text-muted">
+                <div className="flex h-9 w-9 mx-auto items-center justify-center rounded-xl bg-white/[0.04] text-muted border border-white/10 mb-2">
+                  <Icon name="play" size={13} />
                 </div>
-                <div className="flex items-center gap-2.5 shrink-0">
-                  <span className="text-xs text-muted">Yesterday, 11:05</span>
-                  <span className="inline-flex items-center rounded-full bg-[#1e2544] px-2.5 py-0.5 text-[11px] font-semibold text-[#818cf8] shadow-sm">
-                    Interview
-                  </span>
-                </div>
-              </Link>
-
-              {/* Recent 2 */}
-              <Link
-                href="/presentations/q1-roadmap"
-                className="flex items-center justify-between py-3 px-2.5 -mx-2.5 rounded-xl transition-all duration-200 hover:bg-panel-2/80 hover:translate-x-1.5 group"
-              >
-                <div className="min-w-0 grow">
-                  <div className="text-[14px] font-semibold text-ink group-hover:underline group-hover:text-blue-soft transition-colors leading-snug">
-                    Q&A rehearsal
-                  </div>
-                  <div className="truncate text-xs text-muted mt-0.5">Q1 roadmap</div>
-                </div>
-                <div className="flex items-center gap-2.5 shrink-0">
-                  <span className="text-xs text-muted">Wed 5 Nov, 16:20</span>
-                  <span className="inline-flex items-center rounded-full bg-[#162a26] px-2.5 py-0.5 text-[11px] font-semibold text-[#34d399] shadow-sm">
-                    Presentation
-                  </span>
-                </div>
-              </Link>
-
-              {/* Recent 3 */}
-              <Link
-                href="/interviews/halden"
-                className="flex items-center justify-between py-3 px-2.5 -mx-2.5 rounded-xl transition-all duration-200 hover:bg-panel-2/80 hover:translate-x-1.5 group"
-              >
-                <div className="min-w-0 grow">
-                  <div className="text-[14px] font-semibold text-ink group-hover:underline group-hover:text-blue-soft transition-colors leading-snug">
-                    Behavioural practice
-                  </div>
-                  <div className="truncate text-xs text-muted mt-0.5">Halden</div>
-                </div>
-                <div className="flex items-center gap-2.5 shrink-0">
-                  <span className="text-xs text-muted">Tue 4 Nov, 10:10</span>
-                  <span className="inline-flex items-center rounded-full bg-[#1e2544] px-2.5 py-0.5 text-[11px] font-semibold text-[#818cf8] shadow-sm">
-                    Interview
-                  </span>
-                </div>
-              </Link>
-            </div>
+                <p className="font-semibold text-white">No practice sessions yet</p>
+                <p className="mt-1 text-dim max-w-[240px] mx-auto">
+                  Completed practice sessions and scores will appear here after your first run.
+                </p>
+              </div>
+            )}
           </Panel>
         </div>
       </div>

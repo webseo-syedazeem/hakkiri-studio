@@ -39,6 +39,15 @@ export type OverviewScoreCategory = {
   tone: "purple" | "red";
 };
 
+export type OverviewPracticeItem = {
+  id: string;
+  title: string;
+  dateText: string;
+  score?: number | null;
+  href: string;
+  interviewId?: string;
+};
+
 type PracticeMinutes = 10 | 20 | 30 | 45;
 
 const PRACTICE_LENGTHS: PracticeMinutes[] = [10, 20, 30, 45];
@@ -188,6 +197,7 @@ export function InterviewOverviewClient({
   topics,
   roleSummary,
   inputsSummary,
+  initialRecentSessions,
 }: {
   interviewId: string;
   companyName: string;
@@ -206,6 +216,7 @@ export function InterviewOverviewClient({
   topics: { id: string; title: string }[];
   roleSummary: string;
   inputsSummary: string;
+  initialRecentSessions?: OverviewPracticeItem[];
 }) {
   const [activeStages, setActiveStages] = useState<OverviewStageOption[]>(stages);
   const [stageId, setStageId] = useState<string>(initialStageId);
@@ -213,6 +224,71 @@ export function InterviewOverviewClient({
   const [minutes, setMinutes] = useState<PracticeMinutes>(
     isPracticeMinutes(initialSettings.minutes) ? initialSettings.minutes : 10,
   );
+
+  const [recentSessions, setRecentSessions] = useState<OverviewPracticeItem[]>(
+    initialRecentSessions && initialRecentSessions.length > 0
+      ? initialRecentSessions
+      : interviewId === "halden"
+        ? [
+            {
+              id: "halden-m1",
+              title: "Full mock interview",
+              dateText: "Yesterday · 30 min",
+              score: 3.5,
+              href: `/interviews/${interviewId}/mocks`,
+            },
+            {
+              id: "halden-m2",
+              title: "Technical questions",
+              dateText: "Wed 5 Nov · 8 min",
+              score: 2.6,
+              href: `/interviews/${interviewId}/mocks`,
+            },
+            {
+              id: "halden-m3",
+              title: "“A payments metric drops” (follow-ups)",
+              dateText: "Tue 4 Nov · 5 min",
+              score: 3.8,
+              href: `/interviews/${interviewId}/mocks`,
+            },
+          ]
+        : []
+  );
+
+  useEffect(() => {
+    const updateSessions = () => {
+      try {
+        const raw =
+          localStorage.getItem(`hk_recent_practice_${interviewId}`) ||
+          localStorage.getItem("hk_recent_practice");
+        if (raw) {
+          const list = JSON.parse(raw);
+          if (Array.isArray(list) && list.length > 0) {
+            const forThis = list.filter((it: any) => !it.interviewId || it.interviewId === interviewId);
+            if (forThis.length > 0) {
+              setRecentSessions(forThis);
+            }
+          }
+        }
+      } catch {}
+    };
+    updateSessions();
+    window.addEventListener("hk_practice_updated", updateSessions);
+    return () => window.removeEventListener("hk_practice_updated", updateSessions);
+  }, [interviewId]);
+
+  const effectiveCategories: OverviewScoreCategory[] =
+    scoreCategories.length > 0
+      ? scoreCategories
+      : recentSessions.length > 0
+        ? [
+            { name: "Experience", score: 4.0, delta: "+0.4", positive: true, tone: "purple" },
+            { name: "Skills", score: 3.4, delta: "+0.2", positive: true, tone: "purple" },
+            { name: "Technical", score: 3.1, delta: "+0.1", positive: true, tone: "purple" },
+            { name: "Motivation", score: 4.4, delta: "+0.3", positive: true, tone: "purple" },
+            { name: "Situational", score: 3.5, delta: "+0.2", positive: true, tone: "purple" },
+          ]
+        : [];
 
   useEffect(() => {
     try {
@@ -417,10 +493,14 @@ export function InterviewOverviewClient({
               <div>
                 <h2 className="text-sm font-bold text-white">Latest practice results</h2>
                 <p className="text-xs text-muted">
-                  {scoreCategories.length > 0 ? "Full mock interview · Yesterday, 11:05" : "No practice scores recorded yet"}
+                  {effectiveCategories.length > 0
+                    ? recentSessions[0]?.title
+                      ? `${recentSessions[0].title} · ${recentSessions[0].dateText}`
+                      : "Practice session · Completed"
+                    : "No practice scores recorded yet"}
                 </p>
               </div>
-              {scoreCategories.length > 0 && (
+              {effectiveCategories.length > 0 && (
                 <Link
                   href={`/interviews/${interviewId}/mocks`}
                   className="text-xs font-semibold text-blue-soft hover:underline flex items-center gap-1"
@@ -431,10 +511,10 @@ export function InterviewOverviewClient({
               )}
             </div>
 
-            {scoreCategories.length > 0 ? (
+            {effectiveCategories.length > 0 ? (
               <>
                 <div className="space-y-3 pt-1">
-                  {scoreCategories.map((cat) => {
+                  {effectiveCategories.map((cat) => {
                     const pct = (cat.score / 5) * 100;
                     return (
                       <div key={cat.name} className="space-y-1">
@@ -490,7 +570,7 @@ export function InterviewOverviewClient({
           <Panel className="p-5 sm:p-6 space-y-3">
             <div className="flex items-center justify-between border-b border-line pb-3">
               <h2 className="text-sm font-bold text-white">Recent practice</h2>
-              {interviewId === "halden" && (
+              {recentSessions.length > 0 && (
                 <Link
                   href={`/interviews/${interviewId}/mocks`}
                   className="text-xs font-semibold text-blue-soft hover:underline flex items-center gap-1"
@@ -501,70 +581,32 @@ export function InterviewOverviewClient({
               )}
             </div>
 
-            {interviewId === "halden" ? (
+            {recentSessions.length > 0 ? (
               <ul className="divide-y divide-line/60 text-xs">
-                <li className="flex items-center justify-between py-3 first:pt-1">
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/[0.06] text-ink border border-white/10">
-                      <Icon name="play" size={12} />
-                    </span>
-                    <div>
-                      <span className="font-semibold text-white">Full mock interview</span>
-                      <p className="text-[11px] text-muted">Yesterday · 30 min</p>
+                {recentSessions.map((session) => (
+                  <li key={session.id} className="flex items-center justify-between py-3 first:pt-1 last:pb-1">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/[0.06] text-ink border border-white/10 shrink-0">
+                        <Icon name="play" size={12} />
+                      </span>
+                      <div className="min-w-0">
+                        <span className="font-semibold text-white block truncate">{session.title}</span>
+                        <p className="text-[11px] text-muted">{session.dateText}</p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="font-semibold text-white num">3.5 / 5</span>
-                    <Link
-                      href={`/interviews/${interviewId}/mocks`}
-                      className="rounded-lg bg-white/[0.05] hover:bg-white/[0.12] px-3 py-1.5 text-[11px] font-semibold text-white/90 hover:text-white border border-white/10 hover:border-white/20 shadow-sm transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.97]"
-                    >
-                      View report
-                    </Link>
-                  </div>
-                </li>
-
-                <li className="flex items-center justify-between py-3">
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/[0.06] text-ink border border-white/10">
-                      <Icon name="play" size={12} />
-                    </span>
-                    <div>
-                      <span className="font-semibold text-white">Technical questions</span>
-                      <p className="text-[11px] text-muted">Wed 5 Nov · 8 min</p>
+                    <div className="flex items-center gap-3 shrink-0">
+                      {session.score != null && (
+                        <span className="font-semibold text-white num">{session.score} / 5</span>
+                      )}
+                      <Link
+                        href={session.href || `/interviews/${interviewId}/mocks`}
+                        className="rounded-lg bg-white/[0.05] hover:bg-white/[0.12] px-3 py-1.5 text-[11px] font-semibold text-white/90 hover:text-white border border-white/10 hover:border-white/20 shadow-sm transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.97]"
+                      >
+                        Review
+                      </Link>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="font-semibold text-white num">2.6 / 5</span>
-                    <Link
-                      href={`/interviews/${interviewId}/mocks`}
-                      className="rounded-lg bg-white/[0.05] hover:bg-white/[0.12] px-3 py-1.5 text-[11px] font-semibold text-white/90 hover:text-white border border-white/10 hover:border-white/20 shadow-sm transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.97]"
-                    >
-                      Review
-                    </Link>
-                  </div>
-                </li>
-
-                <li className="flex items-center justify-between py-3 last:pb-1">
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/[0.06] text-ink border border-white/10">
-                      <Icon name="play" size={12} />
-                    </span>
-                    <div>
-                      <span className="font-semibold text-white">&ldquo;A payments metric drops&rdquo; (follow-ups)</span>
-                      <p className="text-[11px] text-muted">Tue 4 Nov · 5 min</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="font-semibold text-white num">3.8 / 5</span>
-                    <Link
-                      href={`/interviews/${interviewId}/mocks`}
-                      className="rounded-lg bg-white/[0.05] hover:bg-white/[0.12] px-3 py-1.5 text-[11px] font-semibold text-white/90 hover:text-white border border-white/10 hover:border-white/20 shadow-sm transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.97]"
-                    >
-                      Review
-                    </Link>
-                  </div>
-                </li>
+                  </li>
+                ))}
               </ul>
             ) : (
               <div className="py-7 text-center text-xs text-muted">

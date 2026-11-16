@@ -313,7 +313,21 @@ export function QuestionFeedbackView({
         <div className="space-y-5 animate-fade-in">
           {/* Card 1: Your answer (key extracts) with Audio Player */}
           <div className="rounded-2xl bg-[#0f111d] border border-white/[0.08] p-5 sm:p-6 shadow-xl space-y-4">
-            <h3 className="text-xs font-bold text-white tracking-wide">Your answer (key extracts)</h3>
+            <div className="flex items-center justify-between gap-4">
+              <h3 className="text-xs font-bold text-white tracking-wide">Your answer (key extracts)</h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditedText(transcriptText);
+                  setIsEditingTranscript(true);
+                  setActiveTab("transcript");
+                }}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-500/40 bg-indigo-500/10 hover:bg-indigo-500/20 px-2.5 py-1 text-xs font-semibold text-indigo-300 transition-colors cursor-pointer"
+              >
+                <Icon name="edit" size={11} />
+                <span>Edit response</span>
+              </button>
+            </div>
 
             {/* Custom Audio Player Bar */}
             <div className="flex items-center gap-3.5 rounded-xl bg-[#17192b] border border-white/[0.08] px-4 py-2.5">

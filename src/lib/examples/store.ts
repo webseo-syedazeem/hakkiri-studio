@@ -179,6 +179,28 @@ export function toggleExampleFavorite(id: string): void {
   } catch {}
 }
 
+export function updateExample(
+  id: string,
+  patch: Partial<Omit<InterviewExample, "id" | "createdAt">>
+): InterviewExample | null {
+  const current = loadExamples();
+  let updatedEx: InterviewExample | null = null;
+  const updated = current.map((ex) => {
+    if (ex.id === id) {
+      updatedEx = { ...ex, ...patch };
+      return updatedEx;
+    }
+    return ex;
+  });
+  if (updatedEx) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      window.dispatchEvent(new Event("hk_examples_updated"));
+    } catch {}
+  }
+  return updatedEx;
+}
+
 export function deleteExample(id: string): void {
   const current = loadExamples();
   const updated = current.filter((ex) => ex.id !== id);

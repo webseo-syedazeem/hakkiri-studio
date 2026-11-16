@@ -5,7 +5,10 @@ import { Icon } from "@/components/ui";
 import { londonToday } from "@/lib/dates";
 import { listInterviews } from "@/lib/interviews/store";
 import { listPresentations } from "@/lib/pitch/store";
-import { longDay } from "@/lib/format";
+import { listMocksAsync, rowsFor } from "@/lib/mocks/store";
+import { mockScore } from "@/lib/mocks/report";
+import { sessionTitle } from "@/lib/sessions/labels";
+import { longDay, whenSaid } from "@/lib/format";
 import { DashboardClientView } from "@/components/dashboard/DashboardClientView";
 import { HomeHeaderActions } from "@/components/dashboard/HomeHeaderActions";
 import type { UpcomingEvent } from "@/components/dashboard/UpcomingAgenda";
@@ -21,6 +24,33 @@ export default async function HomePage() {
 
   const interviews = listInterviews(londonToday(), user.id);
   const presentations = listPresentations(user.id);
+
+  const customInterview = interviews.find((iv) => iv.id !== "halden");
+  const primaryInterview = customInterview ?? interviews[0];
+  const activeInterview = primaryInterview
+    ? {
+        id: primaryInterview.id,
+        role: primaryInterview.role,
+        company: primaryInterview.company,
+        companyInitial: primaryInterview.companyInitial || primaryInterview.company[0] || "H",
+        stages: primaryInterview.stages,
+      }
+    : null;
+
+  const mocks = primaryInterview
+    ? (await listMocksAsync(primaryInterview.id, user.id)).filter((m) => m.status !== "planned")
+    : [];
+  const recentPractices = mocks.map((m) => {
+    const rows = rowsFor(m);
+    const score = mockScore(rows);
+    return {
+      id: m.id,
+      title: sessionTitle(m, primaryInterview),
+      dateText: whenSaid(m.startedAt) || "Recently",
+      score: score != null ? Number(score.toFixed(1)) : null,
+      href: `/interviews/${primaryInterview.id}/mocks/${m.id}`,
+    };
+  });
 
   // Upcoming items for the agenda matching mockup
   const agendaEvents: UpcomingEvent[] = [
@@ -61,14 +91,17 @@ export default async function HomePage() {
 
   // If the user has other custom interviews, prepend them
   for (const iv of interviews) {
-    if (iv.id !== "halden" && iv.date) {
+    if (iv.id !== "halden") {
+      const nextSt = iv.stages?.find((s) => s.status === "next") ?? iv.stages?.[0];
+      const dateStr = nextSt?.date || iv.date?.slice(0, 10) || "Thu 12 Nov";
+      const timeStr = nextSt?.time || (iv.date?.includes("T") ? iv.date.slice(11, 16) : "09:30");
       agendaEvents.unshift({
         id: iv.id,
         type: "interview",
-        dateGroup: iv.date.slice(0, 10),
-        time: iv.date.includes("T") ? iv.date.slice(11, 16) : "10:00",
+        dateGroup: dateStr,
+        time: timeStr,
         title: iv.role,
-        subtitle: iv.company,
+        subtitle: `${iv.company}${nextSt?.name ? ` · ${nextSt.name}` : ""}`,
         relative: "upcoming",
         href: `/interviews/${iv.id}`,
         actionLabel: "Prepare",
@@ -100,6 +133,8 @@ export default async function HomePage() {
         upcomingInterviewsCount={upcomingInterviewsCount}
         upcomingPresentationsCount={upcomingPresentationsCount}
         agendaEvents={agendaEvents}
+        activeInterview={activeInterview}
+        initialRecentPractices={recentPractices}
       />
     </div>
   );

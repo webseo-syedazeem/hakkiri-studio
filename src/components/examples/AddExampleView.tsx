@@ -142,7 +142,7 @@ export function AddExampleView() {
             </div>
           )}
 
-          {/* Row 1: 3 Animated Custom Select Dropdowns */}
+          {/* Row 1: Competency Dropdown and Free-Text Role & Interview Type */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <CustomSelect
               label="Competency"
@@ -154,25 +154,33 @@ export function AddExampleView() {
               options={COMPETENCY_OPTIONS}
             />
 
-            <CustomSelect
-              label="Role"
-              tooltip="Role or job category this example belongs to"
-              icon="user"
-              placeholder="Select role"
-              value={role}
-              onChange={setRole}
-              options={ROLE_OPTIONS}
-            />
+            <div className="space-y-1.5">
+              <label className="flex items-center gap-1.5 text-xs font-semibold text-white">
+                <Icon name="user" size={13} className="text-muted" />
+                <span>Role</span>
+              </label>
+              <input
+                type="text"
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                placeholder="e.g. Associate Product Manager, Policy Lead"
+                className="w-full rounded-[12px] bg-panel-2 px-3.5 py-2.5 text-xs text-ink outline-none border border-line focus:border-indigo-500 transition-colors placeholder:text-dim"
+              />
+            </div>
 
-            <CustomSelect
-              label="Interview type"
-              tooltip="Which interview stage or format this fits best"
-              icon="layers"
-              placeholder="Select interview type"
-              value={interviewType}
-              onChange={setInterviewType}
-              options={INTERVIEW_TYPE_OPTIONS}
-            />
+            <div className="space-y-1.5">
+              <label className="flex items-center gap-1.5 text-xs font-semibold text-white">
+                <Icon name="layers" size={13} className="text-muted" />
+                <span>Interview type</span>
+              </label>
+              <input
+                type="text"
+                value={interviewType}
+                onChange={(e) => setInterviewType(e.target.value)}
+                placeholder="e.g. Competency round, Final panel, Case study"
+                className="w-full rounded-[12px] bg-panel-2 px-3.5 py-2.5 text-xs text-ink outline-none border border-line focus:border-indigo-500 transition-colors placeholder:text-dim"
+              />
+            </div>
           </div>
 
           {/* Field 2: Interview Question */}

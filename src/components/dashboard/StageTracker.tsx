@@ -10,6 +10,25 @@ interface StageInfo {
   title: string;
   defaultCompletedText: string;
   upcomingText: string;
+  status?: "completed" | "next" | "upcoming" | string;
+}
+
+export interface StageTrackerStage {
+  id?: string;
+  name?: string;
+  status?: "completed" | "next" | "upcoming" | string;
+  date?: string;
+  time?: string;
+  format?: string;
+  interviewer?: string;
+}
+
+export interface StageTrackerInterview {
+  id: string;
+  role: string;
+  company: string;
+  companyInitial?: string;
+  stages?: StageTrackerStage[];
 }
 
 const DEFAULT_STAGES: StageInfo[] = [
@@ -18,35 +37,92 @@ const DEFAULT_STAGES: StageInfo[] = [
     title: "Stage 1 · Recruiter screen",
     defaultCompletedText: "Completed · 4 Nov",
     upcomingText: "Completed · 4 Nov",
+    status: "completed",
   },
   {
     num: 2,
     title: "Stage 2 · Hiring manager",
     defaultCompletedText: "Completed · 12 Nov",
     upcomingText: "Upcoming · 12 Nov, 10:00",
+    status: "next",
   },
   {
     num: 3,
     title: "Stage 3 · Case interview",
     defaultCompletedText: "Completed · 19 Nov",
     upcomingText: "Upcoming · 19 Nov, 14:00",
+    status: "upcoming",
   },
   {
     num: 4,
     title: "Stage 4 · Final panel",
     defaultCompletedText: "Completed · 26 Nov",
     upcomingText: "Upcoming · 26 Nov, 11:00",
+    status: "upcoming",
   },
 ];
 
 export function StageTracker({
+  interview,
   onArchiveRole,
 }: {
+  interview?: StageTrackerInterview | null;
   onArchiveRole?: (reason: string) => void;
 }) {
-  const [currentStage, setCurrentStage] = useState<number>(2);
+  const [activeInterview, setActiveInterview] = useState<StageTrackerInterview | null>(interview ?? null);
+
+  // Sync with client-side localStorage interviews
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("hk_custom_interviews");
+      if (raw) {
+        const list = JSON.parse(raw);
+        if (Array.isArray(list) && list.length > 0) {
+          const match = interview ? list.find((it: any) => it.id === interview.id) : list[0];
+          if (match) {
+            setActiveInterview((prev) => ({
+              id: match.id,
+              role: match.role || prev?.role || "Associate Product Manager",
+              company: match.company || prev?.company || "HMRC",
+              companyInitial: match.companyInitial || match.company?.[0] || prev?.companyInitial || "H",
+              stages: Array.isArray(match.stages) && match.stages.length > 0 ? match.stages : prev?.stages,
+            }));
+          }
+        }
+      }
+    } catch {}
+  }, [interview]);
+
+  const displayRole = activeInterview?.role || "Senior Product Manager, Payments";
+  const displayCompany = activeInterview?.company || "Halden";
+  const displayCompanyInitial = activeInterview?.companyInitial || displayCompany[0] || "H";
+  const displayHref = activeInterview ? `/interviews/${activeInterview.id}` : "/interviews/halden";
+
+  const displayStages: StageInfo[] =
+    activeInterview?.stages && activeInterview.stages.length > 0
+      ? activeInterview.stages.map((st, idx) => {
+          const num = idx + 1;
+          const name = st.name || `Stage ${num}`;
+          const dt = st.date ? `${st.date}${st.time ? `, ${st.time}` : ""}` : "";
+          return {
+            num,
+            title: `Stage ${num} · ${name}`,
+            defaultCompletedText: dt ? `Completed · ${dt}` : "Completed",
+            upcomingText: dt ? `Upcoming · ${dt}` : "Upcoming",
+            status: st.status,
+          };
+        })
+      : DEFAULT_STAGES;
+
+  const totalStages = displayStages.length;
+
+  // Determine initial active stage
+  const nextStageIdx = displayStages.findIndex((s) => s.status === "next");
+  const defaultCurrentStage = nextStageIdx >= 0 ? nextStageIdx + 1 : 1;
+
+  const [currentStage, setCurrentStage] = useState<number>(defaultCurrentStage);
   const [stageFeedback, setStageFeedback] = useState<Record<number, string>>({
-    1: "Priya showed very strong domain depth in payments checkout flows. Clear structure on metric ownership. Advanced to hiring manager round with Sam.",
+    1: "Strong domain depth and clear metrics structure. Recommended for next round.",
   });
   const [activeFeedbackStage, setActiveFeedbackStage] = useState<number>(1);
   const [showFeedbackModal, setShowFeedbackModal] = useState<boolean>(false);
@@ -55,26 +131,28 @@ export function StageTracker({
 
   useEffect(() => {
     try {
-      const savedStage = localStorage.getItem("hk_stage_tracker_current_stage");
+      const savedStage = localStorage.getItem(`hk_stage_tracker_${activeInterview?.id || "default"}_current_stage`);
       if (savedStage) {
         const parsed = parseInt(savedStage, 10);
-        if (parsed >= 1 && parsed <= 4) {
+        if (parsed >= 1 && parsed <= totalStages) {
           setCurrentStage(parsed);
         }
+      } else {
+        setCurrentStage(defaultCurrentStage);
       }
-      const savedFeedback = localStorage.getItem("hk_stage_tracker_feedback");
+      const savedFeedback = localStorage.getItem(`hk_stage_tracker_${activeInterview?.id || "default"}_feedback`);
       if (savedFeedback) {
         setStageFeedback(JSON.parse(savedFeedback));
       }
     } catch {}
-  }, []);
+  }, [activeInterview?.id, totalStages, defaultCurrentStage]);
 
   const handleMarkSuccessful = () => {
-    if (currentStage < 4) {
+    if (currentStage < totalStages) {
       const nextStage = currentStage + 1;
       setCurrentStage(nextStage);
       try {
-        localStorage.setItem("hk_stage_tracker_current_stage", String(nextStage));
+        localStorage.setItem(`hk_stage_tracker_${activeInterview?.id || "default"}_current_stage`, String(nextStage));
       } catch {}
       setIsSuccessfulNotice(true);
       setTimeout(() => setIsSuccessfulNotice(false), 3000);
@@ -127,17 +205,17 @@ export function StageTracker({
         <div className="mt-4 flex items-center justify-between rounded-[14px] bg-panel-2 p-3.5 shadow-[inset_0_0_0_1px_var(--color-line)] transition-all hover:shadow-[inset_0_0_0_1px_var(--color-line-strong)]">
           <div className="flex items-center gap-3.5 min-w-0">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-[#143029] text-[18px] font-bold text-[#34d399] shadow-sm">
-              H
+              {displayCompanyInitial}
             </span>
             <div className="min-w-0 grow">
               <Link
-                href="/interviews/halden"
+                href={displayHref}
                 className="block text-[14px] font-semibold text-ink hover:underline leading-snug truncate"
               >
-                Senior Product Manager, Payments
+                {displayRole}
               </Link>
               <div className="flex items-center gap-2 text-xs text-muted mt-0.5">
-                <span>Halden</span>
+                <span>{displayCompany}</span>
                 <span>·</span>
                 <span className="inline-flex items-center rounded-full bg-blue-fill/20 px-2 py-0.5 text-[10px] font-semibold text-blue-soft">
                   In progress
@@ -150,36 +228,26 @@ export function StageTracker({
 
         {/* Stage Progress Bar */}
         <div className="mt-4 flex items-center justify-between text-xs">
-          <span className="font-semibold text-ink">Stage {currentStage} of 4</span>
+          <span className="font-semibold text-ink">Stage {currentStage} of {totalStages}</span>
           <div className="flex items-center gap-1.5">
-            <span className="h-1.5 w-7 rounded-full bg-[#6366f1] shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
-            <span
-              className={clsx(
-                "h-1.5 w-7 rounded-full transition-colors duration-300",
-                currentStage >= 2 ? "bg-[#6366f1] shadow-[0_0_8px_rgba(99,102,241,0.5)]" : "bg-white/[0.12]"
-              )}
-            />
-            <span
-              className={clsx(
-                "h-1.5 w-7 rounded-full transition-colors duration-300",
-                currentStage >= 3 ? "bg-[#6366f1] shadow-[0_0_8px_rgba(99,102,241,0.5)]" : "bg-white/[0.12]"
-              )}
-            />
-            <span
-              className={clsx(
-                "h-1.5 w-7 rounded-full transition-colors duration-300",
-                currentStage >= 4 ? "bg-[#6366f1] shadow-[0_0_8px_rgba(99,102,241,0.5)]" : "bg-white/[0.12]"
-              )}
-            />
+            {displayStages.map((s) => (
+              <span
+                key={s.num}
+                className={clsx(
+                  "h-1.5 w-7 rounded-full transition-colors duration-300",
+                  s.num <= currentStage ? "bg-[#6366f1] shadow-[0_0_8px_rgba(99,102,241,0.5)]" : "bg-white/[0.12]"
+                )}
+              />
+            ))}
           </div>
         </div>
 
         {/* Timeline Stepper */}
         <div className="mt-4 flex flex-col gap-1">
-          {DEFAULT_STAGES.map((s, idx) => {
-            const isCompleted = s.num < currentStage;
-            const isCurrent = s.num === currentStage;
-            const isLast = idx === DEFAULT_STAGES.length - 1;
+          {displayStages.map((s, idx) => {
+            const isCompleted = s.num < currentStage || s.status === "completed";
+            const isCurrent = s.num === currentStage && !isCompleted;
+            const isLast = idx === displayStages.length - 1;
 
             if (isCurrent) {
               return (
@@ -201,7 +269,7 @@ export function StageTracker({
                         </div>
                       </div>
                       <Link
-                        href="/interviews/halden"
+                        href={displayHref}
                         className="group/btn relative overflow-hidden inline-flex items-center justify-center rounded-[10px] bg-blue-fill px-4 py-1.5 text-xs font-semibold text-white shadow-[0_2px_10px_rgba(74,90,240,0.3)] hover:bg-blue-hover active:scale-95 transition-all shrink-0"
                       >
                         <span className="relative z-10">Prepare</span>
