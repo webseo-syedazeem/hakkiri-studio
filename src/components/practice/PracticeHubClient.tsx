@@ -506,7 +506,11 @@ export function PracticeHubClient({
           <div>
             <h2 className="text-lg font-bold text-white tracking-tight">Focused Practice for Your Role</h2>
             <p className="text-xs text-muted">
-              Short, targeted workouts with questions relevant to {currentInterview?.role} at {currentInterview?.company}.
+              {isNursing
+                ? "Short, targeted workouts with questions relevant to nursing and clinical roles."
+                : isCivilService
+                ? "Short, targeted workouts with questions relevant to Civil Service and public sector roles."
+                : `Short, targeted workouts with questions relevant to ${currentInterview?.role} at ${currentInterview?.company}.`}
             </p>
           </div>
         </div>
@@ -580,7 +584,7 @@ export function PracticeHubClient({
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-lg font-bold text-white tracking-tight">Presentation & Executive Rehearsals</h2>
-            <p className="text-xs text-muted">Slide delivery, timing management, and defending against tough executive questions.</p>
+            <p className="text-xs text-muted">Practise delivering clear, confident and structured presentations.</p>
           </div>
           <Link href="/presentations/q1-roadmap" className="text-xs font-semibold text-blue-soft hover:underline">
             View presentation overview →
@@ -597,7 +601,7 @@ export function PracticeHubClient({
                 <h3 className="text-sm font-bold text-white">Practise Your Opening</h3>
               </div>
               <p className="text-xs text-muted leading-relaxed mt-1 mb-4">
-                A clear and confident 60-second introduction. Frame the context, hook the room, and state the objective.
+                A clear and confident 60-second introduction.
               </p>
             </div>
             <div className="flex items-center justify-between pt-3 border-t border-white/[0.06]">
@@ -620,7 +624,7 @@ export function PracticeHubClient({
                 <h3 className="text-sm font-bold text-white">Practise a Specific Slide</h3>
               </div>
               <p className="text-xs text-muted leading-relaxed mt-1 mb-4">
-                Improve the delivery of a key slide from your deck with live timing feedback and slide notes.
+                Improve the delivery of a key slide from your deck.
               </p>
             </div>
             <div className="flex items-center justify-between pt-3 border-t border-white/[0.06]">
@@ -643,7 +647,7 @@ export function PracticeHubClient({
                 <h3 className="text-sm font-bold text-white">Practise Q&A</h3>
               </div>
               <p className="text-xs text-muted leading-relaxed mt-1 mb-4">
-                Handle tough executive follow-up questions with clarity, data references, and composure.
+                Handle follow-up questions with clarity and confidence.
               </p>
             </div>
             <div className="flex items-center justify-between pt-3 border-t border-white/[0.06]">

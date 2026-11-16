@@ -528,7 +528,7 @@ export function InterviewReportView(p: InterviewReportViewProps) {
                 activeTab === "transcript" ? "text-white after:absolute after:bottom-[-17px] after:left-0 after:right-0 after:h-0.5 after:bg-blue-500" : "text-muted hover:text-white"
               )}
             >
-              Transcription
+              Full transcript
             </button>
             <button
               type="button"
@@ -584,6 +584,24 @@ export function InterviewReportView(p: InterviewReportViewProps) {
           </div>
         </div>
 
+        {/* Question Review Header Banner (Exact match to Image 1) */}
+        <div className="mt-5 rounded-2xl bg-[#141326] border border-white/[0.08] p-5 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-500/15 text-purple-400 border border-purple-500/25">
+              <Icon name="chat" size={20} />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-white tracking-tight">Question review</h2>
+              <p className="text-xs text-[#a5a7b8]">
+                Select any question to see your recorded answer, transcript, detailed feedback and a refined answer.
+              </p>
+            </div>
+          </div>
+          <span className="rounded-full bg-white/10 border border-white/10 px-3 py-1 text-xs font-semibold text-white shrink-0">
+            {filteredRows.length} questions
+          </span>
+        </div>
+
         {/* Questions Table */}
         <div className="mt-4 overflow-x-auto">
           <table className="w-full text-left text-xs">
@@ -591,54 +609,54 @@ export function InterviewReportView(p: InterviewReportViewProps) {
               <tr>
                 <th className="py-3 px-3 font-medium w-8">#</th>
                 <th className="py-3 px-3 font-medium min-w-[280px]">Question</th>
-                <th className="py-3 px-3 font-medium w-32">Category</th>
+                <th className="py-3 px-3 font-medium w-28">Category</th>
                 <th className="py-3 px-3 font-medium w-24">Your score</th>
                 <th className="py-3 px-3 font-medium">Key feedback</th>
-                <th className="py-3 px-3 w-8" />
+                <th className="py-3 px-3 w-36 text-right" />
               </tr>
             </thead>
             <tbody className="divide-y divide-white/[0.05] text-[#c9cad3]">
               {visibleRows.map((r) => {
-                const isGood = (r.overall ?? 3.5) >= 4.0;
                 const categoryPillLabel = r.group === "cv" ? "Experience" : r.group === "competency" ? "Skills" : r.group === "motivation" ? "Motivation" : r.group === "technical" ? "Technical" : "Situational";
-                const feedbackText = r.overall && r.overall >= 4.2 ? "Strong fit and well-reasoned answer." : r.overall && r.overall >= 3.5 ? "A good example, but could be more concise and focused." : "Needs more direct technical evidence and first-principles framing.";
+                const positiveFeedback = r.overall && r.overall >= 4.0 ? "Clear career interest and relevance." : "Described the issue and your actions.";
+                const improveFeedback = r.overall && r.overall >= 4.0 ? "Add stronger, role-specific reasons and impact." : "Add more detail on the outcome and what you learnt.";
 
                 return (
                   <tr key={r.number} className="hover:bg-white/[0.03] transition-colors group">
-                    <td className="py-3.5 px-3 num text-muted">{r.number}</td>
-                    <td className="py-3.5 px-3 font-medium text-white max-w-[340px]">
-                      {r.answerId ? (
-                        <Link href={`/interviews/${interview.id}/answers/${r.answerId}?mock=${mock.id}`} className="hover:text-blue-soft transition-colors">
-                          {r.question}
-                        </Link>
-                      ) : (
-                        r.question
-                      )}
+                    <td className="py-4 px-3 num text-muted">{r.number}</td>
+                    <td className="py-4 px-3 font-medium text-white max-w-[340px]">
+                      <Link href={`/interviews/${interview.id}/answers/${r.answerId || "demo"}?mock=${mock.id}`} className="hover:text-blue-soft transition-colors">
+                        {r.question}
+                      </Link>
                     </td>
-                    <td className="py-3.5 px-3">
-                      <span className="inline-flex px-2.5 py-1 rounded-md text-[11px] font-semibold bg-purple-500/15 text-purple-300 border border-purple-500/20">
+                    <td className="py-4 px-3">
+                      <span className="inline-flex px-3 py-1 rounded-md text-[11px] font-semibold bg-[#2a1b42] text-[#c084fc] border border-[#581c87]/50">
                         {categoryPillLabel}
                       </span>
                     </td>
-                    <td className="py-3.5 px-3 num font-bold text-white">
-                      {r.overall ? `${r.overall.toFixed(1)} / 5` : "3.5 / 5"}
+                    <td className="py-4 px-3 num font-bold text-white">
+                      {r.overall ? `${r.overall.toFixed(1)} / 5` : "2.0 / 5"}
                     </td>
-                    <td className="py-3.5 px-3">
-                      <div className="flex items-center gap-2">
-                        {isGood ? (
-                          <Icon name="checkCircle" size={14} className="text-emerald-400 shrink-0" />
-                        ) : (
-                          <Icon name="info" size={14} className="text-blue-soft shrink-0" />
-                        )}
-                        <span className="line-clamp-1 text-[#d1d2dc]">{feedbackText}</span>
+                    <td className="py-4 px-3">
+                      <div className="space-y-1.5 text-xs">
+                        <div className="flex items-center gap-2">
+                          <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-bold">✓</span>
+                          <span className="text-[#d1d2dc] leading-tight">{positiveFeedback}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border border-white/30 text-white/40 text-[10px]">○</span>
+                          <span className="text-[#a5a7b8] leading-tight">{improveFeedback}</span>
+                        </div>
                       </div>
                     </td>
-                    <td className="py-3.5 px-3 text-right">
-                      {r.answerId && (
-                        <Link href={`/interviews/${interview.id}/answers/${r.answerId}?mock=${mock.id}`} className="text-muted group-hover:text-white transition-colors">
-                          <Icon name="chevronRight" size={14} />
-                        </Link>
-                      )}
+                    <td className="py-4 px-3 text-right">
+                      <Link
+                        href={`/interviews/${interview.id}/answers/${r.answerId || "demo"}?mock=${mock.id}`}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#1c1a35] hover:bg-[#252248] border border-white/10 hover:border-indigo-500/50 text-xs font-semibold text-white transition-all shadow-sm"
+                      >
+                        <span>Review answer</span>
+                        <Icon name="chevronRight" size={13} />
+                      </Link>
                     </td>
                   </tr>
                 );
