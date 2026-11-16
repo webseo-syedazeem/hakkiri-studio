@@ -25,10 +25,17 @@ export function PracticeHubClient({
   initialInterviewId,
   initialType = "strengths",
 }: PracticeHubClientProps) {
-  // 1. Selected Interview State
-  const [selectedId, setSelectedId] = useState<string>(
-    initialInterviewId || interviews[0]?.id || "staff-nurse"
-  );
+  // 1. Selected Interview State (Defaults to Staff Nurse to match design mockup)
+  const defaultSelectedId = useMemo(() => {
+    if (initialInterviewId && interviews.some((i) => i.id === initialInterviewId)) {
+      return initialInterviewId;
+    }
+    const nurse = interviews.find((i) => i.id === "staff-nurse");
+    if (nurse) return nurse.id;
+    return interviews[0]?.id || "staff-nurse";
+  }, [initialInterviewId, interviews]);
+
+  const [selectedId, setSelectedId] = useState<string>(defaultSelectedId);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   // 2. Selected Practice Question Type
@@ -40,7 +47,11 @@ export function PracticeHubClient({
 
   // Active interview record
   const currentInterview = useMemo(() => {
-    return interviews.find((i) => i.id === selectedId) || interviews[0];
+    return (
+      interviews.find((i) => i.id === selectedId) ||
+      interviews.find((i) => i.id === "staff-nurse") ||
+      interviews[0]
+    );
   }, [interviews, selectedId]);
 
   // Role detection
@@ -51,15 +62,15 @@ export function PracticeHubClient({
 
   // Upcoming stage info
   const stageInfo = useMemo(() => {
+    if (isNursing) return { label: "Clinical interview", timing: "Interview in 3 days" };
+    if (isCivilService) return { label: "Competency, strength and presentation", timing: "Interview in 4 days" };
     if (currentInterview?.stages && currentInterview.stages.length > 0) {
       const next = currentInterview.stages.find((s) => s.status === "next") || currentInterview.stages[0];
       return {
-        label: next.name || "Interview round",
+        label: next.name || "Interview stage 1",
         timing: next.date ? (next.date.includes("in") ? next.date : `Interview in 3 days`) : "Interview in 3 days",
       };
     }
-    if (isNursing) return { label: "Clinical interview", timing: "Interview in 3 days" };
-    if (isCivilService) return { label: "Competency, strength and presentation", timing: "Interview in 4 days" };
     return { label: "Final round interview", timing: "Interview in 5 days" };
   }, [currentInterview, isNursing, isCivilService]);
 
@@ -83,7 +94,7 @@ export function PracticeHubClient({
     };
   }, [isNursing, isCivilService]);
 
-  // Question Type Options (Image 2 - Step 2)
+  // Question Type Options (Exact Match to Design Mockup Row: 6 items)
   const questionTypes: {
     id: PracticeQuestionType;
     label: string;
@@ -91,11 +102,11 @@ export function PracticeHubClient({
     badgeLabel?: string;
   }[] = [
     { id: "strengths", label: "Strengths", icon: "star" },
-    { id: "competency", label: "Competency", icon: "list" },
-    { id: "technical", label: "Technical", icon: isNursing ? "zap" : "code" },
-    { id: "situational", label: "Situational", icon: "compass" },
+    { id: "competency", label: "Competency", icon: "layers" },
+    { id: "technical", label: "Technical", icon: isNursing ? "stethoscope" : "code" },
+    { id: "situational", label: "Situational", icon: "brain" },
     { id: "motivation", label: "Motivational", icon: "target" },
-    { id: "experience", label: "Experience", icon: "user" },
+    { id: "experience", label: "Experience", icon: "cal" },
   ];
 
   // Dynamic cards tailored to the role & domain
@@ -123,7 +134,7 @@ export function PracticeHubClient({
           category: "Healthcare Setting (STAR)",
           duration: "4–6 mins",
           difficulty: "Medium",
-          icon: "list" as IconName,
+          icon: "layers" as IconName,
           color: "from-indigo-500/20 to-violet-500/20 text-indigo-300 border-indigo-500/30",
           description: "Use real examples to show your skills, actions and impact in a healthcare setting.",
         },
@@ -135,7 +146,7 @@ export function PracticeHubClient({
           category: "Patient Safety & NEWS2",
           duration: "5 mins",
           difficulty: "Challenging",
-          icon: "zap" as IconName,
+          icon: "stethoscope" as IconName,
           color: "from-blue-500/20 to-cyan-500/20 text-blue-300 border-blue-500/30",
           description: "Practise role-specific questions, such as patient safety, escalation and decisions.",
         },
@@ -147,7 +158,7 @@ export function PracticeHubClient({
           category: "Ward Scenarios",
           duration: "3–5 mins",
           difficulty: "Realistic",
-          icon: "compass" as IconName,
+          icon: "brain" as IconName,
           color: "from-emerald-500/20 to-teal-500/20 text-emerald-300 border-emerald-500/30",
           description: "Respond to realistic scenarios, for example managing competing clinical priorities.",
         },
@@ -410,12 +421,12 @@ export function PracticeHubClient({
 
               {/* Metadata Badges below Dropdown */}
               <div className="flex flex-wrap items-center gap-2 pt-3">
-                <span className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/25 px-2.5 py-1 text-xs font-medium text-indigo-300">
-                  <Icon name={isNursing ? "zap" : "list"} size={13} />
+                <span className="inline-flex items-center gap-1.5 rounded-xl bg-[#16152a] border border-white/10 px-3 py-1.5 text-xs font-medium text-[#d1d2dc]">
+                  <Icon name={isNursing ? "stethoscope" : isCivilService ? "bank" : "list"} size={13} className="text-blue-400" />
                   <span>{stageInfo.label}</span>
                 </span>
-                <span className="inline-flex items-center gap-1.5 rounded-lg bg-white/[0.06] border border-white/10 px-2.5 py-1 text-xs font-medium text-muted">
-                  <Icon name="cal" size={13} />
+                <span className="inline-flex items-center gap-1.5 rounded-xl bg-[#16152a] border border-white/10 px-3 py-1.5 text-xs font-medium text-[#d1d2dc]">
+                  <Icon name="cal" size={13} className="text-indigo-400" />
                   <span>{stageInfo.timing}</span>
                 </span>
               </div>
@@ -425,7 +436,7 @@ export function PracticeHubClient({
           {/* STEP 2: CHOOSE PRACTICE TYPE */}
           <div className="lg:col-span-7 space-y-3">
             <div className="flex items-center gap-2.5">
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white shadow-sm">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#7c3aed] text-xs font-bold text-white shadow-sm">
                 2
               </span>
               <h2 className="text-base font-bold text-white tracking-tight">
@@ -436,8 +447,8 @@ export function PracticeHubClient({
               Choose a question type based on the interview focus.
             </p>
 
-            {/* 6 Interactive Question Type Pills */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-1 pl-8.5">
+            {/* 6 Interactive Question Type Cards in 1 Row (Exact Match to Design Mockup) */}
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-2.5 pt-1 pl-0 sm:pl-8.5">
               {questionTypes.map((t) => {
                 const isActive = selectedType === t.id;
                 return (
@@ -446,21 +457,31 @@ export function PracticeHubClient({
                     type="button"
                     onClick={() => setSelectedType(t.id)}
                     className={clsx(
-                      "flex items-center justify-center gap-2 py-3 px-3.5 rounded-xl border text-xs font-semibold transition-all relative cursor-pointer",
+                      "relative flex flex-col items-center justify-center py-3.5 px-2 rounded-2xl border transition-all cursor-pointer min-h-[78px] group",
                       isActive
-                        ? "bg-indigo-600/20 border-indigo-500 text-white shadow-[0_0_15px_rgba(99,102,241,0.25)] ring-1 ring-indigo-500"
+                        ? "bg-gradient-to-b from-[#241e4b] to-[#1c173d] border-2 border-[#7c3aed] text-white shadow-[0_0_20px_rgba(124,58,237,0.35)] ring-1 ring-[#7c3aed]/50"
                         : "bg-[#141326] border-white/10 text-[#a5a7b8] hover:border-white/20 hover:text-white"
                     )}
                   >
                     <Icon
                       name={t.icon}
-                      size={15}
-                      className={clsx(isActive ? "text-indigo-400" : "text-muted")}
+                      size={22}
+                      className={clsx(
+                        "transition-transform group-hover:scale-110 shrink-0",
+                        isActive ? "text-white" : "text-[#a5a7b8] group-hover:text-white"
+                      )}
                     />
-                    <span>{t.label}</span>
+                    <span
+                      className={clsx(
+                        "text-xs font-semibold mt-1.5 tracking-tight truncate w-full text-center",
+                        isActive ? "text-white" : "text-[#a5a7b8] group-hover:text-white"
+                      )}
+                    >
+                      {t.label}
+                    </span>
                     {isActive && (
-                      <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-indigo-600 text-white shadow">
-                        <Icon name="check" size={10} strokeWidth={2.5} />
+                      <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#7c3aed] text-white shadow-md ring-2 ring-[#0d0c1c]">
+                        <Icon name="check" size={11} strokeWidth={3} />
                       </span>
                     )}
                   </button>

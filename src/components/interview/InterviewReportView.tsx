@@ -612,7 +612,7 @@ export function InterviewReportView(p: InterviewReportViewProps) {
                 <th className="py-3 px-3 font-medium w-28">Category</th>
                 <th className="py-3 px-3 font-medium w-24">Your score</th>
                 <th className="py-3 px-3 font-medium">Key feedback</th>
-                <th className="py-3 px-3 w-36 text-right" />
+                <th className="py-3 px-3 w-44 min-w-[170px] text-right whitespace-nowrap" />
               </tr>
             </thead>
             <tbody className="divide-y divide-white/[0.05] text-[#c9cad3]">
@@ -649,13 +649,13 @@ export function InterviewReportView(p: InterviewReportViewProps) {
                         </div>
                       </div>
                     </td>
-                    <td className="py-4 px-3 text-right">
+                    <td className="py-4 px-3 text-right whitespace-nowrap">
                       <Link
                         href={`/interviews/${interview.id}/answers/${r.answerId || "demo"}?mock=${mock.id}`}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#1c1a35] hover:bg-[#252248] border border-white/10 hover:border-indigo-500/50 text-xs font-semibold text-white transition-all shadow-sm"
+                        className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-[#252048] hover:bg-[#322a61] border border-indigo-500/30 hover:border-indigo-400/60 text-xs font-semibold text-white whitespace-nowrap transition-all shadow-sm shrink-0 group/btn"
                       >
-                        <span>Review answer</span>
-                        <Icon name="chevronRight" size={13} />
+                        <span className="whitespace-nowrap">Review answer</span>
+                        <span className="text-sm leading-none transition-transform group-hover/btn:translate-x-0.5 shrink-0">→</span>
                       </Link>
                     </td>
                   </tr>
