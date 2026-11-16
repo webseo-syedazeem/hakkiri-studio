@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
@@ -40,14 +40,6 @@ export function QuestionFeedbackView({
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"feedback" | "transcript" | "job-match">("feedback");
 
-  // Audio Player State
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(124); // default 2:04
-  const [playbackRate, setPlaybackRate] = useState(1);
-  const [isMuted, setIsMuted] = useState(false);
-
   // Editable Transcript State
   const initialTranscriptText = useMemo(() => {
     if (answer.words && answer.words.length > 0) {
@@ -65,46 +57,221 @@ export function QuestionFeedbackView({
   // Template copy/save state
   const [copiedTemplate, setCopiedTemplate] = useState(false);
 
-  // Audio setup
+  // Initial Duration based on recorded words or fallback
+  const initialDuration = useMemo(() => {
+    if (answer.words && answer.words.length > 0) {
+      const last = answer.words[answer.words.length - 1];
+      if (last.end && last.end > 0) return Math.ceil(last.end);
+    }
+    return 124; // default 2:04
+  }, [answer.words]);
+
+  // Audio Player State
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(initialDuration);
+  const [playbackRate, setPlaybackRate] = useState(1);
+  const [isMuted, setIsMuted] = useState(false);
+  const [audioFailed, setAudioFailed] = useState(false);
+
+  // Speech synthesis & ticker refs
+  const isSpeechActiveRef = useRef(false);
+  const speechTickerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const currentUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const playbackRateRef = useRef(playbackRate);
+  playbackRateRef.current = playbackRate;
+  const isMutedRef = useRef(isMuted);
+  isMutedRef.current = isMuted;
+
+  // Prime speech synthesis voices on load
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      const loadVoices = () => {
+        window.speechSynthesis.getVoices();
+      };
+      loadVoices();
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+    }
+  }, []);
+
+  // Stop active speech synthesis and its timer
+  const stopSpeech = useCallback((resetTime = false) => {
+    if (speechTickerRef.current) {
+      clearInterval(speechTickerRef.current);
+      speechTickerRef.current = null;
+    }
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch {}
+    }
+    isSpeechActiveRef.current = false;
+    currentUtteranceRef.current = null;
+    if (resetTime) {
+      setCurrentTime(0);
+    }
+  }, []);
+
+  // Start speech synthesis with real-time text slice and word boundary tracking
+  const startSpeech = useCallback(
+    (fromSec: number, rate = playbackRateRef.current) => {
+      stopSpeech(false);
+      setIsPlaying(true);
+      isSpeechActiveRef.current = true;
+
+      const totalDur = duration > 0 ? duration : 124;
+      const progress = Math.max(0, Math.min(0.98, fromSec / totalDur));
+      const startChar = Math.floor(progress * transcriptText.length);
+      const speechSlice = transcriptText.slice(startChar) || transcriptText;
+
+      if (typeof window !== "undefined" && window.speechSynthesis) {
+        try {
+          window.speechSynthesis.cancel();
+          const u = new SpeechSynthesisUtterance(speechSlice);
+          currentUtteranceRef.current = u;
+          u.rate = rate;
+          u.volume = isMutedRef.current ? 0 : 1;
+
+          const voices = window.speechSynthesis.getVoices();
+          const preferred =
+            voices.find((v) => v.lang === "en-GB" && /daniel|george|oliver|arthur|natural|online/i.test(v.name)) ??
+            voices.find((v) => v.lang === "en-GB") ??
+            voices.find((v) => v.lang.startsWith("en") && /natural|online|google/i.test(v.name)) ??
+            voices.find((v) => v.lang.startsWith("en")) ??
+            null;
+
+          if (preferred) u.voice = preferred;
+
+          u.onboundary = (e) => {
+            if (e.charIndex != null && speechSlice.length > 0) {
+              const currentTotalChar = startChar + e.charIndex;
+              const frac = currentTotalChar / transcriptText.length;
+              const sec = Math.min(totalDur, Math.round(frac * totalDur));
+              setCurrentTime(sec);
+            }
+          };
+
+          u.onend = () => {
+            stopSpeech(true);
+            setIsPlaying(false);
+          };
+
+          u.onerror = () => {
+            stopSpeech(true);
+            setIsPlaying(false);
+          };
+
+          window.speechSynthesis.speak(u);
+        } catch (e) {
+          console.warn("Speech synthesis error:", e);
+        }
+      }
+
+      // Smooth interval ticker to increment currentTime every 150ms
+      const intervalMs = 150;
+      speechTickerRef.current = setInterval(() => {
+        setCurrentTime((prev) => {
+          const step = (intervalMs / 1000) * playbackRateRef.current;
+          const next = prev + step;
+          if (next >= totalDur) {
+            stopSpeech(true);
+            setIsPlaying(false);
+            return 0;
+          }
+          return next;
+        });
+      }, intervalMs);
+    },
+    [duration, transcriptText, stopSpeech]
+  );
+
+  // Clean up speech on unmount or question change
+  useEffect(() => {
+    return () => {
+      stopSpeech(false);
+    };
+  }, [answer.id, stopSpeech]);
+
+  // Audio element setup & event listeners
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    const onTimeUpdate = () => setCurrentTime(audio.currentTime);
-    const onLoadedMetadata = () => {
-      if (Number.isFinite(audio.duration) && audio.duration > 0) {
-        setDuration(audio.duration);
+    const onTimeUpdate = () => {
+      if (!isSpeechActiveRef.current) {
+        setCurrentTime(audio.currentTime);
       }
     };
-    const onEnded = () => setIsPlaying(false);
+    const onLoadedMetadata = () => {
+      if (Number.isFinite(audio.duration) && audio.duration > 0) {
+        setDuration(Math.ceil(audio.duration));
+      }
+    };
+    const onEnded = () => {
+      setIsPlaying(false);
+      setCurrentTime(0);
+    };
+    const onError = () => {
+      console.warn("Native audio error; falling back to speech synthesis.");
+      setAudioFailed(true);
+    };
 
     audio.addEventListener("timeupdate", onTimeUpdate);
     audio.addEventListener("loadedmetadata", onLoadedMetadata);
     audio.addEventListener("ended", onEnded);
+    audio.addEventListener("error", onError);
 
     return () => {
       audio.removeEventListener("timeupdate", onTimeUpdate);
       audio.removeEventListener("loadedmetadata", onLoadedMetadata);
       audio.removeEventListener("ended", onEnded);
+      audio.removeEventListener("error", onError);
     };
   }, [audioSrc]);
 
+  // Unified Toggle Play
   const togglePlay = () => {
-    if (!audioRef.current) return;
     if (isPlaying) {
-      audioRef.current.pause();
+      if (audioSrc && !audioFailed && audioRef.current) {
+        audioRef.current.pause();
+      }
+      stopSpeech(false);
       setIsPlaying(false);
+      return;
+    }
+
+    // Start playing
+    if (audioSrc && !audioFailed && audioRef.current) {
+      const audio = audioRef.current;
+      audio.playbackRate = playbackRate;
+      audio.muted = isMuted;
+
+      const p = audio.play();
+      if (p !== undefined) {
+        p.then(() => {
+          setIsPlaying(true);
+        }).catch((err) => {
+          console.warn("Audio play rejected, falling back to speech:", err);
+          setAudioFailed(true);
+          startSpeech(currentTime);
+        });
+      } else {
+        setIsPlaying(true);
+      }
     } else {
-      audioRef.current.play().catch(() => {});
-      setIsPlaying(true);
+      startSpeech(currentTime);
     }
   };
 
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = Number(e.target.value);
     setCurrentTime(val);
-    if (audioRef.current) {
+
+    if (audioSrc && !audioFailed && audioRef.current) {
       audioRef.current.currentTime = val;
+    } else if (isPlaying) {
+      startSpeech(val);
     }
   };
 
@@ -113,20 +280,35 @@ export function QuestionFeedbackView({
     const nextIdx = (speeds.indexOf(playbackRate) + 1) % speeds.length;
     const nextRate = speeds[nextIdx];
     setPlaybackRate(nextRate);
-    if (audioRef.current) {
+    playbackRateRef.current = nextRate;
+
+    if (audioSrc && !audioFailed && audioRef.current) {
       audioRef.current.playbackRate = nextRate;
+    } else if (isPlaying && isSpeechActiveRef.current) {
+      startSpeech(currentTime, nextRate);
     }
   };
 
   const toggleMute = () => {
-    if (!audioRef.current) return;
-    audioRef.current.muted = !isMuted;
-    setIsMuted(!isMuted);
+    const nextMuted = !isMuted;
+    setIsMuted(nextMuted);
+    isMutedRef.current = nextMuted;
+
+    if (audioSrc && !audioFailed && audioRef.current) {
+      audioRef.current.muted = nextMuted;
+    }
+
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      if (currentUtteranceRef.current) {
+        currentUtteranceRef.current.volume = nextMuted ? 0 : 1;
+      }
+    }
   };
 
   const formatTime = (sec: number) => {
-    const m = Math.floor(sec / 60);
-    const s = Math.floor(sec % 60);
+    const total = Math.floor(sec);
+    const m = Math.floor(total / 60);
+    const s = total % 60;
     return `${m}:${s < 10 ? "0" : ""}${s}`;
   };
 
@@ -197,7 +379,18 @@ export function QuestionFeedbackView({
 
   return (
     <div className="flex w-full grow flex-col pb-16 animate-rise max-w-5xl mx-auto">
-      {audioSrc && <audio ref={audioRef} src={audioSrc} preload="metadata" className="hidden" />}
+      {audioSrc && !audioFailed && (
+        <audio
+          ref={audioRef}
+          src={audioSrc}
+          preload="metadata"
+          className="hidden"
+          onError={() => {
+            console.warn("Audio element failed to load audioSrc, enabling speech fallback.");
+            setAudioFailed(true);
+          }}
+        />
+      )}
 
       {/* Top Modal-Style Navigation Header */}
       <div className="flex items-center justify-between gap-4 border-b border-white/[0.08] pb-4 mb-5">
@@ -392,15 +585,21 @@ export function QuestionFeedbackView({
 
             {/* Answer Extracts with Green Pill Highlights */}
             <div className="text-xs sm:text-[13px] text-[#c9cad8] leading-relaxed italic bg-black/20 p-4 rounded-xl border border-white/[0.04]">
-              &ldquo;I explained a new digital process to colleagues.{" "}
-              <span className="rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 not-italic font-medium">
-                I walked them through how it worked
-              </span>{" "}
-              and{" "}
-              <span className="rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 not-italic font-medium">
-                answered their questions
-              </span>
-              . They seemed to understand...&rdquo;
+              {transcriptText === initialTranscriptText ? (
+                <>
+                  &ldquo;I explained a new digital process to colleagues.{" "}
+                  <span className="rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 not-italic font-medium">
+                    I walked them through how it worked
+                  </span>{" "}
+                  and{" "}
+                  <span className="rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 not-italic font-medium">
+                    answered their questions
+                  </span>
+                  . They seemed to understand...&rdquo;
+                </>
+              ) : (
+                <>&ldquo;{transcriptText.length > 250 ? transcriptText.slice(0, 240) + "..." : transcriptText}&rdquo;</>
+              )}
             </div>
           </div>
 
