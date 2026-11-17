@@ -537,6 +537,19 @@ export function LiveInterview(p: LiveInterviewProps) {
     [mic, q, qIndex, askMain, advance, openWrong],
   );
 
+  const handleSkipQuestion = useCallback(async () => {
+    askToken.current++;
+    voice.current?.cancel();
+    await mic.stop();
+    if (session && turn.kind === "main") {
+      void skip("by-choice");
+    } else if (!isRun || queue.length === 1) {
+      router.push(`/mock/${p.interviewId}?practice=1&next=1`);
+    } else {
+      advance("Skipped. Moving to the next question.");
+    }
+  }, [session, turn.kind, skip, isRun, queue.length, mic, router, p.interviewId, advance]);
+
   const finish = useCallback(async () => {
     voice.current?.cancel();
     const seconds = mic.elapsed;
@@ -1582,6 +1595,10 @@ export function LiveInterview(p: LiveInterviewProps) {
                       <Icon name="pause" size={14} />
                       Pause
                     </Button>
+                    <Button onClick={() => void handleSkipQuestion()} className="rounded-xl text-xs hover:border-amber-500/40 hover:text-amber-300">
+                      <Icon name="fastForward" size={14} />
+                      Skip question
+                    </Button>
                     <button
                       type="button"
                       onClick={() => voice.current?.cancel()}
@@ -1604,6 +1621,10 @@ export function LiveInterview(p: LiveInterviewProps) {
                     <Button onClick={togglePause} className="rounded-xl text-xs">
                       <Icon name={phase === "paused" ? "play" : "pause"} size={14} />
                       {phase === "paused" ? "Resume" : "Pause"}
+                    </Button>
+                    <Button onClick={() => void handleSkipQuestion()} className="rounded-xl text-xs hover:border-amber-500/40 hover:text-amber-300">
+                      <Icon name="fastForward" size={14} />
+                      Skip question
                     </Button>
                     <button
                       type="button"

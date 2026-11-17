@@ -20,6 +20,125 @@ export interface PracticeHubClientProps {
   initialType?: PracticeQuestionType;
 }
 
+interface AnsweringGuide {
+  id: string;
+  name: string;
+  icon: IconName;
+  subtitle: string;
+  approachName: string;
+  steps: {
+    num: number;
+    title: string;
+    desc: string;
+  }[];
+  exampleQuestion: string;
+  keyTip: string;
+}
+
+const ANSWERING_GUIDES: AnsweringGuide[] = [
+  {
+    id: "competency",
+    name: "Competency & Behavioural",
+    icon: "star",
+    subtitle: "Use this for questions about something you've done in the past, such as “Tell me about a time when...”.",
+    approachName: "STAR",
+    steps: [
+      { num: 1, title: "Situation", desc: "Set the context and the problem briefly (10-15% of your answer)." },
+      { num: 2, title: "Task", desc: "What was your specific responsibility or goal?" },
+      { num: 3, title: "Action", desc: "What did YOU specifically do? Detail your thought process and teamwork (60-70%)." },
+      { num: 4, title: "Result", desc: "What was the outcome? Quantify impact and share any key lessons." },
+    ],
+    exampleQuestion: "Tell me about a time when you delivered a project under tight deadlines.",
+    keyTip: "Keep the Situation and Task under 30 seconds. Spend the majority of your time explaining the specific actions YOU took and the decisions behind them.",
+  },
+  {
+    id: "strengths",
+    name: "Strengths",
+    icon: "zap",
+    subtitle: "Use this for questions exploring what naturally energises and motivates you, and how you behave instinctively.",
+    approachName: "Authentic Energy & Real Evidence",
+    steps: [
+      { num: 1, title: "Direct Enthusiastic Reaction", desc: "Answer directly with genuine energy and positive tone without hesitation." },
+      { num: 2, title: "Why It Motivates You", desc: "Explain why this type of work or problem gives you energy." },
+      { num: 3, title: "Concrete Quick Example", desc: "Ground your strength with a short, tangible moment where you applied it naturally." },
+    ],
+    exampleQuestion: "Do you enjoy solving unfamiliar problems? Why?",
+    keyTip: "Strengths questions evaluate spontaneity and authentic enthusiasm. Don't over-rehearse a rigid essay; smile, answer with genuine energy, and give one brief real-life anchor.",
+  },
+  {
+    id: "situational",
+    name: "Situational",
+    icon: "compass",
+    subtitle: "Use this for hypothetical scenarios: “What would you do if...”. Focus on immediate triage, risk mitigation, and reasoned action.",
+    approachName: "Assess, Decide & Mitigate",
+    steps: [
+      { num: 1, title: "Assess & Clarify", desc: "Quickly assess the urgency, safety, stakeholders, or missing information." },
+      { num: 2, title: "Immediate Action", desc: "State your priority first action clearly (e.g. safety check, triage, stakeholder notification)." },
+      { num: 3, title: "Structured Plan", desc: "Walk through your step-by-step resolution and who you would collaborate with." },
+      { num: 4, title: "Prevent & Learn", desc: "Explain how you would review the outcome to prevent similar issues." },
+    ],
+    exampleQuestion: "What would you do if you discovered a critical bug 2 hours before a major product release?",
+    keyTip: "Interviewers look for sound judgement under pressure. Lead with safety, communication, and risk containment before jumping to long-term fixes.",
+  },
+  {
+    id: "curveball",
+    name: "Curveball & Challenging",
+    icon: "sparkle",
+    subtitle: "Use this for unexpected, stress-testing, or non-standard questions designed to test composure and lateral thinking.",
+    approachName: "Pause, Frame & Pivot",
+    steps: [
+      { num: 1, title: "Poised Pause", desc: "Take a calm 2–3 second breath to show emotional composure." },
+      { num: 2, title: "Frame Assumptions", desc: "State your interpretation and structure how you'll break the problem down." },
+      { num: 3, title: "Constructive Answer", desc: "Give a thoughtful perspective balancing trade-offs, humility, and pragmatism." },
+    ],
+    exampleQuestion: "If you had to eliminate 50% of your current features tomorrow, which would you cut and why?",
+    keyTip: "There is usually no single 'correct' answer. The panel is watching your thought process, ability to stay calm, and how you reason through ambiguity.",
+  },
+  {
+    id: "technical",
+    name: "Technical & Problem-solving",
+    icon: "code",
+    subtitle: "Use this for domain-specific questions, system architecture, clinical protocols, or regulatory standards.",
+    approachName: "Clarify, Approach & Trade-offs",
+    steps: [
+      { num: 1, title: "Clarify Scope", desc: "Confirm constraints, scale, regulatory guardrails, or clinical criteria." },
+      { num: 2, title: "High-Level Approach", desc: "Outline your overarching strategy or standard framework before diving into details." },
+      { num: 3, title: "Deep Dive & Trade-offs", desc: "Explain the pros, cons, edge cases, and alternatives you considered." },
+      { num: 4, title: "Validation", desc: "Explain how you measure success, test safety, or ensure compliance." },
+    ],
+    exampleQuestion: "How do you ensure data integrity and idempotency in high-throughput transactional services?",
+    keyTip: "Explain the 'why' behind technical decisions, not just the 'what'. Mention trade-offs (e.g. latency vs consistency, speed vs risk).",
+  },
+  {
+    id: "motivation",
+    name: "Motivational",
+    icon: "target",
+    subtitle: "Use this for questions about why you want this specific role, organisation, or career transition.",
+    approachName: "The 3 Whys: Company, Role & Timing",
+    steps: [
+      { num: 1, title: "Why This Organisation", desc: "Show genuine insight into their mission, challenges, and public/market impact." },
+      { num: 2, title: "Why This Specific Role", desc: "Connect the role's responsibilities to what genuinely energises and suits you." },
+      { num: 3, title: "Why Right Now", desc: "Explain why this is the natural, exciting next step in your career trajectory." },
+    ],
+    exampleQuestion: "Why do you want to join HMRC as an Associate Product Manager, and why is now the right time in your career?",
+    keyTip: "Avoid generic praise like 'You're an industry leader'. Name a specific initiative, service, or value that resonates with your personal career mission.",
+  },
+  {
+    id: "general",
+    name: "General & Career",
+    icon: "user",
+    subtitle: "Use this for open-ended background questions, career transitions, and “Tell me about yourself”.",
+    approachName: "Present, Past & Future",
+    steps: [
+      { num: 1, title: "Present", desc: "Who you are right now, your current role, and high-impact recent focus (20-30s)." },
+      { num: 2, title: "Past", desc: "Key milestones, skills gained, and relevant achievements that shaped your expertise (30-45s)." },
+      { num: 3, title: "Future", desc: "Why you're sitting in this interview and how your trajectory leads to this position (20s)." },
+    ],
+    exampleQuestion: "Tell me about yourself and your background in product delivery.",
+    keyTip: "Do not recite your entire CV chronologically. Tell a coherent narrative showing progression, key strengths, and why this interview is the logical next chapter.",
+  },
+];
+
 export function PracticeHubClient({
   interviews,
   initialInterviewId,
@@ -44,6 +163,7 @@ export function PracticeHubClient({
   // 3. Practice Settings (Difficulty & Mode)
   const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">("medium");
   const [duration, setDuration] = useState<"1-question" | "3-mins" | "5-mins">("1-question");
+  const [activeGuideTab, setActiveGuideTab] = useState<string>("competency");
 
   // Active interview record
   const currentInterview = useMemo(() => {
@@ -779,6 +899,126 @@ export function PracticeHubClient({
               </Link>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* 6. SECTION 3: ANSWERING GUIDES (QUESTION PLAYBOOKS) */}
+      <div className="mt-12 pt-8 border-t border-white/[0.08]">
+        <div className="flex items-center gap-3.5 mb-6">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#241e4b] border border-[#7c3aed]/40 text-[#c084fc] shadow-[0_0_15px_rgba(124,58,237,0.25)]">
+            <Icon name="book" size={20} strokeWidth={2} />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-white tracking-tight">Answering guides</h2>
+            <p className="text-xs text-muted">Learn how to structure different types of interview answers, with when to use each approach.</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 items-start">
+          {/* Left: 7 Category Tabs */}
+          <div className="flex flex-col gap-2">
+            {ANSWERING_GUIDES.map((guide) => {
+              const isActive = activeGuideTab === guide.id;
+              return (
+                <button
+                  key={guide.id}
+                  type="button"
+                  onClick={() => setActiveGuideTab(guide.id)}
+                  className={clsx(
+                    "flex items-center justify-between px-4 py-3.5 rounded-xl border text-left transition-all cursor-pointer group",
+                    isActive
+                      ? "bg-gradient-to-r from-[#241e4b] to-[#1c173d] border-[#7c3aed] text-white shadow-[0_0_15px_rgba(124,58,237,0.25)] ring-1 ring-[#7c3aed]/50 font-semibold"
+                      : "bg-[#0d0c1c] border-white/[0.06] text-[#a5a7b8] hover:border-white/20 hover:text-white"
+                  )}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className={clsx(
+                      "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs",
+                      isActive ? "bg-[#7c3aed]/30 text-[#c084fc]" : "bg-white/[0.05] text-[#8c8d9e] group-hover:text-white"
+                    )}>
+                      <Icon name={guide.icon} size={15} />
+                    </span>
+                    <span className="text-xs truncate">{guide.name}</span>
+                  </div>
+                  <Icon
+                    name="chevronRight"
+                    size={14}
+                    className={clsx("shrink-0 transition-transform", isActive ? "text-[#c084fc] translate-x-0.5" : "text-white/20 group-hover:text-white/50")}
+                  />
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Right: Selected Guide Details */}
+          {(() => {
+            const currentGuide = ANSWERING_GUIDES.find((g) => g.id === activeGuideTab) ?? ANSWERING_GUIDES[0];
+            return (
+              <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-6 sm:p-7 shadow-xl space-y-6">
+                <div>
+                  <h3 className="text-xl font-bold text-white tracking-tight">{currentGuide.name}</h3>
+                  <p className="text-sm text-[#9b9ca8] leading-relaxed mt-1.5">{currentGuide.subtitle}</p>
+                </div>
+
+                {/* Recommended Approach Container */}
+                <div className="rounded-xl bg-[#141328] border border-white/[0.06] p-5">
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#a5a1ff]">
+                      Recommended approach: {currentGuide.approachName}
+                    </span>
+                  </div>
+
+                  <div className={clsx("grid gap-3", currentGuide.steps.length === 4 ? "grid-cols-1 sm:grid-cols-2 xl:grid-cols-4" : currentGuide.steps.length === 3 ? "grid-cols-1 sm:grid-cols-3" : "grid-cols-1 sm:grid-cols-2")}>
+                    {currentGuide.steps.map((st) => (
+                      <div
+                        key={st.num}
+                        className="rounded-xl bg-[#1a1835]/70 border border-white/[0.06] p-4 flex flex-col justify-between"
+                      >
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-bold text-white">{st.title}</span>
+                            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#7c3aed]/25 text-[11px] font-bold text-[#c084fc]">
+                              {st.num}
+                            </span>
+                          </div>
+                          <p className="text-xs text-[#a5a7b8] leading-relaxed">{st.desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Example Question & Key Tip Side-by-Side */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+                  {/* Left: Example Question */}
+                  <div className="rounded-xl bg-[#141328] border border-white/[0.06] p-4 sm:p-5 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 text-xs font-semibold text-[#a5a1ff] mb-2.5">
+                        <Icon name="chat" size={15} />
+                        <span>Example question</span>
+                      </div>
+                      <p className="text-xs sm:text-sm font-medium text-white/90 italic leading-relaxed">
+                        “{currentGuide.exampleQuestion}”
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Right: Key Tip */}
+                  <div className="rounded-xl bg-[#141328] border border-white/[0.06] p-4 sm:p-5 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 text-xs font-semibold text-amber-300 mb-2.5">
+                        <Icon name="sparkle" size={15} />
+                        <span>Key tip</span>
+                      </div>
+                      <p className="text-xs text-[#a5a7b8] leading-relaxed">
+                        {currentGuide.keyTip}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
         </div>
       </div>
     </div>
