@@ -185,24 +185,34 @@ export default async function MockInterviewPage({
     } else if (next === "1") {
       const idx = Math.floor(Math.random() * interview.questions.length);
       targetQuestion = interview.questions[idx] ?? interview.questions[0];
-    } else if (topic) {
-      const topicSpec = getTopic(topic);
+    } else if (type || topic) {
+      const topicSpec = topic ? getTopic(topic) : undefined;
       const topicDifficulty = difficultyParam ?? interview.settings?.difficulty ?? difficultyFor(interview.style);
       const lastAsked = await lastAskedMapAsync(interview.id, user.id);
-      const questions = topicSpec ? topicQuestions(topicSpec.id, interview.questions, { difficulty: topicDifficulty, lastAsked, limit: 1 }) : [];
-      targetQuestion = questions[0];
-    } else if (type) {
-      const diff = difficultyParam ?? "medium";
-      const matching = interview.questions.filter((item) => {
-        if (type === "strengths") return item.group === "curveball" || /strength/i.test(`${item.text} ${item.short}`);
-        if (type === "competency") return item.group === "competency";
-        if (type === "technical") return item.group === "technical";
-        if (type === "situational") return item.type === "situational" || item.group === "curveball";
-        if (type === "motivation") return item.group === "motivation";
-        if (type === "experience") return item.group === "cv";
-        return true;
-      });
-      targetQuestion = matching.find((x) => x.difficulty === diff) ?? matching[0] ?? interview.questions[0];
+      let candidates: Question[] = [];
+      if (topicSpec) {
+        candidates = topicQuestions(topicSpec.id, interview.questions, { difficulty: topicDifficulty, lastAsked, limit: 4 });
+      }
+
+      if (type) {
+        const typeCandidates = (candidates.length ? candidates : interview.questions).filter((item) => {
+          if (type === "strengths") return item.type === "strengths" || /strength/i.test(`${item.text} ${item.short}`);
+          if (type === "competency") return item.type === "competency" || item.group === "competency";
+          if (type === "technical") return item.type === "technical" || item.group === "technical";
+          if (type === "situational") return item.type === "situational" || (item.group === "curveball" && item.type !== "strengths");
+          if (type === "motivation") return item.type === "why-us" || item.type === "tell-me-about-yourself" || item.group === "motivation";
+          if (type === "experience") return item.group === "cv";
+          return true;
+        });
+        if (typeCandidates.length > 0) {
+          const matchingDiff = typeCandidates.find((x) => x.difficulty === topicDifficulty);
+          targetQuestion = matchingDiff ?? typeCandidates[0];
+        }
+      }
+
+      if (!targetQuestion && candidates.length > 0) {
+        targetQuestion = candidates[0];
+      }
     }
 
     if (!targetQuestion) {
@@ -211,12 +221,25 @@ export default async function MockInterviewPage({
 
     if (targetQuestion) {
       const topicSpec = topic ? getTopic(topic) : undefined;
+      const interviewerTitle =
+        type === "strengths"
+          ? "Strengths practice"
+          : type === "motivation"
+          ? "Motivation practice"
+          : type === "experience"
+          ? "Experience practice"
+          : topicSpec?.id === "technical"
+          ? "Technical interviewer"
+          : topicSpec
+          ? `${topicSpec.focusLabel} practice`
+          : `${interview.company} practice`;
+
       return (
         <LiveInterview
           {...common}
           interviewer={{
             ...interview.interviewer,
-            title: topicSpec?.id === "technical" ? "Technical interviewer" : topicSpec ? `${topicSpec.focusLabel} practice` : `${interview.company} practice`,
+            title: interviewerTitle,
             style: styleOverride ?? styleFor(difficultyParam ?? "medium"),
           }}
           run={{ kind: "single" }}

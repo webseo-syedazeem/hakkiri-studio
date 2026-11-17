@@ -64,34 +64,103 @@ const DEFAULT_STAGES: StageInfo[] = [
 
 export function StageTracker({
   interview,
+  availableInterviews = [],
   onArchiveRole,
 }: {
   interview?: StageTrackerInterview | null;
+  availableInterviews?: StageTrackerInterview[];
   onArchiveRole?: (reason: string) => void;
 }) {
-  const [activeInterview, setActiveInterview] = useState<StageTrackerInterview | null>(interview ?? null);
+  const [interviewsList, setInterviewsList] = useState<StageTrackerInterview[]>(() => {
+    const fallbackList: StageTrackerInterview[] = [
+      {
+        id: "staff-nurse",
+        role: "Staff Nurse",
+        company: "Example NHS Trust",
+        companyInitial: "N",
+        stages: [
+          { id: "st-1", name: "Clinical interview", status: "next", date: "20 Nov", time: "09:30" },
+          { id: "st-2", name: "Ward scenario assessment", status: "upcoming" },
+        ],
+      },
+      {
+        id: "hmrc",
+        role: "Associate Product Manager",
+        company: "HMRC",
+        companyInitial: "H",
+        stages: [
+          { id: "st-1", name: "Competency, strength and presentation", status: "next", date: "21 Nov", time: "11:00" },
+          { id: "st-2", name: "Digital service delivery assessment", status: "upcoming", date: "28 Nov" },
+          { id: "st-3", name: "Executive panel interview", status: "upcoming", date: "5 Dec" },
+        ],
+      },
+      {
+        id: "halden",
+        role: "Senior Product Manager, Payments",
+        company: "Halden",
+        companyInitial: "H",
+        stages: DEFAULT_STAGES.map((s, idx) => ({
+          id: `st-${idx + 1}`,
+          name: s.title.replace(/^Stage \d+ · /, ""),
+          status: s.status,
+          date: s.upcomingText.replace(/^Upcoming · /, ""),
+        })),
+      },
+    ];
+    if (availableInterviews && availableInterviews.length > 0) {
+      const merged = [...availableInterviews];
+      for (const fb of fallbackList) {
+        if (!merged.some((m) => m.id === fb.id)) {
+          merged.push(fb);
+        }
+      }
+      return merged;
+    }
+    return fallbackList;
+  });
 
-  // Sync with client-side localStorage interviews
+  const [activeInterview, setActiveInterview] = useState<StageTrackerInterview | null>(() => {
+    return interview ?? interviewsList[0] ?? null;
+  });
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  // Sync with client-side localStorage and passed interviews
   useEffect(() => {
     try {
+      let combined = [...(availableInterviews.length > 0 ? availableInterviews : interviewsList)];
       const raw = localStorage.getItem("hk_custom_interviews");
       if (raw) {
         const list = JSON.parse(raw);
         if (Array.isArray(list) && list.length > 0) {
-          const match = interview ? list.find((it: any) => it.id === interview.id) : list[0];
-          if (match) {
-            setActiveInterview((prev) => ({
-              id: match.id,
-              role: match.role || prev?.role || "Associate Product Manager",
-              company: match.company || prev?.company || "HMRC",
-              companyInitial: match.companyInitial || match.company?.[0] || prev?.companyInitial || "H",
-              stages: Array.isArray(match.stages) && match.stages.length > 0 ? match.stages : prev?.stages,
-            }));
+          for (const item of list) {
+            if (!combined.some((it) => it.id === item.id)) {
+              combined.push({
+                id: item.id,
+                role: item.role,
+                company: item.company,
+                companyInitial: item.companyInitial || item.company?.[0] || "C",
+                stages: Array.isArray(item.stages) && item.stages.length > 0 ? item.stages : undefined,
+              });
+            }
           }
         }
       }
+      setInterviewsList(combined);
+
+      const savedTrackerId = localStorage.getItem("hk_active_stage_tracker_id");
+      if (savedTrackerId) {
+        const found = combined.find((i) => i.id === savedTrackerId);
+        if (found) {
+          setActiveInterview(found);
+          return;
+        }
+      }
+      if (interview) {
+        const found = combined.find((i) => i.id === interview.id);
+        if (found) setActiveInterview(found);
+      }
     } catch {}
-  }, [interview]);
+  }, [interview, availableInterviews]);
 
   const displayRole = activeInterview?.role || "Senior Product Manager, Payments";
   const displayCompany = activeInterview?.company || "Halden";
@@ -147,6 +216,24 @@ export function StageTracker({
     } catch {}
   }, [activeInterview?.id, totalStages, defaultCurrentStage]);
 
+  const handleSelectInterview = (iv: StageTrackerInterview) => {
+    setActiveInterview(iv);
+    setIsDropdownOpen(false);
+    try {
+      localStorage.setItem("hk_active_stage_tracker_id", iv.id);
+      const savedStage = localStorage.getItem(`hk_stage_tracker_${iv.id}_current_stage`);
+      if (savedStage) {
+        const parsed = parseInt(savedStage, 10);
+        if (parsed >= 1) {
+          setCurrentStage(parsed);
+          return;
+        }
+      }
+      const nextIdx = iv.stages?.findIndex((s) => s.status === "next");
+      setCurrentStage(nextIdx != null && nextIdx >= 0 ? nextIdx + 1 : 1);
+    } catch {}
+  };
+
   const handleMarkSuccessful = () => {
     if (currentStage < totalStages) {
       const nextStage = currentStage + 1;
@@ -201,29 +288,88 @@ export function StageTracker({
           </div>
         )}
 
-        {/* Target Role Card */}
-        <div className="mt-4 flex items-center justify-between rounded-[14px] bg-panel-2 p-3.5 shadow-[inset_0_0_0_1px_var(--color-line)] transition-all hover:shadow-[inset_0_0_0_1px_var(--color-line-strong)]">
-          <div className="flex items-center gap-3.5 min-w-0">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-[#143029] text-[18px] font-bold text-[#34d399] shadow-sm">
-              {displayCompanyInitial}
-            </span>
-            <div className="min-w-0 grow">
-              <Link
-                href={displayHref}
-                className="block text-[14px] font-semibold text-ink hover:underline leading-snug truncate"
-              >
-                {displayRole}
-              </Link>
-              <div className="flex items-center gap-2 text-xs text-muted mt-0.5">
-                <span>{displayCompany}</span>
-                <span>·</span>
-                <span className="inline-flex items-center rounded-full bg-blue-fill/20 px-2 py-0.5 text-[10px] font-semibold text-blue-soft">
-                  In progress
-                </span>
+        {/* Target Role Card with Interactive Dropdown */}
+        <div className="relative mt-4">
+          <div
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            className="flex items-center justify-between rounded-[14px] bg-panel-2 p-3.5 shadow-[inset_0_0_0_1px_var(--color-line)] transition-all hover:shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-[#1a1f33] cursor-pointer group select-none"
+          >
+            <div className="flex items-center gap-3.5 min-w-0">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-[#143029] text-[18px] font-bold text-[#34d399] shadow-sm">
+                {displayCompanyInitial}
+              </span>
+              <div className="min-w-0 grow">
+                <div className="block text-[14px] font-semibold text-ink group-hover:text-blue-soft transition-colors leading-snug truncate">
+                  {displayRole}
+                </div>
+                <div className="flex items-center gap-2 text-xs text-muted mt-0.5">
+                  <span>{displayCompany}</span>
+                  <span>·</span>
+                  <span className="inline-flex items-center rounded-full bg-blue-fill/20 px-2 py-0.5 text-[10px] font-semibold text-blue-soft">
+                    In progress
+                  </span>
+                </div>
               </div>
             </div>
+            <button
+              type="button"
+              className="p-1 rounded-lg text-muted group-hover:text-ink transition-colors"
+              aria-label="Switch interview"
+            >
+              <Icon
+                name="chevronDown"
+                size={16}
+                className={clsx("transition-transform duration-200", isDropdownOpen && "rotate-180")}
+              />
+            </button>
           </div>
-          <Icon name="chevronRight" size={16} className="text-muted shrink-0 rotate-90" />
+
+          {/* Floating Dropdown Menu */}
+          {isDropdownOpen && (
+            <>
+              <div
+                className="fixed inset-0 z-40"
+                onClick={() => setIsDropdownOpen(false)}
+              />
+              <div className="absolute top-full left-0 right-0 mt-2 z-50 rounded-xl bg-[#141829] border border-white/15 shadow-2xl overflow-hidden py-1.5 backdrop-blur-xl animate-fade-in divide-y divide-white/[0.06]">
+                <div className="px-3.5 py-2 text-[11px] font-bold uppercase tracking-wider text-muted">
+                  Switch multi-stage interview
+                </div>
+                <div className="max-h-60 overflow-y-auto py-1">
+                  {interviewsList.map((iv) => {
+                    const isSelected = iv.id === activeInterview?.id;
+                    const stageCount = iv.stages?.length ?? 4;
+                    return (
+                      <button
+                        key={iv.id}
+                        type="button"
+                        onClick={() => handleSelectInterview(iv)}
+                        className={clsx(
+                          "w-full flex items-center justify-between px-3.5 py-2.5 text-left transition-colors text-xs cursor-pointer",
+                          isSelected
+                            ? "bg-indigo-600/20 text-white font-semibold"
+                            : "hover:bg-white/[0.08] text-[#c9cad4]"
+                        )}
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/10 text-xs font-bold text-white">
+                            {iv.companyInitial || iv.company[0]}
+                          </span>
+                          <div className="min-w-0 truncate">
+                            <div className="font-semibold text-white truncate">{iv.role}</div>
+                            <div className="text-[11px] text-muted truncate">
+                              {iv.company} · {stageCount} {stageCount === 1 ? "stage" : "stages"}
+                            </div>
+                          </div>
+                        </div>
+                        {isSelected && <Icon name="check" size={14} className="text-indigo-400 shrink-0 ml-2" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Stage Progress Bar */}

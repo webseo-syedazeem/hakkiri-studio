@@ -109,6 +109,14 @@ export default async function HomePage() {
     }
   }
 
+  const availableInterviews = interviews.map((iv) => ({
+    id: iv.id,
+    role: iv.role,
+    company: iv.company,
+    companyInitial: iv.companyInitial || iv.company[0] || "H",
+    stages: iv.stages,
+  }));
+
   const upcomingInterviewsCount = Math.max(1, interviews.length);
   const upcomingPresentationsCount = Math.max(1, presentations.length);
 
@@ -134,6 +142,7 @@ export default async function HomePage() {
         upcomingPresentationsCount={upcomingPresentationsCount}
         agendaEvents={agendaEvents}
         activeInterview={activeInterview}
+        availableInterviews={availableInterviews}
         initialRecentPractices={recentPractices}
       />
     </div>

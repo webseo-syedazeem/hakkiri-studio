@@ -19,7 +19,9 @@ export type TopicId =
   | "commercial-judgement"
   | "star"
   | "technical"
-  | "curveball";
+  | "curveball"
+  | "motivation"
+  | "experience";
 
 export interface TopicSpec {
   id: TopicId;
@@ -172,7 +174,7 @@ export const DRILL_TOPICS: Record<TopicId, TopicSpec> = {
       {
         id: "topic-str-1",
         group: "curveball",
-        type: "situational",
+        type: "strengths",
         difficulty: "easy",
         text: "Do you enjoy working with people who have different viewpoints?",
         short: "Different viewpoints",
@@ -181,16 +183,16 @@ export const DRILL_TOPICS: Record<TopicId, TopicSpec> = {
       {
         id: "topic-str-2",
         group: "curveball",
-        type: "situational",
-        difficulty: "easy",
-        text: "How do you approach a problem you've never encountered before?",
-        short: "Novel problems",
+        type: "strengths",
+        difficulty: "medium",
+        text: "Do you enjoy solving unfamiliar problems? Why?",
+        short: "Unfamiliar problems (Strength)",
         drillOnly: true,
       },
       {
         id: "topic-str-3",
         group: "curveball",
-        type: "situational",
+        type: "strengths",
         difficulty: "easy",
         text: "Do you find it easy to stay energized when learning a completely unfamiliar system?",
         short: "Energized learning",
@@ -199,7 +201,7 @@ export const DRILL_TOPICS: Record<TopicId, TopicSpec> = {
       {
         id: "topic-str-4",
         group: "curveball",
-        type: "situational",
+        type: "strengths",
         difficulty: "medium",
         text: "What motivates you when working under pressure?",
         short: "Motivation under pressure",
@@ -208,7 +210,7 @@ export const DRILL_TOPICS: Record<TopicId, TopicSpec> = {
       {
         id: "topic-str-5",
         group: "curveball",
-        type: "situational",
+        type: "strengths",
         difficulty: "medium",
         text: "Do you prefer making decisions independently or collaboratively?",
         short: "Decision style",
@@ -217,7 +219,7 @@ export const DRILL_TOPICS: Record<TopicId, TopicSpec> = {
       {
         id: "topic-str-6",
         group: "curveball",
-        type: "situational",
+        type: "strengths",
         difficulty: "medium",
         text: "How do you stay motivated when an initiative requires long, repetitive groundwork?",
         short: "Sustained groundwork",
@@ -226,7 +228,7 @@ export const DRILL_TOPICS: Record<TopicId, TopicSpec> = {
       {
         id: "topic-str-7",
         group: "curveball",
-        type: "situational",
+        type: "strengths",
         difficulty: "hard",
         text: "How do you respond when someone challenges your ideas?",
         short: "Challenged ideas",
@@ -235,7 +237,7 @@ export const DRILL_TOPICS: Record<TopicId, TopicSpec> = {
       {
         id: "topic-str-8",
         group: "curveball",
-        type: "situational",
+        type: "strengths",
         difficulty: "hard",
         text: "What do you enjoy most about improving how an organisation works?",
         short: "Improving organisations",
@@ -244,7 +246,7 @@ export const DRILL_TOPICS: Record<TopicId, TopicSpec> = {
       {
         id: "topic-str-9",
         group: "curveball",
-        type: "situational",
+        type: "strengths",
         difficulty: "hard",
         text: "When an ambiguous problem has no precedent, how do you decide which principle to stand by?",
         short: "Unprecedented ambiguity",
@@ -1044,6 +1046,196 @@ export const DRILL_TOPICS: Record<TopicId, TopicSpec> = {
       },
     ],
   },
+  motivation: {
+    id: "motivation",
+    title: "Motivational & culture fit",
+    focusLabel: "Motivation",
+    subtitle: "Why this role, company mission, values & career aspirations.",
+    instruction:
+      "Practising motivational questions: articulate why this organisation, why this role now, and your genuine career drive. Feedback after every answer.",
+    group: "motivation",
+    minutes: 5,
+    matchPattern: /\b(why|motivation|company|join|role|career|mission|values|vocation|halden|margin|onboarding|strategic)\b/i,
+    preferredBankIds: ["m1", "m2", "m3", "me1", "me2", "me3", "mh1", "mh2", "mh3", "hmrc-m1", "nurse-m1"],
+    questions: [
+      {
+        id: "topic-mot-e1",
+        group: "motivation",
+        type: "why-us",
+        difficulty: "easy",
+        text: "What caught your eye about this organisation and the mission of this team?",
+        short: "Mission & company interest",
+        drillOnly: true,
+      },
+      {
+        id: "topic-mot-e2",
+        group: "motivation",
+        type: "why-us",
+        difficulty: "easy",
+        text: "What kind of team environment allows you to do your most impactful work?",
+        short: "Ideal team environment",
+        drillOnly: true,
+      },
+      {
+        id: "topic-mot-e3",
+        group: "motivation",
+        type: "why-us",
+        difficulty: "easy",
+        text: "What values do you look for most in an organisation before committing to a new role?",
+        short: "Core values alignment",
+        drillOnly: true,
+      },
+      {
+        id: "topic-mot-m1",
+        group: "motivation",
+        type: "why-us",
+        difficulty: "medium",
+        text: "Why this role, and why is now the right time in your career for this move?",
+        short: "Why this role now",
+        drillOnly: true,
+      },
+      {
+        id: "topic-mot-m2",
+        group: "motivation",
+        type: "why-us",
+        difficulty: "medium",
+        text: "What do you understand about our core challenges, and where can you contribute most?",
+        short: "Core challenge contribution",
+        drillOnly: true,
+      },
+      {
+        id: "topic-mot-m3",
+        group: "motivation",
+        type: "why-us",
+        difficulty: "medium",
+        text: "How does this opportunity fit into your broader career trajectory and aspirations?",
+        short: "Career trajectory fit",
+        drillOnly: true,
+      },
+      {
+        id: "topic-mot-h1",
+        group: "motivation",
+        type: "why-us",
+        difficulty: "hard",
+        text: "Where do you see yourself making the biggest strategic contribution over the next two to three years?",
+        short: "Strategic impact over time",
+        drillOnly: true,
+      },
+      {
+        id: "topic-mot-h2",
+        group: "motivation",
+        type: "why-us",
+        difficulty: "hard",
+        text: "Every role involves unexpected roadblocks and compromises — what keeps you motivated when progress is slow?",
+        short: "Motivation through friction",
+        drillOnly: true,
+      },
+      {
+        id: "topic-mot-h3",
+        group: "motivation",
+        type: "why-us",
+        difficulty: "hard",
+        text: "What strategic risk in our domain or competitive space do you think leadership might be underestimating?",
+        short: "Domain strategic awareness",
+        drillOnly: true,
+      },
+    ],
+  },
+  experience: {
+    id: "experience",
+    title: "Experience & CV narrative",
+    focusLabel: "Experience",
+    subtitle: "Career background, key milestones, transitions & delivery impact.",
+    instruction:
+      "Practising experience questions: walk through your career journey, past transitions, and key achievements with evidence. Feedback after every answer.",
+    group: "cv",
+    minutes: 5,
+    matchPattern: /\b(experience|cv|background|career|transition|project|achievement|past|milestone|fernway|brightpay|completion|stint|tenure|commitment|lift|guardrail|conversion)\b/i,
+    preferredBankIds: ["v1", "v2", "v3", "ve1", "ve2", "ve3", "vh1", "vh2", "vh3", "hmrc-v1", "nurse-v1"],
+    questions: [
+      {
+        id: "topic-exp-e1",
+        group: "cv",
+        type: "competency",
+        difficulty: "easy",
+        text: "Which achievement on your CV are you most proud of, and what made it stand out?",
+        short: "Proudest career achievement",
+        drillOnly: true,
+      },
+      {
+        id: "topic-exp-e2",
+        group: "cv",
+        type: "competency",
+        difficulty: "easy",
+        text: "How has your earlier background shaped your approach to your current discipline?",
+        short: "Background shaping discipline",
+        drillOnly: true,
+      },
+      {
+        id: "topic-exp-e3",
+        group: "cv",
+        type: "competency",
+        difficulty: "easy",
+        text: "What key skills or lessons have you carried forward most from your previous team?",
+        short: "Lessons carried forward",
+        drillOnly: true,
+      },
+      {
+        id: "topic-exp-m1",
+        group: "cv",
+        type: "competency",
+        difficulty: "medium",
+        text: "Looking at your experience to date, tell me about a project where things did not go to plan and what you learned from it.",
+        short: "Learning from a setback",
+        drillOnly: true,
+      },
+      {
+        id: "topic-exp-m2",
+        group: "cv",
+        type: "competency",
+        difficulty: "medium",
+        text: "Walk me through a major career transition on your CV and what motivated that change.",
+        short: "Explaining career transitions",
+        drillOnly: true,
+      },
+      {
+        id: "topic-exp-m3",
+        group: "cv",
+        type: "competency",
+        difficulty: "medium",
+        text: "Give an example of a time your direct contribution changed the outcome of a key initiative.",
+        short: "Direct outcome impact",
+        drillOnly: true,
+      },
+      {
+        id: "topic-exp-h1",
+        group: "cv",
+        type: "competency",
+        difficulty: "hard",
+        text: "Walk me through your most complex delivery from ambiguity through to measurable results and long-term impact.",
+        short: "High-impact delivery narrative",
+        drillOnly: true,
+      },
+      {
+        id: "topic-exp-h2",
+        group: "cv",
+        type: "competency",
+        difficulty: "hard",
+        text: "Looking at your CV timeline, what trade-offs did you make between staying deep in a domain versus broadening your scope?",
+        short: "Career scope trade-offs",
+        drillOnly: true,
+      },
+      {
+        id: "topic-exp-h3",
+        group: "cv",
+        type: "competency",
+        difficulty: "hard",
+        text: "Tell me about a high-profile initiative on your CV where early results were disappointing — how did you pivot?",
+        short: "Pivoting under pressure",
+        drillOnly: true,
+      },
+    ],
+  },
 };
 
 export const CHECKLIST_TOPICS = [
@@ -1082,6 +1274,8 @@ export function getTopicsForInterview(interview?: {
     if (DRILL_TOPICS["clinical-judgement"]) list.push(DRILL_TOPICS["clinical-judgement"]);
     if (DRILL_TOPICS["nursing-competency"]) list.push(DRILL_TOPICS["nursing-competency"]);
     if (DRILL_TOPICS["civil-service-strengths"]) list.push(DRILL_TOPICS["civil-service-strengths"]);
+    list.push(DRILL_TOPICS["motivation"]);
+    list.push(DRILL_TOPICS["experience"]);
     list.push(DRILL_TOPICS["stakeholder-management"]);
     list.push(DRILL_TOPICS["star"]);
     list.push(DRILL_TOPICS["curveball"]);
@@ -1091,6 +1285,8 @@ export function getTopicsForInterview(interview?: {
   if (isCivilService) {
     if (DRILL_TOPICS["civil-service-competencies"]) list.push(DRILL_TOPICS["civil-service-competencies"]);
     if (DRILL_TOPICS["civil-service-strengths"]) list.push(DRILL_TOPICS["civil-service-strengths"]);
+    list.push(DRILL_TOPICS["motivation"]);
+    list.push(DRILL_TOPICS["experience"]);
     list.push(DRILL_TOPICS["stakeholder-management"]);
     list.push(DRILL_TOPICS["star"]);
     list.push(DRILL_TOPICS["commercial-judgement"]);
@@ -1104,6 +1300,8 @@ export function getTopicsForInterview(interview?: {
     list.push(DRILL_TOPICS["payment-fundamentals"]);
     list.push(DRILL_TOPICS["product-metrics"]);
     list.push(DRILL_TOPICS["commercial-judgement"]);
+    list.push(DRILL_TOPICS["motivation"]);
+    list.push(DRILL_TOPICS["experience"]);
     list.push(DRILL_TOPICS["star"]);
     if (DRILL_TOPICS["civil-service-competencies"]) list.push(DRILL_TOPICS["civil-service-competencies"]);
     if (DRILL_TOPICS["civil-service-strengths"]) list.push(DRILL_TOPICS["civil-service-strengths"]);
@@ -1115,6 +1313,8 @@ export function getTopicsForInterview(interview?: {
   // Standard / General / Tech roles (NEVER show payment fundamentals):
   if (DRILL_TOPICS["civil-service-competencies"]) list.push(DRILL_TOPICS["civil-service-competencies"]);
   if (DRILL_TOPICS["civil-service-strengths"]) list.push(DRILL_TOPICS["civil-service-strengths"]);
+  list.push(DRILL_TOPICS["motivation"]);
+  list.push(DRILL_TOPICS["experience"]);
   list.push(DRILL_TOPICS["stakeholder-management"]);
   if (isPM) list.push(DRILL_TOPICS["product-metrics"]);
   list.push(DRILL_TOPICS["star"]);

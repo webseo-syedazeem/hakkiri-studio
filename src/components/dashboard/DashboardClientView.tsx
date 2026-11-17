@@ -14,12 +14,14 @@ export function DashboardClientView({
   upcomingPresentationsCount,
   agendaEvents,
   activeInterview,
+  availableInterviews,
   initialRecentPractices,
 }: {
   upcomingInterviewsCount: number;
   upcomingPresentationsCount: number;
   agendaEvents: UpcomingEvent[];
   activeInterview?: StageTrackerInterview | null;
+  availableInterviews?: StageTrackerInterview[];
   initialRecentPractices?: OverviewPracticeItem[];
 }) {
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
@@ -246,7 +248,11 @@ export function DashboardClientView({
               </div>
             </div>
           ) : (
-            <StageTracker interview={activeInterview} onArchiveRole={handleArchiveHalden} />
+            <StageTracker
+              interview={activeInterview}
+              availableInterviews={availableInterviews}
+              onArchiveRole={handleArchiveHalden}
+            />
           )}
         </Panel>
 

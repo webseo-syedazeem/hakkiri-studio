@@ -15,6 +15,7 @@ export type ContextType =
   | "competency"
   | "technical"
   | "situational"
+  | "strengths"
   | "questions-for-us"
   | "salary"
   | "pay-question"

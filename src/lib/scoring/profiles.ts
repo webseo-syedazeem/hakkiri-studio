@@ -74,6 +74,16 @@ export const PROFILES: Record<ContextType, ContextProfile> = {
     allowThinkingPauses: false,
     pointWithinSec: 10,
   },
+  strengths: {
+    label: "Strengths question",
+    targetSec: [45, 90],
+    shape: "Authentic, spontaneous reflection on what energises and motivates you",
+    countsMost: "Authenticity, genuine energy, clear personal examples without rigid STAR scripts",
+    relaxed: "STAR not applied. Spontaneous, natural reflections are valued over rehearsed scripts.",
+    weights: { content: 0.5, structure: 0.25, delivery: 0.25 },
+    allowThinkingPauses: false,
+    pointWithinSec: 10,
+  },
   "questions-for-us": {
     label: "Your questions for them",
     targetSec: [30, 60],

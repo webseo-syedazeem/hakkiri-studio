@@ -118,7 +118,7 @@ export function PracticeHubClient({
           topicId: "civil-service-strengths",
           type: "strengths" as PracticeQuestionType,
           title: "Strengths Questions",
-          category: "Spontaneous Strengths",
+          category: "Clinical Motivation & Energy",
           badge: "RECOMMENDED",
           duration: "3–5 mins",
           difficulty: "Realistic",
@@ -155,12 +155,38 @@ export function PracticeHubClient({
           topicId: "curveball",
           type: "situational" as PracticeQuestionType,
           title: "Situational Questions",
-          category: "Ward Scenarios",
+          category: "Ward Scenarios & Triage",
           duration: "3–5 mins",
           difficulty: "Realistic",
           icon: "brain" as IconName,
           color: "from-emerald-500/20 to-teal-500/20 text-emerald-300 border-emerald-500/30",
           description: "Respond to realistic scenarios, for example managing competing clinical priorities.",
+        },
+        {
+          id: "nursing-motivation",
+          topicId: "motivation",
+          type: "motivation" as PracticeQuestionType,
+          title: "Nursing Vocation & NHS Values",
+          category: "Why Nursing & NHS Trust",
+          badge: "RECOMMENDED",
+          duration: "3–5 mins",
+          difficulty: "Friendly",
+          icon: "target" as IconName,
+          color: "from-purple-500/20 to-pink-500/20 text-purple-300 border-purple-500/30",
+          description: "Articulate your clinical vocation, commitment to compassionate care and alignment with NHS values.",
+        },
+        {
+          id: "nursing-experience",
+          topicId: "experience",
+          type: "experience" as PracticeQuestionType,
+          title: "Clinical Background & Ward Rotations",
+          category: "Placements & Practical Care",
+          badge: "RECOMMENDED",
+          duration: "4–6 mins",
+          difficulty: "Realistic",
+          icon: "cal" as IconName,
+          color: "from-cyan-500/20 to-blue-500/20 text-cyan-300 border-cyan-500/30",
+          description: "Walk through key clinical placements, patient care milestones and lessons from challenging ward shifts.",
         },
       ];
     }
@@ -197,7 +223,7 @@ export function PracticeHubClient({
           topicId: "technical",
           type: "technical" as PracticeQuestionType,
           title: "Government Standards & GDS",
-          category: "Digital Standards",
+          category: "Digital Standards & WCAG",
           duration: "5 mins",
           difficulty: "Challenging",
           icon: "code" as IconName,
@@ -215,6 +241,32 @@ export function PracticeHubClient({
           icon: "compass" as IconName,
           color: "from-emerald-500/20 to-teal-500/20 text-emerald-300 border-emerald-500/30",
           description: "Navigate shifting ministerial directives, competing department priorities and citizen impact.",
+        },
+        {
+          id: "cs-motivation",
+          topicId: "motivation",
+          type: "motivation" as PracticeQuestionType,
+          title: "Public Service Mission & HMRC",
+          category: "Why HMRC & Citizen Value",
+          badge: "RECOMMENDED",
+          duration: "3–5 mins",
+          difficulty: "Friendly",
+          icon: "target" as IconName,
+          color: "from-purple-500/20 to-pink-500/20 text-purple-300 border-purple-500/30",
+          description: "Articulate why you want to deliver public value, your civil service motivations and HMRC mission alignment.",
+        },
+        {
+          id: "cs-experience",
+          topicId: "experience",
+          type: "experience" as PracticeQuestionType,
+          title: "Career Journey & Public Delivery",
+          category: "CV & Impact Narrative",
+          badge: "RECOMMENDED",
+          duration: "4–6 mins",
+          difficulty: "Realistic",
+          icon: "cal" as IconName,
+          color: "from-cyan-500/20 to-blue-500/20 text-cyan-300 border-cyan-500/30",
+          description: "Walk through key programme milestones, data-informed decisions and public impact from your CV.",
         },
       ];
     }
@@ -261,18 +313,54 @@ export function PracticeHubClient({
       },
       {
         id: "pm-curveball",
-        topicId: "curveball",
+        topicId: "civil-service-strengths",
         type: "strengths" as PracticeQuestionType,
-        title: "Curveball & Salary Questions",
-        category: "Situational & Closing",
-        duration: "3 mins",
-        difficulty: "Friendly",
-        icon: "chat" as IconName,
+        title: "Product Strengths & Working Style",
+        category: "Energy & Problem Solving",
+        badge: "RECOMMENDED",
+        duration: "3–4 mins",
+        difficulty: "Realistic",
+        icon: "star" as IconName,
         color: "from-emerald-500/20 to-teal-500/20 text-emerald-300 border-emerald-500/30",
-        description: "Handle unexpected scenarios, gap explanations, and compensation expectations with poise and confidence.",
+        description: "Explore what energises you in product management, handling unfamiliar challenges and collaborative style.",
+      },
+      {
+        id: "pm-motivation",
+        topicId: "motivation",
+        type: "motivation" as PracticeQuestionType,
+        title: "Why Halden & Product Vision",
+        category: "Why Role & Company",
+        badge: "RECOMMENDED",
+        duration: "3–5 mins",
+        difficulty: "Friendly",
+        icon: "target" as IconName,
+        color: "from-purple-500/20 to-pink-500/20 text-purple-300 border-purple-500/30",
+        description: "Articulate why Halden, why fintech payments now, and your long-term product vision for small businesses.",
+      },
+      {
+        id: "pm-experience",
+        topicId: "experience",
+        type: "experience" as PracticeQuestionType,
+        title: "Career Narrative & Product Track Record",
+        category: "CV & Launch History",
+        badge: "RECOMMENDED",
+        duration: "4–6 mins",
+        difficulty: "Realistic",
+        icon: "cal" as IconName,
+        color: "from-cyan-500/20 to-blue-500/20 text-cyan-300 border-cyan-500/30",
+        description: "Connect your track record, past product launches, and career transitions into a compelling story.",
       },
     ];
   }, [isNursing, isCivilService]);
+
+  // Sort practice cards so the active selected type is placed first and clearly highlighted
+  const displayedPracticeCards = useMemo(() => {
+    return [...practiceCards].sort((a, b) => {
+      if (a.type === selectedType && b.type !== selectedType) return -1;
+      if (b.type === selectedType && a.type !== selectedType) return 1;
+      return 0;
+    });
+  }, [practiceCards, selectedType]);
 
   return (
     <div className="flex grow flex-col w-full pb-20 animate-rise text-white">
@@ -537,7 +625,7 @@ export function PracticeHubClient({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {practiceCards.map((card) => {
+          {displayedPracticeCards.map((card) => {
             const isCardHighlighted = card.type === selectedType;
             const practiceHref = `/mock/${currentInterview?.id ?? "staff-nurse"}?practice=1&topic=${card.topicId}&type=${card.type}&difficulty=${difficulty}&duration=${duration}`;
 
@@ -545,10 +633,10 @@ export function PracticeHubClient({
               <div
                 key={card.id}
                 className={clsx(
-                  "rounded-2xl bg-[#0d0c1c] border p-6 shadow-xl flex flex-col justify-between transition-all group",
+                  "rounded-2xl border p-6 shadow-xl flex flex-col justify-between transition-all group relative",
                   isCardHighlighted
-                    ? "border-indigo-500/50 bg-[#100f24] ring-1 ring-indigo-500/30"
-                    : "border-white/[0.08] hover:border-white/20"
+                    ? "border-[#7c3aed] bg-gradient-to-b from-[#1c163d] to-[#120f26] ring-2 ring-[#7c3aed]/50 shadow-[0_0_25px_rgba(124,58,237,0.35)]"
+                    : "bg-[#0d0c1c] border-white/[0.08] hover:border-white/20"
                 )}
               >
                 <div>
@@ -564,11 +652,16 @@ export function PracticeHubClient({
                         <div className="text-xs text-muted">{card.category}</div>
                       </div>
                     </div>
-                    {card.badge && (
+                    {isCardHighlighted ? (
+                      <span className="rounded-full bg-[#7c3aed]/25 border border-[#7c3aed]/50 px-2.5 py-0.5 text-[10px] font-bold text-purple-200 uppercase tracking-wider flex items-center gap-1 shadow-sm">
+                        <Icon name="check" size={10} strokeWidth={3} className="text-[#a5a1ff]" />
+                        <span>SELECTED FOCUS</span>
+                      </span>
+                    ) : card.badge ? (
                       <span className="rounded-full bg-amber-500/15 border border-amber-500/30 px-2.5 py-0.5 text-[10px] font-bold text-amber-300 uppercase tracking-wider">
                         {card.badge}
                       </span>
-                    )}
+                    ) : null}
                   </div>
 
                   <p className="text-xs text-[#a5a7b8] leading-relaxed mt-2 mb-4">
@@ -588,7 +681,12 @@ export function PracticeHubClient({
                   </div>
                   <Link
                     href={practiceHref}
-                    className="pro-btn-glow flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#141326] border border-white/10 hover:border-indigo-500/50 hover:bg-[#1a1932] text-xs font-semibold text-white transition-all"
+                    className={clsx(
+                      "flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-white transition-all",
+                      isCardHighlighted
+                        ? "bg-gradient-to-r from-[#6366f1] to-[#7c3aed] hover:from-[#7073ff] hover:to-[#8b4bf0] shadow-md shadow-indigo-500/30"
+                        : "pro-btn-glow bg-[#141326] border border-white/10 hover:border-indigo-500/50 hover:bg-[#1a1932]"
+                    )}
                   >
                     <span>Start practice</span>
                     <Icon name="chevronRight" size={13} />
