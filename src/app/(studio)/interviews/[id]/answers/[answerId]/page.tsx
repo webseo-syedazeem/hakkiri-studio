@@ -184,6 +184,14 @@ export default async function AnswerFeedbackPage({
     if (idx >= 0 && idx < mock.answerIds.length - 1) nextAnswerId = mock.answerIds[idx + 1];
   }
 
+  // 4. Find next question in this interview for continuous practice
+  const currentQIdx = interview.questions.findIndex((q) => q.id === question?.id);
+  const nextQ =
+    currentQIdx >= 0 && currentQIdx < interview.questions.length - 1
+      ? interview.questions[currentQIdx + 1]
+      : interview.questions[0];
+  const nextQuestionId = nextQ ? nextQ.id : null;
+
   const categoryLabel =
     question.group === "competency"
       ? "Skills"
@@ -209,6 +217,7 @@ export default async function AnswerFeedbackPage({
       overallScore={overall ?? 3.5}
       prevAnswerId={prevAnswerId}
       nextAnswerId={nextAnswerId}
+      nextQuestionId={nextQuestionId}
       audioSrc={audioSrc}
       jobDescription={interview.sources?.job}
     />

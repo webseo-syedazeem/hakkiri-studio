@@ -19,6 +19,7 @@ interface QuestionFeedbackViewProps {
   overallScore: number;
   prevAnswerId?: string | null;
   nextAnswerId?: string | null;
+  nextQuestionId?: string | null;
   audioSrc: string | null;
   jobDescription?: string;
 }
@@ -34,6 +35,7 @@ export function QuestionFeedbackView({
   overallScore,
   prevAnswerId,
   nextAnswerId,
+  nextQuestionId,
   audioSrc,
   jobDescription,
 }: QuestionFeedbackViewProps) {
@@ -720,7 +722,13 @@ export function QuestionFeedbackView({
 
             <div className="flex items-center gap-2.5">
               <Link
-                href={`/mock/${interviewId}?practice=1&topic=civil-service-strengths&next=1`}
+                href={
+                  nextAnswerId
+                    ? `/interviews/${interviewId}/answers/${nextAnswerId}${mockId ? `?mock=${mockId}` : ""}`
+                    : nextQuestionId
+                    ? `/mock/${interviewId}?q=${nextQuestionId}&practice=1`
+                    : `/mock/${interviewId}?practice=1&next=1`
+                }
                 className="inline-flex items-center gap-2 rounded-xl bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/35 px-4 py-2.5 text-xs font-semibold text-indigo-200 transition-colors cursor-pointer"
               >
                 <span>Next question</span>

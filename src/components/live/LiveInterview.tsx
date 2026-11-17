@@ -901,10 +901,10 @@ export function LiveInterview(p: LiveInterviewProps) {
                   </div>
                   <div className="min-w-0">
                     <div className="text-sm font-semibold text-white truncate">
-                      {session?.minutes ?? (session?.mode === "drill" ? 6 : 20)} minutes
+                      {!isRun ? "3–5 minutes" : `${session?.minutes ?? (session?.mode === "drill" ? 6 : 20)} minutes`}
                     </div>
                     <div className="text-xs text-[#8c8d9e] truncate">
-                      {session?.mode === "drill" ? "Practice length" : "Interview length"}
+                      {!isRun ? "Target question length" : session?.mode === "drill" ? "Practice length" : "Interview length"}
                     </div>
                   </div>
                 </div>
@@ -915,10 +915,10 @@ export function LiveInterview(p: LiveInterviewProps) {
                   </div>
                   <div className="min-w-0">
                     <div className="text-sm font-semibold text-white truncate">
-                      {session?.mode === "drill" ? `${queue.length} questions` : `About ${queue.length} questions`}
+                      {!isRun ? "1 question" : session?.mode === "drill" ? `${queue.length} questions` : `About ${queue.length} questions`}
                     </div>
                     <div className="text-xs text-[#8c8d9e] truncate">
-                      {session?.mode === "drill" ? "Topic-specific" : "Role-relevant questions"}
+                      {!isRun ? "Instant feedback & next" : session?.mode === "drill" ? "Topic-specific" : "Role-relevant questions"}
                     </div>
                   </div>
                 </div>
@@ -929,10 +929,10 @@ export function LiveInterview(p: LiveInterviewProps) {
                   </div>
                   <div className="min-w-0">
                     <div className="text-sm font-semibold text-white truncate">
-                      {session?.mode === "drill" ? (session.drill?.focusLabel ?? "Focused") : "Balanced"}
+                      {!isRun ? "Continuous practice" : session?.mode === "drill" ? (session.drill?.focusLabel ?? "Focused") : "Balanced"}
                     </div>
                     <div className="text-xs text-[#8c8d9e] truncate">
-                      {session?.mode === "drill" ? "Selected topic focus" : "A mix of experience, skills and technical"}
+                      {!isRun ? "Try another after feedback" : session?.mode === "drill" ? "Selected topic focus" : "A mix of experience, skills and technical"}
                     </div>
                   </div>
                 </div>
@@ -955,7 +955,7 @@ export function LiveInterview(p: LiveInterviewProps) {
                       <Icon name="check" size={13} strokeWidth={2.6} />
                     </div>
                     <span className="text-sm text-white/90">
-                      {session?.mode === "drill" ? "Focused, topic-relevant questions." : "Realistic, role-relevant questions."}
+                      {!isRun ? "Realistic, role-relevant question." : session?.mode === "drill" ? "Focused, topic-relevant questions." : "Realistic, role-relevant questions."}
                     </span>
                   </div>
 
@@ -964,7 +964,11 @@ export function LiveInterview(p: LiveInterviewProps) {
                       <Icon name="check" size={13} strokeWidth={2.6} />
                     </div>
                     <span className="text-sm text-white/90">
-                      {session?.feedbackEach ? "Instant feedback after each answer." : "Feedback at the end, like a real interview."}
+                      {!isRun
+                        ? "Instant feedback after this question, with option to try the next question."
+                        : session?.feedbackEach
+                        ? "Instant feedback after each answer."
+                        : "Feedback at the end, like a real interview."}
                     </span>
                   </div>
                 </div>
@@ -1048,9 +1052,13 @@ export function LiveInterview(p: LiveInterviewProps) {
                   3
                 </div>
                 <div>
-                  <div className="text-sm font-semibold text-white">Get feedback</div>
+                  <div className="text-sm font-semibold text-white">
+                    {!isRun ? "Get feedback & next question" : "Get feedback"}
+                  </div>
                   <div className="text-xs text-[#8c8d9e] mt-0.5 leading-normal">
-                    Receive a detailed score and personalised feedback at the end.
+                    {!isRun
+                      ? "Score & STAR coaching, then try the next question or practice again."
+                      : "Receive a detailed score and personalised feedback at the end."}
                   </div>
                 </div>
               </div>
@@ -1103,14 +1111,25 @@ export function LiveInterview(p: LiveInterviewProps) {
                 <span>Press Space to finish your answer</span>
               </div>
 
-              <button
-                type="button"
-                onClick={() => void start()}
-                className="group flex items-center gap-2.5 rounded-xl bg-gradient-to-r from-[#4f52f8] via-[#5c5ffc] to-[#6d5eff] hover:from-[#5b5efd] hover:to-[#7b6dff] px-7 py-3 text-sm font-semibold text-white border border-white/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.3),0_6px_25px_-2px_rgba(79,82,248,0.55)] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_8px_32px_-2px_rgba(79,82,248,0.75)] transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] cursor-pointer"
-              >
-                <Icon name="mic" size={17} strokeWidth={2.2} className="group-hover:scale-110 transition-transform duration-200" />
-                <span>{begun.current ? "Carry on" : session?.mode === "drill" ? "Start practice" : "Start interview"}</span>
-              </button>
+              <div className="flex items-center gap-3">
+                {!isRun && (
+                  <Link
+                    href={`/mock/${p.interviewId}?practice=1&next=1`}
+                    className="flex items-center gap-1.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 px-4 py-3 text-xs font-semibold text-white transition-all cursor-pointer"
+                  >
+                    <Icon name="repeat" size={14} />
+                    <span>Try another question</span>
+                  </Link>
+                )}
+                <button
+                  type="button"
+                  onClick={() => void start()}
+                  className="group flex items-center gap-2.5 rounded-xl bg-gradient-to-r from-[#4f52f8] via-[#5c5ffc] to-[#6d5eff] hover:from-[#5b5efd] hover:to-[#7b6dff] px-7 py-3 text-sm font-semibold text-white border border-white/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.3),0_6px_25px_-2px_rgba(79,82,248,0.55)] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_8px_32px_-2px_rgba(79,82,248,0.75)] transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] cursor-pointer"
+                >
+                  <Icon name="mic" size={17} strokeWidth={2.2} className="group-hover:scale-110 transition-transform duration-200" />
+                  <span>{begun.current ? "Carry on" : session?.mode === "drill" || !isRun ? "Start practice" : "Start interview"}</span>
+                </button>
+              </div>
             </div>
           </div>
         </main>

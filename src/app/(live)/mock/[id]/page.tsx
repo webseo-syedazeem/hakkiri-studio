@@ -44,7 +44,7 @@ export default async function MockInterviewPage({
 }) {
   const user = await requirePageUser();
   const { id } = await params;
-  const { q, followups, session: sessionId, topic, difficulty, practice, type, duration } = await searchParams;
+  const { q, followups, session: sessionId, topic, difficulty, practice, type, duration, next } = await searchParams;
   const difficultyParam =
     difficulty === "easy" || difficulty === "medium" || difficulty === "hard" ? (difficulty as Difficulty) : null;
   const styleOverride = difficultyParam ? styleFor(difficultyParam) : null;
@@ -177,11 +177,14 @@ export default async function MockInterviewPage({
   }
 
   // 1-Question Focused Practice Mode (from Practice Hub or practice links)
-  const isSinglePractice = practice === "1" || duration === "1-question" || Boolean(q);
+  const isSinglePractice = practice === "1" || duration === "1-question" || Boolean(q) || next === "1";
   if (isSinglePractice) {
     let targetQuestion: Question | undefined;
     if (q) {
       targetQuestion = byId(q);
+    } else if (next === "1") {
+      const idx = Math.floor(Math.random() * interview.questions.length);
+      targetQuestion = interview.questions[idx] ?? interview.questions[0];
     } else if (topic) {
       const topicSpec = getTopic(topic);
       const topicDifficulty = difficultyParam ?? interview.settings?.difficulty ?? difficultyFor(interview.style);
@@ -200,6 +203,10 @@ export default async function MockInterviewPage({
         return true;
       });
       targetQuestion = matching.find((x) => x.difficulty === diff) ?? matching[0] ?? interview.questions[0];
+    }
+
+    if (!targetQuestion) {
+      targetQuestion = interview.questions[0];
     }
 
     if (targetQuestion) {
