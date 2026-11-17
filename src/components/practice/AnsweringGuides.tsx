@@ -146,7 +146,7 @@ export function AnsweringGuides({ className }: { className?: string }) {
       </div>
 
       {/* Main Container: Left Sidebar Tabs + Right Guide Details */}
-      <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-4 sm:gap-5 items-start">
         {/* Left: 7 Category Sidebar Buttons */}
         <div className="space-y-1.5">
           {ANSWERING_GUIDES_DATA.map((guide) => {
@@ -188,12 +188,12 @@ export function AnsweringGuides({ className }: { className?: string }) {
           <p className="text-xs text-[#8c8d9e] mt-1 mb-5 leading-relaxed">{activeGuide.subtitle}</p>
 
           {/* Recommended Approach Container with Flowchart Steps */}
-          <div className="rounded-xl bg-[#141328] border border-white/[0.06] p-5 mb-5 shadow-sm">
+          <div className="rounded-xl bg-[#141328] border border-white/[0.06] p-4 mb-4 shadow-sm">
             <h5 className="text-xs font-semibold text-[#a5a1ff] mb-4">
               Recommended approach: {activeGuide.approachName}
             </h5>
 
-            <div className="flex flex-col sm:flex-row flex-wrap lg:flex-nowrap items-stretch lg:items-center gap-3">
+            <div className="flex flex-col sm:flex-row flex-wrap lg:flex-nowrap items-stretch lg:items-center gap-2.5">
               {activeGuide.steps.map((step, idx) => {
                 const isLast = idx === activeGuide.steps.length - 1;
                 return (
@@ -221,7 +221,7 @@ export function AnsweringGuides({ className }: { className?: string }) {
           </div>
 
           {/* Example Question & Key Tip Side-by-Side */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {/* Left: Example Question */}
             <div className="rounded-xl bg-[#141328] border border-white/[0.06] p-4 flex items-start gap-3 shadow-sm">
               <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#232044] text-[#a5a1ff] mt-0.5">
