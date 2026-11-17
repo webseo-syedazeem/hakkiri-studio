@@ -21,8 +21,8 @@ export interface PlaybookItem {
 }
 
 export function getPlaybooks(role?: string, company?: string): PlaybookItem[] {
-  const roleName = role || "the role";
-  const orgName = company || "your team";
+  const roleName = role || "Senior Product Manager, Payments";
+  const orgName = company || "Halden";
 
   return [
     {
@@ -127,18 +127,19 @@ export function QuestionPlaybooks({ role, company, className }: QuestionPlaybook
 
   return (
     <div className={clsx("rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-6 sm:p-7 shadow-xl", className)}>
-      <div className="flex items-center gap-2.5 pb-2">
-        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue/15 text-blue-soft border border-blue-500/20">
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-5">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#18172c] border border-white/10 text-[#8c8d9e]">
           <Icon name="book" size={16} />
         </div>
         <div>
-          <h3 className="text-base font-semibold text-white tracking-tight">Question playbooks</h3>
-          <p className="text-xs text-muted">Guidance, example structures and key things to cover for common interview questions.</p>
+          <h3 className="text-sm sm:text-base font-bold text-white tracking-tight">Question playbooks</h3>
+          <p className="text-xs text-[#8c8d9e]">Guidance, example structures and key things to cover for common interview questions.</p>
         </div>
       </div>
 
-      {/* Playbook Tabs */}
-      <div className="mt-5 flex flex-wrap gap-2 border-b border-white/[0.07] pb-4">
+      {/* Playbook Tabs (Exact match: rounded-full pills, no bottom border line) */}
+      <div className="flex flex-wrap gap-2.5 mb-6">
         {playbooks.map((pb) => {
           const active = pb.id === activePlaybookId;
           return (
@@ -147,10 +148,10 @@ export function QuestionPlaybooks({ role, company, className }: QuestionPlaybook
               type="button"
               onClick={() => setActivePlaybookId(pb.id)}
               className={clsx(
-                "px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all border cursor-pointer",
+                "px-4 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer",
                 active
-                  ? "bg-blue border-blue-soft text-white shadow-[0_0_14px_rgba(79,70,229,0.4)]"
-                  : "bg-[#141326] border-white/10 text-muted hover:text-white hover:border-white/20"
+                  ? "bg-[#5c64f7] text-white shadow-[0_0_14px_rgba(92,100,247,0.45)] border border-[#6d75fc]"
+                  : "bg-[#141326] border border-white/10 text-[#8c8d9e] hover:text-white hover:border-white/20"
               )}
             >
               {pb.label}
@@ -159,27 +160,28 @@ export function QuestionPlaybooks({ role, company, className }: QuestionPlaybook
         })}
       </div>
 
-      {/* Active Playbook Breakdown */}
-      <div className="mt-5 grid grid-cols-1 md:grid-cols-[1fr_1.3fr_1.3fr] gap-6 items-start">
+      {/* Active Playbook Breakdown: 3 Columns matching design screenshot */}
+      <div className="grid grid-cols-1 md:grid-cols-[1.1fr_1.6fr_1.5fr] gap-8 items-start">
         {/* Column 1: Summary */}
         <div>
-          <h4 className="text-sm font-semibold text-white">{activePlaybook.title}</h4>
-          <p className="mt-2 text-xs text-muted leading-relaxed">{activePlaybook.summary}</p>
+          <h4 className="text-sm font-bold text-white tracking-tight">{activePlaybook.title}</h4>
+          <p className="mt-2 text-xs text-[#8c8d9e] leading-relaxed">{activePlaybook.summary}</p>
         </div>
 
         {/* Column 2: Structure */}
-        <div className="space-y-2.5">
-          <h5 className="text-xs font-semibold text-white tracking-wide uppercase">
+        <div className="space-y-3">
+          <h5 className="text-[11px] font-bold text-white tracking-wider uppercase">
             A simple structure ({activePlaybook.structureDuration || "~ 1–2 minutes"})
           </h5>
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             {activePlaybook.structure.map((item) => (
               <div key={item.step} className="flex items-start gap-2.5 text-xs text-[#c9cad3]">
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue text-[10px] font-bold text-white mt-0.5">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#5c64f7] text-[10px] font-bold text-white mt-0.5">
                   {item.step}
                 </span>
-                <div>
-                  <strong className="text-white font-medium">{item.name}</strong> — {item.detail}
+                <div className="leading-relaxed">
+                  <strong className="text-white font-semibold">{item.name}</strong>
+                  <span className="text-[#8c8d9e]"> — {item.detail}</span>
                 </div>
               </div>
             ))}
@@ -187,9 +189,9 @@ export function QuestionPlaybooks({ role, company, className }: QuestionPlaybook
         </div>
 
         {/* Column 3: Example Flow */}
-        <div className="p-4 rounded-xl bg-[#141326] border border-white/10">
-          <h5 className="text-xs font-semibold text-white tracking-wide uppercase mb-2">Example flow</h5>
-          <p className="text-xs text-[#c9cad3] italic leading-relaxed">{activePlaybook.example}</p>
+        <div className="p-5 rounded-2xl bg-[#121124] border border-white/10 shadow-sm">
+          <h5 className="text-[11px] font-bold text-white tracking-wider uppercase mb-2.5">Example flow</h5>
+          <p className="text-xs text-[#a5a7b8] italic leading-relaxed">{activePlaybook.example}</p>
         </div>
       </div>
     </div>
