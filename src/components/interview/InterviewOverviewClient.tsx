@@ -18,6 +18,7 @@ import {
 } from "@/lib/interviews/settings";
 import { InterviewTabs } from "./InterviewTabs";
 import { StartButton } from "./StartSession";
+import { QuestionPlaybooks } from "./QuestionPlaybooks";
 
 export type OverviewStageOption = {
   id: string;
@@ -883,6 +884,11 @@ export function InterviewOverviewClient({
             </div>
           </details>
         </div>
+      </div>
+
+      {/* QUESTION PLAYBOOKS (ANSWERING GUIDES) */}
+      <div className="mt-8">
+        <QuestionPlaybooks role={roleTitle} company={companyName} />
       </div>
     </div>
   );
