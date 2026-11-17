@@ -5,17 +5,20 @@ import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import { useAuth } from "@/lib/auth/AuthContext";
 
-/** The public site's top links. Pricing and questions stay on the page you're on (presenters or interviews). */
+/** The public site's top links matching the beta landing navigation. */
 export function SiteNav() {
   const path = usePathname();
   const { user } = useAuth();
-  const base = path === "/present" ? "/present" : "";
+  const isPresent = path === "/present";
+  const base = isPresent ? "/present" : "";
   const links: [string, string, boolean][] = [
     ["/", "Interviews", path === "/" || path === "/landing"],
-    ["/present", "Presentations", path === "/present"],
-    [`${base}#pricing`, "Pricing", false],
+    ["/present", "Presentations", isPresent],
+    [`${base}#how`, "How it works", false],
+    [`${base}#beta`, "Beta", false],
     [`${base}#faq`, "Questions", false],
   ];
+
   return (
     <nav aria-label="Main" className="flex items-center gap-1 text-[13px] sm:gap-2">
       {links.map(([href, label, current]) => (
@@ -49,10 +52,10 @@ export function SiteNav() {
             Log in
           </Link>
           <Link
-            href="/dashboard"
+            href="/signup"
             className="ml-1 rounded-full bg-mk-cta px-4 py-1.5 font-medium text-white transition-all duration-200 hover:scale-[1.04] active:scale-[0.97] hover:bg-mk-cta-hover hover:shadow-md hover:shadow-mk-cta/25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mk-cta"
           >
-            Start free
+            Sign up free
           </Link>
         </>
       )}

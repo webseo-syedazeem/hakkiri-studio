@@ -102,17 +102,6 @@ export async function GET(req: NextRequest) {
 
     const normEmail = profile.email.toLowerCase().trim();
 
-    // 3. In beta, block new account creation if signup is closed
-    if (isBeta()) {
-      const existingUser = await findUserByEmail(normEmail);
-      if (!existingUser) {
-        console.warn(`[google/callback] Sign-up rejected during beta for new user: ${normEmail}`);
-        const errRes = NextResponse.redirect(new URL("/login?error=signup_closed", origin));
-        errRes.cookies.delete("g_oauth_state");
-        return errRes;
-      }
-    }
-
     // 4. Find or create user in MongoDB
     const user = await findOrCreateOAuthUser({
       email: normEmail,

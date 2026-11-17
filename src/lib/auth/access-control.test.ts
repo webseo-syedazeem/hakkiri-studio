@@ -42,7 +42,7 @@ describe("Access Control & Multi-Tenant Isolation", () => {
   });
 
   describe("Route-level unauthenticated guards", () => {
-    it("POST /api/auth/signup returns 403 Forbidden when HAKKIRI_BETA=1", async () => {
+    it("POST /api/auth/signup succeeds during open beta when HAKKIRI_BETA=1", async () => {
       vi.stubEnv("HAKKIRI_BETA", "1");
       const req = new Request("http://localhost:3000/api/auth/signup", {
         method: "POST",
@@ -51,9 +51,10 @@ describe("Access Control & Multi-Tenant Isolation", () => {
       });
       // @ts-expect-error NextRequest wrapper mock
       const res = await signup(req);
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(200);
       const data = await res.json();
-      expect(data.error).toContain("closed during the beta");
+      expect(data.ok).toBe(true);
+      expect(data.user.email).toBe("tester@example.com");
     });
 
     it("POST /api/settings rejects unauthenticated requests with 401", async () => {
