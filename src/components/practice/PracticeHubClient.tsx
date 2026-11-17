@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import clsx from "clsx";
 import { Icon, type IconName } from "@/components/ui";
-import { QuestionPlaybooks } from "@/components/interview/QuestionPlaybooks";
+import { AnsweringGuides } from "@/components/practice/AnsweringGuides";
 import type { Interview, QuestionGroup } from "@/lib/types";
 
 export type PracticeQuestionType =
@@ -783,9 +783,9 @@ export function PracticeHubClient({
         </div>
       </div>
 
-      {/* 5. QUESTION PLAYBOOKS (EXACT MATCH TO CLIENT DESIGN MOCKUP) */}
+      {/* 5. ANSWERING GUIDES (EXACT MATCH TO CLIENT DESIGN MOCKUP) */}
       <div className="mt-12 pt-8 border-t border-white/[0.08]">
-        <QuestionPlaybooks role={currentInterview?.role} company={currentInterview?.company} />
+        <AnsweringGuides />
       </div>
     </div>
   );
