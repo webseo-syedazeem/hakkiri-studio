@@ -58,6 +58,46 @@ function wantsNatural(): boolean {
   return !/(?:^|;\s*)hk_voice=browser/.test(document.cookie);
 }
 
+let cachedBrowserVoices: SpeechSynthesisVoice[] = [];
+if (typeof window !== "undefined" && window.speechSynthesis) {
+  const updateVoices = () => {
+    cachedBrowserVoices = window.speechSynthesis.getVoices();
+  };
+  updateVoices();
+  window.speechSynthesis.onvoiceschanged = updateVoices;
+}
+
+function getBestBrowserVoice(voiceType?: VoiceName): SpeechSynthesisVoice | null {
+  if (typeof window === "undefined" || !window.speechSynthesis) return null;
+  const voices = cachedBrowserVoices.length ? cachedBrowserVoices : window.speechSynthesis.getVoices();
+  if (!voices.length) return null;
+
+  const isFemale = voiceType === "easy";
+
+  // 1. Natural / Neural UK English voice (Edge, Chrome, Safari)
+  const naturalUK = voices.find((v) => {
+    const isUK = v.lang === "en-GB" || v.lang === "en_GB";
+    const isNatural = /natural|neural|online|google|siri|enhanced/i.test(v.name);
+    const genderMatch = isFemale ? /female|sonia|serena|stephanie/i.test(v.name) : /male|ryan|daniel|oliver|george/i.test(v.name);
+    return isUK && isNatural && genderMatch;
+  }) ?? voices.find((v) => (v.lang === "en-GB" || v.lang === "en_GB") && /natural|neural|online|google|siri|enhanced/i.test(v.name));
+  if (naturalUK) return naturalUK;
+
+  // 2. Standard UK voice with gender preference
+  const standardUK = voices.find((v) => {
+    const isUK = v.lang === "en-GB" || v.lang === "en_GB";
+    return isUK && (isFemale ? /female|hazel|susan/i.test(v.name) : /male|daniel|george|arthur/i.test(v.name));
+  }) ?? voices.find((v) => v.lang === "en-GB" || v.lang === "en_GB");
+  if (standardUK) return standardUK;
+
+  // 3. Any Natural English voice
+  const anyNatural = voices.find((v) => v.lang.startsWith("en") && /natural|neural|online|google/i.test(v.name));
+  if (anyNatural) return anyNatural;
+
+  // 4. Any English voice
+  return voices.find((v) => v.lang.startsWith("en")) ?? null;
+}
+
 function browserSpeak(text: string, opts: SpeakOptions, finish: () => void, setCancel: (c: () => void) => void) {
   const synth = typeof window !== "undefined" ? window.speechSynthesis : undefined;
   if (!synth) {
@@ -71,10 +111,17 @@ function browserSpeak(text: string, opts: SpeakOptions, finish: () => void, setC
   }
   synth.cancel();
   const u = new SpeechSynthesisUtterance(text);
-  const voices = synth.getVoices();
-  u.voice = voices.find((v) => v.lang === "en-GB" && /male|daniel|arthur|george/i.test(v.name)) ?? voices.find((v) => v.lang === "en-GB") ?? voices.find((v) => v.lang.startsWith("en")) ?? null;
-  u.lang = "en-GB";
-  u.rate = opts.rate ?? 1;
+  const voice = getBestBrowserVoice(opts.voice);
+  if (voice) {
+    u.voice = voice;
+    u.lang = voice.lang || "en-GB";
+  } else {
+    u.lang = "en-GB";
+  }
+
+  // Interviewers speak deliberately and calmly (0.93 - 0.96 prevents rushed robotic speech)
+  u.rate = opts.rate ?? (opts.voice === "hard" ? 0.96 : 0.93);
+  u.pitch = opts.voice === "hard" ? 0.96 : opts.voice === "easy" ? 1.02 : 1.0;
   u.onend = () => finish();
   u.onerror = () => finish();
   // Some browsers never fire onend if speech is blocked; don't hang the interview.

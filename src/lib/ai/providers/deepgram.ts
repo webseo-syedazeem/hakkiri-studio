@@ -65,10 +65,28 @@ export class DeepgramSpeechToText implements SpeechToText {
 }
 
 export const DEEPGRAM_VOICES: Record<"easy" | "medium" | "hard", { id: string; name: string }> = {
-  easy: { id: process.env.DEEPGRAM_VOICE_EASY || "aura-asteria-en", name: "Asteria" },
+  easy: { id: process.env.DEEPGRAM_VOICE_EASY || "aura-athena-en", name: "Athena" },
   medium: { id: process.env.DEEPGRAM_VOICE_MEDIUM || "aura-helios-en", name: "Helios" },
-  hard: { id: process.env.DEEPGRAM_VOICE_HARD || "aura-orion-en", name: "Orion" },
+  hard: { id: process.env.DEEPGRAM_VOICE_HARD || "aura-zeus-en", name: "Zeus" },
 };
+
+/**
+ * Prepares interview questions for natural conversational speech.
+ * Adds subtle micro-pauses at sentence boundaries and conversational openers
+ * so the AI interviewer doesn't sound rushed or robotic.
+ */
+export function paceTextForSpeech(text: string): string {
+  let paced = text.trim();
+  // Natural pause after conversational openers (e.g. "Right...", "Okay...")
+  paced = paced.replace(/^(Right|Okay|So|Now|Well|Great|Sure),?\s+/i, "$1... ");
+  // Natural pause between distinct sentences (period or question mark followed by capital letter)
+  paced = paced.replace(/([.?!])\s+(?=[A-Z])/g, "$1 ... ");
+  // Breathing space around em-dashes
+  paced = paced.replace(/\s*—\s*/g, " — ");
+  // Clean up any double/excessive punctuation
+  paced = paced.replace(/\.{4,}/g, "...").replace(/(\.\.\.\s*){2,}/g, "... ");
+  return paced;
+}
 
 /**
  * Deepgram Aura text-to-speech: fast natural voice using the existing Deepgram API key.
@@ -77,6 +95,7 @@ export const DEEPGRAM_VOICES: Record<"easy" | "medium" | "hard", { id: string; n
 export async function synthesiseDeepgram(text: string, voice: "easy" | "medium" | "hard", apiKey: string): Promise<ArrayBuffer> {
   const voiceConfig = DEEPGRAM_VOICES[voice] || DEEPGRAM_VOICES.medium;
   const url = `https://api.deepgram.com/v1/speak?model=${voiceConfig.id}`;
+  const pacedText = paceTextForSpeech(text);
   const res = await fetch(url, {
     method: "POST",
     headers: {
@@ -84,7 +103,7 @@ export async function synthesiseDeepgram(text: string, voice: "easy" | "medium" 
       "Content-Type": "application/json",
       Accept: "audio/mpeg",
     },
-    body: JSON.stringify({ text }),
+    body: JSON.stringify({ text: pacedText }),
     signal: AbortSignal.timeout(15_000),
   });
   if (!res.ok) {

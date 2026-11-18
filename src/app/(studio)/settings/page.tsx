@@ -13,6 +13,7 @@ import { londonToday } from "@/lib/dates";
 import { isBeta, isLaunch } from "@/lib/launch";
 import { mockAiEnabled } from "@/lib/ai/mock";
 import { elevenLabsKey } from "@/lib/ai/providers/elevenlabs";
+import { aiConfig } from "@/lib/ai/config";
 import {
   byFeature,
   dailyCosts,
@@ -128,14 +129,14 @@ export default async function SettingsPage() {
   const launch = isLaunch();
   const beta = isBeta();
   const testMode = mockAiEnabled() && !launch;
-  const naturalAvailable = !!elevenLabsKey() && !mockAiEnabled();
+  const naturalAvailable = Boolean(elevenLabsKey() || aiConfig.deepgramKey) && !mockAiEnabled();
   const unavailableNote = naturalAvailable
     ? null
     : launch
       ? null
       : mockAiEnabled()
-        ? "Test mode is on (HAKKIRI_MOCK_AI=1), so the browser voice is used. Turn test mode off and add ELEVENLABS_API_KEY to .env.local for the natural voice."
-        : "Add ELEVENLABS_API_KEY to .env.local and restart for the natural voice.";
+        ? "Test mode is on (HAKKIRI_MOCK_AI=1), so the browser voice is used. Turn test mode off and add DEEPGRAM_API_KEY (free) or ELEVENLABS_API_KEY to .env.local for the natural voice."
+        : "Add DEEPGRAM_API_KEY (free) or ELEVENLABS_API_KEY to .env.local and restart for the natural voice.";
 
   const userEmail = user.email?.toLowerCase() ?? "";
   const isAdmin = Boolean(
