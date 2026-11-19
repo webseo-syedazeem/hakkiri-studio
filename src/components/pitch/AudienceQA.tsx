@@ -90,6 +90,19 @@ export function AudienceQA(p: AudienceQAProps) {
   const cutting = useRef(false);
   /** True once the first question has been asked. */
   const begun = useRef(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  useEffect(() => {
+    const vid = videoRef.current;
+    if (!vid) return;
+    if (phase === "asking") {
+      vid.play().catch(() => {});
+    } else if (phase === "paused") {
+      vid.pause();
+    } else {
+      vid.pause();
+      vid.currentTime = 0;
+    }
+  }, [phase]);
 
   const target = press ? followUpProfile(press.kind).targetSec : profileFor("presentation-qa").targetSec;
   const totalSec = Math.max(90, target[1] + 30);
@@ -428,16 +441,15 @@ export function AudienceQA(p: AudienceQAProps) {
             {/* Left Column: Video Card of Asker + Question Content */}
             <div className="space-y-4">
               <div className="relative w-full aspect-[16/9] rounded-2xl overflow-hidden bg-booth border border-white/10 shadow-2xl">
-                <div className={clsx(
-                  "relative w-full h-full transition-transform duration-700",
-                  phase === "asking" ? "animate-talking-head origin-bottom scale-[1.02]" : "animate-ambient-breathe origin-bottom"
-                )}>
-                  <img
-                    src={persona.name.toLowerCase().includes("dana") ? "/dana.jpg" : "/sam.jpg"}
-                    alt={persona.name}
-                    className="w-full h-full object-cover object-center"
-                  />
-                </div>
+                <video
+                  ref={videoRef}
+                  src={persona.name.toLowerCase().includes("dana") ? "/videos/dana.mp4" : "/videos/sam.mp4"}
+                  poster={persona.name.toLowerCase().includes("dana") ? "/dana.jpg" : "/sam.jpg"}
+                  loop
+                  muted
+                  playsInline
+                  className="w-full h-full object-cover object-center"
+                />
                 {phase === "asking" && (
                   <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/70 backdrop-blur-md border border-emerald-500/40 text-emerald-300 text-[11px] font-semibold shadow-lg">
                     <span className="relative flex h-2 w-2">

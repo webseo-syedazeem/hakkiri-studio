@@ -199,6 +199,20 @@ export function LiveInterview(p: LiveInterviewProps) {
   const toggleChecklist = (key: string) => setChecklist((prev) => ({ ...prev, [key]: !prev[key] }));
   const [, tick] = useState(0);
   const voice = useRef<{ cancel: () => void } | null>(null);
+  const interviewerVideoRef = useRef<HTMLVideoElement | null>(null);
+
+  useEffect(() => {
+    const vid = interviewerVideoRef.current;
+    if (!vid) return;
+    if (phase === "asking") {
+      vid.play().catch(() => {});
+    } else if (phase === "paused") {
+      vid.pause();
+    } else {
+      vid.pause();
+      vid.currentTime = 0;
+    }
+  }, [phase]);
   /** Bumped to abandon a question that's still being asked (e.g. the interview ended). */
   const askToken = useRef(0);
   /** True once the first question has been asked. */
@@ -1244,25 +1258,16 @@ export function LiveInterview(p: LiveInterviewProps) {
                   {/* Left: Big Professional Interviewer Video Card */}
                   <div className="relative rounded-2xl overflow-hidden bg-[#0c0b16] border border-white/[0.08] shadow-2xl flex flex-col justify-between min-h-[380px] sm:min-h-[410px]">
                     <div className="relative w-full h-full min-h-[320px] overflow-hidden">
-                      {/* Live Persona Feed with realistic webcam motion */}
-                      <div className={clsx(
-                        "relative w-full h-full transition-transform duration-700",
-                        phase === "asking" ? "animate-talking-head origin-bottom scale-[1.02]" : phase === "answering" ? "animate-ambient-breathe origin-bottom" : ""
-                      )}>
-                        <Image
-                          src={isFemale(name) ? "/dana.jpg" : "/sam.jpg"}
-                          alt={name}
-                          fill
-                          sizes="(max-width: 768px) 100vw, 440px"
-                          className="object-cover object-top"
-                          priority
-                        />
-
-                        {/* Attentive Listening Micro-nod Effect */}
-                        {phase === "answering" && (
-                          <div aria-hidden className="absolute inset-0 pointer-events-none animate-gentle-nod" />
-                        )}
-                      </div>
+                      {/* Real Live HD Interviewer Video Stream */}
+                      <video
+                        ref={interviewerVideoRef}
+                        src={isFemale(name) ? "/videos/dana.mp4" : "/videos/sam.mp4"}
+                        poster={isFemale(name) ? "/dana.jpg" : "/sam.jpg"}
+                        loop
+                        muted
+                        playsInline
+                        className="w-full h-full object-cover object-top"
+                      />
 
                       {/* Studio Lighting Vignette */}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-black/35 pointer-events-none" />
