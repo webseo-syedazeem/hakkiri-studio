@@ -1185,11 +1185,11 @@ export function LiveInterview(p: LiveInterviewProps) {
           </div>
         </main>
       ) : (
-        <main className="flex min-h-0 grow flex-col justify-between px-6 lg:px-10 py-5 w-full animate-rise">
+        <main className="flex min-h-0 grow flex-col px-6 lg:px-10 py-5 w-full animate-rise">
           {/* Top 2 Columns: Center Card + Right Sidebar */}
-          <div className="grid grid-cols-1 lg:grid-cols-[1.65fr_1fr] gap-5 items-stretch">
+          <div className="grid grid-cols-1 lg:grid-cols-[1.65fr_1fr] gap-5 items-start">
             {/* Left Column: Question / Feedback / Ending */}
-            <div className="flex flex-col justify-between gap-4">
+            <div className="flex flex-col gap-4">
               {phase === "finishing" || (phase === "error" && problem?.stage === "report") ? (
                 <div className="rounded-2xl bg-[#0f0e1c] border border-white/[0.08] p-7 sm:p-9 shadow-xl flex flex-col justify-center min-h-[340px]">
                   <div className="flex items-center gap-2.5 text-xs font-semibold text-blue-soft uppercase tracking-wider">
@@ -1241,29 +1241,91 @@ export function LiveInterview(p: LiveInterviewProps) {
               ) : (
                 /* Primary Active Question Section: Video Player Card + Question Card */
                 <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] lg:grid-cols-[330px_1fr] gap-4 items-stretch">
-                  {/* Left: Interviewer Video Card */}
-                  <div className="relative rounded-2xl overflow-hidden bg-[#0c0b16] border border-white/[0.08] shadow-xl flex flex-col justify-between aspect-[4/3] md:aspect-auto min-h-[280px]">
-                    <div className="relative w-full h-full min-h-[220px]">
-                      <Image
-                        src={isFemale(name) ? "/dana.jpg" : "/sam.jpg"}
-                        alt={name}
-                        fill
-                        sizes="(max-width: 768px) 100vw, 360px"
-                        className="object-cover"
-                        priority
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/20" />
+                  {/* Left: Interviewer Video Card with Live Motion & Lip-Sync */}
+                  <div className="relative rounded-2xl overflow-hidden bg-[#0c0b16] border border-white/[0.08] shadow-2xl flex flex-col justify-between aspect-[4/3] md:aspect-auto min-h-[280px] sm:min-h-[300px]">
+                    <div className="relative w-full h-full min-h-[220px] overflow-hidden">
+                      {/* Live Persona Feed with realistic motion & lip-sync */}
+                      <div className={clsx(
+                        "relative w-full h-full transition-transform duration-500",
+                        phase === "asking" ? "animate-talking-head origin-bottom" : phase === "answering" ? "animate-ambient-breathe origin-bottom" : ""
+                      )}>
+                        <Image
+                          src={isFemale(name) ? "/dana.jpg" : "/sam.jpg"}
+                          alt={name}
+                          fill
+                          sizes="(max-width: 768px) 100vw, 360px"
+                          className="object-cover"
+                          priority
+                        />
+
+                        {/* Realistic Lip-sync / Mouth Motion Simulation Overlay (Active when interviewer speaks out loud) */}
+                        {phase === "asking" && (
+                          <div
+                            aria-hidden
+                            className={clsx(
+                              "absolute pointer-events-none rounded-full bg-black/40 blur-[1px] mix-blend-multiply transition-all",
+                              isFemale(name)
+                                ? "left-[50.5%] top-[57%] w-[18px] h-[9px] -translate-x-1/2 animate-talking-mouth"
+                                : "left-[49.5%] top-[54%] w-[24px] h-[12px] -translate-x-1/2 animate-talking-mouth"
+                            )}
+                          />
+                        )}
+
+                        {/* Attentive Listening Micro-nod Effect */}
+                        {phase === "answering" && (
+                          <div aria-hidden className="absolute inset-0 pointer-events-none animate-gentle-nod" />
+                        )}
+                      </div>
+
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/30 pointer-events-none" />
+
+                      {/* Top Broadcast Badge: Live Interviewer / Listening */}
+                      <div className="absolute top-3 left-3 z-20">
+                        {phase === "asking" ? (
+                          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/70 backdrop-blur-md border border-emerald-500/40 text-emerald-300 text-[11px] font-semibold shadow-lg">
+                            <span className="relative flex h-2 w-2">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                            </span>
+                            <span>Live Interviewer</span>
+                            <span className="flex items-center gap-[2px] ml-1">
+                              <span className="h-2 w-[2px] bg-emerald-400 animate-wave" style={{ animationDelay: "0ms" }} />
+                              <span className="h-3 w-[2px] bg-emerald-400 animate-wave" style={{ animationDelay: "150ms" }} />
+                              <span className="h-1.5 w-[2px] bg-emerald-400 animate-wave" style={{ animationDelay: "300ms" }} />
+                            </span>
+                          </div>
+                        ) : phase === "answering" ? (
+                          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/70 backdrop-blur-md border border-blue/30 text-blue-soft text-[11px] font-medium shadow-md">
+                            <span className="h-2 w-2 rounded-full bg-blue" />
+                            <span>Listening...</span>
+                          </div>
+                        ) : null}
+                      </div>
+
+                      {/* Paused Overlay */}
+                      {phase === "paused" && (
+                        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
+                          <button
+                            type="button"
+                            onClick={togglePause}
+                            className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/15 hover:bg-white/25 border border-white/20 text-xs font-semibold text-white shadow-xl transition-all cursor-pointer"
+                          >
+                            <Icon name="play" size={13} />
+                            <span>Resume</span>
+                          </button>
+                        </div>
+                      )}
                     </div>
 
                     {/* Video Player Controls Overlay */}
-                    <div className="absolute inset-x-0 bottom-0 p-3 sm:p-3.5 bg-gradient-to-t from-black/95 via-black/70 to-transparent flex items-center justify-between text-xs text-white/90">
+                    <div className="absolute inset-x-0 bottom-0 p-3 sm:p-3.5 bg-gradient-to-t from-black/95 via-black/75 to-transparent flex items-center justify-between text-xs text-white/90 z-20">
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
                           onClick={togglePause}
-                          className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors"
+                          className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors cursor-pointer"
                         >
-                          <Icon name={phase === "asking" ? "pause" : "play"} size={10} />
+                          <Icon name={phase === "asking" ? "pause" : phase === "paused" ? "play" : "play"} size={10} />
                         </button>
                         <span className="font-mono text-[10px] sm:text-[11px] text-white/90">
                           {phase === "asking" ? mmss(shownSec) : "0:03"} / {mmss(target[0])}

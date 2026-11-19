@@ -428,15 +428,29 @@ export function AudienceQA(p: AudienceQAProps) {
             {/* Left Column: Video Card of Asker + Question Content */}
             <div className="space-y-4">
               <div className="relative w-full aspect-[16/9] rounded-2xl overflow-hidden bg-booth border border-white/10 shadow-2xl">
-                <img
-                  src={persona.name.toLowerCase().includes("dana") ? "/dana.jpg" : "/sam.jpg"}
-                  alt={persona.name}
-                  className="w-full h-full object-cover object-center"
-                />
+                <div className={clsx(
+                  "relative w-full h-full transition-transform duration-500",
+                  phase === "asking" ? "animate-talking-head origin-bottom" : "animate-ambient-breathe origin-bottom"
+                )}>
+                  <img
+                    src={persona.name.toLowerCase().includes("dana") ? "/dana.jpg" : "/sam.jpg"}
+                    alt={persona.name}
+                    className="w-full h-full object-cover object-center"
+                  />
+                  {phase === "asking" && (
+                    <div
+                      aria-hidden
+                      className="absolute left-[50.5%] top-[57%] w-[18px] h-[9px] -translate-x-1/2 pointer-events-none rounded-full bg-black/40 blur-[1px] mix-blend-multiply animate-talking-mouth"
+                    />
+                  )}
+                </div>
                 {phase === "asking" && (
-                  <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/15 text-[11px] font-semibold text-white">
-                    <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                    <span>Speaking...</span>
+                  <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/70 backdrop-blur-md border border-emerald-500/40 text-emerald-300 text-[11px] font-semibold shadow-lg">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                    </span>
+                    <span>Live Interviewer</span>
                   </div>
                 )}
                 {/* Video controls overlay matching design */}
