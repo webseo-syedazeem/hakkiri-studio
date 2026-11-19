@@ -1187,9 +1187,9 @@ export function LiveInterview(p: LiveInterviewProps) {
       ) : (
         <main className="flex min-h-0 grow flex-col px-6 lg:px-10 py-5 w-full animate-rise">
           {/* Top 2 Columns: Center Card + Right Sidebar */}
-          <div className="grid grid-cols-1 lg:grid-cols-[1.65fr_1fr] gap-5 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-[1.65fr_1fr] gap-5 items-stretch">
             {/* Left Column: Question / Feedback / Ending */}
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col justify-between gap-4 h-full">
               {phase === "finishing" || (phase === "error" && problem?.stage === "report") ? (
                 <div className="rounded-2xl bg-[#0f0e1c] border border-white/[0.08] p-7 sm:p-9 shadow-xl flex flex-col justify-center min-h-[340px]">
                   <div className="flex items-center gap-2.5 text-xs font-semibold text-blue-soft uppercase tracking-wider">
@@ -1239,37 +1239,24 @@ export function LiveInterview(p: LiveInterviewProps) {
                   </div>
                 </div>
               ) : (
-                /* Primary Active Question Section: Video Player Card + Question Card */
-                <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] lg:grid-cols-[330px_1fr] gap-4 items-stretch">
-                  {/* Left: Interviewer Video Card with Live Motion & Lip-Sync */}
-                  <div className="relative rounded-2xl overflow-hidden bg-[#0c0b16] border border-white/[0.08] shadow-2xl flex flex-col justify-between aspect-[4/3] md:aspect-auto min-h-[280px] sm:min-h-[300px]">
-                    <div className="relative w-full h-full min-h-[220px] overflow-hidden">
-                      {/* Live Persona Feed with realistic motion & lip-sync */}
+                /* Primary Active Question Section: Big Professional Video Card + Question Card */
+                <div className="grid grid-cols-1 md:grid-cols-[380px_1fr] lg:grid-cols-[430px_1fr] gap-4 items-stretch grow">
+                  {/* Left: Big Professional Interviewer Video Card */}
+                  <div className="relative rounded-2xl overflow-hidden bg-[#0c0b16] border border-white/[0.08] shadow-2xl flex flex-col justify-between min-h-[380px] sm:min-h-[410px]">
+                    <div className="relative w-full h-full min-h-[320px] overflow-hidden">
+                      {/* Live Persona Feed with realistic webcam motion */}
                       <div className={clsx(
-                        "relative w-full h-full transition-transform duration-500",
-                        phase === "asking" ? "animate-talking-head origin-bottom" : phase === "answering" ? "animate-ambient-breathe origin-bottom" : ""
+                        "relative w-full h-full transition-transform duration-700",
+                        phase === "asking" ? "animate-talking-head origin-bottom scale-[1.02]" : phase === "answering" ? "animate-ambient-breathe origin-bottom" : ""
                       )}>
                         <Image
                           src={isFemale(name) ? "/dana.jpg" : "/sam.jpg"}
                           alt={name}
                           fill
-                          sizes="(max-width: 768px) 100vw, 360px"
-                          className="object-cover"
+                          sizes="(max-width: 768px) 100vw, 440px"
+                          className="object-cover object-top"
                           priority
                         />
-
-                        {/* Realistic Lip-sync / Mouth Motion Simulation Overlay (Active when interviewer speaks out loud) */}
-                        {phase === "asking" && (
-                          <div
-                            aria-hidden
-                            className={clsx(
-                              "absolute pointer-events-none rounded-full bg-black/40 blur-[1px] mix-blend-multiply transition-all",
-                              isFemale(name)
-                                ? "left-[50.5%] top-[57%] w-[18px] h-[9px] -translate-x-1/2 animate-talking-mouth"
-                                : "left-[49.5%] top-[54%] w-[24px] h-[12px] -translate-x-1/2 animate-talking-mouth"
-                            )}
-                          />
-                        )}
 
                         {/* Attentive Listening Micro-nod Effect */}
                         {phase === "answering" && (
@@ -1277,29 +1264,43 @@ export function LiveInterview(p: LiveInterviewProps) {
                         )}
                       </div>
 
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/30 pointer-events-none" />
+                      {/* Studio Lighting Vignette */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-black/35 pointer-events-none" />
 
-                      {/* Top Broadcast Badge: Live Interviewer / Listening */}
-                      <div className="absolute top-3 left-3 z-20">
+                      {/* Camera Viewfinder Accents */}
+                      <div className="absolute top-3 left-3 text-white/20 pointer-events-none text-xs font-mono select-none">⌜</div>
+                      <div className="absolute top-3 right-3 text-white/20 pointer-events-none text-xs font-mono select-none">⌝</div>
+                      <div className="absolute bottom-14 left-3 text-white/20 pointer-events-none text-xs font-mono select-none">⌞</div>
+                      <div className="absolute bottom-14 right-3 text-white/20 pointer-events-none text-xs font-mono select-none">⌟</div>
+
+                      {/* Top Broadcast Badge: Live Video + Audio Visualizer */}
+                      <div className="absolute top-3.5 left-3.5 z-20">
                         {phase === "asking" ? (
-                          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/70 backdrop-blur-md border border-emerald-500/40 text-emerald-300 text-[11px] font-semibold shadow-lg">
-                            <span className="relative flex h-2 w-2">
+                          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/80 backdrop-blur-md border border-emerald-500/40 text-emerald-300 text-xs font-semibold shadow-xl">
+                            <span className="relative flex h-2.5 w-2.5">
                               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
                             </span>
-                            <span>Live Interviewer</span>
-                            <span className="flex items-center gap-[2px] ml-1">
-                              <span className="h-2 w-[2px] bg-emerald-400 animate-wave" style={{ animationDelay: "0ms" }} />
-                              <span className="h-3 w-[2px] bg-emerald-400 animate-wave" style={{ animationDelay: "150ms" }} />
-                              <span className="h-1.5 w-[2px] bg-emerald-400 animate-wave" style={{ animationDelay: "300ms" }} />
+                            <span className="tracking-wide text-[11px] uppercase">Live Video</span>
+                            <span className="flex items-center gap-[2.5px] ml-1 h-3">
+                              <span className="h-2 w-[2px] rounded-full bg-emerald-400 animate-wave" style={{ animationDelay: "0ms" }} />
+                              <span className="h-3 w-[2px] rounded-full bg-emerald-400 animate-wave" style={{ animationDelay: "150ms" }} />
+                              <span className="h-2 w-[2px] rounded-full bg-emerald-400 animate-wave" style={{ animationDelay: "300ms" }} />
+                              <span className="h-3 w-[2px] rounded-full bg-emerald-400 animate-wave" style={{ animationDelay: "450ms" }} />
                             </span>
                           </div>
                         ) : phase === "answering" ? (
-                          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/70 backdrop-blur-md border border-blue/30 text-blue-soft text-[11px] font-medium shadow-md">
+                          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/75 backdrop-blur-md border border-blue/30 text-blue-soft text-xs font-medium shadow-md">
                             <span className="h-2 w-2 rounded-full bg-blue" />
                             <span>Listening...</span>
                           </div>
                         ) : null}
+                      </div>
+
+                      {/* Top Right: 1080p Stream Quality Pill */}
+                      <div className="absolute top-3.5 right-3.5 z-20 flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-black/60 backdrop-blur-md border border-white/10 text-[10px] font-mono text-white/70">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                        <span>1080p HD</span>
                       </div>
 
                       {/* Paused Overlay */}
@@ -1317,34 +1318,34 @@ export function LiveInterview(p: LiveInterviewProps) {
                       )}
                     </div>
 
-                    {/* Video Player Controls Overlay */}
-                    <div className="absolute inset-x-0 bottom-0 p-3 sm:p-3.5 bg-gradient-to-t from-black/95 via-black/75 to-transparent flex items-center justify-between text-xs text-white/90 z-20">
-                      <div className="flex items-center gap-2">
+                    {/* Bottom Video Player Controls Overlay */}
+                    <div className="absolute inset-x-0 bottom-0 p-3 sm:p-4 bg-gradient-to-t from-black/95 via-black/80 to-transparent flex items-center justify-between text-xs text-white/90 z-20">
+                      <div className="flex items-center gap-2.5">
                         <button
                           type="button"
                           onClick={togglePause}
-                          className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors cursor-pointer"
+                          className="flex h-6 w-6 items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors cursor-pointer"
                         >
-                          <Icon name={phase === "asking" ? "pause" : phase === "paused" ? "play" : "play"} size={10} />
+                          <Icon name={phase === "asking" ? "pause" : phase === "paused" ? "play" : "play"} size={11} />
                         </button>
-                        <span className="font-mono text-[10px] sm:text-[11px] text-white/90">
+                        <span className="font-mono text-xs text-white/90">
                           {phase === "asking" ? mmss(shownSec) : "0:03"} / {mmss(target[0])}
                         </span>
-                        <div className="h-1 w-12 sm:w-20 rounded-full bg-white/20 overflow-hidden">
+                        <div className="h-1.5 w-16 sm:w-28 rounded-full bg-white/20 overflow-hidden">
                           <div
-                            className="h-full bg-white rounded-full transition-all duration-200"
+                            className="h-full bg-gradient-to-r from-blue to-indigo-400 rounded-full transition-all duration-200"
                             style={{ width: `${Math.min(100, phase === "asking" ? (shownSec / Math.max(1, target[0])) * 100 : 25)}%` }}
                           />
                         </div>
                       </div>
-                      <div className="flex items-center gap-2 text-white/80">
-                        <span className="text-[10px] font-semibold">1x</span>
+                      <div className="flex items-center gap-2.5 text-white/80">
+                        <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-white/10">1x</span>
                         <button
                           type="button"
                           className="text-white/80 hover:text-white"
                           title="Fullscreen"
                         >
-                          <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                          <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
                             <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
                           </svg>
                         </button>
@@ -1353,12 +1354,12 @@ export function LiveInterview(p: LiveInterviewProps) {
                   </div>
 
                   {/* Right: Question Card */}
-                  <div className="rounded-2xl bg-[#0f0e1c] border border-white/[0.08] p-5 sm:p-6 shadow-xl flex flex-col justify-between min-h-[280px] relative overflow-hidden">
+                  <div className="rounded-2xl bg-[#0f0e1c] border border-white/[0.08] p-6 sm:p-7 shadow-xl flex flex-col justify-between min-h-[380px] sm:min-h-[410px] relative overflow-hidden">
                     <div>
                       {/* Top row of card */}
-                      <div className="flex flex-wrap items-center justify-between gap-3 pb-3.5 border-b border-white/[0.06]">
+                      <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-white/[0.06]">
                         <div className="flex items-center gap-2.5">
-                          <div className="relative h-7 w-7 shrink-0 overflow-hidden rounded-full border border-white/20 bg-[#1e1c33]">
+                          <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full border border-white/20 bg-[#1e1c33]">
                             <div className="flex h-full w-full items-center justify-center font-semibold text-xs text-white/80 bg-[#25223e]">
                               {name[0]}
                             </div>
@@ -1366,7 +1367,7 @@ export function LiveInterview(p: LiveInterviewProps) {
                               src={isFemale(name) ? "/dana.jpg" : "/sam.jpg"}
                               alt={name}
                               fill
-                              sizes="28px"
+                              sizes="32px"
                               className="object-cover z-10"
                             />
                           </div>
@@ -1388,39 +1389,39 @@ export function LiveInterview(p: LiveInterviewProps) {
 
                       {/* Question text */}
                       {turn.kind === "follow-up" ? (
-                        <div className="mt-4">
-                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-blue/20 text-blue-soft border border-blue/30 text-[10px] font-bold uppercase tracking-wider mb-2">
+                        <div className="mt-5">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue/20 text-blue-soft border border-blue/30 text-[10px] font-bold uppercase tracking-wider mb-2">
                             Follow-up {turn.number} of {turn.of}
                           </span>
-                          <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-white tracking-tight leading-snug">
+                          <h1 className="text-xl sm:text-2xl lg:text-[26px] font-bold text-white tracking-tight leading-snug">
                             {turn.question}
                           </h1>
                         </div>
                       ) : (
-                        <h1 className="mt-4 text-lg sm:text-xl md:text-2xl font-bold text-white tracking-tight leading-snug">
+                        <h1 className="mt-5 text-xl sm:text-2xl lg:text-[26px] font-bold text-white tracking-tight leading-snug">
                           {q.text}
                         </h1>
                       )}
 
                       {/* Rephrased Question Banner */}
                       {rephrasedText && (
-                        <div className="mt-3.5 rounded-xl bg-indigo-500/15 border border-indigo-500/35 p-3.5 flex items-start gap-2.5 animate-fade-in shadow-md">
+                        <div className="mt-4 rounded-xl bg-indigo-500/15 border border-indigo-500/35 p-4 flex items-start gap-2.5 animate-fade-in shadow-md">
                           <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-lg bg-indigo-500/30 text-indigo-300 mt-0.5">
-                            <Icon name="sparkle" size={12} />
+                            <Icon name="sparkle" size={13} />
                           </div>
                           <div className="text-xs text-indigo-200 leading-relaxed">
                             <span className="font-bold text-indigo-300 uppercase tracking-wide mr-2 text-[10px]">Rephrased question:</span>
-                            <span className="text-white font-medium text-[12px]">{rephrasedText}</span>
+                            <span className="text-white font-medium text-[13px]">{rephrasedText}</span>
                           </div>
                         </div>
                       )}
 
                       {/* Guidance / Hint Callout Box */}
-                      <div className="mt-4 rounded-xl bg-[#16152a] border border-white/[0.06] p-3 flex items-start gap-2.5">
+                      <div className="mt-5 rounded-xl bg-[#16152a] border border-white/[0.06] p-4 flex items-start gap-3">
                         <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-lg bg-amber-500/15 text-amber-400 mt-0.5">
-                          <Icon name="sparkle" size={12} />
+                          <Icon name="sparkle" size={13} />
                         </div>
-                        <div className="text-[11px] text-[#a5a7b8] leading-relaxed">
+                        <div className="text-xs text-[#a5a7b8] leading-relaxed">
                           <b className="text-white">Guidance: </b>
                           {q.type === "strengths"
                             ? "Strengths question. Be spontaneous, authentic and explain what energises you. Aim for 1:00 to 1:30."
@@ -1437,7 +1438,7 @@ export function LiveInterview(p: LiveInterviewProps) {
               )}
 
               {/* Progress Segment Bar below question card */}
-              <div className="rounded-xl bg-[#0f0e1c] border border-white/[0.08] p-4 shadow-lg">
+              <div className="rounded-xl bg-[#0f0e1c] border border-white/[0.08] p-4 shadow-lg shrink-0">
                 <div className="flex items-center justify-between text-xs mb-2.5">
                   <div className="flex items-center gap-1.5 font-semibold text-white">
                     <span>Interview progress</span>
