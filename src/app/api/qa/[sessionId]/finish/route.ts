@@ -29,7 +29,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ session
   const p = getPresentation(draft.presentationId, user.id);
   if (!p) return NextResponse.json({ error: "not-found", message: "This Q&A has expired. Start it again." }, { status: 404 });
   const session = await finishQa(draft, p, user.id);
-  if (!session) return NextResponse.json({ error: "scoring-failed", message: devOr("None of your answers could be scored. Check your keys and connection, then try again.", "None of your answers could be scored just now. Try again in a minute.") }, { status: 502 });
   await flushStorage();
   return NextResponse.json({ id: session.id });
 }

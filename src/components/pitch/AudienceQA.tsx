@@ -30,7 +30,18 @@ const SPEAKER_BARS = Array.from({ length: BARS }, (_, i) => {
 });
 
 /** A friendlier voice for a curious audience, a firmer one for sceptics. */
-const QA_VOICE: Record<QaStyle, VoiceName> = { curious: "easy", technical: "medium", sceptical: "hard", "time-pressed": "hard" };
+const QA_VOICE: Record<QaStyle, VoiceName> = { curious: "easy", technical: "medium", sceptical: "easy", "time-pressed": "hard" };
+
+/** Guarantees voice gender matches the persona (e.g. Dana is female -> "easy" Athena/Sarah) */
+function voiceForPersona(personaName?: string, style?: QaStyle): VoiceName {
+  const name = (personaName || "").toLowerCase();
+  if (name.includes("dana") || name.includes("sarah") || name.includes("athena") || name.includes("alex")) {
+    return "easy"; // Female voice (Athena in Deepgram, Sarah in ElevenLabs)
+  }
+  if (style === "sceptical" || style === "curious") return "easy";
+  if (style === "time-pressed") return "hard";
+  return "medium";
+}
 
 const ANSWER_TIP: Record<QaStyle, string> = {
   sceptical: "Give a number if you have one.",
@@ -127,7 +138,7 @@ export function AudienceQA(p: AudienceQAProps) {
     async (text: string, how: "start" | "resume") => {
       const token = ++askToken.current;
       setPhase("asking");
-      const v = speak(text, { voice: QA_VOICE[styleRef.current] });
+      const v = speak(text, { voice: voiceForPersona(persona.name, styleRef.current) });
       voice.current = v;
       await v.done;
       voice.current = null;
@@ -174,7 +185,7 @@ export function AudienceQA(p: AudienceQAProps) {
     setPress(null);
     const nextQ = session.questions[k + 1];
     if (!nextQ) {
-      voice.current = speak("Thanks. That’s all from me.", { voice: QA_VOICE[styleRef.current] });
+      voice.current = speak("Thanks. That’s all from me.", { voice: voiceForPersona(persona.name, styleRef.current) });
       return void finishAll();
     }
     setK(k + 1);
@@ -345,120 +356,162 @@ export function AudienceQA(p: AudienceQAProps) {
         </div>
       </header>
 
-      <main className="grid min-h-0 grow grid-cols-[minmax(0,1fr)_320px] items-center gap-12 pl-[120px] pr-10">
+      <main className="grid min-h-0 grow grid-cols-1 lg:grid-cols-[400px_1fr] items-start gap-8 px-6 sm:px-12 py-4">
         {phase === "finishing" || (phase === "error" && problem?.stage === "finish") ? (
-          <div key="end">
+          <div key="end" className="lg:col-span-2 max-w-2xl mx-auto py-12 text-center">
             <div className="animate-rise text-sm text-muted">
               {persona.name}, {persona.title}
             </div>
             <h1 className="mt-3.5 animate-rise text-[clamp(34px,6.2vh,52px)] font-semibold leading-[1.07] tracking-[-0.03em] [animation-delay:0.1s]">Thanks. That’s all from me.</h1>
             <p className="mt-5 animate-rise text-base text-muted [animation-delay:0.2s]">Your report is being written now: every answer, and every time {persona.name} asked again.</p>
+            <div className="mt-8 flex justify-center">
+              <aside className="animate-rise rounded-[14px] bg-panel px-6 py-5 shadow-[inset_0_0_0_1px_var(--color-line)] w-full max-w-md">
+                <div className="text-[13px] text-muted">Your report</div>
+                <div className="num mt-1 text-sm font-semibold">
+                  {Math.min(scored, answered.current.size)} of {Math.max(1, answered.current.size)} answers scored
+                </div>
+                <div className="mt-3 flex gap-[3px]" aria-hidden>
+                  {Array.from({ length: Math.max(1, answered.current.size) }, (_, i) => (
+                    <span key={i} className={clsx("h-2 flex-1 rounded-[2px]", i < scored ? "bg-blue" : "bg-white/[0.08]")} />
+                  ))}
+                </div>
+              </aside>
+            </div>
           </div>
         ) : phase === "ready" || phase === "preparing" || !q ? (
-          <div key="ready">
-            <div className="flex animate-rise items-center gap-2.5">
-              <Chip tone={sceptic ? "red" : "blue"}>{QA_STYLE_LABEL[style]}</Chip>
-              <span className="text-sm text-muted">
-                {persona.name}, {persona.title}
-              </span>
-            </div>
-            <h1 className="mt-4 animate-rise text-[clamp(34px,6.2vh,52px)] font-semibold leading-[1.07] tracking-[-0.03em] [animation-delay:0.1s]">
-              The talk is over. Time for questions.
-            </h1>
-            <p className="mt-5 animate-rise text-base text-muted [animation-delay:0.2s]">
-              {capitalise(inWords(count))} questions from your slides and your last run. Answer first, then the reason, then link back to your ask.
-            </p>
-          </div>
-        ) : press ? (
-          <div key={`p${k}`}>
-            <div className="flex animate-rise items-center gap-2.5">
-              <Chip tone="red">Asked again</Chip>
-              <span className="text-sm text-muted">
-                {persona.name}, {persona.title}
-              </span>
-            </div>
-            <h1 className="mt-4 animate-rise text-[clamp(34px,6.2vh,52px)] font-semibold leading-[1.07] tracking-[-0.03em] [animation-delay:0.1s]">{press.question}</h1>
-            <p className="mt-5 animate-rise text-base text-muted [animation-delay:0.2s]">
-              {phase === "asking" ? `Answer when ${persona.name} finishes. ` : ""}Answer it directly this time: {mmss(target[0])} to {mmss(target[1])}.
-            </p>
-          </div>
-        ) : (
-          <div key={`q${k}`}>
-            <div className="flex animate-rise items-center gap-2.5">
-              <Chip tone={sceptic ? "red" : "blue"}>{QA_STYLE_LABEL[style]}</Chip>
-              <span className="text-sm text-muted">
-                {persona.name}, {persona.title}, asks
-              </span>
-            </div>
-            <h1 className="mt-4 animate-rise text-[clamp(34px,6.2vh,52px)] font-semibold leading-[1.07] tracking-[-0.03em] [animation-delay:0.1s]">{q.text}</h1>
-            <p className="mt-5 animate-rise text-base text-muted [animation-delay:0.2s]">
-              Answer first, then the reason, then link back to your ask. {target[0]} to {target[1]} seconds.
-            </p>
-          </div>
-        )}
-
-        {phase === "ready" || phase === "preparing" || (phase === "error" && problem?.stage === "start") ? (
-          <aside className="rounded-[14px] bg-panel px-5 py-5 shadow-[inset_0_0_0_1px_var(--color-line)]">
-            <div className="text-[13px] text-muted">Who’s asking</div>
-            <div className="mt-2.5">
-              <div role="radiogroup" aria-label="Audience style" className="grid grid-cols-2 gap-1.5">
-                {QA_STYLES.map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    role="radio"
-                    aria-checked={style === s}
-                    disabled={phase === "preparing"}
-                    onClick={() => {
-                      if (s === style) return;
-                      setStyle(s);
-                      prepare(s);
-                    }}
-                    className={clsx("rounded-[8px] px-2.5 py-2 text-left text-[13px] font-semibold", style === s ? "bg-blue-fill text-white" : "bg-panel-2 text-muted hover:text-ink")}
-                  >
-                    {QA_STYLE_LABEL[s]}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <p className="mt-3 text-[13px] leading-normal text-muted">{QA_STYLE_HINT[style]}</p>
-            <p className={clsx("mt-3.5 border-t border-line pt-3.5 text-[13px] leading-normal", preparing && !preparing.startsWith("Reading") ? "text-red-soft" : "text-muted")}>
-              {session ? `${capitalise(inWords(session.questions.length))} questions ready. Feedback comes at the end.` : (preparing ?? "")}
-            </p>
-          </aside>
-        ) : phase === "finishing" || (phase === "error" && problem?.stage === "finish") ? (
-          <aside className="animate-rise rounded-[14px] bg-panel px-5 py-5 shadow-[inset_0_0_0_1px_var(--color-line)]">
-            <div className="text-[13px] text-muted">Your report</div>
-            <div className="num mt-1 text-sm font-semibold">
-              {Math.min(scored, answered.current.size)} of {answered.current.size} answers scored
-            </div>
-            <div className="mt-3 flex gap-[3px]" aria-hidden>
-              {Array.from({ length: answered.current.size }, (_, i) => (
-                <span key={i} className={clsx("h-2 flex-1 rounded-[2px]", i < scored ? "bg-blue" : "bg-white/[0.08]")} />
-              ))}
-            </div>
-          </aside>
-        ) : (
-          <aside className="animate-rise rounded-[14px] bg-panel px-5 py-5 shadow-[inset_0_0_0_1px_var(--color-line)]">
-            {qSlide ? (
-              <>
-                <div className="text-[13px] text-muted">About your slide</div>
-                <SlideView slide={qSlide} presentationId={p.presentationId} className="mt-2.5 w-full rounded-[5px] shadow-[0_0_0_1px_var(--color-line-strong)]" />
-              </>
-            ) : (
-              <div className="flex items-center gap-3">
-                <Mark size={30} live={phase === "asking"} />
-                <div className="text-sm font-semibold">
+          <>
+            <div key="ready" className="py-6">
+              <div className="flex animate-rise items-center gap-2.5">
+                <Chip tone={sceptic ? "red" : "blue"}>{QA_STYLE_LABEL[style]}</Chip>
+                <span className="text-sm text-muted">
                   {persona.name}, {persona.title}
+                </span>
+              </div>
+              <h1 className="mt-4 animate-rise text-[clamp(34px,6.2vh,52px)] font-semibold leading-[1.07] tracking-[-0.03em] [animation-delay:0.1s]">
+                The talk is over. Time for questions.
+              </h1>
+              <p className="mt-5 animate-rise text-base text-muted [animation-delay:0.2s]">
+                {capitalise(inWords(count))} questions from your slides and your last run. Answer first, then the reason, then link back to your ask.
+              </p>
+            </div>
+            <aside className="rounded-[14px] bg-panel px-5 py-5 shadow-[inset_0_0_0_1px_var(--color-line)]">
+              <div className="text-[13px] text-muted">Who’s asking</div>
+              <div className="mt-2.5">
+                <div role="radiogroup" aria-label="Audience style" className="grid grid-cols-2 gap-1.5">
+                  {QA_STYLES.map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      role="radio"
+                      aria-checked={style === s}
+                      disabled={phase === "preparing"}
+                      onClick={() => {
+                        if (s === style) return;
+                        setStyle(s);
+                        prepare(s);
+                      }}
+                      className={clsx("rounded-[8px] px-2.5 py-2 text-left text-[13px] font-semibold", style === s ? "bg-blue-fill text-white" : "bg-panel-2 text-muted hover:text-ink")}
+                    >
+                      {QA_STYLE_LABEL[s]}
+                    </button>
+                  ))}
                 </div>
               </div>
-            )}
-            {q && (
-              <p className="mt-3 text-[13px] leading-normal text-muted">
-                {press ? `${persona.name} asked again. One more chance, then the next question.` : `${persona.name} will ask again if ${q.pressIf.replace(/^if\s+/i, "").replace(/\.$/, "")}.`}
+              <p className="mt-3 text-[13px] leading-normal text-muted">{QA_STYLE_HINT[style]}</p>
+              <p className={clsx("mt-3.5 border-t border-line pt-3.5 text-[13px] leading-normal", preparing && !preparing.startsWith("Reading") ? "text-red-soft" : "text-muted")}>
+                {session ? `${capitalise(inWords(session.questions.length))} questions ready. Feedback comes at the end.` : (preparing ?? "")}
               </p>
-            )}
-          </aside>
+            </aside>
+          </>
+        ) : (
+          <>
+            {/* Left Column: Video Card of Asker + Question Content */}
+            <div className="space-y-4">
+              <div className="relative w-full aspect-[16/9] rounded-2xl overflow-hidden bg-booth border border-white/10 shadow-2xl">
+                <img
+                  src={persona.name.toLowerCase().includes("dana") ? "/dana.jpg" : "/sam.jpg"}
+                  alt={persona.name}
+                  className="w-full h-full object-cover object-center"
+                />
+                {phase === "asking" && (
+                  <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/15 text-[11px] font-semibold text-white">
+                    <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                    <span>Speaking...</span>
+                  </div>
+                )}
+                {/* Video controls overlay matching design */}
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-3 flex items-center justify-between text-xs text-white">
+                  <div className="flex items-center gap-2">
+                    <Icon name={phase === "asking" ? "pause" : "play"} size={13} className="text-white" />
+                    <span className="font-mono text-[11px] text-white/90">0:00 / 0:14</span>
+                  </div>
+                  <div className="flex-1 mx-3 h-1 bg-white/20 rounded-full overflow-hidden">
+                    <div className="h-full bg-white rounded-full transition-all duration-300" style={{ width: phase === "asking" ? "55%" : "0%" }} />
+                  </div>
+                  <div className="flex items-center gap-2 text-white/80">
+                    <span className="text-[10px] font-semibold">1x</span>
+                    <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                      <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              <div className="animate-rise space-y-2">
+                <div className="flex items-center gap-2">
+                  <Chip tone={sceptic ? "red" : "blue"}>{QA_STYLE_LABEL[style]}</Chip>
+                  <span className="text-xs sm:text-sm font-semibold text-white/90">{persona.name}, {persona.title}</span>
+                </div>
+                <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-white tracking-tight leading-snug">
+                  {press ? press.question : q?.text}
+                </h1>
+                <p className="text-xs text-muted leading-relaxed">
+                  Answer first, then the reason, then link back to your ask. Aim for {target[0]} to {target[1]} seconds.
+                </p>
+              </div>
+            </div>
+
+            {/* Right Column: Large, Prominent PPT Slide */}
+            <div className="min-w-0 h-full flex flex-col">
+              <div className="relative w-full rounded-2xl bg-white p-6 sm:p-8 text-black shadow-2xl flex flex-col justify-between border border-black/10 min-h-[360px] sm:min-h-[420px]">
+                <div className="flex items-center justify-between border-b border-black/10 pb-3 mb-4">
+                  <span className="text-xs font-bold uppercase tracking-wider text-black/50">Presentation Slide</span>
+                  <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/5 border border-black/10 text-xs font-semibold text-black/80">
+                    <Icon name="layers" size={14} /> Your slide ({qSlide?.title || "Timeline"})
+                  </span>
+                </div>
+
+                <div className="flex-1 flex flex-col justify-center">
+                  {qSlide ? (
+                    <SlideView slide={qSlide} presentationId={p.presentationId} className="w-full h-full" />
+                  ) : (
+                    <div className="space-y-6">
+                      <h2 className="text-2xl sm:text-3xl font-extrabold text-[#16201D] tracking-tight">Timeline</h2>
+                      <div className="flex items-center justify-between py-6 border-t border-b border-black/10">
+                        <div className="text-center flex-1">
+                          <div className="h-3 w-3 rounded-full bg-emerald-600 mx-auto mb-2" />
+                          <div className="font-bold text-sm text-[#16201D]">Jan – Feb</div>
+                          <div className="text-xs text-black/60">Plan and set up</div>
+                        </div>
+                        <div className="w-12 h-0.5 bg-emerald-600/30" />
+                        <div className="text-center flex-1">
+                          <div className="h-3 w-3 rounded-full bg-emerald-600 mx-auto mb-2" />
+                          <div className="font-bold text-sm text-[#16201D]">Mar – Apr</div>
+                          <div className="text-xs text-black/60">Pilot and test with users</div>
+                        </div>
+                        <div className="w-12 h-0.5 bg-emerald-600/30" />
+                        <div className="text-center flex-1">
+                          <div className="h-3 w-3 rounded-full bg-emerald-600 mx-auto mb-2" />
+                          <div className="font-bold text-sm text-[#16201D]">May – Jun</div>
+                          <div className="text-xs text-black/60">Roll out and measure impact</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </>
         )}
       </main>
 

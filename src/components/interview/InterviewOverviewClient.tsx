@@ -329,6 +329,32 @@ export function InterviewOverviewClient({
     } catch {}
   }, [interviewId, roleTitle, companyName]);
 
+  const deleteStage = async (e: React.MouseEvent, idToDelete: string) => {
+    e.stopPropagation();
+    if (activeStages.length <= 1) return;
+    const nextStages = activeStages.filter((s) => s.id !== idToDelete);
+    setActiveStages(nextStages);
+    if (stageId === idToDelete) {
+      setStageId(nextStages[0].id);
+    }
+    try {
+      await fetch(`/api/interviews/${interviewId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          stages: nextStages.map((st) => ({
+            id: st.id,
+            name: st.label,
+            status: st.status,
+            date: st.subtitle,
+          })),
+        }),
+      });
+    } catch (err) {
+      console.warn("Failed to delete interview round:", err);
+    }
+  };
+
   const activeStage = activeStages.find((s) => s.id === stageId) ?? activeStages[0] ?? stages[0];
   const nextStage = activeStages.find((s) => s.status === "next") ?? activeStage;
   const estQuestions = Math.max(3, totalQuestionCount(minutes, difficulty));
@@ -686,11 +712,31 @@ export function InterviewOverviewClient({
                       </div>
                     </div>
 
-                    {selected ? (
-                      <Icon name="chevronRight" size={14} className="shrink-0 text-indigo-300" />
-                    ) : (
-                      <span className="shrink-0 text-[11px] font-medium text-dim">{st.subtitle}</span>
-                    )}
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {activeStages.length > 1 && (
+                        <span
+                          role="button"
+                          tabIndex={0}
+                          title="Delete this round"
+                          aria-label={`Delete ${st.label}`}
+                          onClick={(e) => void deleteStage(e, st.id)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              void deleteStage(e as any, st.id);
+                            }
+                          }}
+                          className="p-1 rounded-md text-dim hover:text-red-400 hover:bg-white/[0.08] transition-colors cursor-pointer opacity-70 hover:opacity-100"
+                        >
+                          <Icon name="trash" size={13} />
+                        </span>
+                      )}
+                      {selected ? (
+                        <Icon name="chevronRight" size={14} className="shrink-0 text-indigo-300" />
+                      ) : (
+                        <span className="text-[11px] font-medium text-dim">{st.subtitle}</span>
+                      )}
+                    </div>
                   </button>
                 );
               })}

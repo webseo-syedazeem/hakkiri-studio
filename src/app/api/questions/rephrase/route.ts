@@ -105,6 +105,9 @@ function fallbackRephrase(q: string): string {
   }
 
   // 6. Motivation & Experience
+  if (lower.includes("claim on your cv") || lower.includes("audit") || (lower.includes("cv") && (lower.includes("defend") || lower.includes("substantiate") || lower.includes("verify")))) {
+    return "Sure. Imagine someone wanted to independently verify the figures behind an achievement on your CV. Which one would be the most difficult to substantiate?";
+  }
   if (lower.includes("why do you want") || lower.includes("why this role") || lower.includes("why us") || lower.includes("why halden") || lower.includes("why hmrc")) {
     return "What specifically drew you to this team and mission, and why is this the natural next step in your career?";
   }
@@ -119,6 +122,9 @@ function fallbackRephrase(q: string): string {
   }
 
   // 7. General Structural Rephrasers (Guaranteed NOT to repeat original verbatim)
+  if (/^which /i.test(q)) {
+    return "If you had to pick one specific example from your experience, what would you choose and what was the reasoning behind it?";
+  }
   if (/^how would you ensure /i.test(q)) {
     const topic = q.replace(/^how would you ensure /i, "").replace(/\?$/, "");
     return `What concrete steps, design patterns and safeguards would you use to ensure ${topic}?`;
@@ -140,9 +146,8 @@ function fallbackRephrase(q: string): string {
     return `If put in this situation, what would be your initial decision and reasoning regarding ${action}?`;
   }
 
-  // Fallback for short or unconventional phrases: extract essence
-  const cleaned = q.replace(/[?.!]+$/, "").trim();
-  return `The interviewer wants to understand your mindset and approach to this: how would you address ${cleaned.toLowerCase()} in your own words?`;
+  // Fallback: direct, human rephrasing without repetitive templates
+  return "Put simply: walk the interviewer through your personal thinking and decision-making on this topic, using a real-world example.";
 }
 
 /** POST /api/questions/rephrase: rephrases an interview question clearly and concisely */
@@ -161,9 +166,12 @@ export async function POST(req: Request) {
   }
 
   const system =
-    "You are an expert interview coach. A candidate asked you to rephrase or clarify an interview question. " +
-    "CRITICAL RULE: Paraphrase using different, simpler words. NEVER repeat the question verbatim and NEVER prefix with 'In plain terms:'. " +
-    "Explain what the interviewer is really looking for in 1 to 2 clear, accessible sentences. " +
+    "You are a friendly, conversational executive interview coach speaking directly to a candidate who asked: 'Can you rephrase that question in simpler terms?'. " +
+    "CRITICAL RULES: " +
+    "1. Give a direct, natural rephrasing in 1-2 colloquial British English sentences (e.g., 'Sure. Imagine someone wanted to independently verify...'). " +
+    "2. NEVER repeat the original question or vocabulary verbatim. " +
+    "3. NEVER use formulaic templates like 'The interviewer wants to understand your mindset...' or 'In plain terms:'. " +
+    "4. Make the question feel human, concrete, and grounded. " +
     "Reply with a single JSON object: {\"rephrased\": \"...\"}";
 
   const userPrompt = `Rephrase this question using different and simpler words (do not repeat it):\n"${question}"`;
