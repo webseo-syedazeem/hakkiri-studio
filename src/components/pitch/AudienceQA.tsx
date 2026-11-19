@@ -285,15 +285,31 @@ export function AudienceQA(p: AudienceQAProps) {
     void ask(press?.question ?? q?.text ?? "", "resume");
   }, [phase, mic, ask, press, q]);
 
+  const pausedDuringAsking = useRef(false);
+
   const togglePause = useCallback(() => {
-    if (phase === "answering") {
+    if (phase === "asking") {
+      pausedDuringAsking.current = true;
+      voice.current?.cancel();
+      if (videoRef.current) {
+        videoRef.current.pause();
+        videoRef.current.currentTime = 0;
+      }
+      setPhase("paused");
+    } else if (phase === "answering") {
+      pausedDuringAsking.current = false;
       mic.pause();
       setPhase("paused");
     } else if (phase === "paused") {
-      mic.resume();
-      setPhase("answering");
+      if (pausedDuringAsking.current) {
+        pausedDuringAsking.current = false;
+        void ask(press?.question ?? q?.text ?? "", "resume");
+      } else {
+        mic.resume();
+        setPhase("answering");
+      }
     }
-  }, [phase, mic]);
+  }, [phase, mic, ask, press, q]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

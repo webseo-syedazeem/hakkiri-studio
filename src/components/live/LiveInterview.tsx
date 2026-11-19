@@ -706,15 +706,31 @@ export function LiveInterview(p: LiveInterviewProps) {
     void ask(asked, "resume");
   }, [phase, mic, ask, asked]);
 
+  const pausedDuringAsking = useRef(false);
+
   const togglePause = useCallback(() => {
-    if (phase === "answering") {
+    if (phase === "asking") {
+      pausedDuringAsking.current = true;
+      voice.current?.cancel();
+      if (interviewerVideoRef.current) {
+        interviewerVideoRef.current.pause();
+        interviewerVideoRef.current.currentTime = 0;
+      }
+      setPhase("paused");
+    } else if (phase === "answering") {
+      pausedDuringAsking.current = false;
       mic.pause();
       setPhase("paused");
     } else if (phase === "paused") {
-      mic.resume();
-      setPhase("answering");
+      if (pausedDuringAsking.current) {
+        pausedDuringAsking.current = false;
+        void ask(asked, "resume");
+      } else {
+        mic.resume();
+        setPhase("answering");
+      }
     }
-  }, [phase, mic]);
+  }, [phase, mic, asked, ask]);
 
   const answerAgain = useCallback(() => {
     setProblem(null);
