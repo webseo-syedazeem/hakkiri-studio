@@ -181,11 +181,15 @@ export function LiveInterview(p: LiveInterviewProps) {
       }
     }
   };
-  /** The interviewer's voice follows the difficulty (a firmer voice when it gets tougher). */
-  const voiceName = useRef<VoiceName>(voiceFor(p.interviewer.style));
+  /** The interviewer's voice follows the difficulty (a firmer voice when it gets tougher), with female personas mapped to Athena/Sarah. */
+  const isFemale = (n: string) => {
+    const s = (n || "").toLowerCase();
+    return s.includes("dana") || s.includes("sarah") || s.includes("athena") || s.includes("alex") || s.includes("emily") || s.includes("rachel") || s.includes("claire") || s.includes("lisa") || s.includes("anna");
+  };
+  const voiceName = useRef<VoiceName>(isFemale(p.interviewer.name) ? "easy" : voiceFor(p.interviewer.style));
   useEffect(() => {
-    voiceName.current = voiceFor(style);
-  }, [style]);
+    voiceName.current = isFemale(p.interviewer.name) ? "easy" : voiceFor(style);
+  }, [style, p.interviewer.name]);
   const [scoredCount, setScoredCount] = useState(0);
   const [feedback, setFeedback] = useState<{ result: Scored; question: typeof q; last: boolean } | null>(null);
   const [wrong, setWrong] = useState<{ reasons: WrongReason[]; resume: "reask" | "resume" | "none" } | null>(null);
@@ -864,7 +868,7 @@ export function LiveInterview(p: LiveInterviewProps) {
                       {name[0]}
                     </div>
                     <Image
-                      src="/sam.jpg"
+                      src={isFemale(name) ? "/dana.jpg" : "/sam.jpg"}
                       alt={name}
                       fill
                       sizes="80px"
@@ -1235,83 +1239,135 @@ export function LiveInterview(p: LiveInterviewProps) {
                   </div>
                 </div>
               ) : (
-                /* Primary Active Question Card */
-                <div className="rounded-2xl bg-[#0f0e1c] border border-white/[0.08] p-6 sm:p-8 shadow-xl flex flex-col justify-between min-h-[330px] relative overflow-hidden">
-                  <div>
-                    {/* Top row of card */}
-                    <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-white/[0.06]">
-                      <div className="flex items-center gap-3">
-                        <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-full border border-white/20 bg-[#1e1c33]">
-                          <div className="flex h-full w-full items-center justify-center font-semibold text-xs text-white/80 bg-[#25223e]">
-                            {name[0]}
-                          </div>
-                          <Image
-                            src="/sam.jpg"
-                            alt={name}
-                            fill
-                            sizes="32px"
-                            className="object-cover z-10"
-                          />
-                        </div>
-                        <div>
-                          <div className="text-xs font-semibold text-white">{name}</div>
-                          <div className="text-[11px] text-muted">{p.interviewer.title || "Hiring manager"} asks:</div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <span className="rounded-full bg-[#24213d] border border-[#3e3966] px-2.5 py-0.5 text-[11px] font-semibold text-[#a5a1ff]">
-                          {q.contextLabel || "Role Question"}
-                        </span>
-                        <span className="rounded-full bg-[#1b2649] border border-[#2b3d75] px-2.5 py-0.5 text-[11px] font-semibold text-[#6d9dfd]">
-                          Target: {mmss(target[0])}–{mmss(target[1])}
-                        </span>
-                      </div>
+                /* Primary Active Question Section: Video Player Card + Question Card */
+                <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] lg:grid-cols-[330px_1fr] gap-4 items-stretch">
+                  {/* Left: Interviewer Video Card */}
+                  <div className="relative rounded-2xl overflow-hidden bg-[#0c0b16] border border-white/[0.08] shadow-xl flex flex-col justify-between aspect-[4/3] md:aspect-auto min-h-[280px]">
+                    <div className="relative w-full h-full min-h-[220px]">
+                      <Image
+                        src={isFemale(name) ? "/dana.jpg" : "/sam.jpg"}
+                        alt={name}
+                        fill
+                        sizes="(max-width: 768px) 100vw, 360px"
+                        className="object-cover"
+                        priority
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/20" />
                     </div>
 
-                    {/* Question text */}
-                    {turn.kind === "follow-up" ? (
-                      <div className="mt-5">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue/20 text-blue-soft border border-blue/30 text-[11px] font-bold uppercase tracking-wider mb-2">
-                          Follow-up {turn.number} of {turn.of}
+                    {/* Video Player Controls Overlay */}
+                    <div className="absolute inset-x-0 bottom-0 p-3 sm:p-3.5 bg-gradient-to-t from-black/95 via-black/70 to-transparent flex items-center justify-between text-xs text-white/90">
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={togglePause}
+                          className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors"
+                        >
+                          <Icon name={phase === "asking" ? "pause" : "play"} size={10} />
+                        </button>
+                        <span className="font-mono text-[10px] sm:text-[11px] text-white/90">
+                          {phase === "asking" ? mmss(shownSec) : "0:03"} / {mmss(target[0])}
                         </span>
-                        <h1 className="text-xl sm:text-2xl lg:text-[28px] font-bold text-white tracking-tight leading-snug">
-                          {turn.question}
+                        <div className="h-1 w-12 sm:w-20 rounded-full bg-white/20 overflow-hidden">
+                          <div
+                            className="h-full bg-white rounded-full transition-all duration-200"
+                            style={{ width: `${Math.min(100, phase === "asking" ? (shownSec / Math.max(1, target[0])) * 100 : 25)}%` }}
+                          />
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 text-white/80">
+                        <span className="text-[10px] font-semibold">1x</span>
+                        <button
+                          type="button"
+                          className="text-white/80 hover:text-white"
+                          title="Fullscreen"
+                        >
+                          <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right: Question Card */}
+                  <div className="rounded-2xl bg-[#0f0e1c] border border-white/[0.08] p-5 sm:p-6 shadow-xl flex flex-col justify-between min-h-[280px] relative overflow-hidden">
+                    <div>
+                      {/* Top row of card */}
+                      <div className="flex flex-wrap items-center justify-between gap-3 pb-3.5 border-b border-white/[0.06]">
+                        <div className="flex items-center gap-2.5">
+                          <div className="relative h-7 w-7 shrink-0 overflow-hidden rounded-full border border-white/20 bg-[#1e1c33]">
+                            <div className="flex h-full w-full items-center justify-center font-semibold text-xs text-white/80 bg-[#25223e]">
+                              {name[0]}
+                            </div>
+                            <Image
+                              src={isFemale(name) ? "/dana.jpg" : "/sam.jpg"}
+                              alt={name}
+                              fill
+                              sizes="28px"
+                              className="object-cover z-10"
+                            />
+                          </div>
+                          <div>
+                            <div className="text-xs font-semibold text-white">{name}</div>
+                            <div className="text-[11px] text-muted">{p.interviewer.title || "Lead Product Manager"} asks:</div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <span className="rounded-full bg-[#24213d] border border-[#3e3966] px-2.5 py-0.5 text-[11px] font-semibold text-[#a5a1ff]">
+                            {q.contextLabel || "Competency question"}
+                          </span>
+                          <span className="rounded-full bg-[#1b2649] border border-[#2b3d75] px-2.5 py-0.5 text-[11px] font-semibold text-[#6d9dfd]">
+                            Target: {mmss(target[0])}–{mmss(target[1])}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Question text */}
+                      {turn.kind === "follow-up" ? (
+                        <div className="mt-4">
+                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-blue/20 text-blue-soft border border-blue/30 text-[10px] font-bold uppercase tracking-wider mb-2">
+                            Follow-up {turn.number} of {turn.of}
+                          </span>
+                          <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-white tracking-tight leading-snug">
+                            {turn.question}
+                          </h1>
+                        </div>
+                      ) : (
+                        <h1 className="mt-4 text-lg sm:text-xl md:text-2xl font-bold text-white tracking-tight leading-snug">
+                          {q.text}
                         </h1>
-                      </div>
-                    ) : (
-                      <h1 className="mt-5 text-xl sm:text-2xl lg:text-[30px] font-bold text-white tracking-tight leading-snug">
-                        {q.text}
-                      </h1>
-                    )}
+                      )}
 
-                    {/* Rephrased Question Banner */}
-                    {rephrasedText && (
-                      <div className="mt-4 rounded-xl bg-indigo-500/15 border border-indigo-500/35 p-4 flex items-start gap-3 animate-fade-in shadow-md">
-                        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-indigo-500/30 text-indigo-300 mt-0.5">
-                          <Icon name="sparkle" size={13} />
+                      {/* Rephrased Question Banner */}
+                      {rephrasedText && (
+                        <div className="mt-3.5 rounded-xl bg-indigo-500/15 border border-indigo-500/35 p-3.5 flex items-start gap-2.5 animate-fade-in shadow-md">
+                          <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-lg bg-indigo-500/30 text-indigo-300 mt-0.5">
+                            <Icon name="sparkle" size={12} />
+                          </div>
+                          <div className="text-xs text-indigo-200 leading-relaxed">
+                            <span className="font-bold text-indigo-300 uppercase tracking-wide mr-2 text-[10px]">Rephrased question:</span>
+                            <span className="text-white font-medium text-[12px]">{rephrasedText}</span>
+                          </div>
                         </div>
-                        <div className="text-xs text-indigo-200 leading-relaxed">
-                          <span className="font-bold text-indigo-300 uppercase tracking-wide mr-2 text-[11px]">Rephrased question:</span>
-                          <span className="text-white font-medium text-[13px]">{rephrasedText}</span>
-                        </div>
-                      </div>
-                    )}
+                      )}
 
-                    {/* Guidance / Hint Callout Box */}
-                    <div className="mt-6 rounded-xl bg-[#16152a] border border-white/[0.06] p-4 flex items-start gap-3">
-                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-amber-500/15 text-amber-400 mt-0.5">
-                        <Icon name="sparkle" size={14} />
-                      </div>
-                      <div className="text-xs text-[#a5a7b8] leading-relaxed">
-                        <b className="text-white">Guidance: </b>
-                        {q.type === "strengths"
-                          ? "Strengths question. Be spontaneous, authentic and explain what energises you. Aim for 1:00 to 1:30."
-                          : session?.drill?.instruction && (session.drill.kind === "fix" || session.drill.kind === "habit" || session.drill.kind === "topic")
-                          ? session.drill.instruction
-                          : sameWords(q.contextLabel, q.text)
-                          ? q.contextHint
-                          : `${q.contextLabel}. ${q.contextHint}`}
+                      {/* Guidance / Hint Callout Box */}
+                      <div className="mt-4 rounded-xl bg-[#16152a] border border-white/[0.06] p-3 flex items-start gap-2.5">
+                        <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-lg bg-amber-500/15 text-amber-400 mt-0.5">
+                          <Icon name="sparkle" size={12} />
+                        </div>
+                        <div className="text-[11px] text-[#a5a7b8] leading-relaxed">
+                          <b className="text-white">Guidance: </b>
+                          {q.type === "strengths"
+                            ? "Strengths question. Be spontaneous, authentic and explain what energises you. Aim for 1:00 to 1:30."
+                            : session?.drill?.instruction && (session.drill.kind === "fix" || session.drill.kind === "habit" || session.drill.kind === "topic")
+                            ? session.drill.instruction
+                            : sameWords(q.contextLabel, q.text)
+                            ? q.contextHint
+                            : `${q.contextLabel}. ${q.contextHint}`}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1340,16 +1396,23 @@ export function LiveInterview(p: LiveInterviewProps) {
                       <div
                         key={item.id}
                         className={clsx(
-                          "flex flex-col items-center justify-center py-2 px-1 rounded-lg border text-center transition-all",
+                          "flex items-center justify-between py-2.5 px-3 rounded-xl border transition-all",
                           isCurrent
-                            ? "bg-blue/20 border-blue text-white shadow-[0_0_12px_rgba(79,70,229,0.35)] font-bold"
+                            ? "bg-blue/20 border-blue text-white shadow-[0_0_12px_rgba(79,70,229,0.35)] font-bold ring-1 ring-blue/50"
                             : isDone
                             ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300 font-medium"
                             : "bg-[#141326] border-white/5 text-muted opacity-60"
                         )}
                       >
-                        <span className="num text-xs font-bold">{idx + 1}</span>
-                        <span className="text-[10px] truncate max-w-full hidden sm:inline px-1">{item.short}</span>
+                        <div className="flex flex-col text-left min-w-0 flex-1">
+                          <span className="num text-[11px] font-bold text-white/70">{idx + 1}</span>
+                          <span className="text-xs truncate max-w-full font-medium text-white/90">{item.short}</span>
+                        </div>
+                        {isDone && (
+                          <div className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-black text-[10px] font-bold ml-2">
+                            ✓
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -1406,7 +1469,7 @@ export function LiveInterview(p: LiveInterviewProps) {
                     phase === "asking" ? "ring-2 ring-blue shadow-[0_0_15px_rgba(79,82,248,0.5)]" : phase === "answering" ? "ring-2 ring-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)]" : "ring-0"
                   )}>
                     <Image
-                      src="/sam.jpg"
+                      src={isFemale(name) ? "/dana.jpg" : "/sam.jpg"}
                       alt={name}
                       fill
                       sizes="44px"
