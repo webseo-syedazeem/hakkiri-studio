@@ -200,19 +200,6 @@ export function LiveInterview(p: LiveInterviewProps) {
   const [, tick] = useState(0);
   const voice = useRef<{ cancel: () => void } | null>(null);
   const interviewerVideoRef = useRef<HTMLVideoElement | null>(null);
-
-  useEffect(() => {
-    const vid = interviewerVideoRef.current;
-    if (!vid) return;
-    if (phase === "asking") {
-      vid.play().catch(() => {});
-    } else if (phase === "paused") {
-      vid.pause();
-    } else {
-      vid.pause();
-      vid.currentTime = 0;
-    }
-  }, [phase]);
   /** Bumped to abandon a question that's still being asked (e.g. the interview ended). */
   const askToken = useRef(0);
   /** True once the first question has been asked. */
@@ -256,10 +243,28 @@ export function LiveInterview(p: LiveInterviewProps) {
     async (text: string, mic_: "start" | "resume") => {
       const token = ++askToken.current;
       setPhase("asking");
-      const v = speak(text, { voice: voiceName.current });
+      // Keep video paused on attentive frame until sound actually begins emitting
+      if (interviewerVideoRef.current) {
+        interviewerVideoRef.current.pause();
+        interviewerVideoRef.current.currentTime = 0;
+      }
+      const v = speak(text, {
+        voice: voiceName.current,
+        onStart: () => {
+          // Play video at the exact millisecond audio starts playing
+          if (askToken.current === token && interviewerVideoRef.current) {
+            interviewerVideoRef.current.play().catch(() => {});
+          }
+        },
+      });
       voice.current = v;
       await v.done;
       voice.current = null;
+      // Stop video immediately when speech audio finishes
+      if (interviewerVideoRef.current) {
+        interviewerVideoRef.current.pause();
+        interviewerVideoRef.current.currentTime = 0;
+      }
       if (askToken.current !== token) return; // the interview moved on while the question was being asked
       if (mic_ === "start") {
         if (!(await mic.start())) {

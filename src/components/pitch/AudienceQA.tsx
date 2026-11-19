@@ -91,18 +91,6 @@ export function AudienceQA(p: AudienceQAProps) {
   /** True once the first question has been asked. */
   const begun = useRef(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  useEffect(() => {
-    const vid = videoRef.current;
-    if (!vid) return;
-    if (phase === "asking") {
-      vid.play().catch(() => {});
-    } else if (phase === "paused") {
-      vid.pause();
-    } else {
-      vid.pause();
-      vid.currentTime = 0;
-    }
-  }, [phase]);
 
   const target = press ? followUpProfile(press.kind).targetSec : profileFor("presentation-qa").targetSec;
   const totalSec = Math.max(90, target[1] + 30);
@@ -151,10 +139,25 @@ export function AudienceQA(p: AudienceQAProps) {
     async (text: string, how: "start" | "resume") => {
       const token = ++askToken.current;
       setPhase("asking");
-      const v = speak(text, { voice: voiceForPersona(persona.name, styleRef.current) });
+      if (videoRef.current) {
+        videoRef.current.pause();
+        videoRef.current.currentTime = 0;
+      }
+      const v = speak(text, {
+        voice: voiceForPersona(persona.name, styleRef.current),
+        onStart: () => {
+          if (askToken.current === token && videoRef.current) {
+            videoRef.current.play().catch(() => {});
+          }
+        },
+      });
       voice.current = v;
       await v.done;
       voice.current = null;
+      if (videoRef.current) {
+        videoRef.current.pause();
+        videoRef.current.currentTime = 0;
+      }
       if (askToken.current !== token) return;
       if (how === "start") {
         cutting.current = false;

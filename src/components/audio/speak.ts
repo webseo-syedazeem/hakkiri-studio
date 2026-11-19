@@ -12,7 +12,7 @@
  */
 
 export type VoiceName = "easy" | "medium" | "hard";
-export type SpeakOptions = { rate?: number; voice?: VoiceName };
+export type SpeakOptions = { rate?: number; voice?: VoiceName; onStart?: () => void };
 type Speech = { done: Promise<void>; cancel: () => void };
 
 /** Once the server says there's no natural voice (or it fails twice running), stop asking for this page's life. */
@@ -102,6 +102,7 @@ function browserSpeak(text: string, opts: SpeakOptions, finish: () => void, setC
   const synth = typeof window !== "undefined" ? window.speechSynthesis : undefined;
   if (!synth) {
     // No speech in this browser: give the reader a moment, then carry on.
+    opts.onStart?.();
     const timer = setTimeout(finish, Math.min(4000, 60 * text.length));
     setCancel(() => {
       clearTimeout(timer);
@@ -122,6 +123,7 @@ function browserSpeak(text: string, opts: SpeakOptions, finish: () => void, setC
   // Interviewers speak deliberately and calmly (0.93 - 0.96 prevents rushed robotic speech)
   u.rate = opts.rate ?? (opts.voice === "hard" ? 0.96 : 0.93);
   u.pitch = opts.voice === "hard" ? 0.96 : opts.voice === "easy" ? 1.02 : 1.0;
+  u.onstart = () => opts.onStart?.();
   u.onend = () => finish();
   u.onerror = () => finish();
   // Some browsers never fire onend if speech is blocked; don't hang the interview.
@@ -180,6 +182,7 @@ export function speak(text: string, opts: SpeakOptions = {}): Speech {
         URL.revokeObjectURL(url);
         finish();
       };
+      audio.onplay = () => opts.onStart?.();
       audio.onended = end;
       audio.onerror = end;
       // If playback stalls and never ends, don't hang the interview.
