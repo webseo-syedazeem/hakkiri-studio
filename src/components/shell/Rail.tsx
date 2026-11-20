@@ -46,6 +46,12 @@ const ITEMS: {
     match: (p) => p.startsWith("/practice") || p.startsWith("/rehearse"),
   },
   {
+    label: "Robot Tester",
+    href: "/robot-test",
+    icon: "sparkle",
+    match: (p) => p.startsWith("/robot-test"),
+  },
+  {
     label: "Profile",
     href: "/settings",
     icon: "user",
