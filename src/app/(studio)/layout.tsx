@@ -26,9 +26,9 @@ export default async function StudioLayout({
   const initials = currentUser.initials || "HA";
 
   return (
-    <div className="flex min-h-screen flex-col md:flex-row w-full max-w-full overflow-x-hidden">
+    <div className="flex min-h-screen flex-col md:flex-row w-full max-w-full">
       <Rail initials={initials} beta={isBeta()} />
-      <main className="flex min-w-0 grow flex-col px-4 py-4 sm:px-6 sm:py-6 md:px-9 md:py-7 print:p-0 w-full max-w-full overflow-x-hidden">
+      <main className="flex min-w-0 grow flex-col px-4 py-4 sm:px-6 sm:py-6 md:px-9 md:py-7 print:p-0 w-full max-w-full overflow-x-clip">
         {children}
       </main>
       <PhoneNotice />

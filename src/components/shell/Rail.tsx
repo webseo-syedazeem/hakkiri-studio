@@ -178,10 +178,13 @@ export function Rail({
         </div>
       )}
 
+      {/* Desktop spacer to preserve layout flow alongside fixed sidebar */}
+      <div className="hidden md:block print:hidden w-[200px] shrink-0" aria-hidden="true" />
+
       {/* Desktop Navigation Sidebar (>= md) */}
       <nav
         aria-label="Main"
-        className="print-hide sticky top-0 hidden md:flex h-screen w-[200px] shrink-0 flex-col border-r border-line py-5 px-3"
+        className="print-hide fixed top-0 bottom-0 left-0 z-30 hidden md:flex h-screen w-[200px] shrink-0 flex-col border-r border-line bg-booth py-5 px-3 overflow-y-auto overflow-x-hidden [scrollbar-width:none]"
       >
         {/* Brand Header */}
         <Link
@@ -257,7 +260,7 @@ export function Rail({
             )}
 
             {showMenu && authUser && (
-              <div className="absolute bottom-10 left-0 z-50 mb-1 w-48 rounded-xl border border-line bg-panel p-2 shadow-2xl backdrop-blur-md">
+              <div className="absolute bottom-11 left-0 z-50 mb-1 w-44 rounded-xl border border-line bg-panel p-2 shadow-2xl backdrop-blur-md">
                 <div className="px-2.5 py-1.5 border-b border-line/60">
                   <p className="text-[13px] font-medium text-ink truncate">{authUser.firstName || "Sazia Aktar"}</p>
                   <p className="text-[11px] text-muted truncate">{authUser.email}</p>
