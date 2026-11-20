@@ -182,18 +182,55 @@ export function runRobotAudit(): { summary: string; results: TestResult[] } {
 Total Persona Tests Run: ${results.length}
 Score Gap (Executive vs Intern): ${scoreGap} (Target: >= 0.8) -> ${scoreGap >= 0.8 ? "PASSED" : "FAILED"}
 Loopholes & Bugs Flagged: ${results.filter((r) => r.loopholeDetected).length}
+Active Claude Model: ${process.env.HAKKIRI_MAIN_MODEL || "claude-sonnet-5"}
 `;
 
   return { summary, results };
 }
 
-if (require.main === module) {
-  console.log("Starting Hakkiri AI Robot Tester...");
-  const { summary, results } = runRobotAudit();
-  console.log(summary);
+async function verifyLiveClaude(): Promise<boolean> {
+  const key = process.env.ANTHROPIC_API_KEY;
+  if (!key) {
+    console.log("No ANTHROPIC_API_KEY found in .env.local; running in simulation mode.");
+    return false;
+  }
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key": key,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        model: process.env.HAKKIRI_MAIN_MODEL || "claude-sonnet-5",
+        max_tokens: 30,
+        messages: [{ role: "user", content: "Robot tester ping." }],
+      }),
+    });
+    if (res.ok) {
+      console.log("✓ Live Claude API connection verified! Using model: " + (process.env.HAKKIRI_MAIN_MODEL || "claude-sonnet-5"));
+      return true;
+    }
+    const err = await res.text();
+    console.warn("Claude API ping returned " + res.status + ":", err.slice(0, 150));
+    return false;
+  } catch (e) {
+    console.warn("Failed to reach Claude API:", e);
+    return false;
+  }
+}
 
-  const outDir = path.join(process.cwd(), "out", "robot-tester");
-  fs.mkdirSync(outDir, { recursive: true });
-  fs.writeFileSync(path.join(outDir, "audit-results.json"), JSON.stringify(results, null, 2));
-  console.log(`Saved detailed audit results to ${path.join(outDir, "audit-results.json")}`);
+if (require.main === module) {
+  (async () => {
+    console.log("Starting Hakkiri AI Robot Tester...");
+    await verifyLiveClaude();
+    const { summary, results } = runRobotAudit();
+    console.log(summary);
+
+    const outDir = path.join(process.cwd(), "out", "robot-tester");
+    fs.mkdirSync(outDir, { recursive: true });
+    fs.writeFileSync(path.join(outDir, "audit-results.json"), JSON.stringify(results, null, 2));
+    console.log(`Saved detailed audit results to ${path.join(outDir, "audit-results.json")}`);
+  })();
 }
