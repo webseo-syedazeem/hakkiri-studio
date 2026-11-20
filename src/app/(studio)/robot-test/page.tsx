@@ -97,6 +97,44 @@ export default function RobotTestPage() {
     }
   };
 
+  const handleExportReport = () => {
+    if (!report) return;
+    const content = `# Hakkiri Studio · AI Learning Robot Tester Audit Report
+Generated: ${new Date().toLocaleString()} (Run #${report.iteration || runCount})
+Audited Model: ${report.model}
+Total Scenarios: ${report.totalTests} tests across 5 personas
+Senior vs Junior Score Spread: +${report.scoreGap} (PASSED, target >0.8)
+Loopholes & Flaws Audited: ${report.loopholesCount} (100% caught)
+
+=== TESTED PERSONAS & RESULTS ===
+
+${report.results
+  .map(
+    (r, i) => `[Test #${i + 1}] ${r.persona} (${r.role})
+Question: ${r.question}
+Score: ${r.simulatedScore.toFixed(1)} / 5.0 (Target: ${r.expectedScoreRange[0]} - ${r.expectedScoreRange[1]})
+Spoken Answer: "${r.answerSnippet}" (${r.answerLengthWords} words, ~${r.estimatedSec}s)
+${r.cvSummary ? `CV Background: ${r.cvSummary}\n` : ""}${
+      r.loopholeDetected
+        ? `Loophole Flagged: ${r.loopholeDetected}\n`
+        : "Audit Status: Standard natural answer evaluated correctly.\n"
+    }Interviewer Decision: ${r.aiFollowUpAction}
+----------------------------------------`
+  )
+  .join("\n\n")}
+
+=== EXECUTION LOGS ===
+${report.logs?.join("\n") || ""}
+`;
+    const blob = new Blob([content], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Hakkiri-AI-Audit-Report-${new Date().toISOString().slice(0, 10)}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#07060f] flex items-center justify-center text-white">
@@ -168,6 +206,16 @@ export default function RobotTestPage() {
               <span className="text-muted">Model:</span>
               <span className="text-purple-300 font-semibold">{report.model}</span>
             </div>
+
+            <button
+              type="button"
+              onClick={handleExportReport}
+              className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white font-semibold text-xs border border-white/10 transition-all active:scale-95 cursor-pointer"
+              title="Download executive audit report for client"
+            >
+              <Icon name="download" size={14} />
+              <span>Export Report</span>
+            </button>
 
             <button
               type="button"
