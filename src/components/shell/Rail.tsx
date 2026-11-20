@@ -29,15 +29,27 @@ const ITEMS: {
     match: (p) => p.startsWith("/interviews") || p.startsWith("/mock"),
   },
   {
+    label: "Practice Hub",
+    href: "/practice",
+    icon: "chart",
+    match: (p) => p.startsWith("/practice") || p.startsWith("/rehearse"),
+  },
+  {
     label: "Presentations",
     href: "/presentations",
     icon: "present",
-    match: (p) => p.startsWith("/presentations") || p.startsWith("/rehearse") || p.startsWith("/qa"),
+    match: (p) => p.startsWith("/presentations") || p.startsWith("/qa"),
+  },
+  {
+    label: "Interview examples",
+    href: "/interview-examples",
+    icon: "layers",
+    match: (p) => p.startsWith("/interview-examples"),
   },
   {
     label: "Story Bank",
     href: "/story-bank",
-    icon: "layers",
+    icon: "doc",
     match: (p) => p.startsWith("/story-bank"),
   },
   {
@@ -45,6 +57,12 @@ const ITEMS: {
     href: "/robot-test",
     icon: "sparkle",
     match: (p) => p.startsWith("/robot-test"),
+  },
+  {
+    label: "Profile",
+    href: "/settings",
+    icon: "user",
+    match: (p) => p.startsWith("/settings"),
   },
 ];
 
