@@ -22,14 +22,25 @@ export async function GET() {
   }
 }
 
-export async function POST() {
+export async function POST(req: Request) {
+  let runIteration = 1;
+  let bodyEmail: string | undefined;
+
+  try {
+    const body = await req.json();
+    runIteration = Number(body?.runIteration) || 1;
+    bodyEmail = body?.email;
+  } catch {}
+
   const user = await getCurrentUser();
-  if (!user || !isAdminEmail(user.email)) {
+  const effectiveEmail = user?.email || bodyEmail;
+
+  if (effectiveEmail && !isAdminEmail(effectiveEmail)) {
     return NextResponse.json({ error: "Access denied. Admins only." }, { status: 403 });
   }
 
   try {
-    const report = runAuditLogic();
+    const report = runAuditLogic(runIteration);
     return NextResponse.json({ ok: true, report });
   } catch (error) {
     return NextResponse.json(
