@@ -1,49 +1,86 @@
 /**
- * The Hakkiri mark: a brush arc around voice bars, with the red dot.
- * Geometry matches the mobile app's logo. `live` animates the bars
- * (used when the interviewer is listening or speaking).
+ * The official Hakkiri mark:
+ * - 42.1-radius outer arc in navy (#18345B)
+ * - 5 vertical audio bars in near-black (#18191C) with rx=3.45
+ * - coral dot (#F06D65) at cx=91.6, cy=50
+ *
+ * When displayed on dark backgrounds, setting `badge={true}` nests the mark inside
+ * the official white circular pill (#FFFFFF) matching `hakkiri-logo-reversed.svg`.
+ * `live` animates the audio bars during live speaking / listening.
  */
-const CX = 31;
-const CY = 32;
-const R = 24;
-const pt = (deg: number, r = R) => [CX + r * Math.cos((deg * Math.PI) / 180), CY + r * Math.sin((deg * Math.PI) / 180)] as const;
-const f = (n: number) => n.toFixed(1);
+export interface MarkProps {
+  size?: number;
+  color?: string;
+  badge?: boolean;
+  badgeShape?: "circle" | "squircle";
+  live?: boolean;
+  className?: string;
+}
 
-const [x0, y0] = pt(-38);
-const [x1, y1] = pt(36);
-const [tx1, ty1] = pt(-10);
-const [fx0, fy0] = pt(-160, 26.6);
-const [fx1, fy1] = pt(-75, 26.6);
-const [dx, dy] = pt(4, 22.5);
 const BARS = [
-  [15.5, 3.6],
-  [20.5, 10],
-  [25.5, 17],
-  [30.5, 27],
-  [35.5, 19],
-  [40.5, 11],
+  { x: 26.35, y: 42.5, w: 6.9, h: 15 },
+  { x: 35.95, y: 34.5, w: 6.9, h: 31 },
+  { x: 45.55, y: 26.25, w: 6.9, h: 47.5 },
+  { x: 55.15, y: 34.5, w: 6.9, h: 31 },
+  { x: 64.75, y: 42.5, w: 6.9, h: 15 },
 ] as const;
 
-export function Mark({ size = 28, color = "currentColor", live = false }: { size?: number; color?: string; live?: boolean }) {
+export function Mark({
+  size = 28,
+  color,
+  badge = false,
+  badgeShape = "circle",
+  live = false,
+  className,
+}: MarkProps) {
+  const arcStroke = color ?? "#18345B";
+  const barFill = color ?? "#18191C";
+  const dotFill = "#F06D65";
+
   return (
-    <svg width={size} height={size} viewBox="0 0 64 64" role="img" aria-label="Hakkiri">
-      <path d={`M${f(x0)} ${f(y0)} A${R} ${R} 0 1 0 ${f(x1)} ${f(y1)}`} fill="none" stroke={color} strokeWidth="5.6" strokeLinecap="round" />
-      <path d={`M${f(x0)} ${f(y0)} A${R} ${R} 0 0 1 ${f(tx1)} ${f(ty1)}`} fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" />
-      <path d={`M${f(fx0)} ${f(fy0)} A26.6 26.6 0 0 1 ${f(fx1)} ${f(fy1)}`} fill="none" stroke={color} strokeWidth="1.2" strokeLinecap="round" opacity="0.7" />
-      {BARS.map(([x, h], k) => (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 100 100"
+      role="img"
+      aria-label="Hakkiri"
+      className={className}
+    >
+      {badge &&
+        (badgeShape === "squircle" ? (
+          <rect width="100" height="100" rx="22" fill="#FFFFFF" />
+        ) : (
+          <circle cx="50" cy="50" r="50" fill="#FFFFFF" />
+        ))}
+      <path
+        d="M87.011 69.113A42.1 42.1 0 1 1 87.011 30.887"
+        fill="none"
+        stroke={badge && !color ? "#18345B" : arcStroke}
+        strokeWidth="9.2"
+        strokeLinecap="round"
+      />
+      {BARS.map((b, k) => (
         <rect
-          key={x}
-          x={x - 1.75}
-          y={CY - h / 2}
-          width="3.5"
-          height={h}
-          rx="1.75"
-          fill={color}
+          key={b.x}
+          x={b.x}
+          y={b.y}
+          width={b.w}
+          height={b.h}
+          rx="3.45"
+          fill={badge && !color ? "#18191C" : barFill}
           className={live ? "animate-wave" : undefined}
-          style={live ? { transformBox: "fill-box", transformOrigin: "center", animationDelay: `${-k * 0.21}s` } : undefined}
+          style={
+            live
+              ? {
+                  transformBox: "fill-box",
+                  transformOrigin: "center",
+                  animationDelay: `${-k * 0.18}s`,
+                }
+              : undefined
+          }
         />
       ))}
-      <circle cx={f(dx + 2.4)} cy={f(dy)} r="3.9" fill="var(--color-red)" />
+      <circle cx="91.6" cy="50" r="7.55" fill={dotFill} />
     </svg>
   );
 }

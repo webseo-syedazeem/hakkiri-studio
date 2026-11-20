@@ -105,7 +105,7 @@ export function MicCheck({ next }: { next: string }) {
     <div className="flex min-h-dvh flex-col">
       <header className="flex h-[68px] shrink-0 items-center justify-between px-10">
         <div className="flex items-center gap-3.5">
-          <Mark size={26} />
+          <Mark size={26} badge />
           <span className="text-sm font-semibold">Microphone check</span>
         </div>
         <Link href={next} className={buttonClass("secondary", "sm")}>

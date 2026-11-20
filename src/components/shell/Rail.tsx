@@ -83,7 +83,7 @@ export function Rail({
         aria-label="Hakkiri Studio home"
         className="mb-6 flex items-center gap-3 px-2 text-ink hover:opacity-90 transition-opacity"
       >
-        <Mark size={28} />
+        <Mark size={28} badge />
         <span className="text-[18px] font-bold tracking-tight text-white">Hakkiri</span>
       </Link>
 

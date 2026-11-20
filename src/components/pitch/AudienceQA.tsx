@@ -348,7 +348,7 @@ export function AudienceQA(p: AudienceQAProps) {
     <div className="flex h-dvh min-h-[600px] flex-col">
       <header className="flex h-[68px] shrink-0 items-center justify-between px-10">
         <div className="flex min-w-0 items-center gap-3.5">
-          <Mark size={26} />
+          <Mark size={26} badge />
           <span className="text-sm font-semibold">Audience Q&A</span>
           <span className="truncate text-sm text-muted">{p.heading}</span>
         </div>

@@ -50,7 +50,7 @@ export default async function WelcomePage() {
           delay="0.1s"
         >
           <div className="flex items-center gap-2.5 text-xs text-muted">
-            <Mark size={22} />
+            <Mark size={22} badge />
             Sam, hiring manager, asks
           </div>
           <div className="mt-2.5 text-[19px] font-semibold leading-tight tracking-[-0.015em]">Why do you want to work here, rather than somewhere bigger?</div>

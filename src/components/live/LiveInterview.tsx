@@ -825,6 +825,7 @@ export function LiveInterview(p: LiveInterviewProps) {
       <header className="flex h-[68px] shrink-0 items-center justify-between gap-6 px-10">
         <div className="flex min-w-0 items-center gap-3.5">
           <Link href={`/interviews/${p.interviewId}`} className="flex items-center gap-2 hover:opacity-85 transition-opacity">
+            <Mark size={22} badge />
             <span className="font-bold text-lg text-white tracking-tight">Hakkiri</span>
           </Link>
           <span className="text-white/20">|</span>

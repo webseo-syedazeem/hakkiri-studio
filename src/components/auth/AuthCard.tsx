@@ -57,7 +57,7 @@ export function AuthCard({ initialMode = "signin" }: { initialMode?: "signin" | 
           aria-label="Hakkiri home"
           className="transition-transform duration-500 hover:scale-110 active:scale-95"
         >
-          <Mark size={42} />
+          <Mark size={46} badge />
         </Link>
         <h1 className="mt-4 text-[22px] font-semibold tracking-[-0.02em] text-ink animate-fade-in">
           {mode === "signin" ? "Sign in to Hakkiri Studio" : "Create your Studio account"}
