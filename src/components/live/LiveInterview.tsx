@@ -1265,7 +1265,7 @@ export function LiveInterview(p: LiveInterviewProps) {
                       />
 
                       {/* Studio Lighting Vignette */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/15 to-black/35 pointer-events-none" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
 
                       {/* Camera Viewfinder Accents */}
                       <div className="absolute top-3 left-3 text-white/20 pointer-events-none text-xs font-mono select-none">⌜</div>
