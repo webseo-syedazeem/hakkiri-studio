@@ -90,7 +90,6 @@ export function AudienceQA(p: AudienceQAProps) {
   const cutting = useRef(false);
   /** True once the first question has been asked. */
   const begun = useRef(false);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
 
   const target = press ? followUpProfile(press.kind).targetSec : profileFor("presentation-qa").targetSec;
   const totalSec = Math.max(90, target[1] + 30);
@@ -139,25 +138,12 @@ export function AudienceQA(p: AudienceQAProps) {
     async (text: string, how: "start" | "resume") => {
       const token = ++askToken.current;
       setPhase("asking");
-      if (videoRef.current) {
-        videoRef.current.pause();
-        videoRef.current.currentTime = 0;
-      }
       const v = speak(text, {
         voice: voiceForPersona(persona.name, styleRef.current),
-        onStart: () => {
-          if (askToken.current === token && videoRef.current) {
-            videoRef.current.play().catch(() => {});
-          }
-        },
       });
       voice.current = v;
       await v.done;
       voice.current = null;
-      if (videoRef.current) {
-        videoRef.current.pause();
-        videoRef.current.currentTime = 0;
-      }
       if (askToken.current !== token) return;
       if (how === "start") {
         cutting.current = false;
@@ -291,10 +277,6 @@ export function AudienceQA(p: AudienceQAProps) {
     if (phase === "asking") {
       pausedDuringAsking.current = true;
       voice.current?.cancel();
-      if (videoRef.current) {
-        videoRef.current.pause();
-        videoRef.current.currentTime = 0;
-      }
       setPhase("paused");
     } else if (phase === "answering") {
       pausedDuringAsking.current = false;
@@ -345,8 +327,8 @@ export function AudienceQA(p: AudienceQAProps) {
   }[phase];
 
   return (
-    <div className="flex h-dvh min-h-[600px] flex-col">
-      <header className="flex h-[68px] shrink-0 items-center justify-between px-10">
+    <div className="flex h-dvh min-h-[600px] flex-col w-full max-w-full overflow-x-hidden">
+      <header className="flex h-[60px] sm:h-[68px] shrink-0 items-center justify-between gap-3 px-3.5 sm:px-6 md:px-10">
         <div className="flex min-w-0 items-center gap-3.5">
           <Mark size={26} badge />
           <span className="text-sm font-semibold">Audience Q&A</span>
@@ -388,7 +370,7 @@ export function AudienceQA(p: AudienceQAProps) {
         </div>
       </header>
 
-      <main className="grid min-h-0 grow grid-cols-1 lg:grid-cols-[400px_1fr] items-start gap-8 px-6 sm:px-12 py-4">
+      <main className="grid min-h-0 grow grid-cols-1 lg:grid-cols-[400px_1fr] items-start gap-6 sm:gap-8 px-3.5 sm:px-6 lg:px-12 py-4 w-full">
         {phase === "finishing" || (phase === "error" && problem?.stage === "finish") ? (
           <div key="end" className="lg:col-span-2 max-w-2xl mx-auto py-12 text-center">
             <div className="animate-rise text-sm text-muted">
@@ -457,41 +439,46 @@ export function AudienceQA(p: AudienceQAProps) {
           </>
         ) : (
           <>
-            {/* Left Column: Video Card of Asker + Question Content */}
+            {/* Left Column: Portrait Card of Asker + Question Content */}
             <div className="space-y-4">
               <div className="relative w-full aspect-[16/9] rounded-2xl overflow-hidden bg-booth border border-white/10 shadow-2xl">
-                <video
-                  ref={videoRef}
-                  src={persona.name.toLowerCase().includes("dana") ? "/videos/dana.mp4" : "/videos/sam.mp4"}
-                  poster={persona.name.toLowerCase().includes("dana") ? "/dana.jpg" : "/sam.jpg"}
-                  loop
-                  muted
-                  playsInline
-                  className="w-full h-full object-cover object-center"
+                <img
+                  src={persona.name.toLowerCase().includes("dana") ? "/dana.jpg" : "/sam.jpg"}
+                  alt={persona.name}
+                  className="w-full h-full object-cover object-top"
                 />
-                {phase === "asking" && (
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-black/30 pointer-events-none" />
+
+                {phase === "asking" ? (
                   <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/70 backdrop-blur-md border border-emerald-500/40 text-emerald-300 text-[11px] font-semibold shadow-lg">
                     <span className="relative flex h-2 w-2">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                       <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
                     </span>
-                    <span>Live Interviewer</span>
+                    <span>Speaking</span>
+                    <span className="flex items-center gap-[2px] ml-1 h-2.5">
+                      <span className="h-2 w-[2px] rounded-full bg-emerald-400 animate-wave" style={{ animationDelay: "0ms" }} />
+                      <span className="h-2.5 w-[2px] rounded-full bg-emerald-400 animate-wave" style={{ animationDelay: "150ms" }} />
+                      <span className="h-2 w-[2px] rounded-full bg-emerald-400 animate-wave" style={{ animationDelay: "300ms" }} />
+                    </span>
                   </div>
-                )}
-                {/* Video controls overlay matching design */}
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-3 flex items-center justify-between text-xs text-white">
+                ) : phase === "answering" ? (
+                  <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/70 backdrop-blur-md border border-blue/30 text-blue-soft text-[11px] font-medium shadow-md">
+                    <span className="h-2 w-2 rounded-full bg-blue animate-pulse" />
+                    <span>Listening...</span>
+                  </div>
+                ) : null}
+
+                {/* Bottom Asker Info Overlay */}
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-3 flex items-center justify-between text-xs text-white">
                   <div className="flex items-center gap-2">
-                    <Icon name={phase === "asking" ? "pause" : "play"} size={13} className="text-white" />
-                    <span className="font-mono text-[11px] text-white/90">0:00 / 0:14</span>
-                  </div>
-                  <div className="flex-1 mx-3 h-1 bg-white/20 rounded-full overflow-hidden">
-                    <div className="h-full bg-white rounded-full transition-all duration-300" style={{ width: phase === "asking" ? "55%" : "0%" }} />
-                  </div>
-                  <div className="flex items-center gap-2 text-white/80">
-                    <span className="text-[10px] font-semibold">1x</span>
-                    <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                      <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
-                    </svg>
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-white/10 text-[11px] font-semibold text-white">
+                      {persona.name.charAt(0)}
+                    </div>
+                    <div>
+                      <span className="font-medium text-white/95 text-xs">{persona.name}</span>
+                      <span className="text-[10px] text-white/60 ml-1.5">{persona.title}</span>
+                    </div>
                   </div>
                 </div>
               </div>

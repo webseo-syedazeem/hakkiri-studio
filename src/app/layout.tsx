@@ -56,10 +56,16 @@ export function generateMetadata(): Metadata {
   };
 }
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en-GB">
-      <body className="min-h-screen bg-booth text-ink antialiased">
+    <html lang="en-GB" className="overflow-x-hidden">
+      <body className="min-h-screen bg-booth text-ink antialiased overflow-x-hidden w-full max-w-full">
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>

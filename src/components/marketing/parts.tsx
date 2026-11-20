@@ -106,11 +106,11 @@ export function Device({
   return (
     <div
       className={clsx(
-        "group rounded-[20px] bg-mk-bezel p-[5px] shadow-[0_0_0_1px_rgb(0_0_0/0.08),0_60px_120px_-40px_rgb(23_28_80/0.45)] transition-all duration-500 hover:-translate-y-1.5 hover:shadow-[0_0_0_1px_rgb(59_130_246/0.25),0_80px_160px_-40px_rgb(37_99_235/0.35)] sm:rounded-[26px] sm:p-[9px]",
+        "group rounded-[20px] bg-mk-bezel p-[5px] shadow-[0_0_0_1px_rgb(0_0_0/0.08),0_60px_120px_-40px_rgb(23_28_80/0.45)] transition-all duration-500 hover:-translate-y-1.5 hover:shadow-[0_0_0_1px_rgb(59_130_246/0.25),0_80px_160px_-40px_rgb(37_99_235/0.35)] sm:rounded-[26px] sm:p-[9px] w-full max-w-full overflow-hidden",
         className,
       )}
     >
-      <div className="relative overflow-hidden rounded-[15px] sm:rounded-[18px]">
+      <div className="relative overflow-hidden rounded-[15px] sm:rounded-[18px] w-full max-w-full">
         {/* eslint-disable-next-line @next/next/no-img-element -- static screenshots, already sized */}
         <img
           src={src}

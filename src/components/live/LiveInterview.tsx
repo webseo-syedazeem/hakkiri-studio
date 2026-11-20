@@ -199,7 +199,6 @@ export function LiveInterview(p: LiveInterviewProps) {
   const toggleChecklist = (key: string) => setChecklist((prev) => ({ ...prev, [key]: !prev[key] }));
   const [, tick] = useState(0);
   const voice = useRef<{ cancel: () => void } | null>(null);
-  const interviewerVideoRef = useRef<HTMLVideoElement | null>(null);
   /** Bumped to abandon a question that's still being asked (e.g. the interview ended). */
   const askToken = useRef(0);
   /** True once the first question has been asked. */
@@ -243,28 +242,10 @@ export function LiveInterview(p: LiveInterviewProps) {
     async (text: string, mic_: "start" | "resume") => {
       const token = ++askToken.current;
       setPhase("asking");
-      // Keep video paused on attentive frame until sound actually begins emitting
-      if (interviewerVideoRef.current) {
-        interviewerVideoRef.current.pause();
-        interviewerVideoRef.current.currentTime = 0;
-      }
-      const v = speak(text, {
-        voice: voiceName.current,
-        onStart: () => {
-          // Play video at the exact millisecond audio starts playing
-          if (askToken.current === token && interviewerVideoRef.current) {
-            interviewerVideoRef.current.play().catch(() => {});
-          }
-        },
-      });
+      const v = speak(text, { voice: voiceName.current });
       voice.current = v;
       await v.done;
       voice.current = null;
-      // Stop video immediately when speech audio finishes
-      if (interviewerVideoRef.current) {
-        interviewerVideoRef.current.pause();
-        interviewerVideoRef.current.currentTime = 0;
-      }
       if (askToken.current !== token) return; // the interview moved on while the question was being asked
       if (mic_ === "start") {
         if (!(await mic.start())) {
@@ -712,10 +693,6 @@ export function LiveInterview(p: LiveInterviewProps) {
     if (phase === "asking") {
       pausedDuringAsking.current = true;
       voice.current?.cancel();
-      if (interviewerVideoRef.current) {
-        interviewerVideoRef.current.pause();
-        interviewerVideoRef.current.currentTime = 0;
-      }
       setPhase("paused");
     } else if (phase === "answering") {
       pausedDuringAsking.current = false;
@@ -821,8 +798,8 @@ export function LiveInterview(p: LiveInterviewProps) {
   const habit = session?.drill?.habit;
 
   return (
-    <div className="flex h-dvh min-h-[600px] flex-col">
-      <header className="flex h-[68px] shrink-0 items-center justify-between gap-6 px-10">
+    <div className="flex h-dvh min-h-[600px] flex-col w-full max-w-full overflow-x-hidden">
+      <header className="flex h-[60px] sm:h-[68px] shrink-0 items-center justify-between gap-3 sm:gap-6 px-3.5 sm:px-6 lg:px-10">
         <div className="flex min-w-0 items-center gap-3.5">
           <Link href={`/interviews/${p.interviewId}`} className="flex items-center gap-2 hover:opacity-85 transition-opacity">
             <Mark size={22} badge />
@@ -892,7 +869,7 @@ export function LiveInterview(p: LiveInterviewProps) {
       </header>
 
       {phase === "ready" ? (
-        <main className="flex min-h-0 grow flex-col justify-start px-6 lg:px-10 py-6 w-full animate-rise">
+        <main className="flex min-h-0 grow flex-col justify-start px-3.5 sm:px-6 lg:px-10 py-4 sm:py-6 w-full animate-rise">
           {/* Top 2 Cards: Interviewer Briefing + Ready to Start */}
           <div className="grid grid-cols-1 lg:grid-cols-[1.58fr_1fr] gap-5 items-stretch">
             {/* Left Card: Interviewer Briefing */}
@@ -1221,7 +1198,7 @@ export function LiveInterview(p: LiveInterviewProps) {
           </div>
         </main>
       ) : (
-        <main className="flex min-h-0 grow flex-col px-6 lg:px-10 py-5 w-full animate-rise">
+        <main className="flex min-h-0 grow flex-col px-3.5 sm:px-6 lg:px-10 py-4 sm:py-5 w-full animate-rise">
           {/* Top 2 Columns: Center Card + Right Sidebar */}
           <div className="grid grid-cols-1 lg:grid-cols-[1.65fr_1fr] gap-5 items-stretch">
             {/* Left Column: Question / Feedback / Ending */}
@@ -1277,30 +1254,26 @@ export function LiveInterview(p: LiveInterviewProps) {
               ) : (
                 /* Primary Active Question Section: Big Professional Video Card + Question Card */
                 <div className="grid grid-cols-1 md:grid-cols-[380px_1fr] lg:grid-cols-[430px_1fr] gap-4 items-stretch grow">
-                  {/* Left: Big Professional Interviewer Video Card */}
-                  <div className="relative rounded-2xl overflow-hidden bg-[#0c0b16] border border-white/[0.08] shadow-2xl flex flex-col justify-between min-h-[380px] sm:min-h-[410px]">
-                    <div className="relative w-full h-full min-h-[320px] overflow-hidden">
-                      {/* Real Live HD Interviewer Video Stream */}
-                      <video
-                        ref={interviewerVideoRef}
-                        src={isFemale(name) ? "/videos/dana.mp4" : "/videos/sam.mp4"}
-                        poster={isFemale(name) ? "/dana.jpg" : "/sam.jpg"}
-                        loop
-                        muted
-                        playsInline
+                  {/* Left: Professional Interviewer Portrait Card */}
+                  <div className="relative rounded-2xl overflow-hidden bg-[#0c0b16] border border-white/[0.08] shadow-2xl flex flex-col justify-between min-h-[340px] sm:min-h-[410px]">
+                    <div className="relative w-full h-full min-h-[300px] overflow-hidden">
+                      {/* Professional Interviewer Portrait Image */}
+                      <img
+                        src={isFemale(name) ? "/dana.jpg" : "/sam.jpg"}
+                        alt={name}
                         className="w-full h-full object-cover object-top"
                       />
 
                       {/* Studio Lighting Vignette */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-black/35 pointer-events-none" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/15 to-black/35 pointer-events-none" />
 
                       {/* Camera Viewfinder Accents */}
                       <div className="absolute top-3 left-3 text-white/20 pointer-events-none text-xs font-mono select-none">⌜</div>
                       <div className="absolute top-3 right-3 text-white/20 pointer-events-none text-xs font-mono select-none">⌝</div>
-                      <div className="absolute bottom-14 left-3 text-white/20 pointer-events-none text-xs font-mono select-none">⌞</div>
-                      <div className="absolute bottom-14 right-3 text-white/20 pointer-events-none text-xs font-mono select-none">⌟</div>
+                      <div className="absolute bottom-16 left-3 text-white/20 pointer-events-none text-xs font-mono select-none">⌞</div>
+                      <div className="absolute bottom-16 right-3 text-white/20 pointer-events-none text-xs font-mono select-none">⌟</div>
 
-                      {/* Top Broadcast Badge: Live Video + Audio Visualizer */}
+                      {/* Top Broadcast Badge */}
                       <div className="absolute top-3.5 left-3.5 z-20">
                         {phase === "asking" ? (
                           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/80 backdrop-blur-md border border-emerald-500/40 text-emerald-300 text-xs font-semibold shadow-xl">
@@ -1308,7 +1281,7 @@ export function LiveInterview(p: LiveInterviewProps) {
                               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
                             </span>
-                            <span className="tracking-wide text-[11px] uppercase">Live Video</span>
+                            <span className="tracking-wide text-[11px] uppercase">Speaking</span>
                             <span className="flex items-center gap-[2.5px] ml-1 h-3">
                               <span className="h-2 w-[2px] rounded-full bg-emerald-400 animate-wave" style={{ animationDelay: "0ms" }} />
                               <span className="h-3 w-[2px] rounded-full bg-emerald-400 animate-wave" style={{ animationDelay: "150ms" }} />
@@ -1318,16 +1291,10 @@ export function LiveInterview(p: LiveInterviewProps) {
                           </div>
                         ) : phase === "answering" ? (
                           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/75 backdrop-blur-md border border-blue/30 text-blue-soft text-xs font-medium shadow-md">
-                            <span className="h-2 w-2 rounded-full bg-blue" />
+                            <span className="h-2 w-2 rounded-full bg-blue animate-pulse" />
                             <span>Listening...</span>
                           </div>
                         ) : null}
-                      </div>
-
-                      {/* Top Right: 1080p Stream Quality Pill */}
-                      <div className="absolute top-3.5 right-3.5 z-20 flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-black/60 backdrop-blur-md border border-white/10 text-[10px] font-mono text-white/70">
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                        <span>1080p HD</span>
                       </div>
 
                       {/* Paused Overlay */}
@@ -1345,37 +1312,31 @@ export function LiveInterview(p: LiveInterviewProps) {
                       )}
                     </div>
 
-                    {/* Bottom Video Player Controls Overlay */}
+                    {/* Bottom Interviewer Info Overlay */}
                     <div className="absolute inset-x-0 bottom-0 p-3 sm:p-4 bg-gradient-to-t from-black/95 via-black/80 to-transparent flex items-center justify-between text-xs text-white/90 z-20">
                       <div className="flex items-center gap-2.5">
-                        <button
-                          type="button"
-                          onClick={togglePause}
-                          className="flex h-6 w-6 items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors cursor-pointer"
-                        >
-                          <Icon name={phase === "asking" ? "pause" : phase === "paused" ? "play" : "play"} size={11} />
-                        </button>
-                        <span className="font-mono text-xs text-white/90">
-                          {phase === "asking" ? mmss(shownSec) : "0:03"} / {mmss(target[0])}
-                        </span>
-                        <div className="h-1.5 w-16 sm:w-28 rounded-full bg-white/20 overflow-hidden">
-                          <div
-                            className="h-full bg-gradient-to-r from-blue to-indigo-400 rounded-full transition-all duration-200"
-                            style={{ width: `${Math.min(100, phase === "asking" ? (shownSec / Math.max(1, target[0])) * 100 : 25)}%` }}
-                          />
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-xs font-semibold text-white">
+                          {name.charAt(0)}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-sm text-white leading-none">{name}</p>
+                          <p className="text-[11px] text-white/70 mt-0.5">{title}</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2.5 text-white/80">
-                        <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-white/10">1x</span>
-                        <button
-                          type="button"
-                          className="text-white/80 hover:text-white"
-                          title="Fullscreen"
-                        >
-                          <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
-                          </svg>
-                        </button>
+                      <div className="flex items-center gap-2">
+                        {phase === "asking" ? (
+                          <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-[11px] font-medium border border-emerald-500/30">
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                            Speaking
+                          </span>
+                        ) : phase === "answering" ? (
+                          <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue/20 text-blue-soft text-[11px] font-medium border border-blue/30">
+                            <span className="h-1.5 w-1.5 rounded-full bg-blue animate-pulse" />
+                            Listening
+                          </span>
+                        ) : (
+                          <span className="text-[11px] text-white/50">Ready</span>
+                        )}
                       </div>
                     </div>
                   </div>

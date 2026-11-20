@@ -123,13 +123,13 @@ export default async function HomePage() {
   return (
     <div className="flex w-full grow flex-col gap-6">
       {/* Top Header */}
-      <header className="flex animate-rise items-end justify-between gap-6" style={{ animationDelay: "0.05s" }}>
+      <header className="flex flex-col sm:flex-row animate-rise sm:items-end justify-between gap-4 sm:gap-6" style={{ animationDelay: "0.05s" }}>
         <div>
           <div className="flex items-center gap-2 text-sm font-medium text-muted">
             <Icon name="cal" size={14} className="text-blue-soft" />
             <span>{longDay(`${londonToday()}T12:00:00Z`)}</span>
           </div>
-          <h1 className="mt-1 text-[28px] font-bold tracking-[-0.025em] text-ink sm:text-[34px]">
+          <h1 className="mt-1 text-[24px] sm:text-[28px] md:text-[34px] font-bold tracking-[-0.025em] text-ink break-words">
             You have 3 things coming up this week.
           </h1>
         </div>

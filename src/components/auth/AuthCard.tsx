@@ -49,7 +49,7 @@ export function AuthCard({ initialMode = "signin" }: { initialMode?: "signin" | 
     "mt-1.5 w-full rounded-xl border border-line bg-panel-2 px-3.5 py-2.5 text-[15px] text-ink placeholder:text-muted/60 transition-all duration-200 focus:border-blue focus:ring-2 focus:ring-blue/20 focus:outline-none [&:-webkit-autofill]:[box-shadow:0_0_0_1000px_#22232c_inset] [&:-webkit-autofill]:[-webkit-text-fill-color:#f1f1f4]";
 
   return (
-    <div className="relative z-10 w-full max-w-[420px] rounded-2xl border border-line bg-panel/95 p-8 shadow-[0_0_0_1px_rgba(255,255,255,0.06),0_28px_64px_-16px_rgba(0,0,0,0.65)] backdrop-blur-xl animate-scale-in transition-all duration-300 hover:border-line-strong">
+    <div className="relative z-10 w-full max-w-[420px] rounded-2xl border border-line bg-panel/95 p-5 sm:p-8 shadow-[0_0_0_1px_rgba(255,255,255,0.06),0_28px_64px_-16px_rgba(0,0,0,0.65)] backdrop-blur-xl animate-scale-in transition-all duration-300 hover:border-line-strong">
       {/* Brand header */}
       <div className="flex flex-col items-center text-center">
         <Link

@@ -102,8 +102,8 @@ export function MicCheck({ next }: { next: string }) {
   const lit = Math.round(level * SEGMENTS);
 
   return (
-    <div className="flex min-h-dvh flex-col">
-      <header className="flex h-[68px] shrink-0 items-center justify-between px-10">
+    <div className="flex min-h-dvh flex-col w-full max-w-full overflow-x-hidden">
+      <header className="flex h-[60px] sm:h-[68px] shrink-0 items-center justify-between px-4 sm:px-6 md:px-10">
         <div className="flex items-center gap-3.5">
           <Mark size={26} badge />
           <span className="text-sm font-semibold">Microphone check</span>
@@ -112,8 +112,8 @@ export function MicCheck({ next }: { next: string }) {
           Skip for now
         </Link>
       </header>
-      <main className="flex grow items-center justify-center px-10 pb-16">
-        <Panel className="w-full max-w-[640px] animate-rise px-9 py-8">
+      <main className="flex grow items-center justify-center px-4 sm:px-6 md:px-10 pb-16">
+        <Panel className="w-full max-w-[640px] animate-rise p-5 sm:px-9 sm:py-8">
           <h1 className="text-[28px] font-semibold tracking-[-0.025em]">Check your microphone</h1>
           <p className="mt-2 text-[15px] leading-normal text-muted">
             Hakkiri scores what you say from the recording, so it needs to hear you clearly. This takes ten seconds. Your test isn’t saved.

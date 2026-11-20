@@ -80,7 +80,7 @@ export default function RobotTestPage() {
     : report.results.filter((r) => r.persona === filterPersona);
 
   return (
-    <div className="min-h-screen bg-[#07060f] text-white p-6 sm:p-10">
+    <div className="min-h-screen bg-[#07060f] text-white p-4 sm:p-8 md:p-10 w-full max-w-full overflow-x-hidden">
       <div className="max-w-6xl mx-auto space-y-8 animate-rise">
         {/* Header Bar */}
         <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-white/10">
