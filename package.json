@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:robot": "npx tsx scripts/robot-tester.ts",
     "e2e": "node e2e/run.cjs"
   },
   "dependencies": {
