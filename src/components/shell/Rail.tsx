@@ -8,6 +8,7 @@ import { Mark } from "@/components/brand/Mark";
 import { Icon, type IconName } from "@/components/ui";
 import { FeedbackButton } from "./FeedbackButton";
 import { useAuth } from "@/lib/auth/AuthContext";
+import { isAdminEmail } from "@/lib/auth/admins";
 
 const ITEMS: {
   label: string;
@@ -88,7 +89,7 @@ export function Rail({
 
       {/* Navigation Items with labels matching mockup */}
       <div className="flex flex-col gap-1">
-        {ITEMS.map((it) => {
+        {ITEMS.filter((it) => it.href !== "/robot-test" || isAdminEmail(authUser?.email)).map((it) => {
           const on = it.match(pathname);
           return (
             <Link

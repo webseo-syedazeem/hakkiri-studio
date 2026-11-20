@@ -1,11 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { Icon } from "@/components/ui";
 import { runAuditLogic, type AuditReport, type TestResult } from "@/lib/robot-test/tester";
+import { useAuth } from "@/lib/auth/AuthContext";
+import { isAdminEmail } from "@/lib/auth/admins";
 import clsx from "clsx";
 
 export default function RobotTestPage() {
+  const { user, loading } = useAuth();
   const [report, setReport] = useState<AuditReport | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   const [filterPersona, setFilterPersona] = useState<string>("all");
@@ -31,6 +35,42 @@ export default function RobotTestPage() {
       setTimeout(() => setIsRunning(false), 600);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#07060f] flex items-center justify-center text-white">
+        <div className="flex items-center gap-3 text-sm text-muted">
+          <Icon name="repeat" size={18} className="animate-spin text-blue" />
+          <span>Verifying admin credentials…</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Restrict to admins only (bilaal77@gmail.com, Saziaaktar21@gmail.com, faizanrizwan327@gmail.com)
+  if (!user || !isAdminEmail(user.email)) {
+    return (
+      <div className="min-h-screen bg-[#07060f] flex items-center justify-center p-6 text-white">
+        <div className="max-w-md w-full rounded-2xl bg-[#0f0e1c] border border-white/10 p-8 text-center space-y-4 shadow-2xl">
+          <div className="flex h-12 w-12 mx-auto items-center justify-center rounded-2xl bg-rose-500/15 text-rose-400 border border-rose-500/20">
+            <Icon name="flag" size={20} />
+          </div>
+          <h1 className="text-xl font-bold tracking-tight text-white">Admin Access Required</h1>
+          <p className="text-xs text-[#a5a7b8] leading-relaxed">
+            The AI Learning Robot Tester console is restricted to designated administrators only.
+          </p>
+          <div className="pt-2">
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-semibold text-white transition-all"
+            >
+              Back to Dashboard
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!report) return null;
 
