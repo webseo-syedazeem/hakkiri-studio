@@ -215,6 +215,27 @@ export function LiveInterview(p: LiveInterviewProps) {
   /** The session clock: started at Start, paused while "Something's wrong" is open. */
   const clock = useRef<{ start: number; paused: number; pausedAt: number | null }>({ start: 0, paused: 0, pausedAt: null });
   const cutIn = useRef(false);
+  const talkingVideoRef = useRef<HTMLVideoElement | null>(null);
+  const listeningVideoRef = useRef<HTMLVideoElement | null>(null);
+
+  useEffect(() => {
+    if (phase === "asking") {
+      listeningVideoRef.current?.pause();
+      talkingVideoRef.current?.play().catch(() => {});
+    } else if (phase === "answering") {
+      talkingVideoRef.current?.pause();
+      if (talkingVideoRef.current) talkingVideoRef.current.currentTime = 0;
+      listeningVideoRef.current?.play().catch(() => {});
+    } else if (phase === "paused") {
+      talkingVideoRef.current?.pause();
+      listeningVideoRef.current?.pause();
+    } else {
+      talkingVideoRef.current?.pause();
+      listeningVideoRef.current?.pause();
+      if (talkingVideoRef.current) talkingVideoRef.current.currentTime = 0;
+      if (listeningVideoRef.current) listeningVideoRef.current.currentTime = 0;
+    }
+  }, [phase]);
 
   const name = p.interviewer.name;
   const asked = turn.kind === "main" ? q.text : turn.question;
@@ -243,10 +264,23 @@ export function LiveInterview(p: LiveInterviewProps) {
     async (text: string, mic_: "start" | "resume") => {
       const token = ++askToken.current;
       setPhase("asking");
-      const v = speak(text, { voice: voiceName.current });
+      if (talkingVideoRef.current) {
+        talkingVideoRef.current.currentTime = 0;
+      }
+      const v = speak(text, {
+        voice: voiceName.current,
+        onStart: () => {
+          if (askToken.current === token && talkingVideoRef.current) {
+            talkingVideoRef.current.play().catch(() => {});
+          }
+        },
+      });
       voice.current = v;
       await v.done;
       voice.current = null;
+      if (talkingVideoRef.current) {
+        talkingVideoRef.current.pause();
+      }
       if (askToken.current !== token) return; // the interview moved on while the question was being asked
       if (mic_ === "start") {
         if (!(await mic.start())) {
@@ -1250,24 +1284,54 @@ export function LiveInterview(p: LiveInterviewProps) {
               ) : (
                 /* Primary Active Question Section: Big Professional Video Card + Question Card */
                 <div className="grid grid-cols-1 md:grid-cols-[380px_1fr] lg:grid-cols-[430px_1fr] gap-4 items-stretch grow">
-                  {/* Left: Professional Interviewer Portrait Card */}
+                  {/* Left: Professional Interviewer Video Card */}
                   <div className="relative rounded-2xl overflow-hidden bg-[#0c0b16] border border-white/[0.08] shadow-2xl flex flex-col justify-between min-h-[340px] sm:min-h-[410px]">
                     <div className="relative w-full h-full min-h-[300px] overflow-hidden">
-                      {/* Professional Interviewer Portrait Image */}
+                      {/* Studio High-Definition Backdrop Poster */}
                       <img
                         src={isFemale(name) ? "/dana.jpg" : "/sam.jpg"}
                         alt={name}
-                        className="w-full h-full object-cover object-top"
+                        className="absolute inset-0 w-full h-full object-cover object-top z-0"
+                      />
+
+                      {/* Live Talking Video Avatar */}
+                      <video
+                        ref={talkingVideoRef}
+                        src={isFemale(name) ? "/videos/dana.mp4" : "/videos/sam.mp4"}
+                        poster={isFemale(name) ? "/dana.jpg" : "/sam.jpg"}
+                        loop
+                        muted
+                        playsInline
+                        preload="auto"
+                        className={clsx(
+                          "absolute inset-0 w-full h-full object-cover object-top transition-opacity duration-300",
+                          phase === "asking" ? "opacity-100 z-10" : "opacity-0 pointer-events-none z-0"
+                        )}
+                      />
+
+                      {/* Live Attentive Listening Video Avatar */}
+                      <video
+                        ref={listeningVideoRef}
+                        src={isFemale(name) ? "/videos/dana_listening.mp4" : "/videos/sam_listening.mp4"}
+                        poster={isFemale(name) ? "/dana.jpg" : "/sam.jpg"}
+                        loop
+                        muted
+                        playsInline
+                        preload="auto"
+                        className={clsx(
+                          "absolute inset-0 w-full h-full object-cover object-top transition-opacity duration-300",
+                          phase === "answering" ? "opacity-100 z-10" : "opacity-0 pointer-events-none z-0"
+                        )}
                       />
 
                       {/* Studio Lighting Vignette */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none z-10" />
 
                       {/* Camera Viewfinder Accents */}
-                      <div className="absolute top-3 left-3 text-white/20 pointer-events-none text-xs font-mono select-none">⌜</div>
-                      <div className="absolute top-3 right-3 text-white/20 pointer-events-none text-xs font-mono select-none">⌝</div>
-                      <div className="absolute bottom-16 left-3 text-white/20 pointer-events-none text-xs font-mono select-none">⌞</div>
-                      <div className="absolute bottom-16 right-3 text-white/20 pointer-events-none text-xs font-mono select-none">⌟</div>
+                      <div className="absolute top-3 left-3 text-white/20 pointer-events-none text-xs font-mono select-none z-20">⌜</div>
+                      <div className="absolute top-3 right-3 text-white/20 pointer-events-none text-xs font-mono select-none z-20">⌝</div>
+                      <div className="absolute bottom-16 left-3 text-white/20 pointer-events-none text-xs font-mono select-none z-20">⌞</div>
+                      <div className="absolute bottom-16 right-3 text-white/20 pointer-events-none text-xs font-mono select-none z-20">⌟</div>
 
                       {/* Top Broadcast Badge */}
                       <div className="absolute top-3.5 left-3.5 z-20">

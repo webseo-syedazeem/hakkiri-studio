@@ -90,6 +90,20 @@ export function AudienceQA(p: AudienceQAProps) {
   const cutting = useRef(false);
   /** True once the first question has been asked. */
   const begun = useRef(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  useEffect(() => {
+    const vid = videoRef.current;
+    if (!vid) return;
+    if (phase === "asking") {
+      vid.play().catch(() => {});
+    } else if (phase === "paused") {
+      vid.pause();
+    } else {
+      vid.pause();
+      vid.currentTime = 0;
+    }
+  }, [phase]);
 
   const target = press ? followUpProfile(press.kind).targetSec : profileFor("presentation-qa").targetSec;
   const totalSec = Math.max(90, target[1] + 30);
@@ -442,9 +456,13 @@ export function AudienceQA(p: AudienceQAProps) {
             {/* Left Column: Portrait Card of Asker + Question Content */}
             <div className="space-y-4">
               <div className="relative w-full aspect-[16/9] rounded-2xl overflow-hidden bg-booth border border-white/10 shadow-2xl">
-                <img
-                  src={persona.name.toLowerCase().includes("dana") ? "/dana.jpg" : "/sam.jpg"}
-                  alt={persona.name}
+                <video
+                  ref={videoRef}
+                  src={persona.name.toLowerCase().includes("dana") ? "/videos/dana.mp4" : "/videos/sam.mp4"}
+                  poster={persona.name.toLowerCase().includes("dana") ? "/dana.jpg" : "/sam.jpg"}
+                  loop
+                  muted
+                  playsInline
                   className="w-full h-full object-cover object-top"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
