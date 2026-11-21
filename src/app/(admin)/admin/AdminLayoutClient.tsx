@@ -68,6 +68,7 @@ export function AdminLayoutClient({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
+  const [adminEmail, setAdminEmail] = useState("admin@hakkiri.com");
   const [passcode, setPasscode] = useState("");
   const [authError, setAuthError] = useState(false);
 
@@ -81,7 +82,8 @@ export function AdminLayoutClient({ children }: { children: React.ReactNode }) {
 
   const handleUnlock = (e: React.FormEvent) => {
     e.preventDefault();
-    if (passcode.trim() === "admin2026" || passcode.trim() === "hakkiri" || passcode.trim() === "admin") {
+    const p = passcode.trim();
+    if (p === "admin2026" || p === "hakkiri" || p === "admin" || p === "hakkiri2026") {
       localStorage.setItem("hakkiri_admin_unlocked", "true");
       setIsAuthenticated(true);
       setAuthError(false);
@@ -112,35 +114,49 @@ export function AdminLayoutClient({ children }: { children: React.ReactNode }) {
               Hakkiri Admin Console
             </h1>
             <p className="text-xs text-slate-400 mt-1">
-              Enter your administration passcode to access CMS and SEO tools.
+              Enter your administration credentials to access CMS and SEO tools.
             </p>
           </div>
 
-          <form onSubmit={handleUnlock} className="space-y-4">
+          <form onSubmit={handleUnlock} className="space-y-3.5 text-left">
             <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1">Admin Email</label>
+              <input
+                type="email"
+                value={adminEmail}
+                onChange={(e) => setAdminEmail(e.target.value)}
+                placeholder="admin@hakkiri.com"
+                className="w-full h-11 rounded-xl border border-white/15 bg-[#1a1b26] px-3.5 text-sm font-mono text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-all"
+              />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between text-xs mb-1">
+                <label className="font-semibold text-slate-300">Admin Password / Passcode</label>
+              </div>
               <input
                 type="password"
-                placeholder="Enter admin passcode"
+                placeholder="Enter password (admin2026)"
                 value={passcode}
                 onChange={(e) => {
                   setPasscode(e.target.value);
                   setAuthError(false);
                 }}
                 className={clsx(
-                  "w-full h-11 rounded-xl border bg-[#1a1b26] px-4 text-sm text-center font-mono text-white placeholder-slate-500 focus:outline-none transition-all",
+                  "w-full h-11 rounded-xl border bg-[#1a1b26] px-3.5 text-sm font-mono text-white placeholder-slate-500 focus:outline-none transition-all",
                   authError ? "border-rose-500 focus:ring-1 focus:ring-rose-500" : "border-white/15 focus:border-purple-500"
                 )}
               />
               {authError && (
-                <p className="text-xs text-rose-400 mt-1.5 font-medium">Incorrect passcode. Try &quot;admin2026&quot;</p>
+                <p className="text-xs text-rose-400 mt-1.5 font-medium">Incorrect password. Use &quot;admin2026&quot;</p>
               )}
             </div>
 
             <button
               type="submit"
-              className="w-full h-11 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-sm font-semibold text-white shadow-lg shadow-purple-600/30 hover:brightness-110 active:scale-95 transition"
+              className="w-full h-11 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-sm font-bold text-white shadow-lg shadow-purple-600/30 hover:brightness-110 active:scale-95 transition mt-2"
             >
-              Unlock Console
+              Sign In to Admin Console
             </button>
           </form>
 
