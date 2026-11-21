@@ -33,6 +33,9 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
             <Link href="/present" className="hover:text-mk-ink">
               For presenters
             </Link>
+            <Link href="/blog" className="hover:text-mk-ink">
+              Blog
+            </Link>
             <Link href="/privacy" className="hover:text-mk-ink">
               Privacy policy
             </Link>

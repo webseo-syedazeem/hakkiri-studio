@@ -53,6 +53,12 @@ const ITEMS: {
     match: (p) => p.startsWith("/robot-test"),
   },
   {
+    label: "Blog Manager",
+    href: "/admin/blog",
+    icon: "doc",
+    match: (p) => p.startsWith("/admin/blog"),
+  },
+  {
     label: "Profile",
     href: "/settings",
     icon: "user",

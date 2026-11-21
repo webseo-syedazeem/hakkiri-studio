@@ -14,6 +14,7 @@ export function SiteNav() {
   const links: [string, string, boolean][] = [
     ["/", "Interviews", path === "/" || path === "/landing"],
     ["/present", "Presentations", isPresent],
+    ["/blog", "Blog", path.startsWith("/blog")],
     [`${base}#how`, "How it works", false],
     [`${base}#beta`, "Beta", false],
     [`${base}#faq`, "Questions", false],
