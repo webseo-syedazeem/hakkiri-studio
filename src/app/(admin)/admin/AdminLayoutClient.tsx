@@ -89,13 +89,14 @@ export function AdminLayoutClient({ children }: { children: React.ReactNode }) {
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-[#0a0b10] flex items-center justify-center p-4 text-white">
-        <div className="w-full max-w-md rounded-3xl border border-white/10 bg-[#12131c] p-8 shadow-2xl text-center space-y-6">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-purple-600/20 text-purple-400 border border-purple-500/30">
-            <Mark size={28} />
+        <div className="w-full max-w-md rounded-3xl border border-white/10 bg-[#12131c] p-8 shadow-2xl text-center space-y-6 animate-scale-in">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white p-1.5 shadow-lg shadow-purple-500/25 ring-1 ring-white/20 transition-transform duration-300 hover:scale-105">
+            <Mark size={32} />
           </div>
 
           <div>
-            <span className="rounded-full bg-purple-500/20 px-3 py-1 text-xs font-semibold text-purple-300">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-500/20 border border-purple-500/30 px-3 py-1 text-xs font-semibold text-purple-300">
+              <span className="h-1.5 w-1.5 rounded-full bg-purple-400 animate-pulse" />
               Restricted Area
             </span>
             <h1 className="text-2xl font-bold tracking-tight text-white mt-3">
@@ -153,15 +154,18 @@ export function AdminLayoutClient({ children }: { children: React.ReactNode }) {
         <div className="space-y-6">
           {/* Admin Brand Header */}
           <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-600/20 border border-purple-500/30 text-white">
-              <Mark size={22} />
-            </span>
+            <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white p-1.5 shadow-md shadow-purple-500/20 ring-1 ring-white/20 transition-transform duration-300 hover:scale-105">
+              <Mark size={24} />
+            </div>
             <div>
               <div className="text-sm font-bold tracking-tight text-white flex items-center gap-1.5">
-                Hakkiri <span className="rounded bg-purple-500/20 text-purple-300 text-[10px] font-extrabold px-1.5 py-0.5 tracking-wider uppercase border border-purple-500/30">ADMIN</span>
+                Hakkiri <span className="rounded bg-gradient-to-r from-purple-500 to-indigo-500 text-white text-[10px] font-black px-1.5 py-0.5 tracking-wider uppercase shadow-sm">ADMIN</span>
               </div>
-              <div className="flex items-center gap-1.5 text-[11px] text-emerald-400 mt-0.5">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <div className="flex items-center gap-1.5 text-[11px] text-emerald-400 mt-0.5 font-medium">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
+                </span>
                 <span>MongoDB Connected</span>
               </div>
             </div>
@@ -257,9 +261,11 @@ export function AdminLayoutClient({ children }: { children: React.ReactNode }) {
       {/* ========================================================================= */}
       <header className="md:hidden flex h-14 items-center justify-between border-b border-white/[0.08] bg-[#0e0f18] px-4">
         <div className="flex items-center gap-2.5">
-          <Mark size={20} />
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white p-1 shadow-sm">
+            <Mark size={18} />
+          </div>
           <span className="text-sm font-bold text-white">Hakkiri Admin</span>
-          <span className="rounded bg-purple-500/20 text-purple-300 text-[10px] font-bold px-1.5 py-0.5">PROD</span>
+          <span className="rounded bg-gradient-to-r from-purple-500 to-indigo-500 text-white text-[9px] font-extrabold px-1.5 py-0.5">PROD</span>
         </div>
 
         <button

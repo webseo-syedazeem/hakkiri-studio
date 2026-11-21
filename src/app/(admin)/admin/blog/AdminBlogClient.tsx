@@ -322,9 +322,12 @@ export function AdminBlogClient({
 
   return (
     <div className="w-full text-slate-100 pb-16">
-      {/* Toast Notification */}
+      {/* Toast Notification with Smooth Slide & Glow */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 rounded-xl bg-slate-900 border border-slate-700/80 px-4 py-3 text-sm font-medium text-white shadow-2xl animate-fade-in flex items-center gap-2">
+        <div className="fixed bottom-6 right-6 z-50 rounded-2xl bg-[#141522]/95 backdrop-blur-xl border border-purple-500/30 px-5 py-3.5 text-sm font-semibold text-white shadow-2xl shadow-purple-500/20 animate-slide-in-up flex items-center gap-3">
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-purple-500/20 text-purple-300 text-xs font-black">
+            ✦
+          </span>
           <span>{toastMessage}</span>
         </div>
       )}
@@ -628,44 +631,73 @@ export function AdminBlogClient({
               <button
                 type="button"
                 onClick={() => setActiveTab("list")}
-                className="rounded-xl border border-white/10 bg-[#1c1d27] p-2 text-slate-400 hover:text-white hover:bg-[#252634] transition"
+                className="group inline-flex items-center gap-2 rounded-xl border border-white/10 bg-[#161722] hover:bg-[#202230] px-3.5 py-2 text-xs font-semibold text-slate-300 hover:text-white transition-all shadow-sm active:scale-95"
               >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                <svg
+                  className="w-4 h-4 text-slate-400 group-hover:text-purple-400 transition-transform duration-200 group-hover:-translate-x-1"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
+                <span>Back to Articles</span>
               </button>
-              <div>
+
+              <div className="hidden sm:block h-6 w-px bg-white/10" />
+
+              <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-slate-400">Editing Post:</span>
-                  <span className="text-xs font-bold text-white truncate max-w-xs">{editingPost.title || "Untitled"}</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-purple-400/80">Editing Post</span>
+                  <span className="text-slate-600">•</span>
+                  <span className="text-xs font-bold text-white truncate max-w-xs">{editingPost.title || "Untitled Article"}</span>
                 </div>
-                <div className="text-xs text-slate-500 font-mono mt-0.5">
-                  /blog/{editingPost.slug || slugify(editingPost.title) || "slug"}
+                <div className="flex items-center gap-1.5 text-xs text-slate-500 font-mono mt-0.5">
+                  <span>/blog/{editingPost.slug || slugify(editingPost.title) || "slug"}</span>
+                  {editingPost.slug && (
+                    <span className="rounded bg-white/[0.05] px-1 text-[10px] text-slate-400">Live URL</span>
+                  )}
                 </div>
               </div>
             </div>
 
             <div className="flex items-center gap-2.5 flex-wrap">
-              {/* Status selector */}
-              <select
-                value={editingPost.published ? "published" : "draft"}
-                onChange={(e) => setEditingPost({ ...editingPost, published: e.target.value === "published" })}
-                className="h-9 rounded-xl border border-white/10 bg-[#1c1d27] px-3 text-xs text-slate-200 focus:border-purple-500 focus:outline-none"
-              >
-                <option value="draft">Draft</option>
-                <option value="published">Published</option>
-              </select>
+              {/* Status pill selector */}
+              <div className="relative">
+                <select
+                  value={editingPost.published ? "published" : "draft"}
+                  onChange={(e) => setEditingPost({ ...editingPost, published: e.target.value === "published" })}
+                  className={clsx(
+                    "h-9 rounded-xl border px-3 text-xs font-medium focus:outline-none transition-all pr-8 appearance-none bg-[#1c1d27]",
+                    editingPost.published
+                      ? "border-emerald-500/40 text-emerald-300 bg-emerald-500/10"
+                      : "border-amber-500/40 text-amber-300 bg-amber-500/10"
+                  )}
+                >
+                  <option value="draft" className="bg-[#1c1d27] text-amber-300">Draft Status</option>
+                  <option value="published" className="bg-[#1c1d27] text-emerald-300">Published Status</option>
+                </select>
+                <div className="pointer-events-none absolute right-2.5 top-2.5">
+                  <span
+                    className={clsx(
+                      "inline-block h-2 w-2 rounded-full",
+                      editingPost.published ? "bg-emerald-400 animate-pulse" : "bg-amber-400"
+                    )}
+                  />
+                </div>
+              </div>
 
               {editingPost.slug && (
                 <Link
                   href={`/blog/${editingPost.slug}`}
                   target="_blank"
-                  className="rounded-xl border border-white/10 bg-[#1c1d27] px-3 py-2 text-xs font-semibold text-slate-300 hover:text-white transition flex items-center gap-1.5"
+                  className="rounded-xl border border-white/10 bg-[#1c1d27] hover:bg-[#252634] px-3.5 py-2 text-xs font-semibold text-slate-200 hover:text-white transition flex items-center gap-1.5 shadow-sm active:scale-95"
                 >
-                  <svg className="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  <svg className="w-3.5 h-3.5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                   </svg>
-                  Preview on Live Site
+                  <span>Preview on Live Site</span>
                 </Link>
               )}
 
@@ -673,7 +705,7 @@ export function AdminBlogClient({
                 type="button"
                 disabled={isSaving}
                 onClick={() => handleSavePost(false)}
-                className="rounded-xl border border-white/10 bg-[#1c1d27] px-4 py-2 text-xs font-semibold text-slate-200 hover:bg-[#252634] transition disabled:opacity-50"
+                className="rounded-xl border border-white/10 bg-[#1c1d27] hover:bg-[#252634] px-4 py-2 text-xs font-semibold text-slate-200 hover:text-white transition disabled:opacity-50 active:scale-95"
               >
                 {isSaving ? "Saving..." : "Save Draft"}
               </button>
@@ -682,9 +714,13 @@ export function AdminBlogClient({
                 type="button"
                 disabled={isSaving}
                 onClick={() => handleSavePost(true)}
-                className="rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 px-5 py-2 text-xs font-semibold text-white shadow-lg shadow-purple-600/30 hover:brightness-110 active:scale-95 transition disabled:opacity-50"
+                className="relative group rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 hover:brightness-110 px-5 py-2 text-xs font-bold text-white shadow-lg shadow-purple-600/30 active:scale-95 transition-all disabled:opacity-50 flex items-center gap-2"
               >
-                {isSaving ? "Publishing..." : "Publish Live"}
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75"></span>
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-white"></span>
+                </span>
+                <span>{isSaving ? "Publishing..." : "Publish Live"}</span>
               </button>
             </div>
           </div>
@@ -794,34 +830,32 @@ export function AdminBlogClient({
                 </div>
 
                 {/* Cover Image Upload from PC & URL */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-xs text-slate-300">
-                    <label className="font-semibold text-white">Cover Image (Upload from PC or URL)</label>
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <label className="font-semibold text-white flex items-center gap-1.5">
+                      <span>🖼️</span> Cover Image (Upload from PC or URL)
+                    </label>
                     {editingPost.coverImage && (
-                      <button
-                        type="button"
-                        onClick={() => setEditingPost({ ...editingPost, coverImage: "" })}
-                        className="text-[11px] text-rose-400 hover:text-rose-300"
-                      >
-                        Remove image
-                      </button>
+                      <span className="text-[11px] text-purple-400 font-mono">1200 × 630 Recommended</span>
                     )}
                   </div>
 
                   <div className="flex flex-col sm:flex-row gap-2">
-                    <input
-                      type="text"
-                      value={editingPost.coverImage}
-                      onChange={(e) => setEditingPost({ ...editingPost, coverImage: e.target.value })}
-                      placeholder="Paste image URL (https://...)"
-                      className="flex-1 rounded-xl border border-white/10 bg-[#1c1d27] px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:border-purple-500 focus:outline-none"
-                    />
+                    <div className="relative flex-1">
+                      <input
+                        type="text"
+                        value={editingPost.coverImage}
+                        onChange={(e) => setEditingPost({ ...editingPost, coverImage: e.target.value })}
+                        placeholder="Paste image URL (e.g. https://images.unsplash.com/...)"
+                        className="w-full rounded-xl border border-white/10 bg-[#1c1d27] px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:border-purple-500 focus:outline-none"
+                      />
+                    </div>
 
-                    <label className="shrink-0 inline-flex items-center justify-center gap-1.5 cursor-pointer rounded-xl bg-purple-600 hover:bg-purple-500 px-3.5 py-2 text-xs font-semibold text-white shadow transition active:scale-95">
+                    <label className="shrink-0 inline-flex items-center justify-center gap-1.5 cursor-pointer rounded-xl bg-purple-600 hover:bg-purple-500 px-4 py-2 text-xs font-semibold text-white shadow-md shadow-purple-600/25 transition-all active:scale-95">
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                       </svg>
-                      <span>{isUploadingCover ? "Uploading..." : "Upload from PC"}</span>
+                      <span>{isUploadingCover ? "Uploading from PC..." : "Upload from PC"}</span>
                       <input
                         type="file"
                         accept="image/*"
@@ -832,9 +866,85 @@ export function AdminBlogClient({
                     </label>
                   </div>
 
-                  {editingPost.coverImage && (
-                    <div className="mt-2 h-36 w-full rounded-xl overflow-hidden border border-white/10 relative group bg-slate-900">
-                      <img src={editingPost.coverImage} alt="Cover preview" className="h-full w-full object-cover" />
+                  {/* Responsive High-Fidelity 16:9 / 21:9 Cover Preview */}
+                  {editingPost.coverImage ? (
+                    <div className="relative group aspect-[16/9] sm:aspect-[21/9] max-h-80 w-full rounded-2xl overflow-hidden border border-white/15 bg-[#0a0b12] shadow-2xl transition-all duration-300">
+                      <img
+                        src={editingPost.coverImage}
+                        alt="Cover preview"
+                        className="h-full w-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105"
+                      />
+                      {/* Ambient gradient overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
+
+                      {/* Top left badge */}
+                      <div className="absolute top-3 left-3 flex items-center gap-1.5 rounded-full bg-black/60 backdrop-blur-md px-3 py-1 text-[11px] font-semibold text-white/90 border border-white/20 shadow-md">
+                        <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                        <span>16:9 Live Retina Banner</span>
+                      </div>
+
+                      {/* Top right floating actions on hover */}
+                      <div className="absolute top-3 right-3 flex items-center gap-2 opacity-95 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200">
+                        <label className="cursor-pointer inline-flex items-center gap-1.5 rounded-xl bg-black/75 hover:bg-black backdrop-blur-md px-3 py-1.5 text-xs font-semibold text-white border border-white/25 shadow-lg transition active:scale-95">
+                          <svg className="w-3.5 h-3.5 text-purple-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                          </svg>
+                          <span>Change from PC</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            disabled={isUploadingCover}
+                            onChange={handleUploadCover}
+                            className="sr-only"
+                          />
+                        </label>
+
+                        <button
+                          type="button"
+                          onClick={() => setEditingPost({ ...editingPost, coverImage: "" })}
+                          className="inline-flex items-center gap-1 rounded-xl bg-rose-600/80 hover:bg-rose-600 backdrop-blur-md px-2.5 py-1.5 text-xs font-semibold text-white shadow-lg transition active:scale-95 border border-rose-400/30"
+                          title="Remove cover image"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                          <span className="hidden sm:inline">Remove</span>
+                        </button>
+                      </div>
+
+                      {/* Bottom title & category overlay preview */}
+                      <div className="absolute bottom-3 left-4 right-4 pointer-events-none">
+                        <span className="rounded bg-purple-600/80 backdrop-blur-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">
+                          {editingPost.category || "General"}
+                        </span>
+                        <h4 className="text-sm sm:text-base font-bold text-white mt-1 drop-shadow-md truncate">
+                          {editingPost.title || "Your Article Title Goes Here"}
+                        </h4>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="rounded-2xl border-2 border-dashed border-white/15 bg-[#12131d] p-6 text-center space-y-3 transition-colors hover:border-purple-500/40">
+                      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-600/20 text-purple-400 border border-purple-500/30">
+                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-white">No Cover Image Selected</p>
+                        <p className="text-[11px] text-slate-400 mt-0.5">
+                          Upload a banner from your computer or paste an Unsplash URL above (1200×630 recommended for high CTR)
+                        </p>
+                      </div>
+                      <label className="inline-flex items-center gap-2 cursor-pointer rounded-xl bg-purple-600/30 hover:bg-purple-600/50 border border-purple-500/40 px-3.5 py-1.5 text-xs font-semibold text-purple-200 transition active:scale-95">
+                        <span>📁 Choose file from PC</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          disabled={isUploadingCover}
+                          onChange={handleUploadCover}
+                          className="sr-only"
+                        />
+                      </label>
                     </div>
                   )}
                 </div>
@@ -1031,47 +1141,100 @@ export function AdminBlogClient({
             {/* RIGHT COLUMN: ADVANCED REAL-TIME SEO SUITE */}
             {/* ========================================================= */}
             <div className="lg:col-span-5 space-y-5">
-              {/* SEO Score Health Badge Card */}
+              {/* Executive SEO Audit Gauge Card */}
               {activeSeoAnalysis && (
-                <div className="rounded-2xl border border-white/10 bg-[#141520] p-5">
-                  <div className="flex items-center justify-between">
+                <div className="rounded-2xl border border-white/10 bg-[#141520] p-5 shadow-xl relative overflow-hidden">
+                  <div className="flex items-center justify-between gap-4">
                     <div>
-                      <div className="text-xs font-semibold text-slate-400">Real-Time SEO Audit</div>
-                      <div className="text-xl font-extrabold text-white mt-0.5">
+                      <div className="flex items-center gap-1.5 text-xs font-semibold text-purple-400 uppercase tracking-wider">
+                        <span className="relative flex h-2 w-2">
+                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-purple-400 opacity-75"></span>
+                          <span className="relative inline-flex h-2 w-2 rounded-full bg-purple-500"></span>
+                        </span>
+                        <span>Real-Time SEO Audit</span>
+                      </div>
+                      <div className="text-xl font-extrabold text-white mt-1">
                         Optimization Score
                       </div>
+                      <div className="text-xs text-slate-400 mt-0.5">
+                        Google search & snippet readiness
+                      </div>
                     </div>
-                    <div
-                      className={clsx(
-                        "flex items-center justify-center rounded-2xl h-14 w-14 font-black text-xl border",
-                        activeSeoAnalysis.score >= 80
-                          ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
-                          : activeSeoAnalysis.score >= 60
-                          ? "bg-amber-500/20 text-amber-300 border-amber-500/40"
-                          : "bg-rose-500/20 text-rose-300 border-rose-500/40"
-                      )}
-                    >
-                      {activeSeoAnalysis.score}
+
+                    {/* Circular Radial Gauge */}
+                    <div className="relative flex items-center justify-center shrink-0">
+                      <svg className="w-20 h-20 -rotate-90 transform" viewBox="0 0 36 36">
+                        <path
+                          className="text-white/10"
+                          stroke="currentColor"
+                          strokeWidth="3.2"
+                          fill="none"
+                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                        <path
+                          className={clsx(
+                            "transition-all duration-1000 ease-out",
+                            activeSeoAnalysis.score >= 80
+                              ? "text-emerald-400 stroke-emerald-400"
+                              : activeSeoAnalysis.score >= 60
+                              ? "text-amber-400 stroke-amber-400"
+                              : "text-rose-400 stroke-rose-400"
+                          )}
+                          strokeDasharray={`${activeSeoAnalysis.score}, 100`}
+                          strokeLinecap="round"
+                          strokeWidth="3.2"
+                          fill="none"
+                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                      </svg>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                        <span className="text-xl font-black text-white leading-none">
+                          {activeSeoAnalysis.score}
+                        </span>
+                        <span className="text-[9px] font-bold text-slate-400 leading-none mt-0.5">
+                          / 100
+                        </span>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Progress bar */}
-                  <div className="w-full bg-slate-800 rounded-full h-2 mt-4 overflow-hidden">
+                  {/* Visual Progress Bar */}
+                  <div className="w-full bg-white/[0.06] rounded-full h-2 mt-4 overflow-hidden">
                     <div
                       className={clsx(
-                        "h-full transition-all duration-500",
+                        "h-full transition-all duration-700 ease-out rounded-full",
                         activeSeoAnalysis.score >= 80
-                          ? "bg-emerald-500"
+                          ? "bg-gradient-to-r from-emerald-500 to-teal-400"
                           : activeSeoAnalysis.score >= 60
-                          ? "bg-amber-500"
-                          : "bg-rose-500"
+                          ? "bg-gradient-to-r from-amber-500 to-yellow-400"
+                          : "bg-gradient-to-r from-rose-500 to-red-400"
                       )}
                       style={{ width: `${activeSeoAnalysis.score}%` }}
                     />
                   </div>
-                  <div className="flex justify-between items-center text-[11px] text-slate-400 mt-1.5">
-                    <span>Status: <strong className="text-white">{activeSeoAnalysis.grade}</strong></span>
-                    <span>{activeSeoAnalysis.checks.filter((c) => c.status === "pass").length} / {activeSeoAnalysis.checks.length} tests passed</span>
+
+                  {/* 3 Metric Pills */}
+                  <div className="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-white/[0.06] text-center">
+                    <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 py-1.5 px-2">
+                      <div className="text-[10px] font-bold text-emerald-400 flex items-center justify-center gap-1">
+                        <span>✓</span>
+                        <span>{activeSeoAnalysis.checks.filter((c) => c.status === "pass").length} Passed</span>
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 py-1.5 px-2">
+                      <div className="text-[10px] font-bold text-amber-400 flex items-center justify-center gap-1">
+                        <span>⚠</span>
+                        <span>{activeSeoAnalysis.checks.filter((c) => c.status === "warn").length} Warnings</span>
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl bg-rose-500/10 border border-rose-500/20 py-1.5 px-2">
+                      <div className="text-[10px] font-bold text-rose-400 flex items-center justify-center gap-1">
+                        <span>✕</span>
+                        <span>{activeSeoAnalysis.checks.filter((c) => c.status === "fail").length} Actions</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
@@ -1146,30 +1309,59 @@ export function AdminBlogClient({
                   {/* TAB 1: SEO CHECKLIST */}
                   {seoPreviewTab === "audit" && activeSeoAnalysis && (
                     <div className="space-y-3">
-                      <div className="text-xs font-bold text-white mb-2">Live Content Diagnostics</div>
+                      <div className="flex items-center justify-between text-xs mb-2">
+                        <span className="font-bold text-white flex items-center gap-1.5">
+                          <span>📋</span> Live Content Diagnostics
+                        </span>
+                        <span className="text-[11px] text-slate-400 font-mono">
+                          {activeSeoAnalysis.checks.length} ranking tests evaluated
+                        </span>
+                      </div>
+
                       {activeSeoAnalysis.checks.map((c) => (
                         <div
                           key={c.id}
-                          className="rounded-xl border border-white/[0.06] bg-[#1c1d27] p-3 text-xs space-y-1"
+                          className={clsx(
+                            "rounded-xl border p-3.5 text-xs space-y-1.5 transition-all duration-200 hover:shadow-md",
+                            c.status === "pass" && "border-emerald-500/20 bg-emerald-950/10 hover:border-emerald-500/40",
+                            c.status === "warn" && "border-amber-500/20 bg-amber-950/10 hover:border-amber-500/40",
+                            c.status === "fail" && "border-rose-500/25 bg-rose-950/15 hover:border-rose-500/40"
+                          )}
                         >
-                          <div className="flex items-center justify-between">
-                            <span className="font-semibold text-slate-200">{c.label}</span>
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={clsx(
+                                  "flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-black shrink-0",
+                                  c.status === "pass" && "bg-emerald-500/20 text-emerald-400",
+                                  c.status === "warn" && "bg-amber-500/20 text-amber-400",
+                                  c.status === "fail" && "bg-rose-500/20 text-rose-400"
+                                )}
+                              >
+                                {c.status === "pass" ? "✓" : c.status === "warn" ? "!" : "✕"}
+                              </span>
+                              <span className="font-semibold text-white">{c.label}</span>
+                            </div>
+
                             <span
                               className={clsx(
-                                "rounded px-1.5 py-0.5 text-[10px] font-bold uppercase",
-                                c.status === "pass" && "bg-emerald-500/20 text-emerald-400",
-                                c.status === "warn" && "bg-amber-500/20 text-amber-400",
-                                c.status === "fail" && "bg-rose-500/20 text-rose-400"
+                                "rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-wider",
+                                c.status === "pass" && "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30",
+                                c.status === "warn" && "bg-amber-500/20 text-amber-300 border border-amber-500/30",
+                                c.status === "fail" && "bg-rose-500/20 text-rose-300 border border-rose-500/30"
                               )}
                             >
-                              {c.status}
+                              {c.status === "pass" ? "Pass" : c.status === "warn" ? "Warning" : "Required"}
                             </span>
                           </div>
-                          <p className="text-slate-400 text-[11px] leading-relaxed">{c.message}</p>
+
+                          <p className="text-slate-300 text-[11px] leading-relaxed pl-7">{c.message}</p>
+
                           {c.recommendation && (
-                            <p className="text-purple-300 text-[11px] font-medium pt-1">
-                              💡 Tip: {c.recommendation}
-                            </p>
+                            <div className="ml-7 mt-1 rounded-lg bg-purple-500/10 border border-purple-500/20 p-2 text-[11px] text-purple-200 flex items-start gap-1.5">
+                              <span className="shrink-0 text-purple-300 font-bold">💡 Tip:</span>
+                              <span className="leading-relaxed">{c.recommendation}</span>
+                            </div>
                           )}
                         </div>
                       ))}

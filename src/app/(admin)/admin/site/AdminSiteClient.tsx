@@ -271,8 +271,15 @@ export function AdminSiteClient({ initialContent }: { initialContent: HomepageCo
 
             {/* Preview */}
             {content.heroImageUrl && (
-              <div className="rounded-xl overflow-hidden border border-white/10 max-h-56 bg-slate-900">
-                <img src={content.heroImageUrl} alt="Hero preview" className="w-full h-full object-cover" />
+              <div className="relative group rounded-2xl overflow-hidden border border-white/15 aspect-[16/9] w-full bg-[#0d0e16] shadow-xl">
+                <img
+                  src={content.heroImageUrl}
+                  alt="Hero preview"
+                  className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
+                />
+                <div className="absolute top-2.5 left-2.5 rounded-full bg-black/60 backdrop-blur-md px-2.5 py-1 text-[10px] font-semibold text-white/90 border border-white/20">
+                  Homepage Hero Preview (16:9)
+                </div>
               </div>
             )}
           </div>

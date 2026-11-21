@@ -125,21 +125,33 @@ export function analyzeBlogSeo(params: {
       recommendation: "Define a target search term (e.g. 'NHS nursing interview') to optimize your ranking.",
     });
   } else {
+    const kwTokens = focusKeyword.split(/\s+/).filter(Boolean);
+
     // 2. Keyword in Title
     const titleLower = title.toLowerCase();
-    if (titleLower.includes(focusKeyword)) {
+    const hasExactTitle = titleLower.includes(focusKeyword);
+    const hasAllTitleTokens = kwTokens.length > 1 && kwTokens.every((token) => titleLower.includes(token));
+
+    if (hasExactTitle) {
       checks.push({
         id: "keyword_in_title",
         label: "Focus Keyword in Title",
         status: "pass",
-        message: `Focus keyword "${focusKeyword}" appears in the main title.`,
+        message: `Exact focus keyword "${focusKeyword}" appears in the main title.`,
+      });
+    } else if (hasAllTitleTokens) {
+      checks.push({
+        id: "keyword_in_title",
+        label: "Focus Keyword in Title",
+        status: "pass",
+        message: `All key search terms (${kwTokens.join(", ")}) are strategically placed in the title.`,
       });
     } else {
       checks.push({
         id: "keyword_in_title",
         label: "Focus Keyword in Title",
         status: "fail",
-        message: `Keyword "${focusKeyword}" is missing from the title.`,
+        message: `Keyword terms "${focusKeyword}" are missing from the title.`,
         recommendation: "Include your primary keyword near the start of the title.",
       });
     }
@@ -147,12 +159,16 @@ export function analyzeBlogSeo(params: {
     // 3. Keyword in URL Slug
     const slugLower = slug.toLowerCase();
     const slugKeyword = slugify(focusKeyword);
-    if (slugLower.includes(slugKeyword) || slugLower.includes(focusKeyword.replace(/\s+/g, "-"))) {
+    const slugTokens = kwTokens.map((t) => slugify(t)).filter(Boolean);
+    const slugHasExact = slugLower.includes(slugKeyword) || slugLower.includes(focusKeyword.replace(/\s+/g, "-"));
+    const slugHasAllTokens = slugTokens.every((t) => slugLower.includes(t));
+
+    if (slugHasExact || slugHasAllTokens) {
       checks.push({
         id: "keyword_in_slug",
         label: "Focus Keyword in URL Slug",
         status: "pass",
-        message: "URL slug cleanly incorporates the focus keyword.",
+        message: "URL slug cleanly incorporates the focus search keywords.",
       });
     } else {
       checks.push({
@@ -166,7 +182,11 @@ export function analyzeBlogSeo(params: {
 
     // 4. Keyword in First Paragraph (Introduction)
     const firstParagraph = paragraphs[0] || "";
-    if (firstParagraph.toLowerCase().includes(focusKeyword)) {
+    const firstParaLower = firstParagraph.toLowerCase();
+    const introHasExact = firstParaLower.includes(focusKeyword);
+    const introHasTokens = kwTokens.length > 1 && kwTokens.every((t) => firstParaLower.includes(t));
+
+    if (introHasExact || introHasTokens) {
       checks.push({
         id: "keyword_in_intro",
         label: "Focus Keyword in Introduction",
@@ -184,7 +204,11 @@ export function analyzeBlogSeo(params: {
     }
 
     // 5. Keyword in Headings (H2 / H3)
-    const kwInHeadings = headings.some((h) => h.text.toLowerCase().includes(focusKeyword));
+    const kwInHeadings = headings.some((h) => {
+      const hLower = h.text.toLowerCase();
+      return hLower.includes(focusKeyword) || (kwTokens.length > 1 && kwTokens.every((t) => hLower.includes(t)));
+    });
+
     if (kwInHeadings) {
       checks.push({
         id: "keyword_in_headings",
