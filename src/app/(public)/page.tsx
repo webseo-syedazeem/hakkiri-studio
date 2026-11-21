@@ -11,29 +11,35 @@ import { LandingPrivacy } from "@/components/landing/LandingPrivacy";
 import { LandingFaq } from "@/components/landing/LandingFaq";
 import { LandingFinalCta } from "@/components/landing/LandingFinalCta";
 import { StickyCta } from "@/components/marketing/StickyCta";
+import { getHomepageContentAsync } from "@/lib/site/site-content";
 
-export const metadata: Metadata = {
-  title: "Hakkiri · Practise for the interview you actually have",
-  description:
-    "The most advanced interview practice there is: a live AI interviewer built from your job description and CV that asks out loud, follows up on what you say, and shows you exactly what to fix, answer by answer. Free for everyone for a limited time while we’re in beta.",
-  openGraph: {
-    title: "Hakkiri · Practise for the interview you actually have",
-    description: "Practise interviews and presentations with AI feedback that never judges your accent.",
-    url: "https://hakkiri.studio",
-    siteName: "Hakkiri Studio",
-    locale: "en_GB",
-    images: [{ url: "https://hakkiri.studio/opengraph-image.png", width: 1200, height: 630 }],
-    type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Hakkiri · Practise for the interview you actually have",
-    description: "Practise interviews and presentations with AI feedback that never judges your accent.",
-    images: ["https://hakkiri.studio/opengraph-image.png"],
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const content = await getHomepageContentAsync();
 
-export default function LandingPage() {
+  return {
+    title: content.metaTitle || "Hakkiri · Practise for the interview you actually have",
+    description: content.metaDescription || "Practise interviews and presentations with AI feedback that never judges your accent.",
+    openGraph: {
+      title: content.metaTitle || "Hakkiri · Practise for the interview you actually have",
+      description: content.metaDescription || "Practise interviews and presentations with AI feedback that never judges your accent.",
+      url: "https://hakkiri.studio",
+      siteName: "Hakkiri Studio",
+      locale: "en_GB",
+      images: [{ url: "https://hakkiri.studio/opengraph-image.png", width: 1200, height: 630 }],
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: content.metaTitle || "Hakkiri · Practise for the interview you actually have",
+      description: content.metaDescription || "Practise interviews and presentations with AI feedback that never judges your accent.",
+      images: ["https://hakkiri.studio/opengraph-image.png"],
+    },
+  };
+}
+
+export default async function LandingPage() {
+  const content = await getHomepageContentAsync();
+
   return (
     <div className="flex flex-col">
       {/* Structured Data (JSON-LD) for Search Engines */}
@@ -66,7 +72,7 @@ export default function LandingPage() {
         }}
       />
 
-      <LandingHero />
+      <LandingHero content={content} />
       <LandingLiveSection />
       <LandingSteps />
       <LandingWalkthrough />
@@ -77,7 +83,7 @@ export default function LandingPage() {
       <LandingPrivacy />
       <LandingFaq />
       <LandingFinalCta />
-      <StickyCta label="Sign up free" />
+      <StickyCta label={content.primaryCtaText || "Sign up free"} />
     </div>
   );
 }

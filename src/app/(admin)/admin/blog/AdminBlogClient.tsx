@@ -47,12 +47,59 @@ export function AdminBlogClient({
   const [serpDevice, setSerpDevice] = useState<"desktop" | "mobile">("desktop");
   const [seoPreviewTab, setSeoPreviewTab] = useState<"audit" | "serp" | "social" | "schema">("audit");
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  const handleUploadCover = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !editingPost) return;
+
+    setIsUploadingCover(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/admin/upload", { method: "POST", body: formData });
+      if (!res.ok) throw new Error("Upload failed");
+      const data = await res.json();
+      setEditingPost({ ...editingPost, coverImage: data.url });
+      showToast("📸 Cover image uploaded from your PC!");
+    } catch (err) {
+      console.error("Cover upload error:", err);
+      showToast("❌ Image upload failed. Try again.");
+    } finally {
+      setIsUploadingCover(false);
+    }
+  };
+
+  const handleUploadAvatar = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !editingPost) return;
+
+    setIsUploadingAvatar(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/admin/upload", { method: "POST", body: formData });
+      if (!res.ok) throw new Error("Upload failed");
+      const data = await res.json();
+      setEditingPost({
+        ...editingPost,
+        author: { ...editingPost.author, avatarUrl: data.url },
+      });
+      showToast("📸 Author avatar uploaded from your PC!");
+    } catch (err) {
+      console.error("Avatar upload error:", err);
+      showToast("❌ Avatar upload failed.");
+    } finally {
+      setIsUploadingAvatar(false);
+    }
   };
 
   // Stats calculation
@@ -746,18 +793,47 @@ export function AdminBlogClient({
                   />
                 </div>
 
-                {/* Cover Image URL */}
-                <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">Cover Image URL</label>
-                  <input
-                    type="text"
-                    value={editingPost.coverImage}
-                    onChange={(e) => setEditingPost({ ...editingPost, coverImage: e.target.value })}
-                    placeholder="https://images.unsplash.com/..."
-                    className="w-full rounded-xl border border-white/10 bg-[#1c1d27] px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-purple-500 focus:outline-none"
-                  />
+                {/* Cover Image Upload from PC & URL */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs text-slate-300">
+                    <label className="font-semibold text-white">Cover Image (Upload from PC or URL)</label>
+                    {editingPost.coverImage && (
+                      <button
+                        type="button"
+                        onClick={() => setEditingPost({ ...editingPost, coverImage: "" })}
+                        className="text-[11px] text-rose-400 hover:text-rose-300"
+                      >
+                        Remove image
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <input
+                      type="text"
+                      value={editingPost.coverImage}
+                      onChange={(e) => setEditingPost({ ...editingPost, coverImage: e.target.value })}
+                      placeholder="Paste image URL (https://...)"
+                      className="flex-1 rounded-xl border border-white/10 bg-[#1c1d27] px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:border-purple-500 focus:outline-none"
+                    />
+
+                    <label className="shrink-0 inline-flex items-center justify-center gap-1.5 cursor-pointer rounded-xl bg-purple-600 hover:bg-purple-500 px-3.5 py-2 text-xs font-semibold text-white shadow transition active:scale-95">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                      </svg>
+                      <span>{isUploadingCover ? "Uploading..." : "Upload from PC"}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        disabled={isUploadingCover}
+                        onChange={handleUploadCover}
+                        className="sr-only"
+                      />
+                    </label>
+                  </div>
+
                   {editingPost.coverImage && (
-                    <div className="mt-2 h-28 w-full rounded-xl overflow-hidden border border-white/10">
+                    <div className="mt-2 h-36 w-full rounded-xl overflow-hidden border border-white/10 relative group bg-slate-900">
                       <img src={editingPost.coverImage} alt="Cover preview" className="h-full w-full object-cover" />
                     </div>
                   )}
@@ -780,18 +856,38 @@ export function AdminBlogClient({
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-medium text-slate-400 mb-1">Author Title / Role</label>
-                    <input
-                      type="text"
-                      value={editingPost.author.title}
-                      onChange={(e) =>
-                        setEditingPost({
-                          ...editingPost,
-                          author: { ...editingPost.author, title: e.target.value },
-                        })
-                      }
-                      className="w-full rounded-xl border border-white/10 bg-[#1c1d27] px-3 py-1.5 text-xs text-white focus:outline-none"
-                    />
+                    <div className="flex items-center justify-between text-[11px] font-medium text-slate-400 mb-1">
+                      <span>Author Avatar</span>
+                      <label className="text-purple-400 hover:text-purple-300 cursor-pointer font-semibold text-[10px]">
+                        {isUploadingAvatar ? "Uploading..." : "Upload from PC"}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          disabled={isUploadingAvatar}
+                          onChange={handleUploadAvatar}
+                          className="sr-only"
+                        />
+                      </label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {editingPost.author.avatarUrl ? (
+                        <img src={editingPost.author.avatarUrl} alt="" className="h-7 w-7 rounded-full object-cover border border-white/10 shrink-0" />
+                      ) : (
+                        <div className="h-7 w-7 rounded-full bg-slate-800 text-xs flex items-center justify-center shrink-0">👤</div>
+                      )}
+                      <input
+                        type="text"
+                        value={editingPost.author.avatarUrl || ""}
+                        onChange={(e) =>
+                          setEditingPost({
+                            ...editingPost,
+                            author: { ...editingPost.author, avatarUrl: e.target.value },
+                          })
+                        }
+                        placeholder="Avatar image URL"
+                        className="w-full rounded-xl border border-white/10 bg-[#1c1d27] px-3 py-1.5 text-xs text-white focus:outline-none"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
