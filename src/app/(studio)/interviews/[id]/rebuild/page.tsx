@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { Crumbs } from "@/components/ui";
 import { RebuildFlow } from "@/components/interview/RebuildFlow";
-import { getInterview } from "@/lib/interviews/store";
+import { getInterview, getInterviewAsync } from "@/lib/interviews/store";
 import { understandingOf } from "@/lib/interviews/build";
 import { findMock } from "@/lib/mocks/store";
 import { requirePageUser } from "@/lib/auth/require";
@@ -17,7 +17,7 @@ export default async function RebuildPage({ params, searchParams }: { params: Pr
   const user = await requirePageUser();
   const { id } = await params;
   const { from } = await searchParams;
-  const interview = getInterview(id, user.id);
+  const interview = (await getInterviewAsync(id, user.id)) ?? getInterview(id, user.id);
   if (!interview) notFound();
   const stopped = from ? findMock(from, user.id) : undefined;
   if (from && (!stopped || stopped.interviewId !== interview.id || stopped.status !== "stopped")) redirect(`/interviews/${interview.id}`);
@@ -27,15 +27,25 @@ export default async function RebuildPage({ params, searchParams }: { params: Pr
   return (
     <div className="flex grow flex-col">
       <header className="animate-rise">
-        <Crumbs items={[{ label: `${interview.company} interview`, href: `/interviews/${interview.id}` }, { label: from ? "Something’s wrong" : "What Hakkiri understood" }]} />
-        <h1 className="mt-2 text-[28px] font-semibold tracking-[-0.025em]">{from ? "Let’s fix your questions" : "Check what Hakkiri understood"}</h1>
+        <Crumbs items={[{ label: `${interview.company} interview`, href: `/interviews/${interview.id}` }, { label: from ? "Something’s wrong" : "Edit interview & rebuild" }]} />
+        <h1 className="mt-2 text-[28px] font-semibold tracking-[-0.025em]">{from ? "Let’s fix your questions" : "Edit interview & rebuild questions"}</h1>
         <p className="mt-1 max-w-[760px] text-sm text-muted">
           {from
             ? "Hakkiri rereads your documents with your feedback and shows you what it changed. Confirm or edit it, and a fresh interview starts with new questions."
-            : "Change anything that’s wrong about the job. The questions you haven’t heard are rebuilt to match."}
+            : "Update your job description, change focus metrics (like Strengths & Competency), or edit role understanding. Questions are rebuilt to match."}
         </p>
       </header>
-      <RebuildFlow interviewId={interview.id} sessionId={stopped?.id} current={understandingOf(interview)} rules={interview.rules ?? []} attempt={attempt} micOk={micOk} company={interview.company} />
+      <RebuildFlow
+        interviewId={interview.id}
+        sessionId={stopped?.id}
+        current={understandingOf(interview)}
+        rules={interview.rules ?? []}
+        attempt={attempt}
+        micOk={micOk}
+        company={interview.company}
+        initialJobSummary={interview.jobSummary || ""}
+        initialSettings={interview.settings}
+      />
     </div>
   );
 }

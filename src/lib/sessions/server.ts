@@ -5,7 +5,8 @@ import { getInterview, getInterviewAsync, saveInterviewAsync, updateInterview } 
 import { addQuestions, rethink, understandingOf } from "@/lib/interviews/build";
 import { aiConfig } from "@/lib/ai/config";
 import { mockAiEnabled } from "@/lib/ai/mock";
-import { CATEGORY_ORDER, enabledGroups, settingsOr, styleFor, type SessionSettings } from "@/lib/interviews/settings";
+import { CATEGORY_ORDER, enabledGroups, presetFor, settingsOr, styleFor, type Mix, type SessionSettings } from "@/lib/interviews/settings";
+import { isMongoConfigured } from "@/lib/storage/mongodb";
 import { buildReport, categoryScores, type MockReport, type MockRow, type Verdict } from "@/lib/mocks/report";
 import { createSession, doneSessions, findMock, isFresh, lastAskedMap, lastAskedMapAsync, listMocks, rerunOf, rowsFor, saveMock, saveMockAsync, type MockRecord, type SkipRecord } from "@/lib/mocks/store";
 import { drillQuestions, suggestDrills, type DrillSpec, type DrillSuggestion } from "./drills";
@@ -250,21 +251,57 @@ export async function rethinkFrom(interviewId: string, sessionId: string, userId
  * aside every question you haven't heard, writes a fresh set and plans a new
  * interview with your settings.
  */
-export async function rebuildAndPlan(interviewId: string, change: { understanding: Interview["understanding"]; rules: string[]; documents?: Partial<NonNullable<Interview["documents"]>>; sources?: Interview["sources"]; templates?: boolean }, opts: { start: boolean }, userId?: string): Promise<{ interview: Interview; session: MockRecord | null }> {
+export async function rebuildAndPlan(
+  interviewId: string,
+  change: {
+    understanding: Interview["understanding"];
+    rules: string[];
+    documents?: Partial<NonNullable<Interview["documents"]>>;
+    sources?: Interview["sources"];
+    templates?: boolean;
+    mix?: Mix;
+    preset?: string;
+    jobSummary?: string;
+  },
+  opts: { start: boolean },
+  userId?: string,
+): Promise<{ interview: Interview; session: MockRecord | null }> {
   await settled(interviewId);
-  const base = getInterview(interviewId, userId);
+  const base = (await getInterviewAsync(interviewId, userId)) ?? getInterview(interviewId, userId);
   if (!base) throw new PlanError("That interview doesn’t exist any more.");
   const rules = mergeRules(base.rules, change.rules);
-  const updated = updateInterview(interviewId, (i) => ({
-    ...i,
-    understanding: change.understanding ?? i.understanding,
-    role: change.understanding?.role && change.understanding.role !== understandingOf(i).role ? change.understanding.role : i.role,
-    seniority: change.understanding?.level ?? i.seniority,
-    rules,
-    rebuilds: (i.rebuilds ?? 0) + 1,
-    documents: change.documents && i.documents ? { ...i.documents, ...change.documents } : i.documents,
-    sources: change.sources ? { ...i.sources, ...change.sources } : i.sources,
-  }), userId)!;
+  const updated = updateInterview(
+    interviewId,
+    (i) => ({
+      ...i,
+      understanding: change.understanding ?? i.understanding,
+      role:
+        change.understanding?.role && change.understanding.role !== understandingOf(i).role
+          ? change.understanding.role
+          : i.role,
+      seniority: change.understanding?.level ?? i.seniority,
+      rules,
+      rebuilds: (i.rebuilds ?? 0) + 1,
+      jobSummary: change.jobSummary || i.jobSummary,
+      settings: {
+        ...settingsOr(i.settings, i.style),
+        ...(change.mix ? { mix: change.mix, preset: (change.preset as any) || presetFor(change.mix) } : {}),
+      },
+      documents: change.documents?.cv || i.documents?.cv
+        ? {
+            cv: change.documents?.cv || i.documents?.cv || "",
+            coverLetter: change.documents?.coverLetter || i.documents?.coverLetter,
+            job: change.documents?.job || i.documents?.job,
+            site: change.documents?.site || i.documents?.site,
+          }
+        : i.documents,
+      sources: change.sources ? { ...i.sources, ...change.sources } : i.sources,
+    }),
+    userId,
+  )!;
+  if (isMongoConfigured()) {
+    await saveInterviewAsync(updated, userId);
+  }
   const heard = [...(await lastAskedMapAsync(interviewId)).keys()];
   const settings = settingsOr(updated.settings, updated.style);
   const need = questionsNeeded(pickQuestions(updated.questions.map((q) => (q.slot || heard.includes(q.id) ? q : { ...q, retired: true })), settings, await lastAskedMapAsync(interviewId)));

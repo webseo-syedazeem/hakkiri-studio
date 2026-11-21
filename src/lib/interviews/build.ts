@@ -232,7 +232,7 @@ export async function addQuestions(interview: Interview, need: Partial<Record<Qu
     const asking = Object.fromEntries(GROUP_ORDER.map((g) => [g, counts[g] > 0 ? counts[g] + 1 : 0])) as Record<QuestionGroup, number>;
     const input = { company: interview.company, understanding, difficulty, counts: asking, rules, avoid, documents: docs };
     const { system, user } = buildNewQuestionsPrompt(input);
-    const reply = await ask({ model: aiConfig.mainModel, system, user, maxTokens: 3000, temperature: 0.5, timeoutMs: 90_000, schema: NewQuestionsSchema, check: (r) => checkNewQuestions(r, input), label: "new-questions" });
+    const reply = await ask({ model: aiConfig.mainModel, system, user, maxTokens: 3000, temperature: 0.5, timeoutMs: 25_000, schema: NewQuestionsSchema, check: (r) => checkNewQuestions(r, input), label: "new-questions" });
     written = reply?.questions ?? null;
   }
   written ??= GROUP_ORDER.flatMap((g) => templateQuestions(interview.company, interview.role, g, counts[g], avoid, difficulty));

@@ -8,9 +8,54 @@ import { Segmented } from "@/components/ui/Segmented";
 import { DocField } from "./InterviewSetup";
 import type { ReadDoc } from "./read-docs";
 import type { QuestionGroup, RoleUnderstanding } from "@/lib/types";
-import { CATEGORY_ORDER, categoryLabel } from "@/lib/interviews/settings";
+import { CATEGORY_ORDER, categoryLabel, type SessionSettings } from "@/lib/interviews/settings";
 
 type Rethought = { before: RoleUnderstanding; after: RoleUnderstanding; rules: string[]; by: "model" | "rules"; attempt: number };
+
+const FOCUS_OPTIONS = [
+  {
+    key: "strengths-competency",
+    label: "Strengths & Competency (STAR)",
+    badge: "Civil Service / HMRC",
+    description: "STAR behavioural competencies + spontaneous strengths questions",
+    mix: { curveball: 50, competency: 50, cv: 0, technical: 0, motivation: 0 },
+  },
+  {
+    key: "balanced",
+    label: "Balanced (All areas)",
+    badge: undefined,
+    description: "Even coverage across Experience, Skills, Technical, Motivation & Situational",
+    mix: { cv: 20, competency: 20, technical: 20, motivation: 20, curveball: 20 },
+  },
+  {
+    key: "strengths",
+    label: "Strengths focus",
+    badge: undefined,
+    description: "Focus on spontaneous strengths, values, motivation and pressure reactions",
+    mix: { curveball: 80, competency: 20, cv: 0, technical: 0, motivation: 0 },
+  },
+  {
+    key: "competency",
+    label: "Competency focus (STAR)",
+    badge: undefined,
+    description: "Deep dive on structured behavioural examples and delivering outcomes",
+    mix: { competency: 80, curveball: 20, cv: 0, technical: 0, motivation: 0 },
+  },
+  {
+    key: "technical",
+    label: "Role Knowledge & Technical",
+    badge: undefined,
+    description: "GDS standards, delivery methods, WCAG accessibility and technical execution",
+    mix: { technical: 60, competency: 20, motivation: 20, cv: 0, curveball: 0 },
+  },
+  {
+    key: "motivation",
+    label: "Motivation & Why HMRC",
+    badge: undefined,
+    description: "Public service motivation, why this role and organisation",
+    mix: { motivation: 60, cv: 20, competency: 20, technical: 0, curveball: 0 },
+  },
+];
 
 const input = "w-full rounded-[9px] bg-panel-2 px-3 py-2 text-sm outline-none shadow-[inset_0_0_0_1px_var(--color-line-strong)] placeholder:text-dim focus:shadow-[inset_0_0_0_1px_var(--color-blue)]";
 
@@ -46,6 +91,8 @@ export function RebuildFlow({
   attempt,
   micOk,
   company,
+  initialJobSummary = "",
+  initialSettings,
 }: {
   interviewId: string;
   /** The stopped interview, after "Something's wrong"; absent when editing from the overview. */
@@ -56,6 +103,8 @@ export function RebuildFlow({
   attempt: number;
   micOk: boolean;
   company: string;
+  initialJobSummary?: string;
+  initialSettings?: SessionSettings;
 }) {
   const router = useRouter();
   const [phase, setPhase] = useState<"reading" | "ready" | "rebuilding" | "error">(sessionId ? "reading" : "ready");
@@ -63,6 +112,9 @@ export function RebuildFlow({
   const [u, setU] = useState<RoleUnderstanding>(current);
   const [rules, setRules] = useState<string[]>(initialRules);
   const [newRule, setNewRule] = useState("");
+  const [jobSummary, setJobSummary] = useState<string>(initialJobSummary);
+  const isCivilService = /\b(civil service|hmrc|gov|government|ministry|public sector)\b/i.test(`${company} ${current.role}`);
+  const [focusPreset, setFocusPreset] = useState<string>(isCivilService ? "strengths-competency" : "balanced");
   const [by, setBy] = useState<"model" | "rules" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [cv, setCv] = useState<ReadDoc | null>(null);
@@ -111,6 +163,7 @@ export function RebuildFlow({
     setPhase("rebuilding");
     setError(null);
     try {
+      const chosen = FOCUS_OPTIONS.find((f) => f.key === focusPreset) || FOCUS_OPTIONS[0];
       const res = await fetch(`/api/interviews/${interviewId}/rebuild`, {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -119,6 +172,9 @@ export function RebuildFlow({
           rules,
           start: opts.start,
           templates: opts.templates,
+          jobSummary,
+          mix: chosen.mix,
+          preset: chosen.key === "balanced" ? "balanced" : "custom",
           cv: cv ? { text: cv.text, label: cv.name } : undefined,
           job: job ? { text: job.text, label: job.name } : undefined,
         }),
@@ -198,6 +254,17 @@ export function RebuildFlow({
             />
             <p className="mt-1.5 text-xs text-muted">{u.technicalLabel === "Technical" ? "Questions on the tools and methods the job uses." : "“Role knowledge” instead: what this job needs you to know, like product, pricing or process."}</p>
           </Row>
+          <Row label="Job description" was="" isChanged={false} showWas={false}>
+            <textarea
+              aria-label="Job description summary"
+              rows={3}
+              className={clsx(input, "resize-y text-xs")}
+              placeholder="Paste or update the job spec, key responsibilities, or requirements..."
+              value={jobSummary}
+              onChange={(e) => setJobSummary(e.target.value)}
+            />
+            <p className="mt-1 text-xs text-muted">You can update the job description or essential criteria above at any time.</p>
+          </Row>
           {CATEGORY_ORDER.map((g) => (
             <Row key={g} label={categoryLabel(g, u.technicalLabel)} was={before.meanings[g]} isChanged={meaningChanged(g)} showWas={Boolean(sessionId)}>
               <textarea aria-label={`What ${categoryLabel(g, u.technicalLabel)} means for this job`} rows={2} className={clsx(input, "resize-none")} value={u.meanings[g]} onChange={(e) => setU({ ...u, meanings: { ...u.meanings, [g]: e.target.value } })} />
@@ -207,7 +274,48 @@ export function RebuildFlow({
       </Panel>
 
       <div className="flex flex-col gap-5">
-        <Panel aria-label="Rules for the new questions" className="animate-rise px-6 py-5 [animation-delay:0.05s]">
+        <Panel aria-label="Question focus & practice metrics" className="animate-rise px-6 py-5 [animation-delay:0.04s]">
+          <div className="flex items-center justify-between">
+            <h2 className="text-[15px] font-semibold">Question focus & metrics</h2>
+            <span className="text-[11px] font-semibold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-full border border-indigo-500/20">
+              Customise focus
+            </span>
+          </div>
+          <p className="mt-0.5 text-[13px] text-muted">Choose what areas you want your practice questions to focus on.</p>
+          <div className="mt-3 space-y-2">
+            {FOCUS_OPTIONS.map((opt) => {
+              const isSel = focusPreset === opt.key;
+              return (
+                <button
+                  key={opt.key}
+                  type="button"
+                  onClick={() => setFocusPreset(opt.key)}
+                  className={clsx(
+                    "w-full text-left p-3 rounded-xl border text-xs transition-all flex items-start justify-between gap-3 cursor-pointer",
+                    isSel
+                      ? "border-indigo-500 bg-indigo-500/15 text-white shadow-[0_0_15px_rgba(99,102,241,0.2)]"
+                      : "border-line bg-panel-2 hover:border-white/20 text-[#c9cad4] hover:text-white"
+                  )}
+                >
+                  <div>
+                    <div className="font-semibold text-white flex items-center gap-2">
+                      <span>{opt.label}</span>
+                      {opt.badge && (
+                        <span className="rounded bg-indigo-500/25 px-1.5 py-0.2 text-[9px] font-bold uppercase tracking-wider text-indigo-300">
+                          {opt.badge}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-muted mt-0.5">{opt.description}</p>
+                  </div>
+                  {isSel && <Icon name="check" size={14} className="text-indigo-400 shrink-0 mt-0.5" />}
+                </button>
+              );
+            })}
+          </div>
+        </Panel>
+
+        <Panel aria-label="Rules for the new questions" className="animate-rise px-6 py-5 [animation-delay:0.06s]">
           <h2 className="text-[15px] font-semibold">Rules for the new questions</h2>
           <p className="mt-0.5 text-[13px] text-muted">From your feedback. Every new question is checked against them.</p>
           {rules.length === 0 && <p className="mt-2 text-sm text-dim">No rules yet.</p>}
@@ -237,27 +345,27 @@ export function RebuildFlow({
           </form>
         </Panel>
 
-        {checkDocs && (
-          <Panel aria-label="Check your documents" className="animate-rise px-6 py-5 shadow-[inset_0_0_0_1px_rgb(255_120_120/0.35)] [animation-delay:0.08s]">
-            <div className="flex items-center gap-2 text-[15px] font-semibold">
-              <Icon name="flag" size={15} strokeWidth={2} className="text-red-soft" />
-              Still wrong after a rebuild?
-            </div>
-            <p className="mt-1 text-[13px] leading-relaxed text-muted">Most often the wrong file was uploaded, or the job link was misread. Replace either below, or use the standard questions for “{u.role}” while you sort them out.</p>
-            <div className="mt-3 space-y-2">
-              <DocField id="rebuild-cv" label="A new CV" doc={cv} setDoc={setCv} optional onProblem={setDocProblem} />
-              <DocField id="rebuild-job" label="Job spec" doc={job} setDoc={setJob} optional onProblem={setDocProblem} />
-            </div>
-            {docProblem && (
-              <p role="alert" className="mt-2 text-[13px] text-red-soft">
-                {docProblem}
-              </p>
-            )}
+        <Panel aria-label="Update documents" className="animate-rise px-6 py-5 [animation-delay:0.08s]">
+          <div className="flex items-center gap-2 text-[15px] font-semibold">
+            <Icon name="doc" size={15} strokeWidth={2} className="text-indigo-400" />
+            <span>Update Job Spec or CV</span>
+          </div>
+          <p className="mt-1 text-[13px] leading-relaxed text-muted">Replace your uploaded job spec document or upload a fresh CV to rebuild questions from source files.</p>
+          <div className="mt-3 space-y-2">
+            <DocField id="rebuild-cv" label="Upload a new CV" doc={cv} setDoc={setCv} optional onProblem={setDocProblem} />
+            <DocField id="rebuild-job" label="Upload a new Job spec" doc={job} setDoc={setJob} optional onProblem={setDocProblem} />
+          </div>
+          {docProblem && (
+            <p role="alert" className="mt-2 text-[13px] text-red-soft">
+              {docProblem}
+            </p>
+          )}
+          {sessionId && (
             <Button size="sm" className="mt-3" disabled={phase === "rebuilding"} onClick={() => void rebuild({ start: true, templates: true })}>
               Use standard questions for now
             </Button>
-          </Panel>
-        )}
+          )}
+        </Panel>
 
         <Panel className="animate-rise px-6 py-5 [animation-delay:0.1s]">
           <p className="text-[13px] leading-relaxed text-muted">

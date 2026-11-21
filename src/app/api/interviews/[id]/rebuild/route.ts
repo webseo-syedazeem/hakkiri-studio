@@ -21,6 +21,9 @@ const Body = z.object({
   templates: z.boolean().optional(),
   /** Start a new interview straight away (after "Something's wrong"), or just rebuild (after editing what Hakkiri understood). */
   start: z.boolean(),
+  mix: z.record(z.string(), z.number()).optional(),
+  preset: z.string().optional(),
+  jobSummary: z.string().optional(),
 });
 
 /**
@@ -53,6 +56,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         templates: b.templates,
         documents: { ...(b.cv ? { cv: b.cv.text } : {}), ...(b.job ? { job: b.job.text } : {}) },
         sources: { ...(b.cv ? { cv: b.cv.label } : {}), ...(b.job ? { job: b.job.label } : {}) },
+        mix: b.mix as any,
+        preset: b.preset,
+        jobSummary: b.jobSummary,
       },
       { start: b.start },
       user.id,

@@ -9,6 +9,7 @@ import {
   DIFFICULTY_HINT,
   DIFFICULTY_LABEL,
   PRESETS,
+  presetFor,
   totalQuestionCount,
   type Difficulty,
   type Mix,
@@ -16,6 +17,51 @@ import {
   type SessionMinutes,
   type SessionSettings,
 } from "@/lib/interviews/settings";
+
+export type FocusAreaPreset =
+  | "strengths-competency"
+  | "balanced"
+  | "strengths"
+  | "competency"
+  | "technical"
+  | "motivation";
+
+export const FOCUS_PRESETS: Record<
+  FocusAreaPreset,
+  { label: string; description: string; mix: Mix; badge?: string }
+> = {
+  "strengths-competency": {
+    label: "Strengths & Competency (STAR)",
+    description: "STAR behavioural competencies + spontaneous strengths questions",
+    badge: "Civil Service / HMRC",
+    mix: { curveball: 50, competency: 50, cv: 0, technical: 0, motivation: 0 },
+  },
+  balanced: {
+    label: "Balanced (All areas)",
+    description: "Even coverage across Experience, Skills, Technical, Motivation & Situational",
+    mix: { cv: 20, competency: 20, technical: 20, motivation: 20, curveball: 20 },
+  },
+  strengths: {
+    label: "Strengths focus",
+    description: "Focus on spontaneous strengths, values, motivation and pressure reactions",
+    mix: { curveball: 80, competency: 20, cv: 0, technical: 0, motivation: 0 },
+  },
+  competency: {
+    label: "Competency focus (STAR)",
+    description: "Deep dive on structured behavioural examples and delivering outcomes",
+    mix: { competency: 80, curveball: 20, cv: 0, technical: 0, motivation: 0 },
+  },
+  technical: {
+    label: "Role Knowledge & Technical",
+    description: "GDS standards, delivery methods, WCAG accessibility and technical execution",
+    mix: { technical: 60, competency: 20, motivation: 20, cv: 0, curveball: 0 },
+  },
+  motivation: {
+    label: "Motivation & Why HMRC",
+    description: "Public service motivation, why this role and organisation",
+    mix: { motivation: 60, cv: 20, competency: 20, technical: 0, curveball: 0 },
+  },
+};
 import { InterviewTabs } from "./InterviewTabs";
 import { StartButton } from "./StartSession";
 import { updateClientInterviewStages } from "@/lib/interviews/client-store";
@@ -377,11 +423,43 @@ export function InterviewOverviewClient({
   const nextStage = activeStages.find((s) => s.status === "next") ?? activeStage;
   const estQuestions = Math.max(3, totalQuestionCount(minutes, difficulty));
 
+  const isCivilService = /\b(civil service|hmrc|gov|government|ministry|public sector)\b/i.test(`${companyName} ${roleTitle}`);
+  const [focusPreset, setFocusPreset] = useState<FocusAreaPreset>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(`hk_interview_${interviewId}_focus`) as FocusAreaPreset;
+      if (saved && FOCUS_PRESETS[saved]) return saved;
+    }
+    return isCivilService ? "strengths-competency" : "balanced";
+  });
+
+  const handleFocusChange = async (presetKey: FocusAreaPreset) => {
+    setFocusPreset(presetKey);
+    try {
+      localStorage.setItem(`hk_interview_${interviewId}_focus`, presetKey);
+      const newMix = FOCUS_PRESETS[presetKey].mix;
+      await fetch(`/api/interviews/${interviewId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          settings: {
+            mix: newMix,
+            preset: presetFor(newMix),
+            difficulty,
+            minutes,
+          },
+        }),
+      });
+    } catch (err) {
+      console.warn("Failed to update settings:", err);
+    }
+  };
+
+  const activeMix = FOCUS_PRESETS[focusPreset]?.mix ?? activeStage.mix;
   const currentSettings: SessionSettings = {
     difficulty,
     minutes,
-    preset: activeStage.preset,
-    mix: activeStage.mix,
+    preset: presetFor(activeMix),
+    mix: activeMix,
   };
 
   return (
@@ -422,6 +500,14 @@ export function InterviewOverviewClient({
           </div>
 
           <div className="flex shrink-0 items-center gap-2.5">
+            <Link
+              href={`/interviews/${interviewId}/rebuild?edit=1`}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-semibold text-white/90 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.08] hover:text-white hover:shadow-[0_4px_16px_rgba(0,0,0,0.3)] active:scale-[0.98]"
+            >
+              <Icon name="sliders" size={13} />
+              <span>Edit job & rebuild</span>
+            </Link>
+
             <Link
               href={`/interviews/${interviewId}/prep`}
               className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-semibold text-white/90 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.08] hover:text-white hover:shadow-[0_4px_16px_rgba(0,0,0,0.3)] active:scale-[0.98]"
@@ -486,9 +572,11 @@ export function InterviewOverviewClient({
                     Recommended Next
                   </span>
                   <h2 className="text-base font-bold text-white tracking-tight">
-                    Practise {activeStage.titlePhrase} questions
+                    Practise {focusPreset === "strengths-competency" ? "Strengths & Competency" : focusPreset === "strengths" ? "Strengths" : focusPreset === "competency" ? "Competency" : activeStage.titlePhrase} questions
                   </h2>
-                  <p className="text-xs text-muted max-w-[490px] leading-relaxed">{activeStage.description}</p>
+                  <p className="text-xs text-muted max-w-[490px] leading-relaxed">
+                    {FOCUS_PRESETS[focusPreset]?.description || activeStage.description}
+                  </p>
                   <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] text-muted">
                     <span className="inline-flex items-center gap-1.5 rounded-md bg-white/[0.06] px-2.5 py-1 border border-white/10 text-ink">
                       <Icon name="user" size={12} className="text-muted" />
@@ -779,6 +867,44 @@ export function InterviewOverviewClient({
               <StageDropdown stages={activeStages} value={activeStage.id} onChange={setStageId} />
             </div>
 
+            {/* Question focus / Focus area */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-medium text-muted">Question focus</span>
+                <span className="font-semibold text-indigo-300">
+                  {FOCUS_PRESETS[focusPreset]?.label}
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {(Object.keys(FOCUS_PRESETS) as FocusAreaPreset[]).map((key) => {
+                  const opt = FOCUS_PRESETS[key];
+                  const isSel = focusPreset === key;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => void handleFocusChange(key)}
+                      className={clsx(
+                        "p-2.5 rounded-xl text-left border transition-all flex flex-col justify-between gap-1 cursor-pointer text-xs",
+                        isSel
+                          ? "border-indigo-500 bg-indigo-500/20 text-white shadow-[0_0_12px_rgba(99,102,241,0.25)]"
+                          : "border-white/10 bg-white/[0.03] hover:border-white/20 text-[#c9cad4] hover:text-white"
+                      )}
+                    >
+                      <div className="flex items-center justify-between gap-1 w-full">
+                        <span className="font-semibold text-white truncate">{opt.label}</span>
+                        {isSel && <Icon name="check" size={13} className="text-indigo-400 shrink-0" />}
+                      </div>
+                      <span className="text-[10px] text-muted line-clamp-1">{opt.description}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-[11px] text-muted pt-0.5">
+                {FOCUS_PRESETS[focusPreset]?.description}
+              </p>
+            </div>
+
             {/* Difficulty */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between text-xs">
@@ -867,7 +993,7 @@ export function InterviewOverviewClient({
               </Link>
 
               <Link
-                href={`/interviews/${interviewId}/rebuild`}
+                href={`/interviews/${interviewId}/rebuild?edit=1`}
                 className="flex items-center justify-between p-3.5 rounded-xl bg-panel-2 border border-line hover:border-indigo-500/40 hover:bg-white/[0.04] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(0,0,0,0.35)] group"
               >
                 <div className="flex items-center gap-3 text-xs">
@@ -876,9 +1002,31 @@ export function InterviewOverviewClient({
                   </span>
                   <div>
                     <span className="font-semibold text-ink group-hover:text-white transition-colors">
-                      Customise your session
+                      Edit job description & rebuild questions
                     </span>
-                    <p className="text-[11px] text-muted">Choose topics, question types and duration</p>
+                    <p className="text-[11px] text-muted">Update job spec, role understanding or upload new CV</p>
+                  </div>
+                </div>
+                <Icon
+                  name="chevronRight"
+                  size={14}
+                  className="text-muted group-hover:text-white group-hover:translate-x-1 transition-all"
+                />
+              </Link>
+
+              <Link
+                href={`/practice?interview=${interviewId}`}
+                className="flex items-center justify-between p-3.5 rounded-xl bg-panel-2 border border-line hover:border-indigo-500/40 hover:bg-white/[0.04] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(0,0,0,0.35)] group"
+              >
+                <div className="flex items-center gap-3 text-xs">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500/15 text-indigo-400 border border-indigo-500/25 transition-transform duration-200 group-hover:scale-110">
+                    <Icon name="target" size={13} />
+                  </span>
+                  <div>
+                    <span className="font-semibold text-ink group-hover:text-white transition-colors">
+                      Browse Practice Hub workouts
+                    </span>
+                    <p className="text-[11px] text-muted">Targeted 1-question drills for Strengths, Competency and Scenarios</p>
                   </div>
                 </div>
                 <Icon
