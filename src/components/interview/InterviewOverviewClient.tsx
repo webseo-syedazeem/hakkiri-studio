@@ -18,6 +18,7 @@ import {
 } from "@/lib/interviews/settings";
 import { InterviewTabs } from "./InterviewTabs";
 import { StartButton } from "./StartSession";
+import { updateClientInterviewStages } from "@/lib/interviews/client-store";
 
 export type OverviewStageOption = {
   id: string;
@@ -291,43 +292,49 @@ export function InterviewOverviewClient({
         : [];
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem("hk_custom_interviews");
-      if (raw) {
-        const list = JSON.parse(raw);
-        const match = Array.isArray(list) ? list.find((it: any) => it.id === interviewId) : null;
-        if (match && Array.isArray(match.stages) && match.stages.length > 0) {
-          const mapped: OverviewStageOption[] = match.stages.map((st: any, idx: number) => {
-            const id = st.id || `stage-${idx + 1}`;
-            const label = st.name || `Stage ${idx + 1}`;
-            const lName = label.toLowerCase();
-            const isPresetScreen = lName.includes("screen") || lName.includes("recruiter");
-            const isPresetTech = lName.includes("tech") || lName.includes("case") || lName.includes("code");
-            const isPresetFinal = lName.includes("final") || lName.includes("panel") || lName.includes("lead");
-            const preset: SessionSettings["preset"] = isPresetScreen ? "screening" : isPresetTech ? "technical" : isPresetFinal ? "final" : "balanced";
-            const isNext = st.status === "next" || (idx === 0 && !match.stages.some((x: any) => x.status === "next"));
-            const isCompleted = st.status === "completed";
-            return {
-              id,
-              label,
-              selectLabel: label,
-              titlePhrase: label.toLowerCase(),
-              description: `Focus on ${label.toLowerCase()} questions, tailored to ${roleTitle} at ${companyName}.`,
-              status: isCompleted ? "completed" : isNext ? "next" : "upcoming",
-              subtitle: st.date ? `${st.date}${st.time ? `, ${st.time}` : ""}` : isCompleted ? "Completed" : "Upcoming",
-              preset,
-              mix: PRESETS[preset].mix,
-            };
-          });
-          setActiveStages(mapped);
-          if (!mapped.some((s) => s.id === stageId)) {
-            const nextOne = mapped.find((s) => s.status === "next") ?? mapped[0];
-            if (nextOne) setStageId(nextOne.id);
+    const syncStages = () => {
+      try {
+        const raw = localStorage.getItem("hk_custom_interviews");
+        if (raw) {
+          const list = JSON.parse(raw);
+          const match = Array.isArray(list) ? list.find((it: any) => it.id === interviewId) : null;
+          if (match && Array.isArray(match.stages) && match.stages.length > 0) {
+            const mapped: OverviewStageOption[] = match.stages.map((st: any, idx: number) => {
+              const id = st.id || `stage-${idx + 1}`;
+              const label = st.name || `Stage ${idx + 1}`;
+              const lName = label.toLowerCase();
+              const isPresetScreen = lName.includes("screen") || lName.includes("recruiter");
+              const isPresetTech = lName.includes("tech") || lName.includes("case") || lName.includes("code");
+              const isPresetFinal = lName.includes("final") || lName.includes("panel") || lName.includes("lead");
+              const preset: SessionSettings["preset"] = isPresetScreen ? "screening" : isPresetTech ? "technical" : isPresetFinal ? "final" : "balanced";
+              const isNext = st.status === "next" || (idx === 0 && !match.stages.some((x: any) => x.status === "next"));
+              const isCompleted = st.status === "completed";
+              return {
+                id,
+                label,
+                selectLabel: label,
+                titlePhrase: label.toLowerCase(),
+                description: `Focus on ${label.toLowerCase()} questions, tailored to ${roleTitle} at ${companyName}.`,
+                status: isCompleted ? "completed" : isNext ? "next" : "upcoming",
+                subtitle: st.date ? `${st.date}${st.time ? `, ${st.time}` : ""}` : isCompleted ? "Completed" : "Upcoming",
+                preset,
+                mix: PRESETS[preset].mix,
+              };
+            });
+            setActiveStages(mapped);
+            if (!mapped.some((s) => s.id === stageId)) {
+              const nextOne = mapped.find((s) => s.status === "next") ?? mapped[0];
+              if (nextOne) setStageId(nextOne.id);
+            }
           }
         }
-      }
-    } catch {}
-  }, [interviewId, roleTitle, companyName]);
+      } catch {}
+    };
+
+    syncStages();
+    window.addEventListener("hk_interviews_updated", syncStages);
+    return () => window.removeEventListener("hk_interviews_updated", syncStages);
+  }, [interviewId, roleTitle, companyName, stageId]);
 
   const deleteStage = async (e: React.MouseEvent, idToDelete: string) => {
     e.stopPropagation();
@@ -337,17 +344,28 @@ export function InterviewOverviewClient({
     if (stageId === idToDelete) {
       setStageId(nextStages[0].id);
     }
+
+    const mappedToSave = nextStages.map((st) => ({
+      id: st.id,
+      name: st.label,
+      status: st.status,
+      date: st.subtitle,
+    }));
+
+    // 1. Immediately persist to localStorage and notify all other views (like StageTracker on Home)
+    updateClientInterviewStages(interviewId, mappedToSave, {
+      role: roleTitle,
+      company: companyName,
+      companyInitial,
+    });
+
+    // 2. Persist to server / MongoDB
     try {
       await fetch(`/api/interviews/${interviewId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          stages: nextStages.map((st) => ({
-            id: st.id,
-            name: st.label,
-            status: st.status,
-            date: st.subtitle,
-          })),
+          stages: mappedToSave,
         }),
       });
     } catch (err) {
@@ -391,7 +409,7 @@ export function InterviewOverviewClient({
               <div className="mt-0.5 text-xs text-muted flex flex-wrap items-center gap-2">
                 <span>{companyName}</span>
                 <span>·</span>
-                <span>{activeStages.length} interview stages</span>
+                <span>{activeStages.length} interview {activeStages.length === 1 ? "stage" : "stages"}</span>
                 <span>·</span>
                 <span>Next: {nextStage.label}</span>
                 <span>·</span>

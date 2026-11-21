@@ -105,9 +105,8 @@ export function StageTracker({
         company: "HMRC",
         companyInitial: "H",
         stages: [
-          { id: "st-1", name: "Competency, strength and presentation", status: "next", date: "21 Nov", time: "11:00" },
-          { id: "st-2", name: "Digital service delivery assessment", status: "upcoming", date: "28 Nov" },
-          { id: "st-3", name: "Executive panel interview", status: "upcoming", date: "5 Dec" },
+          { id: "stage-hmrc-1", name: "Competency, strength and presentation", status: "next", date: "21 Nov", time: "11:00" },
+          { id: "stage-hmrc-2", name: "Final panel", status: "upcoming" },
         ],
       },
       {
@@ -142,40 +141,54 @@ export function StageTracker({
 
   // Sync with client-side localStorage and passed interviews
   useEffect(() => {
-    try {
-      let combined = [...(availableInterviews.length > 0 ? availableInterviews : interviewsList)];
-      const raw = localStorage.getItem("hk_custom_interviews");
-      if (raw) {
-        const list = JSON.parse(raw);
-        if (Array.isArray(list) && list.length > 0) {
-          for (const item of list) {
-            if (!combined.some((it) => it.id === item.id)) {
-              combined.push({
-                id: item.id,
-                role: item.role,
-                company: item.company,
-                companyInitial: item.companyInitial || item.company?.[0] || "C",
-                stages: Array.isArray(item.stages) && item.stages.length > 0 ? item.stages : undefined,
-              });
+    const syncInterviews = () => {
+      try {
+        let combined = [...(availableInterviews.length > 0 ? availableInterviews : interviewsList)];
+        const raw = localStorage.getItem("hk_custom_interviews");
+        if (raw) {
+          const list = JSON.parse(raw);
+          if (Array.isArray(list) && list.length > 0) {
+            for (const item of list) {
+              const existingIdx = combined.findIndex((it) => it.id === item.id);
+              if (existingIdx >= 0) {
+                if (Array.isArray(item.stages) && item.stages.length > 0) {
+                  combined[existingIdx] = {
+                    ...combined[existingIdx],
+                    stages: item.stages,
+                  };
+                }
+              } else {
+                combined.push({
+                  id: item.id,
+                  role: item.role,
+                  company: item.company,
+                  companyInitial: item.companyInitial || item.company?.[0] || "C",
+                  stages: Array.isArray(item.stages) && item.stages.length > 0 ? item.stages : undefined,
+                });
+              }
             }
           }
         }
-      }
-      setInterviewsList(combined);
+        setInterviewsList(combined);
 
-      const savedTrackerId = localStorage.getItem("hk_active_stage_tracker_id");
-      if (savedTrackerId) {
-        const found = combined.find((i) => i.id === savedTrackerId);
-        if (found) {
-          setActiveInterview(found);
-          return;
+        const savedTrackerId = localStorage.getItem("hk_active_stage_tracker_id");
+        const currentActiveId = savedTrackerId || activeInterview?.id || interview?.id;
+        if (currentActiveId) {
+          const found = combined.find((i) => i.id === currentActiveId);
+          if (found) {
+            setActiveInterview(found);
+            return;
+          }
         }
-      }
-      if (interview) {
-        const found = combined.find((i) => i.id === interview.id);
-        if (found) setActiveInterview(found);
-      }
-    } catch {}
+        if (combined[0]) {
+          setActiveInterview(combined[0]);
+        }
+      } catch {}
+    };
+
+    syncInterviews();
+    window.addEventListener("hk_interviews_updated", syncInterviews);
+    return () => window.removeEventListener("hk_interviews_updated", syncInterviews);
   }, [interview, availableInterviews]);
 
   const displayRole = activeInterview?.role || "Senior Product Manager, Payments";
@@ -221,6 +234,8 @@ export function StageTracker({
         const parsed = parseInt(savedStage, 10);
         if (parsed >= 1 && parsed <= totalStages) {
           setCurrentStage(parsed);
+        } else if (parsed > totalStages && totalStages > 0) {
+          setCurrentStage(totalStages);
         }
       } else {
         setCurrentStage(defaultCurrentStage);

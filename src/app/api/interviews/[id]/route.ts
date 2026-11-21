@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { deleteInterview, getInterview, isDemoInterview, updateInterview } from "@/lib/interviews/store";
+import { deleteInterview, getInterview, isDemoInterview, updateInterview, updateInterviewAsync } from "@/lib/interviews/store";
 import { deleteAnswersFor } from "@/lib/answers/store";
 import { deleteRecordings } from "@/lib/answers/audio";
 import { deleteMocksFor } from "@/lib/mocks/store";
@@ -47,7 +47,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const body = (await req.json().catch(() => null)) as { stages?: any[]; settings?: any } | null;
   if (!body) return NextResponse.json({ error: "bad-request" }, { status: 400 });
 
-  const updated = updateInterview(
+  const updated = await updateInterviewAsync(
     id,
     (current) => {
       const nextStages = Array.isArray(body.stages) ? body.stages : current.stages;

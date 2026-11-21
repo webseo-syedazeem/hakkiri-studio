@@ -128,6 +128,14 @@ export async function listInterviewsAsync(today: string, userId?: string): Promi
           store.set(item.id, item);
         }
       }
+      for (const demoId of [hmrc.id, staffNurse.id, halden.id]) {
+        if (!store.has(demoId)) {
+          const direct = await loadFromMongo<Interview>("interviews", demoId);
+          if (direct && direct.id) {
+            store.set(direct.id, direct);
+          }
+        }
+      }
     } catch (err) {
       console.warn("[interviews/store] MongoDB load list failed:", err);
     }
@@ -183,7 +191,24 @@ export function updateInterview(id: string, change: (i: Interview) => Interview,
   const raw = store.get(id) ?? demoBase(id);
   if (!raw) return undefined;
   if (!isDemoInterview(raw.id) && (userId && raw.userId !== userId)) return undefined;
-  saveInterview(change(withDemoPool(raw)), userId || raw.userId);
+  const changed = change(withDemoPool(raw));
+  saveInterview(changed, userId || raw.userId);
+  if (isMongoConfigured()) {
+    void saveInterviewAsync(changed, userId || raw.userId);
+  }
+  return getInterview(id, userId);
+}
+
+export async function updateInterviewAsync(
+  id: string,
+  change: (i: Interview) => Interview,
+  userId?: string,
+): Promise<Interview | undefined> {
+  const raw = store.get(id) ?? (await getInterviewAsync(id, userId)) ?? demoBase(id);
+  if (!raw) return undefined;
+  if (!isDemoInterview(raw.id) && (userId && raw.userId !== userId)) return undefined;
+  const changed = change(withDemoPool(raw));
+  await saveInterviewAsync(changed, userId || raw.userId);
   return getInterview(id, userId);
 }
 

@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { Icon } from "@/components/ui";
 import { londonToday } from "@/lib/dates";
-import { listInterviews } from "@/lib/interviews/store";
+import { listInterviews, listInterviewsAsync } from "@/lib/interviews/store";
 import { listPresentations } from "@/lib/pitch/store";
 import { listMocksAsync, rowsFor } from "@/lib/mocks/store";
 import { mockScore } from "@/lib/mocks/report";
@@ -50,7 +50,7 @@ export default async function HomePage() {
   // First visit: start at the welcome screen.
   if (!jar.get("hk_welcomed")) redirect("/welcome");
 
-  const interviews = listInterviews(londonToday(), user.id);
+  const interviews = await listInterviewsAsync(londonToday(), user.id);
   const presentations = listPresentations(user.id);
 
   const customInterview = interviews.find((iv) => iv.id !== "halden");

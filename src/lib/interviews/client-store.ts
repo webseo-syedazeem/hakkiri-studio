@@ -64,3 +64,37 @@ export function deleteClientInterview(id: string): void {
     window.dispatchEvent(new Event("hk_interviews_updated"));
   } catch {}
 }
+
+export function updateClientInterviewStages(
+  id: string,
+  stages: any[],
+  meta?: { role?: string; company?: string; companyInitial?: string }
+): void {
+  if (typeof window === "undefined") return;
+  try {
+    const current = loadClientInterviews();
+    const idx = current.findIndex((it) => it.id === id);
+    if (idx >= 0) {
+      current[idx] = {
+        ...current[idx],
+        stages,
+        ...(meta?.role ? { role: meta.role } : {}),
+        ...(meta?.company ? { company: meta.company } : {}),
+        ...(meta?.companyInitial ? { companyInitial: meta.companyInitial } : {}),
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(current));
+    } else {
+      const newEntry: any = {
+        id,
+        role: meta?.role || "",
+        company: meta?.company || "",
+        companyInitial: meta?.companyInitial || (meta?.company ? meta.company[0] : "C"),
+        stages,
+        createdAt: new Date().toISOString(),
+      };
+      current.push(newEntry);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(current));
+    }
+    window.dispatchEvent(new Event("hk_interviews_updated"));
+  } catch {}
+}
