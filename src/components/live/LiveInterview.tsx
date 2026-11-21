@@ -94,6 +94,7 @@ export interface LiveInterviewProps {
   /** single: one question, then its feedback. session: questions in a row, then the report. */
   run: { kind: "single" } | { kind: "session"; session: LiveSession };
   questions: LiveQuestion[];
+  spares?: LiveQuestion[];
   /** Shown when there are no API keys yet, or no audio was recorded. */
   /** The demo screens to show when nothing could be scored. Absent at launch (the demo is hidden). */
   demoFeedbackHref?: string;
@@ -157,8 +158,8 @@ export function LiveInterview(p: LiveInterviewProps) {
     setQueue(p.questions);
     setQIndex(0);
     setStyle(p.interviewer.style);
-    sparesLeft.current = session?.spares ?? [];
-  }, [session?.id, p.questions, p.interviewer.style, session?.spares, phase]);
+    sparesLeft.current = (p.spares && p.spares.length > 0) ? p.spares : (session?.spares ?? []);
+  }, [session?.id, p.questions, p.interviewer.style, session?.spares, p.spares, phase]);
   const changeReadyDifficulty = async (d: Difficulty) => {
     setStyle(styleFor(d));
     if (phase !== "ready" || switchingDifficulty) return;
@@ -210,7 +211,7 @@ export function LiveInterview(p: LiveInterviewProps) {
   /** Main questions reached (skipped ones included), for the session record. */
   const askedIds = useRef<string[]>([]);
   const skipped = useRef<SkipRecord[]>([]);
-  const sparesLeft = useRef<LiveQuestion[]>(session?.spares ?? []);
+  const sparesLeft = useRef<LiveQuestion[]>((p.spares && p.spares.length > 0) ? p.spares : (session?.spares ?? []));
   /** The session clock: started at Start, paused while "Something's wrong" is open. */
   const clock = useRef<{ start: number; paused: number; pausedAt: number | null }>({ start: 0, paused: 0, pausedAt: null });
   const cutIn = useRef(false);
@@ -519,8 +520,14 @@ export function LiveInterview(p: LiveInterviewProps) {
         skipped.current = [...skipped.current, { questionId: q.id, reason: "by-choice" }];
         return advance(q.slot === "opening" ? "No problem. Let’s get into it. " : "");
       }
-      const spare = sparesLeft.current.find((x) => x.group === q.group);
-      if (spare) sparesLeft.current = sparesLeft.current.filter((x) => x !== spare);
+      let spare = sparesLeft.current.find((x) => x.group === q.group) ?? sparesLeft.current[0];
+      if (!spare) {
+        const fallback = p.questions.find((x) => x.id !== q.id);
+        if (fallback) spare = fallback;
+      }
+      if (spare) {
+        sparesLeft.current = sparesLeft.current.filter((x) => x.id !== spare!.id);
+      }
       skipped.current = [...skipped.current, { questionId: q.id, reason, replacedBy: spare?.id }];
       const realSkips = skipped.current.filter((s) => s.reason !== "by-choice");
       const lead = reason === "said-so" ? "Sorry, my mistake. Let’s move on. " : "No problem. Let’s move on. ";
@@ -538,21 +545,19 @@ export function LiveInterview(p: LiveInterviewProps) {
         advance(lead);
       }
     },
-    [mic, q, qIndex, askMain, advance, openWrong],
+    [mic, q, qIndex, askMain, advance, openWrong, p.questions],
   );
 
   const handleSkipQuestion = useCallback(async () => {
     askToken.current++;
     voice.current?.cancel();
     await mic.stop();
-    if (session && turn.kind === "main") {
-      void skip("by-choice");
-    } else if (!isRun || queue.length === 1) {
-      router.push(`/mock/${p.interviewId}?practice=1&next=1`);
+    if (turn.kind === "follow-up") {
+      void moveOn();
     } else {
-      advance("Skipped. Moving to the next question.");
+      void skip("by-choice");
     }
-  }, [session, turn.kind, skip, isRun, queue.length, mic, router, p.interviewId, advance]);
+  }, [mic, skip, turn.kind, moveOn]);
 
   const finish = useCallback(async () => {
     voice.current?.cancel();
@@ -1176,15 +1181,6 @@ export function LiveInterview(p: LiveInterviewProps) {
               </div>
 
               <div className="flex items-center gap-3">
-                {(queue.length === 1 || !isRun) && (
-                  <Link
-                    href={`/mock/${p.interviewId}?practice=1&next=1`}
-                    className="flex items-center gap-1.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 px-4 py-3 text-xs font-semibold text-white transition-all cursor-pointer"
-                  >
-                    <Icon name="repeat" size={14} />
-                    <span>Try another question</span>
-                  </Link>
-                )}
                 <button
                   type="button"
                   onClick={() => void start()}

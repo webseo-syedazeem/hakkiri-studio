@@ -234,6 +234,22 @@ export default async function MockInterviewPage({
           ? `${topicSpec.focusLabel} practice`
           : `${interview.company} practice`;
 
+      // Gather spares for skipping: same category/topic first, then other questions
+      const matchingSpares = interview.questions.filter((item) => {
+        if (item.id === targetQuestion?.id) return false;
+        if (type === "strengths") return item.type === "strengths" || /strength/i.test(`${item.text} ${item.short}`);
+        if (type === "competency") return item.type === "competency" || item.group === "competency";
+        if (type === "technical") return item.type === "technical" || item.group === "technical";
+        if (type === "situational") return item.type === "situational" || (item.group === "curveball" && item.type !== "strengths");
+        if (type === "motivation") return item.type === "why-us" || item.type === "tell-me-about-yourself" || item.group === "motivation";
+        if (type === "experience") return item.group === "cv";
+        return false;
+      });
+      const otherSpares = interview.questions.filter(
+        (item) => item.id !== targetQuestion?.id && !matchingSpares.some((s) => s.id === item.id)
+      );
+      const orderedSpares = [...matchingSpares, ...otherSpares];
+
       return (
         <LiveInterview
           {...common}
@@ -244,6 +260,7 @@ export default async function MockInterviewPage({
           }}
           run={{ kind: "single" }}
           questions={[toLive(targetQuestion, 1, followups !== "off")]}
+          spares={orderedSpares.map((q, i) => toLive(q, i + 2, followups !== "off"))}
         />
       );
     }
@@ -255,12 +272,13 @@ export default async function MockInterviewPage({
     const lastAsked = await lastAskedMapAsync(interview.id, user.id);
     const questions = topicQuestions(topicSpec.id, interview.questions, { difficulty: topicDifficulty, lastAsked });
     if (questions.length) {
+      const remainingQuestions = interview.questions.filter((q) => !questions.some((x) => x.id === q.id));
       const live: LiveSession = {
         id: `topic_${topicSpec.id}_${topicDifficulty}`,
         mode: "drill",
         minutes: topicSpec.minutes,
         feedbackEach: true,
-        spares: [],
+        spares: remainingQuestions.map((q, i) => toLive(q, i + questions.length + 1)),
         drill: {
           kind: "topic",
           topic: topicSpec.id,

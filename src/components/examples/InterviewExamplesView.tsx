@@ -121,7 +121,7 @@ export function InterviewExamplesView() {
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-rise">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">Interview examples</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-white">Experience Library</h1>
           <p className="mt-1 text-xs text-muted max-w-[680px]">
             Build a personal bank of real examples to use in interviews. Capture, organise and reuse your best experiences.
           </p>

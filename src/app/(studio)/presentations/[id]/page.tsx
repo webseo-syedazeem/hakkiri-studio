@@ -302,22 +302,6 @@ export default async function PresentationWorkspace({ params }: { params: Promis
               </Link>
 
               <Link
-                href={`/rehearse/${p.id}?mode=opening`}
-                className="group flex items-center justify-between gap-3 p-3 rounded-xl bg-[#141326] border border-white/10 hover:border-white/20 transition-all"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/[0.06] text-indigo-300 group-hover:bg-indigo-500/20 transition-colors">
-                    <Icon name="flag" size={14} />
-                  </div>
-                  <div>
-                    <div className="text-xs font-semibold text-white group-hover:text-indigo-300 transition-colors">Opening only</div>
-                    <div className="text-[11px] text-muted">Your first 60 seconds, scored on hook and relevance.</div>
-                  </div>
-                </div>
-                <Icon name="chevronRight" size={13} className="text-muted group-hover:text-white transition-colors shrink-0" />
-              </Link>
-
-              <Link
                 href={`/qa/${p.id}`}
                 className="group flex items-center justify-between gap-3 p-3 rounded-xl bg-[#141326] border border-white/10 hover:border-white/20 transition-all"
               >

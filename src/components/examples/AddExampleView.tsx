@@ -125,7 +125,7 @@ export function AddExampleView() {
           className="inline-flex items-center gap-1.5 text-xs font-medium text-muted hover:text-white transition-colors mb-2"
         >
           <Icon name="back" size={13} />
-          <span>Interview examples</span>
+          <span>Experience Library</span>
         </Link>
         <h1 className="text-2xl font-bold tracking-tight text-white">Add interview question example</h1>
         <p className="mt-1 text-xs text-muted">

@@ -41,16 +41,10 @@ const ITEMS: {
     match: (p) => p.startsWith("/presentations") || p.startsWith("/qa"),
   },
   {
-    label: "Interview examples",
+    label: "Experience Library",
     href: "/interview-examples",
     icon: "layers",
     match: (p) => p.startsWith("/interview-examples"),
-  },
-  {
-    label: "Story Bank",
-    href: "/story-bank",
-    icon: "doc",
-    match: (p) => p.startsWith("/story-bank"),
   },
   {
     label: "Robot Tester",
