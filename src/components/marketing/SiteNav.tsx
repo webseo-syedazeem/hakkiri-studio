@@ -38,12 +38,22 @@ export function SiteNav() {
         </Link>
       ))}
       {user ? (
-        <Link
-          href="/dashboard"
-          className="ml-1 rounded-full bg-mk-cta px-4 py-1.5 font-medium text-white transition-all duration-200 hover:scale-[1.04] active:scale-[0.97] hover:bg-mk-cta-hover hover:shadow-md hover:shadow-mk-cta/25"
-        >
-          Open Studio ({user.initials})
-        </Link>
+        <div className="flex items-center gap-1.5">
+          {user.email === "admin@hakkiri.com" && (
+            <Link
+              href="/admin"
+              className="rounded-full bg-purple-600 hover:bg-purple-500 px-3.5 py-1.5 font-bold text-xs text-white shadow-md shadow-purple-600/30 transition-all hover:scale-[1.04]"
+            >
+              Admin Portal
+            </Link>
+          )}
+          <Link
+            href="/dashboard"
+            className="ml-1 rounded-full bg-mk-cta px-4 py-1.5 font-medium text-white transition-all duration-200 hover:scale-[1.04] active:scale-[0.97] hover:bg-mk-cta-hover hover:shadow-md hover:shadow-mk-cta/25"
+          >
+            Open Studio ({user.initials})
+          </Link>
+        </div>
       ) : (
         <>
           <Link

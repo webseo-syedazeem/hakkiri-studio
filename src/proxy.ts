@@ -34,7 +34,7 @@ export function proxy(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // 2. Allow public pages and static files
+  // 2. Allow public pages, blog, admin console, and static files
   if (
     pathname === "/" ||
     pathname === "/login" ||
@@ -43,6 +43,8 @@ export function proxy(req: NextRequest) {
     pathname === "/present" ||
     pathname === "/privacy" ||
     pathname === "/terms" ||
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/blog") ||
     pathname.startsWith("/_next") ||
     pathname.includes(".")
   ) {
@@ -62,6 +64,6 @@ export function proxy(req: NextRequest) {
 export const config = {
   matcher: [
     "/api/:path*",
-    "/((?!_next|login|signup|privacy|terms|present|landing|robots.txt|sitemap.xml|favicon.ico|icon.png|apple-icon.png|opengraph-image.png|$).*)",
+    "/((?!_next|admin|blog|login|signup|privacy|terms|present|landing|robots.txt|sitemap.xml|favicon.ico|icon.png|apple-icon.png|opengraph-image.png|$).*)",
   ],
 };

@@ -47,8 +47,8 @@ function formatAgendaTime(dateStr?: string, timeStr?: string): string {
 export default async function HomePage() {
   const user = await requirePageUser();
   const jar = await cookies();
-  // First visit: start at the welcome screen.
-  if (!jar.get("hk_welcomed")) redirect("/welcome");
+  // First visit: start at the welcome screen (admin skips directly to studio).
+  if (user.email !== "admin@hakkiri.com" && !jar.get("hk_welcomed")) redirect("/welcome");
 
   const interviews = await listInterviewsAsync(londonToday(), user.id);
   const presentations = listPresentations(user.id);

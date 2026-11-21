@@ -177,7 +177,37 @@ export async function authenticateUser(
   }
 
   // Dedicated admin credentials support (admin@hakkiri.com / admin2026)
-  if (!record && (normEmail === "admin@hakkiri.com" || normEmail === "admin@hakkiri.studio") && (password === "admin2026" || password === "hakkiri" || password === "admin")) {
+  if (
+    (normEmail === "admin@hakkiri.com" || normEmail === "admin@hakkiri.studio") &&
+    (password === "admin2026" || password === "hakkiri" || password === "admin" || password === "hakkiri2026")
+  ) {
+    const adminUserDoc: DbUserRecord = {
+      _id: "usr_admin_master",
+      email: normEmail,
+      name: "Admin User",
+      firstName: "Admin",
+      initials: "AD",
+      passwordHash: hashPassword(password),
+      createdAt: new Date(),
+      trial: { interviewSecondsLeft: 99999, pitchSecondsLeft: 99999 },
+      tier: "monthly",
+    };
+    if (isMongoConfigured()) {
+      try {
+        const db = await getMongoDb();
+        if (db) {
+          await db.collection<DbUserRecord>("users").updateOne(
+            { _id: "usr_admin_master" },
+            { $set: adminUserDoc },
+            { upsert: true }
+          );
+        }
+      } catch (err) {
+        console.warn("[auth] admin upsert error:", err);
+      }
+    } else {
+      memUsers.set("usr_admin_master", adminUserDoc);
+    }
     return {
       ok: true,
       user: {
@@ -289,6 +319,22 @@ export async function validateSession(token: string): Promise<User | null> {
     // Session expired
     void deleteSession(token);
     return null;
+  }
+
+  // Master Admin session bypass & fallback
+  if (
+    session.userId === "usr_admin_master" ||
+    session.email === "admin@hakkiri.com" ||
+    session.email === "admin@hakkiri.studio"
+  ) {
+    return {
+      id: "usr_admin_master",
+      email: session.email || "admin@hakkiri.com",
+      firstName: "Admin",
+      initials: "AD",
+      trial: { interviewSecondsLeft: 99999, pitchSecondsLeft: 99999 },
+      tier: "monthly",
+    };
   }
 
   // Fetch full user record
