@@ -90,20 +90,6 @@ export function AudienceQA(p: AudienceQAProps) {
   const cutting = useRef(false);
   /** True once the first question has been asked. */
   const begun = useRef(false);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-
-  useEffect(() => {
-    const vid = videoRef.current;
-    if (!vid) return;
-    if (phase === "asking") {
-      vid.play().catch(() => {});
-    } else if (phase === "paused") {
-      vid.pause();
-    } else {
-      vid.pause();
-      vid.currentTime = 0;
-    }
-  }, [phase]);
 
   const target = press ? followUpProfile(press.kind).targetSec : profileFor("presentation-qa").targetSec;
   const totalSec = Math.max(90, target[1] + 30);
@@ -455,50 +441,30 @@ export function AudienceQA(p: AudienceQAProps) {
           <>
             {/* Left Column: Portrait Card of Asker + Question Content */}
             <div className="space-y-4">
-              <div className="relative w-full aspect-[16/9] rounded-2xl overflow-hidden bg-booth border border-white/10 shadow-2xl">
-                <video
-                  ref={videoRef}
-                  src={persona.name.toLowerCase().includes("dana") ? "/videos/dana.mp4" : "/videos/sam.mp4"}
-                  poster={persona.name.toLowerCase().includes("dana") ? "/dana.jpg" : "/sam.jpg"}
-                  loop
-                  muted
-                  playsInline
-                  className="w-full h-full object-cover object-top"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
-
+              <div className="relative w-full rounded-2xl overflow-hidden bg-[#0c0b16] border border-white/10 p-5 shadow-2xl flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-[#4f52f8] to-[#7c3aed] text-sm font-bold text-white shadow-lg">
+                    {persona.name.charAt(0)}
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm text-white">{persona.name}</p>
+                    <p className="text-xs text-muted">{persona.title}</p>
+                  </div>
+                </div>
                 {phase === "asking" ? (
-                  <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/70 backdrop-blur-md border border-emerald-500/40 text-emerald-300 text-[11px] font-semibold shadow-lg">
+                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-semibold">
                     <span className="relative flex h-2 w-2">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                       <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
                     </span>
-                    <span>Speaking</span>
-                    <span className="flex items-center gap-[2px] ml-1 h-2.5">
-                      <span className="h-2 w-[2px] rounded-full bg-emerald-400 animate-wave" style={{ animationDelay: "0ms" }} />
-                      <span className="h-2.5 w-[2px] rounded-full bg-emerald-400 animate-wave" style={{ animationDelay: "150ms" }} />
-                      <span className="h-2 w-[2px] rounded-full bg-emerald-400 animate-wave" style={{ animationDelay: "300ms" }} />
-                    </span>
+                    <span>Speaking...</span>
                   </div>
                 ) : phase === "answering" ? (
-                  <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/70 backdrop-blur-md border border-blue/30 text-blue-soft text-[11px] font-medium shadow-md">
+                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue/15 border border-blue/30 text-blue-soft text-xs font-medium">
                     <span className="h-2 w-2 rounded-full bg-blue animate-pulse" />
-                    <span>Listening...</span>
+                    <span>Listening to you...</span>
                   </div>
                 ) : null}
-
-                {/* Bottom Asker Info Overlay */}
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-3 flex items-center justify-between text-xs text-white">
-                  <div className="flex items-center gap-2">
-                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-white/10 text-[11px] font-semibold text-white">
-                      {persona.name.charAt(0)}
-                    </div>
-                    <div>
-                      <span className="font-medium text-white/95 text-xs">{persona.name}</span>
-                      <span className="text-[10px] text-white/60 ml-1.5">{persona.title}</span>
-                    </div>
-                  </div>
-                </div>
               </div>
 
               <div className="animate-rise space-y-2">
