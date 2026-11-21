@@ -16,6 +16,34 @@ import { requirePageUser } from "@/lib/auth/require";
 
 export const dynamic = "force-dynamic";
 
+function formatAgendaDate(dateStr?: string): string {
+  if (!dateStr) return "Upcoming";
+  if (/^[A-Za-z]{3}\s+\d{1,2}\s+[A-Za-z]{3}/.test(dateStr)) return dateStr;
+  try {
+    const d = new Date(dateStr);
+    if (!isNaN(d.getTime())) {
+      return d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+    }
+  } catch {}
+  return dateStr.slice(0, 10);
+}
+
+function formatAgendaTime(dateStr?: string, timeStr?: string): string {
+  if (timeStr && /^\d{1,2}:\d{2}$/.test(timeStr)) return timeStr;
+  if (dateStr) {
+    try {
+      const d = new Date(dateStr);
+      if (!isNaN(d.getTime()) && dateStr.includes("T")) {
+        return d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+      }
+    } catch {}
+    if (dateStr.includes("T")) {
+      return dateStr.slice(11, 16);
+    }
+  }
+  return "09:30";
+}
+
 export default async function HomePage() {
   const user = await requirePageUser();
   const jar = await cookies();
@@ -93,8 +121,10 @@ export default async function HomePage() {
   for (const iv of interviews) {
     if (iv.id !== "halden") {
       const nextSt = iv.stages?.find((s) => s.status === "next") ?? iv.stages?.[0];
-      const dateStr = nextSt?.date || iv.date?.slice(0, 10) || "Thu 12 Nov";
-      const timeStr = nextSt?.time || (iv.date?.includes("T") ? iv.date.slice(11, 16) : "09:30");
+      const rawDate = nextSt?.date || iv.date;
+      const rawTime = nextSt?.time;
+      const dateStr = formatAgendaDate(rawDate);
+      const timeStr = formatAgendaTime(rawDate, rawTime);
       agendaEvents.unshift({
         id: iv.id,
         type: "interview",

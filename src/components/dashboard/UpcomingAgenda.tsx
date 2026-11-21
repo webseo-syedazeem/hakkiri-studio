@@ -83,7 +83,7 @@ export function UpcomingAgenda({ events }: { events: UpcomingEvent[] }) {
                 {/* Subtle sheen highlight on hover */}
                 <div className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/[0.04] to-transparent transition-transform duration-700 group-hover:translate-x-full" />
 
-                {/* Squircle Icon & Time / Date */}
+                {/* Squircle Icon & Time / Type Badge */}
                 <div className="flex items-center gap-3 shrink-0">
                   <div
                     className={clsx(
@@ -96,29 +96,32 @@ export function UpcomingAgenda({ events }: { events: UpcomingEvent[] }) {
                     <Icon name={item.type === "interview" ? "cal" : "present"} size={20} />
                   </div>
                   <div className="shrink-0 text-left">
-                    <div className="text-sm font-bold text-ink">{item.time}</div>
-                    <div className="text-[11px] text-muted whitespace-nowrap mt-0.5">{item.dateGroup}</div>
+                    <div className="text-sm font-bold text-ink font-mono">{item.time}</div>
+                    <span
+                      className={clsx(
+                        "inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold mt-0.5",
+                        item.type === "interview"
+                          ? "bg-[#1e2544] text-[#818cf8]"
+                          : "bg-[#162a26] text-[#34d399]"
+                      )}
+                    >
+                      {item.type === "interview" ? "Interview" : "Presentation"}
+                    </span>
                   </div>
                 </div>
 
                 {/* Details */}
                 <div className="min-w-0 grow px-1">
-                  {item.type === "interview" ? (
-                    <span className="mb-1 inline-flex items-center gap-1.5 rounded-full bg-[#1e2544] px-2.5 py-0.5 text-[10px] font-semibold text-[#818cf8]">
-                      Interview
-                    </span>
-                  ) : (
-                    <span className="mb-1 inline-flex items-center gap-1.5 rounded-full bg-[#162a26] px-2.5 py-0.5 text-[10px] font-semibold text-[#34d399]">
-                      Presentation
-                    </span>
-                  )}
                   <Link
                     href={item.href}
                     className="block text-[14px] font-semibold tracking-[-0.01em] text-ink hover:underline group-hover:text-blue-soft transition-colors leading-snug truncate"
+                    title={item.title}
                   >
                     {item.title}
                   </Link>
-                  <div className="text-xs text-muted mt-0.5 truncate">{item.subtitle}</div>
+                  <div className="text-xs text-muted mt-0.5 truncate" title={item.subtitle}>
+                    {item.subtitle}
+                  </div>
                 </div>
 
                 {/* Action button */}

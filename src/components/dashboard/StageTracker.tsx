@@ -62,6 +62,22 @@ const DEFAULT_STAGES: StageInfo[] = [
   },
 ];
 
+function formatStageDateText(dateStr?: string, timeStr?: string): string {
+  if (!dateStr) return "";
+  if (/^\d{1,2}\s+[A-Za-z]{3}/.test(dateStr)) {
+    return timeStr ? `${dateStr}, ${timeStr}` : dateStr;
+  }
+  try {
+    const d = new Date(dateStr);
+    if (!isNaN(d.getTime())) {
+      const datePart = d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+      const timePart = timeStr || (dateStr.includes("T") ? d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" }) : "");
+      return timePart ? `${datePart}, ${timePart}` : datePart;
+    }
+  } catch {}
+  return dateStr;
+}
+
 export function StageTracker({
   interview,
   availableInterviews = [],
@@ -172,7 +188,7 @@ export function StageTracker({
       ? activeInterview.stages.map((st, idx) => {
           const num = idx + 1;
           const name = st.name || `Stage ${num}`;
-          const dt = st.date ? `${st.date}${st.time ? `, ${st.time}` : ""}` : "";
+          const dt = formatStageDateText(st.date, st.time);
           return {
             num,
             title: `Stage ${num} · ${name}`,
