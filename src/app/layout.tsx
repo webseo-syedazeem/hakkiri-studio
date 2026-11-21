@@ -5,6 +5,8 @@ import { elevenLabsKey } from "@/lib/ai/providers/elevenlabs";
 import { aiConfig } from "@/lib/ai/config";
 import { mockAiEnabled } from "@/lib/ai/mock";
 import { AuthProvider } from "@/lib/auth/AuthContext";
+import { Analytics } from "@vercel/analytics/react";
+import Script from "next/script";
 
 export function generateMetadata(): Metadata {
   const hasVoice = Boolean(elevenLabsKey() || aiConfig.deepgramKey) && !mockAiEnabled();
@@ -63,10 +65,39 @@ export const viewport = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const gaId = process.env.NEXT_PUBLIC_GA_ID || process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+
   return (
     <html lang="en-GB" className="overflow-x-clip">
+      <head>
+        {process.env.NEXT_PUBLIC_GSC_VERIFICATION && (
+          <meta
+            name="google-site-verification"
+            content={process.env.NEXT_PUBLIC_GSC_VERIFICATION}
+          />
+        )}
+      </head>
       <body className="min-h-screen bg-booth text-ink antialiased overflow-x-clip w-full max-w-full">
         <AuthProvider>{children}</AuthProvider>
+        <Analytics />
+        {gaId && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
+              strategy="afterInteractive"
+            />
+            <Script id="google-analytics" strategy="afterInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${gaId}', {
+                  page_path: window.location.pathname,
+                });
+              `}
+            </Script>
+          </>
+        )}
       </body>
     </html>
   );
