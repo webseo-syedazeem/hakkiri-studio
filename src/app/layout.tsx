@@ -7,6 +7,7 @@ import { mockAiEnabled } from "@/lib/ai/mock";
 import { AuthProvider } from "@/lib/auth/AuthContext";
 import { Analytics } from "@vercel/analytics/react";
 import Script from "next/script";
+import { AnalyticsTracker } from "@/components/analytics/AnalyticsTracker";
 
 export function generateMetadata(): Metadata {
   const hasVoice = Boolean(elevenLabsKey() || aiConfig.deepgramKey) && !mockAiEnabled();
@@ -79,6 +80,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-screen bg-booth text-ink antialiased overflow-x-clip w-full max-w-full">
         <AuthProvider>{children}</AuthProvider>
+        <AnalyticsTracker />
         <Analytics />
         {gaId && (
           <>
