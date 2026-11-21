@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import clsx from "clsx";
 import type { BlogPost, BlogSeoData } from "@/lib/blog/types";
 import { analyzeBlogSeo, slugify, calculateReadingTimeMinutes } from "@/lib/blog/seo";
@@ -24,9 +25,17 @@ export function AdminBlogClient({
   initialPosts: BlogPost[];
   categories: string[];
 }) {
+  const searchParams = useSearchParams();
   const [posts, setPosts] = useState<BlogPost[]>(initialPosts);
   const [activeTab, setActiveTab] = useState<"list" | "editor">("list");
   const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
+
+  // Check if ?action=new is set
+  useEffect(() => {
+    if (searchParams.get("action") === "new") {
+      handleStartNewPost();
+    }
+  }, [searchParams]);
 
   // List view filters
   const [searchQuery, setSearchQuery] = useState("");
@@ -311,15 +320,15 @@ export function AdminBlogClient({
             <div>
               <div className="flex items-center gap-2">
                 <span className="rounded-md bg-purple-500/20 px-2 py-0.5 text-xs font-semibold text-purple-400">
-                  Admin Portal
+                  Dedicated Admin Console
                 </span>
-                <span className="text-xs text-slate-400">MongoDB Connected</span>
+                <span className="text-xs text-slate-400">MongoDB Atlas Live</span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white mt-1">
-                Blog & SEO Command Center
+                Blog & Content Management
               </h1>
               <p className="text-xs sm:text-sm text-slate-400 mt-0.5">
-                Manage, publish, and audit SEO for your career and interview prep articles.
+                Create, edit, audit SEO real-time, and manage articles on the live website.
               </p>
             </div>
 
@@ -327,12 +336,12 @@ export function AdminBlogClient({
               <Link
                 href="/blog"
                 target="_blank"
-                className="rounded-xl border border-white/10 bg-[#1c1d27] px-4 py-2 text-xs font-semibold text-slate-200 hover:bg-[#252634] hover:text-white transition flex items-center gap-1.5"
+                className="rounded-xl border border-white/10 bg-[#181926] px-4 py-2 text-xs font-semibold text-slate-200 hover:bg-[#252634] hover:text-white transition flex items-center gap-1.5"
               >
                 <svg className="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                 </svg>
-                View Live Website
+                View Live Site
               </Link>
               <button
                 type="button"
@@ -349,25 +358,25 @@ export function AdminBlogClient({
 
           {/* Metric Stats Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="rounded-2xl border border-white/10 bg-[#181924] p-4">
+            <div className="rounded-2xl border border-white/10 bg-[#141520] p-4">
               <div className="text-xs font-medium text-slate-400">Total Articles</div>
               <div className="text-2xl font-bold text-white mt-1">{totalPosts}</div>
               <div className="text-[11px] text-slate-500 mt-1">Across all categories</div>
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-[#181924] p-4">
+            <div className="rounded-2xl border border-white/10 bg-[#141520] p-4">
               <div className="text-xs font-medium text-emerald-400">Published Live</div>
               <div className="text-2xl font-bold text-emerald-400 mt-1">{publishedCount}</div>
               <div className="text-[11px] text-slate-500 mt-1">Indexable by Google</div>
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-[#181924] p-4">
+            <div className="rounded-2xl border border-white/10 bg-[#141520] p-4">
               <div className="text-xs font-medium text-amber-400">Drafts</div>
               <div className="text-2xl font-bold text-amber-400 mt-1">{draftCount}</div>
               <div className="text-[11px] text-slate-500 mt-1">In progress</div>
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-[#181924] p-4">
+            <div className="rounded-2xl border border-white/10 bg-[#141520] p-4">
               <div className="text-xs font-medium text-purple-400">Avg SEO Score</div>
               <div className="flex items-center gap-2 mt-1">
                 <span className="text-2xl font-bold text-purple-300">{avgSeoScore}</span>
@@ -378,11 +387,11 @@ export function AdminBlogClient({
           </div>
 
           {/* Filters & Search */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#161722] p-3">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#141520] p-3">
             <div className="w-full sm:w-80 relative">
               <input
                 type="text"
-                placeholder="Search by title, slug, or focus keyword..."
+                placeholder="Search articles, slugs, focus keywords..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full h-9 rounded-xl border border-white/10 bg-[#1c1d27] px-3 pl-8 text-xs text-white placeholder-slate-500 focus:border-purple-500 focus:outline-none"
@@ -425,7 +434,7 @@ export function AdminBlogClient({
           </div>
 
           {/* Posts Table / List */}
-          <div className="rounded-2xl border border-white/10 bg-[#161722] overflow-hidden">
+          <div className="rounded-2xl border border-white/10 bg-[#141520] overflow-hidden">
             {filteredPosts.length === 0 ? (
               <div className="p-12 text-center text-slate-400 text-sm">
                 No articles found matching your filters.
@@ -609,7 +618,7 @@ export function AdminBlogClient({
                   <svg className="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                   </svg>
-                  Preview on Site
+                  Preview on Live Site
                 </Link>
               )}
 
@@ -640,7 +649,7 @@ export function AdminBlogClient({
             {/* ========================================================= */}
             <div className="lg:col-span-7 space-y-5">
               {/* Title & Slug */}
-              <div className="rounded-2xl border border-white/10 bg-[#161722] p-5 space-y-4">
+              <div className="rounded-2xl border border-white/10 bg-[#141520] p-5 space-y-4">
                 <div>
                   <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
                     <label className="font-semibold text-white">Article Title *</label>
@@ -740,15 +749,13 @@ export function AdminBlogClient({
                 {/* Cover Image URL */}
                 <div>
                   <label className="block text-xs font-medium text-slate-300 mb-1">Cover Image URL</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={editingPost.coverImage}
-                      onChange={(e) => setEditingPost({ ...editingPost, coverImage: e.target.value })}
-                      placeholder="https://images.unsplash.com/..."
-                      className="w-full rounded-xl border border-white/10 bg-[#1c1d27] px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-purple-500 focus:outline-none"
-                    />
-                  </div>
+                  <input
+                    type="text"
+                    value={editingPost.coverImage}
+                    onChange={(e) => setEditingPost({ ...editingPost, coverImage: e.target.value })}
+                    placeholder="https://images.unsplash.com/..."
+                    className="w-full rounded-xl border border-white/10 bg-[#1c1d27] px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-purple-500 focus:outline-none"
+                  />
                   {editingPost.coverImage && (
                     <div className="mt-2 h-28 w-full rounded-xl overflow-hidden border border-white/10">
                       <img src={editingPost.coverImage} alt="Cover preview" className="h-full w-full object-cover" />
@@ -790,7 +797,7 @@ export function AdminBlogClient({
               </div>
 
               {/* Main Content Editor */}
-              <div className="rounded-2xl border border-white/10 bg-[#161722] p-5 space-y-3">
+              <div className="rounded-2xl border border-white/10 bg-[#141520] p-5 space-y-3">
                 <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
                   <div className="flex items-center gap-1.5">
                     <button
@@ -910,11 +917,11 @@ export function AdminBlogClient({
                     rows={20}
                     value={editingPost.content}
                     onChange={(e) => setEditingPost({ ...editingPost, content: e.target.value })}
-                    className="w-full rounded-xl border border-white/10 bg-[#12131b] p-4 font-mono text-xs text-slate-200 leading-relaxed placeholder-slate-600 focus:border-purple-500 focus:outline-none"
+                    className="w-full rounded-xl border border-white/10 bg-[#10111a] p-4 font-mono text-xs text-slate-200 leading-relaxed placeholder-slate-600 focus:border-purple-500 focus:outline-none"
                     placeholder="Write your article in Markdown..."
                   />
                 ) : (
-                  <div className="rounded-xl border border-white/10 bg-[#12131b] p-6 min-h-[400px]">
+                  <div className="rounded-xl border border-white/10 bg-[#10111a] p-6 min-h-[400px]">
                     <div
                       className="prose prose-invert max-w-none text-slate-300 leading-relaxed text-sm"
                       dangerouslySetInnerHTML={{ __html: markdownToHtml(editingPost.content) }}
@@ -930,7 +937,7 @@ export function AdminBlogClient({
             <div className="lg:col-span-5 space-y-5">
               {/* SEO Score Health Badge Card */}
               {activeSeoAnalysis && (
-                <div className="rounded-2xl border border-white/10 bg-[#161722] p-5">
+                <div className="rounded-2xl border border-white/10 bg-[#141520] p-5">
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="text-xs font-semibold text-slate-400">Real-Time SEO Audit</div>
@@ -974,7 +981,7 @@ export function AdminBlogClient({
               )}
 
               {/* Target Focus Keyword Input */}
-              <div className="rounded-2xl border border-white/10 bg-[#161722] p-5 space-y-3">
+              <div className="rounded-2xl border border-white/10 bg-[#141520] p-5 space-y-3">
                 <div>
                   <label className="block text-xs font-bold text-white mb-1">
                     🎯 Target Focus Keyword *
@@ -1015,7 +1022,7 @@ export function AdminBlogClient({
               </div>
 
               {/* SEO Sub-panel Selector Tabs */}
-              <div className="rounded-2xl border border-white/10 bg-[#161722] overflow-hidden">
+              <div className="rounded-2xl border border-white/10 bg-[#141520] overflow-hidden">
                 <div className="flex border-b border-white/[0.08] bg-[#1a1b26]">
                   {[
                     { id: "audit", label: "Checklist" },
@@ -1030,7 +1037,7 @@ export function AdminBlogClient({
                       className={clsx(
                         "flex-1 py-2.5 text-xs font-semibold transition text-center",
                         seoPreviewTab === tab.id
-                          ? "bg-[#161722] text-purple-400 border-b-2 border-purple-500"
+                          ? "bg-[#141520] text-purple-400 border-b-2 border-purple-500"
                           : "text-slate-400 hover:text-white"
                       )}
                     >
