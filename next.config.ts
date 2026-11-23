@@ -2,6 +2,8 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // pdf.js reads uploaded CVs on the server; it loads its own worker file, so it must not be bundled.
+  serverExternalPackages: ["pdfjs-dist"],
   experimental: {
     // src/proxy.ts sees every API request, so Next buffers request bodies up to this size.
     // It must fit the largest recording: 25 MB for an answer, 50 MB for a presentation run.

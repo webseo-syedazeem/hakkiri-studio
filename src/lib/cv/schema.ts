@@ -214,6 +214,8 @@ export const CvDocSchema = z.object({
   userId: z.string().min(1),
   /** Goes up by one on every save; a save from an out-of-date copy is refused. */
   rev: z.number().int().min(1).default(1),
+  /** The name of the last save applied, so the same save sent twice is applied once. */
+  lastSaveId: z.string().max(40).optional(),
   name: line(120),
   kind: z.enum(["base", "tailored"]).default("base"),
   /** For a tailored version: the base CV it was made from, and that CV's revision at the time. */

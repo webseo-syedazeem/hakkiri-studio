@@ -217,6 +217,26 @@ export async function queryDocs<T>(
   return Object.values(store).filter(predicate);
 }
 
+/** One person's documents in a collection. Asks the database for just theirs, where there is one. */
+export async function queryDocsByUser<T extends { userId?: string }>(collectionName: string, userId: string): Promise<T[]> {
+  if (isMongoConfigured()) {
+    try {
+      const db = await getMongoDb();
+      if (db) {
+        const docs = await db.collection(collectionName).find({ userId }).toArray();
+        return docs.map((d) => {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { _id, ...clean } = d;
+          return clean as unknown as T;
+        });
+      }
+    } catch (err) {
+      console.warn(`[apply_db] Mongo query fallback for ${collectionName}:`, err);
+    }
+  }
+  return Object.values(readFallback<T>(collectionName)).filter((d) => d.userId === userId);
+}
+
 /* --------------------------------------------------------------------------
    TYPED ENTITY HELPERS
 -------------------------------------------------------------------------- */
