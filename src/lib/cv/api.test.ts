@@ -7,6 +7,19 @@ import path from "node:path";
 const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "hakkiri-cv-api-"));
 process.env.HAKKIRI_DATA_DIR = dataDir;
 let signedIn: { id: string; email: string } | null = null;
+// The reader that checks exported files can be made to fail, to see what happens when it is down.
+const reader = vi.hoisted(() => ({ down: false }));
+vi.mock("@/lib/cv/render/readback", async (original) => {
+  const real = await original<typeof import("@/lib/cv/render/readback")>();
+  const orFail =
+    <A extends unknown[], R>(fn: (...args: A) => R) =>
+    (...args: A): R => {
+      if (reader.down) throw new Error("the reader is down");
+      return fn(...args);
+    };
+  return { ...real, readBackPdf: orFail(real.readBackPdf), readBackDocx: orFail(real.readBackDocx) };
+});
+
 vi.mock("@/lib/auth/require", () => ({
   requireUser: async () => {
     if (!signedIn) throw new Response(JSON.stringify({ error: "unauthorised" }), { status: 401 });
@@ -362,6 +375,159 @@ describe("one person's upload is theirs alone", () => {
     await importConfirm.POST(json({}), ctx(made.importId));
     expect((await oneImport.PATCH(json({ reviewed: ["contact"] }, "PATCH"), ctx(made.importId))).status).toBe(409);
     expect((await importFile.POST(upload({}, "maya-chen.writer.docx"), ctx(made.importId))).status).toBe(409);
+  });
+});
+
+describe("downloading a CV", () => {
+  const exportRoute = () => import("@/app/api/cv/versions/[id]/export/route");
+  const checkRoute = () => import("@/app/api/cv/versions/[id]/check/route");
+  const duplicateRoute = () => import("@/app/api/cv/versions/[id]/duplicate/route");
+  const file = (format: string) => new Request(`http://localhost/api?format=${format}`);
+
+  async function filledCv() {
+    const made = await makeImport();
+    await importConfirm.POST(json({}), ctx(made.importId));
+    return made.versionId;
+  }
+
+  it("sends a real PDF and a real Word file, each checked against the CV, with the right file name", async () => {
+    const id = await filledCv();
+    const { GET } = await exportRoute();
+    const pdf = await GET(file("pdf"), ctx(id));
+    expect(pdf.status).toBe(200);
+    expect(pdf.headers.get("content-type")).toBe("application/pdf");
+    expect(pdf.headers.get("content-disposition")).toContain('filename="Maya Chen - CV.pdf"');
+    expect(pdf.headers.get("x-cv-check")).toBe("checked");
+    const pdfBytes = new Uint8Array(await pdf.arrayBuffer());
+    expect(new TextDecoder().decode(pdfBytes.subarray(0, 8))).toContain("%PDF-1.7");
+    const docx = await GET(file("docx"), ctx(id));
+    expect(docx.status).toBe(200);
+    expect(docx.headers.get("content-disposition")).toContain('filename="Maya Chen - CV.docx"');
+    expect([...new Uint8Array(await docx.arrayBuffer()).subarray(0, 2)]).toEqual([0x50, 0x4b]);
+    // The upload reader, given the downloaded PDF, finds the same person and roles.
+    const { readCvFile } = await import("@/lib/cv/import");
+    const back = await readCvFile(pdfBytes);
+    expect(back.contact.fullName).toBe("Maya Chen");
+    expect(back.sections.find((s) => s.kind === "experience" && isEntrySection(s) && s.entries.length === 3)).toBeTruthy();
+  });
+
+  it("checks both files and says which revision was checked", async () => {
+    const id = await filledCv();
+    const { POST } = await checkRoute();
+    const res = await POST(json({}), ctx(id));
+    const body = await res.json();
+    expect(body.rev).toBe(2);
+    expect(body.pdf).toMatchObject({ status: "checked", name: "Maya Chen - CV.pdf", missing: [], unexpected: [], unsupported: [] });
+    expect(body.docx).toMatchObject({ status: "checked", name: "Maya Chen - CV.docx", missing: [], unexpected: [] });
+    expect(body.pdf.pages).toBeGreaterThanOrEqual(1);
+  });
+
+  it("withholds a file that does not read back the same as the CV", async () => {
+    const id = await filledCv();
+    const cv = (await store.getOwnCv(id, alice.id))!;
+    // A character none of the fonts can draw would print as an empty box.
+    await store.saveCv({ ...cv, contact: { ...cv.contact, fullName: "Maya 陈 Chen" } });
+    const { GET } = await exportRoute();
+    const res = await GET(file("pdf"), ctx(id));
+    expect(res.status).toBe(409);
+    const body = await res.json();
+    expect(body.error).toBe("loss");
+    expect(body.unsupported).toEqual(["陈"]);
+    expect(res.headers.get("content-type")).toContain("application/json");
+  });
+
+  it("when the checker itself is down, a file is never called checked: it is sent only when asked for as unchecked", async () => {
+    const id = await filledCv();
+    const { GET } = await exportRoute();
+    reader.down = true;
+    const silent = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const refused = await GET(file("pdf"), ctx(id));
+      expect(refused.status).toBe(503);
+      expect((await refused.json()).error).toBe("check_failed");
+      const sent = await GET(new Request("http://localhost/api?format=pdf&unchecked=1"), ctx(id));
+      expect(sent.status).toBe(200);
+      expect(sent.headers.get("x-cv-check")).toBe("unchecked");
+      expect(new TextDecoder().decode(new Uint8Array(await sent.arrayBuffer()).subarray(0, 5))).toBe("%PDF-");
+      const checked = await (await (await checkRoute()).POST(json({}), ctx(id))).json();
+      expect(checked.pdf).toMatchObject({ status: "failed", made: true });
+      expect(checked.docx).toMatchObject({ status: "failed", made: true });
+    } finally {
+      reader.down = false;
+      silent.mockRestore();
+    }
+    // With the checker back, asking for "unchecked" changes nothing: a file with a known difference is still withheld.
+    const cv = (await store.getOwnCv(id, alice.id))!;
+    await store.saveCv({ ...cv, contact: { ...cv.contact, fullName: "Maya 陈 Chen" } });
+    expect((await GET(new Request("http://localhost/api?format=pdf&unchecked=1"), ctx(id))).status).toBe(409);
+  });
+
+  it("an empty CV has nothing to download or check", async () => {
+    const id = await makeCv();
+    expect((await (await exportRoute()).GET(file("pdf"), ctx(id))).status).toBe(409);
+    expect((await (await checkRoute()).POST(json({}), ctx(id))).status).toBe(409);
+  });
+
+  it("only PDF and Word can be asked for", async () => {
+    const id = await filledCv();
+    expect((await (await exportRoute()).GET(file("exe"), ctx(id))).status).toBe(400);
+  });
+
+  it("another account cannot download, check or duplicate someone else's CV", async () => {
+    const id = await filledCv();
+    signedIn = bob;
+    expect((await (await exportRoute()).GET(file("pdf"), ctx(id))).status).toBe(404);
+    expect((await (await checkRoute()).POST(json({}), ctx(id))).status).toBe(404);
+    expect((await (await duplicateRoute()).POST(json({}), ctx(id))).status).toBe(404);
+    signedIn = null;
+    expect((await (await exportRoute()).GET(file("pdf"), ctx(id))).status).toBe(401);
+  });
+
+  it("a duplicate is a separate CV: changing one leaves the other alone", async () => {
+    const id = await filledCv();
+    const res = await (await duplicateRoute()).POST(json({}), ctx(id));
+    expect(res.status).toBe(201);
+    const copyId = (await res.json()).id as string;
+    expect(copyId).not.toBe(id);
+    const copy = (await store.getOwnCv(copyId, alice.id))!;
+    expect(copy).toMatchObject({ name: `Copy of ${SETUP.name}`, rev: 1, userId: alice.id });
+    expect(copy.importId).toBeUndefined();
+    expect(cvStrings(copy)).toEqual(cvStrings((await store.getOwnCv(id, alice.id))!));
+    await version.PATCH(json({ rev: 1, contact: { ...copy.contact, fullName: "Changed in the copy" } }, "PATCH"), ctx(copyId));
+    expect((await store.getOwnCv(id, alice.id))!.contact.fullName).toBe("Maya Chen");
+  });
+
+  it("unsaved changes can be kept as a separate version, leaving the original as it was", async () => {
+    const id = await filledCv();
+    const before = (await store.getOwnCv(id, alice.id))!;
+    const res = await (await duplicateRoute()).POST(json({ changes: { contact: { ...before.contact, phone: "07700 900123" } } }), ctx(id));
+    expect(res.status).toBe(201);
+    const copy = (await store.getOwnCv((await res.json()).id, alice.id))!;
+    expect(copy.contact.phone).toBe("07700 900123");
+    expect(copy.sections).toEqual(before.sections);
+    expect((await store.getOwnCv(id, alice.id))!.contact.phone).toBe(before.contact.phone);
+    // The copy takes only what a save could change: never the owner or the id.
+    expect((await (await duplicateRoute()).POST(json({ changes: { userId: bob.id } }), ctx(id))).status).toBe(400);
+    expect((await (await duplicateRoute()).POST(json({ changes: { id: "cv_0000000000000000" } }), ctx(id))).status).toBe(400);
+  });
+
+  it("the design can be changed, and only to what is allowed", async () => {
+    const id = await makeCv();
+    const ok = await version.PATCH(json({ rev: 1, design: { template: "executive", pageSize: "a4", density: "tighter", pageTarget: 1, accent: "plum", fonts: "research", fileName: "My CV" } }, "PATCH"), ctx(id));
+    expect(ok.status).toBe(200);
+    expect((await store.getOwnCv(id, alice.id))!.design).toMatchObject({ template: "executive", density: "tighter", pageTarget: 1, accent: "plum", fonts: "research", fileName: "My CV" });
+    for (const bad of [{ template: "two-column" }, { density: "microscopic" }, { pageTarget: 5 }, { accent: "neon" }]) {
+      expect((await version.PATCH(json({ rev: 2, design: { template: "standard", pageSize: "a4", density: "default", pageTarget: 2, ...bad } }, "PATCH"), ctx(id))).status).toBe(400);
+    }
+  });
+
+  it("serves only the listed font files", async () => {
+    const { GET } = await import("@/app/api/cv/fonts/[file]/route");
+    const ok = await GET(get(), { params: Promise.resolve({ file: "Inter_400Regular.ttf" }) });
+    expect(ok.status).toBe(200);
+    expect(ok.headers.get("cache-control")).toContain("immutable");
+    expect((await ok.arrayBuffer()).byteLength).toBeGreaterThan(100000);
+    for (const bad of ["../../../package.json", "OFL-inter.txt", "nope.ttf"]) expect((await GET(get(), { params: Promise.resolve({ file: bad }) })).status).toBe(404);
   });
 });
 

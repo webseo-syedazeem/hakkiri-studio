@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { type CvSummary, LEVEL_LABELS } from "@/lib/cv/schema";
+import { type CvDoc, type CvSummary, LEVEL_LABELS } from "@/lib/cv/schema";
 import { docWord } from "@/lib/cv/sections";
 import { api, messageOf } from "./client";
-import { Bar, Btn, BtnLink, CvScreen, Panel, Skeleton, Toolbar } from "./ui";
+import { Dialog, usePanel } from "./Dialog";
+import { Announce, Bar, Btn, BtnLink, CvScreen, Field, Panel, Skeleton, Toolbar } from "./ui";
 
 const when = (iso: string) => new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 
@@ -17,6 +18,11 @@ export function Dashboard() {
   const [cvs, setCvs] = useState<CvSummary[] | null>(null);
   const [error, setError] = useState("");
   const [synced, setSynced] = useState("");
+  const { panel, item, open, close } = usePanel();
+  const [name, setName] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [problem, setProblem] = useState("");
+  const [said, setSaid] = useState("");
 
   const load = useCallback(() => {
     setError("");
@@ -28,6 +34,50 @@ export function Dashboard() {
       .catch((e) => setError(messageOf(e)));
   }, []);
   useEffect(load, [load]);
+
+  const chosen = cvs?.find((c) => c.id === item);
+  // The rename box starts with the current name each time it opens.
+  useEffect(() => {
+    if (panel === "rename" && chosen) setName(chosen.name);
+    setProblem("");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [panel, item, chosen?.name]);
+
+  /** Runs one change to a CV, then reloads the list. The dialog stays open with the reason if it fails. */
+  async function act(run: () => Promise<string>) {
+    setBusy(true);
+    setProblem("");
+    try {
+      const done = await run();
+      close();
+      load();
+      setSaid(done);
+    } catch (e) {
+      setProblem(messageOf(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const rename = () =>
+    act(async () => {
+      const next = name.replace(/\s+/g, " ").trim();
+      if (!next) throw new Error("Give your CV a name.");
+      // The save names the revision it was made on, so it cannot overwrite a change made elsewhere.
+      const { cv } = await api<{ cv: CvDoc }>(`/api/cv/versions/${item}`);
+      await api(`/api/cv/versions/${item}`, { method: "PATCH", json: { rev: cv.rev, name: next } });
+      return `Renamed to ${next}.`;
+    });
+  const duplicate = () =>
+    act(async () => {
+      const made = await api<{ name: string }>(`/api/cv/versions/${item}/duplicate`, { method: "POST", json: {} });
+      return `${made.name} created.`;
+    });
+  const remove = () =>
+    act(async () => {
+      await api(`/api/cv/versions/${item}`, { method: "DELETE" });
+      return `${chosen?.name ?? "CV"} deleted.`;
+    });
 
   const bases = (cvs ?? []).filter((c) => c.kind === "base" || !cvs?.some((p) => p.id === c.parentId));
   const tailored = (id: string) => (cvs ?? []).filter((c) => c.kind === "tailored" && c.parentId === id);
@@ -90,21 +140,98 @@ export function Dashboard() {
             <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
               {bases.map((cv) => (
                 <li key={cv.id}>
-                  <Row cv={cv} />
+                  <Row cv={cv} onAction={(what) => open(what, { item: cv.id })} />
                   {tailored(cv.id).map((t) => (
-                    <Row key={t.id} cv={t} indent />
+                    <Row key={t.id} cv={t} indent onAction={(what) => open(what, { item: t.id })} />
                   ))}
                 </li>
               ))}
             </ul>
           </Panel>
         )}
+        <Announce>{said}</Announce>
       </div>
+
+      {panel === "rename" && chosen && (
+        <Dialog
+          title="Rename"
+          onClose={close}
+          actions={
+            <>
+              <Btn onClick={close}>Cancel</Btn>
+              <Btn kind="primary" busy={busy} onClick={() => void rename()}>
+                Save name
+              </Btn>
+            </>
+          }
+        >
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              void rename();
+            }}
+          >
+            <Field label="CV name" rule="Only you see this name. It is not printed on the CV." maxLength={120} value={name} onChange={setName} error={problem} autoFocus />
+          </form>
+        </Dialog>
+      )}
+      {panel === "duplicate" && chosen && (
+        <Dialog
+          title="Duplicate"
+          onClose={close}
+          actions={
+            <>
+              <Btn onClick={close}>Cancel</Btn>
+              <Btn kind="primary" busy={busy} onClick={() => void duplicate()}>
+                Duplicate
+              </Btn>
+            </>
+          }
+        >
+          <p>
+            Make a copy of <b>{chosen.name}</b>? The copy is a separate {docWord(chosen.region)}: changing one never changes the other.
+          </p>
+          {problem && (
+            <p className="cv-error-text" role="alert">
+              {problem}
+            </p>
+          )}
+        </Dialog>
+      )}
+      {panel === "delete-version" && chosen && (
+        <Dialog
+          title="Delete"
+          onClose={close}
+          actions={
+            <>
+              <Btn onClick={close}>Cancel</Btn>
+              <Btn kind="danger" busy={busy} onClick={() => void remove()}>
+                Delete {docWord(chosen.region)}
+              </Btn>
+            </>
+          }
+        >
+          <p>
+            Delete <b>{chosen.name}</b>? The {docWord(chosen.region)} and any file uploaded for it are removed. This can’t be undone.
+          </p>
+          {tailored(chosen.id).length > 0 && <p className="cv-muted">Its tailored versions are kept and will be listed on their own.</p>}
+          {problem && (
+            <p className="cv-error-text" role="alert">
+              {problem}
+            </p>
+          )}
+        </Dialog>
+      )}
+      {panel && ["rename", "duplicate", "delete-version"].includes(panel) && cvs && !chosen && (
+        <Dialog title="CV not found" onClose={close}>
+          <p>That CV is no longer in your list.</p>
+        </Dialog>
+      )}
     </CvScreen>
   );
 }
 
-function Row({ cv, indent }: { cv: CvSummary; indent?: boolean }) {
+function Row({ cv, indent, onAction }: { cv: CvSummary; indent?: boolean; onAction: (what: "rename" | "duplicate" | "delete-version") => void }) {
   const href = cv.pendingImportId ? `/cv/import/${cv.pendingImportId}` : `/cv/v/${cv.id}/edit/contact`;
   const target = [cv.targetTitle, cv.targetEmployer].filter(Boolean).join(" · ");
   return (
@@ -119,7 +246,18 @@ function Row({ cv, indent }: { cv: CvSummary; indent?: boolean }) {
         </small>
       </div>
       {cv.pendingImportId ? <span className="cv-chip cv-link" style={{ textDecoration: "none" }}>Upload to check</span> : cv.empty ? <span className="cv-chip">Empty</span> : null}
-      <BtnLink href={href}>{cv.pendingImportId ? "Check upload" : "Open"}</BtnLink>
+      <span className="cv-controls">
+        <Btn kind="quiet" onClick={() => onAction("rename")} aria-label={`Rename ${cv.name}`}>
+          Rename
+        </Btn>
+        <Btn kind="quiet" onClick={() => onAction("duplicate")} aria-label={`Duplicate ${cv.name}`}>
+          Duplicate
+        </Btn>
+        <Btn kind="quiet" onClick={() => onAction("delete-version")} aria-label={`Delete ${cv.name}`}>
+          Delete
+        </Btn>
+        <BtnLink href={href}>{cv.pendingImportId ? "Check upload" : "Open"}</BtnLink>
+      </span>
     </div>
   );
 }

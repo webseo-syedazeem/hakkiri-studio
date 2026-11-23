@@ -99,7 +99,7 @@ export type Contact = z.infer<typeof ContactSchema>;
 /* ---------------------------------------------------------------- sections */
 
 /** Sections made of dated or titled entries. One field set covers them all; each kind uses the fields it needs. */
-export const ENTRY_KINDS = ["experience", "education", "projects", "volunteering", "certificates", "awards", "publications", "courses", "custom"] as const;
+export const ENTRY_KINDS = ["experience", "education", "projects", "volunteering", "certificates", "awards", "publications", "courses", "achievements", "custom"] as const;
 export type EntryKind = (typeof ENTRY_KINDS)[number];
 /** Sections that are simple lists. */
 export const LIST_KINDS = ["languages", "interests"] as const;
@@ -182,12 +182,28 @@ export const TargetSchema = z.object({
 });
 export type Target = z.infer<typeof TargetSchema>;
 
-export const CV_TEMPLATES = ["standard", "graduate"] as const;
+export const CV_TEMPLATES = ["standard", "graduate", "compact", "executive", "portfolio", "research", "career-change", "technical"] as const;
+export type TemplateId = (typeof CV_TEMPLATES)[number];
+export const CV_ACCENTS = ["indigo", "navy", "teal", "copper", "plum", "slate"] as const;
+export type AccentId = (typeof CV_ACCENTS)[number];
+export const CV_DENSITIES = ["tighter", "default", "looser"] as const;
+export type Density = (typeof CV_DENSITIES)[number];
+
 export const DesignSchema = z.object({
   template: z.enum(CV_TEMPLATES).default("standard"),
   pageSize: z.enum(["a4", "letter"]).default("a4"),
-  /** Tighter (-2) to looser (+2). */
-  density: z.number().int().min(-2).max(2).default(0),
+  /** One control: tighter (85% of the template's spacing), default, or looser (115%). Type size is never changed. */
+  density: z.preprocess((v) => (typeof v === "number" ? (v < 0 ? "tighter" : v > 0 ? "looser" : "default") : v), z.enum(CV_DENSITIES).default("default")),
+  /** How many whole pages the CV should fill. */
+  pageTarget: z.union([z.literal(1), z.literal(2)]).default(2),
+  /** The font pairing, when the person has changed it from the template's own: the id of the template whose fonts to use. */
+  fonts: z.enum(CV_TEMPLATES).optional(),
+  /** The accent colour, when changed from the template's own. */
+  accent: z.enum(CV_ACCENTS).optional(),
+  /** The order of sections on the paper, by section id, when the person has changed it from the template's own. */
+  order: z.array(z.string().max(40)).max(24).optional(),
+  /** The person's own file name for downloads, without the extension. Empty uses "[Name] - [Role] - CV". */
+  fileName: line(120).optional(),
 });
 export type Design = z.infer<typeof DesignSchema>;
 

@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { badInput, failure, notFound, requireUserId } from "@/lib/cv/access";
-import { CV_LEVELS, CV_REGIONS, ContactSchema, DesignSchema, SectionSchema, TargetSchema } from "@/lib/cv/schema";
+import { EditableSchema, badInput, failure, notFound, requireUserId, sectionIdsDiffer } from "@/lib/cv/access";
 import { deleteCv, deleteImport, getOwnCv, listOwnImports, saveCv } from "@/lib/cv/store";
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -17,24 +16,11 @@ export async function GET(_req: Request, { params }: Ctx) {
 }
 
 /**
- * What the browser may change. The owner, the id and the dates are never taken
- * from the browser. `rev` is the revision the change was made on: a save from an
+ * A save. `rev` is the revision the change was made on: a save from an
  * out-of-date copy is refused, so one tab can never silently overwrite another.
  * `saveId` names this save, so the same save sent twice is applied once.
  */
-const PatchSchema = z
-  .object({
-    rev: z.number().int().min(1),
-    saveId: z.string().max(40).optional(),
-    name: z.string().trim().min(1).max(120).optional(),
-    level: z.enum(CV_LEVELS).optional(),
-    region: z.enum(CV_REGIONS).optional(),
-    target: TargetSchema.nullable().optional(),
-    contact: ContactSchema.optional(),
-    sections: z.array(SectionSchema).max(24).optional(),
-    design: DesignSchema.optional(),
-  })
-  .strict();
+const PatchSchema = EditableSchema.extend({ rev: z.number().int().min(1), saveId: z.string().max(40).optional() }).strict();
 
 export async function PATCH(req: Request, { params }: Ctx) {
   try {
@@ -46,8 +32,7 @@ export async function PATCH(req: Request, { params }: Ctx) {
     const { rev, saveId, target, ...changes } = parsed.data;
     if (saveId && cv.lastSaveId === saveId) return NextResponse.json({ cv });
     if (rev !== cv.rev) return NextResponse.json({ error: "conflict", message: "This CV was changed somewhere else.", cv }, { status: 409 });
-    const ids = (changes.sections ?? []).map((s) => s.id);
-    if (new Set(ids).size !== ids.length) return badInput("That change could not be saved.");
+    if (!sectionIdsDiffer(changes.sections)) return badInput("That change could not be saved.");
     const saved = await saveCv({
       ...cv,
       ...changes,
