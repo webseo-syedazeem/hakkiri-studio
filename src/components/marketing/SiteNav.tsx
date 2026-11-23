@@ -15,14 +15,18 @@ export function SiteNav() {
   const menuRef = useRef<HTMLDivElement>(null);
 
   const isPresent = path === "/present";
+  const base = isPresent ? "/present" : "";
 
-  // Core navigation links
+  // Core navigation links matching the executive navigation (Screenshot 9)
   const primaryLinks: [string, string, boolean][] = [
     ["/", "Interviews", path === "/" || path === "/landing"],
     ["/present", "Presentations", isPresent],
     ["/cv-audit", "Free CV Audit", path.startsWith("/cv-audit")],
     ["/about", "About", path === "/about"],
     ["/blog", "Blog", path.startsWith("/blog")],
+    [`${base}#how`, "How it works", false],
+    [`${base}#beta`, "Beta", false],
+    [`${base}#faq`, "Questions", false],
   ];
 
   const isUserAdmin = isAdminEmail(user?.email);
@@ -51,7 +55,7 @@ export function SiteNav() {
           href={href}
           aria-current={current ? "page" : undefined}
           className={clsx(
-            "hidden rounded-full px-3.5 py-1.5 transition-all duration-200 md:inline font-medium",
+            "hidden rounded-full px-3 py-1.5 transition-all duration-200 md:inline font-medium text-[13px]",
             current
               ? "text-mk-ink font-semibold bg-black/[0.05] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.04)]"
               : "text-mk-ink/70 hover:text-mk-ink hover:bg-black/[0.03]"
@@ -60,6 +64,17 @@ export function SiteNav() {
           {label}
         </Link>
       ))}
+
+      {/* Admin Quick Portal Badge (matching Screenshot 9) */}
+      {isUserAdmin && (
+        <Link
+          href="/admin"
+          className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-purple-500/30 bg-purple-500/10 px-3 py-1.5 text-xs font-semibold text-purple-700 hover:bg-purple-500/20 transition-all hover:scale-[1.03]"
+        >
+          <span className="h-2 w-2 rounded-full bg-purple-600 animate-pulse"></span>
+          <span>Admin</span>
+        </Link>
+      )}
 
       {/* Auth / Studio CTAs */}
       {user ? (

@@ -10,102 +10,59 @@ import { FeedbackButton } from "./FeedbackButton";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { isAdminEmail } from "@/lib/auth/admins";
 
-interface NavItem {
+const ITEMS: {
   label: string;
   href: string;
   icon: IconName;
   match: (p: string) => boolean;
-}
-
-interface NavSection {
-  title?: string;
-  items: NavItem[];
-}
-
-const NAV_SECTIONS: NavSection[] = [
+}[] = [
   {
-    items: [
-      {
-        label: "Home",
-        href: "/dashboard",
-        icon: "home",
-        match: (p) => p === "/dashboard" || p === "/" || p.startsWith("/welcome"),
-      },
-    ],
+    label: "Home",
+    href: "/dashboard",
+    icon: "home",
+    match: (p) => p === "/dashboard" || p === "/" || p.startsWith("/welcome"),
   },
   {
-    title: "1 · CV & Prep",
-    items: [
-      {
-        label: "CV Builder",
-        href: "/apply/cvs",
-        icon: "doc",
-        match: (p) => p.startsWith("/apply/cvs"),
-      },
-      {
-        label: "Apply Hub",
-        href: "/apply",
-        icon: "target",
-        match: (p) => p === "/apply" || (p.startsWith("/apply") && !p.startsWith("/apply/applications") && !p.startsWith("/apply/cvs")),
-      },
-      {
-        label: "Evidence Bank",
-        href: "/interview-examples",
-        icon: "layers",
-        match: (p) => p.startsWith("/interview-examples") || p.startsWith("/apply/evidence"),
-      },
-    ],
+    label: "Interviews",
+    href: "/interviews",
+    icon: "cal",
+    match: (p) => p.startsWith("/interviews") || p.startsWith("/mock"),
   },
   {
-    title: "2 · Auto-Apply",
-    items: [
-      {
-        label: "Applications",
-        href: "/apply/applications",
-        icon: "list",
-        match: (p) => p.startsWith("/apply/applications") || p.startsWith("/apply/matches"),
-      },
-    ],
+    label: "Practice Hub",
+    href: "/practice",
+    icon: "chart",
+    match: (p) => p.startsWith("/practice") || p.startsWith("/rehearse"),
   },
   {
-    title: "3 · Practice Interviews",
-    items: [
-      {
-        label: "Interviews",
-        href: "/interviews",
-        icon: "cal",
-        match: (p) => p.startsWith("/interviews") || p.startsWith("/mock"),
-      },
-      {
-        label: "Practice Hub",
-        href: "/practice",
-        icon: "chart",
-        match: (p) => p.startsWith("/practice") || p.startsWith("/rehearse"),
-      },
-      {
-        label: "Presentations",
-        href: "/presentations",
-        icon: "present",
-        match: (p) => p.startsWith("/presentations") || p.startsWith("/qa"),
-      },
-    ],
+    label: "Presentations",
+    href: "/presentations",
+    icon: "present",
+    match: (p) => p.startsWith("/presentations") || p.startsWith("/qa"),
   },
   {
-    title: "Intelligence & Audit",
-    items: [
-      {
-        label: "Robot Tester",
-        href: "/robot-test",
-        icon: "sparkle",
-        match: (p) => p.startsWith("/robot-test"),
-      },
-      {
-        label: "Profile",
-        href: "/settings",
-        icon: "user",
-        match: (p) => p.startsWith("/settings") || p.startsWith("/apply/profile"),
-      },
-    ],
+    label: "CV Builder",
+    href: "/apply/cvs",
+    icon: "doc",
+    match: (p) => p.startsWith("/apply/cvs"),
+  },
+  {
+    label: "Experience Library",
+    href: "/interview-examples",
+    icon: "layers",
+    match: (p) => p.startsWith("/interview-examples"),
+  },
+  {
+    label: "Robot Tester",
+    href: "/robot-test",
+    icon: "sparkle",
+    match: (p) => p.startsWith("/robot-test"),
+  },
+  {
+    label: "Profile",
+    href: "/settings",
+    icon: "user",
+    match: (p) => p.startsWith("/settings"),
   },
 ];
 
@@ -123,12 +80,9 @@ export function Rail({
   const displayInitials = authUser?.initials || initials || "SA";
 
   const isUserAdmin = isAdminEmail(authUser?.email);
-  const visibleSections = NAV_SECTIONS.map((sec) => ({
-    ...sec,
-    items: sec.items.filter(
-      (it) => it.href !== "/robot-test" || isUserAdmin
-    ),
-  })).filter((sec) => sec.items.length > 0);
+  const visibleItems = ITEMS.filter(
+    (it) => it.href !== "/robot-test" || isUserAdmin
+  );
 
   return (
     <>
@@ -164,47 +118,38 @@ export function Rail({
       {/* Mobile Drawer Overlay (< md) */}
       {mobileOpen && (
         <div className="print-hide fixed inset-0 top-14 z-40 flex flex-col bg-booth/98 backdrop-blur-xl p-5 md:hidden animate-fade-in overflow-y-auto">
-          <nav className="flex flex-col gap-3 grow">
-            {visibleSections.map((sec, sIdx) => (
-              <div key={sec.title || sIdx} className="space-y-1">
-                {sec.title && (
-                  <div className="px-3 pt-2 text-[10px] font-extrabold uppercase tracking-wider text-muted/70">
-                    {sec.title}
-                  </div>
-                )}
-                {sec.items.map((it) => {
-                  const on = it.match(pathname);
-                  return (
-                    <Link
-                      key={it.label}
-                      href={it.href}
-                      onClick={() => setMobileOpen(false)}
-                      aria-current={on ? "page" : undefined}
-                      className={clsx(
-                        "flex items-center gap-3 rounded-xl px-4 py-2.5 text-[14px] font-medium transition-all duration-200",
-                        on
-                          ? "bg-[#1c2237] text-white shadow-[inset_0_0_0_1px_#374268]"
-                          : "text-muted hover:bg-panel-2 hover:text-ink"
-                      )}
-                    >
-                      <Icon
-                        name={it.icon}
-                        size={18}
-                        className={clsx("shrink-0", on ? "text-blue-soft" : "text-muted")}
-                      />
-                      <span>{it.label}</span>
-                    </Link>
-                  );
-                })}
-              </div>
-            ))}
+          <nav className="flex flex-col gap-1.5 grow">
+            {visibleItems.map((it) => {
+              const on = it.match(pathname);
+              return (
+                <Link
+                  key={it.label}
+                  href={it.href}
+                  onClick={() => setMobileOpen(false)}
+                  aria-current={on ? "page" : undefined}
+                  className={clsx(
+                    "flex items-center gap-3 rounded-xl px-4 py-3 text-[15px] font-medium transition-all duration-200",
+                    on
+                      ? "bg-[#1c2237] text-white shadow-[inset_0_0_0_1px_#374268]"
+                      : "text-muted hover:bg-panel-2 hover:text-ink"
+                  )}
+                >
+                  <Icon
+                    name={it.icon}
+                    size={20}
+                    className={clsx("shrink-0", on ? "text-blue-soft" : "text-muted")}
+                  />
+                  <span>{it.label}</span>
+                </Link>
+              );
+            })}
 
             <Link
               href="/settings"
               onClick={() => setMobileOpen(false)}
-              className="flex items-center gap-3 rounded-xl px-4 py-3 text-[14px] font-medium text-muted hover:bg-panel-2 hover:text-ink transition-all mt-2"
+              className="flex items-center gap-3 rounded-xl px-4 py-3 text-[15px] font-medium text-muted hover:bg-panel-2 hover:text-ink transition-all mt-2"
             >
-              <Icon name="gear" size={18} className="text-muted" />
+              <Icon name="gear" size={20} className="text-muted" />
               <span>Settings</span>
             </Link>
           </nav>
@@ -246,46 +191,37 @@ export function Rail({
         <Link
           href="/"
           aria-label="Hakkiri Studio home"
-          className="mb-4 flex items-center gap-3 px-2 text-ink hover:opacity-90 transition-opacity"
+          className="mb-6 flex items-center gap-3 px-2 text-ink hover:opacity-90 transition-opacity"
         >
           <Mark size={28} badge />
           <span className="text-[18px] font-bold tracking-tight text-white">Hakkiri</span>
         </Link>
 
         {/* Navigation Items with labels matching mockup */}
-        <div className="flex flex-col gap-2">
-          {visibleSections.map((sec, sIdx) => (
-            <div key={sec.title || sIdx} className="space-y-0.5">
-              {sec.title && (
-                <div className="px-3 pt-2 pb-1 text-[9.5px] font-black uppercase tracking-wider text-muted/60">
-                  {sec.title}
-                </div>
-              )}
-              {sec.items.map((it) => {
-                const on = it.match(pathname);
-                return (
-                  <Link
-                    key={it.label}
-                    href={it.href}
-                    aria-current={on ? "page" : undefined}
-                    className={clsx(
-                      "flex items-center gap-2.5 rounded-xl px-3 py-2 text-[12.5px] font-medium transition-all duration-200",
-                      on
-                        ? "bg-[#1c2237] text-white shadow-[inset_0_0_0_1px_#374268]"
-                        : "text-muted hover:bg-panel-2 hover:text-ink"
-                    )}
-                  >
-                    <Icon
-                      name={it.icon}
-                      size={16}
-                      className={clsx("shrink-0 transition-colors", on ? "text-blue-soft" : "text-muted")}
-                    />
-                    <span className="truncate">{it.label}</span>
-                  </Link>
-                );
-              })}
-            </div>
-          ))}
+        <div className="flex flex-col gap-1">
+          {visibleItems.map((it) => {
+            const on = it.match(pathname);
+            return (
+              <Link
+                key={it.label}
+                href={it.href}
+                aria-current={on ? "page" : undefined}
+                className={clsx(
+                  "flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all duration-200",
+                  on
+                    ? "bg-[#1c2237] text-white shadow-[inset_0_0_0_1px_#374268]"
+                    : "text-muted hover:bg-panel-2 hover:text-ink"
+                )}
+              >
+                <Icon
+                  name={it.icon}
+                  size={18}
+                  className={clsx("shrink-0 transition-colors", on ? "text-blue-soft" : "text-muted")}
+                />
+                <span className="truncate">{it.label}</span>
+              </Link>
+            );
+          })}
         </div>
 
         <div className="grow" />
