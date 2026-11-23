@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import clsx from "clsx";
 import type { Application, ApplicationStatus } from "@/lib/apply/schema";
 
 const COLUMNS: { id: ApplicationStatus; title: string; color: string; badge: string }[] = [
@@ -108,6 +109,8 @@ export default function ApplicationsTrackerPage() {
   const [applications, setApplications] = useState<EnrichedApp[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"board" | "list">("board");
+  const [draggedAppId, setDraggedAppId] = useState<string | null>(null);
+  const [dragOverColId, setDragOverColId] = useState<ApplicationStatus | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -168,7 +171,7 @@ export default function ApplicationsTrackerPage() {
           <div className="flex rounded-2xl bg-panel p-1 border border-line">
             <button
               onClick={() => setViewMode("board")}
-              className={`rounded-xl px-4 py-2 text-xs font-bold transition ${
+              className={`rounded-xl px-4 py-2 text-xs font-bold transition cursor-pointer ${
                 viewMode === "board"
                   ? "bg-blue-fill text-white shadow-sm"
                   : "text-muted hover:text-ink"
@@ -178,7 +181,7 @@ export default function ApplicationsTrackerPage() {
             </button>
             <button
               onClick={() => setViewMode("list")}
-              className={`rounded-xl px-4 py-2 text-xs font-bold transition ${
+              className={`rounded-xl px-4 py-2 text-xs font-bold transition cursor-pointer ${
                 viewMode === "list"
                   ? "bg-blue-fill text-white shadow-sm"
                   : "text-muted hover:text-ink"
@@ -197,20 +200,57 @@ export default function ApplicationsTrackerPage() {
         </div>
       </div>
 
+      {/* Drag & Drop Hint Banner */}
+      {viewMode === "board" && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-2xl border border-line bg-panel-2/60 px-4 py-2.5 text-xs text-muted">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex h-2 w-2 rounded-full bg-blue animate-pulse" />
+            <span className="font-extrabold text-ink">Interactive Drag & Drop:</span>
+            <span>Drag any application card between columns to instantly update its status.</span>
+          </div>
+          <span className="font-mono text-[10px] text-muted">Auto-saves to database</span>
+        </div>
+      )}
+
       {loading ? (
         <div className="flex h-64 items-center justify-center text-muted">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue border-t-transparent" />
         </div>
       ) : viewMode === "board" ? (
-        /* Kanban Columns: Full Viewport Stretch */
+        /* Kanban Columns: Full Viewport Stretch with HTML5 Drag & Drop */
         <div className="flex gap-5 overflow-x-auto pb-6 pt-1 items-stretch w-full [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.18)_transparent] [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-white/15 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-white/30">
           {COLUMNS.map((col) => {
             const columnApps = safeApps.filter((a) => a.status === col.id);
+            const isColumnOver = dragOverColId === col.id;
 
             return (
               <div
                 key={col.id}
-                className="w-80 shrink-0 rounded-3xl border border-line bg-panel/85 p-4 space-y-3 shadow-xl backdrop-blur-md min-h-[calc(100vh-260px)] flex flex-col"
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = "move";
+                  if (dragOverColId !== col.id) setDragOverColId(col.id);
+                }}
+                onDragLeave={(e) => {
+                  if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                    setDragOverColId(null);
+                  }
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const droppedId = e.dataTransfer.getData("text/plain") || draggedAppId;
+                  if (droppedId) {
+                    handleMoveStage(droppedId, col.id);
+                  }
+                  setDragOverColId(null);
+                  setDraggedAppId(null);
+                }}
+                className={clsx(
+                  "w-80 shrink-0 rounded-3xl border p-4 space-y-3 shadow-xl backdrop-blur-md min-h-[calc(100vh-280px)] flex flex-col transition-all duration-200",
+                  isColumnOver
+                    ? "border-blue-400 bg-blue-500/[0.08] ring-2 ring-blue-500/40 shadow-[0_0_30px_rgba(59,130,246,0.25)] scale-[1.01]"
+                    : "border-line bg-panel/85"
+                )}
               >
                 {/* Column Title & Badge */}
                 <div className="flex items-center justify-between border-b border-line pb-2.5">
@@ -225,79 +265,114 @@ export default function ApplicationsTrackerPage() {
                 </div>
 
                 {/* Column Items */}
-                <div className="space-y-3 flex-1">
+                <div className="space-y-3 flex-1 flex flex-col">
                   {columnApps.length === 0 ? (
-                    <div className="flex h-40 items-center justify-center rounded-2xl border border-dashed border-line/60 text-xs font-medium text-muted/60">
-                      Empty stage
+                    <div
+                      className={clsx(
+                        "flex h-44 flex-col items-center justify-center rounded-2xl border border-dashed text-xs font-semibold transition-all duration-200 gap-2",
+                        isColumnOver
+                          ? "border-blue text-blue bg-blue/15 animate-pulse scale-[1.02]"
+                          : "border-line/60 text-muted/60"
+                      )}
+                    >
+                      <span className="text-xl">{isColumnOver ? "📥" : "📋"}</span>
+                      <span>{isColumnOver ? "Drop Card Here" : "Empty stage"}</span>
                     </div>
                   ) : (
-                    columnApps.map((app) => (
-                      <div
-                        key={app.id}
-                        className="group relative rounded-2xl border border-line bg-panel-2 p-4 space-y-3 hover:border-blue/50 hover:shadow-lg transition shadow-md"
-                      >
-                        <div className="space-y-1">
-                          <div className="flex items-start justify-between gap-2">
-                            <h4 className="text-xs font-black text-ink line-clamp-1 group-hover:text-blue-soft transition">
-                              {app.job?.title || "Role Application"}
-                            </h4>
-                            <span className="text-[10px] font-black rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 flex-shrink-0">
-                              {app.fit}% Fit
-                            </span>
+                    columnApps.map((app) => {
+                      const isDragging = draggedAppId === app.id;
+
+                      return (
+                        <div
+                          key={app.id}
+                          draggable
+                          onDragStart={(e) => {
+                            e.dataTransfer.setData("text/plain", app.id);
+                            e.dataTransfer.effectAllowed = "move";
+                            setDraggedAppId(app.id);
+                          }}
+                          onDragEnd={() => {
+                            setDraggedAppId(null);
+                            setDragOverColId(null);
+                          }}
+                          className={clsx(
+                            "group relative rounded-2xl border p-4 space-y-3 transition-all duration-200 shadow-md cursor-grab active:cursor-grabbing select-none",
+                            isDragging
+                              ? "opacity-35 border-dashed border-blue bg-blue/10 scale-95 ring-2 ring-blue/50"
+                              : "border-line bg-panel-2 hover:border-blue/50 hover:shadow-xl hover:-translate-y-0.5"
+                          )}
+                        >
+                          <div className="space-y-1">
+                            <div className="flex items-start justify-between gap-2">
+                              <h4 className="text-xs font-black text-ink line-clamp-1 group-hover:text-blue-soft transition">
+                                {app.job?.title || "Role Application"}
+                              </h4>
+                              <div className="flex items-center gap-1.5 flex-shrink-0">
+                                <span className="text-[10px] font-black rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5">
+                                  {app.fit}% Fit
+                                </span>
+                                <span
+                                  className="text-muted/40 group-hover:text-muted text-xs cursor-grab select-none"
+                                  title="Drag card to move between stages"
+                                >
+                                  ⠿
+                                </span>
+                              </div>
+                            </div>
+                            <div className="text-[11px] font-bold text-muted">
+                              {app.job?.employer || "Company"}
+                            </div>
+                            <div className="text-[10px] text-muted font-mono">
+                              {app.job?.location || "Remote"}
+                            </div>
                           </div>
-                          <div className="text-[11px] font-bold text-muted">
-                            {app.job?.employer || "Company"}
-                          </div>
-                          <div className="text-[10px] text-muted font-mono">
-                            {app.job?.location || "Remote"}
+
+                          {app.notes && (
+                            <p className="text-[11px] text-muted/90 line-clamp-2 leading-relaxed bg-booth/50 p-2 rounded-xl border border-line/40">
+                              {app.notes}
+                            </p>
+                          )}
+
+                          <div className="pt-2 border-t border-line/50 flex flex-col gap-2">
+                            <Link
+                              href={`/apply/applications/${app.id}`}
+                              className="inline-flex items-center justify-between text-[11px] font-bold text-blue hover:text-blue-soft transition"
+                            >
+                              <span>Open Workspace</span>
+                              <span>→</span>
+                            </Link>
+
+                            {/* Quick Stage Progression */}
+                            <div className="flex items-center gap-1.5 pt-1">
+                              {col.id === "queued" && (
+                                <button
+                                  onClick={() => handleMoveStage(app.id, "ready")}
+                                  className="w-full rounded-xl bg-blue-fill/10 border border-blue-fill/30 py-1.5 text-[10px] font-bold text-blue hover:bg-blue-fill hover:text-white transition cursor-pointer"
+                                >
+                                  Mark Ready
+                                </button>
+                              )}
+                              {col.id === "ready" && (
+                                <button
+                                  onClick={() => handleMoveStage(app.id, "sent")}
+                                  className="w-full rounded-xl bg-emerald-500/10 border border-emerald-500/30 py-1.5 text-[10px] font-bold text-emerald-400 hover:bg-emerald-500 hover:text-white transition cursor-pointer"
+                                >
+                                  Mark Sent
+                                </button>
+                              )}
+                              {(col.id === "sent" || col.id === "screen" || col.id === "interview") && (
+                                <Link
+                                  href="/practice"
+                                  className="w-full text-center rounded-xl bg-blue/10 border border-blue/30 py-1.5 text-[10px] font-bold text-blue hover:bg-blue hover:text-white transition"
+                                >
+                                  Mock Practice →
+                                </Link>
+                              )}
+                            </div>
                           </div>
                         </div>
-
-                        {app.notes && (
-                          <p className="text-[11px] text-muted/90 line-clamp-2 leading-relaxed bg-booth/50 p-2 rounded-xl border border-line/40">
-                            {app.notes}
-                          </p>
-                        )}
-
-                        <div className="pt-2 border-t border-line/50 flex flex-col gap-2">
-                          <Link
-                            href={`/apply/applications/${app.id}`}
-                            className="inline-flex items-center justify-between text-[11px] font-bold text-blue hover:text-blue-soft transition"
-                          >
-                            <span>Open Workspace</span>
-                            <span>→</span>
-                          </Link>
-
-                          {/* Quick Stage Progression */}
-                          <div className="flex items-center gap-1.5 pt-1">
-                            {col.id === "queued" && (
-                              <button
-                                onClick={() => handleMoveStage(app.id, "ready")}
-                                className="w-full rounded-xl bg-blue-fill/10 border border-blue-fill/30 py-1.5 text-[10px] font-bold text-blue hover:bg-blue-fill hover:text-white transition"
-                              >
-                                Mark Ready
-                              </button>
-                            )}
-                            {col.id === "ready" && (
-                              <button
-                                onClick={() => handleMoveStage(app.id, "sent")}
-                                className="w-full rounded-xl bg-emerald-500/10 border border-emerald-500/30 py-1.5 text-[10px] font-bold text-emerald-400 hover:bg-emerald-500 hover:text-white transition"
-                              >
-                                Mark Sent
-                              </button>
-                            )}
-                            {(col.id === "sent" || col.id === "screen" || col.id === "interview") && (
-                              <Link
-                                href="/practice"
-                                className="w-full text-center rounded-xl bg-blue/10 border border-blue/30 py-1.5 text-[10px] font-bold text-blue hover:bg-blue hover:text-white transition"
-                              >
-                                Mock Practice →
-                              </Link>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
               </div>
