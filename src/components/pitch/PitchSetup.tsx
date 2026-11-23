@@ -392,6 +392,7 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
                 id="slides-file-input"
                 ref={fileRef}
                 type="file"
+                aria-label="Slides file (PowerPoint or PDF)"
                 accept=".pdf,.pptx,application/pdf,application/vnd.openxmlformats-officedocument.presentationml.presentation"
                 className="sr-only"
                 onChange={(e) => {
@@ -463,7 +464,7 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
                         className={clsx(
                           "flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition-all border",
                           active
-                            ? "bg-blue border-blue-soft text-white shadow-[0_0_16px_rgba(79,70,229,0.4)]"
+                            ? "bg-blue-fill border-blue-soft text-white shadow-[0_0_16px_rgba(79,70,229,0.4)]"
                             : "bg-[#141326] border-white/10 text-muted hover:text-white hover:border-white/20"
                         )}
                       >
@@ -586,11 +587,12 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
 
             {/* Date */}
             <div>
-              <label className="block text-xs font-semibold text-muted mb-2">
+              <label htmlFor="p-date" className="block text-xs font-semibold text-muted mb-2">
                 Date (optional)
               </label>
               <div className="relative">
                 <input
+                  id="p-date"
                   type="date"
                   value={when.date}
                   onChange={(e) => setWhen({ ...when, date: e.target.value })}
@@ -659,6 +661,7 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
               type="button"
               onClick={() => setActiveSlideIndex((i) => Math.max(0, i - 1))}
               disabled={activeSlideIndex === 0}
+              aria-label="Previous slide"
               className="p-1.5 rounded-lg text-muted hover:text-white hover:bg-white/[0.07] disabled:opacity-30 disabled:hover:bg-transparent transition-all"
             >
               <Icon name="chevronRight" size={16} className="rotate-180" />
@@ -686,6 +689,7 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
                 type="button"
                 onClick={() => setActiveSlideIndex((i) => Math.min(slides.length - 1, i + 1))}
                 disabled={activeSlideIndex === slides.length - 1}
+                aria-label="Next slide"
                 className="p-1.5 rounded-lg text-muted hover:text-white hover:bg-white/[0.07] disabled:opacity-30 disabled:hover:bg-transparent transition-all"
               >
                 <Icon name="chevronRight" size={16} />

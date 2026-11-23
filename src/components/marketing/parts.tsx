@@ -682,7 +682,7 @@ export function Pricing({
               )}
             >
               {p.badge && (
-                <span className="absolute -top-3.5 left-8 rounded-full bg-mk-cta px-3 py-1 text-[12px] font-semibold text-white animate-pulse-glow">
+                <span className="absolute -top-3.5 left-8 rounded-full bg-mk-cta px-3 py-1 text-[12px] font-semibold text-white">
                   {p.badge}
                 </span>
               )}
