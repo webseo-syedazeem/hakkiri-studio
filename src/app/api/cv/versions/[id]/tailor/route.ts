@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { badInput, failure, newCvId, notFound, requireUserId } from "@/lib/cv/access";
-import { getOwnCv, listOwnCvs, saveCv } from "@/lib/cv/store";
+import { badInput, failure, makingTooFast, newCvId, notFound, requireUserId } from "@/lib/cv/access";
+import { TOO_MANY_CVS, atCvLimit, getOwnCv, saveCv } from "@/lib/cv/store";
 import { extractRequirements } from "@/lib/cv/tailor/requirements";
 
 const text = (max: number) => z.string().max(max * 2).transform((s) => s.replace(/\s+/g, " ").trim().slice(0, max));
 const Body = z.object({ title: text(160).default(""), employer: text(160).default(""), advert: z.string().max(40000).transform((s) => s.replace(/\r/g, "").trim().slice(0, 20000)) }).strict();
-const MAX_VERSIONS = 60;
 
 /**
  * POST /api/cv/versions/[id]/tailor: a tailored version of a CV for one job.
@@ -19,6 +18,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const userId = await requireUserId();
     const cv = await getOwnCv((await params).id, userId);
     if (!cv) return notFound();
+    const fast = makingTooFast(userId);
+    if (fast) return fast;
     const parsed = Body.safeParse(await req.json().catch(() => null));
     if (!parsed.success) return badInput("Those details could not be read.");
     const { title, employer, advert } = parsed.data;
@@ -26,7 +27,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     if (!title && !employer) fields.title = "Give the job title or the employer, so you can tell this version from the others.";
     if (advert.replace(/\s/g, "").length < 40) fields.advert = "Paste the job advert. It is what this version is tailored to.";
     if (Object.keys(fields).length) return badInput("Add the job this version is for.", fields);
-    if ((await listOwnCvs(userId)).length >= MAX_VERSIONS) return badInput("You have reached the limit of CVs and versions. Delete some you no longer need.");
+    if (await atCvLimit(userId)) return badInput(TOO_MANY_CVS);
     const now = new Date().toISOString();
     // A version of a version still hangs off the original base.
     const base = cv.kind === "tailored" && cv.parentId ? cv.parentId : cv.id;

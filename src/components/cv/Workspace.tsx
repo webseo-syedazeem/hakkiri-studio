@@ -92,6 +92,11 @@ export function CvWorkspace({ versionId, children }: { versionId: string; childr
   const [checks, setChecks] = useState<FileChecks | null>(null);
   const wanted = useRef<{ entry: string; field: string } | null>(null);
   const setOpenEntry = useCallback((sectionId: string, entryId: string) => setOpen((o) => ({ ...o, [sectionId]: entryId })), []);
+  // The file checks made for the CV as it was loaded come with it, so a reload does not forget them (or change the score).
+  const loadedFiles = c.files;
+  useEffect(() => {
+    if (loadedFiles) setChecks((now) => now ?? loadedFiles);
+  }, [loadedFiles]);
   const [fromFindings, setFromFindings] = useState(false);
 
   // The checks run in code, 400ms after the last change. File checks count only for the CV exactly as it is now.

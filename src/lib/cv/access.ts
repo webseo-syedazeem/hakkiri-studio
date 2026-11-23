@@ -1,4 +1,5 @@
 import "server-only";
+import { rateLimited } from "@/lib/usage/limits";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth/require";
@@ -165,4 +166,16 @@ export function newCv(userId: string, setup: Setup, now: string): CvDoc {
     createdAt: now,
     updatedAt: now,
   };
+}
+
+/** New CVs (made, copied or tailored) one person can start in a minute. A person clicking never reaches it; a script does. */
+export const NEW_CVS_A_MINUTE = 20;
+
+/**
+ * Refuses when one person is making CVs faster than anyone clicking could.
+ * Counted by account, not by address, so one person cannot slow another down.
+ */
+export function makingTooFast(userId: string): NextResponse | null {
+  if (!rateLimited(`cv-make:${userId}`, NEW_CVS_A_MINUTE, 60_000)) return null;
+  return NextResponse.json({ error: "slow-down", message: "That’s a lot of new CVs in a short time. Wait a minute, then try again." }, { status: 429 });
 }

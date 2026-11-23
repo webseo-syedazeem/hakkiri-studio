@@ -458,7 +458,7 @@ export interface CvSummary {
   letter?: boolean;
   /** True when nothing has been entered yet. */
   empty: boolean;
-  /** The CV score, from what can be judged without making its files. Absent for an empty CV. */
+  /** The CV score: the same number the builder shows for the CV as it was last saved. Absent for an empty CV. */
   score?: number;
   /** Job fit, where the CV has an advert with something to assess. */
   fit?: number;
@@ -492,6 +492,38 @@ export const ExportRecordSchema = z.object({
   cv: z.object({ name: line(120), level: z.enum(CV_LEVELS), region: z.enum(CV_REGIONS), target: TargetSchema.optional(), contact: ContactSchema, sections: z.array(SectionSchema).max(24), design: DesignSchema, letter: LetterSchema.optional() }),
 });
 export type ExportRecord = z.infer<typeof ExportRecordSchema>;
+
+/** How one file of a CV read back when it was last made and checked. */
+export const FileCheckSchema = z.object({
+  status: z.enum(["checked", "loss", "failed"]),
+  /** For "failed": the file was made, and it was the reading of it that failed. */
+  made: z.boolean().optional(),
+  name: line(200).optional(),
+  pages: z.number().int().min(0).optional(),
+  words: z.number().int().min(0).optional(),
+  size: z.number().int().min(0).optional(),
+  missing: z.array(line(300)).max(60).optional(),
+  unexpected: z.array(line(300)).max(60).optional(),
+  unsupported: z.array(line(40)).max(60).optional(),
+});
+export type StoredFileCheck = z.infer<typeof FileCheckSchema>;
+
+/**
+ * The file checks for one revision of one CV, kept beside the CV (never in
+ * it, so recording a check can never overwrite an edit). It is why the score
+ * is the same number in the builder, after a reload and in the list. Once the
+ * CV changes, the record is out of date and is ignored.
+ */
+export const FileCheckRecordSchema = z.object({
+  /** The CV's id: one record a CV. */
+  id: z.string().min(1),
+  userId: z.string().min(1),
+  rev: z.number().int().min(1),
+  pdf: FileCheckSchema.optional(),
+  docx: FileCheckSchema.optional(),
+  at: z.string(),
+});
+export type FileCheckRecord = z.infer<typeof FileCheckRecordSchema>;
 
 /* ----------------------------------------------------------------- helpers */
 

@@ -4,7 +4,7 @@ import { exportCv } from "@/lib/cv/render/server";
 import { cvIsEmpty } from "@/lib/cv/schema";
 import { cvIsEmpty as isEmpty, newId } from "@/lib/cv/schema";
 import { privateLines, privateMessage } from "@/lib/cv/privacy";
-import { getOwnCv, listOwnAchievements, saveExport } from "@/lib/cv/store";
+import { getOwnCv, listOwnAchievements, noteFileChecks, saveExport } from "@/lib/cv/store";
 import { guard } from "@/lib/usage/limits";
 
 export const runtime = "nodejs";
@@ -43,6 +43,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       await saveExport({ id, userId, versionId: cv.id, rev: cv.rev, format, what: "cv", name: out.name, at: now.toISOString(), checked, pages: out.pages, cv: { name: cv.name, level: cv.level, region: cv.region, target: cv.target, contact: cv.contact, sections: cv.sections, design: cv.design } }).catch((err) => console.error("[cv export] the record of this download could not be saved:", err));
       return id;
     };
+    // How the file read back is kept for this revision, so the score says the same everywhere.
+    await noteFileChecks(cv, { [format]: out.check ? { status: out.check.status, name: out.name, pages: out.pages, words: out.check.words, missing: out.check.missing, unexpected: out.check.unexpected, unsupported: out.missing, size: out.bytes.length } : { status: "failed", made: true, name: out.name } });
     if (!out.check) {
       if (new URL(req.url).searchParams.get("unchecked") !== "1") {
         return NextResponse.json({ error: "check_failed", message: "The file was made, but it could not be read back to check it." }, { status: 503 });

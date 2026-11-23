@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { stateAt } from "@/lib/cv/edit";
-import { type Finding, GOOD_ENOUGH, GROUPS, type GroupId, type Score } from "@/lib/cv/score/score";
+import { type Finding, GOOD_ENOUGH, GROUPS, type GroupId, LINES_NEEDED, type Score } from "@/lib/cv/score/score";
 import { docWord, formatDate } from "@/lib/cv/sections";
 import { Dialog, usePanel } from "./Dialog";
 import { Bar, Btn, BtnLink, CvScreen, Panel, Skeleton, Toolbar } from "./ui";
@@ -182,11 +182,31 @@ export function Findings() {
                         )}
                       </div>
                     ) : (
-                      next && (
-                        <Btn kind="primary" onClick={() => go(next)}>
-                          Fix next {next.severity === "issue" ? "issue" : "suggestion"}
-                        </Btn>
-                      )
+                      <>
+                        {score.shown >= GOOD_ENOUGH && score.missing.length > 0 && (
+                          <div className="cv-note" data-testid="not-enough">
+                            Your score is {score.shown}, but your {word} is not ready to send yet. It still needs:
+                            <ul style={{ margin: "6px 0 0", paddingLeft: 18 }}>
+                              {score.missing.map((m) => (
+                                <li key={m}>{m}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {next && (
+                          <Btn kind="primary" onClick={() => go(next)}>
+                            Fix next {next.severity === "issue" ? "issue" : "suggestion"}
+                          </Btn>
+                        )}
+                      </>
+                    )}
+                    {score.thin && (
+                      <div className="cv-note" data-testid="thin-note">
+                        There is not much here to score yet. Your {word} has {score.thin.have === 0 ? "no lines" : score.thin.have === 1 ? "1 line" : `${score.thin.have} different lines`} saying what you did, and a {word} needs at least {score.thin.need}. Until it does, the checks a short {word} passes without trying earn only a share of their points.
+                        <div className="cv-row" style={{ marginTop: 8 }}>
+                          <BtnLink href={`${base}/edit/experience`}>Add what you did</BtnLink>
+                        </div>
+                      </div>
                     )}
                     <Btn onClick={() => open("score-method")}>How this is scored</Btn>
                     <small style={{ display: "block" }}>Worked out in code from your {word} as it is now. {GOOD_ENOUGH} is good enough to apply; nothing here stops you downloading.</small>
@@ -248,6 +268,12 @@ export function Findings() {
           <p>
             One score out of 100, from 35 checks in four groups. Every check is worked out in code from your {word}: no AI, and no guessing. A check that doesn’t apply to you hands its points to the rest of its group.
           </p>
+          <p>
+            Lines that say the same thing count once: a copy is flagged as a repeat and judged by nothing else. A {word} needs at least {LINES_NEEDED[cv.level]} different lines saying what you did ({LINES_NEEDED.experienced} for an experienced or senior {word}, {LINES_NEEDED.student} for a student or someone early in their career). With fewer, the checks a short {word} passes without trying, marked * below, earn in proportion: with half the lines, half their points.
+          </p>
+          <p data-testid="enough-rule">
+            {GOOD_ENOUGH} is good enough to apply, as long as your {word} also has: your name and an email address that works; at least one role (for a student or someone early in their career, a role, a project or a course of study); the {LINES_NEEDED[cv.level]} different lines; and a qualification, certificate or course. Nothing here ever stops you downloading.
+          </p>
           {score.groups.map((g) => (
             <div key={g.id}>
               <h3>
@@ -266,13 +292,21 @@ export function Findings() {
                     <tr key={c.id} data-check={c.id}>
                       <th scope="row">{c.title}</th>
                       <td>{c.state === "na" ? "Doesn’t apply" : c.state === "pending" ? "Not checked yet" : c.unit ? `${c.passed} of ${c.total} ${c.unit}` : c.passed ? "Yes" : "No"}</td>
-                      <td>{c.state === "na" ? "–" : c.state === "pending" ? `${pts(c.points)} pending` : `${pts(c.earned)} of ${pts(c.points)}`}</td>
+                      <td>
+                        {c.state === "na" ? "–" : c.state === "pending" ? `${pts(c.points)} pending` : `${pts(c.earned)} of ${pts(c.points)}`}
+                        {c.thin ? " *" : ""}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           ))}
+          {score.thin && (
+            <small style={{ display: "block" }} data-testid="thin-rule">
+              * Your {word} has {score.thin.have} of the {score.thin.need} different lines it needs, so each of these checks can earn {score.thin.have} of every {score.thin.need} of its points for now.
+            </small>
+          )}
           <small style={{ display: "block" }}>Evidence carries 45 points and punctuation one, so the score can’t be raised with full stops. Gaps in work are never scored.</small>
         </Dialog>
       )}

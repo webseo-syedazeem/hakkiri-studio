@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { EditableSchema, badInput, failure, notFound, requireUserId, saveProblem, sectionIdsDiffer, tooBig } from "@/lib/cv/access";
-import { deleteCv, deleteImport, getOwnCv, listOwnImports, saveCv } from "@/lib/cv/store";
+import { currentFileChecks, deleteCvAndRecords, getOwnCv, saveCv } from "@/lib/cv/store";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -9,7 +9,10 @@ export async function GET(_req: Request, { params }: Ctx) {
   try {
     const userId = await requireUserId();
     const cv = await getOwnCv((await params).id, userId);
-    return cv ? NextResponse.json({ cv }) : notFound();
+    if (!cv) return notFound();
+    // With the CV: how its files read back, if they were checked for the CV exactly as it is now.
+    const files = await currentFileChecks(cv);
+    return NextResponse.json({ cv, files: files ? { rev: files.rev, pdf: files.pdf, docx: files.docx } : undefined });
   } catch (err) {
     return failure("api/cv/versions/[id] GET", err, "The CV could not be loaded.");
   }
@@ -56,9 +59,8 @@ export async function DELETE(_req: Request, { params }: Ctx) {
     const userId = await requireUserId();
     const cv = await getOwnCv((await params).id, userId);
     if (!cv) return notFound();
-    // The uploads made for this CV go with it.
-    for (const imp of await listOwnImports(userId)) if (imp.versionId === cv.id) await deleteImport(imp.id);
-    await deleteCv(cv.id);
+    // Everything kept for this CV alone goes with it: its uploads, the copies kept of what was downloaded, its file checks.
+    await deleteCvAndRecords(cv);
     return NextResponse.json({ ok: true });
   } catch (err) {
     return failure("api/cv/versions/[id] DELETE", err, "The CV could not be deleted.");

@@ -3,7 +3,7 @@ import { readCvText } from "../import";
 import type { CvDoc, CvRegion } from "../schema";
 import { questionFor } from "../write/draft";
 import { figures } from "../write/facts";
-import { GOOD_ENOUGH, type Score, scoreCv } from "./score";
+import { type Score, scoreCv } from "./score";
 
 /**
  * The free public check, on the same engine as the builder: the pasted text
@@ -40,9 +40,9 @@ export function auditText(text: string, region: CvRegion, now = new Date()): Pub
   const detail = scoreCv({ cv, now, ownFile: false });
   const pct = (id: string) => {
     const g = detail.groups.find((x) => x.id === id)!;
-    // The share of what could be judged from the text: points that wait on the finished file are left out of both sides.
-    const judged = g.points - g.pending;
-    return judged > 0 ? Math.round((g.earned / judged) * 100) : 0;
+    // The share of what could be judged from the text: checks that wait on the finished file are left out of both sides.
+    const judged = g.checks.filter((c) => c.state === "scored").reduce((n, c) => n + c.points, 0);
+    return judged > 0 ? Math.min(100, Math.round((g.earned / judged) * 100)) : 0;
   };
   // Findings about the finished file do not apply to pasted text.
   const shown = detail.findings.filter((f) => f.fix !== "files" && f.rule !== "page-count");
@@ -50,5 +50,5 @@ export function auditText(text: string, region: CvRegion, now = new Date()): Pub
   const findings: OldFinding[] = shown.map((f, i) => ({ id: `${f.rule}-${i + 1}`, area: f.group, severity: f.severity === "issue" ? "high" : f.points >= 1 ? "medium" : "low", quote: f.excerpt, problem: f.reason, fix: f.action }));
   const bullets = cv.sections.flatMap((s) => ("entries" in s ? s.entries.flatMap((e) => e.bullets.map((b) => b.text)) : []));
   const interviewerQuestions = [...bullets.filter((b) => figures(b).length), ...bullets.filter((b) => !figures(b).length)].slice(0, 5).map((quote, i) => ({ id: `q${i + 1}`, quote, question: questionFor(quote) }));
-  return { score: detail.shown, subscores: { evidence: pct("evidence"), clarity: pct("clarity"), structure: pct("structure"), software: pct("software") }, findings, teaser: findings.slice(0, 3).map((f) => f.id), interviewerQuestions, isGoodEnough: detail.shown >= GOOD_ENOUGH, pending: detail.pending, detail };
+  return { score: detail.shown, subscores: { evidence: pct("evidence"), clarity: pct("clarity"), structure: pct("structure"), software: pct("software") }, findings, teaser: findings.slice(0, 3).map((f) => f.id), interviewerQuestions, isGoodEnough: detail.goodEnough, pending: detail.pending, detail };
 }

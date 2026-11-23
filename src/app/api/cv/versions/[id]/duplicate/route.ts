@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { EditableSchema, badInput, failure, newCvId, notFound, requireUserId, sectionIdsDiffer, tooBig } from "@/lib/cv/access";
-import { getOwnCv, saveCv } from "@/lib/cv/store";
+import { EditableSchema, badInput, failure, makingTooFast, newCvId, notFound, requireUserId, sectionIdsDiffer, tooBig } from "@/lib/cv/access";
+import { TOO_MANY_CVS, atCvLimit, getOwnCv, saveCv } from "@/lib/cv/store";
 
 const BodySchema = z.object({ changes: EditableSchema.optional() }).strict();
 
@@ -16,6 +16,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const userId = await requireUserId();
     const cv = await getOwnCv((await params).id, userId);
     if (!cv) return notFound();
+    const fast = makingTooFast(userId);
+    if (fast) return fast;
+    if (await atCvLimit(userId)) return badInput(TOO_MANY_CVS);
     const parsed = BodySchema.safeParse(await req.json().catch(() => ({})));
     if (!parsed.success || !sectionIdsDiffer(parsed.data.changes?.sections) || tooBig(parsed.data.changes?.sections)) return badInput("The copy could not be made.");
     const { target, letter, name, ...changes } = parsed.data.changes ?? {};

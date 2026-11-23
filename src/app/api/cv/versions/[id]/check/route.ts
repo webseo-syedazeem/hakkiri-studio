@@ -3,7 +3,8 @@ import { failure, notFound, requireUserId } from "@/lib/cv/access";
 import { exportCv } from "@/lib/cv/render/server";
 import { cvIsEmpty } from "@/lib/cv/schema";
 import { privateLines, privateMessage } from "@/lib/cv/privacy";
-import { getOwnCv, listOwnAchievements } from "@/lib/cv/store";
+import type { StoredFileCheck } from "@/lib/cv/schema";
+import { getOwnCv, listOwnAchievements, noteFileChecks } from "@/lib/cv/store";
 import { guard } from "@/lib/usage/limits";
 
 export const runtime = "nodejs";
@@ -24,7 +25,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     if (cvIsEmpty(cv)) return NextResponse.json({ error: "empty", message: "There is nothing to check yet. Add your details first." }, { status: 409 });
     const kept = privateLines(cv, await listOwnAchievements(userId));
     if (kept.length) return NextResponse.json({ error: "private", message: privateMessage(kept, cv.region === "us" ? "resume" : "CV"), lines: kept }, { status: 409 });
-    const results: Record<string, unknown> = {};
+    const results: { pdf?: StoredFileCheck; docx?: StoredFileCheck } = {};
     for (const format of ["pdf", "docx"] as const) {
       try {
         const out = await exportCv(cv, format);
@@ -37,6 +38,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         results[format] = { status: "failed" };
       }
     }
+    // Kept for this revision, so the score is the same after a reload and in the list of CVs.
+    await noteFileChecks(cv, results);
     return NextResponse.json({ rev: cv.rev, checkedAt: new Date().toISOString(), ...results });
   } catch (err) {
     return failure("api/cv/versions/[id]/check POST", err, "The files could not be checked.");

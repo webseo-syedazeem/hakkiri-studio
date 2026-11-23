@@ -3,7 +3,7 @@ import { newCv } from "../access";
 import { fernCv } from "../render/testing";
 import { type CvDoc, type EntrySection, type SkillsSection, type SummarySection, emptySection, newBullet } from "../schema";
 import { bigClaim, buzzwords, dutyLead, filler, firstPerson, fragment, hasContext, hasOutcome, hasScale, passive, presentLead, unclearContribution, unexplainedAcronyms, validEmail, validLink, validPhone, weakLead, wrongRegionSpelling } from "./detect";
-import { CHECKS, GROUPS, type Score, type ScoreInput, gapsIn, scoreCv } from "./score";
+import { CHECKS, GROUPS, LINES_NEEDED, type Score, type ScoreInput, gapsIn, scoreCv, whatIsMissing } from "./score";
 
 const NOW = new Date("2026-11-23T12:00:00Z");
 const base = (): CvDoc => ({ ...(fernCv() as CvDoc), level: "experienced", accepted: [] });
@@ -20,6 +20,25 @@ function withBullets(texts: string[], change?: (cv: CvDoc) => void): CvDoc {
   return cv;
 }
 const found = (cv: CvDoc, id: string) => check(run(cv), id).findings;
+const STRONG_LINES = [
+  "Catalogued 3,200 maps in two years by rebuilding the intake process",
+  "Wrote a 40-page handling guide used at every induction since March 2024",
+  "Trained 40 volunteers to handle paper safely each term",
+  "Cut retrieval time from 3 days to 1 by re-shelving the reading room",
+  "Digitised 600 glass negatives for the online catalogue in one summer",
+  "Ran the monthly conservation audit across both stores for two years",
+];
+/** A CV with everything a CV needs: six strong lines, a qualification, a profile and skills its lines show. */
+function strongCv(lines = STRONG_LINES, change?: (cv: CvDoc) => void): CvDoc {
+  const cv = base();
+  cv.sections = cv.sections.filter((s) => ["summary", "experience", "skills", "education"].includes(s.kind));
+  const e = exp(cv);
+  e.entries = [{ ...e.entries[0], orgInfo: "", bullets: lines.map((t) => newBullet(t)) }];
+  (cv.sections.find((s) => s.kind === "skills") as SkillsSection).groups = [{ id: "g_1", name: "", visible: true, skills: ["Cataloguing", "handling", "maps", "volunteers", "induction", "intake", "reading room", "re-shelving"].map((name, i) => ({ id: `k_${i}00`, name, visible: true })) }];
+  (cv.sections.find((s) => s.kind === "summary") as SummarySection).text = "Archive assistant caring for paper maps. Catalogued 3,200 maps in two years. Trained 40 volunteers to handle paper safely.";
+  change?.(cv);
+  return cv;
+}
 
 describe("the shape of the score", () => {
   it("has 35 checks in four groups that add up to 100", () => {
@@ -58,11 +77,11 @@ describe("the shape of the score", () => {
   });
 
   it("a per-item check earns in proportion to the items that pass", () => {
-    const s = run(withBullets(["Cut late orders by 12% over the year", "Looked after the stock room", "Ran the till", "Wrote the rota each week"]));
+    const s = run(withBullets(["Cut late orders by 12% over the year", "Looked after the stock room", "Ran the till", "Wrote the rota each week", "Answered the phones", "Built the returns spreadsheet"]));
     const c = check(s, "outcome");
-    expect([c.passed, c.total, c.unit]).toEqual([2, 4, "bullets"]);
+    expect([c.passed, c.total, c.unit]).toEqual([3, 6, "bullets"]);
     expect(c.earned).toBeCloseTo(c.points / 2, 1);
-    expect(c.findings).toHaveLength(2);
+    expect(c.findings).toHaveLength(3);
     // What each finding is worth adds back up to what the check lost.
     expect(c.findings.reduce((n, f) => n + f.points, 0)).toBeCloseTo(c.points - c.earned, 0);
   });
@@ -78,15 +97,10 @@ describe("the shape of the score", () => {
   });
 
   it("is good enough at 85, and not before", () => {
-    const strong = withBullets(
-      ["Catalogued 3,200 maps in two years by rebuilding the intake process", "Wrote a 40-page handling guide used at every induction since March 2024", "Trained 40 volunteers to handle paper safely each term", "Cut retrieval time from 3 days to 1 by re-shelving the reading room"],
-      (c) => {
-        (c.sections.find((s) => s.kind === "skills") as SkillsSection).groups = [{ id: "g_1", name: "", visible: true, skills: ["Cataloguing", "handling", "maps", "volunteers", "induction", "intake", "reading room", "re-shelving"].map((name, i) => ({ id: `k_${i}00`, name, visible: true })) }];
-        (c.sections.find((s) => s.kind === "summary") as SummarySection).text = "Archive assistant caring for paper maps. Catalogued 3,200 maps in two years. Trained 40 volunteers to handle paper safely.";
-      },
-    );
-    const s = run(strong);
+    const s = run(strongCv());
     expect(s.shown).toBeGreaterThanOrEqual(85);
+    expect(s.missing).toEqual([]);
+    expect(s.thin).toBeNull();
     expect(s.goodEnough).toBe(true);
     expect(run(withBullets(["Helped out"])).goodEnough).toBe(false);
   });
@@ -399,5 +413,158 @@ describe("gaps in work", () => {
     const without = gapCv([["2018-01", "2021-05"], ["2021-06", "", true]]);
     expect(run(withGap).gaps).toHaveLength(1);
     expect(run(withGap).total).toBe(run(without).total);
+  });
+});
+
+/**
+ * The score, attacked: it must not rise because a line was pasted many times,
+ * and a CV with almost nothing in it must not be told it is ready to send.
+ */
+describe("lines that say the same thing count once", () => {
+  const strong = "Cut cataloguing backlog by 40% in six months by rebuilding the intake process across the Leeds site";
+  const weak = ["Helped with filing", "Was involved in various tasks", "Worked on the front desk"];
+  const role = (cv: CvDoc, texts: string[], more: Partial<EntrySection["entries"][number]> = {}) => ({ ...exp(cv).entries[0], id: `e_${Math.random().toString(16).slice(2, 10)}`, orgInfo: "", bullets: texts.map((t) => newBullet(t)), ...more });
+  const roles = (make: (cv: CvDoc) => EntrySection["entries"]) => {
+    const cv = withBullets([]);
+    exp(cv).entries = make(cv);
+    return run(cv);
+  };
+
+  it("the same strong bullet six times, or twenty-four, scores no more than once", () => {
+    const once = roles((cv) => [role(cv, [strong])]);
+    const six = roles((cv) => [role(cv, Array.from({ length: 6 }, () => strong))]);
+    const many = roles((cv) => Array.from({ length: 4 }, (_, i) => role(cv, Array.from({ length: 6 }, () => strong), { start: String(2010 + i * 3), end: String(2012 + i * 3), current: false })));
+    expect(six.total).toBeLessThanOrEqual(once.total);
+    expect(many.total).toBeLessThanOrEqual(once.total);
+    // Every copy after the first is flagged, and the checks of evidence judge one line.
+    expect(check(six, "repeat")).toMatchObject({ passed: 1, total: 6 });
+    expect(check(six, "outcome")).toMatchObject({ passed: 1, total: 1 });
+    expect(check(many, "repeat").findings).toHaveLength(23);
+    expect(six.thin).toEqual({ have: 1, need: 6 });
+  });
+
+  it("one figure changed in each copy does not make it a new line", () => {
+    const once = roles((cv) => [role(cv, [strong])]);
+    const near = roles((cv) => Array.from({ length: 4 }, (_, i) => role(cv, Array.from({ length: 6 }, (_, k) => strong.replace("40%", `${40 + i * 6 + k}%`)), { start: String(2010 + i * 3), end: String(2012 + i * 3), current: false })));
+    expect(near.total).toBeLessThanOrEqual(once.total);
+    const f = check(near, "repeat").findings;
+    expect(f).toHaveLength(23);
+    expect(f[0].reason).toBe("This says almost the same as another bullet in this entry. The two are counted as one.");
+    expect(f[0].action).toBe("If it was a different piece of work, say what was different about it. If not, keep one.");
+  });
+
+  it("near-copies of one strong line cannot lift a weak CV", () => {
+    const honest = roles((cv) => [role(cv, [...weak, strong])]);
+    const padded = roles((cv) => [role(cv, weak), ...Array.from({ length: 5 }, (_, i) => role(cv, Array.from({ length: 6 }, (_, k) => strong.replace("40%", `${40 + i * 6 + k}%`)), { start: String(2000 + i * 3), end: String(2002 + i * 3), current: false }))]);
+    expect(padded.total).toBeLessThanOrEqual(honest.total);
+    expect(padded.goodEnough).toBe(false);
+  });
+
+  it("tells a repeat from two lines about different work", () => {
+    const rep = (a: string, b: string) => check(run(withBullets([a, b])), "repeat").findings.length;
+    expect(rep("Trained 40 volunteers to handle paper", "Trained 40 volunteers to handle paper.")).toBe(1);
+    expect(rep("Trained 40 volunteers to handle paper", "trained 12 volunteers to handle paper")).toBe(1);
+    expect(rep("Managed the weekend rota for 12 staff", "Managed the weekend rota for twelve staff members")).toBe(1);
+    // Different work, in some of the same words.
+    expect(rep("Trained 12 new starters on the till", "Trained 4 new starters on stock control")).toBe(0);
+    expect(rep("Wrote the handling guide for volunteers", "Wrote the weekly bulletin for volunteers")).toBe(0);
+    expect(rep("Ran the till", "Ran the stock room")).toBe(0);
+  });
+
+  it("a role made of copies does not have “3 to 6 bullets”, and copies do not make a CV long enough", () => {
+    const cv = withBullets(Array.from({ length: 5 }, () => strong));
+    const f = found(cv, "bullets-per-role");
+    expect(f).toHaveLength(1);
+    expect(f[0].reason).toContain("has 1 bullet that say different things");
+    // 300 copies of a 17-word line is 5,100 words: too long, and never "long enough".
+    const padded = withBullets(Array.from({ length: 20 }, () => strong), (c) => ((c.sections.find((s) => s.kind === "summary") as SummarySection).text = ""));
+    const wc = check(run(padded), "word-count");
+    expect(wc.earned).toBe(0);
+    expect(wc.findings[0].reason).toMatch(/words once repeated bullets are counted once\.$/);
+  });
+});
+
+describe("a CV with almost nothing in it", () => {
+  const bare = (change: (cv: CvDoc) => void): CvDoc => {
+    const cv = { ...newCv("u", { name: "x", level: "experienced", region: "uk", targetTitle: "", targetEmployer: "", targetAdvert: "" }, NOW.toISOString()) } as CvDoc;
+    change(cv);
+    return cv;
+  };
+  /** A name, an email, a phone number, a town and one role with one line: about sixty words. */
+  const sixtyWords = () =>
+    bare((cv) => {
+      cv.contact = { fullName: "Ada Example", email: "ada@example.com", phone: "07700 900123", location: "Leeds", links: [] };
+      const e = cv.sections.find((s) => s.kind === "experience") as EntrySection;
+      e.entries = [{ ...exp(base()).entries[0], orgInfo: "", bullets: [newBullet("Cut cataloguing backlog by 40% in six months by rebuilding the intake process across the Leeds site")] }];
+    });
+
+  it("only a town scores nothing: there is no floor", () => {
+    const s = run(bare((cv) => (cv.contact.location = "x")));
+    expect(s.empty).toBe(false);
+    expect(s.total).toBe(0);
+    expect(s.shown).toBe(0);
+  });
+
+  it("only a name earns the points for a name and a file name, and nothing else", () => {
+    const s = run(bare((cv) => (cv.contact.fullName = "A")));
+    expect(s.groups.find((g) => g.id === "evidence")!.earned).toBe(0);
+    expect(s.groups.find((g) => g.id === "clarity")!.earned).toBe(0);
+    expect(s.groups.flatMap((g) => g.checks).filter((c) => c.earned > 0).map((c) => c.id)).toEqual(["name", "file-name"]);
+    expect(s.shown).toBeLessThan(5);
+  });
+
+  it("a check that a short CV passes without trying earns only a share", () => {
+    const s = run(sixtyWords());
+    expect(s.thin).toEqual({ have: 1, need: LINES_NEEDED.experienced });
+    // One line of the six a CV needs: a sixth of the points, though the check itself passes.
+    for (const id of ["sources", "repeat", "one-column", "pdf-readback", "page-count"]) {
+      const c = check(s, id);
+      expect(c.passed, id).toBe(c.total);
+      expect(c.thin, id).toBe(true);
+      expect(c.earned, id).toBeCloseTo(c.points / 6, 1);
+    }
+    // Checks of fact are not shared out: the name is there or it is not.
+    expect(check(s, "name")).toMatchObject({ earned: check(s, "name").points });
+    expect(check(s, "name").thin).toBeUndefined();
+    expect(s.shown).toBeLessThan(40);
+  });
+
+  it("is never told it is good enough to apply, and is told what it still needs", () => {
+    const s = run(sixtyWords());
+    expect(s.goodEnough).toBe(false);
+    expect(s.missing).toEqual(["6 different lines saying what you did (it has 1)", "a qualification, certificate or course"]);
+  });
+
+  it("a high score is still not “good enough” while something a CV needs is missing", () => {
+    const noEducation = run(strongCv(STRONG_LINES, (c) => (c.sections = c.sections.filter((x) => x.kind !== "education"))));
+    expect(noEducation.shown).toBeGreaterThanOrEqual(85);
+    expect(noEducation.goodEnough).toBe(false);
+    expect(noEducation.missing).toEqual(["a qualification, certificate or course"]);
+    const noEmail = run(strongCv(STRONG_LINES, (c) => (c.contact.email = "")));
+    expect(noEmail.missing).toEqual(["your name and an email address that works"]);
+    expect(noEmail.goodEnough).toBe(false);
+  });
+
+  it("what a CV needs depends on the level: a student needs three lines, and a course of study will do for a role", () => {
+    const cv = strongCv(STRONG_LINES.slice(0, 3));
+    expect(whatIsMissing(cv, 3)).toEqual(["6 different lines saying what you did (it has 3)"]);
+    expect(whatIsMissing({ ...cv, level: "student" }, 3)).toEqual([]);
+    const student = { ...cv, level: "student" as const, sections: cv.sections.filter((s) => s.kind !== "experience") };
+    expect(whatIsMissing(student, 0)).toEqual(["3 different lines saying what you did (it has 0)"]);
+    expect(whatIsMissing({ ...student, level: "experienced" }, 6)).toEqual(["at least one role"]);
+  });
+
+  it("what a finding is worth is what fixing it would add now, in a short CV too", () => {
+    const cv = sixtyWords();
+    (cv.sections.find((s) => s.kind === "experience") as EntrySection).entries[0].bullets[0].text = "Looked after the stock room";
+    const s = run(cv);
+    const c = check(s, "outcome");
+    expect(c.earned).toBe(0);
+    expect(c.findings[0].points).toBeCloseTo(c.points / 6, 1);
+  });
+
+  it("the file checks that are pending hold only the share a short CV could earn", () => {
+    const s = run(sixtyWords(), { files: {} });
+    expect(s.pending).toBeCloseTo(6 / 6, 1);
   });
 });

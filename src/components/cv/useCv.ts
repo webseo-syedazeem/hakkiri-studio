@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { type History, SNAPSHOT_KEYS, type Snapshot, emptyHistory, record, redo as redoStep, snapshotOf, undo as undoStep } from "@/lib/cv/edit";
-import type { CvDoc } from "@/lib/cv/schema";
+import type { CvDoc, StoredFileCheck } from "@/lib/cv/schema";
 import { ApiError, api } from "./client";
 
 /** What the save indicator says. It reports what actually happened, never a hopeful guess. */
@@ -50,6 +50,8 @@ export function useCv(id: string) {
   const [saveNote, setSaveNote] = useState("");
   /** A save has failed and none has succeeded since: the warning stays up while the next try is on its way. */
   const [troubled, setTroubled] = useState(false);
+  /** How the CV's files read back when last checked, as loaded with the CV. Only for the revision it names. */
+  const [files, setFiles] = useState<{ rev: number; pdf?: StoredFileCheck; docx?: StoredFileCheck } | null>(null);
   /** The last change sent and its name: the same change sent again keeps the name, so the server applies it once. */
   const lastTry = useRef<{ id: string; body: string } | null>(null);
   /** Saves whose answer never arrived. One of them may have reached the server. */
@@ -69,9 +71,10 @@ export function useCv(id: string) {
   useEffect(() => {
     let live = true;
     setLoad("loading");
-    api<{ cv: CvDoc }>(`/api/cv/versions/${id}`)
-      .then(({ cv: loaded }) => {
+    api<{ cv: CvDoc; files?: { rev: number; pdf?: StoredFileCheck; docx?: StoredFileCheck } }>(`/api/cv/versions/${id}`)
+      .then(({ cv: loaded, files: checked }) => {
         if (!live) return;
+        setFiles(checked ?? null);
         // Edits that never reached the server last time are put back, if they were made on this revision.
         try {
           const kept = JSON.parse(localStorage.getItem(draftKey(id)) ?? "null") as { rev: number; changes: Partial<Editable> } | null;
@@ -329,7 +332,7 @@ export function useCv(id: string) {
     };
   }, [flush]);
 
-  return { cv, load, save, saveError, saveNote, troubled, update, flush, settle, retry: () => schedule(0), undo, redo, canUndo: steps.undo > 0, canRedo: steps.redo > 0, other, keepMine, takeTheirs, saveSeparate };
+  return { cv, load, save, saveError, saveNote, troubled, files, update, flush, settle, retry: () => schedule(0), undo, redo, canUndo: steps.undo > 0, canRedo: steps.redo > 0, other, keepMine, takeTheirs, saveSeparate };
 }
 
 export const SAVE_WORDS: Record<SaveState, string> = {
