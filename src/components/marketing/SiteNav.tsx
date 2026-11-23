@@ -17,11 +17,10 @@ export function SiteNav() {
   const isPresent = path === "/present";
   const base = isPresent ? "/present" : "";
 
-  // Core navigation links matching the executive navigation (Screenshot 9)
+  // Core navigation links matching the executive navigation (without CV references)
   const primaryLinks: [string, string, boolean][] = [
     ["/", "Interviews", path === "/" || path === "/landing"],
     ["/present", "Presentations", isPresent],
-    ["/cv-audit", "Free CV Audit", path.startsWith("/cv-audit")],
     ["/about", "About", path === "/about"],
     ["/blog", "Blog", path.startsWith("/blog")],
     [`${base}#how`, "How it works", false],
@@ -69,7 +68,7 @@ export function SiteNav() {
       {isUserAdmin && (
         <Link
           href="/admin"
-          className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-purple-500/30 bg-purple-500/10 px-3 py-1.5 text-xs font-semibold text-purple-700 hover:bg-purple-500/20 transition-all hover:scale-[1.03]"
+          className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-purple-500/30 bg-purple-500/10 px-3 py-1.5 text-xs font-semibold text-purple-700 hover:bg-purple-500/20 transition-all hover:scale-[1.03] whitespace-nowrap shrink-0"
         >
           <span className="h-2 w-2 rounded-full bg-purple-600 animate-pulse"></span>
           <span>Admin</span>
@@ -78,11 +77,11 @@ export function SiteNav() {
 
       {/* Auth / Studio CTAs */}
       {user ? (
-        <div className="relative flex items-center gap-2 pl-1" ref={menuRef}>
+        <div className="relative flex items-center gap-2 pl-1 shrink-0" ref={menuRef}>
           {/* Main Open Studio CTA Button */}
           <Link
             href="/dashboard"
-            className="rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:shadow-md hover:shadow-blue-500/25 hover:scale-[1.03] active:scale-[0.98] transition-all"
+            className="rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:shadow-md hover:shadow-blue-500/25 hover:scale-[1.03] active:scale-[0.98] transition-all whitespace-nowrap inline-flex items-center justify-center shrink-0"
           >
             Open Studio
           </Link>
@@ -93,7 +92,7 @@ export function SiteNav() {
             onClick={() => setUserMenuOpen((prev) => !prev)}
             aria-label="User account menu"
             aria-expanded={userMenuOpen}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-tr from-slate-900 via-slate-800 to-indigo-950 text-[11px] font-bold tracking-tight text-white shadow-md ring-1 ring-black/10 hover:ring-2 hover:ring-blue-500/50 hover:scale-105 active:scale-95 transition-all cursor-pointer select-none"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-tr from-slate-900 via-slate-800 to-indigo-950 text-[11px] font-bold tracking-tight text-white shadow-md ring-1 ring-black/10 hover:ring-2 hover:ring-blue-500/50 hover:scale-105 active:scale-95 transition-all cursor-pointer select-none shrink-0"
             title={`${user.firstName || "User"} (${user.email || ""})`}
           >
             {user.initials || "U"}
@@ -122,21 +121,21 @@ export function SiteNav() {
                 </Link>
 
                 <Link
-                  href="/apply/cvs"
-                  onClick={() => setUserMenuOpen(false)}
-                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 hover:bg-black/[0.04] hover:text-slate-900 transition-colors"
-                >
-                  <span className="text-emerald-600 font-bold">📄</span>
-                  CV Builder
-                </Link>
-
-                <Link
                   href="/interviews"
                   onClick={() => setUserMenuOpen(false)}
                   className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 hover:bg-black/[0.04] hover:text-slate-900 transition-colors"
                 >
                   <span className="text-violet-600 font-bold">🎙️</span>
                   Mock Interviews
+                </Link>
+
+                <Link
+                  href="/presentations"
+                  onClick={() => setUserMenuOpen(false)}
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 hover:bg-black/[0.04] hover:text-slate-900 transition-colors"
+                >
+                  <span className="text-indigo-600 font-bold">📊</span>
+                  Presentations
                 </Link>
 
                 {isUserAdmin && (
@@ -177,20 +176,20 @@ export function SiteNav() {
           )}
         </div>
       ) : (
-        <>
+        <div className="flex items-center gap-1.5 shrink-0">
           <Link
             href="/login"
-            className="hidden rounded-full px-3.5 py-1.5 text-mk-ink/70 transition-all duration-150 hover:text-mk-ink hover:bg-black/[0.03] sm:inline font-medium"
+            className="hidden rounded-full px-3.5 py-1.5 text-mk-ink/70 transition-all duration-150 hover:text-mk-ink hover:bg-black/[0.03] sm:inline font-medium whitespace-nowrap"
           >
             Log in
           </Link>
           <Link
             href="/signup"
-            className="ml-1 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:shadow-md hover:shadow-blue-500/25 hover:scale-[1.03] active:scale-[0.98] transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mk-cta"
+            className="ml-1 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:shadow-md hover:shadow-blue-500/25 hover:scale-[1.03] active:scale-[0.98] transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mk-cta whitespace-nowrap inline-flex items-center justify-center shrink-0"
           >
             Sign up free
           </Link>
-        </>
+        </div>
       )}
     </nav>
   );

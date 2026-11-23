@@ -41,12 +41,6 @@ const ITEMS: {
     match: (p) => p.startsWith("/presentations") || p.startsWith("/qa"),
   },
   {
-    label: "CV Builder",
-    href: "/apply/cvs",
-    icon: "doc",
-    match: (p) => p.startsWith("/apply/cvs"),
-  },
-  {
     label: "Experience Library",
     href: "/interview-examples",
     icon: "layers",

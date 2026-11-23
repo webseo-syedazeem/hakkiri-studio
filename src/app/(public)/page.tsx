@@ -156,41 +156,34 @@ export default async function LandingPage() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify([
-            {
-              "@context": "https://schema.org",
-              "@type": "Organization",
-              name: "Hakkiri",
-              url: "https://www.hakkiri.studio",
-              logo: "https://www.hakkiri.studio/icon.png",
-            },
-            {
-              "@context": "https://schema.org",
-              "@type": "WebSite",
-              name: "Hakkiri",
-              url: "https://www.hakkiri.studio",
-              description: "Free AI mock interview practice built from your job description and CV.",
-            },
-            {
-              "@context": "https://schema.org",
-              "@type": "SoftwareApplication",
-              name: "Hakkiri",
-              applicationCategory: "EducationalApplication",
-              operatingSystem: "Web, All",
-              offers: {
-                "@type": "Offer",
-                price: "0",
-                priceCurrency: "USD",
-                description:
-                  "Free AI interview practice for everyone while the beta runs.",
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@graph": [
+              {
+                "@type": "Organization",
+                "@id": "https://www.hakkiri.studio/#organization",
+                "name": "Hakkiri",
+                "url": "https://www.hakkiri.studio/",
+                "description":
+                  "Hakkiri is a free AI mock interview platform built from your job description and CV.",
               },
-            },
-            {
-              "@context": "https://schema.org",
-              "@type": "FAQPage",
-              mainEntity: faqSchemaItems,
-            },
-          ]),
+              {
+                "@type": "SoftwareApplication",
+                "name": "Hakkiri",
+                "url": "https://www.hakkiri.studio/",
+                "applicationCategory": "EducationalApplication",
+                "operatingSystem": "Web",
+                "description":
+                  "Free AI interview practice. A live AI interviewer asks questions out loud, follows up on your answers and gives feedback on every answer.",
+                "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+                "publisher": { "@id": "https://www.hakkiri.studio/#organization" },
+              },
+              {
+                "@type": "FAQPage",
+                mainEntity: faqSchemaItems,
+              },
+            ],
+          }),
         }}
       />
 
