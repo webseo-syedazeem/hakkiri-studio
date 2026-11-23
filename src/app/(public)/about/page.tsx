@@ -40,10 +40,10 @@ export default function AboutPage() {
               Sign up free
             </Link>
             <Link
-              href="/cv-audit"
+              href="/present"
               className="rounded-full border border-mk-line bg-white px-5 py-3 text-sm font-semibold text-mk-ink hover:bg-mk-mist transition-all shadow-sm"
             >
-              Free CV Audit →
+              For presenters →
             </Link>
           </div>
         </div>
@@ -76,9 +76,9 @@ export default function AboutPage() {
             </div>
             <div className="space-y-1">
               <div className="text-2xl sm:text-3xl font-black text-mk-ink">End-to-End</div>
-              <div className="text-xs font-semibold text-mk-blue uppercase tracking-wider">Career Suite</div>
+              <div className="text-xs font-semibold text-mk-blue uppercase tracking-wider">Practice Suite</div>
               <p className="text-[11px] text-mk-slate leading-normal">
-                From free CV diagnostic to live interview practice hand-off in one ecosystem.
+                From first-round screening to final executive presentation rehearsal.
               </p>
             </div>
           </div>
@@ -231,7 +231,7 @@ export default function AboutPage() {
             Ready to prepare for the interview you actually have?
           </h2>
           <p className="text-sm sm:text-base text-mk-slate leading-relaxed">
-            Create your account in under two minutes. No card required. Start with a free diagnostic CV audit or jump straight into tailored mock interview practice.
+            Create your account in under two minutes. No card required. Practise out loud, take tough follow-up probes, and walk in confident.
           </p>
           <div className="pt-2 flex flex-wrap justify-center gap-3">
             <Link
@@ -241,10 +241,10 @@ export default function AboutPage() {
               Sign up free
             </Link>
             <Link
-              href="/cv-audit"
+              href="/present"
               className="rounded-full border border-mk-line bg-white px-6 py-3.5 text-sm font-semibold text-mk-ink hover:bg-mk-mist transition-all shadow-sm"
             >
-              Audit your CV free
+              Explore presentations →
             </Link>
           </div>
         </div>

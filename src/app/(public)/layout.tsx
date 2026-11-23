@@ -25,24 +25,26 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
       </main>
       <footer className="bg-mk-mist">
         <div className="mx-auto flex w-full max-w-[1120px] flex-col gap-3 border-t border-mk-line/70 px-4 py-6 text-[12px] text-mk-slate sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <span>© {new Date().getFullYear()} Hakkiri Studio · A trading name of Happy Cheeks Ltd (company no. 15146182).</span>
-          <nav aria-label="Legal" className="flex flex-wrap gap-x-5 gap-y-2">
-            <Link href="/" className="hover:text-mk-ink">
+          <span className="font-medium text-mk-slate/90">
+            © {new Date().getFullYear()} Hakkiri Studio · A trading name of Happy Cheeks Ltd (company no. 15146182).
+          </span>
+          <nav aria-label="Legal" className="flex flex-wrap gap-x-6 gap-y-2">
+            <Link href="/" className="hover:text-mk-ink transition-colors font-medium">
               Interview practice
             </Link>
-            <Link href="/present" className="hover:text-mk-ink">
+            <Link href="/present" className="hover:text-mk-ink transition-colors font-medium">
               For presenters
             </Link>
-            <Link href="/about" className="hover:text-mk-ink">
+            <Link href="/about" className="hover:text-mk-ink transition-colors font-medium">
               About us
             </Link>
-            <Link href="/blog" className="hover:text-mk-ink">
+            <Link href="/blog" className="hover:text-mk-ink transition-colors font-medium">
               Blog
             </Link>
-            <Link href="/privacy" className="hover:text-mk-ink">
+            <Link href="/privacy" className="hover:text-mk-ink transition-colors font-medium">
               Privacy policy
             </Link>
-            <Link href="/terms" className="hover:text-mk-ink">
+            <Link href="/terms" className="hover:text-mk-ink transition-colors font-medium">
               Terms
             </Link>
           </nav>
