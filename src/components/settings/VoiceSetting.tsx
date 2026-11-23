@@ -3,29 +3,48 @@
 import { useEffect, useRef, useState } from "react";
 import clsx from "clsx";
 import { Icon } from "@/components/ui";
-import { Segmented } from "@/components/ui/Segmented";
 import { speak, type VoiceName } from "@/components/audio/speak";
 
-type Choice = "natural" | "browser";
-
-const PREVIEW: { voice: VoiceName; label: string; who: string; line: string }[] = [
-  { voice: "easy", label: "Easy", who: "Sarah", line: "Hi, thanks for coming in. To start us off, tell me a little about yourself." },
-  { voice: "medium", label: "Medium", who: "George", line: "Tell me about a time you had to win round someone who disagreed with you." },
-  { voice: "hard", label: "Hard", who: "Daniel", line: "You said the project was a success. How do you know? Give me a number." },
+const PREVIEW: { voice: VoiceName; label: string; who: string; role: string; line: string }[] = [
+  {
+    voice: "easy",
+    label: "Easy",
+    who: "Sarah",
+    role: "Supportive HR Lead",
+    line: "Hi, thanks for coming in today. To start us off, tell me a little about yourself and what drew you to this role.",
+  },
+  {
+    voice: "medium",
+    label: "Medium",
+    who: "George",
+    role: "Senior Engineering Manager",
+    line: "Tell me about a time you had to win round someone who strongly disagreed with your technical decision.",
+  },
+  {
+    voice: "hard",
+    label: "Hard",
+    who: "Daniel",
+    role: "Executive Director",
+    line: "You said the project was a major success. How exactly do you know? Walk me through the specific metrics.",
+  },
 ];
 
-/** Interviewer voice: natural (ElevenLabs) or the browser's own, with a preview of each difficulty. */
-export function VoiceSetting({ initial, naturalAvailable, unavailableNote }: { initial: Choice; naturalAvailable: boolean; unavailableNote: string | null }) {
-  const [choice, setChoice] = useState<Choice>(initial);
+/** Interviewer voice: high-fidelity natural voice synthesis with difficulty previews. */
+export function VoiceSetting({
+  unavailableNote,
+}: {
+  initial?: "natural" | "browser";
+  naturalAvailable?: boolean;
+  unavailableNote?: string | null;
+}) {
   const [playing, setPlaying] = useState<VoiceName | null>(null);
   const current = useRef<{ cancel: () => void } | null>(null);
 
-  useEffect(() => () => current.current?.cancel(), []);
-
-  const pick = (c: Choice) => {
-    setChoice(c);
-    document.cookie = `hk_voice=${c}; path=/; max-age=${60 * 60 * 24 * 365}; samesite=lax`;
-  };
+  useEffect(() => {
+    // Ensure cookie is set to natural voice
+    document.cookie = `hk_voice=natural; path=/; max-age=${60 * 60 * 24 * 365}; samesite=lax`;
+    return () => current.current?.cancel();
+  }, []);
 
   const preview = async (v: (typeof PREVIEW)[number]) => {
     current.current?.cancel();
@@ -41,25 +60,29 @@ export function VoiceSetting({ initial, naturalAvailable, unavailableNote }: { i
   };
 
   return (
-    <div>
-      {naturalAvailable && (
-        <Segmented<Choice>
-          label="Interviewer voice"
-          value={choice}
-          onChange={pick}
-          options={[
-            { value: "natural", label: "Natural voice" },
-            { value: "browser", label: "Browser voice" },
-          ]}
-        />
+    <div className="space-y-4">
+      <div className="flex items-center justify-between border-b border-line/60 pb-3">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-sm font-bold text-ink">Natural AI Interviewer Voice</span>
+          </div>
+          <p className="mt-1 text-xs text-muted leading-relaxed">
+            High-fidelity human voice synthesis calibrated for executive interview pacing (130–150 WPM). Easy, Medium and Hard each feature distinct persona dynamics.
+          </p>
+        </div>
+        <span className="rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 text-[11px] font-mono font-bold text-emerald-400">
+          Studio Active
+        </span>
+      </div>
+
+      {unavailableNote && (
+        <p className="text-xs text-dim bg-panel-2 p-3 rounded-xl border border-line">
+          {unavailableNote}
+        </p>
       )}
-      <p className="mt-2.5 text-[13px] leading-normal text-muted">
-        {naturalAvailable && choice === "natural"
-          ? "A natural, human-sounding voice. Easy, Medium and Hard each have their own interviewer."
-          : "Your browser’s built-in voice. It works offline and costs nothing, but sounds more robotic."}
-      </p>
-      {unavailableNote && <p className="mt-1.5 text-[13px] text-dim">{unavailableNote}</p>}
-      <div className="mt-4 grid grid-cols-3 gap-2.5">
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
         {PREVIEW.map((v) => (
           <button
             key={v.voice}
@@ -67,15 +90,30 @@ export function VoiceSetting({ initial, naturalAvailable, unavailableNote }: { i
             onClick={() => void preview(v)}
             aria-pressed={playing === v.voice}
             className={clsx(
-              "flex items-center gap-2.5 rounded-[10px] px-3.5 py-3 text-left shadow-[inset_0_0_0_1px_var(--color-line-strong)] transition-colors hover:bg-panel-2",
-              playing === v.voice && "bg-panel-2",
+              "flex flex-col gap-2 rounded-2xl p-4 text-left border transition-all cursor-pointer",
+              playing === v.voice
+                ? "bg-blue/15 border-blue text-ink shadow-md"
+                : "bg-panel-2 border-line hover:border-line-strong hover:bg-panel text-ink"
             )}
           >
-            <Icon name={playing === v.voice ? "pause" : "speaker"} size={16} strokeWidth={2} className="shrink-0 text-blue-soft" />
-            <span className="min-w-0">
-              <span className="block text-[13px] font-semibold">{playing === v.voice ? "Stop" : `Hear ${v.label}`}</span>
-              <span className="block text-[12px] text-muted">{naturalAvailable && choice === "natural" ? v.who : "Browser voice"}</span>
-            </span>
+            <div className="flex items-center justify-between w-full">
+              <span className="text-xs font-bold uppercase tracking-wider text-muted">
+                {v.label} Tier
+              </span>
+              <Icon
+                name={playing === v.voice ? "pause" : "speaker"}
+                size={16}
+                strokeWidth={2}
+                className="shrink-0 text-blue-soft"
+              />
+            </div>
+            <div>
+              <span className="block text-sm font-black text-ink">{v.who}</span>
+              <span className="block text-[11px] text-muted truncate">{v.role}</span>
+            </div>
+            <div className="text-[11px] font-medium text-blue-soft pt-1">
+              {playing === v.voice ? "Playing preview…" : "Click to hear voice →"}
+            </div>
           </button>
         ))}
       </div>

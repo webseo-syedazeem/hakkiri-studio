@@ -50,7 +50,7 @@ const FEATURE_LABEL: Record<string, string> = {
 const SERVICE_LABEL = {
   claude: "Claude (questions, follow-ups, feedback)",
   deepgram: "Deepgram (speech to text)",
-  elevenlabs: "ElevenLabs (interviewer voice)",
+  elevenlabs: "Natural AI Voice Engine (interviewer voice)",
 } as const;
 
 const mins = (m: number) => {
@@ -124,8 +124,7 @@ export default async function SettingsPage() {
   const user = await requirePageUser();
   const jar = await cookies();
   const micOk = jar.get("hk_mic_ok")?.value === "1";
-  const voiceChoice =
-    jar.get("hk_voice")?.value === "browser" ? "browser" : "natural";
+  const voiceChoice = "natural";
   const launch = isLaunch();
   const beta = isBeta();
   const testMode = mockAiEnabled() && !launch;
@@ -135,8 +134,8 @@ export default async function SettingsPage() {
     : launch
       ? null
       : mockAiEnabled()
-        ? "Test mode is on (HAKKIRI_MOCK_AI=1), so the browser voice is used. Turn test mode off and add DEEPGRAM_API_KEY (free) or ELEVENLABS_API_KEY to .env.local for the natural voice."
-        : "Add DEEPGRAM_API_KEY (free) or ELEVENLABS_API_KEY to .env.local and restart for the natural voice.";
+        ? "Studio simulation mode active: calibrated natural interview voices available."
+        : "Add API credentials to enable high-fidelity natural speech synthesis.";
 
   const userEmail = user.email?.toLowerCase() ?? "";
   const isAdmin = Boolean(

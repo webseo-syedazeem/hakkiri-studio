@@ -55,7 +55,7 @@ if (typeof window !== "undefined") {
 function wantsNatural(): boolean {
   if (typeof document === "undefined" || natural === "off") return false;
   if (document.querySelector('meta[name="hk-natural-voice"]')?.getAttribute("content") === "off") return false;
-  return !/(?:^|;\s*)hk_voice=browser/.test(document.cookie);
+  return true;
 }
 
 let cachedBrowserVoices: SpeechSynthesisVoice[] = [];

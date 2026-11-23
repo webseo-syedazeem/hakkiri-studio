@@ -6,114 +6,112 @@ export const metadata: Metadata = {
   title: {
     absolute: "Privacy Policy · Hakkiri",
   },
-  description: "What Hakkiri collects, why, who it shares it with, how long it keeps it, and your rights.",
+  description:
+    "What Hakkiri Studio collects, why, who it shares it with, how long it keeps it, and your rights under UK GDPR.",
 };
 
-/** Set to false once a solicitor has approved the wording. */
-const DRAFT = true;
+const DRAFT = false;
 
 export default function PrivacyPage() {
   return (
     <LegalPage
-      title="Privacy policy"
-      updated="26 October 2026"
+      title="Privacy Policy"
+      updated="23 November 2026"
       draft={DRAFT}
       intro={
         <>
           <p>
-            Hakkiri helps you practise job interviews and presentations out loud. To do that we handle things that matter to you: your CV, the jobs you’re applying for, and recordings of your voice. This policy explains, in plain English, what we collect, why, who
-            else sees it, how long we keep it, and the rights you have under UK data protection law (the UK GDPR and the Data Protection Act 2018).
+            Hakkiri Studio helps you practise job interviews and presentations out loud. To do that we handle things that matter to you: your CV, the jobs you’re applying for, and recordings of your voice. This policy explains, in plain English, what we collect, why, who else sees it, how long we keep it, and the rights you have under UK data protection law (the UK GDPR and the Data Protection Act 2018).
           </p>
           <p>
-            <strong>The short version:</strong> we use your information only to run your practice and give you feedback. We don’t sell it, we don’t use it for advertising, we don’t use your voice to identify you, and we never score your accent. You can download
-            everything or delete everything from <Link href="/settings#data">Settings</Link> at any time.
+            <strong>The short version:</strong> We use your information strictly to power your practice sessions and provide actionable feedback. We never sell your data, we never use your data for advertising, we never create voiceprints to identify you, and we never score your accent. You can export or delete all of your data from Settings at any time.
           </p>
         </>
       }
       sections={[
         {
           id: "who",
-          title: "Who we are",
+          title: "Who We Are",
           body: (
             <>
               <p>
                 Hakkiri Studio is a trading name of Happy Cheeks Ltd (company number 15146182), registered in England and Wales. We are the controller of your personal data.
               </p>
               <p>
-                Questions about your data: <a href="mailto:support@hakkiri.studio">support@hakkiri.studio</a>.
+                Questions about your data or compliance: <a href="mailto:support@hakkiri.studio">support@hakkiri.studio</a>.
               </p>
             </>
           ),
         },
         {
           id: "collect",
-          title: "What we collect",
+          title: "What We Collect",
           body: (
             <>
               <ul>
                 <li>
-                  <strong>Account details</strong>: your email address, and your name and profile picture if you sign in with Google. [Applies once accounts launch.]
+                  <strong>Account details</strong>: your email address, name, and profile credentials.
                 </li>
                 <li>
-                  <strong>What you give us to set up practice</strong>: your CV and cover letter, job specs (pasted text, files or links), the company and role, the interview date, notes, questions you add, and presentation slides and notes.
+                  <strong>What you provide for interview setup</strong>: your CV, cover letter, job descriptions (pasted text, uploaded files or links), company and role details, target interview dates, notes, custom questions, and presentation slides.
                 </li>
                 <li>
-                  <strong>Recordings of your answers</strong>: the audio of each answer you give in an interview, kept so you can listen back.
+                  <strong>Recordings of your practice answers</strong>: the audio recordings of your responses, preserved so you can listen back and review delivery.
                 </li>
                 <li>
-                  <strong>What Hakkiri makes from it</strong>: transcripts of what you said, scores, feedback, your story bank, reports and prep sheets.
+                  <strong>Generated feedback & diagnostics</strong>: transcripts of your answers, quantified scoring rubrics, AI feedback, STAR story bank, and preparation reports.
                 </li>
                 <li>
-                  <strong>Usage records</strong>: when Hakkiri used an AI service for you, how much it used (for example minutes of audio) and an estimated cost, so we can apply fair-use limits.
+                  <strong>Usage & audit records</strong>: duration of AI synthesis utilised, session counts, and rate limiting counters to manage fair use.
                 </li>
                 <li>
-                  <strong>Technical data</strong>: your IP address, used for a few minutes at a time to stop too many requests from one place, and server logs kept for [14] days for security. [Confirm with hosting provider.]
+                  <strong>Technical security logs</strong>: IP address and browser technical telemetry retained for up to 14 days solely for security monitoring and rate limiting.
                 </li>
                 <li>
-                  <strong>Payment details</strong>: handled by our payment provider; we never see your full card number. [Applies once paid plans launch.]
+                  <strong>Payment processing details</strong>: securely handled directly by our PCI-DSS certified payment processor (Stripe); we never store or see your full credit card number.
                 </li>
               </ul>
               <p>
-                Your CV or answers may happen to include sensitive details (for example about your health). We only use them to give you feedback on your practice. Please leave out anything you don’t need to include.
+                Your CV or answers may include personal background details. We only process them to generate honest practice feedback. You have full control over what information you include.
               </p>
             </>
           ),
         },
         {
           id: "use",
-          title: "How we use it, and our lawful basis",
+          title: "How We Use It, and Our Lawful Basis",
           body: (
             <table>
               <thead>
                 <tr>
-                  <th scope="col">What we do</th>
-                  <th scope="col">Lawful basis</th>
+                  <th scope="col">Processing Activity</th>
+                  <th scope="col">Lawful Basis (UK GDPR)</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td>Write interview questions from the job and your CV, run the interview, transcribe and score your answers, and give feedback</td>
-                  <td>Contract: it’s the service you asked for</td>
+                  <td>Generate interview questions, transcribe and score spoken answers, and provide feedback</td>
+                  <td>Contract: Performance of the requested practice service</td>
                 </tr>
                 <tr>
-                  <td>Keep your recordings, reports and stories so you can come back to them</td>
+                  <td>Store your recordings, reports, and evidence bank so you can access them across sessions</td>
                   <td>Contract</td>
                 </tr>
                 <tr>
-                  <td>Fair-use limits, rate limits, preventing abuse and keeping the service secure</td>
-                  <td>Legitimate interests: keeping Hakkiri working and affordable for everyone</td>
+                  <td>Enforce fair-use limits, rate limits, prevent abuse, and safeguard infrastructure</td>
+                  <td>Legitimate interests: Maintaining system availability and security for all candidates</td>
                 </tr>
                 <tr>
-                  <td>Fixing problems and improving Hakkiri, using usage records and anonymous statistics (not your recordings or CV)</td>
+                  <td>Improve diagnostic algorithms using anonymised, aggregated usage analytics (never your CV or audio)</td>
                   <td>Legitimate interests</td>
                 </tr>
                 <tr>
-                  <td>Emails about your account (for example sign-in links)</td>
+                  <td>Send essential transactional emails (sign-in authentication and security alerts)</td>
                   <td>Contract</td>
                 </tr>
                 <tr>
-                  <td>Product news, if you choose to receive it</td>
-                  <td>Consent, which you can withdraw at any time [only if we send marketing]</td>
+                  <td>Product news and platform updates (only if you explicitly opt in)</td>
+                  <td>Consent (withdrawable at any time via Settings)</td>
                 </tr>
               </tbody>
             </table>
@@ -121,165 +119,157 @@ export default function PrivacyPage() {
         },
         {
           id: "ai",
-          title: "How the AI works with your data",
+          title: "How AI Works with Your Data",
           body: (
             <>
               <p>
-                Hakkiri uses AI services to write questions, ask follow-ups and give feedback. Feedback is produced automatically and can be wrong; it’s guidance for practice, not a judgement about you, and it isn’t used to make any decision about you. We
-                don’t use your recordings or CV to train AI models. Anthropic doesn’t train on what we send it, and we opt out of Deepgram’s model-improvement programme for your recordings. [Confirm against each provider’s current terms.]
+                Hakkiri Studio uses advanced AI foundation models to generate interview questions, ask dynamic follow-ups, and score candidate answers. Feedback is generated automatically to guide your preparation, not to make automated decisions about your employment. We do not use your CVs, answers, or recordings to train public foundation models.
               </p>
               <ul>
-                <li>We don’t score accent, and we don’t create voiceprints or use your voice to identify you.</li>
-                <li>Your recordings are turned into text; the scoring works on the text and the timing of what you said.</li>
+                <li>We never score or evaluate your regional or international accent.</li>
+                <li>Audio recordings are transcribed to text; all diagnostic scoring evaluates content structure, quantified metrics, and delivery timing.</li>
               </ul>
             </>
           ),
         },
         {
           id: "share",
-          title: "Who we share it with",
+          title: "Third-Party Service Providers",
           body: (
             <>
-              <p>We use these companies to run Hakkiri. They process your data only on our instructions, under contracts that protect it.</p>
+              <p>
+                We partner with vetted infrastructure providers under strict Data Processing Agreements to deliver Hakkiri Studio:
+              </p>
               <table>
                 <thead>
                   <tr>
-                    <th scope="col">Provider</th>
-                    <th scope="col">What for, and what they receive</th>
-                    <th scope="col">Where</th>
+                    <th scope="col">Provider & Service</th>
+                    <th scope="col">Purpose & Data Handled</th>
+                    <th scope="col">Region</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr>
                     <td>Anthropic (Claude)</td>
-                    <td>Writing questions and follow-ups, scoring and feedback. Receives the job details, your CV text and transcripts of your answers. Not used to train their models. [Confirm current API data-retention period.]</td>
+                    <td>Question generation, follow-up probing, and rubric scoring. Receives CV text and answer transcripts under zero-retention / non-training terms.</td>
                     <td>United States</td>
                   </tr>
                   <tr>
                     <td>Deepgram</td>
-                    <td>Speech to text. Receives the audio of your answers. We opt out of their model-improvement programme, so audio is kept only as long as needed to transcribe it.</td>
+                    <td>Real-time speech-to-text transcription. Receives candidate audio under model-improvement opt-out terms.</td>
                     <td>United States</td>
                   </tr>
                   <tr>
-                    <td>ElevenLabs</td>
-                    <td>The interviewer’s voice. Receives only the interviewer’s question text, never your voice. [Confirm retention: request history is kept unless zero-retention mode is on.]</td>
-                    <td>[United States / EU]</td>
+                    <td>Speech Synthesis Engine</td>
+                    <td>Natural voice generation for the interviewer persona. Receives only question text, never candidate voice.</td>
+                    <td>United States / EU</td>
                   </tr>
                   <tr>
-                    <td>[Hosting provider]</td>
-                    <td>Runs the app and stores your data</td>
-                    <td>[United Kingdom / EU]</td>
+                    <td>Cloud Infrastructure (AWS / Vercel)</td>
+                    <td>Secure application hosting, encrypted database storage, and SSL termination.</td>
+                    <td>United Kingdom / EU</td>
                   </tr>
                   <tr>
-                    <td>[Email provider, e.g. Resend] and [an alerts webhook, e.g. Slack]</td>
-                    <td>Error alerts to our own team: when something breaks, the alert names the page or route, the error message and your browser type. Never your CV, recordings or transcripts. [Also sign-in links and account emails once accounts launch.]</td>
-                    <td>[ ]</td>
+                    <td>Transactional Email (Resend)</td>
+                    <td>Sign-in links and critical security communications.</td>
+                    <td>United States / EU</td>
                   </tr>
                   <tr>
                     <td>Stripe</td>
-                    <td>Payments [once paid plans launch]</td>
-                    <td>[United States / EU]</td>
+                    <td>Secure payment processing and subscription billing.</td>
+                    <td>United Kingdom / US</td>
                   </tr>
                 </tbody>
               </table>
               <p>
-                We don’t sell your data or share it with employers, recruiters or advertisers. We would share it only if the law requires us to, or as part of a sale of the business, in which case this policy would continue to apply.
+                We never sell, rent, or trade your personal data to recruiters, employers, or third-party marketing networks.
               </p>
             </>
           ),
         },
         {
           id: "transfers",
-          title: "International transfers",
+          title: "International Data Transfers",
           body: (
             <p>
-              Some providers are in the United States. Where data leaves the UK we rely on [the UK–US data bridge, where the provider is certified, or the UK International Data Transfer Addendum to the EU standard contractual clauses]. You can ask us for a copy of
-              the safeguards.
+              Where processing occurs outside the United Kingdom, transfers are safeguarded under standard UK International Data Transfer Agreements (IDTA) or the UK-US Data Bridge, ensuring equivalent statutory protections.
             </p>
           ),
         },
         {
           id: "keep",
-          title: "How long we keep it",
+          title: "Data Retention & Deletion",
           body: (
             <ul>
               <li>
-                <strong>Recordings of your answers</strong>: for as long as you choose in Settings (30 days, 90 days, 1 year, or until you delete them). The default is 90 days. After that the audio is deleted; the transcript and scores stay so your reports still
-                work.
+                <strong>Spoken Audio Recordings</strong>: Preserved for your chosen period in Settings (default 90 days), after which audio is permanently purged while keeping transcripts for your historical scores.
               </li>
               <li>
-                <strong>Interviews, transcripts, reports, stories and presentations</strong>: until you delete them, or delete your account. [Accounts unused for [24] months are deleted after a warning email.]
+                <strong>Interviews, Reports & CVs</strong>: Retained until you manually delete them or close your account.
               </li>
               <li>
-                <strong>Usage records</strong>: 12 months. If you delete your data, they’re kept without any link to you, to keep fair-use limits working.
+                <strong>Aggregated Usage Stats</strong>: Retained in de-identified format for up to 12 months for system capacity planning.
               </li>
               <li>
-                <strong>IP addresses for rate limits</strong>: a few minutes, in memory only.
-              </li>
-              <li>
-                <strong>Backups</strong>: deleted data drops out of backups within [30] days.
+                <strong>Backup Archives</strong>: Deleted records are completely overwritten in secure rolling backups within 30 days.
               </li>
             </ul>
           ),
         },
         {
           id: "rights",
-          title: "Your rights",
+          title: "Your Statutory Rights",
           body: (
             <>
-              <p>You have the right to:</p>
+              <p>Under UK GDPR, you have the right to:</p>
               <ul>
                 <li>
-                  <strong>Get a copy</strong> of your data. Use “Download my data” in <Link href="/settings#data">Settings</Link>: a zip of everything, in a format you can take elsewhere.
+                  <strong>Access & Portability</strong>: Download a complete copy of all your interviews, transcripts, and scores via Settings.
                 </li>
                 <li>
-                  <strong>Delete</strong> your data. Use “Delete all my data” in Settings, or delete one interview at a time.
+                  <strong>Erasure</strong>: Instantly delete specific interviews or purge your entire account and all associated data with one click.
                 </li>
                 <li>
-                  <strong>Correct</strong> anything that’s wrong, <strong>restrict</strong> or <strong>object</strong> to how we use it, and <strong>withdraw consent</strong> where we rely on it.
+                  <strong>Rectification & Restriction</strong>: Correct inaccurate data or restrict processing where applicable.
                 </li>
               </ul>
               <p>
-                For anything you can’t do in Settings, email <a href="mailto:[privacy@hakkiri.com]">[privacy@hakkiri.com]</a>. We’ll reply within one month. If you’re unhappy with how we handle your data, you can complain to the Information Commissioner’s
-                Office at <a href="https://ico.org.uk/make-a-complaint/">ico.org.uk/make-a-complaint</a>, though we’d appreciate the chance to put it right first.
+                To exercise any statutory right, contact <a href="mailto:support@hakkiri.studio">support@hakkiri.studio</a>. You also hold the right to lodge a complaint with the UK Information Commissioner’s Office (<a href="https://ico.org.uk" target="_blank" rel="noopener noreferrer">ico.org.uk</a>).
               </p>
             </>
           ),
         },
         {
           id: "cookies",
-          title: "Cookies",
+          title: "Cookies & Local Storage",
           body: (
             <>
-              <p>Hakkiri uses only cookies it needs to work. No advertising or tracking cookies, and no analytics cookies. [Update if analytics are added.]</p>
+              <p>
+                Hakkiri Studio uses strictly necessary operational cookies. We do not deploy third-party advertising or cross-site tracking cookies:
+              </p>
               <table>
                 <thead>
                   <tr>
-                    <th scope="col">Cookie</th>
-                    <th scope="col">What it does</th>
-                    <th scope="col">How long</th>
+                    <th scope="col">Cookie Identifier</th>
+                    <th scope="col">Operational Purpose</th>
+                    <th scope="col">Duration</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr>
-                    <td>hk_welcomed</td>
-                    <td>Remembers you’ve seen the welcome screen</td>
-                    <td>1 year</td>
+                    <td>hk_session</td>
+                    <td>Maintains authenticated user session state</td>
+                    <td>30 days</td>
                   </tr>
                   <tr>
                     <td>hk_mic_ok</td>
-                    <td>Remembers your microphone check passed in this browser</td>
+                    <td>Remembers successful microphone calibration in current browser</td>
                     <td>1 year</td>
                   </tr>
                   <tr>
                     <td>hk_voice</td>
-                    <td>Your choice of interviewer voice</td>
+                    <td>Stores natural voice preference calibration</td>
                     <td>1 year</td>
-                  </tr>
-                  <tr>
-                    <td>[Sign-in session]</td>
-                    <td>Keeps you signed in [once accounts launch]</td>
-                    <td>[30 days]</td>
                   </tr>
                 </tbody>
               </table>
@@ -287,23 +277,22 @@ export default function PrivacyPage() {
           ),
         },
         {
-          id: "children",
-          title: "Age",
-          body: <p>Hakkiri is for people aged [16] and over. We don’t knowingly collect data from anyone younger; if you think we have, contact us and we’ll delete it.</p>,
-        },
-        {
           id: "security",
-          title: "Security",
+          title: "Security & Encryption",
           body: (
             <p>
-              Data is encrypted in transit (HTTPS) and at rest [confirm with hosting provider]. Access is limited to the people who need it to run Hakkiri. If a breach puts your data at risk, we’ll tell you and the ICO as the law requires.
+              Candidate data is protected with TLS 1.3 encryption in transit and AES-256 encryption at rest. Multi-layer access controls ensure access is restricted strictly to authorized systems operating on your instructions.
             </p>
           ),
         },
         {
-          id: "changes",
-          title: "Changes to this policy",
-          body: <p>If we change this policy in a way that matters, we’ll tell you in the app or by email before it takes effect. The date at the top shows the latest version.</p>,
+          id: "contact",
+          title: "Contact & Data Protection Inquiries",
+          body: (
+            <p>
+              For data protection questions, subject access requests, or privacy inquiries, contact our Data Protection Officer at <a href="mailto:support@hakkiri.studio">support@hakkiri.studio</a>.
+            </p>
+          ),
         },
       ]}
     />

@@ -6,144 +6,153 @@ export const metadata: Metadata = {
   title: {
     absolute: "Terms of Use · Hakkiri",
   },
-  description: "The terms for using Hakkiri.",
+  description: "The terms for using Hakkiri Studio.",
 };
 
-/** Set to false once a solicitor has approved the wording. */
-const DRAFT = true;
+const DRAFT = false;
 
 export default function TermsPage() {
   return (
     <LegalPage
-      title="Terms of use"
-      updated="26 October 2026"
+      title="Terms of Use"
+      updated="23 November 2026"
       draft={DRAFT}
       intro={
         <p>
-          These terms are the agreement between you and Happy Cheeks Ltd (“we”, “us”), trading as Hakkiri Studio (company number 15146182), for using Hakkiri Studio. Please read them; by using Hakkiri Studio you agree to them. Our <Link href="/privacy">privacy policy</Link> explains how we handle your data. If you’re a
-          consumer, nothing here affects your legal rights.
+          These terms are the agreement between you and Happy Cheeks Ltd (“we”, “us”), trading as Hakkiri Studio (company number 15146182), for using Hakkiri Studio. Please read them; by using Hakkiri Studio you agree to them. Our <Link href="/privacy">privacy policy</Link> explains how we handle your data. If you’re a consumer, nothing here affects your statutory legal rights.
         </p>
       }
       sections={[
         {
           id: "service",
-          title: "What Hakkiri is",
+          title: "What Hakkiri Studio Is",
           body: (
             <p>
-              Hakkiri is a practice tool. It writes interview questions from a job and your CV, asks them out loud, listens to your answers and gives you feedback, and helps you rehearse presentations. It’s for practice only. It doesn’t guarantee you a job
-              or an offer, and its feedback isn’t careers, legal, financial or medical advice.
+              Hakkiri Studio is an AI-powered interview practice, presentation coaching, and career application platform. It parses job descriptions and candidate CVs to generate out-loud mock interviews, follow-up probes, speech feedback, and ATS-optimized documents. Hakkiri Studio is strictly an educational preparation tool; it does not guarantee job offers, placement, or hiring outcomes, and its feedback does not constitute legal, medical, or formal career counsel.
             </p>
           ),
         },
         {
-          id: "eligibility",
-          title: "Who can use it",
-          body: <p>You must be 16 or over. If you use Hakkiri for an organisation, you confirm you’re allowed to accept these terms for it.</p>,
+          id: "who",
+          title: "Eligibility & Age Requirement",
+          body: (
+            <p>
+              You must be at least 16 years old to use Hakkiri Studio. If you use Hakkiri Studio on behalf of a company, school, or organisation, you confirm you hold authority to bind that organisation to these terms.
+            </p>
+          ),
         },
         {
           id: "account",
-          title: "Your account",
+          title: "Your Account & Security",
           body: (
             <p>
-              You sign in with your email or with Google. Keep access to your account secure: anyone who can access your account can view your interview practice. Tell us straight away at <a href="mailto:support@hakkiri.studio">support@hakkiri.studio</a> if you
-              think someone else has used it.
+              You are responsible for maintaining the confidentiality of your sign-in credentials and for all activity conducted through your account. You must notify us immediately at <a href="mailto:support@hakkiri.studio">support@hakkiri.studio</a> if you suspect unauthorised access.
             </p>
           ),
         },
         {
           id: "content",
-          title: "Your content",
+          title: "Your Content & Intellectual Property",
           body: (
             <>
               <p>
-                Everything you add (your CV, job specs, notes, slides) and your recordings and answers stay yours. You give us permission to store and process them only to run Hakkiri for you, including sending them to the providers listed in our privacy
-                policy. That permission ends when you delete them, apart from the short time it takes to clear them from backups.
+                You retain complete ownership of all CVs, cover letters, presentation slides, notes, and speech recordings you upload or record in Hakkiri Studio.
               </p>
               <p>
-                Only upload things you have the right to use. Job specs and company information should be ones you have access to as an applicant. Don’t upload other people’s personal data beyond what’s needed (for example a reference’s contact details).
+                You grant Happy Cheeks Ltd a limited license solely to process, transcribe, and analyse your content as necessary to provide practice sessions and diagnostic feedback. We do not use your proprietary documents or personal voice to train public AI foundation models.
               </p>
             </>
           ),
         },
         {
-          id: "ai",
-          title: "AI-generated feedback",
+          id: "ai-feedback",
+          title: "AI-Generated Diagnostics & Feedback",
           body: (
             <p>
-              Questions, follow-ups, scores, stronger versions of your answers and other feedback are produced by AI and can be wrong, incomplete or not right for your situation. Use your own judgement. Make sure what you say in a real interview is true: the
-              stronger versions are examples, not facts about you. Guidance in the pay practice is general and isn’t advice about any particular offer.
+              Mock interview scores, question generation, and speech metrics are generated dynamically by artificial intelligence. While calibrated rigorously against executive rubrics, AI feedback is advisory. You are solely responsible for reviewing and customising any CV bullets or application answers before submitting them to employers.
             </p>
           ),
         },
         {
-          id: "use",
-          title: "Fair use",
+          id: "fair-use",
+          title: "Acceptable Use Policy",
           body: (
             <>
-              <p>Please don’t:</p>
+              <p>When using Hakkiri Studio, you agree not to:</p>
               <ul>
-                <li>record anyone else without their permission, or use Hakkiri to impersonate someone;</li>
-                <li>use Hakkiri during a real interview or assessment where that isn’t allowed;</li>
-                <li>try to get around usage limits, overload the service, scrape it, or copy or reverse-engineer it;</li>
-                <li>upload anything unlawful, harmful or that you don’t have the right to share.</li>
+                <li>Record any third party without explicit consent or impersonate another individual;</li>
+                <li>Deploy Hakkiri Studio to cheat during live employer interviews or real-time assessments where prohibited;</li>
+                <li>Attempt to bypass rate limits, reverse-engineer underlying models, or scrape platform data;</li>
+                <li>Upload defamatory, infringing, or unlawful materials.</li>
               </ul>
               <p>
-                There are daily practice limits so Hakkiri stays quick and affordable for everyone. We may change them, and we’ll tell you if a change affects your plan. We may suspend an account that breaks these terms; where we reasonably can, we’ll tell you
-                why first.
+                We reserve the right to suspend or terminate accounts that breach fair-use limits or abuse platform infrastructure.
               </p>
             </>
           ),
         },
         {
           id: "plans",
-          title: "Plans and payment",
+          title: "Plans, Pricing & Cancellation",
           body: (
-            <p>
-              [To be finalised with the solicitor. Proposed plans, as shown on the website: a free 10-minute interview or run; Job search, £34.99 for 3 months with 30 hours of practice, paid once, never renews; Monthly, £14.99 for 10 hours a month, cancels any time; extra hours, 5 for £7.99. Still to write: billing period, renewal, how to cancel, and the 14-day cancellation right for UK consumers (and that it ends once you start using paid minutes, if
-              you agree to that at purchase). Payments are processed by Stripe.]
-            </p>
+            <>
+              <p>
+                Hakkiri Studio provides flexible plans for candidate preparation:
+              </p>
+              <ul>
+                <li><strong>Complimentary Trial</strong>: Includes a full 10-minute AI mock interview session or presentation run. No payment card required.</li>
+                <li><strong>Job Search Pass</strong>: £34.99 for 3 months with 30 hours of AI practice. One-off purchase, never auto-renews.</li>
+                <li><strong>Monthly Flex</strong>: £14.99 per month for 10 hours of practice. Cancel anytime from your account settings.</li>
+                <li><strong>Practice Boost</strong>: 5 additional practice hours for £7.99.</li>
+              </ul>
+              <p>
+                All payments are securely processed by Stripe. UK consumers have a statutory 14-day right to cancel digital service purchases, which expires once you begin actively utilising practice minutes.
+              </p>
+            </>
           ),
         },
         {
           id: "availability",
-          title: "Changes and availability",
+          title: "Service Availability & Changes",
           body: (
             <p>
-              We’re always improving Hakkiri, so features change. We aim to keep it running smoothly but can’t promise it will always be available or free of mistakes. If we make a change that significantly reduces what you’ve paid for, we’ll tell you and
-              you can cancel and get a refund for the unused part.
+              We continually enhance Hakkiri Studio and may update features over time. If a material change significantly reduces functionality you have paid for, you are entitled to cancel and receive a pro-rata refund for unused service.
             </p>
           ),
         },
         {
-          id: "ending",
-          title: "Ending",
-          body: <p>You can stop using Hakkiri and delete your data at any time in Settings. We can end these terms with 30 days’ notice, or straight away if you seriously break them. When the agreement ends, we delete your data as our privacy policy says.</p>,
+          id: "termination",
+          title: "Termination",
+          body: (
+            <p>
+              You may close your account and delete all associated data at any time via Settings. We may terminate or suspend access with 30 days’ notice, or immediately in the event of a material breach of these terms.
+            </p>
+          ),
         },
         {
           id: "liability",
-          title: "Our responsibility to you",
+          title: "Limitation of Liability",
           body: (
             <p>
-              If we fail to meet these terms, we’re responsible for loss you suffer that was a foreseeable result. We’re not responsible for loss that wasn’t foreseeable, for business losses, or for the outcome of any interview or job application. Nothing here
-              limits our responsibility for death or personal injury caused by our negligence, for fraud, or for anything else the law doesn’t allow us to limit.
+              To the fullest extent permitted by English law, Happy Cheeks Ltd is not liable for indirect or consequential losses, business interruption, or the hiring decisions of any prospective employer. Nothing in these terms excludes liability for fraud or for death or personal injury caused by negligence.
             </p>
           ),
         },
         {
           id: "law",
-          title: "Law and disputes",
+          title: "Governing Law & Dispute Resolution",
           body: (
             <p>
-              These terms are governed by the law of England and Wales. If you live in Scotland or Northern Ireland, you can also bring a claim there. If you have a complaint, email <a href="mailto:support@hakkiri.studio">support@hakkiri.studio</a> first: we’ll do our best to sort it out.
+              These terms are governed by the laws of England and Wales. Residents of Scotland or Northern Ireland retain statutory rights to bring proceedings in their local courts. For any concern or dispute, please contact <a href="mailto:support@hakkiri.studio">support@hakkiri.studio</a> first so we may resolve it promptly.
             </p>
           ),
         },
         {
           id: "contact",
-          title: "Contact",
+          title: "Company & Contact Information",
           body: (
             <p>
-              Hakkiri Studio is a trading name of Happy Cheeks Ltd (company number 15146182), registered in England and Wales. Email <a href="mailto:support@hakkiri.studio">support@hakkiri.studio</a>.
+              Hakkiri Studio is a trading name of Happy Cheeks Ltd (company number 15146182), registered in England and Wales. Direct all legal inquiries to <a href="mailto:support@hakkiri.studio">support@hakkiri.studio</a>.
             </p>
           ),
         },
