@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, buttonClass, CustomSelect } from "@/components/ui";
 import { announceBrowserData, browserData } from "@/lib/browser/owner";
+import { DELETE_DATA_PHRASE } from "@/lib/data/confirm";
 
 type Retention = 30 | 90 | 365 | 0;
 const OPTIONS: { value: Retention; label: string }[] = [
@@ -79,7 +80,7 @@ export function DataButtons({ hasData }: { hasData: boolean }) {
   const remove = async () => {
     setState("deleting");
     try {
-      const res = await fetch("/api/data/delete", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ confirm: "delete" }) });
+      const res = await fetch("/api/data/delete", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ confirm: DELETE_DATA_PHRASE }) });
       if (!res.ok) throw new Error();
       // What this browser holds for the person (drafts, the examples library, tracker notes) is deleted too.
       browserData.forget();
@@ -105,11 +106,24 @@ export function DataButtons({ hasData }: { hasData: boolean }) {
           </button>
         )}
       </div>
-      <p className="mt-2 text-[13px] text-muted">The download is a zip: your interviews, answers, scores and presentations as one file, plus your recordings.</p>
+      <p className="mt-2 text-[13px] leading-normal text-muted">
+        The download is a zip of everything our servers hold for you: your account details, interviews, questions, answers, scores, presentations, CVs, the Apply pages, the notes and survey answers you sent, and
+        your recordings. A file inside it lists what each part is.
+      </p>
+      <p className="mt-1.5 text-[13px] leading-normal text-muted">
+        Your Experience Library, archived interviews and any set-up draft are kept only in this browser, so they are not in the download. Deleting your data here clears them from this browser too.
+      </p>
       {confirming && (
         <div className="mt-4 rounded-[12px] bg-red/10 px-4 py-4 shadow-[inset_0_0_0_1px_rgb(255_92_97/0.3)]">
           <p className="text-sm font-semibold text-red-soft">This deletes everything and can’t be undone.</p>
-          <p className="mt-1 text-[13px] text-muted">Your interviews, CV and job spec text, questions, answers, recordings, reports, stories and presentations. Download a copy first if you might want it.</p>
+          <p className="mt-1 text-[13px] leading-normal text-muted">
+            Your interviews, CV and job spec text, questions, answers, recordings, reports, stories, presentations, CVs, everything on the Apply pages, your settings, and the notes and survey answers you sent.
+            Download a copy first if you might want it.
+          </p>
+          <p className="mt-1.5 text-[13px] leading-normal text-muted">
+            Your account stays, so you can carry on. Two things are kept with it: a count of the practice time you have used this month (so the monthly allowance still applies; it says nothing about what you
+            practised), and, if you have asked for the beta survey voucher, a note that you have. To remove those as well, delete your account below.
+          </p>
           <label htmlFor="confirm-delete" className="mt-3 block text-[13px] font-semibold">
             Type <b>delete</b> to confirm
           </label>
@@ -121,7 +135,7 @@ export function DataButtons({ hasData }: { hasData: boolean }) {
               autoComplete="off"
               className="h-[38px] w-[180px] rounded-[9px] bg-panel-2 px-3 text-sm text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)]"
             />
-            <button type="button" onClick={() => void remove()} disabled={typed.trim().toLowerCase() !== "delete" || state === "deleting"} className={DANGER}>
+            <button type="button" onClick={() => void remove()} disabled={typed.trim().toLowerCase() !== DELETE_DATA_PHRASE || state === "deleting"} className={DANGER}>
               {state === "deleting" ? "Deleting…" : "Delete everything"}
             </button>
             <Button variant="ghost" onClick={() => (setConfirming(false), setTyped(""))}>

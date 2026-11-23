@@ -25,6 +25,7 @@ import {
 import { LIMITS, limitStanding } from "@/lib/usage/limits";
 import { dollars } from "@/lib/usage/prices";
 import { dataCounts, hasData, pruneOldRecordings } from "@/lib/data/account";
+import { accountOf } from "@/lib/auth/user-db";
 import { getSettings } from "@/lib/settings/store";
 import { alertsConfigured, recentProblems } from "@/lib/alerts/store";
 import { recentSurveys } from "@/lib/feedback/survey-store";
@@ -129,15 +130,18 @@ export default async function SettingsPage() {
   const beta = isBeta();
   const testMode = mockAiEnabled() && !launch;
   const naturalAvailable = Boolean(elevenLabsKey() || aiConfig.deepgramKey) && !mockAiEnabled();
-  const unavailableNote = naturalAvailable
-    ? null
-    : launch
+  const isAdmin = isAdminUser(user);
+  // Costs, the breakdown by service and the names of settings in the environment are for whoever runs
+  // the app, not for the people using it: administrators, or anyone on a developer's own machine.
+  const showCosts = !launch && (isAdmin || process.env.NODE_ENV !== "production");
+  // Why the natural voice is off is the operator's business too. Everyone else is simply told which voice they get.
+  const unavailableNote =
+    naturalAvailable || !showCosts
       ? null
       : mockAiEnabled()
-        ? "Studio simulation mode active: calibrated natural interview voices available."
-        : "Add API credentials to enable high-fidelity natural speech synthesis.";
-
-  const isAdmin = isAdminUser(user);
+        ? "Test mode is on, so the natural voice isn’t called and the browser’s own voice is used."
+        : "No voice service key is set (ELEVENLABS_API_KEY or DEEPGRAM_API_KEY), so the browser’s own voice is used.";
+  const account = await accountOf(user.id);
 
   // Recordings older than this person chose to keep them go now (theirs only).
   pruneOldRecordings({ userId: user.id });
@@ -222,7 +226,7 @@ export default async function SettingsPage() {
           <Section
             id="data"
             title="Your data"
-            intro="Everything you’ve given Hakkiri or made in it is yours. Download a copy or delete it at any time."
+            intro="Everything you’ve given Hakkiri or made in it is yours. Download a copy or delete it at any time. These counts are yours alone."
           >
             <dl className="grid grid-cols-3 gap-x-4 gap-y-3 text-sm">
               {(
@@ -256,16 +260,16 @@ export default async function SettingsPage() {
         <div className="flex flex-col gap-5">
           <Section
             id="usage"
-            title={launch ? "Your practice" : "Usage"}
+            title={showCosts ? "Usage" : "Your practice"}
             intro={
               beta
                 ? "How much of this month’s beta allowance you’ve used. It resets on the 1st; hours count only while you practise."
-                : launch
-                  ? "How long you’ve practised. There’s a daily limit so the service stays quick for everyone."
-                  : "What Hakkiri has used today and this month, against the limits in .env.local."
+                : showCosts
+                  ? "What Hakkiri has used today and this month, against the limits set in the environment."
+                  : "How long you’ve practised. There’s a limit so the service stays quick for everyone."
             }
           >
-            {testMode && (
+            {testMode && showCosts && (
               <div
                 role="status"
                 className="mb-4 rounded-[10px] bg-blue/12 px-4 py-2.5 text-[13px] text-lilac shadow-[inset_0_0_0_1px_rgb(123_136_255/0.3)]"
@@ -309,11 +313,11 @@ export default async function SettingsPage() {
                   />
                 )}
               </div>
-              {!launch && (
+              {showCosts && (
                 <>
                   <div>
                     <div className="mb-1.5 flex justify-between text-sm">
-                      <span>Spent today</span>
+                      <span>Spent today, by everyone</span>
                       <span className="num text-muted">
                         {dollars(standing.spentToday)}
                         {LIMITS.dailyUsd ? ` of $${LIMITS.dailyUsd}` : ""}
@@ -329,7 +333,7 @@ export default async function SettingsPage() {
                   </div>
                   <div>
                     <div className="mb-1.5 flex justify-between text-sm">
-                      <span>Spent this month</span>
+                      <span>Spent this month, by everyone</span>
                       <span className="num text-muted">
                         {dollars(standing.spentMonth)}
                         {LIMITS.monthlyUsd ? ` of $${LIMITS.monthlyUsd}` : ""}
@@ -348,7 +352,7 @@ export default async function SettingsPage() {
             </div>
 
             <div className="mt-6 border-t border-line pt-5">
-              {launch ? (
+              {!showCosts ? (
                 <UsageChart
                   title="Minutes of speaking, last 14 days"
                   value="Minutes"
@@ -357,7 +361,7 @@ export default async function SettingsPage() {
                 />
               ) : (
                 <UsageChart
-                  title={`Estimated cost per day, last 14 days${testMode ? " (including test samples)" : ""}`}
+                  title={`Your estimated cost per day, last 14 days${testMode ? " (including test samples)" : ""}`}
                   value="Cost"
                   days={days.map((d) => ({ day: d.day, value: d.costUsd }))}
                   format={dollars}
@@ -365,11 +369,11 @@ export default async function SettingsPage() {
               )}
             </div>
 
-            {!launch && (
+            {showCosts && (
               <>
                 <div className="mt-6 border-t border-line pt-5">
                   <h3 className="text-[13px] font-semibold">
-                    This month by service
+                    Your use this month by service
                   </h3>
                   <table className="mt-2 w-full text-sm">
                     <tbody>
@@ -430,11 +434,13 @@ export default async function SettingsPage() {
                   )}
                 </div>
                 <p className="mt-5 text-[12px] leading-normal text-muted">
-                  Today: {dollars(todayT.costUsd)}. Estimates from public price
+                  Your use today: {dollars(todayT.costUsd)}. Estimates from public price
                   lists, not invoices; check each provider’s dashboard for what
                   you’re billed. Change the limits with HAKKIRI_DAILY_MINUTES,
-                  HAKKIRI_DAILY_SPEND_USD and HAKKIRI_MONTHLY_SPEND_USD (0 turns
-                  one off).
+                  HAKKIRI_DAILY_SPEND_USD and HAKKIRI_MONTHLY_SPEND_USD for the
+                  whole app, and HAKKIRI_USER_DAILY_SPEND_USD and
+                  HAKKIRI_USER_MONTHLY_SPEND_USD for each account (0 turns one
+                  off).
                 </p>
               </>
             )}
@@ -555,7 +561,7 @@ export default async function SettingsPage() {
           )}
 
           <Section id="account" title="Account">
-            <AccountControls />
+            <AccountControls hasPassword={account?.hasPassword ?? false} signsInWithGoogle={account?.signsInWithGoogle ?? false} />
           </Section>
         </div>
       </div>

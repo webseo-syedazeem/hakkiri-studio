@@ -29,8 +29,9 @@ const PREVIEW: { voice: VoiceName; label: string; who: string; role: string; lin
   },
 ];
 
-/** Interviewer voice: high-fidelity natural voice synthesis with difficulty previews. */
+/** Interviewer voice: what it is on this server (a natural voice, or the browser's own), with a preview of each interviewer. */
 export function VoiceSetting({
+  naturalAvailable,
   unavailableNote,
 }: {
   initial?: "natural" | "browser";
@@ -64,15 +65,23 @@ export function VoiceSetting({
       <div className="flex items-center justify-between border-b border-line/60 pb-3">
         <div>
           <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-sm font-bold text-ink">Natural AI Interviewer Voice</span>
+            <span className={clsx("h-2 w-2 rounded-full", naturalAvailable ? "bg-emerald-400" : "bg-muted")} />
+            <span className="text-sm font-bold text-ink">{naturalAvailable ? "Natural interviewer voice" : "Your browser’s voice"}</span>
           </div>
           <p className="mt-1 text-xs text-muted leading-relaxed">
-            High-fidelity human voice synthesis calibrated for executive interview pacing (130–150 WPM). Easy, Medium and Hard each feature distinct persona dynamics.
+            {naturalAvailable
+              ? "Questions are read out in a natural voice. Easy, Medium and Hard each have their own interviewer."
+              : "Questions are read out by the voice built into your browser, so all three interviewers may sound the same."}
           </p>
         </div>
-        <span className="rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 text-[11px] font-mono font-bold text-emerald-400">
-          Studio Active
+        <span
+          data-testid="voice-status"
+          className={clsx(
+            "rounded-full border px-2.5 py-1 text-[11px] font-bold",
+            naturalAvailable ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" : "bg-panel-2 border-line text-muted",
+          )}
+        >
+          {naturalAvailable ? "On" : "Browser voice"}
         </span>
       </div>
 

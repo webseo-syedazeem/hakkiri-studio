@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { Button, ButtonLink, Icon } from "@/components/ui";
+import { DeleteAccount } from "./DeleteAccount";
 
-export function AccountControls() {
+export function AccountControls({ hasPassword = false, signsInWithGoogle = false }: { hasPassword?: boolean; signsInWithGoogle?: boolean }) {
   const { user, logout } = useAuth();
 
   return (
@@ -17,6 +18,9 @@ export function AccountControls() {
                 {user.firstName ? `${user.firstName} ${user.lastName || ""}`.trim() : "Studio User"}
               </div>
               <div className="text-[13px] text-muted">{user.email}</div>
+              <div className="mt-0.5 text-[12px] text-muted">
+                {hasPassword ? "You sign in with your email address and password." : signsInWithGoogle ? "You sign in with Google." : null}
+              </div>
             </div>
             <div className="flex items-center gap-2.5">
               <ButtonLink href="/landing" variant="secondary" size="sm">
@@ -65,6 +69,12 @@ export function AccountControls() {
           Terms
         </Link>
       </div>
+
+      {user && (
+        <div className="border-t border-line pt-4">
+          <DeleteAccount userId={user.id} hasPassword={hasPassword} />
+        </div>
+      )}
     </div>
   );
 }
