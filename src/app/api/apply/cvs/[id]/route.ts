@@ -1,72 +1,38 @@
 import { NextResponse } from "next/server";
-import { requireUser } from "@/lib/auth/require";
-import { getCv, saveCv, deleteDoc, getProfile, listCvs, APPLY_COLLECTIONS } from "@/lib/apply/db";
+import { z } from "zod";
+import { saveCv, deleteDoc, APPLY_COLLECTIONS } from "@/lib/apply/db";
 import { auditCvText } from "@/lib/apply/checks/rubric";
-import type { Cv } from "@/lib/apply/schema";
+import { CvBulletSchema, CvSectionSchema, type Cv } from "@/lib/apply/schema";
+import { loadOwnCv, cvNotFound, requireUserId } from "@/lib/cv/access";
 
-export async function GET(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
+/** Only these fields can be changed from the browser. Owner, id, kind and dates stay as stored. */
+const CvPatchSchema = z
+  .object({
+    name: z.string().trim().min(1).max(120),
+    templateId: z.enum(["standard", "graduate"]),
+    sections: z.array(CvSectionSchema).max(30),
+    bullets: z.array(CvBulletSchema).max(300),
+  })
+  .partial()
+  .strict();
+
+/** The CV as plain text, built only from what is in it. Nothing is added. */
+function cvAsText(cv: Cv): string {
+  const lines: string[] = [];
+  const summary = cv.sections.find((s) => s.type === "summary" && s.visible !== false)?.text?.trim();
+  if (summary) lines.push("Summary", summary);
+  const bullets = cv.bullets.filter((b) => b.visible !== false && b.text.trim());
+  if (bullets.length) lines.push("Experience", ...bullets.map((b) => `• ${b.text.trim()}`));
+  return lines.join("\n");
+}
+
+export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const user = await requireUser();
-    const userId = user.id || "usr_guest";
+    const userId = await requireUserId();
     const { id } = await params;
-    let cv = await getCv(id);
-    let profile = await getProfile(userId);
-
-    if (!cv) {
-      // If not found by exact ID, fallback to user's first CV or create standard default
-      const userCvs = await listCvs(userId);
-      if (userCvs.length > 0) {
-        cv = userCvs[0];
-      } else {
-        const now = new Date().toISOString();
-        const defaultCv: Cv = {
-          id: id.startsWith("cv_") ? id : `cv_${id}`,
-          userId,
-          name: "Standard Professional CV (Base)",
-          kind: "base",
-          templateId: "standard",
-          sections: [
-            { type: "contact", order: 1, visible: true },
-            { type: "summary", order: 2, visible: true, text: profile?.summary || "Senior engineering leader with proven experience scaling high-performance systems." },
-            { type: "experience", order: 3, visible: true },
-            { type: "education", order: 4, visible: true },
-            { type: "skills", order: 5, visible: true },
-          ],
-          bullets: [
-            {
-              id: "b-default-1",
-              roleId: "role-1",
-              text: "Architected real-time payment reconciliation engine processing £14M+ daily transactions with 99.99% uptime.",
-              evidenceIds: [],
-              origin: "person",
-              visible: true,
-            },
-            {
-              id: "b-default-2",
-              roleId: "role-1",
-              text: "Reduced cloud infrastructure latency by 42% through distributed caching and query optimization.",
-              evidenceIds: [],
-              origin: "person",
-              visible: true,
-            },
-          ],
-          score: {
-            total: 86,
-            parts: { evidence: 88, clarity: 85, structure: 85, software: 90 },
-            at: now,
-          },
-          createdAt: now,
-          updatedAt: now,
-        };
-        await saveCv(defaultCv);
-        cv = defaultCv;
-      }
-    }
-
-    return NextResponse.json({ cv, profile });
+    const cv = await loadOwnCv(id, userId);
+    if (!cv) return cvNotFound();
+    return NextResponse.json({ cv });
   } catch (err: unknown) {
     if (err instanceof Response) return err;
     console.error("[api/apply/cvs/[id] GET] Error:", err);
@@ -74,44 +40,28 @@ export async function GET(
   }
 }
 
-export async function PATCH(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const user = await requireUser();
-    const userId = user.id || "usr_guest";
+    const userId = await requireUserId();
     const { id } = await params;
-    const existing = await getCv(id);
+    const existing = await loadOwnCv(id, userId);
+    if (!existing) return cvNotFound();
 
-    if (!existing) {
-      return NextResponse.json({ error: "not_found", message: "CV not found." }, { status: 404 });
+    const parsed = CvPatchSchema.safeParse(await req.json().catch(() => null));
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: "invalid_input", message: "That change could not be saved.", issues: parsed.error.issues.slice(0, 5) },
+        { status: 400 },
+      );
     }
 
-    const body = await req.json();
     const now = new Date().toISOString();
-
-    // Compile text representation for live code scoring
-    const summaryText = body.sections?.find((s: { type: string; text?: string }) => s.type === "summary")?.text || "";
-    const bulletTexts = (body.bullets || existing.bullets || [])
-      .filter((b: { visible?: boolean }) => b.visible !== false)
-      .map((b: { text: string }) => `• ${b.text}`)
-      .join("\n");
-    const fullText = `Contact Details: ${user.email || ""}\nSummary: ${summaryText}\nExperience:\n${bulletTexts}\nEducation: BSc Degree\nSkills: TypeScript, Next.js, Cloud`;
-
-    const audit = auditCvText(fullText, "uk");
-
+    const merged: Cv = { ...existing, ...parsed.data, id: existing.id, userId: existing.userId, updatedAt: now };
+    const text = cvAsText(merged);
+    const audit = text ? auditCvText(text, "uk") : null;
     const updated: Cv = {
-      ...existing,
-      ...body,
-      id: existing.id,
-      userId,
-      score: {
-        total: audit.score,
-        parts: audit.subscores,
-        at: now,
-      },
-      updatedAt: now,
+      ...merged,
+      score: audit ? { total: audit.score, parts: audit.subscores, at: now } : { total: 0, parts: {}, at: now },
     };
 
     await saveCv(updated);
@@ -123,18 +73,12 @@ export async function PATCH(
   }
 }
 
-export async function DELETE(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const user = await requireUser();
+    const userId = await requireUserId();
     const { id } = await params;
-    const existing = await getCv(id);
-
-    if (!existing || existing.userId !== user.id) {
-      return NextResponse.json({ error: "not_found", message: "CV not found." }, { status: 404 });
-    }
+    const existing = await loadOwnCv(id, userId);
+    if (!existing) return cvNotFound();
 
     await deleteDoc(APPLY_COLLECTIONS.CVS, id);
     return NextResponse.json({ success: true, message: "CV deleted." });

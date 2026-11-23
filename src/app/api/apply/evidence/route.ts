@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth/require";
-import { listEvidence, saveEvidence } from "@/lib/apply/db";
+import { listEvidence, removeSeededEvidence, saveEvidence } from "@/lib/apply/db";
 import type { Evidence } from "@/lib/apply/schema";
 import crypto from "node:crypto";
 
@@ -20,57 +20,14 @@ function extractNumbersAndSkills(text: string): { numbers: string[]; skillTags: 
   return { numbers: cleanNumbers, skillTags };
 }
 
+/** The person's own evidence. A new account's bank is empty: nothing is written into it for them. */
 export async function GET() {
   try {
     const user = await requireUser();
-    const userId = user.id || "usr_guest";
-    let evidenceList = await listEvidence(userId);
-
-    // Initial seed if empty
-    if (evidenceList.length === 0) {
-      const now = new Date().toISOString();
-      const seeds: Evidence[] = [
-        {
-          id: `ev_${crypto.randomBytes(6).toString("hex")}`,
-          userId,
-          text: "Spearheaded migration of core billing pipeline to AWS serverless, reducing monthly infrastructure costs by 38% (£45k annual saving).",
-          numbers: ["38%", "£45k"],
-          skillTags: ["AWS", "System Architecture", "Cost Optimization"],
-          sourceKind: "cv-bullet",
-          confirmed: true,
-          createdAt: now,
-          updatedAt: now,
-        },
-        {
-          id: `ev_${crypto.randomBytes(6).toString("hex")}`,
-          userId,
-          text: "Resolved major production database deadlock during Black Friday sales rush, coordinating 4 senior engineers and restoring traffic within 12 minutes.",
-          numbers: ["4", "12 minutes"],
-          skillTags: ["Incident Management", "Leadership", "SQL"],
-          sourceKind: "story",
-          confirmed: true,
-          createdAt: now,
-          updatedAt: now,
-        },
-        {
-          id: `ev_${crypto.randomBytes(6).toString("hex")}`,
-          userId,
-          text: "Implemented end-to-end automated testing with Playwright, improving sprint release velocity by 2.5x and dropping defect escape rate to 0.4%.",
-          numbers: ["2.5x", "0.4%"],
-          skillTags: ["CI/CD", "TypeScript"],
-          sourceKind: "typed-note",
-          confirmed: true,
-          createdAt: now,
-          updatedAt: now,
-        },
-      ];
-      for (const s of seeds) {
-        await saveEvidence(s);
-      }
-      evidenceList = seeds;
-    }
-
-    return NextResponse.json(evidenceList);
+    const userId = user.id as string;
+    // Clear out the three invented entries an earlier build put into every account.
+    await removeSeededEvidence(userId);
+    return NextResponse.json(await listEvidence(userId));
   } catch (err: unknown) {
     if (err instanceof Response) return err;
     console.error("[api/apply/evidence GET] Error:", err);

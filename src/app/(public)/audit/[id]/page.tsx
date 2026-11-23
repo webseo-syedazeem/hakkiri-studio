@@ -156,7 +156,7 @@ export default function AuditReportPage({
               <div className="text-xl font-bold text-white mt-1">{audit.subscores.structure}%</div>
             </div>
             <div className="rounded-xl bg-card/60 p-3.5 border border-line">
-              <div className="text-[11px] text-muted">ATS Software Read (10%)</div>
+              <div className="text-[11px] text-muted">Readable by software (10%)</div>
               <div className="text-xl font-bold text-white mt-1">{audit.subscores.software}%</div>
             </div>
           </div>
