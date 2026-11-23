@@ -1,3 +1,4 @@
+import { isAdminUser } from "@/lib/auth/admin";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import clsx from "clsx";
@@ -137,16 +138,7 @@ export default async function SettingsPage() {
         ? "Studio simulation mode active: calibrated natural interview voices available."
         : "Add API credentials to enable high-fidelity natural speech synthesis.";
 
-  const userEmail = user.email?.toLowerCase() ?? "";
-  const isAdmin = Boolean(
-    userEmail &&
-      ((process.env.ADMIN_EMAILS &&
-        process.env.ADMIN_EMAILS.split(",")
-          .map((e) => e.trim().toLowerCase())
-          .includes(userEmail)) ||
-        (process.env.ADMIN_EMAIL &&
-          process.env.ADMIN_EMAIL.trim().toLowerCase() === userEmail))
-  );
+  const isAdmin = isAdminUser(user);
 
   pruneRecordings();
   const today = londonToday();
@@ -255,6 +247,9 @@ export default async function SettingsPage() {
             <div className="mt-5 border-t border-line pt-5">
               <DataButtons hasData={hasData(counts)} />
             </div>
+            <p className="mt-4 text-[12px] text-muted">
+              Account id: <span className="num select-all">{user.id}</span>
+            </p>
           </Section>
         </div>
 

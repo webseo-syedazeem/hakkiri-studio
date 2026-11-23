@@ -34,7 +34,8 @@ export function proxy(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // 2. Allow public pages, blog, admin console, free audits, and static files
+  // 2. Allow public pages, blog, free audits, and static files. The admin console is NOT public:
+  //    a request for it with no session goes to sign in, and the pages check for an administrator themselves.
   if (
     pathname === "/" ||
     pathname === "/login" ||
@@ -47,7 +48,6 @@ export function proxy(req: NextRequest) {
     pathname.startsWith("/cv-audit") ||
     pathname.startsWith("/cover-letter-audit") ||
     pathname.startsWith("/audit") ||
-    pathname.startsWith("/admin") ||
     pathname.startsWith("/blog") ||
     pathname.startsWith("/_next") ||
     pathname.includes(".")
@@ -68,6 +68,6 @@ export function proxy(req: NextRequest) {
 export const config = {
   matcher: [
     "/api/:path*",
-    "/((?!_next|cv-audit|cover-letter-audit|audit|admin|blog|login|signup|privacy|terms|present|landing|robots.txt|sitemap.xml|favicon.ico|icon.png|apple-icon.png|opengraph-image.png|$).*)",
+    "/((?!_next|cv-audit|cover-letter-audit|audit|blog|login|signup|privacy|terms|present|landing|robots.txt|sitemap.xml|favicon.ico|icon.png|apple-icon.png|opengraph-image.png|$).*)",
   ],
 };

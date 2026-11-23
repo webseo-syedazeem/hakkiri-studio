@@ -1,3 +1,4 @@
+import { isAdminUser } from "@/lib/auth/admin";
 import { NextRequest, NextResponse } from "next/server";
 import { createUser, createSession } from "@/lib/auth/user-db";
 import { clientKey, rateLimited } from "@/lib/usage/limits";
@@ -39,7 +40,7 @@ export async function POST(req: NextRequest) {
 
     const response = NextResponse.json({
       ok: true,
-      user: result.user,
+      user: { ...result.user, isAdmin: isAdminUser(result.user) },
     });
 
     response.cookies.set({

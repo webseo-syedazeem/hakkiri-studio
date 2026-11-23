@@ -5,7 +5,6 @@ import Link from "next/link";
 import { Icon } from "@/components/ui";
 import { runAuditLogic, type AuditReport, type TestResult, type LearningBotInfo } from "@/lib/robot-test/tester";
 import { useAuth } from "@/lib/auth/AuthContext";
-import { isAdminEmail } from "@/lib/auth/admins";
 import clsx from "clsx";
 
 export default function RobotTestPage() {
@@ -158,7 +157,7 @@ ${report.logs?.join("\n") || ""}
   }
 
   // Restrict to admins only
-  if (!user || !isAdminEmail(user.email)) {
+  if (!user?.isAdmin) {
     return (
       <div className="min-h-screen bg-[#07060f] flex items-center justify-center p-6 text-white">
         <div className="max-w-md w-full rounded-2xl bg-[#0f0e1c] border border-white/10 p-8 text-center space-y-4 shadow-2xl">

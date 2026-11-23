@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import clsx from "clsx";
@@ -63,112 +63,17 @@ const ADMIN_NAV = [
   },
 ];
 
-export function AdminLayoutClient({ children }: { children: React.ReactNode }) {
+export function AdminLayoutClient({ children, email }: { children: React.ReactNode; email: string }) {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
-  const [adminEmail, setAdminEmail] = useState("admin@hakkiri.com");
-  const [passcode, setPasscode] = useState("");
-  const [authError, setAuthError] = useState(false);
 
-  // Check simple admin passcode unlock state in localStorage for convenience
-  useEffect(() => {
-    const saved = localStorage.getItem("hakkiri_admin_unlocked");
-    if (saved === "true") {
-      setIsAuthenticated(true);
-    }
-  }, []);
-
-  const handleUnlock = (e: React.FormEvent) => {
-    e.preventDefault();
-    const p = passcode.trim();
-    if (p === "admin2026" || p === "hakkiri" || p === "admin" || p === "hakkiri2026") {
-      localStorage.setItem("hakkiri_admin_unlocked", "true");
-      setIsAuthenticated(true);
-      setAuthError(false);
-    } else {
-      setAuthError(true);
-    }
+  // Leaving the console signs the administrator out of the app. There is no separate lock: access is the account's.
+  const handleLock = async () => {
+    await fetch("/api/auth/logout", { method: "POST" }).catch(() => undefined);
+    router.push("/login");
+    router.refresh();
   };
-
-  const handleLock = () => {
-    localStorage.removeItem("hakkiri_admin_unlocked");
-    setIsAuthenticated(false);
-  };
-
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-[#0a0b10] flex items-center justify-center p-4 text-white">
-        <div className="w-full max-w-md rounded-3xl border border-white/10 bg-[#12131c] p-8 shadow-2xl text-center space-y-6 animate-scale-in">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white p-1.5 shadow-lg shadow-purple-500/25 ring-1 ring-white/20 transition-transform duration-300 hover:scale-105">
-            <Mark size={32} />
-          </div>
-
-          <div>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-500/20 border border-purple-500/30 px-3 py-1 text-xs font-semibold text-purple-300">
-              <span className="h-1.5 w-1.5 rounded-full bg-purple-400 animate-pulse" />
-              Restricted Area
-            </span>
-            <h1 className="text-2xl font-bold tracking-tight text-white mt-3">
-              Hakkiri Admin Console
-            </h1>
-            <p className="text-xs text-slate-400 mt-1">
-              Enter your administration credentials to access CMS and SEO tools.
-            </p>
-          </div>
-
-          <form onSubmit={handleUnlock} className="space-y-3.5 text-left">
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Admin Email</label>
-              <input
-                type="email"
-                value={adminEmail}
-                onChange={(e) => setAdminEmail(e.target.value)}
-                placeholder="admin@hakkiri.com"
-                className="w-full h-11 rounded-xl border border-white/15 bg-[#1a1b26] px-3.5 text-sm font-mono text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 transition-all"
-              />
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between text-xs mb-1">
-                <label className="font-semibold text-slate-300">Admin Password / Passcode</label>
-              </div>
-              <input
-                type="password"
-                placeholder="Enter password (admin2026)"
-                value={passcode}
-                onChange={(e) => {
-                  setPasscode(e.target.value);
-                  setAuthError(false);
-                }}
-                className={clsx(
-                  "w-full h-11 rounded-xl border bg-[#1a1b26] px-3.5 text-sm font-mono text-white placeholder-slate-500 focus:outline-none transition-all",
-                  authError ? "border-rose-500 focus:ring-1 focus:ring-rose-500" : "border-white/15 focus:border-purple-500"
-                )}
-              />
-              {authError && (
-                <p className="text-xs text-rose-400 mt-1.5 font-medium">Incorrect password. Use &quot;admin2026&quot;</p>
-              )}
-            </div>
-
-            <button
-              type="submit"
-              className="w-full h-11 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 text-sm font-bold text-white shadow-lg shadow-purple-600/30 hover:brightness-110 active:scale-95 transition mt-2"
-            >
-              Sign In to Admin Console
-            </button>
-          </form>
-
-          <div className="pt-2 text-xs text-slate-500">
-            <Link href="/" className="hover:text-slate-300 underline underline-offset-4">
-              &larr; Return to Hakkiri Public Website
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-[#0c0d14] text-slate-100 flex flex-col md:flex-row antialiased">
@@ -263,8 +168,8 @@ export function AdminLayoutClient({ children }: { children: React.ReactNode }) {
               AD
             </div>
             <div>
-              <div className="text-xs font-bold text-white">Super Admin</div>
-              <div className="text-[10px] text-slate-500 font-mono">live.session</div>
+              <div className="text-xs font-bold text-white">Administrator</div>
+              <div className="text-[10px] text-slate-500 font-mono truncate max-w-[140px]">{email}</div>
             </div>
           </div>
 
@@ -272,7 +177,7 @@ export function AdminLayoutClient({ children }: { children: React.ReactNode }) {
             type="button"
             onClick={handleLock}
             className="rounded-lg p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition"
-            title="Lock Console"
+            title="Sign out"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />

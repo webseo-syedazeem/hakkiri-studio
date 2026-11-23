@@ -1,3 +1,4 @@
+import { isAdminUser } from "@/lib/auth/admin";
 import { NextRequest, NextResponse } from "next/server";
 import { validateSession } from "@/lib/auth/user-db";
 
@@ -20,7 +21,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       authenticated: true,
-      user,
+      user: { ...user, isAdmin: isAdminUser(user) },
     });
   } catch (err) {
     console.error("[api/auth/me] error:", err);

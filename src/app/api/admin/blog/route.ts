@@ -1,3 +1,4 @@
+import { adminDenied } from "@/lib/auth/admin";
 import { NextResponse } from "next/server";
 import { getBlogPostsAsync, saveBlogPostAsync } from "@/lib/blog/store";
 import { getCurrentUser } from "@/lib/auth/require";
@@ -7,6 +8,10 @@ import { slugify } from "@/lib/blog/seo";
 export const runtime = "nodejs";
 
 export async function GET(req: Request) {
+  // Administrators only, decided on the server before anything else happens.
+  const denied = await adminDenied();
+  if (denied) return denied;
+
   try {
     const user = await getCurrentUser();
     // Allow studio users or admin access
@@ -24,13 +29,17 @@ export async function GET(req: Request) {
   } catch (err) {
     console.error("[api/admin/blog] GET error:", err);
     return NextResponse.json(
-      { error: "Internal Server Error", message: err instanceof Error ? err.message : "Failed to load posts" },
+      { error: "Internal Server Error", message: "Failed to load posts" },
       { status: 500 }
     );
   }
 }
 
 export async function POST(req: Request) {
+  // Administrators only, decided on the server before anything else happens.
+  const denied = await adminDenied();
+  if (denied) return denied;
+
   try {
     const body = await req.json();
 
@@ -78,7 +87,7 @@ export async function POST(req: Request) {
   } catch (err) {
     console.error("[api/admin/blog] POST error:", err);
     return NextResponse.json(
-      { error: "Internal Server Error", message: err instanceof Error ? err.message : "Failed to save post" },
+      { error: "Internal Server Error", message: "Failed to save post" },
       { status: 500 }
     );
   }

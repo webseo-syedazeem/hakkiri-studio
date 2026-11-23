@@ -75,3 +75,40 @@ describe("authentication system", () => {
     expect(afterDelete).toBeNull();
   });
 });
+
+describe("no built-in administrator", () => {
+  const mem = (globalThis as unknown as { __hakkiri_memUsers: Map<string, Record<string, unknown>> }).__hakkiri_memUsers;
+
+  it("the old built-in admin account cannot sign in, even with a record and the right password for it", async () => {
+    // A record like the one the removed code used to write into the store.
+    mem.set("usr_admin_master", { _id: "usr_admin_master", email: "old-admin@example.com", name: "Admin", firstName: "Admin", initials: "AD", passwordHash: hashPassword("whatever-it-was-1"), createdAt: new Date(), trial: { interviewSecondsLeft: 99999, pitchSecondsLeft: 99999 }, tier: "monthly" });
+    const res = await authenticateUser("old-admin@example.com", "whatever-it-was-1");
+    expect(res.ok).toBe(false);
+    mem.delete("usr_admin_master");
+  });
+
+  it("a session left over from that account is ended, not honoured", async () => {
+    const token = await createSession("usr_admin_master", "old-admin@example.com");
+    expect(await validateSession(token)).toBeNull();
+    // And it is gone, not just refused once.
+    expect(await validateSession(token)).toBeNull();
+  });
+
+  it("no email and password pair signs anyone in without an account", async () => {
+    for (const email of ["admin@example.com", "administrator@example.com", "root@localhost"]) {
+      for (const password of ["admin", "password", "letmein123", "changeme-now"]) {
+        expect((await authenticateUser(email, password)).ok, `${email} / ${password}`).toBe(false);
+      }
+    }
+  });
+
+  it("an address listed as an administrator cannot be registered with a password by whoever gets there first", async () => {
+    const { vi } = await import("vitest");
+    vi.stubEnv("ADMIN_EMAILS", "boss@example.com");
+    const taken = await createUser("Boss@Example.com", "secret12345", "Not The Boss");
+    expect(taken).toEqual({ ok: false, error: "This address can’t be registered here. Sign in with Google, or ask the team to add your account." });
+    const other = await createUser(`someone_${Date.now()}@example.com`, "secret12345", "Someone");
+    expect(other.ok).toBe(true);
+    vi.unstubAllEnvs();
+  });
+});

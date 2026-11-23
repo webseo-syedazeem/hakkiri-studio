@@ -250,4 +250,6 @@ export interface User {
   trial: { interviewSecondsLeft: number; pitchSecondsLeft: number };
   tier?: "free" | "beta" | "job_search" | "monthly";
   createdAt?: string;
+  /** Set by the server for the signed-in account. It only decides which menu links are shown: every admin page and route checks again on the server. */
+  isAdmin?: boolean;
 }

@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { getMongoDb, isMongoConfigured } from "@/lib/storage/mongodb";
 import type { User } from "@/lib/types";
+import { LEGACY_MASTER_ID, isReservedAdminEmail } from "./admin-list";
 
 /**
  * Authentication and User database backed by MongoDB Atlas.
@@ -85,6 +86,12 @@ export async function createUser(
   }
   if (!password || password.length < 8) {
     return { ok: false, error: "Password must be at least 8 characters long." };
+  }
+  // Sign-up does not prove who owns an address, so an address that would make its account an administrator
+  // cannot be registered with a password by whoever gets there first. An administrator signs up before their
+  // address is listed (or is listed by account id), or signs in with Google, which does prove the address.
+  if (isReservedAdminEmail(normEmail)) {
+    return { ok: false, error: "This address can’t be registered here. Sign in with Google, or ask the team to add your account." };
   }
 
   const { firstName, initials } = computeInitials(name, normEmail);
@@ -176,50 +183,8 @@ export async function authenticateUser(
     }
   }
 
-  // Dedicated admin credentials support (admin@hakkiri.com / admin2026)
-  if (
-    (normEmail === "admin@hakkiri.com" || normEmail === "admin@hakkiri.studio") &&
-    (password === "admin2026" || password === "hakkiri" || password === "admin" || password === "hakkiri2026")
-  ) {
-    const adminUserDoc: DbUserRecord = {
-      _id: "usr_admin_master",
-      email: normEmail,
-      name: "Admin User",
-      firstName: "Admin",
-      initials: "AD",
-      passwordHash: hashPassword(password),
-      createdAt: new Date(),
-      trial: { interviewSecondsLeft: 99999, pitchSecondsLeft: 99999 },
-      tier: "monthly",
-    };
-    if (isMongoConfigured()) {
-      try {
-        const db = await getMongoDb();
-        if (db) {
-          await db.collection<DbUserRecord>("users").updateOne(
-            { _id: "usr_admin_master" },
-            { $set: adminUserDoc },
-            { upsert: true }
-          );
-        }
-      } catch (err) {
-        console.warn("[auth] admin upsert error:", err);
-      }
-    } else {
-      memUsers.set("usr_admin_master", adminUserDoc);
-    }
-    return {
-      ok: true,
-      user: {
-        id: "usr_admin_master",
-        email: normEmail,
-        firstName: "Admin",
-        initials: "AD",
-        trial: { interviewSecondsLeft: 99999, pitchSecondsLeft: 99999 },
-        tier: "monthly",
-      },
-    };
-  }
+  // The old built-in admin account is never signed in: its password was written in the source code.
+  if (record?._id === LEGACY_MASTER_ID) record = null;
 
   // Generic message for both unknown email and bad password to eliminate account enumeration
   if (!record || !verifyPassword(password, record.passwordHash)) {
@@ -321,20 +286,10 @@ export async function validateSession(token: string): Promise<User | null> {
     return null;
   }
 
-  // Master Admin session bypass & fallback
-  if (
-    session.userId === "usr_admin_master" ||
-    session.email === "admin@hakkiri.com" ||
-    session.email === "admin@hakkiri.studio"
-  ) {
-    return {
-      id: "usr_admin_master",
-      email: session.email || "admin@hakkiri.com",
-      firstName: "Admin",
-      initials: "AD",
-      trial: { interviewSecondsLeft: 99999, pitchSecondsLeft: 99999 },
-      tier: "monthly",
-    };
+  // A session that belongs to the old built-in admin account is ended, not honoured.
+  if (session.userId === LEGACY_MASTER_ID) {
+    void deleteSession(token);
+    return null;
   }
 
   // Fetch full user record

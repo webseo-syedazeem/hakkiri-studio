@@ -1,12 +1,18 @@
+import { adminDenied } from "@/lib/auth/admin";
 import { NextResponse } from "next/server";
 import { getMongoDb, isMongoConfigured } from "@/lib/storage/mongodb";
 import { getBlogPostsAsync } from "@/lib/blog/store";
 import { getHomepageContentAsync } from "@/lib/site/site-content";
 import { APPLY_COLLECTIONS } from "@/lib/apply/db";
+import { forBackup } from "@/lib/storage/backup";
 
 export const runtime = "nodejs";
 
 export async function GET(req: Request) {
+  // Administrators only, decided on the server before anything else happens.
+  const denied = await adminDenied();
+  if (denied) return denied;
+
   try {
     const { searchParams } = new URL(req.url);
     const isDownload = searchParams.get("download") !== "false";
@@ -37,17 +43,12 @@ export async function GET(req: Request) {
 
           for (const name of colNames) {
             try {
-              const col = db.collection(name);
-              const docs = await col.find({}).toArray();
-              if (docs && docs.length > 0) {
-                collectionsData[name] = docs.map((doc) => {
-                  const cleaned: Record<string, unknown> = { ...(doc as Record<string, unknown>) };
-                  if (cleaned._id && typeof cleaned._id !== "string") {
-                    cleaned._id = String(cleaned._id);
-                  }
-                  return cleaned;
-                });
-                totalDocuments += docs.length;
+              const docs = (await db.collection(name).find({}).toArray()) as unknown as Record<string, unknown>[];
+              // Sessions are left out and password hashes are blanked: see lib/storage/backup.ts.
+              const kept = docs.length ? forBackup(name, docs) : null;
+              if (kept) {
+                collectionsData[name] = kept;
+                totalDocuments += kept.length;
               }
             } catch {
               // Ignore single collection error
@@ -119,7 +120,7 @@ export async function GET(req: Request) {
     return NextResponse.json(
       {
         error: "Internal Server Error",
-        message: err instanceof Error ? err.message : "Failed to generate backup",
+        message: "Failed to generate backup",
       },
       { status: 500 }
     );

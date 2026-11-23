@@ -1,3 +1,4 @@
+import { adminDenied } from "@/lib/auth/admin";
 import { NextResponse } from "next/server";
 import { getBlogPostByIdAsync, saveBlogPostAsync, deleteBlogPostAsync } from "@/lib/blog/store";
 import type { BlogPost } from "@/lib/blog/types";
@@ -9,6 +10,10 @@ export async function GET(
   _req: Request,
   props: { params: Promise<{ id: string }> }
 ) {
+  // Administrators only, decided on the server before anything else happens.
+  const denied = await adminDenied();
+  if (denied) return denied;
+
   try {
     const { id } = await props.params;
     const post = await getBlogPostByIdAsync(id);
@@ -18,7 +23,7 @@ export async function GET(
     return NextResponse.json({ post });
   } catch (err) {
     return NextResponse.json(
-      { error: "Internal Server Error", message: err instanceof Error ? err.message : "Failed to load post" },
+      { error: "Internal Server Error", message: "Failed to load post" },
       { status: 500 }
     );
   }
@@ -28,6 +33,10 @@ export async function PUT(
   req: Request,
   props: { params: Promise<{ id: string }> }
 ) {
+  // Administrators only, decided on the server before anything else happens.
+  const denied = await adminDenied();
+  if (denied) return denied;
+
   try {
     const { id } = await props.params;
     const existing = await getBlogPostByIdAsync(id);
@@ -57,7 +66,7 @@ export async function PUT(
     return NextResponse.json({ post: saved });
   } catch (err) {
     return NextResponse.json(
-      { error: "Internal Server Error", message: err instanceof Error ? err.message : "Failed to update post" },
+      { error: "Internal Server Error", message: "Failed to update post" },
       { status: 500 }
     );
   }
@@ -67,6 +76,10 @@ export async function DELETE(
   _req: Request,
   props: { params: Promise<{ id: string }> }
 ) {
+  // Administrators only, decided on the server before anything else happens.
+  const denied = await adminDenied();
+  if (denied) return denied;
+
   try {
     const { id } = await props.params;
     const deleted = await deleteBlogPostAsync(id);
@@ -76,7 +89,7 @@ export async function DELETE(
     return NextResponse.json({ success: true, id });
   } catch (err) {
     return NextResponse.json(
-      { error: "Internal Server Error", message: err instanceof Error ? err.message : "Failed to delete post" },
+      { error: "Internal Server Error", message: "Failed to delete post" },
       { status: 500 }
     );
   }

@@ -1,32 +1,18 @@
+import { adminDenied } from "@/lib/auth/admin";
 import { NextResponse } from "next/server";
-import crypto from "node:crypto";
 import { alertsConfigured, reportProblem } from "@/lib/alerts/store";
 import { isLaunch } from "@/lib/launch";
-import { getCurrentUser } from "@/lib/auth/require";
 
 export const runtime = "nodejs";
 
-function isTimingSafeBearer(header: string | null, secret: string | undefined): boolean {
-  if (!header || !secret) return false;
-  const expected = `Bearer ${secret}`;
-  const headerBuf = Buffer.from(header);
-  const expectedBuf = Buffer.from(expected);
-  if (headerBuf.length !== expectedBuf.length) return false;
-  return crypto.timingSafeEqual(headerBuf, expectedBuf);
-}
 
 /** POST /api/alerts/test: sends a test alert so you can check the webhook or email works (not once launched). */
 export async function POST(req: Request) {
   if (isLaunch()) return NextResponse.json({ error: "not-found" }, { status: 404 });
 
-  const user = await getCurrentUser();
-  const authHeader = req.headers.get("authorization");
-  const adminSecret = process.env.ADMIN_SECRET_KEY;
-  const isSecretValid = isTimingSafeBearer(authHeader, adminSecret);
-
-  if (!user && !isSecretValid) {
-    return NextResponse.json({ error: "unauthorised", message: "Authentication required to trigger test alerts." }, { status: 401 });
-  }
+  // Sending a test alert reaches the team's channel, so it is for administrators (or a script with the admin secret).
+  const denied = await adminDenied(req, { allowSecret: true });
+  if (denied) return denied;
 
   const c = alertsConfigured();
   if (!c.webhook && !c.email) return NextResponse.json({ error: "not-configured", message: "Add ALERT_WEBHOOK_URL, or RESEND_API_KEY and ALERT_EMAIL_TO, to .env.local first." }, { status: 400 });
