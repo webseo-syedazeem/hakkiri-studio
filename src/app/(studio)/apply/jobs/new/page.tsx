@@ -120,9 +120,10 @@ export default function NewJobIntakePage() {
         <div className="space-y-1.5">
           <Link
             href="/apply/applications"
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-muted hover:text-ink transition"
+            className="group inline-flex items-center gap-2 rounded-xl border border-line bg-panel-2/80 px-3.5 py-1.5 text-xs font-bold text-muted hover:text-ink hover:border-line-strong hover:bg-panel transition shadow-sm active:scale-95"
           >
-            <span>←</span> Back to Tracker
+            <span className="transition-transform group-hover:-translate-x-0.5">←</span>
+            <span>Back to Applications Tracker</span>
           </Link>
           <div className="flex items-center gap-2 mt-1">
             <div className="inline-flex items-center gap-2 px-3 py-0.5 rounded-full bg-blue/10 border border-blue/20 text-blue text-[11px] font-bold tracking-wide uppercase">

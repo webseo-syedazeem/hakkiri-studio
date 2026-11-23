@@ -203,7 +203,7 @@ export default function ApplicationsTrackerPage() {
         </div>
       ) : viewMode === "board" ? (
         /* Kanban Columns: Full Viewport Stretch */
-        <div className="flex gap-5 overflow-x-auto pb-8 items-stretch w-full scrollbar-thin">
+        <div className="flex gap-5 overflow-x-auto pb-6 pt-1 items-stretch w-full [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.18)_transparent] [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-white/15 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-white/30">
           {COLUMNS.map((col) => {
             const columnApps = safeApps.filter((a) => a.status === col.id);
 

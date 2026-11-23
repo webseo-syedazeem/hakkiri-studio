@@ -163,9 +163,10 @@ export default function ApplicationWorkspacePage({
         <div>
           <Link
             href="/apply/applications"
-            className="text-xs font-semibold text-muted hover:text-white transition"
+            className="group inline-flex items-center gap-2 rounded-xl border border-line bg-panel-2/80 px-3.5 py-1.5 text-xs font-bold text-muted hover:text-ink hover:border-line-strong hover:bg-panel transition shadow-sm active:scale-95"
           >
-            ← Back to Applications Tracker
+            <span className="transition-transform group-hover:-translate-x-0.5">←</span>
+            <span>Back to Applications Tracker</span>
           </Link>
           <div className="flex items-center gap-2 mt-2">
             <h1 className="text-xl md:text-2xl font-black text-ink tracking-tight">

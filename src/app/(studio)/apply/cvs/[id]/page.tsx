@@ -284,15 +284,16 @@ export default function CvBuilderEditorPage({
         ];
 
   return (
-    <div className="space-y-6 animate-fadeIn w-full max-w-none pb-16">
+    <div className="space-y-6 animate-fadeIn w-full max-w-none pb-16 print:space-y-0 print:pb-0 print:m-0 print:p-0">
       {/* Top Bar Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-line pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-line pb-4 print:hidden print-hide">
         <div className="flex items-center gap-3">
           <Link
             href="/apply/cvs"
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-muted hover:text-ink transition"
+            className="group inline-flex items-center gap-2 rounded-xl border border-line bg-panel-2/80 px-3.5 py-1.5 text-xs font-bold text-muted hover:text-ink hover:border-line-strong hover:bg-panel transition shadow-sm active:scale-95"
           >
-            <span>←</span> Back to Resumes
+            <span className="transition-transform group-hover:-translate-x-0.5">←</span>
+            <span>Back to Resumes</span>
           </Link>
           <span className="text-line">|</span>
           <input
@@ -334,16 +335,18 @@ export default function CvBuilderEditorPage({
 
           <button
             onClick={handleExport}
-            className="inline-flex items-center gap-1.5 rounded-2xl border border-line bg-panel px-4 py-2 text-xs font-bold text-ink hover:bg-panel-2 transition shadow-sm"
+            className="inline-flex items-center gap-2 rounded-xl border border-line bg-panel-2 px-4 py-2 text-xs font-bold text-ink hover:bg-panel hover:border-line-strong transition shadow-sm active:scale-95 cursor-pointer"
           >
+            <span>🖨️</span>
             <span>Print / PDF</span>
           </button>
 
           <button
             onClick={() => setShowBulletModal(true)}
-            className="inline-flex items-center gap-1.5 rounded-2xl bg-gradient-to-r from-blue-fill to-blue-hover px-4 py-2 text-xs font-bold text-white shadow-lg shadow-blue-fill/25 hover:scale-[1.02] active:scale-[0.98] transition"
+            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-fill to-blue-hover px-4 py-2 text-xs font-bold text-white shadow-lg shadow-blue-fill/25 hover:shadow-blue-fill/40 hover:scale-[1.02] active:scale-95 transition cursor-pointer"
           >
-            <span>✨ Tell Me What You Did</span>
+            <span>✨</span>
+            <span>Tell Me What You Did</span>
           </button>
         </div>
       </div>
@@ -419,9 +422,9 @@ export default function CvBuilderEditorPage({
       )}
 
       {/* Dual Pane Layout (Desktop) - Full Width Grid */}
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start w-full">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start w-full print:block print:w-full print:m-0 print:p-0">
         {/* Left Pane: Interactive Editor & Switches (5 cols) */}
-        <div className="xl:col-span-5 space-y-4">
+        <div className="xl:col-span-5 space-y-4 print:hidden print-hide">
           <div className="rounded-3xl border border-line bg-panel p-6 space-y-5 shadow-xl">
             <div className="flex items-center justify-between border-b border-line pb-3">
               <div>
@@ -537,8 +540,8 @@ export default function CvBuilderEditorPage({
         </div>
 
         {/* Right Pane: Live Page Preview (7 cols) */}
-        <div className="xl:col-span-7 print:w-full space-y-3">
-          <div className="flex items-center justify-between px-2 text-xs text-muted">
+        <div className="xl:col-span-7 print:w-full space-y-3 print:space-y-0 print:m-0 print:p-0">
+          <div className="flex items-center justify-between px-2 text-xs text-muted print:hidden print-hide">
             <div className="flex items-center gap-2">
               <span className="font-extrabold text-ink">Live ATS Paper Preview</span>
               <span className="text-[10px] bg-panel-2 px-2.5 py-0.5 rounded-full border border-line font-mono">
@@ -547,15 +550,15 @@ export default function CvBuilderEditorPage({
             </div>
             <button
               onClick={handleExport}
-              className="font-bold text-blue hover:text-blue-soft transition flex items-center gap-1"
+              className="font-bold text-blue hover:text-blue-soft transition flex items-center gap-1 cursor-pointer"
             >
               <span>Export PDF / Print</span>
               <span>↗</span>
             </button>
           </div>
 
-          <div className="rounded-3xl border border-line bg-booth/90 p-4 sm:p-8 shadow-2xl flex justify-center backdrop-blur-sm min-h-[820px]">
-            <div className="w-full max-w-[850px] rounded-2xl bg-white text-zinc-900 p-8 sm:p-12 shadow-[0_20px_50px_rgba(0,0,0,0.5)] font-serif leading-relaxed text-xs">
+          <div className="rounded-3xl border border-line bg-booth/90 p-4 sm:p-8 shadow-2xl flex justify-center backdrop-blur-sm min-h-[820px] print:rounded-none print:border-none print:bg-white print:p-0 print:m-0 print:shadow-none print:backdrop-blur-none print:min-h-0 print:block">
+            <div className="w-full max-w-[850px] rounded-2xl bg-white text-zinc-900 p-8 sm:p-12 shadow-[0_20px_50px_rgba(0,0,0,0.5)] font-serif leading-relaxed text-xs print:shadow-none print:rounded-none print:p-0 print:m-0 print:max-w-full print:font-sans print-sheet">
               {/* CV Header */}
               <div className="text-center border-b border-zinc-200 pb-5 mb-5">
                 <h1 className="text-2xl font-black tracking-tight text-zinc-950 font-sans">
