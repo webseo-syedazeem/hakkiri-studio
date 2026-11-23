@@ -26,7 +26,9 @@ const RULES = `You write a cover letter for a person from their own material. Yo
 - Everything about the person (experience, results, skills, why they want the job) must be in their CV lines, their reason or their notes. Reuse their words.
 - Everything about the employer must be in the advert. Never present something from the advert as the person's own experience.
 - No praise, enthusiasm or character words the person did not write themselves.
-- Keep every number exactly as written. "roughly 40" stays "roughly 40". "helped" stays "helped".
+- Keep every number exactly as written, with the thing it counts. "roughly 40" stays "roughly 40". "helped" stays "helped". "not" stays "not".
+- Never write "which I have", "I am one", "as do I" or "I have all of this". What the advert asks for goes in one sentence, in the advert's words. What the person did goes in the next sentence, in the words of their CV line. Never join the two.
+- Every sentence that starts with "I" and says what the person has done, knows or is must use the words of one of their CV lines, their reason or their notes.
 - First person. Plain sentences. No greeting and no sign-off: only the paragraphs.
 - Reply with one JSON object and nothing else.`;
 
@@ -72,7 +74,7 @@ export async function draftLetter(cv: LetterCv, now: Date): Promise<LetterDraft>
       label: "cv-letter",
       maxTokens: 1400,
       schema: Reply,
-      system: `${RULES}\n\nWrite the paragraphs of the letter, ${cv.region === "us" ? "US" : "UK"} spelling, 150 to 280 words: an opening that names the job and gives the person's reason in their own words; one or two "evidence" paragraphs, each built on one of the chosen lines and, where the advert asks for what the line shows, saying so in the advert's words; and a short close. Match how the person writes in their reason and their writing sample: ${voice.contractions ? "they use contractions (I'm, I've)" : "they do not use contractions"}, and they call it a "${voice.roleWord}". Reply as {"paragraphs":[{"role":"opening"|"evidence"|"close","sentences":["…"]}]}.`,
+      system: `${RULES}\n\nWrite the paragraphs of the letter, ${cv.region === "us" ? "US" : "UK"} spelling, 150 to 280 words: an opening that names the job and gives the person's reason in their own words; one or two "evidence" paragraphs, each built on one of the chosen lines; where the advert asks for what the line shows, say what it asks for in its own sentence, in the advert's words, before the sentence with the person's line; and a short close. Match how the person writes in their reason and their writing sample: ${voice.contractions ? "they use contractions (I'm, I've)" : "they do not use contractions"}, and they call it a "${voice.roleWord}". Reply as {"paragraphs":[{"role":"opening"|"evidence"|"close","sentences":["…"]}]}.`,
       user: JSON.stringify({
         job: { title: cv.target?.title ?? "", employer: cv.target?.employer ?? "" },
         reason_in_their_words: letter.reason,

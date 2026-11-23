@@ -28,14 +28,22 @@ export interface Capture {
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const END = /[.;,\s]+$/;
 
-/** A sentence as a CV bullet: no "I", no list mark, no full stop, a capital first. Nothing else changes. */
+const SUBJECT = /^(I|We)(?:['’]ve|['’]d| have| had)?\s+(?:also\s+)?/i;
+/** Said on a CV in place of "we": the work was shared, and the bullet keeps saying so. */
+const AS_A_TEAM = ", as part of the team";
+
+/**
+ * A sentence as a CV bullet: no "I", no list mark, no full stop, a capital
+ * first. "We did" becomes "Did …, as part of the team": dropping the "we"
+ * would make a team's work read as the person's alone.
+ */
 export function asBullet(sentence: string): string {
-  const t = oneLine(sentence)
+  const start = oneLine(sentence)
     .replace(/^(?:[-•*·–]\s*|\d+[.)]\s+)/, "")
-    .replace(/^(?:I|We)(?:['’]ve|['’]d| have| had)?\s+(?:also\s+)?/i, "")
-    .replace(/^(?:And|Also|Then)\s+/i, "")
-    .replace(END, "");
-  return cap(t);
+    .replace(/^(?:And|Also|Then)\s+/i, "");
+  const team = /^we/i.test(SUBJECT.exec(start)?.[1] ?? "");
+  const t = start.replace(SUBJECT, "").replace(/^(?:And|Also|Then)\s+/i, "").replace(END, "");
+  return cap(team && !supportWords(t).length ? `${t}${AS_A_TEAM}` : t);
 }
 
 /** The words a number can be introduced by: lower-cased when a detail is set inside a sentence. */
@@ -108,10 +116,12 @@ const TIDY: [RegExp, string][] = [
  * the same text when there is nothing to tidy.
  */
 export function tidyByRule(text: string): string {
-  let t = oneLine(text).replace(/^(?:I|We)(?:['’]ve|['’]d| have| had)?\s+(?:also\s+)?/i, "");
+  const start = oneLine(text);
+  const team = /^we/i.test(SUBJECT.exec(start)?.[1] ?? "");
+  let t = start.replace(SUBJECT, "");
   for (const [re, to] of TIDY) t = t.replace(re, to);
-  t = t.replace(/\s+([,.;])/g, "$1").replace(/\s{2,}/g, " ").replace(END, "");
-  return cap(t.trim());
+  t = t.replace(/\s+([,.;])/g, "$1").replace(/\s{2,}/g, " ").replace(END, "").trim();
+  return cap(team && !supportWords(t).length ? `${t}${AS_A_TEAM}` : t);
 }
 
 /* ------------------------------------------------------------------ profile */

@@ -9,10 +9,22 @@ const NOW = new Date("2026-11-23T12:00:00Z");
 describe("a sentence as a bullet", () => {
   it("drops “I”, the list mark and the full stop, and changes nothing else", () => {
     expect(asBullet("I ran the weekly planning meeting.")).toBe("Ran the weekly planning meeting");
-    expect(asBullet("- we cut late orders by 12% over the year")).toBe("Cut late orders by 12% over the year");
+    expect(asBullet("I’ve trained six new starters on the till;")).toBe("Trained six new starters on the till");
+  });
+
+  it("keeps “we” as “as part of the team”: a team's work is not turned into the person's alone", () => {
+    expect(asBullet("- we cut late orders by 12% over the year")).toBe("Cut late orders by 12% over the year, as part of the team");
+    expect(asBullet("We’ve rebuilt the rota.")).toBe("Rebuilt the rota, as part of the team");
+    // Already says it was shared: nothing is added.
+    expect(asBullet("We worked with the events team to run a conference")).toBe("Worked with the events team to run a conference");
+    expect(checkGrounded(asBullet("We cut late orders by 12% over the year"), ["We cut late orders by 12% over the year"]).ok).toBe(true);
+    expect(checkGrounded("Cut late orders by 12% over the year", ["We cut late orders by 12% over the year"]).problems[0].say).toBe("It dropped “we”, so it claims more of the work than your words do.");
+  });
+
+  it("leaves the rest of a sentence alone", () => {
     expect(asBullet("I’ve trained six new starters on the till;")).toBe("Trained six new starters on the till");
     expect(asBullet("2. Wrote the handling guide")).toBe("Wrote the handling guide");
-    expect(asBullet("Also I helped with stock takes")).toBe("I helped with stock takes");
+    expect(asBullet("Also I helped with stock takes")).toBe("Helped with stock takes");
   });
 });
 
@@ -26,7 +38,7 @@ describe("bullets from the three answers, by rule", () => {
 
   it("makes one bullet from each sentence, in the person's words", () => {
     const out = bulletsByRule(capture);
-    expect(out.map((b) => b.text)).toEqual(["Ran the weekly planning meeting for the Leeds site", "Trained about 12 new starters on the order system", "Cut late orders over the year", "The team stopped using paper order forms"]);
+    expect(out.map((b) => b.text)).toEqual(["Ran the weekly planning meeting for the Leeds site", "Trained about 12 new starters on the order system", "Cut late orders over the year, as part of the team", "The team stopped using paper order forms"]);
   });
 
   it("every bullet says only what its own passages say, and the passages are in the notes word for word", () => {
@@ -92,7 +104,7 @@ describe("putting the person's detail into their bullet", () => {
 describe("tidying a bullet by rule", () => {
   const cases: [string, string][] = [
     ["I successfully managed the till on a daily basis.", "Managed the till daily"],
-    ["We utilised Excel in order to track stock", "Used Excel to track stock"],
+    ["We utilised Excel in order to track stock", "Used Excel to track stock, as part of the team"],
     ["I was able to cut waste by 12% in a year", "Cut waste by 12% in a year"],
     ["Managed a wide range of client accounts", "Managed client accounts"],
     ["Wrote reports as well as the weekly bulletin", "Wrote reports and the weekly bulletin"],

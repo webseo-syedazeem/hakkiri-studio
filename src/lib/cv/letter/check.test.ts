@@ -78,12 +78,13 @@ describe("a sentence about the person", () => {
 
   it("is refused for a figure borrowed from a line about something else", () => {
     // "six" is on the CV, about pupils and about new starters. Not about maps.
-    expect(says("At Paper Kite Archive, I catalogued six maps.")).toEqual(["No line in your CV, your reason or your notes says “six maps”: the figure “six” is there about something else."]);
+    expect(says("At Paper Kite Archive, I catalogued six maps.")).toEqual(["It says “six maps”. In your CV, your reason or your notes, “six” is about something else."]);
     expect(check("At Folio House, I trained six new starters.").status).toBe("sourced");
   });
 
   it("is refused for praise and character words they never wrote", () => {
-    expect(says("I am a quick learner and enjoy working with people.").join(" ")).toMatch(/“quick”.*“learner”.*“enjoy”.*“people”/);
+    // "Learner" on its own claims nothing ("I would welcome the chance to learn"); "quick" is the claim.
+    expect(says("I am a quick learner and enjoy working with people.").join(" ")).toMatch(/“quick”.*“enjoy”.*“people”/);
     expect(says("I am excited by your work on new acquisitions.")).toEqual(["This says “excited”, which isn’t in your CV, your reason or your notes."]);
   });
 
