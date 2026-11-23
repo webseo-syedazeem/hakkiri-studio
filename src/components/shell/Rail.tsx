@@ -338,6 +338,16 @@ export function Rail({
                   <Icon name="gear" size={15} />
                   Settings
                 </Link>
+                {isUserAdmin && (
+                  <Link
+                    href="/admin"
+                    onClick={() => setShowMenu(false)}
+                    className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[13px] text-purple-400 hover:bg-panel-2 hover:text-purple-300 transition-colors"
+                  >
+                    <Icon name="sliders" size={15} />
+                    Admin Console
+                  </Link>
+                )}
                 <Link
                   href="/landing"
                   target="_blank"

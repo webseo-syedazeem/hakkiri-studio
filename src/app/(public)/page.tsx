@@ -16,16 +16,22 @@ import { getHomepageContentAsync } from "@/lib/site/site-content";
 export async function generateMetadata(): Promise<Metadata> {
   const content = await getHomepageContentAsync();
 
-  const title = content.metaTitle || "Free AI Interview Practice From Your Job Description | Hakkiri";
+  const rawTitle = content.metaTitle || "Free AI Interview Practice From Your Job Description | Hakkiri";
+  // Clean up any trailing brand suffixes so it never doubles into "Hakkiri · Hakkiri"
+  const cleanTitle = rawTitle.replace(/\s*[|·-]\s*Hakkiri(\s*Studio)?(\s*[|·-]\s*Hakkiri)?$/i, "").trim();
+  const finalTitle = cleanTitle ? `${cleanTitle} | Hakkiri` : "Free AI Interview Practice From Your Job Description | Hakkiri";
+
   const description =
     content.metaDescription ||
     "Free AI mock interview practice built from your job description and CV. A live AI interviewer asks out loud, follows up and scores every answer.";
 
   return {
-    title,
+    title: {
+      absolute: finalTitle,
+    },
     description,
     openGraph: {
-      title,
+      title: finalTitle,
       description,
       url: "https://www.hakkiri.studio",
       siteName: "Hakkiri",
@@ -35,7 +41,7 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     twitter: {
       card: "summary_large_image",
-      title,
+      title: finalTitle,
       description,
       images: ["https://www.hakkiri.studio/opengraph-image.png"],
     },

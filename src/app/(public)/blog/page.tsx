@@ -3,7 +3,9 @@ import { getBlogPostsAsync } from "@/lib/blog/store";
 import { BlogIndexClient } from "./BlogIndexClient";
 
 export const metadata: Metadata = {
-  title: "Career Guides, Interview Strategies & Speaking Mastery | Hakkiri Blog",
+  title: {
+    absolute: "Career Guides, Interview Strategies & Speaking Mastery | Hakkiri Blog",
+  },
   description:
     "Actionable, research-backed guides to passing NHS nursing interviews, mastering the STAR technique, conquering presentation anxiety, and scaling your executive career.",
   openGraph: {

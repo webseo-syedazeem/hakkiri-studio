@@ -2,7 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { LegalPage } from "@/components/shell/LegalPage";
 
-export const metadata: Metadata = { title: "Privacy policy · Hakkiri", description: "What Hakkiri collects, why, who it shares it with, how long it keeps it, and your rights." };
+export const metadata: Metadata = {
+  title: {
+    absolute: "Privacy Policy · Hakkiri",
+  },
+  description: "What Hakkiri collects, why, who it shares it with, how long it keeps it, and your rights.",
+};
 
 /** Set to false once a solicitor has approved the wording. */
 const DRAFT = true;

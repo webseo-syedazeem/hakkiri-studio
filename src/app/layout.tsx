@@ -16,7 +16,7 @@ export function generateMetadata(): Metadata {
     metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://hakkiri.studio"),
     title: {
       default: "Hakkiri · Practise for the interview you actually have",
-      template: "%s · Hakkiri",
+      template: "%s",
     },
     description: "Practise interviews and presentations with AI feedback that never judges your accent.",
     icons: {

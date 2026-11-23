@@ -6,7 +6,9 @@ import { COMMON_FAQ, Compare, Device, DraftNote, Faq, Feature, FinalCta, Hero, P
 export const dynamic = "force-dynamic"; // the draft notes depend on HAKKIRI_LAUNCH at run time
 
 export const metadata: Metadata = {
-  title: "Hakkiri · Rehearse your presentation before you give it",
+  title: {
+    absolute: "Hakkiri · Rehearse your presentation before you give it",
+  },
   description: "Add your slides, rehearse out loud against the clock, see exactly where to cut, then take questions from a curious, sceptical, time-pressed or technical audience. Your first 10-minute run is free.",
 };
 

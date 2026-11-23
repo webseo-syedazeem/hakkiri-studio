@@ -3,7 +3,9 @@ import Link from "next/link";
 import { Mark } from "@/components/brand/Mark";
 
 export const metadata: Metadata = {
-  title: "About Hakkiri · Practise for the interview you actually have",
+  title: {
+    absolute: "About Hakkiri · Practise for the interview you actually have",
+  },
   description:
     "Why we built Hakkiri: interview practice and career applications grounded in truth, evidence, and your authentic voice. No AI hallucinations, no accent scoring.",
 };
