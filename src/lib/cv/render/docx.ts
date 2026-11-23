@@ -15,7 +15,16 @@ import type { PaperStyle } from "./templates";
  * line breaks, and with them the page count, can differ from the PDF.
  */
 
-const x = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+/** Text made safe for XML: the four characters that have a meaning in it are escaped, and the few that XML does not allow at all are left out. */
+const x = (s: string) =>
+  s
+    .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, "")
+    .replace(/\p{Noncharacter_Code_Point}/gu, "")
+    .replace(/[\uD800-\uDFFF]/gu, "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 const twips = (pt: number) => Math.round(pt * 20);
 const half = (pt: number) => Math.round(pt * 2);
 const hex = (c: string) => c.replace("#", "").toUpperCase();

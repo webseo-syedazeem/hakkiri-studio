@@ -2,7 +2,7 @@
 
 import { type ReactNode, useEffect, useState } from "react";
 import { findDates } from "@/lib/cv/import/dates";
-import { type Bullet, type Contact, type CvRegion, type Entry, type EntrySection, type ListSection, type Section, type SkillGroup, type SkillsSection, type SummarySection, emptyEntry, newBullet, newId } from "@/lib/cv/schema";
+import { type Bullet, type Contact, type CvRegion, type Entry, type EntrySection, type ListSection, type Section, type SkillGroup, type SkillsSection, type SummarySection, LIMITS, emptyEntry, newBullet, newId } from "@/lib/cv/schema";
 import { type FieldDef, SECTION_DEFS, fieldLabel, formatDate, formatDates } from "@/lib/cv/sections";
 import { Grip, ItemControls, useDragOrder } from "./Arrange";
 import { Btn, Field } from "./ui";
@@ -44,12 +44,12 @@ export function ContactForm({ value, onChange, hooks }: { value: Contact; onChan
   const links = [...value.links, ""].slice(0, 4);
   return (
     <div className="cv-stack">
-      <Field label="Name" rule="The name you use professionally." autoComplete="name" value={value.fullName} onChange={(v) => set("fullName", v)} {...hook(hooks, "", "fullName")} />
+      <Field label="Name" rule="The name you use professionally." autoComplete="name" maxLength={LIMITS.name} value={value.fullName} onChange={(v) => set("fullName", v)} {...hook(hooks, "", "fullName")} />
       <div className="cv-pair">
-        <Field label="Email" type="email" autoComplete="email" inputMode="email" value={value.email} onChange={(v) => set("email", v)} {...hook(hooks, "", "email")} />
-        <Field label="Phone" rule="Optional." type="tel" autoComplete="tel" inputMode="tel" value={value.phone} onChange={(v) => set("phone", v)} {...hook(hooks, "", "phone")} />
+        <Field label="Email" type="email" autoComplete="email" inputMode="email" maxLength={LIMITS.email} value={value.email} onChange={(v) => set("email", v)} {...hook(hooks, "", "email")} />
+        <Field label="Phone" rule="Optional." type="tel" autoComplete="tel" inputMode="tel" maxLength={LIMITS.phone} value={value.phone} onChange={(v) => set("phone", v)} {...hook(hooks, "", "phone")} />
       </div>
-      <Field label="Town or city" rule="Town or city only. No street address, photo or date of birth." autoComplete="address-level2" value={value.location} onChange={(v) => set("location", v)} {...hook(hooks, "", "location")} />
+      <Field label="Town or city" rule="Town or city only. No street address, photo or date of birth." autoComplete="address-level2" maxLength={LIMITS.location} value={value.location} onChange={(v) => set("location", v)} {...hook(hooks, "", "location")} />
       <div>
         <span className="cv-label">
           Links<span className="cv-rule">Optional: LinkedIn, a portfolio. Use short addresses and check each one opens.</span>
@@ -61,6 +61,7 @@ export function ContactForm({ value, onChange, hooks }: { value: Contact; onChan
             className="[&>label]:sr-only"
             inputMode="url"
             placeholder={i === 0 ? "linkedin.com/in/your-name" : "Another link"}
+            maxLength={LIMITS.link}
             value={link}
             onChange={(v) => {
               hooks?.onEdit?.("", "links");
@@ -83,6 +84,19 @@ export function ContactForm({ value, onChange, hooks }: { value: Contact; onChan
 
 /* ------------------------------------------------------------------- profile */
 
+/** The longest each field of an entry can be: the same numbers the saved CV is held to. */
+const FIELD_MAX: Record<string, number> = { title: LIMITS.title, org: LIMITS.org, orgInfo: LIMITS.orgInfo, location: LIMITS.location, subject: LIMITS.subject, grade: LIMITS.grade, link: LIMITS.link };
+/** The skills typed into a group's box, one for each comma, semicolon or line. */
+const skillNames = (text: string) => text.split(/[,\n;]+/).map((s) => s.trim()).filter(Boolean);
+/** Said when a list is full, beside the button that adds to it. */
+function Full({ children }: { children: ReactNode }) {
+  return (
+    <p className="cv-small" role="status" style={{ marginTop: 6 }}>
+      {children}
+    </p>
+  );
+}
+
 export function SummaryForm({ value, onChange, region, hooks }: { value: SummarySection; onChange: (s: SummarySection) => void; region: CvRegion; hooks?: FieldHooks }) {
   const def = SECTION_DEFS.summary;
   return (
@@ -91,6 +105,7 @@ export function SummaryForm({ value, onChange, region, hooks }: { value: Summary
       rule={def.rule[region]}
       multiline
       rows={5}
+      maxLength={LIMITS.summary}
       value={value.text}
       onChange={(text) => {
         hooks?.onEdit?.("", "text");
@@ -169,9 +184,10 @@ function BulletsEditor({ bullets, onChange, label, rule, hooks, entryId, arrange
           )}
         </div>
       ))}
-      <Btn style={{ marginTop: 10 }} onClick={() => onChange([...bullets, newBullet("")])}>
+      <Btn style={{ marginTop: 10 }} disabled={bullets.length >= LIMITS.bullets} onClick={() => onChange([...bullets, newBullet("")])}>
         + Add bullet
       </Btn>
+      {bullets.length >= LIMITS.bullets && <Full>A role holds {LIMITS.bullets} bullets. Remove one to add another: a reader takes in far fewer.</Full>}
     </div>
   );
 }
@@ -185,7 +201,7 @@ function EntryFields({ kind, entry, onChange, region, hooks, arrange }: { kind: 
     hooks?.onEdit?.(entry.id, field);
     onChange({ ...entry, [field]: v });
   };
-  const text = (f: FieldDef) => <Field key={f.field} label={fieldLabel(kind, f, region)} rule={f.hint} value={entry[f.field]} onChange={(v) => set(f.field, v)} {...hook(hooks, entry.id, f.field)} />;
+  const text = (f: FieldDef) => <Field key={f.field} label={fieldLabel(kind, f, region)} rule={f.hint} maxLength={FIELD_MAX[f.field]} value={entry[f.field]} onChange={(v) => set(f.field, v)} {...hook(hooks, entry.id, f.field)} />;
   const dates = fields.filter((f) => f.date);
   const plain = fields.filter((f) => !f.date);
   const hasCurrent = dates.some((f) => f.field === "start") && dates.some((f) => f.field === "end") && (kind === "experience" || kind === "volunteering" || kind === "projects");
@@ -328,7 +344,10 @@ export function EntriesForm({ value, onChange, region, hooks, expandAll, entryNo
         );
       })}
       <div className="cv-pad">
-        <Btn onClick={add}>+ Add {noun}</Btn>
+        <Btn onClick={add} disabled={value.entries.length >= LIMITS.entries}>
+          + Add {noun}
+        </Btn>
+        {value.entries.length >= LIMITS.entries && <Full>This section holds {LIMITS.entries} entries. Remove one to add another.</Full>}
       </div>
     </div>
   );
@@ -338,11 +357,11 @@ export function EntriesForm({ value, onChange, region, hooks, expandAll, entryNo
 
 /** Skills are typed as a comma-separated line per group. Skills that keep their name keep their id. */
 function skillsFromText(text: string, group: SkillGroup): SkillGroup["skills"] {
-  const names = text.split(/[,\n;]+/).map((s) => s.trim()).filter(Boolean).slice(0, 40);
+  const names = skillNames(text).slice(0, LIMITS.skills);
   const old = [...group.skills];
   return names.map((name) => {
     const at = old.findIndex((k) => k.name === name);
-    return at >= 0 ? old.splice(at, 1)[0] : { id: newId("k_"), name: name.slice(0, 80), visible: true };
+    return at >= 0 ? old.splice(at, 1)[0] : { id: newId("k_"), name: [...name].slice(0, LIMITS.skill).join(""), visible: true };
   });
 }
 
@@ -358,7 +377,7 @@ function SkillGroupFields({ group, onChange, onRemove, hooks, controls, arrange 
   return (
     <div className="cv-stack">
       <div className="cv-row" style={{ alignItems: "flex-end" }}>
-        <Field className="min-w-0 grow basis-[200px]" label="Group name" rule="Optional: “Tools”, “Languages”." value={group.name} onChange={(name) => onChange({ ...group, name })} {...hook(hooks, group.id, "name")} />
+        <Field className="min-w-0 grow basis-[200px]" label="Group name" rule="Optional: “Tools”, “Languages”." maxLength={LIMITS.groupName} value={group.name} onChange={(name) => onChange({ ...group, name })} {...hook(hooks, group.id, "name")} />
         {controls ?? (
           <Btn kind="quiet" onClick={onRemove} aria-label={`Remove group ${group.name || "of skills"}`}>
             Remove
@@ -379,7 +398,15 @@ function SkillGroupFields({ group, onChange, onRemove, hooks, controls, arrange 
         onFocus={() => (arrange ? hooks?.onFocus?.(group.id, "skills") : hooks?.onFocus?.("", group.skills[0]?.id ?? ""))}
         fieldKey={`${group.id}:skills`}
         uncertain={group.skills.some((k) => hooks?.uncertain?.("", k.id))}
-        note={group.skills.map((k) => hooks?.note?.("", k.id)).find(Boolean)}
+        note={
+          skillNames(text).length > LIMITS.skills ? (
+            <Full>
+              A group holds {LIMITS.skills} skills. The ones after that are not saved: start another group for them.
+            </Full>
+          ) : (
+            group.skills.map((k) => hooks?.note?.("", k.id)).find(Boolean)
+          )
+        }
       />
       {arrange && group.skills.length > 0 && (
         <div role="group" aria-label={`Skills in ${group.name || "this group"}: switch one off to leave it out of this version`}>
@@ -425,7 +452,10 @@ export function SkillsForm({ value, onChange, region, hooks, arrange }: { value:
           </div>
         </div>
       ))}
-      <Btn onClick={add}>+ Add {groups.length ? "another group" : "skills"}</Btn>
+      <Btn onClick={add} disabled={groups.length >= LIMITS.groups}>
+        + Add {groups.length ? "another group" : "skills"}
+      </Btn>
+      {groups.length >= LIMITS.groups && <Full>Skills can be in {LIMITS.groups} groups. Remove one to add another.</Full>}
     </div>
   );
 }
@@ -445,8 +475,8 @@ export function ListForm({ value, onChange, region, hooks, arrange }: { value: L
       {value.items.map((item, i) => (
         <div key={item.id} className="cv-item" style={{ alignItems: "flex-end" }} data-entry={item.id} data-off={!item.visible || undefined} {...(arrange ? drag.row(item.id) : {})}>
           {arrange && <Grip {...drag.grip(item.id)} />}
-          <Field className="cv-item-main" label={isLanguages ? "Language" : `Interest ${i + 1}`} value={item.name} onChange={(name) => set(item.id, { name })} {...hook(hooks, "", item.id)} />
-          {isLanguages && <Field className="cv-item-main" label="Level" placeholder="Native, fluent, B2…" value={item.level} onChange={(level) => set(item.id, { level })} onFocus={() => hooks?.onFocus?.("", item.id)} />}
+          <Field className="cv-item-main" label={isLanguages ? "Language" : `Interest ${i + 1}`} maxLength={LIMITS.item} value={item.name} onChange={(name) => set(item.id, { name })} {...hook(hooks, "", item.id)} />
+          {isLanguages && <Field className="cv-item-main" label="Level" placeholder="Native, fluent, B2…" maxLength={LIMITS.itemLevel} value={item.level} onChange={(level) => set(item.id, { level })} onFocus={() => hooks?.onFocus?.("", item.id)} />}
           {arrange ? (
             <ItemControls name={item.name || noun} index={i} count={value.items.length} visible={item.visible} onVisible={(visible) => set(item.id, { visible })} onMove={(to) => drag.move(item.id, to)} onRemove={() => remove(item.id)} />
           ) : (
@@ -456,7 +486,10 @@ export function ListForm({ value, onChange, region, hooks, arrange }: { value: L
           )}
         </div>
       ))}
-      <Btn onClick={() => onChange({ ...value, items: [...value.items, { id: newId("i_"), name: "", level: "", visible: true }] })}>+ Add {noun}</Btn>
+      <Btn disabled={value.items.length >= LIMITS.items} onClick={() => onChange({ ...value, items: [...value.items, { id: newId("i_"), name: "", level: "", visible: true }] })}>
+        + Add {noun}
+      </Btn>
+      {value.items.length >= LIMITS.items && <Full>This list holds {LIMITS.items}. Remove one to add another.</Full>}
     </div>
   );
 }

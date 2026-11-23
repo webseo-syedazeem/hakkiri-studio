@@ -1,5 +1,5 @@
 import type { CvDoc, Locator } from "../schema";
-import { type Flow, type FlowNode, type FlowText, buildFlow, href } from "../render/flow";
+import { type Flow, type FlowNode, type FlowText, buildFlow, href, printable } from "../render/flow";
 import { type Fonts, type Layout, layoutFlow } from "../render/layout";
 import { type PaperStyle, paperStyle } from "../render/templates";
 import { paragraphText } from "./check";
@@ -62,7 +62,7 @@ export function letterFlow(cv: LetterPrintable, today: string): Flow {
   }
 
   return {
-    nodes,
+    nodes: printable(nodes),
     lang: cv.region === "us" ? "en-US" : "en-GB",
     docWord: "Cover letter",
     title: [c.fullName.trim(), cv.target?.title.trim() ?? "", "Cover Letter"].filter(Boolean).join(" – "),

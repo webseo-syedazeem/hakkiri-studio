@@ -11,6 +11,12 @@ export type SaveState = "saved" | "saving" | "device" | "failed" | "conflict";
 type Editable = Snapshot;
 const KEYS = SNAPSHOT_KEYS;
 const IDLE_MS = 800;
+/** Browsers refuse a keepalive request over about 64 KB. Larger changes are sent the ordinary way. */
+export const KEEPALIVE_MAX = 60_000;
+/** The server answered and said no for a reason that trying again will not change. */
+export const isRefusal = (status: number) => status === 400 || status === 413 || status === 422;
+/** True when the copy on the server was made by one of our own saves whose answer never arrived. */
+export const isOwnSave = (lastSaveId: string | undefined, unanswered: ReadonlySet<string>) => !!lastSaveId && unanswered.has(lastSaveId);
 const draftKey = (id: string) => `hakkiri.cv.unsaved.${id}`;
 
 /** The field being typed in, if any: typing in one field is one step of Undo. */
@@ -35,6 +41,12 @@ export function useCv(id: string) {
   /** The copy saved somewhere else, while the person decides which to keep. */
   const [other, setOther] = useState<CvDoc | null>(null);
   const [steps, setSteps] = useState({ undo: 0, redo: 0 });
+  /** Why the last save was refused, in the server's words. Empty when it was not. */
+  const [saveError, setSaveError] = useState("");
+  /** The last change sent and its name: the same change sent again keeps the name, so the server applies it once. */
+  const lastTry = useRef<{ id: string; body: string } | null>(null);
+  /** Saves whose answer never arrived. One of them may have reached the server. */
+  const unanswered = useRef(new Set<string>());
   const latest = useRef<CvDoc | null>(null);
   const dirty = useRef(new Set<keyof Editable>());
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -75,7 +87,7 @@ export function useCv(id: string) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  const flush = useCallback(async () => {
+  const flush = useCallback(async (opts?: { /** The page is being left: the request must outlive it. */ leaving?: boolean }) => {
     if (timer.current) clearTimeout(timer.current);
     timer.current = null;
     const doc = latest.current;
@@ -86,8 +98,16 @@ export function useCv(id: string) {
     dirty.current.clear();
     const changes: Record<string, unknown> = {};
     for (const k of sending) changes[k] = k === "target" || k === "letter" ? (doc[k] ?? null) : doc[k];
+    const body = JSON.stringify(changes);
+    const saveId = lastTry.current?.body === body ? lastTry.current.id : crypto.randomUUID().slice(0, 36);
+    lastTry.current = { id: saveId, body };
     try {
-      const { cv: saved } = await api<{ cv: CvDoc }>(`/api/cv/versions/${id}`, { method: "PATCH", json: { rev: doc.rev, saveId: crypto.randomUUID().slice(0, 36), ...changes }, keepalive: true });
+      // A request that must outlive the page ("keepalive") is refused by the browser above about 64 KB, without
+      // ever being sent. It is used only as the page is left, and only for a change small enough to go.
+      const { cv: saved } = await api<{ cv: CvDoc }>(`/api/cv/versions/${id}`, { method: "PATCH", json: { rev: doc.rev, saveId, ...changes }, keepalive: opts?.leaving === true && body.length < KEEPALIVE_MAX });
+      lastTry.current = null;
+      unanswered.current.clear();
+      setSaveError("");
       // Take the new revision, and leave what is on screen exactly as it was typed. The server tidies what it
       // stores (it trims a trailing space, say); putting that back mid-sentence would eat the space under the cursor.
       const now = latest.current!;
@@ -105,11 +125,39 @@ export function useCv(id: string) {
       saving.current = false;
       for (const k of sending) dirty.current.add(k);
       if (err instanceof ApiError && err.status === 409) {
+        const theirs = (err.body.cv as CvDoc | undefined) ?? null;
+        // The copy on the server is our own earlier save, whose answer was lost on the way back. Nothing was
+        // changed somewhere else: carry on from its revision and send what has been typed since.
+        if (theirs && isOwnSave(theirs.lastSaveId, unanswered.current)) {
+          unanswered.current.clear();
+          lastTry.current = null;
+          latest.current = { ...latest.current!, rev: theirs.rev };
+          setCv(latest.current);
+          schedule(0);
+          return;
+        }
         conflicted.current = true;
-        setOther((err.body.cv as CvDoc | undefined) ?? null);
+        setOther(theirs);
         setSave("conflict");
         return;
       }
+      // The server read the change and refused it (too long, too many). Trying again will not help, so the person
+      // is told why. What they typed stays on the screen and on this device.
+      if (err instanceof ApiError && isRefusal(err.status)) {
+        try {
+          const now = latest.current!;
+          const kept: Record<string, unknown> = {};
+          for (const k of dirty.current) kept[k] = now[k];
+          localStorage.setItem(draftKey(id), JSON.stringify({ rev: now.rev, changes: kept }));
+        } catch {
+          /* the screen still holds it */
+        }
+        setSaveError(err.message);
+        setSave("failed");
+        return;
+      }
+      // No answer at all: the change may or may not have arrived.
+      if (err instanceof ApiError && err.status === 0) unanswered.current.add(saveId);
       // Nothing is lost: the unsaved changes stay on this device until a save goes through.
       const now = latest.current!;
       const kept: Record<string, unknown> = {};
@@ -235,7 +283,7 @@ export function useCv(id: string) {
 
   // Save when the tab is hidden or the page is left, without waiting for the pause.
   useEffect(() => {
-    const now = () => void flush();
+    const now = () => void flush({ leaving: true });
     const onVisibility = () => document.visibilityState === "hidden" && now();
     document.addEventListener("visibilitychange", onVisibility);
     window.addEventListener("pagehide", now);
@@ -246,7 +294,7 @@ export function useCv(id: string) {
     };
   }, [flush]);
 
-  return { cv, load, save, update, flush, settle, retry: () => schedule(0), undo, redo, canUndo: steps.undo > 0, canRedo: steps.redo > 0, other, keepMine, takeTheirs, saveSeparate };
+  return { cv, load, save, saveError, update, flush, settle, retry: () => schedule(0), undo, redo, canUndo: steps.undo > 0, canRedo: steps.redo > 0, other, keepMine, takeTheirs, saveSeparate };
 }
 
 export const SAVE_WORDS: Record<SaveState, string> = {

@@ -2,7 +2,7 @@ import "server-only";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth/require";
-import { type CvDoc, CV_LEVELS, CV_REGIONS, ChangeRecordSchema, ContactSchema, DesignSchema, ExcerptSchema, LetterSchema, RequirementSchema, SectionSchema, TargetSchema, coreSections, emptyContact, newId } from "./schema";
+import { type CvDoc, CV_LEVELS, CV_REGIONS, ChangeRecordSchema, ContactSchema, DesignSchema, ExcerptSchema, LIMITS, LetterSchema, RequirementSchema, type Section, SectionSchema, TargetSchema, coreSections, emptyContact, newId } from "./schema";
 
 /** The signed-in person's id. Throws the same 401 response as requireUser when signed out. */
 export async function requireUserId(): Promise<string> {
@@ -65,8 +65,64 @@ export const EditableSchema = z
   })
   .strict();
 
-/** Every section id in a change must be different. */
-export const sectionIdsDiffer = (sections: { id: string }[] = []) => new Set(sections.map((s) => s.id)).size === sections.length;
+/**
+ * Every id in a change must be different: sections, and the entries, lines,
+ * skill groups, skills and list items inside them. Two things with one id
+ * could not be told apart by a click on the page, a finding or a letter's source.
+ */
+export function sectionIdsDiffer(sections: Section[] = []): boolean {
+  const ids: string[] = [];
+  for (const s of sections) {
+    ids.push(s.id);
+    if ("entries" in s) for (const e of s.entries) ids.push(e.id, ...e.bullets.map((b) => b.id));
+    if ("groups" in s) for (const g of s.groups) ids.push(g.id, ...g.skills.map((k) => k.id));
+    if ("items" in s) ids.push(...s.items.map((i) => i.id));
+  }
+  return new Set(ids).size === ids.length;
+}
+
+/** Why a CV is too big to save as a whole, in words for the person; null when it is not. */
+export function tooBig(sections: Section[] = []): string | null {
+  let lines = 0;
+  let skills = 0;
+  let entries = 0;
+  for (const s of sections) {
+    if ("entries" in s) {
+      entries += s.entries.length;
+      for (const e of s.entries) lines += e.bullets.length;
+    }
+    if ("groups" in s) for (const g of s.groups) skills += g.skills.length;
+  }
+  if (lines > LIMITS.totalLines) return `This CV has ${lines} lines. It can hold ${LIMITS.totalLines}: remove some to save.`;
+  if (skills > LIMITS.totalSkills) return `This CV lists ${skills} skills. It can hold ${LIMITS.totalSkills}: remove some to save.`;
+  if (entries > LIMITS.totalEntries) return `This CV has ${entries} entries. It can hold ${LIMITS.totalEntries}: remove some to save.`;
+  return null;
+}
+
+const LIST_WORDS: Record<string, string> = {
+  bullets: `One role has more than ${LIMITS.bullets} lines. Remove one to save.`,
+  entries: `One section has more than ${LIMITS.entries} entries. Remove one to save.`,
+  skills: `One group has more than ${LIMITS.skills} skills. Remove some to save.`,
+  groups: `There are more than ${LIMITS.groups} groups of skills. Remove one to save.`,
+  items: `One list has more than ${LIMITS.items} items. Remove one to save.`,
+  sections: "There are more than 24 sections. Remove one to save.",
+  links: "There are more than 4 links. Remove one to save.",
+};
+
+/** Why a change was refused, in words for the person: which list is too long, or which text. */
+export function saveProblem(error: z.ZodError): string {
+  for (const issue of error.issues) {
+    const path = issue.path.map(String);
+    const last = path[path.length - 1] ?? "";
+    if (issue.code === "too_big") {
+      // A list that is too long is named by the list; anything else that is too big is a piece of text.
+      if (last in LIST_WORDS) return LIST_WORDS[last];
+      return `Some text is longer than can be saved (${last || "a field"}). Shorten it to save.`;
+    }
+    if (issue.code === "unrecognized_keys") return "That change holds something that cannot be saved here.";
+  }
+  return "That change could not be saved. Reload the page and try again.";
+}
 
 /** What the browser may set on a saved achievement. The owner, the id and the dates are never taken from it. */
 export const AchievementInput = z

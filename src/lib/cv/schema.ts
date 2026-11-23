@@ -25,12 +25,28 @@ export const LEVEL_LABELS: Record<CvLevel, string> = {
 export const CV_REGIONS = ["uk", "us"] as const;
 export type CvRegion = (typeof CV_REGIONS)[number];
 
+/**
+ * Text as it is kept: without characters that cannot be seen or cannot be
+ * written to a file. A soft hyphen or a zero-width space pasted in from a web
+ * page would sit inside a word unseen and make the downloaded file read
+ * differently from the page; a few characters are not allowed in a Word file
+ * at all.
+ */
+export function storable(s: string): string {
+  return s
+    .replace(/[\u00ad\u200b-\u200f\u2060\ufeff]/g, "")
+    .replace(/[\u2028\u2029]/g, "\n")
+    .replace(/[\u0080-\u009f]/g, " ")
+    .replace(/\p{Noncharacter_Code_Point}/gu, "")
+    .replace(/[\uD800-\uDFFF]/gu, "");
+}
+
 /** A short single-line string: trimmed, no control characters, capped. */
 const line = (max: number) =>
   z
     .string()
     .max(max * 2)
-    .transform((s) => s.replace(/[\u0000-\u001f\u007f]+/g, " ").replace(/\s+/g, " ").trim().slice(0, max))
+    .transform((s) => [...storable(s).replace(/[\u0000-\u001f\u007f]+/g, " ").replace(/\s+/g, " ").trim()].slice(0, max).join(""))
     .default("");
 /** Longer text that may keep its line breaks. */
 const prose = (max: number) =>
@@ -38,16 +54,52 @@ const prose = (max: number) =>
     .string()
     .max(max * 2)
     .transform((s) =>
-      s
+      storable(s)
         .replace(/\r/g, "")
         .replace(/[\u0000-\u0008\u000b-\u001f\u007f]+/g, " ")
         .replace(/[ \t]+/g, " ")
         .replace(/\n{3,}/g, "\n\n")
-        .trim()
-        .slice(0, max),
+        .trim(),
     )
+    // Cut by whole characters: half of an emoji is not a character any file can hold.
+    .transform((s) => (s.length > max ? [...s].slice(0, max).join("") : s))
     .default("");
 const id = z.string().regex(/^[A-Za-z0-9_-]{4,40}$/);
+
+/**
+ * How much a CV can hold. The form's fields use the same numbers, so the
+ * screen can never hold more than is saved and a file can never differ from
+ * the page beside it.
+ */
+export const LIMITS = {
+  name: 120,
+  email: 160,
+  phone: 40,
+  location: 120,
+  link: 200,
+  bullet: 600,
+  /** Lines under one role. */
+  bullets: 30,
+  /** Roles, qualifications or other entries in one section. */
+  entries: 40,
+  title: 400,
+  org: 160,
+  orgInfo: 240,
+  subject: 120,
+  grade: 120,
+  summary: 2000,
+  skill: 80,
+  skills: 40,
+  groups: 12,
+  groupName: 60,
+  item: 120,
+  itemLevel: 60,
+  items: 40,
+  /** Across the whole CV: more than any CV needs, and few enough to check and draw quickly. */
+  totalLines: 400,
+  totalSkills: 200,
+  totalEntries: 120,
+} as const;
 
 /** A date as the person gave it: "", a year ("2021") or a month ("2021-03"). */
 export const PartialDateSchema = z.string().regex(/^(|\d{4}|\d{4}-(0[1-9]|1[0-2]))$/).default("");

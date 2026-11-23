@@ -132,6 +132,8 @@ interface Ctx {
   links: Map<string, string>;
   out: DocLine[];
   col: number;
+  /** Reading back a file this app wrote: the text is kept exactly, with no list marks taken off. */
+  raw?: boolean;
 }
 
 interface RunText {
@@ -232,7 +234,7 @@ function paragraph(p: Node, ctx: Ctx): DocLine[] {
     .map((raw, i) => {
       const cleaned = cleanText(raw.replace(/^\t+|\t+$/g, ""));
       if (!cleaned) return null;
-      const mark = splitBullet(cleaned);
+      const mark = ctx.raw ? { bullet: false, text: cleaned } : splitBullet(cleaned);
       const text = mark.bullet ? mark.text.replace(/^\t+/, "") : cleaned;
       if (!text) return null;
       return makeLine(text, { bullet: mark.bullet || ((numbered || (listStyle && !!numPr)) && !heading), bold, size, heading, indent, links: i === 0 ? links : [], page: 1, col: ctx.col });
@@ -298,7 +300,7 @@ function relationships(xml: string | undefined): Map<string, string> {
 }
 
 /** Reads a .docx file into lines. Throws an ImportError with a plain reason when the file cannot be read. */
-export async function extractDocx(bytes: Uint8Array): Promise<ExtractedFile> {
+export async function extractDocx(bytes: Uint8Array, opts: { /** Read the text exactly as written: used only to read back a file this app has just made. */ raw?: boolean } = {}): Promise<ExtractedFile> {
   let zip: JSZip;
   try {
     zip = await JSZip.loadAsync(bytes);
@@ -310,7 +312,7 @@ export async function extractDocx(bytes: Uint8Array): Promise<ExtractedFile> {
   if (!documentXml) throw new ImportError(zip.file("content.xml") || zip.file("index.xml") || zip.file("Index/Document.iwa") ? "old-word" : "unreadable", "The file is not a Word (.docx) document.");
 
   const { styles, defaultSize } = readStyles(await read(zip, "word/styles.xml"));
-  const ctx: Ctx = { styles, defaultSize, links: relationships(await read(zip, "word/_rels/document.xml.rels")), out: [], col: 0 };
+  const ctx: Ctx = { styles, defaultSize, links: relationships(await read(zip, "word/_rels/document.xml.rels")), out: [], col: 0, raw: opts.raw };
   const body = child(child(parseXml(documentXml), "w:document"), "w:body");
   if (!body) throw new ImportError("unreadable", "The Word file has no text in it.");
   blocks(body, ctx);
@@ -331,7 +333,7 @@ export async function extractDocx(bytes: Uint8Array): Promise<ExtractedFile> {
     }
   }
   const lines = [...header, ...ctx.out];
-  if (lines.reduce((n, l) => n + l.text.length, 0) < 40) throw new ImportError("empty", "The Word file has almost no text.");
+  if (!opts.raw && lines.reduce((n, l) => n + l.text.length, 0) < 40) throw new ImportError("empty", "The Word file has almost no text.");
 
   let pages = 0;
   const app = await read(zip, "docProps/app.xml");

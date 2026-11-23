@@ -5,7 +5,9 @@ const BAD = /[<>:"/\\|?*\u0000-\u001f\u007f]/g;
 
 /** A single piece of a file name: unsafe characters out, spaces tidied, no leading or trailing dots. */
 export function cleanNamePart(s: string): string {
-  return s.replace(BAD, " ").replace(/\s+/g, " ").replace(/^[\s.]+|[\s.]+$/g, "").slice(0, 80);
+  // Cut by whole characters, so a name never ends on half of an emoji (which no file name or header can hold).
+  const whole = [...s.replace(/[\uD800-\uDFFF]/gu, "").replace(BAD, " ").replace(/\s+/g, " ").replace(/^[\s.]+|[\s.]+$/g, "")].slice(0, 80).join("");
+  return whole.replace(/[\s.]+$/, "");
 }
 
 /**
@@ -25,7 +27,8 @@ export function fileBaseName(cv: Pick<CvDoc, "contact" | "target" | "region" | "
 export const fileName = (cv: Parameters<typeof fileBaseName>[0], format: "pdf" | "docx", kind: "cv" | "letter" | "both" = "cv") => `${fileBaseName(cv, kind)}.${format}`;
 
 /** The Content-Disposition header for a download: a plain-ASCII name for old browsers and the real one for the rest. */
-export function contentDisposition(name: string): string {
+export function contentDisposition(given: string): string {
+  const name = given.replace(/[\uD800-\uDFFF]/gu, "");
   const ascii = name.normalize("NFKD").replace(/[^\x20-\x7e]/g, "").replace(/["\\]/g, "") || "download";
   return `attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(name)}`;
 }

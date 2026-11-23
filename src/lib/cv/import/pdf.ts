@@ -9,6 +9,8 @@ import { type DocLine, cleanText, makeLine, splitBullet, splitNumbered } from ".
  */
 
 const MAX_PAGES = 12;
+/** A file this app wrote is read back whatever its length; this only stops a runaway. */
+const MAX_OWN_PAGES = 400;
 
 interface Item {
   str: string;
@@ -131,14 +133,17 @@ function findGutter(rows: Row[], isDates: (s: string) => boolean): number | null
   return x;
 }
 
-function rowToRaw(segs: Seg[], y: number, page: number, col: number, top: number): Raw | null {
+function rowToRaw(segs: Seg[], y: number, page: number, col: number, top: number, raw = false): Raw | null {
   if (!segs.length) return null;
   let parts = segs.map((s) => cleanText(s.text));
   let bullet = false;
   let textX = segs[0].x0;
   // A bullet mark may be a piece of its own, or the start of the first piece.
-  const first = splitBullet(parts[0]);
-  if (first.bullet) {
+  // Reading one of our own files back, nothing is taken as a mark: a line that starts "- from a two-day course" is text.
+  const first = raw ? { bullet: false, text: parts[0] } : splitBullet(parts[0]);
+  if (raw) {
+    /* every piece is kept as it is */
+  } else if (first.bullet) {
     bullet = true;
     if (first.text) {
       parts[0] = first.text;
@@ -268,7 +273,20 @@ export interface ExtractedFile {
 }
 
 /** Reads a PDF into lines. Throws an ImportError with a plain reason when the file cannot be read. */
-export async function extractPdf(bytes: Uint8Array, isDates: (s: string) => boolean, opts: { /** Keep every line: the file is known to have no running headers or footers. */ keepEdges?: boolean } = {}): Promise<ExtractedFile> {
+export async function extractPdf(
+  bytes: Uint8Array,
+  isDates: (s: string) => boolean,
+  opts: {
+    /** Keep every line: the file is known to have no running headers or footers. */
+    keepEdges?: boolean;
+    /**
+     * Read the text exactly as it is on the page: no list marks taken off, no wrapped lines joined, no columns
+     * looked for, no page limit. Used only to read back a file this app has just written, where any tidying
+     * would make the file look different from what was put into it.
+     */
+    raw?: boolean;
+  } = {},
+): Promise<ExtractedFile> {
   // The legacy build runs on the server without a browser.
   const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
   const task = pdfjs.getDocument({ data: new Uint8Array(bytes), verbosity: 0, fontExtraProperties: true, useSystemFonts: false });
@@ -281,7 +299,7 @@ export async function extractPdf(bytes: Uint8Array, isDates: (s: string) => bool
     throw new ImportError("unreadable", "The PDF could not be opened.");
   }
   try {
-    if (doc.numPages > MAX_PAGES) throw new ImportError("too-long", `The PDF has ${doc.numPages} pages.`);
+    if (doc.numPages > (opts.raw ? MAX_OWN_PAGES : MAX_PAGES)) throw new ImportError("too-long", `The PDF has ${doc.numPages} pages.`);
     const raw: Raw[][] = [[], []];
     let chars = 0;
     for (let p = 1; p <= doc.numPages; p++) {
@@ -318,12 +336,12 @@ export async function extractPdf(bytes: Uint8Array, isDates: (s: string) => bool
         chars += it.str.trim().length;
       }
       const rows = toRows(items);
-      const gutter = findGutter(rows, isDates);
+      const gutter = opts.raw ? null : findGutter(rows, isDates);
       const links = (await page.getAnnotations().catch(() => [])).filter((a: { url?: string; rect?: number[] }) => a.url && a.rect) as { url: string; rect: number[] }[];
       const pageLines: Raw[][] = [[], []];
       if (gutter === null) {
         for (const r of rows) {
-          const l = rowToRaw(r.segs, r.y, p, 0, 1 - r.y / view.height);
+          const l = rowToRaw(r.segs, r.y, p, 0, 1 - r.y / view.height, opts.raw);
           if (l) pageLines[0].push(l);
         }
       } else {
@@ -352,13 +370,13 @@ export async function extractPdf(bytes: Uint8Array, isDates: (s: string) => bool
       raw[1].push(...pageLines[1]);
       page.cleanup();
     }
-    if (chars < 40) throw new ImportError("scanned", "No text was found in the PDF.");
+    if (!opts.raw && chars < 40) throw new ImportError("scanned", "No text was found in the PDF.");
 
     // The main column of every page, then the side column of every page.
     const all = [...raw[0], ...raw[1]];
     const ordered = opts.keepEdges ? all : dropFurniture(all, doc.numPages);
-    const joined = joinWrapped(ordered);
-    markIndentedBullets(joined);
+    const joined = opts.raw ? ordered : joinWrapped(ordered);
+    if (!opts.raw) markIndentedBullets(joined);
     const left = new Map<string, number>();
     for (const l of joined) {
       const k = `${l.page}:${l.col}`;

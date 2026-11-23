@@ -1,4 +1,4 @@
-import { type CvDoc, type Entry, type EntrySection, type Locator, type Section, isEntrySection, isListSection, sectionIsEmpty } from "../schema";
+import { type CvDoc, type Entry, type EntrySection, type Locator, type Section, isEntrySection, isListSection, sectionIsEmpty, storable } from "../schema";
 import { docWord, formatDates, sectionHeading } from "../sections";
 import { type TemplateDef, kindOrder } from "./templates";
 
@@ -50,10 +50,32 @@ export interface Flow {
   breaks?: number[];
 }
 
+/**
+ * Every piece of text, without characters that cannot be seen or written to a
+ * file. Text is cleaned when it is saved; this is for a CV saved before that,
+ * so that the paper, the files and the check still agree about it.
+ */
+export function printable(nodes: FlowNode[]): FlowNode[] {
+  const t = (text: string) => storable(text).replace(/[\u0000-\u0008\u000b-\u001f\u007f]/g, "");
+  return nodes.map((n): FlowNode => {
+    if (n.kind === "contact") return { ...n, items: n.items.map((i) => ({ ...i, text: t(i.text) })) };
+    if (n.kind === "entry" || n.kind === "para") return { ...n, runs: n.runs.map((r) => ({ ...r, text: t(r.text) })) };
+    return { ...n, text: t(n.text) };
+  });
+}
+
 const SEP = " · ";
 const join = (parts: string[]) => parts.map((p) => p.trim()).filter(Boolean).join(SEP);
-/** A link as an address a file can open: "linkedin.com/in/x" → "https://linkedin.com/in/x". */
-export const href = (link: string) => (/^[a-z][a-z0-9+.-]*:/i.test(link) ? link : `https://${link}`);
+/**
+ * A link as an address a file can open: "linkedin.com/in/x" → "https://linkedin.com/in/x".
+ * Only web and email addresses are made into live links. Anything else a person types
+ * ("javascript:…", "file:…") is printed as the text it is and opens nothing.
+ */
+export const href = (link: string): string | undefined => {
+  const scheme = /^([a-z][a-z0-9+.-]*):/i.exec(link)?.[1].toLowerCase();
+  if (!scheme) return `https://${link}`;
+  return scheme === "http" || scheme === "https" || scheme === "mailto" ? link : undefined;
+};
 
 /** The sections in the order they are printed: the person's own order if they set one, else the template's. */
 export function paperOrder(cv: Pick<CvDoc, "sections" | "design">, template: TemplateDef): Section[] {
@@ -136,7 +158,7 @@ export function buildFlow(cv: Pick<CvDoc, "contact" | "sections" | "design" | "r
 
   const word = region === "us" ? "Resume" : "CV";
   return {
-    nodes,
+    nodes: printable(nodes),
     lang: region === "us" ? "en-US" : "en-GB",
     docWord: word,
     title: [c.fullName.trim(), cv.target?.title.trim() ?? "", word].filter(Boolean).join(" – "),

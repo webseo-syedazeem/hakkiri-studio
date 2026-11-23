@@ -27,6 +27,8 @@ export interface ReadBack {
 export function wordsOf(text: string): string[] {
   return text
     .normalize("NFKC")
+    // Characters that take no space and cannot be seen (a soft hyphen pasted in from a web page) are not words.
+    .replace(/[\u00ad\u200b-\u200f\u2028\u2029\u2060\ufeff]/g, "")
     .toLowerCase()
     // Curly and straight quotes are the same words; the readers tidy one into the other.
     .replace(/[\u2018\u2019\u201a\u201b]/g, "'")
@@ -85,12 +87,14 @@ export function compareText(flow: Flow, fileText: string, pages = 0): ReadBack {
 /** Reads a PDF back with pdf.js and compares it with the CV. */
 export async function readBackPdf(bytes: Uint8Array, flow: Flow): Promise<ReadBack> {
   // Our own files have no running headers or footers, so no line is set aside as one.
-  const file = await extractPdf(bytes, isOnlyDates, { keepEdges: true });
+  // The text is read as it is on the page. The upload reader's tidying (taking list marks off, joining a line that
+  // ends in a hyphen to the next) is for other people's files; on ours it would report differences that are not there.
+  const file = await extractPdf(bytes, isOnlyDates, { keepEdges: true, raw: true });
   return compareText(flow, file.lines.map((l) => l.text).join("\n"), file.pages);
 }
 
 /** Reads a Word file back with the .docx reader and compares it with the CV. */
 export async function readBackDocx(bytes: Uint8Array, flow: Flow): Promise<ReadBack> {
-  const file = await extractDocx(bytes);
+  const file = await extractDocx(bytes, { raw: true });
   return compareText(flow, file.lines.map((l) => l.text).join("\n"), file.pages);
 }

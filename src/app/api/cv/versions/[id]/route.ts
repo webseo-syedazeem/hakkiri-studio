@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { EditableSchema, badInput, failure, notFound, requireUserId, sectionIdsDiffer } from "@/lib/cv/access";
+import { EditableSchema, badInput, failure, notFound, requireUserId, saveProblem, sectionIdsDiffer, tooBig } from "@/lib/cv/access";
 import { deleteCv, deleteImport, getOwnCv, listOwnImports, saveCv } from "@/lib/cv/store";
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -28,11 +28,14 @@ export async function PATCH(req: Request, { params }: Ctx) {
     const cv = await getOwnCv((await params).id, userId);
     if (!cv) return notFound();
     const parsed = PatchSchema.safeParse(await req.json().catch(() => null));
-    if (!parsed.success) return badInput("That change could not be saved.");
+    // The reason is said, so the screen can show it: a save that is refused is never shown as saved.
+    if (!parsed.success) return badInput(saveProblem(parsed.error));
     const { rev, saveId, target, letter, ...changes } = parsed.data;
     if (saveId && cv.lastSaveId === saveId) return NextResponse.json({ cv });
     if (rev !== cv.rev) return NextResponse.json({ error: "conflict", message: "This CV was changed somewhere else.", cv }, { status: 409 });
-    if (!sectionIdsDiffer(changes.sections)) return badInput("That change could not be saved.");
+    if (!sectionIdsDiffer(changes.sections)) return badInput("Two parts of this CV have the same id, so the change could not be saved. Reload the page and try again.");
+    const big = tooBig(changes.sections);
+    if (big) return badInput(big);
     const saved = await saveCv({
       ...cv,
       ...changes,

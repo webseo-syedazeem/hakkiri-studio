@@ -296,7 +296,7 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
         {(save === "device" || save === "failed") && (
           <div className="cv-issue" role="alert" style={{ marginBottom: 18 }}>
             <strong>{SAVE_WORDS[save]}</strong>
-            <span>{save === "device" ? "Your changes couldn’t reach us, so they are kept on this device. They will be saved when you’re back online." : "Your changes couldn’t be saved. Check you’re online and press Retry."}</span>
+            <span>{save === "device" ? "Your changes couldn’t reach us, so they are kept on this device. They will be saved when you’re back online." : (w.saveError ? `${w.saveError} What you typed is still here.` : "Your changes couldn’t be saved. Check you’re online and press Retry.")}</span>
           </div>
         )}
         {pending && (
