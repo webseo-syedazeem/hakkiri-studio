@@ -22,21 +22,21 @@ export interface HomepageContent {
 
 export const DEFAULT_HOMEPAGE_CONTENT: HomepageContent = {
   badgeText: "Beta · Free for everyone, for a limited time",
-  headline: "Practise for the interview you actually have.",
+  headline: "AI interview practice for the interview you actually have.",
   subheadline:
-    "The most advanced interview practice there is. Add the job and your CV. A live interviewer asks out loud, follows up on what you say, and shows you exactly what to fix.",
+    "Hakkiri is a free AI mock interview platform. Add the job description and your CV or resume, and a live AI interviewer asks questions out loud, follows up on what you say, and shows you exactly what to fix.",
   primaryCtaText: "Sign up free",
   primaryCtaLink: "/signup",
   secondaryCtaText: "See how it works",
   secondaryCtaLink: "#how",
   subtext: "Free for a limited time. No card. Takes about two minutes.",
   heroImageUrl: "/landing/interview-live.webp",
-  metaTitle: "Hakkiri · Practise for the interview you actually have",
+  metaTitle: "Free AI Interview Practice From Your Job Description | Hakkiri",
   metaDescription:
-    "The most advanced interview practice there is: a live AI interviewer built from your job description and CV that asks out loud, follows up on what you say, and shows you exactly what to fix, answer by answer.",
+    "Free AI mock interview practice built from your job description and CV. A live AI interviewer asks out loud, follows up and scores every answer.",
   announcementActive: false,
   announcementText: "",
-  updatedAt: "2026-11-21T00:00:00.000Z",
+  updatedAt: "2026-11-23T00:00:00.000Z",
 };
 
 function resolveStorageDirectory(): string {

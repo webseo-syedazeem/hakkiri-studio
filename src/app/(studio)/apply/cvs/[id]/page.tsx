@@ -136,6 +136,38 @@ const DEFAULT_EDITOR_PROFILE: Profile = {
   updatedAt: new Date().toISOString(),
 };
 
+const FONT_OPTIONS = [
+  { value: "merriweather", label: "Merriweather" },
+  { value: "inter", label: "Inter (Sans)" },
+  { value: "garamond", label: "EB Garamond" },
+  { value: "calibri", label: "Calibri" },
+];
+
+const LINE_SPACING_OPTIONS = [
+  { value: "1.2", label: "1.2 Spacing" },
+  { value: "1.5", label: "1.5 Spacing" },
+  { value: "1.8", label: "1.8 Spacing" },
+];
+
+const MARGIN_OPTIONS = [
+  { value: "compact", label: "1.0 Compact" },
+  { value: "normal", label: "1.5 Normal" },
+  { value: "spacious", label: "2.0 Spacious" },
+];
+
+const PAGE_SIZE_OPTIONS = [
+  { value: "letter", label: "Letter (US)" },
+  { value: "a4", label: "A4 (UK)" },
+];
+
+const ACCENT_COLOR_OPTIONS = [
+  { value: "#1e293b", label: "Classic Slate", dotColor: "bg-slate-700" },
+  { value: "#1e3a8a", label: "Navy Blue", dotColor: "bg-blue-800" },
+  { value: "#065f46", label: "Forest Emerald", dotColor: "bg-emerald-800" },
+  { value: "#4c1d95", label: "Royal Purple", dotColor: "bg-purple-800" },
+  { value: "#831843", label: "Burgundy", dotColor: "bg-pink-900" },
+];
+
 export default function CvBuilderEditorPage({
   params,
 }: {
@@ -488,22 +520,18 @@ export default function CvBuilderEditorPage({
         {/* Formatting Controls Bar */}
         <div className="flex flex-wrap items-center gap-2 text-xs">
           {/* Font Selector */}
-          <div className="flex items-center rounded-xl bg-panel-2 border border-line px-2.5 py-1">
-            <select
+          <div className="w-40">
+            <CustomSelect
               value={fontFamily}
-              onChange={(e) => setFontFamily(e.target.value as typeof fontFamily)}
-              aria-label="Font Family"
-              className="bg-transparent text-ink text-xs font-bold focus:outline-none cursor-pointer"
-            >
-              <option value="merriweather" className="bg-slate-900 text-white">MERRIWEATHER</option>
-              <option value="inter" className="bg-slate-900 text-white">INTER (SANS)</option>
-              <option value="garamond" className="bg-slate-900 text-white">EB GARAMOND</option>
-              <option value="calibri" className="bg-slate-900 text-white">CALIBRI</option>
-            </select>
+              onChange={(val) => setFontFamily(val as typeof fontFamily)}
+              options={FONT_OPTIONS}
+              size="sm"
+              triggerClassName="rounded-xl min-h-[32px] py-1 px-2.5 font-bold text-xs"
+            />
           </div>
 
           {/* Font Size Increment */}
-          <div className="flex items-center rounded-xl bg-panel-2 border border-line px-2 py-1 gap-1.5">
+          <div className="flex items-center rounded-xl bg-panel-2 border border-line px-2 py-1 gap-1.5 h-[32px]">
             <button
               type="button"
               onClick={() => setFontSize((s) => Math.max(9, s - 0.5))}
@@ -511,7 +539,7 @@ export default function CvBuilderEditorPage({
             >
               –
             </button>
-            <span className="font-mono text-ink font-bold">{fontSize}</span>
+            <span className="font-mono text-ink font-bold text-xs">{fontSize}</span>
             <button
               type="button"
               onClick={() => setFontSize((s) => Math.min(14, s + 0.5))}
@@ -522,63 +550,47 @@ export default function CvBuilderEditorPage({
           </div>
 
           {/* Line Spacing */}
-          <div className="flex items-center rounded-xl bg-panel-2 border border-line px-2 py-1">
-            <span className="text-muted mr-1">↕</span>
-            <select
+          <div className="w-32">
+            <CustomSelect
               value={lineSpacing}
-              onChange={(e) => setLineSpacing(e.target.value as typeof lineSpacing)}
-              aria-label="Line Spacing"
-              className="bg-transparent text-ink text-xs font-bold focus:outline-none cursor-pointer"
-            >
-              <option value="1.2" className="bg-slate-900 text-white">1.2 Spacing</option>
-              <option value="1.5" className="bg-slate-900 text-white">1.5 Spacing</option>
-              <option value="1.8" className="bg-slate-900 text-white">1.8 Spacing</option>
-            </select>
+              onChange={(val) => setLineSpacing(val as typeof lineSpacing)}
+              options={LINE_SPACING_OPTIONS}
+              size="sm"
+              triggerClassName="rounded-xl min-h-[32px] py-1 px-2.5 font-bold text-xs"
+            />
           </div>
 
           {/* Margins */}
-          <div className="flex items-center rounded-xl bg-panel-2 border border-line px-2 py-1">
-            <span className="text-muted mr-1">↔</span>
-            <select
+          <div className="w-32">
+            <CustomSelect
               value={marginSpacing}
-              onChange={(e) => setMarginSpacing(e.target.value as typeof marginSpacing)}
-              aria-label="Margin Spacing"
-              className="bg-transparent text-ink text-xs font-bold focus:outline-none cursor-pointer"
-            >
-              <option value="compact" className="bg-slate-900 text-white">1.0 Compact</option>
-              <option value="normal" className="bg-slate-900 text-white">1.5 Normal</option>
-              <option value="spacious" className="bg-slate-900 text-white">2.0 Spacious</option>
-            </select>
+              onChange={(val) => setMarginSpacing(val as typeof marginSpacing)}
+              options={MARGIN_OPTIONS}
+              size="sm"
+              triggerClassName="rounded-xl min-h-[32px] py-1 px-2.5 font-bold text-xs"
+            />
           </div>
 
           {/* Page Format */}
-          <div className="flex items-center rounded-xl bg-panel-2 border border-line px-2 py-1">
-            <select
+          <div className="w-32">
+            <CustomSelect
               value={pageSize}
-              onChange={(e) => setPageSize(e.target.value as typeof pageSize)}
-              aria-label="Page Size"
-              className="bg-transparent text-ink text-xs font-bold focus:outline-none cursor-pointer"
-            >
-              <option value="letter" className="bg-slate-900 text-white">LETTER (US)</option>
-              <option value="a4" className="bg-slate-900 text-white">A4 (UK)</option>
-            </select>
+              onChange={(val) => setPageSize(val as typeof pageSize)}
+              options={PAGE_SIZE_OPTIONS}
+              size="sm"
+              triggerClassName="rounded-xl min-h-[32px] py-1 px-2.5 font-bold text-xs"
+            />
           </div>
 
           {/* Accent Color */}
-          <div className="flex items-center rounded-xl bg-panel-2 border border-line px-2 py-1">
-            <span className="text-muted mr-1">A</span>
-            <select
+          <div className="w-36">
+            <CustomSelect
               value={accentColor}
-              onChange={(e) => setAccentColor(e.target.value)}
-              aria-label="Accent Color"
-              className="bg-transparent text-ink text-xs font-bold focus:outline-none cursor-pointer"
-            >
-              <option value="#1e293b" className="bg-slate-900 text-white">Classic Slate</option>
-              <option value="#1e3a8a" className="bg-slate-900 text-white">Navy Blue</option>
-              <option value="#065f46" className="bg-slate-900 text-white">Forest Emerald</option>
-              <option value="#4c1d95" className="bg-slate-900 text-white">Royal Purple</option>
-              <option value="#831843" className="bg-slate-900 text-white">Burgundy</option>
-            </select>
+              onChange={(val) => setAccentColor(val)}
+              options={ACCENT_COLOR_OPTIONS}
+              size="sm"
+              triggerClassName="rounded-xl min-h-[32px] py-1 px-2.5 font-bold text-xs"
+            />
           </div>
 
           {/* Dividers Toggle */}

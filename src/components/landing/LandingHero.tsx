@@ -3,10 +3,10 @@ import type { HomepageContent } from "@/lib/site/site-content";
 
 export function LandingHero({ content }: { content?: Partial<HomepageContent> }) {
   const badgeText = content?.badgeText || "Beta · Free for everyone, for a limited time";
-  const headline = content?.headline || "Practise for the interview you actually have.";
+  const headline = content?.headline || "AI interview practice for the interview you actually have.";
   const subheadline =
     content?.subheadline ||
-    "The most advanced interview practice there is. Add the job and your CV. A live interviewer asks out loud, follows up on what you say, and shows you exactly what to fix.";
+    "Hakkiri is a free AI mock interview platform. Add the job description and your CV or resume, and a live AI interviewer asks questions out loud, follows up on what you say, and shows you exactly what to fix.";
   const primaryCtaText = content?.primaryCtaText || "Sign up free";
   const primaryCtaLink = content?.primaryCtaLink || "/signup";
   const secondaryCtaText = content?.secondaryCtaText || "See how it works";

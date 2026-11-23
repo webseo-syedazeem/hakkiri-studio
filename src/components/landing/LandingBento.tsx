@@ -6,7 +6,7 @@ export function LandingBento() {
           className="text-[26px] font-bold leading-[1.12] tracking-[-0.025em] [text-wrap:balance] sm:text-[34px] lg:text-[38px] mx-auto max-w-[820px] text-center"
           id="tiles-h"
         >
-          Everything you need for the day.
+          Everything you need for interview day.
         </h2>
 
         {/* Top 2 Big Cards - Perfectly Aligned */}
@@ -15,16 +15,16 @@ export function LandingBento() {
           <article className="group flex flex-col overflow-hidden rounded-[24px] bg-white border border-black/[0.04] shadow-sm hover:-translate-y-0.5 hover:shadow-md transition-all">
             <div className="px-6 pt-6 sm:px-8 sm:pt-7 min-h-[140px] sm:min-h-[125px] flex flex-col justify-start">
               <h3 className="text-[20px] font-semibold leading-snug tracking-[-0.015em] transition-colors duration-200 group-hover:text-mk-blue sm:text-[22px]">
-                Focused practice, when you’ve got twenty minutes.
+                Focused interview practice, when you have twenty minutes.
               </h3>
               <p className="mt-2 text-[14px] leading-relaxed text-mk-slate">
-                Short drills for what employers actually test: behaviours and strengths, STAR structure, stakeholder management, technical depth, salary and curveball questions. Scored like the real thing.
+                Short drills for what employers actually test: behavioral and strengths questions, competency questions, STAR structure, stakeholder management, technical depth, salary and curveball questions. Scored like the real thing.
               </p>
             </div>
             <div className="mt-4 grow pl-6 sm:pl-8 flex items-end">
               <div className="w-full h-[280px] sm:h-[320px] overflow-hidden rounded-tl-[16px] bg-mk-bezel p-[6px] pb-0 pr-0 transition-transform duration-500 group-hover:scale-[1.015]">
                 <img
-                  alt="The Practice Hub: short drill sets by topic, with scores and recent progress."
+                  alt="Hakkiri Practice Hub with focused interview practice by question type and difficulty"
                   className="block h-full w-full object-cover object-left-top rounded-tl-[11px]"
                   decoding="async"
                   height="1600"
@@ -40,16 +40,16 @@ export function LandingBento() {
           <article className="group flex flex-col overflow-hidden rounded-[24px] bg-white border border-black/[0.04] shadow-sm hover:-translate-y-0.5 hover:shadow-md transition-all">
             <div className="px-6 pt-6 sm:px-8 sm:pt-7 min-h-[140px] sm:min-h-[125px] flex flex-col justify-start">
               <h3 className="text-[20px] font-semibold leading-snug tracking-[-0.015em] transition-colors duration-200 group-hover:text-mk-blue sm:text-[22px]">
-                One page for the morning of the interview.
+                One prep sheet for the morning of the interview.
               </h3>
               <p className="mt-2 text-[14px] leading-relaxed text-mk-slate">
-                Your best answers, which story for which question, what they’ll probe on your CV, and what to ask them.
+                Your best answers, which story to use for which question, what they will probe on your CV, and what to ask them. Print it or save it as a PDF.
               </p>
             </div>
             <div className="mt-4 grow pl-6 sm:pl-8 flex items-end">
               <div className="w-full h-[280px] sm:h-[320px] overflow-hidden rounded-tl-[16px] bg-mk-bezel p-[6px] pb-0 pr-0 transition-transform duration-500 group-hover:scale-[1.015]">
                 <img
-                  alt="A one-page prep sheet: the company and the job, your best answers, which story for which question, and questions to ask."
+                  alt="Hakkiri interview prep sheet for a Senior Product Manager interview"
                   className="block h-full w-full object-cover object-left-top rounded-tl-[11px]"
                   decoding="async"
                   height="1600"
@@ -64,7 +64,7 @@ export function LandingBento() {
 
         {/* Bottom 4 Feature Cards - Perfectly Aligned */}
         <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 items-stretch">
-          {/* Feature 1 */}
+          {/* Card 3 */}
           <li className="group flex flex-col rounded-[20px] p-5 sm:p-6 hover:-translate-y-0.5 hover:shadow-md transition-all bg-white border border-black/[0.04] shadow-sm h-full">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-mk-mist text-mk-blue transition-all duration-300 group-hover:scale-110 group-hover:bg-mk-cta group-hover:text-white shrink-0">
               <svg aria-hidden="true" fill="none" height="20" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" viewBox="0 0 24 24" width="20">
@@ -76,12 +76,12 @@ export function LandingBento() {
                 Public sector ready
               </h3>
               <p className="mt-1 text-[13px] leading-relaxed text-mk-slate grow">
-                Behaviours, strengths and values-based questions, asked the way a public-sector panel asks them.
+                Behaviors, strengths and values-based questions, asked the way a public sector interview panel asks them.
               </p>
             </div>
           </li>
 
-          {/* Feature 2 */}
+          {/* Card 4 */}
           <li className="group flex flex-col rounded-[20px] p-5 sm:p-6 hover:-translate-y-0.5 hover:shadow-md transition-all bg-white border border-black/[0.04] shadow-sm h-full">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-mk-mist text-mk-blue transition-all duration-300 group-hover:scale-110 group-hover:bg-mk-cta group-hover:text-white shrink-0">
               <svg aria-hidden="true" fill="none" height="20" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" viewBox="0 0 24 24" width="20">
@@ -90,7 +90,7 @@ export function LandingBento() {
             </div>
             <div className="mt-4 flex flex-col grow">
               <h3 className="text-[17px] font-semibold tracking-[-0.01em] min-h-[44px] flex items-start">
-                A story for every “Tell me about a time…”
+                A story for every “Tell me about a time...”
               </h3>
               <p className="mt-1 text-[13px] leading-relaxed text-mk-slate grow">
                 Hakkiri finds the real examples in your CV, shows what each one is missing, and which questions none of them covers yet.
@@ -98,7 +98,7 @@ export function LandingBento() {
             </div>
           </li>
 
-          {/* Feature 3 */}
+          {/* Card 5 */}
           <li className="group flex flex-col rounded-[20px] p-5 sm:p-6 hover:-translate-y-0.5 hover:shadow-md transition-all bg-white border border-black/[0.04] shadow-sm h-full">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-mk-mist text-mk-blue transition-all duration-300 group-hover:scale-110 group-hover:bg-mk-cta group-hover:text-white shrink-0">
               <svg aria-hidden="true" fill="none" height="20" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" viewBox="0 0 24 24" width="20">
@@ -110,12 +110,12 @@ export function LandingBento() {
                 Talking about pay
               </h3>
               <p className="mt-1 text-[13px] leading-relaxed text-mk-slate grow">
-                Practise “What are you looking for?” for your stage of the process.
+                Practice salary questions like “What are you looking for?” for your stage of the process.
               </p>
             </div>
           </li>
 
-          {/* Feature 4 */}
+          {/* Card 6 */}
           <li className="group flex flex-col rounded-[20px] p-5 sm:p-6 hover:-translate-y-0.5 hover:shadow-md transition-all bg-white border border-black/[0.04] shadow-sm h-full">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-mk-mist text-mk-blue transition-all duration-300 group-hover:scale-110 group-hover:bg-mk-cta group-hover:text-white shrink-0">
               <svg aria-hidden="true" fill="none" height="20" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" viewBox="0 0 24 24" width="20">

@@ -90,7 +90,7 @@ export function LiveDemo() {
   return (
     <div
       ref={containerRef}
-      aria-label="The live interview screen: the interviewer asks a question out loud, your answer is recorded against a target length, and the next question is written from what you said."
+      aria-label="Hakkiri AI mock interview screen asking a behavioral question, with a timer and a live recording"
       role="img"
       className="w-full max-w-full overflow-hidden rounded-[20px] bg-mk-bezel p-[3px] xs:p-[5px] shadow-[0_0_0_1px_rgb(0_0_0/0.08),0_60px_120px_-40px_rgb(23_28_80/0.45)] sm:rounded-[26px] sm:p-[9px]"
     >
