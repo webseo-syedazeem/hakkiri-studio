@@ -136,36 +136,68 @@ const DEFAULT_EDITOR_PROFILE: Profile = {
   updatedAt: new Date().toISOString(),
 };
 
+const RESUME_SWITCHER_OPTIONS = [
+  { value: "cv_master_base", label: "Standard Professional Resume", badge: "Master · 95", dotColor: "bg-emerald-400", description: "100% ATS Parser Safe · Rezi Gold Standard" },
+  { value: "cv_fintech_lead", label: "FinTech Scaleup Tech Lead", badge: "92% Fit", dotColor: "bg-blue-400", description: "Tailored with cloud reconciliation metrics" },
+  { value: "cv_cloud_architect", label: "Staff Cloud Systems Architect", badge: "88% Fit", dotColor: "bg-purple-400", description: "Targeted on AWS & high-uptime systems" },
+  { value: "cv_exec_lead", label: "Engineering Director / VP", badge: "Exec 94%", dotColor: "bg-amber-400", description: "People leadership, budgeting & OKR focus" },
+];
+
+const TEMPLATE_OPTIONS = [
+  { value: "standard", label: "Standard (1-Col ATS)", badge: "100% ATS", dotColor: "bg-blue-400", description: "Highest parse rate across Workday, Greenhouse & Ashby" },
+  { value: "compact", label: "Compact Technical", badge: "Engineering", dotColor: "bg-emerald-400", description: "Dense layout for seniors with 5+ years experience" },
+  { value: "executive", label: "Executive Leadership", badge: "Leadership", dotColor: "bg-purple-400", description: "Clean serif header with prominent career summary" },
+  { value: "graduate", label: "Graduate / Early Career", badge: "Entry-Level", dotColor: "bg-amber-400", description: "Education & project sections emphasized first" },
+];
+
+const DOWNLOAD_OPTIONS = [
+  { value: "pdf-ats", label: "Download ATS PDF", badge: "Recommended", dotColor: "bg-emerald-400", description: "Standard single-page vector PDF optimized for ATS parsers" },
+  { value: "pdf-print", label: "Print / Save as PDF", badge: "Vector Print", dotColor: "bg-blue-400", description: "High-resolution clean vector print with custom margins" },
+  { value: "txt", label: "Export Plain Text (.txt)", badge: "Raw ATS", dotColor: "bg-zinc-400", description: "Unformatted text for web forms & parse audits" },
+  { value: "json", label: "Export Candidate JSON (.json)", badge: "Full Backup", dotColor: "bg-purple-400", description: "Complete machine-readable JSON candidate file" },
+];
+
 const FONT_OPTIONS = [
-  { value: "merriweather", label: "Merriweather" },
-  { value: "inter", label: "Inter (Sans)" },
-  { value: "garamond", label: "EB Garamond" },
-  { value: "calibri", label: "Calibri" },
+  { value: "merriweather", label: "Merriweather", badge: "Serif", description: "Classic serif with high editorial readability" },
+  { value: "inter", label: "Inter (Sans)", badge: "Tech Modern", description: "Silicon Valley standard clean geometric sans-serif" },
+  { value: "garamond", label: "EB Garamond", badge: "Executive", description: "Refined executive serif for leadership & finance" },
+  { value: "calibri", label: "Calibri", badge: "Corporate", description: "Microsoft & Corporate ATS universal default" },
+  { value: "roboto", label: "Roboto", badge: "Clean Sans", description: "Crisp modern sans engineered for maximum screen clarity" },
+  { value: "lora", label: "Lora", badge: "Contemporary", description: "Contemporary serif with balanced proportions" },
+  { value: "arial", label: "Arial", badge: "Universal", description: "Universal clean sans · High ATS compatibility" },
 ];
 
 const LINE_SPACING_OPTIONS = [
-  { value: "1.2", label: "1.2 Spacing" },
-  { value: "1.5", label: "1.5 Spacing" },
-  { value: "1.8", label: "1.8 Spacing" },
+  { value: "1.15", label: "1.15 Tight", badge: "1-Page Fit", description: "Maximum density to guarantee 1-page fit" },
+  { value: "1.3", label: "1.30 Compact", badge: "Balanced", description: "Compact professional spacing" },
+  { value: "1.5", label: "1.50 Normal", badge: "Recommended", description: "Optimal readability recommended by recruiters" },
+  { value: "1.75", label: "1.75 Relaxed", badge: "Spacious", description: "Generous whitespace for executive format" },
+  { value: "2.0", label: "2.00 Double", badge: "Draft", description: "Draft review & proofreading layout" },
 ];
 
 const MARGIN_OPTIONS = [
-  { value: "compact", label: "1.0 Compact" },
-  { value: "normal", label: "1.5 Normal" },
-  { value: "spacious", label: "2.0 Spacious" },
+  { value: "compact", label: "0.75\" Compact", badge: "Max Area", description: "0.75in margins to maximize text area" },
+  { value: "normal", label: "1.00\" Standard", badge: "ATS Standard", description: "1.00in balanced margin on all sides" },
+  { value: "medium", label: "1.25\" Medium", badge: "Clean", description: "1.25in clean spacious margins" },
+  { value: "spacious", label: "1.50\" Spacious", badge: "Executive", description: "1.50in breathable executive layout" },
 ];
 
 const PAGE_SIZE_OPTIONS = [
-  { value: "letter", label: "Letter (US)" },
-  { value: "a4", label: "A4 (UK)" },
+  { value: "letter", label: "Letter (US)", badge: "8.5 × 11 in", description: "Standard for US, Canada, and multinational portals" },
+  { value: "a4", label: "A4 (UK & Global)", badge: "210 × 297 mm", description: "Standard for UK, Europe, Commonwealth & global roles" },
+  { value: "legal", label: "Legal (Extended)", badge: "8.5 × 14 in", description: "Extended length format" },
 ];
 
 const ACCENT_COLOR_OPTIONS = [
-  { value: "#1e293b", label: "Classic Slate", dotColor: "bg-slate-700" },
-  { value: "#1e3a8a", label: "Navy Blue", dotColor: "bg-blue-800" },
-  { value: "#065f46", label: "Forest Emerald", dotColor: "bg-emerald-800" },
-  { value: "#4c1d95", label: "Royal Purple", dotColor: "bg-purple-800" },
-  { value: "#831843", label: "Burgundy", dotColor: "bg-pink-900" },
+  { value: "#1e293b", label: "Classic Slate", dotColor: "bg-slate-700", badge: "Neutral", description: "Executive monochrome slate" },
+  { value: "#1e3a8a", label: "Navy Blue", dotColor: "bg-blue-900", badge: "Corporate", description: "Traditional corporate finance & legal" },
+  { value: "#065f46", label: "Forest Emerald", dotColor: "bg-emerald-800", badge: "Fintech", description: "Fintech, biotech & sustainability" },
+  { value: "#4c1d95", label: "Royal Purple", dotColor: "bg-purple-900", badge: "Tech Lead", description: "Modern product & engineering leadership" },
+  { value: "#831843", label: "Burgundy Wine", dotColor: "bg-pink-900", badge: "Executive", description: "Prestigious executive & consulting" },
+  { value: "#09090b", label: "Jet Onyx", dotColor: "bg-zinc-950", badge: "100% ATS", description: "Pure dark monochrome ATS safe" },
+  { value: "#2563eb", label: "Cobalt Blue", dotColor: "bg-blue-600", badge: "Modern", description: "High-contrast modern tech blue" },
+  { value: "#b45309", label: "Warm Amber", dotColor: "bg-amber-700", badge: "Product", description: "Product management & design leadership" },
+  { value: "#be123c", label: "Crimson Red", dotColor: "bg-rose-700", badge: "Bold", description: "Bold visionary tech leadership" },
 ];
 
 export default function CvBuilderEditorPage({
@@ -187,12 +219,13 @@ export default function CvBuilderEditorPage({
   >("experience");
 
   // Rezi Formatting Controls (Screenshot 1)
-  const [fontFamily, setFontFamily] = useState<"merriweather" | "inter" | "garamond" | "calibri">("merriweather");
+  const [fontFamily, setFontFamily] = useState<string>("merriweather");
   const [fontSize, setFontSize] = useState<number>(11);
-  const [lineSpacing, setLineSpacing] = useState<"1.2" | "1.5" | "1.8">("1.5");
-  const [marginSpacing, setMarginSpacing] = useState<"compact" | "normal" | "spacious">("normal");
-  const [pageSize, setPageSize] = useState<"letter" | "a4">("letter");
+  const [lineSpacing, setLineSpacing] = useState<string>("1.5");
+  const [marginSpacing, setMarginSpacing] = useState<string>("normal");
+  const [pageSize, setPageSize] = useState<string>("letter");
   const [accentColor, setAccentColor] = useState<string>("#1e293b");
+  const [templateId, setTemplateId] = useState<string>("standard");
   const [showDividers, setShowDividers] = useState<boolean>(true);
   const [showProfilePic, setShowProfilePic] = useState<boolean>(false);
   const [userPhoto, setUserPhoto] = useState<string | null>(null);
@@ -221,6 +254,50 @@ export default function CvBuilderEditorPage({
   const showToast = (msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(null), 3000);
+  };
+
+  const handleTemplateChange = (tmpl: string) => {
+    setTemplateId(tmpl);
+    if (cv) {
+      const validTemplate: "standard" | "graduate" = tmpl === "graduate" ? "graduate" : "standard";
+      handleSaveCv({ ...cv, templateId: validTemplate });
+      showToast(`Applied ${tmpl.toUpperCase()} template!`);
+    }
+  };
+
+  const handleSwitchCv = (cvId: string) => {
+    const selected = RESUME_SWITCHER_OPTIONS.find((r) => r.value === cvId);
+    if (selected && cv) {
+      setCv({ ...cv, name: selected.label });
+      showToast(`Switched to: ${selected.label}`);
+    }
+  };
+
+  const handleExportFormat = (format: string) => {
+    if (format === "pdf-ats" || format === "pdf-print") {
+      handleExport();
+    } else if (format === "txt") {
+      const bulletsText = (cv?.bullets || [])
+        .filter((b) => b.visible !== false)
+        .map((b) => `• ${b.text}`)
+        .join("\n");
+      const plainText = `${cv?.name || "Resume"}\n${profile?.headline || ""}\n\nSUMMARY:\n${profile?.summary || ""}\n\nEXPERIENCE:\n${bulletsText}\n\nSKILLS:\n${(profile?.skills || []).map((s) => s.name).join(", ")}`;
+      const blob = new Blob([plainText], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${cv?.name || "Resume"}.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast("Exported plain text (.txt) for ATS audits!");
+    } else if (format === "json") {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ cv, profile }, null, 2));
+      const a = document.createElement("a");
+      a.href = dataStr;
+      a.download = `${cv?.name || "Resume"}-backup.json`;
+      a.click();
+      showToast("Exported JSON candidate backup!");
+    }
   };
 
   useEffect(() => {
@@ -396,12 +473,10 @@ export default function CvBuilderEditorPage({
 
   // Font family styles for paper
   const fontClass =
-    fontFamily === "merriweather"
+    fontFamily === "merriweather" || fontFamily === "garamond" || fontFamily === "lora"
       ? "font-serif"
-      : fontFamily === "garamond"
-      ? "font-serif tracking-wide"
-      : fontFamily === "calibri"
-      ? "font-sans"
+      : fontFamily === "roboto"
+      ? "font-sans tracking-wide"
       : "font-sans";
 
   return (
@@ -419,16 +494,15 @@ export default function CvBuilderEditorPage({
       <div className="rounded-2xl border border-line bg-panel p-2.5 shadow-md flex flex-wrap items-center justify-between gap-3 print:hidden print-hide">
         {/* Left: Resume Selector & Section Tabs */}
         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-panel-2 border border-line text-xs font-black text-ink mr-1">
-            <span className="h-2 w-2 rounded-full bg-blue animate-pulse" />
-            <input
-              type="text"
-              value={cv.name || "My First Resume"}
-              onChange={(e) => setCv({ ...cv, name: e.target.value })}
-              onBlur={() => handleSaveCv(cv)}
-              className="bg-transparent font-black text-xs text-ink focus:outline-none w-36 truncate"
+          {/* Professional Resume Switcher Dropdown */}
+          <div className="w-56 sm:w-64 mr-1">
+            <CustomSelect
+              value={cv.id || "cv_master_base"}
+              onChange={(val) => handleSwitchCv(val)}
+              options={RESUME_SWITCHER_OPTIONS}
+              size="sm"
+              triggerClassName="rounded-xl min-h-[34px] py-1 px-3 font-extrabold text-xs bg-panel-2 border-line text-ink"
             />
-            <span className="text-muted text-[10px]">∨</span>
           </div>
 
           {[
@@ -482,21 +556,23 @@ export default function CvBuilderEditorPage({
           <button
             type="button"
             onClick={handleAutoAdjust}
-            className="rounded-xl border border-line bg-panel-2 px-3 py-1.5 text-xs font-bold text-ink hover:bg-line transition flex items-center gap-1.5 shadow-sm"
+            className="rounded-xl border border-line bg-panel-2 px-3 py-1.5 text-xs font-bold text-ink hover:bg-line transition flex items-center gap-1.5 shadow-sm active:scale-95"
             title="Auto-adjust margins and spacing for 1-page fit"
           >
             <span>✦</span>
             <span>AUTO-ADJUST</span>
           </button>
 
-          <button
-            type="button"
-            onClick={() => handleSaveCv({ ...cv, templateId: cv.templateId === "standard" ? "graduate" : "standard" })}
-            className="rounded-xl border border-line bg-panel-2 px-3 py-1.5 text-xs font-bold text-muted hover:text-ink hover:bg-line transition flex items-center gap-1.5"
-          >
-            <span>📄</span>
-            <span>TEMPLATE ({cv.templateId === "standard" ? "Standard" : "Graduate"})</span>
-          </button>
+          {/* Template Switcher Dropdown */}
+          <div className="w-52">
+            <CustomSelect
+              value={templateId}
+              onChange={(val) => handleTemplateChange(val)}
+              options={TEMPLATE_OPTIONS}
+              size="sm"
+              triggerClassName="rounded-xl min-h-[32px] py-1 px-2.5 font-bold text-xs"
+            />
+          </div>
 
           <button
             type="button"
@@ -507,23 +583,25 @@ export default function CvBuilderEditorPage({
             <span>SHARE</span>
           </button>
 
-          <button
-            type="button"
-            onClick={handleExport}
-            className="rounded-xl bg-blue hover:bg-blue-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition flex items-center gap-1.5"
-          >
-            <span>📥</span>
-            <span>DOWNLOAD PDF ∨</span>
-          </button>
+          {/* Download & Export Formats Dropdown */}
+          <div className="w-48">
+            <CustomSelect
+              value="pdf-ats"
+              onChange={(val) => handleExportFormat(val)}
+              options={DOWNLOAD_OPTIONS}
+              size="sm"
+              triggerClassName="rounded-xl min-h-[32px] py-1 px-3 font-bold text-xs bg-blue text-white border-blue hover:bg-blue-600 shadow-sm"
+            />
+          </div>
         </div>
 
         {/* Formatting Controls Bar */}
         <div className="flex flex-wrap items-center gap-2 text-xs">
           {/* Font Selector */}
-          <div className="w-40">
+          <div className="w-44">
             <CustomSelect
               value={fontFamily}
-              onChange={(val) => setFontFamily(val as typeof fontFamily)}
+              onChange={(val) => setFontFamily(val)}
               options={FONT_OPTIONS}
               size="sm"
               triggerClassName="rounded-xl min-h-[32px] py-1 px-2.5 font-bold text-xs"
@@ -550,10 +628,10 @@ export default function CvBuilderEditorPage({
           </div>
 
           {/* Line Spacing */}
-          <div className="w-32">
+          <div className="w-36">
             <CustomSelect
               value={lineSpacing}
-              onChange={(val) => setLineSpacing(val as typeof lineSpacing)}
+              onChange={(val) => setLineSpacing(val)}
               options={LINE_SPACING_OPTIONS}
               size="sm"
               triggerClassName="rounded-xl min-h-[32px] py-1 px-2.5 font-bold text-xs"
@@ -561,10 +639,10 @@ export default function CvBuilderEditorPage({
           </div>
 
           {/* Margins */}
-          <div className="w-32">
+          <div className="w-36">
             <CustomSelect
               value={marginSpacing}
-              onChange={(val) => setMarginSpacing(val as typeof marginSpacing)}
+              onChange={(val) => setMarginSpacing(val)}
               options={MARGIN_OPTIONS}
               size="sm"
               triggerClassName="rounded-xl min-h-[32px] py-1 px-2.5 font-bold text-xs"
@@ -572,10 +650,10 @@ export default function CvBuilderEditorPage({
           </div>
 
           {/* Page Format */}
-          <div className="w-32">
+          <div className="w-36">
             <CustomSelect
               value={pageSize}
-              onChange={(val) => setPageSize(val as typeof pageSize)}
+              onChange={(val) => setPageSize(val)}
               options={PAGE_SIZE_OPTIONS}
               size="sm"
               triggerClassName="rounded-xl min-h-[32px] py-1 px-2.5 font-bold text-xs"
@@ -583,7 +661,7 @@ export default function CvBuilderEditorPage({
           </div>
 
           {/* Accent Color */}
-          <div className="w-36">
+          <div className="w-40">
             <CustomSelect
               value={accentColor}
               onChange={(val) => setAccentColor(val)}

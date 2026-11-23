@@ -151,8 +151,8 @@ export function CustomSelect({
           disabled
             ? "opacity-50 cursor-not-allowed border-line text-muted"
             : isOpen
-            ? "border-blue-500/80 bg-panel shadow-[0_0_0_2px_rgba(59,130,246,0.25),0_8px_24px_rgba(0,0,0,0.5)] text-ink"
-            : "border-line text-ink hover:border-line-strong hover:bg-panel cursor-pointer shadow-sm",
+            ? "border-blue-500/80 bg-panel shadow-[0_0_0_2px_rgba(59,130,246,0.35),0_8px_24px_rgba(0,0,0,0.6)] text-ink"
+            : "border-line text-ink hover:border-line-strong hover:bg-panel cursor-pointer shadow-sm active:scale-[0.98]",
           triggerClassName
         )}
       >
@@ -160,7 +160,7 @@ export function CustomSelect({
           {selectedOption?.dotColor ? (
             <span
               className={clsx(
-                "h-2 w-2 rounded-full shrink-0 shadow-sm",
+                "h-2.5 w-2.5 rounded-full shrink-0 shadow-sm transition-transform duration-200 group-hover:scale-110",
                 selectedOption.dotColor
               )}
             />
@@ -188,7 +188,7 @@ export function CustomSelect({
         {/* Animated Chevron Arrow */}
         <div
           className={clsx(
-            "shrink-0 text-muted transition-transform duration-200 ease-out",
+            "shrink-0 text-muted transition-transform duration-250 ease-out",
             isOpen && "rotate-180 text-blue"
           )}
         >
@@ -196,7 +196,7 @@ export function CustomSelect({
             <path
               d="M2.5 4.5L6 8L9.5 4.5"
               stroke="currentColor"
-              strokeWidth="1.6"
+              strokeWidth="1.8"
               strokeLinecap="round"
               strokeLinejoin="round"
             />
@@ -211,7 +211,7 @@ export function CustomSelect({
           role="listbox"
           tabIndex={-1}
           className={clsx(
-            "absolute top-[calc(100%+6px)] z-50 min-w-[210px] max-h-64 overflow-y-auto rounded-2xl bg-panel/95 backdrop-blur-2xl border border-line-strong p-1.5 shadow-[0_20px_50px_rgba(0,0,0,0.7),0_0_0_1px_rgba(255,255,255,0.08)] origin-top animate-fadeIn",
+            "absolute top-[calc(100%+6px)] z-[100] min-w-[220px] max-h-72 overflow-y-auto rounded-2xl bg-[#0c0e1c]/95 backdrop-blur-2xl border border-white/15 p-1.5 shadow-[0_24px_60px_rgba(0,0,0,0.85),0_0_0_1px_rgba(255,255,255,0.08)] origin-top animate-dropdown",
             align === "right" ? "right-0 left-auto" : "left-0",
             menuClassName
           )}
@@ -236,11 +236,11 @@ export function CustomSelect({
                 }}
                 onMouseEnter={() => setFocusedIndex(idx)}
                 className={clsx(
-                  "flex items-center justify-between w-full px-3 py-2 rounded-xl text-xs transition-all duration-150 cursor-pointer select-none",
+                  "flex items-center justify-between w-full px-3 py-2 rounded-xl text-xs transition-all duration-150 cursor-pointer select-none active:scale-[0.98]",
                   isSelected
-                    ? "bg-blue/15 text-blue font-bold border border-blue/30 shadow-sm"
+                    ? "bg-blue/20 text-white font-bold border border-blue/40 shadow-sm"
                     : isFocused
-                    ? "bg-white/[0.08] text-white"
+                    ? "bg-white/[0.09] text-white"
                     : "text-muted hover:text-ink hover:bg-white/[0.05]"
                 )}
               >
@@ -248,7 +248,8 @@ export function CustomSelect({
                   {opt.dotColor && (
                     <span
                       className={clsx(
-                        "h-2 w-2 rounded-full shrink-0 shadow-sm",
+                        "h-2.5 w-2.5 rounded-full shrink-0 shadow-sm transition-transform duration-150",
+                        isSelected && "scale-110",
                         opt.dotColor
                       )}
                     />
@@ -263,7 +264,7 @@ export function CustomSelect({
                   <div className="truncate">
                     <span className="truncate block font-semibold">{opt.label}</span>
                     {opt.description && (
-                      <span className="text-[10px] text-muted block truncate font-normal">
+                      <span className="text-[10px] text-muted block truncate font-normal mt-0.5">
                         {opt.description}
                       </span>
                     )}
@@ -272,12 +273,19 @@ export function CustomSelect({
 
                 <div className="flex items-center gap-2 shrink-0 ml-2">
                   {opt.badge && (
-                    <span className="rounded-md bg-white/[0.08] px-1.5 py-0.5 text-[10px] text-muted font-mono">
+                    <span
+                      className={clsx(
+                        "rounded-md px-1.5 py-0.5 text-[10px] font-mono",
+                        isSelected
+                          ? "bg-blue/30 text-blue-200 border border-blue/40"
+                          : "bg-white/[0.08] text-muted border border-white/5"
+                      )}
+                    >
                       {opt.badge}
                     </span>
                   )}
                   {isSelected && (
-                    <span className="text-blue font-black text-xs animate-fadeIn">
+                    <span className="text-blue font-black text-xs animate-scaleIn">
                       ✓
                     </span>
                   )}
