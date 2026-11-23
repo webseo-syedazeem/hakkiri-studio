@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
-import { Icon, Panel } from "@/components/ui";
+import { Icon, Panel, type IconName } from "@/components/ui";
 import { InterviewTabs } from "@/components/interview/InterviewTabs";
 import { PrintButton } from "@/components/interview/PrintButton";
 import { StartButton } from "@/components/interview/StartSession";
 import { PrepChecklist } from "@/components/interview/PrepChecklist";
 import { getInterview } from "@/lib/interviews/store";
 import { buildPrepSheet } from "@/lib/interviews/prep";
+import { likelyQuestions, prepPriorities, prepStage } from "@/lib/interviews/prep-view";
 import { settingsOr } from "@/lib/interviews/settings";
 import { findAnswer, listAnswers } from "@/lib/answers/store";
 import { doneSessions, isFresh, rowsFor } from "@/lib/mocks/store";
@@ -20,11 +21,33 @@ import { requirePageUser } from "@/lib/auth/require";
 
 export const dynamic = "force-dynamic";
 
-export default async function PrepSheetPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+function Card({ icon, tone, title, note, children, testid }: { icon: IconName; tone: string; title: string; note?: string; children: React.ReactNode; testid: string }) {
+  return (
+    <Panel className="p-5 sm:p-6 space-y-3" data-testid={testid}>
+      <div className="flex items-start gap-3">
+        <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border ${tone}`}>
+          <Icon name={icon} size={16} />
+        </div>
+        <div className="min-w-0">
+          <h2 className="text-sm font-bold text-white">{title}</h2>
+          {note ? <p className="mt-0.5 text-xs text-muted">{note}</p> : null}
+        </div>
+      </div>
+      {children}
+    </Panel>
+  );
+}
+
+const Empty = ({ children }: { children: React.ReactNode }) => <p className="rounded-xl bg-panel-2 border border-line px-3.5 py-3 text-xs leading-relaxed text-muted">{children}</p>;
+
+/**
+ * The prep sheet for one interview. Every line on it comes from this
+ * interview (what was read from the job, the company and the CV at set-up)
+ * or from this person's own practice on it (scored answers, stories, the
+ * patterns their interviews showed). A part with nothing behind it says so
+ * and says what would fill it.
+ */
+export default async function PrepSheetPage({ params }: { params: Promise<{ id: string }> }) {
   const user = await requirePageUser();
   const { id } = await params;
   const interview = getInterview(id, user.id);
@@ -34,7 +57,7 @@ export default async function PrepSheetPage({
   const fresh = sessions.filter(isFresh);
   const when = interviewWhen(interview.date, londonToday());
 
-  // Aggregate answers
+  // Every answer this person has given on this interview.
   const byId = new Map<string, Answer>();
   for (const a of listAnswers(interview.id, user.id)) byId.set(a.id, a);
   for (const m of sessions)
@@ -46,60 +69,41 @@ export default async function PrepSheetPage({
   const latest = fresh[0];
   const latestRows = latest ? rowsFor(latest, user.id) : [];
   const fixes = latest ? buildReport(latestRows, interview.interviewer.name).fixes : [];
-  const sheet = buildPrepSheet(interview, {
-    answers: [...byId.values()],
-    interviews: fresh.length,
-    fixes,
-    rows: latestRows,
-  });
+  const sheet = buildPrepSheet(interview, { answers: [...byId.values()], interviews: fresh.length, fixes, rows: latestRows });
 
-  const roleTitle = interview.role || "Senior Product Manager, Payments";
-  const companyName = interview.company || "Halden";
-  const stageName =
-    (interview.round as string) === "hiring-manager"
-      ? "Stage 2: Hiring manager interview"
-      : interview.round
-        ? `Stage: ${interview.round}`
-        : "Stage 2: Hiring manager interview";
-
-  // Dynamic knowledge checklist items
-  const hasQ = (qid: string) => interview.questions.some((q) => q.id === qid);
+  const stage = prepStage(interview);
+  const priorities = prepPriorities({ interviewId: interview.id, fixes, gaps: interview.gaps ?? [], stories: interview.stories ?? [] });
+  const questions = likelyQuestions(interview);
+  const probes = sheet.probes.filter((p) => p.ask.trim());
   const checklistItems = getChecklistForInterview(interview);
+  const storyHref = `/interviews/${interview.id}/story`;
 
   return (
     <div className="flex grow flex-col pb-12">
-      {/* Top Header */}
       <div className="animate-rise">
-        <Link
-          href="/interviews"
-          className="inline-flex items-center gap-1.5 text-xs font-medium text-muted hover:text-ink transition-colors mb-3"
-        >
+        <Link href="/interviews" className="inline-flex items-center gap-1.5 text-xs font-medium text-muted hover:text-ink transition-colors mb-3">
           <Icon name="back" size={12} />
           <span>Interviews</span>
         </Link>
 
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex min-w-0 items-center gap-3.5">
-            <span
-              aria-hidden
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-900/40 text-[19px] font-bold text-emerald-300 border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.15)]"
-            >
-              {interview.companyInitial || companyName[0] || "H"}
+            <span aria-hidden className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-900/40 text-[19px] font-bold text-emerald-300 border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.15)]">
+              {interview.companyInitial || interview.company.charAt(0).toUpperCase() || "?"}
             </span>
             <div className="min-w-0">
-              <h1 className="truncate text-2xl font-bold tracking-tight text-white">
-                {roleTitle}
-              </h1>
+              <h1 className="truncate text-2xl font-bold tracking-tight text-white">{interview.role || "Prep sheet"}</h1>
               <div className="mt-0.5 text-xs text-muted flex flex-wrap items-center gap-2">
-                <span>{companyName}</span>
-                <span>·</span>
-                <span>{stageName}</span>
-                <span>·</span>
+                {interview.company ? <span>{interview.company}</span> : null}
+                {stage ? (
+                  <>
+                    <span aria-hidden>·</span>
+                    <span>{stage}</span>
+                  </>
+                ) : null}
+                <span aria-hidden>·</span>
                 <span>
-                  {when.text}{" "}
-                  {when.rel && when.rel !== "done" && (
-                    <b className="font-semibold text-ink">({when.rel})</b>
-                  )}
+                  {when.text} {when.rel && when.rel !== "done" && <b className="font-semibold text-ink">({when.rel})</b>}
                 </span>
               </div>
             </div>
@@ -110,10 +114,7 @@ export default async function PrepSheetPage({
             <StartButton
               interviewId={interview.id}
               micOk={micOk}
-              body={{
-                kind: "interview",
-                settings: settingsOr(interview.settings, interview.style),
-              }}
+              body={{ kind: "interview", settings: settingsOr(interview.settings, interview.style) }}
               variant="primary"
               size="md"
               buttonClassName="px-4 py-2 rounded-xl text-xs flex items-center gap-2 group shadow-[0_4px_20px_rgba(79,82,248,0.35)] hover:shadow-[0_6px_26px_rgba(79,82,248,0.6)]"
@@ -124,318 +125,217 @@ export default async function PrepSheetPage({
           </div>
         </div>
 
-        {/* Tabs */}
         <InterviewTabs id={interview.id} current="prep" />
-        <p className="mt-4 text-xs text-muted">
-          A personalised preparation plan for your upcoming interview, based on the job, your experience and previous practice.
+        <p className="mt-4 text-xs text-muted" data-testid="prep-based-on">
+          Built from what Hakkiri read at set-up
+          {sheet.basedOn.interviews > 0 || sheet.basedOn.answers > 0
+            ? `, ${sheet.basedOn.interviews} practice interview${sheet.basedOn.interviews === 1 ? "" : "s"} and ${sheet.basedOn.answers} scored answer${sheet.basedOn.answers === 1 ? "" : "s"}.`
+            : ". You haven’t practised this interview yet, so the parts that come from your answers are empty."}
         </p>
       </div>
 
-      {/* Main 2-Column Grid */}
       <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-5 animate-rise [animation-delay:0.05s]">
         {/* ===================== LEFT COLUMN ===================== */}
         <div className="space-y-5">
-          {/* Card 1: The company and the role */}
-          <Panel className="p-5 sm:p-6 space-y-4">
-            <div className="flex items-start gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-fill/15 text-blue-soft border border-blue-fill/25">
-                <Icon name="brief" size={16} />
-              </div>
-              <div className="min-w-0">
-                <h2 className="text-sm font-bold text-white">The company and the role</h2>
-                <p className="mt-1 text-xs text-muted leading-relaxed">
-                  {sheet.company.whatTheyDo ||
-                    `${companyName} makes payments software for small businesses, helping them take payments, manage risk and grow revenue.`}
-                </p>
-              </div>
-            </div>
+          <Card testid="prep-company" icon="brief" tone="bg-blue-fill/15 text-blue-soft border-blue-fill/25" title="The company and the role">
+            {sheet.company.whatTheyDo ? <p className="text-xs text-muted leading-relaxed">{sheet.company.whatTheyDo}</p> : <Empty>Hakkiri has no summary of this company. It writes one when the company’s website can be read at set-up: rebuild the interview with the website to add it.</Empty>}
+            {sheet.company.jobSummary ? (
+              <p className="text-xs text-muted leading-relaxed">
+                <b className="font-semibold text-ink">The job: </b>
+                {sheet.company.jobSummary}
+              </p>
+            ) : null}
 
             <div className="border-t border-line/60 pt-3">
-              <h3 className="text-xs font-bold text-ink mb-2">What matters most for this role</h3>
-              <ul className="space-y-2 text-xs">
-                <li className="flex items-start gap-2 text-muted">
-                  <span className="text-emerald-400 font-bold shrink-0 mt-0.5">✓</span>
-                  <div>
-                    <b className="text-ink">Product judgement</b> — Balance conversion, fraud and risk when making decisions.
-                  </div>
-                </li>
-                <li className="flex items-start gap-2 text-muted">
-                  <span className="text-emerald-400 font-bold shrink-0 mt-0.5">✓</span>
-                  <div>
-                    <b className="text-ink">Impact</b> — Drive measurable improvements in key payments metrics.
-                  </div>
-                </li>
-                <li className="flex items-start gap-2 text-muted">
-                  <span className="text-emerald-400 font-bold shrink-0 mt-0.5">✓</span>
-                  <div>
-                    <b className="text-ink">Collaboration</b> — Work closely with engineering, risk and commercial teams.
-                  </div>
-                </li>
-                <li className="flex items-start gap-2 text-muted">
-                  <span className="text-emerald-400 font-bold shrink-0 mt-0.5">✓</span>
-                  <div>
-                    <b className="text-ink">Ownership</b> — Define problems, prioritise solutions and see them through.
-                  </div>
-                </li>
-              </ul>
-            </div>
-          </Panel>
-
-          {/* Card 2: Your preparation priorities */}
-          <Panel className="p-5 sm:p-6 space-y-4">
-            <div className="flex items-start gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-purple-500/15 text-purple-400 border border-purple-500/25">
-                <Icon name="target" size={16} />
-              </div>
-              <div className="min-w-0">
-                <h2 className="text-sm font-bold text-white">Your preparation priorities</h2>
-                <p className="mt-0.5 text-xs text-muted">
-                  Based on your previous answers and the role requirements.
-                </p>
-              </div>
+              <h3 className="text-xs font-bold text-ink mb-2">What the job asks for</h3>
+              {sheet.company.skills.length ? (
+                <ul className="flex flex-wrap gap-1.5 text-xs">
+                  {sheet.company.skills.map((s) => (
+                    <li key={s} className="rounded-md bg-panel-2 border border-line px-2 py-1 text-ink">
+                      {s}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <Empty>No skills were picked out from the job description.</Empty>
+              )}
             </div>
 
-            <div className="space-y-4 pt-1">
-              {/* Priority 1 */}
-              <div className="flex items-start gap-3">
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-fill/25 text-blue-soft text-xs font-bold border border-blue-fill/30">
-                  1
-                </span>
-                <div className="space-y-1 text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-ink">Strengthen your commercial judgement</span>
-                    <span className="rounded bg-[#f59e0b]/20 px-1.5 py-0.2 text-[9px] font-bold uppercase tracking-wider text-[#fbbf24] border border-[#f59e0b]/40">
-                      Priority
+            {sheet.company.toKnow.length > 0 && (
+              <div className="border-t border-line/60 pt-3">
+                <h3 className="text-xs font-bold text-ink mb-2">Worth knowing</h3>
+                <ul className="space-y-1.5 text-xs text-muted">
+                  {sheet.company.toKnow.map((k) => (
+                    <li key={k} className="flex items-start gap-2">
+                      <span aria-hidden className="text-dim">•</span>
+                      <span>{k}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {sheet.company.whyYou.length > 0 && (
+              <div className="border-t border-line/60 pt-3">
+                <h3 className="text-xs font-bold text-ink mb-2">Links between your CV and this role</h3>
+                <ul className="space-y-1.5 text-xs text-muted">
+                  {sheet.company.whyYou.map((k) => (
+                    <li key={k} className="flex items-start gap-2">
+                      <span aria-hidden className="text-emerald-300 font-bold">✓</span>
+                      <span>{k}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </Card>
+
+          <Card testid="prep-priorities" icon="target" tone="bg-purple-500/15 text-purple-300 border-purple-500/25" title="Your preparation priorities" note="From your latest practice interview, and from skills the job asks for that your stories don’t yet cover.">
+            {priorities.length ? (
+              <ol className="space-y-4 pt-1">
+                {priorities.map((p, i) => (
+                  <li key={p.title} className="flex items-start gap-3">
+                    <span aria-hidden className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-fill/25 text-blue-soft text-xs font-bold border border-blue-fill/30">
+                      {i + 1}
                     </span>
-                  </div>
-                  <p className="text-muted leading-relaxed">
-                    This role involves balancing conversion, fraud and risk. Prepare an example where you evaluated competing outcomes and made a product decision.
-                  </p>
-                  <p className="text-muted leading-relaxed text-[11px] pt-0.5">
-                    <span className="font-semibold text-blue-soft">Your evidence:</span> The first-payment completion improvement from 41% to 58%. Explain the trade-offs considered and how you measured success.
-                  </p>
-                </div>
-              </div>
+                    <div className="space-y-1 text-xs">
+                      <div className="font-bold text-ink">{p.title}</div>
+                      <p className="text-muted leading-relaxed">{p.detail}</p>
+                      <Link href={p.href} className="inline-block font-semibold text-blue-soft hover:underline">
+                        {p.action} →
+                      </Link>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <Empty>Nothing yet. Priorities come from your scored answers: do a practice interview and the habits it shows will be listed here.</Empty>
+            )}
+          </Card>
 
-              {/* Priority 2 */}
-              <div className="flex items-start gap-3">
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-fill/25 text-blue-soft text-xs font-bold border border-blue-fill/30">
-                  2
-                </span>
-                <div className="space-y-1 text-xs">
-                  <span className="font-bold text-ink">Make your personal contribution clearer</span>
-                  <p className="text-muted leading-relaxed">
-                    Your roadmap example explains what the team did, but needs to distinguish your decisions from the team&apos;s delivery. Be specific about what you recommended, who you influenced and the result.
-                  </p>
-                </div>
-              </div>
+          <Card testid="prep-best-answers" icon="sparkle" tone="bg-amber-500/15 text-amber-300 border-amber-500/25" title="Your best answers" note="Your highest-scoring answer to each question, in its stronger version.">
+            {sheet.bestAnswers.length ? (
+              <ul className="space-y-3">
+                {sheet.bestAnswers.map((a) => (
+                  <li key={a.questionId} className="rounded-xl bg-panel-2 p-3.5 border border-line space-y-2">
+                    <div className="flex items-start justify-between gap-3 text-xs font-bold text-ink">
+                      <Link href={`/interviews/${interview.id}/answers/${a.answerId}`} className="hover:text-blue-soft">
+                        {a.question}
+                      </Link>
+                      <span className="num shrink-0 text-white">{a.score.toFixed(1)} / 5</span>
+                    </div>
+                    {a.text ? <p className="text-[11px] leading-relaxed text-muted">“{a.text}”</p> : <p className="text-[11px] text-muted">No stronger version was written for this answer.</p>}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <Empty>No scored answers yet. After you practise, your best answer to each question appears here.</Empty>
+            )}
+          </Card>
 
-              {/* Priority 3 */}
-              <div className="flex items-start gap-3">
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-fill/25 text-blue-soft text-xs font-bold border border-blue-fill/30">
-                  3
-                </span>
-                <div className="space-y-1 text-xs">
-                  <span className="font-bold text-ink">Prepare for questions about career transitions</span>
-                  <p className="text-muted leading-relaxed">
-                    An interviewer may ask about your eight months at Fernway or your move from design into product. Prepare a concise explanation that connects each move to your development.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </Panel>
-
-          {/* Card 3: Your best answers */}
-          <Panel className="p-5 sm:p-6 space-y-3">
-            <div className="flex items-start gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/15 text-amber-400 border border-amber-500/25">
-                <Icon name="sparkle" size={16} />
-              </div>
-              <div className="min-w-0">
-                <h2 className="text-sm font-bold text-white">Your best answers</h2>
-                <p className="mt-0.5 text-xs text-muted">
-                  How your key examples are working and how to make them stronger.
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-2 rounded-xl bg-panel-2 p-3.5 border border-line space-y-2">
-              <div className="flex items-center justify-between text-xs font-bold text-ink">
-                <span>Roadmap change (Fernway)</span>
-                <Icon name="chevronRight" size={14} className="text-muted" />
-              </div>
-              <div className="space-y-1.5 text-xs">
-                <div className="flex items-start gap-2">
-                  <span className="rounded bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-bold text-emerald-400 shrink-0 border border-emerald-500/30">
-                    ✓ What&apos;s strong
-                  </span>
-                  <span className="text-muted text-[11px] leading-relaxed">
-                    Clearly explains the context, decision and outcome.
-                  </span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <span className="rounded bg-blue-fill/20 px-1.5 py-0.5 text-[10px] font-bold text-blue-soft shrink-0 border border-blue-fill/30">
-                    ↑ How to improve
-                  </span>
-                  <span className="text-muted text-[11px] leading-relaxed">
-                    Make your personal role and the trade-offs you evaluated more explicit.
-                  </span>
-                </div>
-              </div>
-            </div>
-          </Panel>
+          <Card testid="prep-stories" icon="book" tone="bg-emerald-500/15 text-emerald-300 border-emerald-500/25" title="Your stories" note="Stories found in your CV at set-up, and the ones you built.">
+            {sheet.stories.length ? (
+              <ul className="space-y-3">
+                {sheet.stories.map((s) => (
+                  <li key={s.title} className="rounded-xl bg-panel-2 p-3.5 border border-line space-y-1.5 text-xs">
+                    <div className="font-bold text-ink">{s.title}</div>
+                    <div className="text-[11px] text-dim">{s.source}</div>
+                    {s.text ? <p className="text-[11px] leading-relaxed text-muted">{s.text}</p> : null}
+                    {s.useFor.length ? <p className="text-[11px] text-muted">Use it for: {s.useFor.join(", ")}.</p> : null}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <Empty>
+                No stories yet.{" "}
+                {(interview.gaps ?? []).length ? (
+                  <Link href={storyHref} className="font-semibold text-blue-soft hover:underline">
+                    Build one for a skill the job asks for
+                  </Link>
+                ) : (
+                  "Stories are picked out of your CV at set-up, and added when you build one."
+                )}
+              </Empty>
+            )}
+          </Card>
         </div>
 
         {/* ===================== RIGHT COLUMN ===================== */}
         <div className="space-y-5">
-          {/* Card 4: Likely questions and how to approach them */}
-          <Panel className="p-5 sm:p-6 space-y-3">
-            <div className="flex items-start gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-fill/15 text-blue-soft border border-blue-fill/25">
-                <Icon name="chat" size={16} />
-              </div>
-              <div className="min-w-0">
-                <h2 className="text-sm font-bold text-white">Likely questions and how to approach them</h2>
-                <p className="mt-0.5 text-xs text-muted">
-                  Key questions for this stage, with guidance on what a strong answer should include.
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-2 divide-y divide-line/60">
-              <div className="grid grid-cols-[1.2fr_1.8fr] gap-3 pb-2 text-[11px] font-semibold text-muted uppercase tracking-wider">
-                <span>Likely question</span>
-                <span>How to approach it</span>
-              </div>
-
-              {/* Row 1 */}
-              <Link
-                href={`/mock/${interview.id}?topic=commercial-judgement`}
-                className="grid grid-cols-[1.2fr_1.8fr] gap-3 py-3 items-start text-xs group hover:bg-white/[0.02] rounded-lg transition-colors px-1"
-              >
-                <span className="font-semibold text-ink group-hover:text-blue-soft transition-colors">
-                  How would you balance conversion and fraud risk?
-                </span>
-                <div className="flex items-start justify-between gap-2 text-muted leading-relaxed text-[11px]">
-                  <span>
-                    Explain how you assess customer impact, fraud losses and trade-offs, including guardrails (e.g. risk thresholds) and when to escalate.
-                  </span>
-                  <Icon name="chevronRight" size={13} className="shrink-0 text-dim mt-0.5 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+          <Card testid="prep-questions" icon="chat" tone="bg-blue-fill/15 text-blue-soft border-blue-fill/25" title="Likely questions and how to approach them" note="The questions written for this interview, most important first.">
+            {questions.length ? (
+              <div className="divide-y divide-line/60">
+                <div className="grid grid-cols-[1.2fr_1.8fr] gap-3 pb-2 text-[11px] font-semibold text-muted uppercase tracking-wider">
+                  <span>Likely question</span>
+                  <span>How to approach it</span>
                 </div>
-              </Link>
+                {questions.map((q) => (
+                  <Link key={q.id} href={`/mock/${interview.id}?q=${encodeURIComponent(q.id)}`} className="grid grid-cols-[1.2fr_1.8fr] gap-3 py-3 items-start text-xs group hover:bg-white/[0.02] rounded-lg transition-colors px-1">
+                    <span className="font-semibold text-ink group-hover:text-blue-soft transition-colors">{q.text}</span>
+                    <span className="flex items-start justify-between gap-2 text-muted leading-relaxed text-[11px]">
+                      <span>{q.approach}</span>
+                      <Icon name="chevronRight" size={13} className="shrink-0 text-dim mt-0.5 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <Empty>No questions have been written for this interview yet.</Empty>
+            )}
+          </Card>
 
-              {/* Row 2 */}
-              <Link
-                href={hasQ("c1") ? `/mock/${interview.id}?q=c1` : `/mock/${interview.id}?topic=star`}
-                className="grid grid-cols-[1.2fr_1.8fr] gap-3 py-3 items-start text-xs group hover:bg-white/[0.02] rounded-lg transition-colors px-1"
-              >
-                <span className="font-semibold text-ink group-hover:text-blue-soft transition-colors">
-                  Tell me about a time you changed a roadmap.
+          <Card testid="prep-probes" icon="chat" tone="bg-indigo-500/15 text-indigo-300 border-indigo-500/25" title="Be ready for follow-up questions" note="What an interviewer is likely to probe in your CV.">
+            {probes.length ? (
+              <ul className="space-y-2.5">
+                {probes.map((p) => (
+                  <li key={p.ask} className="rounded-xl bg-panel-2 p-3.5 border border-line text-xs space-y-1">
+                    <div className="font-bold text-ink">{p.ask}</div>
+                    {p.handle ? <p className="text-[11px] leading-relaxed text-muted">{p.handle}</p> : null}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <Empty>Nothing in your CV was picked out as likely to be probed.</Empty>
+            )}
+          </Card>
+
+          <Card testid="prep-checklist" icon="layers" tone="bg-teal-500/15 text-teal-300 border-teal-500/25" title="Topics to practise" note="Practice topics matched to the job’s title and description. Tick them off as you go: the ticks are kept on this page only until you leave it.">
+            {checklistItems.length ? <PrepChecklist items={checklistItems} interviewId={interview.id} /> : <Empty>No practice topics matched this job.</Empty>}
+          </Card>
+
+          <Card testid="prep-ask" icon="target" tone="bg-emerald-500/15 text-emerald-300 border-emerald-500/25" title="Questions to ask the interviewer">
+            {sheet.questionsToAsk.length ? (
+              <ul className="space-y-2 text-xs text-muted pl-1">
+                {sheet.questionsToAsk.map((q) => (
+                  <li key={q} className="flex items-start gap-2">
+                    <span aria-hidden className="text-dim">•</span>
+                    <span>{q}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <Empty>None were written for this interview. They are written at set-up when the job description can be read.</Empty>
+            )}
+          </Card>
+
+          <Card testid="prep-remember" icon="checkCircle" tone="bg-amber-500/15 text-amber-300 border-amber-500/25" title="On the day" note={fixes.length ? "Reminders from the habits your latest interview showed." : "General reminders: they become your own after a practice interview."}>
+            <ul className="space-y-2 text-xs text-muted pl-1">
+              {sheet.remember.map((r) => (
+                <li key={r} className="flex items-start gap-2">
+                  <span aria-hidden className="text-dim">•</span>
+                  <span>{r}</span>
+                </li>
+              ))}
+              <li className="flex items-start gap-2">
+                <span aria-hidden className="text-dim">•</span>
+                <span>
+                  <b className="font-semibold text-ink">Pay: </b>
+                  {sheet.pay.tip}
+                  {sheet.pay.answer ? ` Your best answer so far: “${sheet.pay.answer}”` : ""}
                 </span>
-                <div className="flex items-start justify-between gap-2 text-muted leading-relaxed text-[11px]">
-                  <span>
-                    Cover the original assumption, evidence that challenged it, options considered, stakeholders influenced and the measurable outcome.
-                  </span>
-                  <Icon name="chevronRight" size={13} className="shrink-0 text-dim mt-0.5 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
-                </div>
-              </Link>
-
-              {/* Row 3 */}
-              <Link
-                href={`/mock/${interview.id}?topic=stakeholder-management`}
-                className="grid grid-cols-[1.2fr_1.8fr] gap-3 py-3 items-start text-xs group hover:bg-white/[0.02] rounded-lg transition-colors px-1"
-              >
-                <span className="font-semibold text-ink group-hover:text-blue-soft transition-colors">
-                  How do you influence engineers who disagree?
-                </span>
-                <div className="flex items-start justify-between gap-2 text-muted leading-relaxed text-[11px]">
-                  <span>
-                    Give a real example of disagreement, how you built alignment and the result. Show respect for different perspectives.
-                  </span>
-                  <Icon name="chevronRight" size={13} className="shrink-0 text-dim mt-0.5 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
-                </div>
-              </Link>
-            </div>
-          </Panel>
-
-          {/* Card 5: Be ready for follow-up questions */}
-          <Panel className="p-5 sm:p-6 space-y-3">
-            <div className="flex items-start gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-500/15 text-indigo-400 border border-indigo-500/25">
-                <Icon name="chat" size={16} />
-              </div>
-              <div className="min-w-0">
-                <h2 className="text-sm font-bold text-white">Be ready for follow-up questions</h2>
-                <p className="mt-0.5 text-xs text-muted">
-                  Example follow-ups based on your experience.
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-2 rounded-xl bg-panel-2 p-4 border border-line space-y-2.5">
-              <div className="text-xs font-bold text-ink">
-                Your example: Growing checkout conversion by 17%
-              </div>
-              <div className="text-xs text-muted space-y-1">
-                <p className="font-medium text-dim">An interviewer might ask:</p>
-                <ul className="space-y-1 pl-1 text-[11px]">
-                  <li>• How do you know your changes caused the improvement?</li>
-                  <li>• What other solutions did you consider?</li>
-                  <li>• What was your personal contribution?</li>
-                  <li>• What would you do differently?</li>
-                </ul>
-              </div>
-            </div>
-          </Panel>
-
-          {/* Card 6: Role-specific knowledge checklist */}
-          <Panel className="p-5 sm:p-6 space-y-3">
-            <div className="flex items-start gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-teal-500/15 text-teal-400 border border-teal-500/25">
-                <Icon name="layers" size={16} />
-              </div>
-              <div className="min-w-0">
-                <h2 className="text-sm font-bold text-white">Role-specific knowledge checklist</h2>
-                <p className="mt-0.5 text-xs text-muted">
-                  Key areas to be confident in for a {roleTitle} role.
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-2">
-              <PrepChecklist items={checklistItems} interviewId={interview.id} />
-            </div>
-          </Panel>
-
-          {/* Card 7: Questions to ask the interviewer */}
-          <Panel className="p-5 sm:p-6 space-y-3">
-            <div className="flex items-start gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">
-                <Icon name="target" size={16} />
-              </div>
-              <div className="min-w-0">
-                <h2 className="text-sm font-bold text-white">Questions to ask the interviewer</h2>
-                <p className="mt-0.5 text-xs text-muted">
-                  Thoughtful questions that show your judgement and help you learn more.
-                </p>
-              </div>
-            </div>
-
-            <ul className="mt-2 space-y-2 text-xs text-muted pl-1">
-              <li className="flex items-start gap-2">
-                <span className="text-dim">•</span>
-                <span>What are the biggest payment challenges you&apos;re looking to solve in the next 6–12 months?</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-dim">•</span>
-                <span>How do you think about the trade-off between growth and risk at {companyName}?</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-dim">•</span>
-                <span>What would success look like in this role after the first 3–6 months?</span>
               </li>
             </ul>
-          </Panel>
+          </Card>
         </div>
       </div>
     </div>
