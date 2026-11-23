@@ -255,7 +255,7 @@ export function InterviewExamplesView() {
                       </button>
 
                       <div className="min-w-0 space-y-2">
-                        <h3 className="text-sm font-semibold text-white leading-snug">{ex.title}</h3>
+                        <h2 className="text-sm font-semibold text-white leading-snug">{ex.title}</h2>
 
                         {/* Tags */}
                         <div className="flex flex-wrap items-center gap-1.5 pt-0.5">

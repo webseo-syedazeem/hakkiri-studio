@@ -84,7 +84,7 @@ export function LegalPage({
             <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">
               Document Outline & Sections ({sections.length})
             </h2>
-            <span className="text-[11px] text-slate-400 font-mono">Jump to section</span>
+            <span className="text-[11px] text-slate-500 font-mono">Jump to section</span>
           </div>
 
           <ol className="mt-4 grid list-decimal gap-x-8 gap-y-2 pl-5 text-sm sm:grid-cols-2 font-medium text-slate-700">

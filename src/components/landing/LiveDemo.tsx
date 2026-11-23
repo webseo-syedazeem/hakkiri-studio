@@ -116,7 +116,7 @@ export function LiveDemo() {
             <span className="whitespace-nowrap hidden xs:inline sm:inline">Question 3 of 8</span>
             <span
               className={`flex items-center gap-1.5 rounded-full px-2 py-0.5 sm:px-2.5 sm:py-1 font-medium transition-colors duration-300 ${
-                rec ? "bg-[#ff5c5c]/15 text-[#ff8a8a]" : "bg-white/[0.06] text-white/45"
+                rec ? "bg-[#ff5c5c]/15 text-[#ff8a8a]" : "bg-white/[0.06] text-white/55"
               }`}
             >
               <span
