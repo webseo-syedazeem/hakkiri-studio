@@ -20,7 +20,7 @@ export default function TermsPage() {
       draft={DRAFT}
       intro={
         <p>
-          These terms are the agreement between you and Hakkiri Ltd (“we”, “us”) for using Hakkiri. Please read them; by using Hakkiri you agree to them. Our <Link href="/privacy">privacy policy</Link> explains how we handle your data. If you’re a
+          These terms are the agreement between you and Happy Cheeks Ltd (“we”, “us”), trading as Hakkiri Studio (company number 15146182), for using Hakkiri Studio. Please read them; by using Hakkiri Studio you agree to them. Our <Link href="/privacy">privacy policy</Link> explains how we handle your data. If you’re a
           consumer, nothing here affects your legal rights.
         </p>
       }
@@ -143,7 +143,7 @@ export default function TermsPage() {
           title: "Contact",
           body: (
             <p>
-              Hakkiri Ltd, 71-75 Shelton Street, Covent Garden, London, WC2H 9JQ, United Kingdom. Email <a href="mailto:support@hakkiri.studio">support@hakkiri.studio</a>.
+              Hakkiri Studio is a trading name of Happy Cheeks Ltd (company number 15146182), registered in England and Wales. Email <a href="mailto:support@hakkiri.studio">support@hakkiri.studio</a>.
             </p>
           ),
         },

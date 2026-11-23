@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Cv } from "@/lib/apply/schema";
-import { ReziProductsFlow } from "@/components/cv/ReziProductsFlow";
+import { AtsProductsFlow } from "@/components/cv/ReziProductsFlow";
 
 const DEFAULT_STARTER_CVS: Cv[] = [
   {
@@ -441,9 +441,9 @@ export default function CvsListPage() {
         </div>
       )}
 
-      {/* Rezi Feature Showcase & ATS Formats */}
+      {/* Executive ATS Feature Showcase & Formats */}
       <div className="pt-8 border-t border-line/60">
-        <ReziProductsFlow />
+        <AtsProductsFlow />
       </div>
     </div>
   );

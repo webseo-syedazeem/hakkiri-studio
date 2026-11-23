@@ -208,9 +208,8 @@ export default function AboutPage() {
 
             <div className="pt-4 border-t border-mk-line/70 text-xs text-mk-slate space-y-1">
               <div>
-                <strong>Hakkiri Ltd</strong> · Registered in England and Wales
+                <strong>Hakkiri Studio</strong> is a trading name of Happy Cheeks Ltd (company number 15146182) · Registered in England and Wales
               </div>
-              <div>71-75 Shelton Street, Covent Garden, London, WC2H 9JQ, United Kingdom</div>
               <div>
                 Contact support:{" "}
                 <a href="mailto:support@hakkiri.studio" className="text-mk-blue hover:underline">

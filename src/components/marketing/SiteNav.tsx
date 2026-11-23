@@ -7,7 +7,7 @@ import clsx from "clsx";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { isAdminEmail } from "@/lib/auth/admins";
 
-/** The public site's top links matching the beta landing navigation. */
+/** The public site's top links matching the modern executive navigation. */
 export function SiteNav() {
   const path = usePathname();
   const { user, logout } = useAuth();
@@ -15,7 +15,6 @@ export function SiteNav() {
   const menuRef = useRef<HTMLDivElement>(null);
 
   const isPresent = path === "/present";
-  const anchorBase = isPresent ? "/present" : "/";
 
   // Core navigation links
   const primaryLinks: [string, string, boolean][] = [
@@ -24,13 +23,6 @@ export function SiteNav() {
     ["/cv-audit", "Free CV Audit", path.startsWith("/cv-audit")],
     ["/about", "About", path === "/about"],
     ["/blog", "Blog", path.startsWith("/blog")],
-  ];
-
-  // Secondary anchor links (visible on wider screens)
-  const secondaryLinks: [string, string][] = [
-    [`${anchorBase}#how`, "How it works"],
-    [`${anchorBase}#beta`, "Beta"],
-    [`${anchorBase}#faq`, "Questions"],
   ];
 
   const isUserAdmin = isAdminEmail(user?.email);
@@ -51,7 +43,7 @@ export function SiteNav() {
   }, [userMenuOpen]);
 
   return (
-    <nav aria-label="Main" className="flex items-center gap-1 text-[13px] sm:gap-2">
+    <nav aria-label="Main" className="flex items-center gap-1.5 text-[13px] sm:gap-2.5">
       {/* Primary Navigation Links */}
       {primaryLinks.map(([href, label, current]) => (
         <Link
@@ -59,9 +51,9 @@ export function SiteNav() {
           href={href}
           aria-current={current ? "page" : undefined}
           className={clsx(
-            "hidden rounded-full px-3 py-1.5 transition-all duration-150 md:inline",
+            "hidden rounded-full px-3.5 py-1.5 transition-all duration-200 md:inline font-medium",
             current
-              ? "text-mk-ink font-semibold bg-black/[0.04]"
+              ? "text-mk-ink font-semibold bg-black/[0.05] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.04)]"
               : "text-mk-ink/70 hover:text-mk-ink hover:bg-black/[0.03]"
           )}
         >
@@ -69,36 +61,13 @@ export function SiteNav() {
         </Link>
       ))}
 
-      {/* Secondary Anchor Links (desktop only) */}
-      {secondaryLinks.map(([href, label]) => (
-        <Link
-          key={label}
-          href={href}
-          className="hidden rounded-full px-3 py-1.5 text-mk-ink/70 transition-all duration-150 hover:text-mk-ink hover:bg-black/[0.03] lg:inline"
-        >
-          {label}
-        </Link>
-      ))}
-
-      {/* Admin Quick Link (Subtle, sleek, non-intrusive) */}
-      {isUserAdmin && (
-        <Link
-          href="/admin"
-          className="hidden xl:inline-flex items-center gap-1.5 rounded-full border border-purple-200/80 bg-purple-50/70 px-3 py-1 text-xs font-semibold text-purple-700 hover:bg-purple-100 hover:text-purple-800 transition-all"
-          title="Hakkiri Admin Console"
-        >
-          <span className="h-1.5 w-1.5 rounded-full bg-purple-600 animate-pulse" />
-          Admin
-        </Link>
-      )}
-
       {/* Auth / Studio CTAs */}
       {user ? (
-        <div className="relative flex items-center gap-2" ref={menuRef}>
-          {/* Main Open Studio CTA Button (clean label without initials in parentheses) */}
+        <div className="relative flex items-center gap-2 pl-1" ref={menuRef}>
+          {/* Main Open Studio CTA Button */}
           <Link
             href="/dashboard"
-            className="rounded-full bg-mk-cta px-4 py-1.5 font-medium text-white transition-all duration-200 hover:scale-[1.03] active:scale-[0.97] hover:bg-mk-cta-hover hover:shadow-md hover:shadow-mk-cta/25"
+            className="rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:shadow-md hover:shadow-blue-500/25 hover:scale-[1.03] active:scale-[0.98] transition-all"
           >
             Open Studio
           </Link>
@@ -109,7 +78,7 @@ export function SiteNav() {
             onClick={() => setUserMenuOpen((prev) => !prev)}
             aria-label="User account menu"
             aria-expanded={userMenuOpen}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-[11px] font-bold text-white shadow-sm ring-1 ring-slate-950/10 hover:ring-2 hover:ring-blue-500/50 transition-all cursor-pointer select-none"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-tr from-slate-900 via-slate-800 to-indigo-950 text-[11px] font-bold tracking-tight text-white shadow-md ring-1 ring-black/10 hover:ring-2 hover:ring-blue-500/50 hover:scale-105 active:scale-95 transition-all cursor-pointer select-none"
             title={`${user.firstName || "User"} (${user.email || ""})`}
           >
             {user.initials || "U"}
@@ -131,7 +100,7 @@ export function SiteNav() {
                 <Link
                   href="/dashboard"
                   onClick={() => setUserMenuOpen(false)}
-                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 hover:bg-black/[0.04] hover:text-slate-900 transition-colors"
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 hover:bg-black/[0.04] hover:text-slate-900 transition-colors"
                 >
                   <span className="text-blue-600 font-bold">●</span>
                   Studio Dashboard
@@ -140,7 +109,7 @@ export function SiteNav() {
                 <Link
                   href="/apply/cvs"
                   onClick={() => setUserMenuOpen(false)}
-                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 hover:bg-black/[0.04] hover:text-slate-900 transition-colors"
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 hover:bg-black/[0.04] hover:text-slate-900 transition-colors"
                 >
                   <span className="text-emerald-600 font-bold">📄</span>
                   CV Builder
@@ -149,7 +118,7 @@ export function SiteNav() {
                 <Link
                   href="/interviews"
                   onClick={() => setUserMenuOpen(false)}
-                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 hover:bg-black/[0.04] hover:text-slate-900 transition-colors"
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 hover:bg-black/[0.04] hover:text-slate-900 transition-colors"
                 >
                   <span className="text-violet-600 font-bold">🎙️</span>
                   Mock Interviews
@@ -159,7 +128,7 @@ export function SiteNav() {
                   <Link
                     href="/admin"
                     onClick={() => setUserMenuOpen(false)}
-                    className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-purple-700 hover:bg-purple-50 transition-colors"
+                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-purple-700 bg-purple-50/60 hover:bg-purple-100 transition-colors"
                   >
                     <span className="text-purple-600 font-bold">⚙️</span>
                     Admin Console
@@ -169,7 +138,7 @@ export function SiteNav() {
                 <Link
                   href="/settings"
                   onClick={() => setUserMenuOpen(false)}
-                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 hover:bg-black/[0.04] hover:text-slate-900 transition-colors"
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 hover:bg-black/[0.04] hover:text-slate-900 transition-colors"
                 >
                   <span className="text-slate-500 font-bold">⚙️</span>
                   Account Settings
@@ -183,7 +152,7 @@ export function SiteNav() {
                     setUserMenuOpen(false);
                     void logout();
                   }}
-                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-medium text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-medium text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
                 >
                   <span>🚪</span>
                   Sign out
@@ -196,13 +165,13 @@ export function SiteNav() {
         <>
           <Link
             href="/login"
-            className="hidden rounded-full px-3 py-1.5 text-mk-ink/70 transition-all duration-150 hover:text-mk-ink hover:bg-black/[0.03] sm:inline"
+            className="hidden rounded-full px-3.5 py-1.5 text-mk-ink/70 transition-all duration-150 hover:text-mk-ink hover:bg-black/[0.03] sm:inline font-medium"
           >
             Log in
           </Link>
           <Link
             href="/signup"
-            className="ml-1 rounded-full bg-mk-cta px-4 py-1.5 font-medium text-white transition-all duration-200 hover:scale-[1.04] active:scale-[0.97] hover:bg-mk-cta-hover hover:shadow-md hover:shadow-mk-cta/25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mk-cta"
+            className="ml-1 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:shadow-md hover:shadow-blue-500/25 hover:scale-[1.03] active:scale-[0.98] transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mk-cta"
           >
             Sign up free
           </Link>

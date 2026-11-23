@@ -28,7 +28,7 @@ const DEFAULT_EDITOR_CV: Cv = {
     {
       id: "b-1",
       roleId: "role-1",
-      text: "Launched Rezi, the leading AI-powered resume SaaS software, garnering trust from over 4,533,800 users globally.",
+      text: "Launched Hakkiri Studio, the leading AI-powered career SaaS software, garnering trust from over 4,533,800 users globally.",
       evidenceIds: ["ev-1"],
       origin: "person",
       visible: true,
@@ -36,7 +36,7 @@ const DEFAULT_EDITOR_CV: Cv = {
     {
       id: "b-2",
       roleId: "role-1",
-      text: "Architected the machine learning models behind Rezi's AI resume writer, lifting resume quality scores 32% across 4.5M+ users.",
+      text: "Architected the machine learning models behind Hakkiri's AI resume writer, lifting resume quality scores 32% across 4.5M+ users.",
       evidenceIds: ["ev-2"],
       origin: "person",
       visible: true,
@@ -77,14 +77,14 @@ const DEFAULT_EDITOR_PROFILE: Profile = {
     location: "Seoul, South Korea",
     links: ["https://linkedin.com/in/cbloomberg"],
   },
-  headline: "CEO & Founder | Rezi",
+  headline: "CEO & Founder | Hakkiri Studio",
   summary:
     "Passion for building inspiring consumer software companies through industry-leading tech, design, and execution. An experienced early-stage global executive with an economics degree.",
   roles: [
     {
       id: "role-1",
       title: "CEO & Founder",
-      employer: "Rezi",
+      employer: "Hakkiri Studio",
       location: "Seoul, South Korea",
       start: "August 2015",
       end: "Present",
@@ -137,7 +137,7 @@ const DEFAULT_EDITOR_PROFILE: Profile = {
 };
 
 const RESUME_SWITCHER_OPTIONS = [
-  { value: "cv_master_base", label: "Standard Professional Resume", badge: "Master · 95", dotColor: "bg-emerald-400", description: "100% ATS Parser Safe · Rezi Gold Standard" },
+  { value: "cv_master_base", label: "Standard Professional Resume", badge: "Master · 95", dotColor: "bg-emerald-400", description: "100% ATS Parser Safe · Executive Gold Standard" },
   { value: "cv_fintech_lead", label: "FinTech Scaleup Tech Lead", badge: "92% Fit", dotColor: "bg-blue-400", description: "Tailored with cloud reconciliation metrics" },
   { value: "cv_cloud_architect", label: "Staff Cloud Systems Architect", badge: "88% Fit", dotColor: "bg-purple-400", description: "Targeted on AWS & high-uptime systems" },
   { value: "cv_exec_lead", label: "Engineering Director / VP", badge: "Exec 94%", dotColor: "bg-amber-400", description: "People leadership, budgeting & OKR focus" },
@@ -213,12 +213,12 @@ export default function CvBuilderEditorPage({
   const [savedMsg, setSavedMsg] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
-  // Rezi Subnavigation Section Tabs (Screenshot 1)
+  // ATS Subnavigation Section Tabs (Screenshot 1)
   const [activeTab, setActiveTab] = useState<
     "contact" | "experience" | "project" | "education" | "skills" | "summary"
   >("experience");
 
-  // Rezi Formatting Controls (Screenshot 1)
+  // ATS Formatting Controls (Screenshot 1)
   const [fontFamily, setFontFamily] = useState<string>("merriweather");
   const [fontSize, setFontSize] = useState<number>(11);
   const [lineSpacing, setLineSpacing] = useState<string>("1.5");
@@ -230,7 +230,7 @@ export default function CvBuilderEditorPage({
   const [showProfilePic, setShowProfilePic] = useState<boolean>(false);
   const [userPhoto, setUserPhoto] = useState<string | null>(null);
 
-  // Rezi Score Drawer (Screenshot 1, 3)
+  // ATS Score Drawer (Screenshot 1, 3)
   const [exploreScoreOpen, setExploreScoreOpen] = useState(false);
 
   // AI Keyword Targeting (Screenshot 1, 4)
@@ -313,7 +313,7 @@ export default function CvBuilderEditorPage({
           throw new Error("CV object missing");
         }
       } catch (err) {
-        console.warn("Using default Rezi CV state:", err);
+        console.warn("Using default CV state:", err);
         setCv({ ...DEFAULT_EDITOR_CV, id });
         setProfile(DEFAULT_EDITOR_PROFILE);
       } finally {
@@ -446,7 +446,7 @@ export default function CvBuilderEditorPage({
       <div className="flex h-96 items-center justify-center text-muted">
         <div className="space-y-3 text-center">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue border-t-transparent mx-auto" />
-          <p className="text-xs text-muted">Loading Rezi CV Builder...</p>
+          <p className="text-xs text-muted">Loading ATS CV Builder...</p>
         </div>
       </div>
     );
@@ -462,7 +462,7 @@ export default function CvBuilderEditorPage({
           {
             id: "role-1",
             title: "CEO & Founder",
-            employer: "Rezi",
+            employer: "Hakkiri Studio",
             location: "Seoul, South Korea",
             start: "August 2015",
             end: "Present",
@@ -489,7 +489,7 @@ export default function CvBuilderEditorPage({
       )}
 
       {/* =================================================================== */}
-      {/* 1. REZI TOP SUBNAV TABS (Screenshot 1)                              */}
+      {/* 1. ATS TOP SUBNAV TABS (Screenshot 1)                               */}
       {/* =================================================================== */}
       <div className="rounded-2xl border border-line bg-panel p-2.5 shadow-md flex flex-wrap items-center justify-between gap-3 print:hidden print-hide">
         {/* Left: Resume Selector & Section Tabs */}
@@ -548,7 +548,7 @@ export default function CvBuilderEditorPage({
       </div>
 
       {/* =================================================================== */}
-      {/* 2. REZI DOCUMENT ACTION TOOLBAR & FORMATTING BAR (Screenshot 1)     */}
+      {/* 2. ATS DOCUMENT ACTION TOOLBAR & FORMATTING BAR (Screenshot 1)     */}
       {/* =================================================================== */}
       <div className="rounded-2xl border border-line bg-panel p-3 shadow-md flex flex-wrap items-center justify-between gap-3 print:hidden print-hide">
         {/* Quick Document Actions */}
@@ -735,7 +735,7 @@ export default function CvBuilderEditorPage({
       </div>
 
       {/* =================================================================== */}
-      {/* 3. 3-COLUMN REZI WORKSPACE: EDITOR | ATS PAPER | REZI SCORE + TARGET */}
+      {/* 3. 3-COLUMN ATS WORKSPACE: EDITOR | ATS PAPER | ATS SCORE + TARGET */}
       {/* =================================================================== */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start w-full print:block print:w-full print:m-0 print:p-0">
         {/* Left Column: Section & Bullet Editor (4 cols) */}
@@ -1010,7 +1010,7 @@ export default function CvBuilderEditorPage({
                                 <span className="bg-emerald-100 text-emerald-900 px-1 rounded font-semibold underline decoration-emerald-500">
                                   machine learning
                                 </span>{" "}
-                                models behind Rezi&apos;s AI resume writer, lifting quality scores 32% across 4.5M+ users.
+                                models behind Hakkiri&apos;s AI resume writer, lifting quality scores 32% across 4.5M+ users.
                               </>
                             ) : (
                               b.text
@@ -1071,9 +1071,9 @@ export default function CvBuilderEditorPage({
           </div>
         </div>
 
-        {/* Right Column: Rezi Score Gauge & AI Keyword Targeting (3 cols, Screenshot 1) */}
+        {/* Right Column: ATS Score Gauge & AI Keyword Targeting (3 cols, Screenshot 1) */}
         <div className="xl:col-span-3 space-y-4 print:hidden print-hide">
-          {/* Card 1: Rezi Score Speedometer Gauge */}
+          {/* Card 1: ATS Score Speedometer Gauge */}
           <div className="rounded-3xl border border-line bg-panel p-5 shadow-xl space-y-4">
             <div className="text-center">
               <div className="relative w-36 h-20 mx-auto overflow-hidden">
@@ -1087,13 +1087,13 @@ export default function CvBuilderEditorPage({
                   <path
                     d="M 10 50 A 40 40 0 0 1 90 50"
                     fill="none"
-                    stroke="url(#reziEditorScoreGrad)"
+                    stroke="url(#hakkiriEditorScoreGrad)"
                     strokeWidth="8"
                     strokeDasharray="125.6"
                     strokeDashoffset={125.6 * (1 - scoreTotal / 100)}
                   />
                   <defs>
-                    <linearGradient id="reziEditorScoreGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <linearGradient id="hakkiriEditorScoreGrad" x1="0%" y1="0%" x2="100%" y2="0%">
                       <stop offset="0%" stopColor="#f43f5e" />
                       <stop offset="35%" stopColor="#f59e0b" />
                       <stop offset="70%" stopColor="#10b981" />
@@ -1120,7 +1120,7 @@ export default function CvBuilderEditorPage({
               className="w-full rounded-xl border border-line bg-panel-2 py-2 text-xs font-bold text-ink hover:bg-line transition flex items-center justify-center gap-1.5 shadow-sm"
             >
               <span>✦</span>
-              <span>EXPLORE YOUR REZI SCORE</span>
+              <span>EXPLORE YOUR ATS SCORE</span>
               <span className="text-xs">{exploreScoreOpen ? "▲" : "▼"}</span>
             </button>
 

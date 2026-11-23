@@ -162,7 +162,7 @@ export default function CvAuditPage() {
             {/* Hero / Intro */}
             <div className="text-center space-y-3">
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue/15 border border-blue/30 text-blue-300 text-xs font-mono font-bold tracking-wide uppercase">
-                <span>✦</span> Rezi-Grade ATS Resume Checker · Deep Diagnostic
+                <span>✦</span> Executive ATS Resume Checker · Deep Diagnostic
               </div>
               <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white">
                 Free AI Resume & CV Score Audit
@@ -339,13 +339,13 @@ export default function CvAuditPage() {
           </div>
         ) : (
           /* =============================================================== */
-          /* AUDIT RESULTS & REZI SPEEDOMETER SCREEN                         */
+          /* AUDIT RESULTS & ATS SPEEDOMETER SCREEN                          */
           /* =============================================================== */
           <div className="space-y-8 animate-fadeIn">
-            {/* Top Score Banner with Rezi Speedometer Gauge */}
+            {/* Top Score Banner with ATS Speedometer Gauge */}
             <div className="rounded-3xl border border-white/15 bg-gradient-to-b from-[#141528] to-[#0d0e19] p-6 sm:p-10 text-center shadow-2xl relative overflow-hidden space-y-6">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-slate-300 text-xs font-mono font-bold">
-                <span>✦</span> Verified Rezi Score Preview
+                <span>✦</span> Verified ATS Score Preview
               </div>
 
               {/* Speedometer Gauge Visual */}
@@ -406,7 +406,7 @@ export default function CvAuditPage() {
                   : "⚠️ Needs Optimization: High-severity duty phrasing and missing metrics detected. Follow the diagnostic findings below."}
               </p>
 
-              {/* 5 Rezi Subscores Grid */}
+              {/* 5 ATS Subscores Grid */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-6 border-t border-white/10 text-left">
                 <div className="rounded-2xl bg-[#18192c] p-4 border border-white/10">
                   <div className="text-[11px] text-slate-400 font-mono">Evidence & Metrics (35%)</div>

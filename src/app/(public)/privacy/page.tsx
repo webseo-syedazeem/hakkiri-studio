@@ -37,7 +37,7 @@ export default function PrivacyPage() {
           body: (
             <>
               <p>
-                Hakkiri is run by Hakkiri Ltd, a company registered in England and Wales, at 71-75 Shelton Street, Covent Garden, London, WC2H 9JQ, United Kingdom. We are the controller of your personal data.
+                Hakkiri Studio is a trading name of Happy Cheeks Ltd (company number 15146182), registered in England and Wales. We are the controller of your personal data.
               </p>
               <p>
                 Questions about your data: <a href="mailto:support@hakkiri.studio">support@hakkiri.studio</a>.

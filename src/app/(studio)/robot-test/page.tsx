@@ -34,7 +34,7 @@ export default function RobotTestPage() {
 
     const timer1 = setTimeout(() => {
       setProgress(25);
-      setAuditStep("Auditing Section 1: Rezi ATS layout compliance & Evidence Bank zero-hallucination checks…");
+      setAuditStep("Auditing Section 1: Enterprise ATS layout compliance & Evidence Bank zero-hallucination checks…");
     }, 450);
 
     const timer2 = setTimeout(() => {
@@ -475,7 +475,7 @@ ${report.logs?.join("\n") || ""}
               )}
             >
               <div className="text-xs font-bold text-blue-300">Section 1 · CV & Prep</div>
-              <div className="text-[11px] opacity-75 mt-0.5">Rezi ATS syntax & 0-invention checks</div>
+              <div className="text-[11px] opacity-75 mt-0.5">Enterprise ATS syntax & 0-invention checks</div>
             </button>
 
             <button

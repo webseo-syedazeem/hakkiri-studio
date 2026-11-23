@@ -4,7 +4,15 @@ import { useState } from "react";
 import Link from "next/link";
 import clsx from "clsx";
 
+export function AtsProductsFlow() {
+  return <AtsProductsFlowComponent />;
+}
+
 export function ReziProductsFlow() {
+  return <AtsProductsFlowComponent />;
+}
+
+function AtsProductsFlowComponent() {
   const [activeTab, setActiveTab] = useState<"build" | "score" | "target">("build");
 
   // Customize preview state (Screenshot 2)
@@ -28,7 +36,7 @@ export function ReziProductsFlow() {
   return (
     <div className="space-y-16 w-full max-w-7xl mx-auto py-8">
       {/* =================================================================== */}
-      {/* 1. THE 3-PHASE REZI FLOW: BUILD | SCORE | TARGET                     */}
+      {/* 1. THE 3-PHASE ATS FLOW: BUILD | SCORE | TARGET                      */}
       {/* =================================================================== */}
       <div className="rounded-3xl border border-line bg-gradient-to-b from-[#11121d] via-[#141523] to-[#0e0f18] p-6 sm:p-10 shadow-2xl overflow-hidden relative">
         <div className="absolute top-0 right-1/4 w-96 h-96 bg-blue/10 rounded-full blur-3xl pointer-events-none" />
@@ -37,7 +45,7 @@ export function ReziProductsFlow() {
           {/* Left Column: Interactive Tab Selectors & Pitch */}
           <div className="w-full lg:w-5/12 space-y-6">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue/10 border border-blue/20 text-blue text-xs font-bold uppercase tracking-wider">
-              <span>✦</span> The Rezi-Engineered Workflow
+              <span>✦</span> The Hakkiri ATS Workflow
             </div>
 
             <div className="space-y-3">
@@ -86,7 +94,7 @@ export function ReziProductsFlow() {
                   Score
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-300 mt-2 leading-relaxed">
-                  Know exactly where you stand. The Rezi Score breaks down your resume section by section. No guessing what&apos;s weak. You see it, then fix it.
+                  Know exactly where you stand. The ATS Score breaks down your resume section by section. No guessing what&apos;s weak. You see it, then fix it.
                 </p>
                 {activeTab === "score" && (
                   <div className="mt-4 flex items-center gap-3">
@@ -117,7 +125,7 @@ export function ReziProductsFlow() {
                   Target
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-300 mt-2 leading-relaxed">
-                  Match the job. Paste a job description and Rezi pulls every keyword you&apos;re missing. Add them in seconds and go from generic to targeted.
+                  Match the job. Paste a job description and Hakkiri pulls every keyword you&apos;re missing. Add them in seconds and go from generic to targeted.
                 </p>
                 {activeTab === "target" && (
                   <div className="mt-4 flex items-center gap-3">
@@ -134,7 +142,7 @@ export function ReziProductsFlow() {
             </div>
           </div>
 
-          {/* Right Column: Live Interactive Preview Matching Rezi Mockup */}
+          {/* Right Column: Live Interactive Preview Matching ATS Mockup */}
           <div className="w-full lg:w-7/12 relative flex justify-center items-center min-h-[500px]">
             {/* The Background Stylized Paper Document */}
             <div className="w-full max-w-[520px] rounded-2xl bg-white text-slate-900 p-7 shadow-2xl border border-slate-200 font-sans text-xs select-none transition-all">
@@ -149,7 +157,7 @@ export function ReziProductsFlow() {
                     }}
                     title="Click to upload your own picture"
                     onClick={() => {
-                      const input = document.getElementById("rezi-preview-photo-input");
+                      const input = document.getElementById("ats-preview-photo-input");
                       input?.click();
                     }}
                   >
@@ -205,20 +213,20 @@ export function ReziProductsFlow() {
                 </div>
                 <div className="flex justify-between text-[10px] font-bold">
                   <span style={{ color: selectedColor }} className="font-black">
-                    CEO & Founder | Rezi
+                    CEO & Founder | Hakkiri Studio
                   </span>
                   <span className="text-slate-500 font-normal">August 2015 – Present, Seoul</span>
                 </div>
                 <ul className="list-disc list-inside mt-1 space-y-1 text-[9px] text-slate-700 leading-normal">
                   <li>
-                    Built Rezi - the most loved resume software in the world, trusted by over 2,227,254 users.
+                    Built Hakkiri Studio - the most advanced career preparation platform, trusted by over 2,227,254 candidates.
                   </li>
                   <li>
                     Architected the{" "}
                     <span className="bg-emerald-100 text-emerald-800 px-1 py-0.5 rounded font-semibold underline decoration-emerald-500">
                       machine learning
                     </span>{" "}
-                    models behind Rezi&apos;s AI resume writer, lifting quality scores 32%.
+                    models behind Hakkiri&apos;s AI resume writer, lifting quality scores 32%.
                   </li>
                   {targetedAdded && (
                     <li className="bg-blue-50 text-blue-900 p-1.5 rounded font-medium border border-blue-200 animate-fadeIn">
@@ -232,7 +240,7 @@ export function ReziProductsFlow() {
                   <span className="text-slate-500 font-normal">May 2015 – November 2015</span>
                 </div>
                 <ul className="list-disc list-inside mt-1 space-y-1 text-[9px] text-slate-700 leading-normal">
-                  {/* Under activeTab === "score", show the Rezi red flagged bullet if needs_improvement */}
+                  {/* Under activeTab === "score", show the red flagged bullet if needs_improvement */}
                   {activeTab === "score" && scoreState === "needs_improvement" ? (
                     <li className="bg-rose-50 text-rose-900 p-1 rounded border border-rose-300 underline decoration-rose-500 animate-pulse">
                       • Managed SEO campaigns using Moz Analytics, monitored site performance, and prepared ranking reports that were shared with the management.
@@ -315,14 +323,14 @@ export function ReziProductsFlow() {
                   {profilePic && (
                     <div className="flex items-center justify-between pt-1 animate-fadeIn text-[11px] bg-white/[0.04] p-2 rounded-xl border border-white/5">
                       <label
-                        htmlFor="rezi-preview-photo-input"
+                        htmlFor="ats-preview-photo-input"
                         className="text-blue-400 hover:text-blue-300 font-bold flex items-center gap-1 cursor-pointer"
                       >
                         <span>📷</span>
                         <span>{customPhoto ? "Change Your Photo" : "Upload Your Own Photo"}</span>
                       </label>
                       <input
-                        id="rezi-preview-photo-input"
+                        id="ats-preview-photo-input"
                         type="file"
                         accept="image/*"
                         className="hidden"
@@ -375,7 +383,7 @@ export function ReziProductsFlow() {
               </div>
             )}
 
-            {/* FLOATING OVERLAY 2: "Rezi Score" Breakdown (Score Tab, Screenshot 3) */}
+            {/* FLOATING OVERLAY 2: "ATS Score" Breakdown (Score Tab, Screenshot 3) */}
             {activeTab === "score" && (
               <div className="absolute top-2 right-2 sm:right-6 w-76 rounded-2xl bg-[#181926]/95 border border-white/20 p-5 shadow-2xl backdrop-blur-xl animate-fadeIn space-y-3 z-20">
                 {/* Semi-circular Speedometer SVG matching Screenshot 3 */}
@@ -391,14 +399,14 @@ export function ReziProductsFlow() {
                       <path
                         d="M 10 50 A 40 40 0 0 1 90 50"
                         fill="none"
-                        stroke="url(#reziScoreGrad)"
+                        stroke="url(#atsScoreGrad)"
                         strokeWidth="8"
                         strokeDasharray="125.6"
                         strokeDashoffset={scoreState === "excellent" ? "20" : "68"}
                         className="transition-all duration-700 ease-out"
                       />
                       <defs>
-                        <linearGradient id="reziScoreGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <linearGradient id="atsScoreGrad" x1="0%" y1="0%" x2="100%" y2="0%">
                           <stop offset="0%" stopColor="#f43f5e" />
                           <stop offset="40%" stopColor="#f59e0b" />
                           <stop offset="70%" stopColor="#10b981" />
@@ -423,7 +431,7 @@ export function ReziProductsFlow() {
                   <p className="text-[10px] text-slate-400 mt-1">
                     {scoreState === "excellent"
                       ? "Surpasses ATS benchmark across 100% of tested enterprise systems."
-                      : "Improve your Rezi score by making suggested adjustments in each category."}
+                      : "Improve your ATS score by making suggested adjustments in each category."}
                   </p>
                 </div>
 

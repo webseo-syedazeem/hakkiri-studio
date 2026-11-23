@@ -33,8 +33,8 @@ export const LEARNING_BOTS: LearningBotInfo[] = [
     ],
   },
   {
-    id: "bot-rezi-ats",
-    name: "Rezi ATS & Grounding Auditor Bot",
+    id: "bot-ats-audit",
+    name: "ATS & Grounding Auditor Bot",
     app: "Hakkiri Studio",
     role: "Audits CV layouts against Ashby, Greenhouse, Workday, BambooHR, and Lever ATS parsers; checks 85+ stop benchmark and zero-hallucination evidence bank grounding.",
     status: "active",
@@ -213,7 +213,7 @@ export function runAuditLogic(runIteration = 1): AuditReport {
   logs.push(`[${timeStr}] Initialized Hakkiri Automated Learning Robot Tester (Run #${runIteration})`);
   logs.push(`[${timeStr}] Verifying Learning Bots on Hakkiri Studio & Language App...`);
   logs.push(`[${timeStr}] Bot 1: Hakkiri Interview Persona Bot → Active (Score gap matrix >0.8 target)`);
-  logs.push(`[${timeStr}] Bot 2: Rezi ATS & Evidence Grounding Bot → Active (Zero hallucination verified)`);
+  logs.push(`[${timeStr}] Bot 2: Enterprise ATS & Evidence Grounding Bot → Active (Zero hallucination verified)`);
   logs.push(`[${timeStr}] Bot 3: Language App Rhythm & Fluency Bot → Active (130-150 wpm cadence calibrated)`);
   logs.push(`[${timeStr}] Bot 4: Auto-Apply Gate & Form Safety Bot → Active (Strict approval gate lock)`);
 
@@ -228,7 +228,7 @@ export function runAuditLogic(runIteration = 1): AuditReport {
     sectionTitle: "1 · CV & Prep",
     persona: "Priya (New graduate)",
     role: "Graduate Analyst, consulting",
-    cvSummary: "Rezi ATS Compliance Check: Ashby, Greenhouse, Workday, BambooHR, Lever standard layout",
+    cvSummary: "Enterprise ATS Compliance Check: Ashby, Greenhouse, Workday, BambooHR, Lever standard layout",
     question: "CV Format & ATS Readability Check",
     answerSnippet: "Single-column serif typography, clean section headers, no text boxes or nested graphics.",
     answerLengthWords: 12,
@@ -237,7 +237,7 @@ export function runAuditLogic(runIteration = 1): AuditReport {
     simulatedScore: 4.9,
     scoreMatch: true,
     loopholeDetected: null,
-    aiFollowUpAction: "✓ ATS syntax 100% compliant. Rezi Score: 94/100 (surpasses 85+ stop-polishing benchmark).",
+    aiFollowUpAction: "✓ ATS syntax 100% compliant. Hakkiri ATS Score: 94/100 (surpasses 85+ stop-polishing benchmark).",
     fullFlowNotes: {
       cvCheck: "Zero ungrounded claims detected. Every bullet references verified Evidence Bank record #EB-102.",
       speechAnalysis: "N/A — Document structural syntax test.",
