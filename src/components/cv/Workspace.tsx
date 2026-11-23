@@ -41,6 +41,12 @@ type Workspace = ReturnType<typeof useCv> &
     wanted: React.RefObject<{ entry: string; field: string } | null>;
     checks: FileChecks | null;
     setChecks: (c: FileChecks | null | ((c: FileChecks | null) => FileChecks | null)) => void;
+    /** The bullet whose helper is open in place of the paper. */
+    inspect: Locator | null;
+    setInspect: (at: Locator | null) => void;
+    /** A profile being tried on the paper before it is put in the CV. Never saved from here. */
+    previewProfile: string | null;
+    setPreviewProfile: (text: string | null) => void;
   };
 
 const Ctx = createContext<Workspace | null>(null);
@@ -52,14 +58,21 @@ const Ctx = createContext<Workspace | null>(null);
  */
 export function CvWorkspace({ versionId, children }: { versionId: string; children: ReactNode }) {
   const c = useCv(versionId);
-  const paper = usePaper(c.cv);
+  const [inspect, setInspect] = useState<Locator | null>(null);
+  const [previewProfile, setPreviewProfile] = useState<string | null>(null);
+  // The paper shows the CV as it is, or with a profile the person is trying out.
+  const shown = useMemo(() => (c.cv && previewProfile !== null ? { ...c.cv, sections: c.cv.sections.map((s) => (s.kind === "summary" ? { ...s, text: previewProfile, visible: true } : s)) } : c.cv), [c.cv, previewProfile]);
+  const paper = usePaper(shown);
   const [focus, setFocus] = useState<Locator | null>(null);
   const [openEntry, setOpen] = useState<Record<string, string>>({});
   const [view, setView] = useState<"edit" | "paper">("edit");
   const [checks, setChecks] = useState<FileChecks | null>(null);
   const wanted = useRef<{ entry: string; field: string } | null>(null);
   const setOpenEntry = useCallback((sectionId: string, entryId: string) => setOpen((o) => ({ ...o, [sectionId]: entryId })), []);
-  const value = useMemo(() => ({ ...c, ...paper, versionId, focus, setFocus, openEntry, setOpenEntry, view, setView, wanted, checks, setChecks }), [c, paper, versionId, focus, openEntry, setOpenEntry, view, checks]);
+  const value = useMemo(
+    () => ({ ...c, ...paper, versionId, focus, setFocus, openEntry, setOpenEntry, view, setView, wanted, checks, setChecks, inspect, setInspect, previewProfile, setPreviewProfile }),
+    [c, paper, versionId, focus, openEntry, setOpenEntry, view, checks, inspect, previewProfile],
+  );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 

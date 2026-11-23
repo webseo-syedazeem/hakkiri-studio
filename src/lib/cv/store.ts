@@ -1,7 +1,7 @@
 import "server-only";
 import { deleteDoc, getDoc, queryDocsByUser, saveDoc } from "@/lib/apply/db";
 import { type CvImport, CvImportSchema } from "./import/record";
-import { type CvDoc, type CvSummary, CvDocSchema, summarise } from "./schema";
+import { type Achievement, AchievementSchema, type CvDoc, type CvSummary, CvDocSchema, isEntrySection, summarise } from "./schema";
 
 /**
  * Where CVs and uploads are kept. Every read takes the person's id and returns
@@ -9,7 +9,7 @@ import { type CvDoc, type CvSummary, CvDocSchema, summarise } from "./schema";
  * same from here, so an address cannot be used to find out which is which.
  */
 
-export const CV_COLLECTIONS = { VERSIONS: "cv_versions", IMPORTS: "cv_imports" } as const;
+export const CV_COLLECTIONS = { VERSIONS: "cv_versions", IMPORTS: "cv_imports", ACHIEVEMENTS: "cv_achievements" } as const;
 
 /** A stored record that no longer fits the rules is treated as missing, not served half-read. */
 function valid<T>(schema: { safeParse: (v: unknown) => { success: boolean; data?: T } }, raw: unknown, what: string): T | null {
@@ -68,16 +68,52 @@ export async function listCvSummaries(userId: string): Promise<CvSummary[]> {
   return cvs.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).map((cv) => summarise(cv, pending.get(cv.id)));
 }
 
+/* ------------------------------------------------------------ achievements */
+
+export async function getOwnAchievement(id: string, userId: string): Promise<Achievement | null> {
+  if (!id || !userId) return null;
+  const a = valid<Achievement>(AchievementSchema, await getDoc(CV_COLLECTIONS.ACHIEVEMENTS, id), "achievement");
+  return a && a.userId === userId ? a : null;
+}
+
+export async function saveAchievement(a: Achievement): Promise<Achievement> {
+  const clean = AchievementSchema.parse(a);
+  await saveDoc(CV_COLLECTIONS.ACHIEVEMENTS, clean.id, clean);
+  return clean;
+}
+
+export async function listOwnAchievements(userId: string): Promise<Achievement[]> {
+  const raw = await queryDocsByUser<Achievement>(CV_COLLECTIONS.ACHIEVEMENTS, userId);
+  return raw
+    .map((r) => valid<Achievement>(AchievementSchema, r, "achievement"))
+    .filter((a): a is Achievement => !!a && a.userId === userId)
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+}
+
+export const deleteAchievement = (id: string) => deleteDoc(CV_COLLECTIONS.ACHIEVEMENTS, id);
+
+/** Which of the person's CVs use each achievement: achievement id → the CVs holding a line taken from it. */
+export async function achievementUse(userId: string): Promise<Record<string, { id: string; name: string }[]>> {
+  const out: Record<string, { id: string; name: string }[]> = {};
+  for (const cv of await listOwnCvs(userId)) {
+    const ids = new Set<string>();
+    for (const s of cv.sections) if (isEntrySection(s)) for (const e of s.entries) for (const b of e.bullets) if (b.bankId) ids.add(b.bankId);
+    for (const id of ids) (out[id] ??= []).push({ id: cv.id, name: cv.name });
+  }
+  return out;
+}
+
 /** Everything held for one person in this section: for "Download my data". */
-export async function exportCvData(userId: string): Promise<{ cvs: CvDoc[]; uploads: CvImport[] }> {
-  const [cvs, uploads] = await Promise.all([listOwnCvs(userId), listOwnImports(userId)]);
-  return { cvs, uploads };
+export async function exportCvData(userId: string): Promise<{ cvs: CvDoc[]; uploads: CvImport[]; achievements: Achievement[] }> {
+  const [cvs, uploads, achievements] = await Promise.all([listOwnCvs(userId), listOwnImports(userId), listOwnAchievements(userId)]);
+  return { cvs, uploads, achievements };
 }
 
 /** Deletes everything held for one person in this section: for "Delete all my data". Returns how many records went. */
 export async function deleteCvData(userId: string): Promise<number> {
-  const { cvs, uploads } = await exportCvData(userId);
+  const { cvs, uploads, achievements } = await exportCvData(userId);
   for (const c of cvs) await deleteCv(c.id);
   for (const u of uploads) await deleteImport(u.id);
-  return cvs.length + uploads.length;
+  for (const a of achievements) await deleteAchievement(a.id);
+  return cvs.length + uploads.length + achievements.length;
 }

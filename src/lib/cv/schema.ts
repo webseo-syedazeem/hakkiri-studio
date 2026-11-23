@@ -79,8 +79,32 @@ export const BulletSchema = z.object({
   visible: z.boolean().default(true),
   origin: z.enum(BULLET_ORIGINS).default("typed"),
   sources: z.array(ExcerptSchema).max(6).default([]),
+  /** The saved achievement this line was taken from, if any. */
+  bankId: z.string().regex(/^ach_[a-f0-9]{16}$/).optional(),
 });
 export type Bullet = z.infer<typeof BulletSchema>;
+
+/**
+ * A saved achievement: something the person did, in wording they approved,
+ * kept so it can be used again in any CV. `original` holds their own words
+ * when the wording was drafted from them.
+ */
+export const AchievementSchema = z.object({
+  id: z.string().regex(/^ach_[a-f0-9]{16}$/),
+  userId: z.string().min(1),
+  text: line(600),
+  original: prose(4000),
+  sources: z.array(ExcerptSchema).max(8).default([]),
+  /** The role and employer it belongs to, as the person names them. */
+  role: line(160),
+  org: line(160),
+  skills: z.array(line(80)).max(12).default([]),
+  /** Private: kept for the person's own reference and left out of drafting and suggestions. */
+  private: z.boolean().default(false),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+export type Achievement = z.infer<typeof AchievementSchema>;
 
 /* ----------------------------------------------------------------- contact */
 

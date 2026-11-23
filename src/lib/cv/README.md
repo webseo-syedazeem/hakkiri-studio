@@ -86,6 +86,33 @@ Things worth knowing:
 - Dialogs are in the address (`?panel=add-section`, `page-overflow`, `save-conflict`, `file-loss`,
   `rename`, `duplicate`, `delete-version`), so Back closes them.
 
+## Step 3: writing help from the person's own words
+
+The rule: a draft may only say what the person said. That is enforced in code, not left to a prompt.
+
+| Where | What |
+| --- | --- |
+| `write/facts.ts` | Reads the facts out of a piece of text: figures (however written: "£1.2m", "six", "18 percent"), whether each is an estimate, a minimum or a maximum, the words that say whose work it was ("helped", "led"), and the words that carry content. |
+| `write/check.ts` | The checks. `checkGrounded`: a draft adds nothing to its sources. `checkRewrite`: a rewrite also loses nothing (every figure, the outcome, the share of the work, every estimate). `checkMerge`: a detail the person gave is in, as given. `checkProfile`: a profile says only what the CV says. Each failure names the exact difference. |
+| `write/draft.ts` | The same jobs done by rule from the person's own sentences. Used in test mode and when the AI service does not answer. |
+| `write/assist.ts` | The tools. Each asks the model (through the app's `ask()` helper) and puts the reply through the checks. A draft that fails twice never reaches the person: a rewrite is refused with the reason; bullets and profiles fall back to the rule version. `writingMode()` is `ai` (keys present), `rules` (`HAKKIRI_MOCK_AI=1`) or `off`. |
+| `write/skills.ts` | Skills worth adding, found by rule from the CV's own bullets and the target advert. Each has the CV line that shows it, or is asked as "Do you have this?". No AI call. |
+| `src/app/api/cv/versions/[id]/write/[tool]` | `bullets`, `rewrite`, `number`, `profile`, `question` (POST) and `skills`, `status` (GET). Owner only, `guard(req, "ai", { userId })`, usage recorded as "cv writing". None of them saves anything: accepting a draft is an ordinary save from the builder. |
+| `src/app/api/cv/transcribe` | Speech to text for "Tell me what you did" (Deepgram). Answers 501 in test mode or without a key; it never returns stand-in words. |
+| `src/app/api/cv/bank` | Saved achievements (`cv_achievements`): list with the CVs that use each, add, change, delete. |
+| `src/components/cv/Capture.tsx` | "Tell me what you did" (`/cv/v/[id]/capture/[entryId or new]`): three questions, typed or spoken, proposed bullets beside the exact words each came from. |
+| `src/components/cv/Assist.tsx` | Help with one bullet, in place of the paper: its sources, Add the number, Rewrite, Practise this claim, Save to achievements. |
+| `src/components/cv/Writing.tsx` | The profile chooser (two versions, previewed on the paper before use), skills suggestions, and "Use a saved achievement". |
+| `src/components/cv/Bank.tsx` | The achievements screen (`/cv/bank`). |
+
+Things worth knowing:
+
+- **Nothing is written from a job title.** With no answers, `bullets` returns 400 and no model is called.
+- **"Add the number" never supplies one.** The detail is the person's; it is placed by rule if the model's wording fails the check.
+- **Sources stay with the bullet.** `bullet.sources` holds the person's own words (and a rewrite keeps the wording as it was); `bullet.bankId` links a line to its saved achievement.
+- **Private achievements** are not offered when building a CV.
+- The prompts are in `write/assist.ts`. They ask for the right thing; the checks are what guarantee it.
+
 ## Tests
 
 - `npx vitest run src/lib/cv`: every reading rule (`dates`, `lines`, `reader`), every sample file
@@ -100,7 +127,10 @@ Things worth knowing:
   never shrinking type), and every template exported to PDF and Word and read back three ways:
   pdf.js, poppler (`pdftotext`, `pdffonts`, `pdfinfo`) and LibreOffice. The poppler and LibreOffice
   checks are skipped on a machine that does not have them.
-- Browser tests: `e2e/cv-cleanup.cjs`, `e2e/cv-start.cjs`, `e2e/cv-upload.cjs`, `e2e/cv-editor.cjs`
+- `write/*.test.ts`: every writing rule (figures, estimates, "helped" against "led", nothing added, nothing
+  lost), the rule drafters, skills suggestions, and the routes with the AI service replaced by a
+  stand-in that replies with good drafts, bad drafts and nothing at all.
+- Browser tests: `e2e/cv-cleanup.cjs`, `e2e/cv-start.cjs`, `e2e/cv-upload.cjs`, `e2e/cv-editor.cjs`, `e2e/cv-writing.cjs`
   (see `e2e/README.md`). `cv-editor.cjs` downloads every file it makes into `e2e/out/cv-downloads/`,
   opens each one and compares its text with the saved CV (`e2e/cv-files.cjs`).
 
@@ -117,6 +147,15 @@ Things worth knowing:
   step 4; today a file is "Checked" or it is not sent.
 - **Word page count.** The Word file names its fonts and falls back to Arial or Georgia where they are
   not installed, so its page breaks can differ from the PDF's. The PDF embeds its fonts.
+- **Real model output has not been run.** There are no keys here, so the model path was tested with a
+  stand-in for the service. Before launch, run each tool with real keys and read the drafts: the checks
+  guarantee nothing is invented, but only a real run shows how good the wording is and how often a
+  draft is refused.
+- **Practice hand-off.** "Practise this claim" shows a question and links to the Practice Hub. Starting
+  a spoken practice on that exact question, and bringing an answer back ("Use an interview answer"),
+  need the practice side to accept a question that is not from an interview's set.
+- **Two banks.** `/cv/bank` (`cv_achievements`) is separate from the older Evidence Bank at
+  `/apply/evidence`. They should probably become one; that is a product decision.
 - **Scanned PDFs** cannot be read (no OCR). The person is told so and can paste the text.
 - **Old code.** `CvSchema`, `getCv`, `saveCv` and `listCvs` in `src/lib/apply/` are no longer used by
   this section and can be removed once nothing else needs them.

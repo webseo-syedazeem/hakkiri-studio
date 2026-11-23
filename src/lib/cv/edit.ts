@@ -1,4 +1,4 @@
-import { type CvDoc, type Locator, type Section, type SectionKind, isEntrySection, isListSection } from "./schema";
+import { type Bullet, type CvDoc, type Entry, type EntrySection, type Locator, type Section, type SectionKind, emptyEntry, isEntrySection, isListSection } from "./schema";
 import { sectionHeading } from "./sections";
 
 /**
@@ -134,6 +134,40 @@ export function itemCount(s: Section): number {
   if (isListSection(s)) return s.items.length;
   if (isEntrySection(s)) return s.entries.reduce((n, e) => n + 1 + e.bullets.length, 0);
   return 0;
+}
+
+/* ------------------------------------------------------------------ bullets */
+
+/** The bullet a pointer names, with the entry and section it is in. */
+export function bulletAt(sections: Section[], at: Locator | null): { section: EntrySection; entry: Entry; bullet: Bullet; index: number } | null {
+  if (!at) return null;
+  const section = sections.find((s) => s.id === at.section);
+  if (!section || !isEntrySection(section)) return null;
+  const entry = section.entries.find((e) => e.id === at.entry);
+  const index = entry ? entry.bullets.findIndex((b) => b.id === at.field) : -1;
+  return entry && index >= 0 ? { section, entry, bullet: entry.bullets[index], index } : null;
+}
+
+/** Changes one bullet and returns the new sections. Everything else is left exactly as it was. */
+export function changeBullet(sections: Section[], at: Locator, change: Partial<Bullet>): Section[] {
+  return sections.map((s) => (s.id === at.section && isEntrySection(s) ? { ...s, entries: s.entries.map((e) => (e.id === at.entry ? { ...e, bullets: e.bullets.map((b) => (b.id === at.field ? { ...b, ...change } : b)) } : e)) } : s));
+}
+
+/**
+ * Adds bullets to an entry, after the ones already there. With `entry` given
+ * and no entry of that id in the section, the entry is added first (a new
+ * role started from notes). Returns the new sections and the entry's id.
+ */
+export function addBullets(sections: Section[], sectionId: string, entryId: string, bullets: Bullet[], entry?: Partial<Entry>): { sections: Section[]; entryId: string } {
+  let id = entryId;
+  const next = sections.map((s) => {
+    if (s.id !== sectionId || !isEntrySection(s)) return s;
+    if (s.entries.some((e) => e.id === entryId)) return { ...s, entries: s.entries.map((e) => (e.id === entryId ? { ...e, ...entry, id: e.id, bullets: [...e.bullets, ...bullets] } : e)) };
+    const made = { ...emptyEntry(), ...entry, bullets };
+    id = made.id;
+    return { ...s, entries: [made, ...s.entries] };
+  });
+  return { sections: next, entryId: id };
 }
 
 /* --------------------------------------------------------------------- undo */

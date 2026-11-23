@@ -14,7 +14,7 @@ const LEVEL_HELP: Record<CvLevel, string> = {
   senior: "Leading a function, a department or an organisation.",
 };
 
-type Method = "empty" | "upload" | "paste";
+type Method = "empty" | "notes" | "upload" | "paste";
 
 /**
  * Set-up: four questions before any CV exists. What it is called, the level,
@@ -67,10 +67,11 @@ export function Setup() {
     setErrors({});
     const setup = { name: name.trim(), level, region, targetTitle, targetEmployer, targetAdvert };
     try {
-      if (method === "empty") {
+      if (method === "empty" || method === "notes") {
         setStage("creating");
         const { id } = await api<{ id: string }>("/api/cv/versions", { method: "POST", json: setup });
-        router.push(`/cv/v/${id}/edit/contact`);
+        // From notes: straight to the three questions about one role. The CV itself still starts empty.
+        router.push(method === "notes" ? `/cv/v/${id}/capture/new` : `/cv/v/${id}/edit/contact`);
         return;
       }
       const form = new FormData();
@@ -87,7 +88,7 @@ export function Setup() {
   }
 
   const busy = stage !== "";
-  const action = method === "empty" ? "Create CV" : method === "paste" ? "Read this text" : file ? `Upload ${file.name}` : "Choose file";
+  const action = method === "empty" ? "Create CV" : method === "notes" ? "Start with notes" : method === "paste" ? "Read this text" : file ? `Upload ${file.name}` : "Choose file";
 
   return (
     <CvScreen>
@@ -183,14 +184,22 @@ export function Setup() {
                 </span>
               </label>
               <label className="cv-choice">
-                <input type="radio" name="method" checked={method !== "empty"} onChange={() => setMethod("upload")} />
+                <input type="radio" name="method" checked={method === "upload" || method === "paste"} onChange={() => setMethod("upload")} />
                 <span>
                   <b style={{ display: "block", fontWeight: 600 }}>Upload a CV</b>
                   <small>We read your CV into sections and you check each one before it is used.</small>
                 </span>
               </label>
 
-              {method !== "empty" && (
+              <label className="cv-choice">
+                <input type="radio" name="method" checked={method === "notes"} onChange={() => setMethod("notes")} />
+                <span>
+                  <b style={{ display: "block", fontWeight: 600 }}>Speak or type</b>
+                  <small>Answer three questions about a role in your own words. Your bullets are written from what you say.</small>
+                </span>
+              </label>
+
+              {(method === "upload" || method === "paste") && (
                 <div className="cv-stack" data-field={method === "paste" ? "text" : "file"}>
                   <input
                     ref={fileRef}

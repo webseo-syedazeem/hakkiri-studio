@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { type Snapshot, TYPING_PAUSE_MS, diffParts, emptyHistory, fieldFor, formTabs, itemCount, moveById, moveItem, record, redo, samePassage, snapshotOf, switchOff, tabFor, undo } from "./edit";
+import { type Snapshot, TYPING_PAUSE_MS, addBullets, bulletAt, changeBullet, diffParts, emptyHistory, fieldFor, formTabs, itemCount, moveById, moveItem, record, redo, samePassage, snapshotOf, switchOff, tabFor, undo } from "./edit";
 import { buildFlow, flowText } from "./render/flow";
 import { TEMPLATES } from "./render/templates";
 import { fernCv } from "./render/testing";
-import { type CvDoc, type EntrySection, type SkillsSection, emptySection } from "./schema";
+import { type CvDoc, type EntrySection, type SkillsSection, emptySection, newBullet } from "./schema";
 
 const cv = (): CvDoc => fernCv() as CvDoc;
 const section = (c: CvDoc, kind: string) => c.sections.find((s) => s.kind === kind)!;
@@ -161,6 +161,51 @@ describe("switching a passage off from the paper", () => {
     const fewer = { ...exp, entries: [{ ...exp.entries[0], bullets: exp.entries[0].bullets.slice(1) }, ...exp.entries.slice(1)] };
     expect(itemCount(fewer)).toBe(itemCount(exp) - 1);
     expect(itemCount(section(c, "summary"))).toBe(0);
+  });
+});
+
+describe("changing and adding bullets", () => {
+  it("finds a bullet by its pointer, and nothing for a pointer that names none", () => {
+    const c = cv();
+    const exp = section(c, "experience") as EntrySection;
+    const e = exp.entries[0];
+    expect(bulletAt(c.sections, { section: exp.id, entry: e.id, field: e.bullets[1].id })).toMatchObject({ index: 1, bullet: e.bullets[1], entry: e });
+    expect(bulletAt(c.sections, { section: exp.id, entry: e.id, field: "title" })).toBeNull();
+    expect(bulletAt(c.sections, { section: "contact", field: "email" })).toBeNull();
+    expect(bulletAt(c.sections, null)).toBeNull();
+  });
+
+  it("changes one bullet and leaves every other word alone", () => {
+    const c = cv();
+    const exp = section(c, "experience") as EntrySection;
+    const e = exp.entries[0];
+    const at = { section: exp.id, entry: e.id, field: e.bullets[0].id };
+    const next = changeBullet(c.sections, at, { text: "New wording", origin: "assisted" });
+    expect(bulletAt(next, at)!.bullet).toMatchObject({ id: e.bullets[0].id, text: "New wording", origin: "assisted" });
+    const strip = (sections: typeof c.sections) => JSON.stringify(sections).replace(JSON.stringify(bulletAt(sections, at)!.bullet), "");
+    expect(strip(next)).toBe(strip(c.sections));
+    expect(e.bullets[0].text).not.toBe("New wording");
+  });
+
+  it("adds bullets after the ones an entry already has", () => {
+    const c = cv();
+    const exp = section(c, "experience") as EntrySection;
+    const e = exp.entries[1];
+    const out = addBullets(c.sections, exp.id, e.id, [newBullet("One"), newBullet("Two")]);
+    const after = (out.sections.find((s) => s.id === exp.id) as EntrySection).entries[1];
+    expect(out.entryId).toBe(e.id);
+    expect(after.bullets.map((b) => b.text)).toEqual([...e.bullets.map((b) => b.text), "One", "Two"]);
+  });
+
+  it("starts a new role at the top when the entry does not exist yet", () => {
+    const c = cv();
+    const exp = section(c, "experience") as EntrySection;
+    const out = addBullets(c.sections, exp.id, "new", [newBullet("Ran the till")], { title: "Shop assistant", org: "Example Books" });
+    const entries = (out.sections.find((s) => s.id === exp.id) as EntrySection).entries;
+    expect(entries).toHaveLength(exp.entries.length + 1);
+    expect(entries[0]).toMatchObject({ id: out.entryId, title: "Shop assistant", org: "Example Books", visible: true });
+    expect(entries[0].bullets.map((b) => b.text)).toEqual(["Ran the till"]);
+    expect(out.entryId).not.toBe("new");
   });
 });
 

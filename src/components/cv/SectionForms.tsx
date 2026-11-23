@@ -21,6 +21,10 @@ export interface FieldHooks {
   onFocus?: (entryId: string, field: string) => void;
   /** Called when the person changes a field, so a doubt about it can be marked as dealt with. */
   onEdit?: (entryId: string, field: string) => void;
+  /** The builder: opens the writing help for one bullet. */
+  onHelp?: (entryId: string, bulletId: string) => void;
+  /** The builder: what else can be done for an entry (start from notes, use a saved achievement), shown under its bullets. */
+  entryTools?: (entry: Entry) => ReactNode;
 }
 
 const hook = (h: FieldHooks | undefined, entryId: string, field: string) => ({
@@ -151,7 +155,13 @@ function BulletsEditor({ bullets, onChange, label, rule, hooks, entryId, arrange
             {...hook(hooks, entryId, b.id)}
           />
           {arrange ? (
-            <ItemControls name={`bullet ${i + 1}`} index={i} count={bullets.length} visible={b.visible} onVisible={(visible) => onChange(bullets.map((x) => (x.id === b.id ? { ...x, visible } : x)))} onMove={(to) => drag.move(b.id, to)} onRemove={() => onChange(bullets.filter((x) => x.id !== b.id))} />
+            <ItemControls name={`bullet ${i + 1}`} index={i} count={bullets.length} visible={b.visible} onVisible={(visible) => onChange(bullets.map((x) => (x.id === b.id ? { ...x, visible } : x)))} onMove={(to) => drag.move(b.id, to)} onRemove={() => onChange(bullets.filter((x) => x.id !== b.id))}>
+              {hooks?.onHelp && (
+                <Btn kind="quiet" aria-label={`Help with bullet ${i + 1}`} onClick={() => hooks.onHelp!(entryId, b.id)}>
+                  Help
+                </Btn>
+              )}
+            </ItemControls>
           ) : (
             <Btn kind="quiet" style={{ marginTop: 4 }} onClick={() => onChange(bullets.filter((x) => x.id !== b.id))} aria-label={`Remove bullet ${i + 1}`}>
               Remove
@@ -221,6 +231,7 @@ function EntryFields({ kind, entry, onChange, region, hooks, arrange }: { kind: 
         </label>
       )}
       {def.bullets && <BulletsEditor bullets={entry.bullets} onChange={(bullets) => onChange({ ...entry, bullets })} label={def.bullets.label} rule={def.bullets.hint} hooks={hooks} entryId={entry.id} arrange={arrange} />}
+      {def.bullets && hooks?.entryTools?.(entry)}
     </div>
   );
 }

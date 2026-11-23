@@ -259,3 +259,6 @@ textarea.cv-input { resize: vertical; field-sizing: content; }
   .cv-menu-list > button { padding: 12px 10px; }
   .cv-paperscroll, .cv-textview { max-height: none; }
 }
+
+/* Writing help: the person's own words, marked beside the bullet made from them. */
+.cv .cv-mark, .cv small .cv-mark { background: var(--cv-mark); color: var(--color-ink); padding: 1px 4px; border-radius: 3px; box-decoration-break: clone; -webkit-box-decoration-break: clone; margin-right: 4px; }
