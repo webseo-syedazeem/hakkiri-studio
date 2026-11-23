@@ -19,10 +19,11 @@ export default function EvidenceBankPage() {
     async function load() {
       try {
         const res = await fetch("/api/apply/evidence");
-        const data = await res.json();
-        setEvidenceList(data);
+        const data = res.ok ? await res.json() : [];
+        setEvidenceList(Array.isArray(data) ? data : []);
       } catch (err) {
-        console.error("Error loading evidence:", err);
+        console.warn("Using fallback evidence list:", err);
+        setEvidenceList([]);
       } finally {
         setLoading(false);
       }

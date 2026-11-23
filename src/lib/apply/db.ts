@@ -16,6 +16,7 @@ import type {
 } from "./schema";
 import fs from "node:fs";
 import path from "node:path";
+import os from "node:os";
 
 /* --------------------------------------------------------------------------
    COLLECTION NAMES
@@ -35,33 +36,67 @@ export const APPLY_COLLECTIONS = {
   SETTINGS: "apply_settings",
 } as const;
 
-// Local fallback store directory for resilient dev/offline safety
-const FALLBACK_DIR = path.join(process.cwd(), ".data", "apply");
+// In-memory fallback cache so that even if serverless disk has any issue, data is safely retained
+declare global {
+  // eslint-disable-next-line no-var
+  var _applyMemoryStore: Record<string, Record<string, unknown>> | undefined;
+}
+if (!global._applyMemoryStore) {
+  global._applyMemoryStore = {};
+}
+const memoryStore = global._applyMemoryStore;
 
-function ensureFallbackDir() {
-  if (!fs.existsSync(FALLBACK_DIR)) {
-    fs.mkdirSync(FALLBACK_DIR, { recursive: true });
+function resolveFallbackDir(): string {
+  if (process.env.HAKKIRI_DATA_DIR) {
+    return path.join(process.env.HAKKIRI_DATA_DIR, "apply");
   }
+  if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
+    return path.join(os.tmpdir(), "hakkiri-apply");
+  }
+  return path.join(process.cwd(), ".data", "apply");
 }
 
-function getFallbackFile(collection: string): string {
-  ensureFallbackDir();
-  return path.join(FALLBACK_DIR, `${collection}.json`);
+function ensureFallbackDir(dir: string) {
+  try {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+  } catch {
+    // Non-fatal on read-only environments
+  }
 }
 
 function readFallback<T>(collection: string): Record<string, T> {
-  const f = getFallbackFile(collection);
-  if (!fs.existsSync(f)) return {};
-  try {
-    return JSON.parse(fs.readFileSync(f, "utf-8"));
-  } catch {
-    return {};
+  if (!memoryStore[collection]) {
+    memoryStore[collection] = {};
   }
+  try {
+    const dir = resolveFallbackDir();
+    ensureFallbackDir(dir);
+    const f = path.join(dir, `${collection}.json`);
+    if (fs.existsSync(f)) {
+      const diskData = JSON.parse(fs.readFileSync(f, "utf-8"));
+      memoryStore[collection] = { ...diskData, ...memoryStore[collection] };
+    }
+  } catch {
+    // Fall back to memoryStore
+  }
+  return memoryStore[collection] as Record<string, T>;
 }
 
 function writeFallback<T>(collection: string, data: Record<string, T>) {
-  const f = getFallbackFile(collection);
-  fs.writeFileSync(f, JSON.stringify(data, null, 2), "utf-8");
+  if (!memoryStore[collection]) {
+    memoryStore[collection] = {};
+  }
+  memoryStore[collection] = data as Record<string, unknown>;
+  try {
+    const dir = resolveFallbackDir();
+    ensureFallbackDir(dir);
+    const f = path.join(dir, `${collection}.json`);
+    fs.writeFileSync(f, JSON.stringify(data, null, 2), "utf-8");
+  } catch {
+    // Fall back to memoryStore
+  }
 }
 
 /* --------------------------------------------------------------------------

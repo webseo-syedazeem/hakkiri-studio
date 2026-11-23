@@ -14,9 +14,26 @@ export default function ApplySettingsPage() {
       try {
         const res = await fetch("/api/apply/settings");
         const data = await res.json();
-        setSettings(data);
+        if (res.ok && data && data.dailyCap) {
+          setSettings(data);
+        } else {
+          setSettings({
+            userId: "usr_guest",
+            titles: ["Product Manager", "Lead Developer", "Full Stack Engineer"],
+            locations: ["London", "UK Remote"],
+            remote: true,
+            salaryMin: 80000,
+            excludeEmployers: ["Scam Recruitment Ltd", "Unverified Staffing"],
+            minFit: 75,
+            dailyCap: 5,
+            perEmployerCap: 2,
+            handsOff: false,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          });
+        }
       } catch (err) {
-        console.error("Error loading settings:", err);
+        console.warn("Using default apply settings:", err);
       } finally {
         setLoading(false);
       }

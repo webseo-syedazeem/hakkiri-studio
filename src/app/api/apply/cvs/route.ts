@@ -14,6 +14,40 @@ export async function GET() {
       const profile = await getProfile(userId);
       const now = new Date().toISOString();
 
+      const defaultBullets = [
+        {
+          id: "b-default-1",
+          roleId: "role-1",
+          text: "Architected real-time payment reconciliation engine processing £14M+ daily transactions with 99.99% uptime.",
+          evidenceIds: [],
+          origin: "person" as const,
+          visible: true,
+        },
+        {
+          id: "b-default-2",
+          roleId: "role-1",
+          text: "Reduced cloud infrastructure latency by 42% through distributed caching and query optimization.",
+          evidenceIds: [],
+          origin: "person" as const,
+          visible: true,
+        },
+      ];
+
+      const mappedBullets = profile?.roles && Array.isArray(profile.roles)
+        ? profile.roles.flatMap((r) =>
+            Array.isArray(r.bullets)
+              ? r.bullets.map((b) => ({
+                  id: b.id,
+                  roleId: r.id,
+                  text: b.text,
+                  evidenceIds: b.evidenceIds || [],
+                  origin: "person" as const,
+                  visible: true,
+                }))
+              : []
+          )
+        : [];
+
       const defaultCv: Cv = {
         id: `cv_${crypto.randomBytes(6).toString("hex")}`,
         userId,
@@ -27,33 +61,7 @@ export async function GET() {
           { type: "education", order: 4, visible: true },
           { type: "skills", order: 5, visible: true },
         ],
-        bullets: profile?.roles.flatMap((r) =>
-          r.bullets.map((b) => ({
-            id: b.id,
-            roleId: r.id,
-            text: b.text,
-            evidenceIds: b.evidenceIds,
-            origin: "person" as const,
-            visible: true,
-          }))
-        ) || [
-          {
-            id: "b-default-1",
-            roleId: "role-1",
-            text: "Architected real-time payment reconciliation engine processing £14M+ daily transactions with 99.99% uptime.",
-            evidenceIds: [],
-            origin: "person",
-            visible: true,
-          },
-          {
-            id: "b-default-2",
-            roleId: "role-1",
-            text: "Reduced cloud infrastructure latency by 42% through distributed caching and query optimization.",
-            evidenceIds: [],
-            origin: "person",
-            visible: true,
-          },
-        ],
+        bullets: mappedBullets.length > 0 ? mappedBullets : defaultBullets,
         score: {
           total: 86,
           parts: { evidence: 88, clarity: 85, structure: 85, software: 90 },

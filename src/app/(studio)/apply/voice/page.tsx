@@ -23,9 +23,35 @@ export default function VoicePersonaPage() {
       try {
         const res = await fetch("/api/apply/voice");
         const data = await res.json();
-        setVoice(data);
+        if (res.ok && data && data.measured) {
+          setVoice(data);
+        } else {
+          setVoice({
+            userId: "usr_guest",
+            samples: [],
+            measured: {
+              sentenceMean: 14.2,
+              sentenceSpread: 4.8,
+              formality: 3,
+              contractions: true,
+              firstPerson: true,
+              spelling: "uk",
+              opens: ["Direct", "Context-first"],
+              closes: ["Action-oriented", "Impact-led"],
+            },
+            signature: [
+              "driven by customer impact",
+              "high-velocity delivery",
+              "rigorous architectural trade-offs",
+            ],
+            never: ["passionate", "synergy", "spearheaded", "utilize", "rockstar", "delve"],
+            learnedFromEdits: [],
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          });
+        }
       } catch (err) {
-        console.error("Error loading voice:", err);
+        console.warn("Using default voice profile:", err);
       } finally {
         setLoading(false);
       }

@@ -4,15 +4,55 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { Application, ApplicationStatus } from "@/lib/apply/schema";
 
-const COLUMNS: { id: ApplicationStatus; title: string; color: string }[] = [
-  { id: "queued", title: "Matched & Queued", color: "border-blue-500/40 text-blue-400" },
-  { id: "draft", title: "Preparing", color: "border-purple-500/40 text-purple-400" },
-  { id: "ready", title: "Ready to Send", color: "border-amber-500/40 text-amber-400" },
-  { id: "sent", title: "Sent & Applied", color: "border-emerald-500/40 text-emerald-400" },
-  { id: "screen", title: "Screening Call", color: "border-cyan-500/40 text-cyan-400" },
-  { id: "interview", title: "Interview", color: "border-accent text-accent" },
-  { id: "offer", title: "Offer Received", color: "border-green-400 text-green-300" },
-  { id: "rejected", title: "Closed", color: "border-zinc-700 text-zinc-500" },
+const COLUMNS: { id: ApplicationStatus; title: string; color: string; badge: string }[] = [
+  {
+    id: "queued",
+    title: "Matched & Queued",
+    color: "text-blue-400",
+    badge: "border-blue-500/30 bg-blue-500/10 text-blue-400",
+  },
+  {
+    id: "draft",
+    title: "Preparing",
+    color: "text-purple-400",
+    badge: "border-purple-500/30 bg-purple-500/10 text-purple-400",
+  },
+  {
+    id: "ready",
+    title: "Ready to Send",
+    color: "text-amber-400",
+    badge: "border-amber-500/30 bg-amber-500/10 text-amber-400",
+  },
+  {
+    id: "sent",
+    title: "Sent & Applied",
+    color: "text-emerald-400",
+    badge: "border-emerald-500/30 bg-emerald-500/10 text-emerald-400",
+  },
+  {
+    id: "screen",
+    title: "Screening Call",
+    color: "text-cyan-400",
+    badge: "border-cyan-500/30 bg-cyan-500/10 text-cyan-400",
+  },
+  {
+    id: "interview",
+    title: "Interview",
+    color: "text-blue",
+    badge: "border-blue/30 bg-blue/10 text-blue",
+  },
+  {
+    id: "offer",
+    title: "Offer Received",
+    color: "text-green-300",
+    badge: "border-green-400/30 bg-green-400/10 text-green-300",
+  },
+  {
+    id: "rejected",
+    title: "Closed",
+    color: "text-zinc-500",
+    badge: "border-zinc-700/40 bg-zinc-800 text-zinc-400",
+  },
 ];
 
 interface EnrichedApp extends Application {
@@ -23,6 +63,47 @@ interface EnrichedApp extends Application {
   };
 }
 
+const STARTER_APPLICATIONS: EnrichedApp[] = [
+  {
+    id: "app_starter_1",
+    userId: "usr_guest",
+    jobId: "job_1",
+    status: "ready",
+    gapMap: [],
+    fit: 92,
+    mode: "approved",
+    stages: [{ name: "Review Ready", date: new Date().toISOString().slice(0, 10) }],
+    notes: "High match on TypeScript, Next.js architecture, and serverless infrastructure.",
+    answerOutputIds: [],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    job: {
+      title: "Senior Full Stack Engineer & Tech Lead",
+      employer: "FinTech Scaleup",
+      location: "London, UK (Hybrid)",
+    },
+  },
+  {
+    id: "app_starter_2",
+    userId: "usr_guest",
+    jobId: "job_2",
+    status: "queued",
+    gapMap: [],
+    fit: 85,
+    mode: "approved",
+    stages: [{ name: "Matched", date: new Date().toISOString().slice(0, 10) }],
+    notes: "Matched against Evidence Bank. Ready for cover letter generation.",
+    answerOutputIds: [],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    job: {
+      title: "Staff Cloud Systems Architect",
+      employer: "Cloud Infrastructure Labs",
+      location: "Remote / London",
+    },
+  },
+];
+
 export default function ApplicationsTrackerPage() {
   const [applications, setApplications] = useState<EnrichedApp[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,10 +113,15 @@ export default function ApplicationsTrackerPage() {
     async function load() {
       try {
         const res = await fetch("/api/apply/applications");
-        const data = await res.json();
-        setApplications(data || []);
+        const data = res.ok ? await res.json() : [];
+        if (Array.isArray(data) && data.length > 0) {
+          setApplications(data);
+        } else {
+          setApplications(STARTER_APPLICATIONS);
+        }
       } catch (err) {
-        console.error("Error loading applications:", err);
+        console.warn("Using starter applications fallback:", err);
+        setApplications(STARTER_APPLICATIONS);
       } finally {
         setLoading(false);
       }
@@ -44,51 +130,58 @@ export default function ApplicationsTrackerPage() {
   }, []);
 
   const handleMoveStage = async (appId: string, nextStatus: ApplicationStatus) => {
+    setApplications((prev) =>
+      prev.map((a) => (a.id === appId ? { ...a, status: nextStatus } : a))
+    );
     try {
-      const res = await fetch(`/api/apply/applications/${appId}`, {
+      await fetch(`/api/apply/applications/${appId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: nextStatus }),
       });
-      if (res.ok) {
-        setApplications((prev) =>
-          prev.map((a) => (a.id === appId ? { ...a, status: nextStatus } : a))
-        );
-      }
     } catch (err) {
       console.error("Error updating status:", err);
     }
   };
 
+  const safeApps = Array.isArray(applications) ? applications : [];
+
   return (
-    <div className="space-y-6 animate-fadeIn w-full max-w-[1500px] mx-auto">
+    <div className="space-y-6 animate-fadeIn w-full max-w-[1550px] mx-auto pb-16 px-2 sm:px-4">
       {/* Tracker Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-line pb-4">
-        <div>
-          <span className="text-xs font-bold uppercase tracking-wider text-accent">Hakkiri Apply Tracker</span>
-          <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight">
-            Job Applications Board
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-line pb-5">
+        <div className="space-y-1">
+          <div className="inline-flex items-center gap-2 px-3 py-0.5 rounded-full bg-blue/10 border border-blue/20 text-blue text-[11px] font-bold tracking-wide uppercase">
+            <span className="h-1.5 w-1.5 rounded-full bg-blue animate-pulse" />
+            Hakkiri Apply Suite · Tracker
+          </div>
+          <h1 className="text-2xl md:text-3xl font-black text-ink tracking-tight">
+            Job Applications Board ({safeApps.length})
           </h1>
-          <p className="text-xs text-muted mt-1">
-            Tracks every application from automated intake to screening and practice interviews. Zero upkeep required.
+          <p className="text-xs text-muted max-w-xl">
+            Track and manage every role from automated intake to tailoring, sending, and mock practice hand-off.
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-3">
           {/* View Mode Toggle */}
-          <div className="flex rounded-xl bg-card p-1 border border-line">
+          <div className="flex rounded-2xl bg-panel p-1 border border-line">
             <button
               onClick={() => setViewMode("board")}
-              className={`rounded-lg px-3 py-1 text-xs font-semibold transition ${
-                viewMode === "board" ? "bg-accent text-white" : "text-muted hover:text-white"
+              className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition ${
+                viewMode === "board"
+                  ? "bg-blue-fill text-white shadow-sm"
+                  : "text-muted hover:text-ink"
               }`}
             >
               Kanban Board
             </button>
             <button
               onClick={() => setViewMode("list")}
-              className={`rounded-lg px-3 py-1 text-xs font-semibold transition ${
-                viewMode === "list" ? "bg-accent text-white" : "text-muted hover:text-white"
+              className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition ${
+                viewMode === "list"
+                  ? "bg-blue-fill text-white shadow-sm"
+                  : "text-muted hover:text-ink"
               }`}
             >
               List View
@@ -97,7 +190,7 @@ export default function ApplicationsTrackerPage() {
 
           <Link
             href="/apply/jobs/new"
-            className="rounded-xl bg-accent px-4 py-2 text-xs font-bold text-white shadow hover:bg-accent-hover transition"
+            className="rounded-2xl bg-gradient-to-r from-blue-fill to-blue-hover px-4 py-2 text-xs font-bold text-white shadow-lg shadow-blue-fill/25 hover:shadow-blue-fill/40 hover:scale-[1.02] active:scale-[0.98] transition"
           >
             + Add Job Advert
           </Link>
@@ -106,111 +199,102 @@ export default function ApplicationsTrackerPage() {
 
       {loading ? (
         <div className="flex h-64 items-center justify-center text-muted">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue border-t-transparent" />
         </div>
       ) : viewMode === "board" ? (
         /* Kanban Columns */
-        <div className="flex gap-4 overflow-x-auto pb-6 items-start">
+        <div className="flex gap-4 overflow-x-auto pb-8 items-start scrollbar-thin">
           {COLUMNS.map((col) => {
-            const columnApps = applications.filter((a) => a.status === col.id);
+            const columnApps = safeApps.filter((a) => a.status === col.id);
 
             return (
               <div
                 key={col.id}
-                className="w-72 shrink-0 rounded-2xl border border-line bg-booth/90 p-4 space-y-3"
+                className="w-72 shrink-0 rounded-3xl border border-line bg-panel/70 p-4 space-y-3 shadow-lg backdrop-blur-sm"
               >
                 {/* Column Title & Badge */}
                 <div className="flex items-center justify-between border-b border-line pb-2.5">
-                  <div className="flex items-center gap-2">
-                    <span className={`text-xs font-extrabold uppercase tracking-wider ${col.color}`}>
-                      {col.title}
-                    </span>
-                  </div>
-                  <span className="text-[11px] font-bold rounded-full bg-canvas px-2 py-0.5 text-muted border border-line">
+                  <span className={`text-xs font-black uppercase tracking-wider ${col.color}`}>
+                    {col.title}
+                  </span>
+                  <span
+                    className={`text-[10px] font-extrabold rounded-full px-2 py-0.5 border ${col.badge}`}
+                  >
                     {columnApps.length}
                   </span>
                 </div>
 
-                {/* Cards Container */}
-                <div className="space-y-3 min-h-[420px]">
+                {/* Column Items */}
+                <div className="space-y-3 min-h-[140px]">
                   {columnApps.length === 0 ? (
-                    <div className="rounded-xl border border-dashed border-line/60 p-6 text-center text-[11px] text-muted/60">
+                    <div className="flex h-28 items-center justify-center rounded-2xl border border-dashed border-line/60 text-[11px] text-muted/60">
                       Empty stage
                     </div>
                   ) : (
-                    columnApps.map((item) => (
+                    columnApps.map((app) => (
                       <div
-                        key={item.id}
-                        className="rounded-xl border border-line bg-card/80 p-4 space-y-2.5 hover:border-line-hover transition relative group shadow-sm"
+                        key={app.id}
+                        className="group relative rounded-2xl border border-line bg-panel-2/80 p-4 space-y-3 hover:border-blue/50 hover:bg-panel-2 transition shadow-md"
                       >
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <Link
-                              href={`/apply/applications/${item.id}`}
-                              className="text-xs font-bold text-white hover:text-accent transition line-clamp-1"
-                            >
-                              {item.job.title}
-                            </Link>
-                            <div className="text-[11px] text-accent font-medium mt-0.5">
-                              {item.job.employer}
-                            </div>
+                        <div className="space-y-1">
+                          <div className="flex items-start justify-between gap-2">
+                            <h4 className="text-xs font-black text-ink line-clamp-1 group-hover:text-blue-soft transition">
+                              {app.job?.title || "Role Application"}
+                            </h4>
+                            <span className="text-[10px] font-black rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 flex-shrink-0">
+                              {app.fit}% Fit
+                            </span>
                           </div>
-
-                          <span className="text-[10px] font-extrabold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
-                            {item.fit}% fit
-                          </span>
+                          <div className="text-[11px] font-bold text-muted">
+                            {app.job?.employer || "Company"}
+                          </div>
+                          <div className="text-[10px] text-muted font-mono">
+                            {app.job?.location || "Remote"}
+                          </div>
                         </div>
 
-                        <div className="text-[10px] text-muted flex items-center justify-between border-t border-line/50 pt-2">
-                          <span>📍 {item.job.location}</span>
-                          <span className="font-mono">{new Date(item.updatedAt).toLocaleDateString()}</span>
-                        </div>
-
-                        {/* Hand-off to Mock Interview button for sent/interview stages */}
-                        {(col.id === "sent" || col.id === "screen" || col.id === "interview") && (
-                          <div className="pt-1">
-                            <Link
-                              href="/interviews"
-                              className="w-full block text-center rounded-lg bg-accent/20 border border-accent/30 py-1.5 text-[10px] font-bold text-accent hover:bg-accent/30 transition"
-                            >
-                              🎙️ Practise Interview Now →
-                            </Link>
-                          </div>
+                        {app.notes && (
+                          <p className="text-[11px] text-muted/90 line-clamp-2 leading-relaxed bg-booth/50 p-2 rounded-xl border border-line/40">
+                            {app.notes}
+                          </p>
                         )}
 
-                        {/* Quick Move Action */}
-                        <div className="pt-1 flex items-center justify-between text-[10px] text-muted">
+                        <div className="pt-2 border-t border-line/50 flex flex-col gap-2">
                           <Link
-                            href={`/apply/applications/${item.id}`}
-                            className="hover:underline font-semibold text-ink"
+                            href={`/apply/applications/${app.id}`}
+                            className="inline-flex items-center justify-between text-[11px] font-bold text-blue hover:text-blue-soft transition"
                           >
-                            Workspace →
+                            <span>Open Workspace</span>
+                            <span>→</span>
                           </Link>
 
-                          {col.id === "queued" && (
-                            <button
-                              onClick={() => handleMoveStage(item.id, "ready")}
-                              className="hover:text-accent font-semibold"
-                            >
-                              Mark Ready →
-                            </button>
-                          )}
-                          {col.id === "ready" && (
-                            <button
-                              onClick={() => handleMoveStage(item.id, "sent")}
-                              className="hover:text-emerald-400 font-semibold"
-                            >
-                              Mark Sent →
-                            </button>
-                          )}
-                          {col.id === "sent" && (
-                            <button
-                              onClick={() => handleMoveStage(item.id, "interview")}
-                              className="hover:text-accent font-semibold"
-                            >
-                              Got Interview! →
-                            </button>
-                          )}
+                          {/* Quick Stage Progression */}
+                          <div className="flex items-center gap-1.5 pt-1">
+                            {col.id === "queued" && (
+                              <button
+                                onClick={() => handleMoveStage(app.id, "ready")}
+                                className="w-full rounded-xl bg-blue-fill/10 border border-blue-fill/30 py-1 text-[10px] font-bold text-blue hover:bg-blue-fill hover:text-white transition"
+                              >
+                                Mark Ready
+                              </button>
+                            )}
+                            {col.id === "ready" && (
+                              <button
+                                onClick={() => handleMoveStage(app.id, "sent")}
+                                className="w-full rounded-xl bg-emerald-500/10 border border-emerald-500/30 py-1 text-[10px] font-bold text-emerald-400 hover:bg-emerald-500 hover:text-white transition"
+                              >
+                                Mark Sent
+                              </button>
+                            )}
+                            {(col.id === "sent" || col.id === "screen" || col.id === "interview") && (
+                              <Link
+                                href="/practice"
+                                className="w-full text-center rounded-xl bg-blue/10 border border-blue/30 py-1 text-[10px] font-bold text-blue hover:bg-blue hover:text-white transition"
+                              >
+                                Mock Practice →
+                              </Link>
+                            )}
+                          </div>
                         </div>
                       </div>
                     ))
@@ -222,37 +306,39 @@ export default function ApplicationsTrackerPage() {
         </div>
       ) : (
         /* List View */
-        <div className="rounded-2xl border border-line bg-booth divide-y divide-line">
-          {applications.map((app) => (
-            <div key={app.id} className="p-4 flex items-center justify-between gap-4 hover:bg-card/40 transition">
-              <div>
-                <Link
-                  href={`/apply/applications/${app.id}`}
-                  className="text-sm font-bold text-white hover:text-accent transition"
-                >
-                  {app.job.title} · <span className="text-accent">{app.job.employer}</span>
-                </Link>
-                <div className="text-xs text-muted mt-0.5">
-                  📍 {app.job.location} · Mode: {app.mode}
+        <div className="rounded-3xl border border-line bg-panel overflow-hidden shadow-xl">
+          <div className="divide-y divide-line">
+            {safeApps.map((app) => (
+              <div
+                key={app.id}
+                className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-panel-2 transition"
+              >
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-extrabold text-ink">{app.job?.title}</span>
+                    <span className="text-[10px] font-extrabold rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5">
+                      {app.fit}% Fit
+                    </span>
+                  </div>
+                  <div className="text-xs text-muted">
+                    {app.job?.employer} · {app.job?.location}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-bold uppercase tracking-wider text-muted px-2.5 py-1 rounded-xl bg-panel-2 border border-line">
+                    {app.status}
+                  </span>
+                  <Link
+                    href={`/apply/applications/${app.id}`}
+                    className="rounded-xl bg-panel-2 border border-line-strong px-4 py-2 text-xs font-bold text-ink hover:bg-blue-fill hover:text-white hover:border-blue-fill transition"
+                  >
+                    Workspace →
+                  </Link>
                 </div>
               </div>
-
-              <div className="flex items-center gap-4">
-                <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded border border-emerald-500/20">
-                  {app.fit}% match fit
-                </span>
-                <span className="text-xs font-semibold uppercase px-2.5 py-1 rounded bg-card text-white border border-line">
-                  {app.status}
-                </span>
-                <Link
-                  href={`/apply/applications/${app.id}`}
-                  className="rounded-lg bg-line px-3 py-1.5 text-xs font-bold text-ink hover:text-white transition"
-                >
-                  Open →
-                </Link>
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
     </div>
