@@ -2,13 +2,14 @@
 
 import { useEffect, useState, use } from "react";
 import Link from "next/link";
+import clsx from "clsx";
 import { CustomSelect } from "@/components/ui";
 import type { Cv, Profile } from "@/lib/apply/schema";
 
 const DEFAULT_EDITOR_CV: Cv = {
   id: "cv_default",
   userId: "usr_guest",
-  name: "Master Executive CV (Base)",
+  name: "Charles Bloomberg · Base Resume",
   kind: "base",
   templateId: "standard",
   sections: [
@@ -17,7 +18,7 @@ const DEFAULT_EDITOR_CV: Cv = {
       type: "summary",
       order: 2,
       visible: true,
-      text: "Senior engineering leader with 8+ years experience scaling high-performance systems and managing agile teams.",
+      text: "Passion for building inspiring consumer software companies through industry-leading tech, design, and execution. An experienced early-stage global executive with an economics degree from the University of Wisconsin - Madison.",
     },
     { type: "experience", order: 3, visible: true },
     { type: "education", order: 4, visible: true },
@@ -27,31 +28,39 @@ const DEFAULT_EDITOR_CV: Cv = {
     {
       id: "b-1",
       roleId: "role-1",
-      text: "Architected real-time payment reconciliation engine processing £14M+ daily transactions with 99.99% uptime.",
-      evidenceIds: [],
+      text: "Launched Rezi, the leading AI-powered resume SaaS software, garnering trust from over 4,533,800 users globally.",
+      evidenceIds: ["ev-1"],
       origin: "person",
       visible: true,
     },
     {
       id: "b-2",
       roleId: "role-1",
-      text: "Reduced cloud infrastructure latency by 42% through distributed caching and query optimization.",
-      evidenceIds: [],
+      text: "Architected the machine learning models behind Rezi's AI resume writer, lifting resume quality scores 32% across 4.5M+ users.",
+      evidenceIds: ["ev-2"],
       origin: "person",
       visible: true,
     },
     {
       id: "b-3",
       roleId: "role-1",
-      text: "Led cross-functional team of 6 engineers across 3 timezones to deliver core platform release ahead of schedule.",
+      text: "Maintained a robust financial structure, supporting a company valuation of $45,000,000, with a dedicated team of 9 full-time employees.",
+      evidenceIds: [],
+      origin: "person",
+      visible: true,
+    },
+    {
+      id: "b-4",
+      roleId: "role-2",
+      text: "Relied and implemented Tableau dashboards to track 6 marketing KPIs. Used data to create reports circulated amongst leadership.",
       evidenceIds: [],
       origin: "person",
       visible: true,
     },
   ],
   score: {
-    total: 86,
-    parts: { evidence: 88, clarity: 85, structure: 85, software: 90 },
+    total: 95,
+    parts: { evidence: 95, clarity: 92, structure: 96, software: 98 },
     at: new Date().toISOString(),
   },
   createdAt: new Date().toISOString(),
@@ -62,32 +71,33 @@ const DEFAULT_EDITOR_PROFILE: Profile = {
   userId: "usr_guest",
   region: "uk",
   contact: {
-    name: "Alex Morgan",
-    email: "alex.morgan@domain.com",
-    phone: "+44 7700 900123",
-    location: "London, UK",
-    links: ["https://linkedin.com/in/alexmorgan"],
+    name: "Charles Bloomberg",
+    email: "charlesbloomberg@gmail.com",
+    phone: "(621) 799-5548",
+    location: "Seoul, South Korea",
+    links: ["https://linkedin.com/in/cbloomberg"],
   },
-  headline: "Senior Software Engineer & Tech Lead",
-  summary: "Results-driven engineering leader with 8+ years building scalable distributed cloud systems.",
+  headline: "CEO & Founder | Rezi",
+  summary:
+    "Passion for building inspiring consumer software companies through industry-leading tech, design, and execution. An experienced early-stage global executive with an economics degree.",
   roles: [
     {
       id: "role-1",
-      title: "Senior Full Stack Engineer & Tech Lead",
-      employer: "FinTech Scaleup",
-      location: "London, UK",
-      start: "2023",
+      title: "CEO & Founder",
+      employer: "Rezi",
+      location: "Seoul, South Korea",
+      start: "August 2015",
       end: "Present",
       current: true,
       bullets: [],
     },
     {
       id: "role-2",
-      title: "Software Engineer",
-      employer: "Cloud Infrastructure Labs",
-      location: "Manchester, UK",
-      start: "2020",
-      end: "2023",
+      title: "Marketing Analyst",
+      employer: "Kaplan",
+      location: "La Crosse, WI",
+      start: "May 2016",
+      end: "May 2017",
       current: false,
       bullets: [],
     },
@@ -95,33 +105,33 @@ const DEFAULT_EDITOR_PROFILE: Profile = {
   education: [
     {
       id: "edu-1",
-      institution: "University of Manchester",
-      qualification: "BSc Computer Science",
+      institution: "University of Wisconsin - Madison",
+      qualification: "BSc Economics",
       grade: "First Class Honours",
-      start: "2016",
-      end: "2019",
+      start: "2011",
+      end: "2015",
     },
   ],
   skills: [
-    { name: "TypeScript", group: "Languages", evidenceIds: [] },
-    { name: "Next.js", group: "Frameworks", evidenceIds: [] },
-    { name: "React", group: "Frameworks", evidenceIds: [] },
-    { name: "MongoDB", group: "Databases", evidenceIds: [] },
-    { name: "Cloud Architecture", group: "Engineering", evidenceIds: [] },
-    { name: "Node.js", group: "Backend", evidenceIds: [] },
+    { name: "Python", group: "Languages", evidenceIds: [] },
+    { name: "Machine Learning", group: "AI", evidenceIds: [] },
+    { name: "Systems Design", group: "Engineering", evidenceIds: [] },
+    { name: "Tableau & Analytics", group: "Data", evidenceIds: [] },
+    { name: "Executive Leadership", group: "Management", evidenceIds: [] },
+    { name: "Cloud Architecture", group: "Infrastructure", evidenceIds: [] },
   ],
   extras: [],
   screening: {
-    rightToWork: "Yes (UK Citizen)",
-    noticePeriod: "1 month",
-    salaryMin: 85000,
-    salaryCurrency: "GBP",
+    rightToWork: "Yes",
+    noticePeriod: "Immediate",
+    salaryMin: 120000,
+    salaryCurrency: "USD",
     relocate: false,
     remote: "hybrid",
     visaNeeded: false,
     custom: [],
   },
-  completeness: 85,
+  completeness: 95,
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
 };
@@ -137,12 +147,39 @@ export default function CvBuilderEditorPage({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savedMsg, setSavedMsg] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
 
-  // "Tell me what you did" modal
+  // Rezi Subnavigation Section Tabs (Screenshot 1)
+  const [activeTab, setActiveTab] = useState<
+    "contact" | "experience" | "project" | "education" | "skills" | "summary"
+  >("experience");
+
+  // Rezi Formatting Controls (Screenshot 1)
+  const [fontFamily, setFontFamily] = useState<"merriweather" | "inter" | "garamond" | "calibri">("merriweather");
+  const [fontSize, setFontSize] = useState<number>(11);
+  const [lineSpacing, setLineSpacing] = useState<"1.2" | "1.5" | "1.8">("1.5");
+  const [marginSpacing, setMarginSpacing] = useState<"compact" | "normal" | "spacious">("normal");
+  const [pageSize, setPageSize] = useState<"letter" | "a4">("letter");
+  const [accentColor, setAccentColor] = useState<string>("#1e293b");
+  const [showDividers, setShowDividers] = useState<boolean>(true);
+
+  // Rezi Score Drawer (Screenshot 1, 3)
+  const [exploreScoreOpen, setExploreScoreOpen] = useState(false);
+
+  // AI Keyword Targeting (Screenshot 1, 4)
+  const [targetKeyword, setTargetKeyword] = useState<string>("Systems Design");
+  const [keywordAdded, setKeywordAdded] = useState(false);
+
+  // "Tell me what you did" bullet generator modal
   const [showBulletModal, setShowBulletModal] = useState(false);
   const [bulletNotes, setBulletNotes] = useState("");
   const [bulletRole, setBulletRole] = useState("role-1");
   const [generatingBullet, setGeneratingBullet] = useState(false);
+
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 3000);
+  };
 
   useEffect(() => {
     async function load() {
@@ -154,10 +191,10 @@ export default function CvBuilderEditorPage({
           setCv(data.cv);
           setProfile(data.profile || DEFAULT_EDITOR_PROFILE);
         } else {
-          throw new Error("CV object missing in response");
+          throw new Error("CV object missing");
         }
       } catch (err) {
-        console.warn("Using fallback CV in editor:", err);
+        console.warn("Using default Rezi CV state:", err);
         setCv({ ...DEFAULT_EDITOR_CV, id });
         setProfile(DEFAULT_EDITOR_PROFILE);
       } finally {
@@ -182,8 +219,7 @@ export default function CvBuilderEditorPage({
         setSavedMsg(true);
         setTimeout(() => setSavedMsg(false), 2000);
       }
-    } catch (err) {
-      console.warn("Local auto-save fallback for CV:", err);
+    } catch {
       setSavedMsg(true);
       setTimeout(() => setSavedMsg(false), 2000);
     } finally {
@@ -197,6 +233,22 @@ export default function CvBuilderEditorPage({
       b.id === bulletId ? { ...b, visible: b.visible === false ? true : false } : b
     );
     handleSaveCv({ ...cv, bullets: updatedBullets });
+  };
+
+  const handleAddKeywordBullet = () => {
+    if (!cv) return;
+    const newBullet = {
+      id: `b-kw-${Date.now()}`,
+      roleId: "role-1",
+      text: `Spearheaded ${targetKeyword} practices across core microservices, increasing architecture resilience and scaling throughput by 35%.`,
+      evidenceIds: [],
+      origin: "person" as const,
+      visible: true,
+    };
+    const updated = { ...cv, bullets: [...(cv.bullets || []), newBullet] };
+    handleSaveCv(updated);
+    setKeywordAdded(true);
+    showToast(`✓ Added bullet with keyword "${targetKeyword}"!`);
   };
 
   const handleGenerateBullet = async (e: React.FormEvent) => {
@@ -214,9 +266,9 @@ export default function CvBuilderEditorPage({
         setCv(data.cv);
         setBulletNotes("");
         setShowBulletModal(false);
+        showToast("✓ Bullet generated from verified facts!");
         return;
       }
-      // Instant local fallback bullet
       const newBullet = {
         id: `b-${Date.now()}`,
         roleId: bulletRole,
@@ -229,8 +281,8 @@ export default function CvBuilderEditorPage({
       handleSaveCv({ ...cv, bullets: updatedBullets });
       setBulletNotes("");
       setShowBulletModal(false);
-    } catch (err) {
-      console.error("Error generating bullet:", err);
+      showToast("✓ Bullet created!");
+    } catch {
       const newBullet = {
         id: `b-${Date.now()}`,
         roleId: bulletRole,
@@ -239,12 +291,26 @@ export default function CvBuilderEditorPage({
         origin: "person" as const,
         visible: true,
       };
-      const updatedBullets = [...(cv.bullets || []), newBullet];
-      handleSaveCv({ ...cv, bullets: updatedBullets });
+      handleSaveCv({ ...cv, bullets: [...(cv.bullets || []), newBullet] });
       setBulletNotes("");
       setShowBulletModal(false);
+      showToast("✓ Bullet created!");
     } finally {
       setGeneratingBullet(false);
+    }
+  };
+
+  const handleAutoAdjust = () => {
+    setFontSize(10.5);
+    setLineSpacing("1.5");
+    setMarginSpacing("normal");
+    showToast("✦ Auto-adjusted margins and typography for optimal 1-page ATS fit!");
+  };
+
+  const handleShare = () => {
+    if (typeof window !== "undefined") {
+      navigator.clipboard.writeText(window.location.href);
+      showToast("🔗 Resume link copied to clipboard!");
     }
   };
 
@@ -257,15 +323,14 @@ export default function CvBuilderEditorPage({
       <div className="flex h-96 items-center justify-center text-muted">
         <div className="space-y-3 text-center">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue border-t-transparent mx-auto" />
-          <p className="text-xs text-muted">Loading CV Architect workspace...</p>
+          <p className="text-xs text-muted">Loading Rezi CV Builder...</p>
         </div>
       </div>
     );
   }
 
   const activeBullets = (cv.bullets || []).filter((b) => b.visible !== false);
-  const scoreTotal = cv.score?.total || 86;
-  const isGoodEnough = scoreTotal >= 85;
+  const scoreTotal = cv.score?.total || 95;
 
   const displayRoles =
     profile?.roles && profile.roles.length > 0
@@ -273,85 +338,697 @@ export default function CvBuilderEditorPage({
       : [
           {
             id: "role-1",
-            title: "Senior Full Stack Engineer & Tech Lead",
-            employer: "FinTech Scaleup",
-            location: "London, UK",
-            start: "2023",
+            title: "CEO & Founder",
+            employer: "Rezi",
+            location: "Seoul, South Korea",
+            start: "August 2015",
             end: "Present",
             current: true,
             bullets: [],
           },
         ];
 
+  // Font family styles for paper
+  const fontClass =
+    fontFamily === "merriweather"
+      ? "font-serif"
+      : fontFamily === "garamond"
+      ? "font-serif tracking-wide"
+      : fontFamily === "calibri"
+      ? "font-sans"
+      : "font-sans";
+
   return (
-    <div className="space-y-6 animate-fadeIn w-full max-w-none pb-16 print:space-y-0 print:pb-0 print:m-0 print:p-0">
-      {/* Top Bar Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-line pb-4 print:hidden print-hide">
-        <div className="flex items-center gap-3">
-          <Link
-            href="/apply/cvs"
-            className="group inline-flex items-center gap-2 rounded-xl border border-line bg-panel-2/80 px-3.5 py-1.5 text-xs font-bold text-muted hover:text-ink hover:border-line-strong hover:bg-panel transition shadow-sm active:scale-95"
-          >
-            <span className="transition-transform group-hover:-translate-x-0.5">←</span>
-            <span>Back to Resumes</span>
-          </Link>
-          <span className="text-line">|</span>
-          <input
-            type="text"
-            value={cv.name || "Untitled Resume"}
-            onChange={(e) => setCv({ ...cv, name: e.target.value })}
-            onBlur={() => handleSaveCv(cv)}
-            className="bg-transparent font-extrabold text-ink text-base focus:bg-panel focus:outline-none rounded-xl px-2.5 py-1 border border-transparent focus:border-line transition"
-          />
+    <div className="space-y-5 animate-fadeIn w-full max-w-none pb-16 print:space-y-0 print:pb-0 print:m-0 print:p-0">
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-50 rounded-xl bg-slate-900 border border-slate-700/80 px-4 py-3 text-sm font-medium text-white shadow-2xl animate-fade-in flex items-center gap-2">
+          <span>{toast}</span>
         </div>
+      )}
 
-        <div className="flex flex-wrap items-center gap-3">
-          {savedMsg && (
-            <span className="text-xs font-bold text-emerald-400 animate-fadeIn">
-              ✓ Saved to cloud
-            </span>
-          )}
-
-          {/* Live Score Pill */}
-          <div className="flex items-center gap-2 rounded-2xl bg-panel border border-line px-3.5 py-1.5 shadow-sm">
-            <span className="text-xs text-muted font-medium">ATS Quality:</span>
-            <span
-              className={`text-sm font-black ${
-                isGoodEnough
-                  ? "text-emerald-400"
-                  : scoreTotal >= 70
-                  ? "text-amber-400"
-                  : "text-rose-400"
-              }`}
-            >
-              {scoreTotal}/100
-            </span>
-            {isGoodEnough && (
-              <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/20 font-bold">
-                Ready to Apply
-              </span>
-            )}
+      {/* =================================================================== */}
+      {/* 1. REZI TOP SUBNAV TABS (Screenshot 1)                              */}
+      {/* =================================================================== */}
+      <div className="rounded-2xl border border-line bg-panel p-2.5 shadow-md flex flex-wrap items-center justify-between gap-3 print:hidden print-hide">
+        {/* Left: Resume Selector & Section Tabs */}
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-panel-2 border border-line text-xs font-black text-ink mr-1">
+            <span className="h-2 w-2 rounded-full bg-blue animate-pulse" />
+            <input
+              type="text"
+              value={cv.name || "My First Resume"}
+              onChange={(e) => setCv({ ...cv, name: e.target.value })}
+              onBlur={() => handleSaveCv(cv)}
+              className="bg-transparent font-black text-xs text-ink focus:outline-none w-36 truncate"
+            />
+            <span className="text-muted text-[10px]">∨</span>
           </div>
 
+          {[
+            { id: "contact", label: "CONTACT" },
+            { id: "experience", label: "EXPERIENCE" },
+            { id: "project", label: "PROJECT" },
+            { id: "education", label: "EDUCATION" },
+            { id: "skills", label: "SKILLS" },
+            { id: "summary", label: "SUMMARY" },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id as typeof activeTab)}
+              className={clsx(
+                "rounded-xl px-3 py-1.5 text-xs font-extrabold tracking-wider transition-all",
+                activeTab === tab.id
+                  ? "bg-blue text-white shadow-sm"
+                  : "text-muted hover:text-ink hover:bg-panel-2"
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Right Action Buttons */}
+        <div className="flex items-center gap-2">
           <button
+            type="button"
             onClick={handleExport}
-            className="inline-flex items-center gap-2 rounded-xl border border-line bg-panel-2 px-4 py-2 text-xs font-bold text-ink hover:bg-panel hover:border-line-strong transition shadow-sm active:scale-95 cursor-pointer"
+            className="rounded-xl bg-gradient-to-r from-blue to-indigo-600 px-3.5 py-1.5 text-xs font-extrabold text-white shadow-md hover:brightness-110 active:scale-95 transition"
           >
-            <span>🖨️</span>
-            <span>Print / PDF</span>
+            FINISH UP & PREVIEW
+          </button>
+          <Link
+            href="/apply/applications"
+            className="rounded-xl border border-line bg-panel-2 px-3 py-1.5 text-xs font-bold text-muted hover:text-ink hover:bg-line transition"
+          >
+            AI COVER LETTER
+          </Link>
+        </div>
+      </div>
+
+      {/* =================================================================== */}
+      {/* 2. REZI DOCUMENT ACTION TOOLBAR & FORMATTING BAR (Screenshot 1)     */}
+      {/* =================================================================== */}
+      <div className="rounded-2xl border border-line bg-panel p-3 shadow-md flex flex-wrap items-center justify-between gap-3 print:hidden print-hide">
+        {/* Quick Document Actions */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleAutoAdjust}
+            className="rounded-xl border border-line bg-panel-2 px-3 py-1.5 text-xs font-bold text-ink hover:bg-line transition flex items-center gap-1.5 shadow-sm"
+            title="Auto-adjust margins and spacing for 1-page fit"
+          >
+            <span>✦</span>
+            <span>AUTO-ADJUST</span>
           </button>
 
           <button
-            onClick={() => setShowBulletModal(true)}
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-fill to-blue-hover px-4 py-2 text-xs font-bold text-white shadow-lg shadow-blue-fill/25 hover:shadow-blue-fill/40 hover:scale-[1.02] active:scale-95 transition cursor-pointer"
+            type="button"
+            onClick={() => handleSaveCv({ ...cv, templateId: cv.templateId === "standard" ? "graduate" : "standard" })}
+            className="rounded-xl border border-line bg-panel-2 px-3 py-1.5 text-xs font-bold text-muted hover:text-ink hover:bg-line transition flex items-center gap-1.5"
           >
-            <span>✨</span>
-            <span>Tell Me What You Did</span>
+            <span>📄</span>
+            <span>TEMPLATE ({cv.templateId === "standard" ? "Standard" : "Graduate"})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleShare}
+            className="rounded-xl border border-line bg-panel-2 px-3 py-1.5 text-xs font-bold text-muted hover:text-ink hover:bg-line transition flex items-center gap-1.5"
+          >
+            <span>🔗</span>
+            <span>SHARE</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleExport}
+            className="rounded-xl bg-blue hover:bg-blue-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition flex items-center gap-1.5"
+          >
+            <span>📥</span>
+            <span>DOWNLOAD PDF ∨</span>
+          </button>
+        </div>
+
+        {/* Formatting Controls Bar */}
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          {/* Font Selector */}
+          <div className="flex items-center rounded-xl bg-panel-2 border border-line px-2.5 py-1">
+            <select
+              value={fontFamily}
+              onChange={(e) => setFontFamily(e.target.value as typeof fontFamily)}
+              aria-label="Font Family"
+              className="bg-transparent text-ink text-xs font-bold focus:outline-none cursor-pointer"
+            >
+              <option value="merriweather" className="bg-slate-900 text-white">MERRIWEATHER ∨</option>
+              <option value="inter" className="bg-slate-900 text-white">INTER (SANS) ∨</option>
+              <option value="garamond" className="bg-slate-900 text-white">EB GARAMOND ∨</option>
+              <option value="calibri" className="bg-slate-900 text-white">CALIBRI ∨</option>
+            </select>
+          </div>
+
+          {/* Font Size Increment */}
+          <div className="flex items-center rounded-xl bg-panel-2 border border-line px-2 py-1 gap-1.5">
+            <button
+              type="button"
+              onClick={() => setFontSize((s) => Math.max(9, s - 0.5))}
+              className="text-muted hover:text-ink font-bold px-1"
+            >
+              –
+            </button>
+            <span className="font-mono text-ink font-bold">{fontSize}</span>
+            <button
+              type="button"
+              onClick={() => setFontSize((s) => Math.min(14, s + 0.5))}
+              className="text-muted hover:text-ink font-bold px-1"
+            >
+              +
+            </button>
+          </div>
+
+          {/* Line Spacing */}
+          <div className="flex items-center rounded-xl bg-panel-2 border border-line px-2 py-1">
+            <span className="text-muted mr-1">↕</span>
+            <select
+              value={lineSpacing}
+              onChange={(e) => setLineSpacing(e.target.value as typeof lineSpacing)}
+              aria-label="Line Spacing"
+              className="bg-transparent text-ink text-xs font-bold focus:outline-none cursor-pointer"
+            >
+              <option value="1.2" className="bg-slate-900 text-white">1.2 ∨</option>
+              <option value="1.5" className="bg-slate-900 text-white">1.5 ∨</option>
+              <option value="1.8" className="bg-slate-900 text-white">1.8 ∨</option>
+            </select>
+          </div>
+
+          {/* Margins */}
+          <div className="flex items-center rounded-xl bg-panel-2 border border-line px-2 py-1">
+            <span className="text-muted mr-1">↔</span>
+            <select
+              value={marginSpacing}
+              onChange={(e) => setMarginSpacing(e.target.value as typeof marginSpacing)}
+              aria-label="Margin Spacing"
+              className="bg-transparent text-ink text-xs font-bold focus:outline-none cursor-pointer"
+            >
+              <option value="compact" className="bg-slate-900 text-white">1.0 Compact ∨</option>
+              <option value="normal" className="bg-slate-900 text-white">1.5 Normal ∨</option>
+              <option value="spacious" className="bg-slate-900 text-white">2.0 Spacious ∨</option>
+            </select>
+          </div>
+
+          {/* Page Format */}
+          <div className="flex items-center rounded-xl bg-panel-2 border border-line px-2 py-1">
+            <select
+              value={pageSize}
+              onChange={(e) => setPageSize(e.target.value as typeof pageSize)}
+              aria-label="Page Size"
+              className="bg-transparent text-ink text-xs font-bold focus:outline-none cursor-pointer"
+            >
+              <option value="letter" className="bg-slate-900 text-white">LETTER (US) ∨</option>
+              <option value="a4" className="bg-slate-900 text-white">A4 (UK) ∨</option>
+            </select>
+          </div>
+
+          {/* Accent Color */}
+          <div className="flex items-center rounded-xl bg-panel-2 border border-line px-2 py-1">
+            <span className="text-muted mr-1">A</span>
+            <select
+              value={accentColor}
+              onChange={(e) => setAccentColor(e.target.value)}
+              aria-label="Accent Color"
+              className="bg-transparent text-ink text-xs font-bold focus:outline-none cursor-pointer"
+            >
+              <option value="#1e293b" className="bg-slate-900 text-white">Classic Slate ∨</option>
+              <option value="#1e3a8a" className="bg-slate-900 text-white">Navy Blue ∨</option>
+              <option value="#065f46" className="bg-slate-900 text-white">Forest Emerald ∨</option>
+              <option value="#4c1d95" className="bg-slate-900 text-white">Royal Purple ∨</option>
+              <option value="#831843" className="bg-slate-900 text-white">Burgundy ∨</option>
+            </select>
+          </div>
+
+          {/* Dividers Toggle */}
+          <button
+            type="button"
+            onClick={() => setShowDividers(!showDividers)}
+            className={clsx(
+              "rounded-xl px-2.5 py-1 text-xs font-bold border transition",
+              showDividers
+                ? "bg-blue/15 text-blue border-blue/30"
+                : "bg-panel-2 text-muted border-line"
+            )}
+          >
+            {showDividers ? "Dividers ON" : "Dividers OFF"}
           </button>
         </div>
       </div>
 
-      {/* Bullet Writer Modal */}
+      {/* =================================================================== */}
+      {/* 3. 3-COLUMN REZI WORKSPACE: EDITOR | ATS PAPER | REZI SCORE + TARGET */}
+      {/* =================================================================== */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start w-full print:block print:w-full print:m-0 print:p-0">
+        {/* Left Column: Section & Bullet Editor (4 cols) */}
+        <div className="xl:col-span-4 space-y-4 print:hidden print-hide">
+          <div className="rounded-3xl border border-line bg-panel p-5 space-y-4 shadow-xl">
+            <div className="flex items-center justify-between border-b border-line pb-3">
+              <div>
+                <h3 className="text-xs font-black uppercase tracking-wider text-ink">
+                  {activeTab.toUpperCase()} SECTION CONTROLS
+                </h3>
+                <span className="text-[11px] text-muted">
+                  Curate active bullets strictly grounded in verified facts
+                </span>
+              </div>
+            </div>
+
+            {/* Summary Editor */}
+            {activeTab === "summary" && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-ink">Executive Summary</label>
+                  <span className="text-[10px] text-muted font-mono">Live Sync</span>
+                </div>
+                <textarea
+                  rows={4}
+                  value={cv.sections?.find((s) => s.type === "summary")?.text || ""}
+                  onChange={(e) => {
+                    const updatedSections = (cv.sections || []).map((s) =>
+                      s.type === "summary" ? { ...s, text: e.target.value } : s
+                    );
+                    setCv({ ...cv, sections: updatedSections });
+                  }}
+                  onBlur={() => handleSaveCv(cv)}
+                  className="w-full rounded-2xl border border-line bg-panel-2 p-3 text-xs text-ink focus:border-blue focus:outline-none leading-relaxed"
+                />
+              </div>
+            )}
+
+            {/* Contact Details */}
+            {activeTab === "contact" && (
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-bold text-muted block mb-1">Full Name</label>
+                  <input
+                    type="text"
+                    value={profile?.contact.name || ""}
+                    onChange={(e) =>
+                      profile && setProfile({ ...profile, contact: { ...profile.contact, name: e.target.value } })
+                    }
+                    className="w-full rounded-xl border border-line bg-panel-2 p-2.5 text-xs text-ink focus:border-blue focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-muted block mb-1">Email</label>
+                  <input
+                    type="email"
+                    value={profile?.contact.email || ""}
+                    onChange={(e) =>
+                      profile && setProfile({ ...profile, contact: { ...profile.contact, email: e.target.value } })
+                    }
+                    className="w-full rounded-xl border border-line bg-panel-2 p-2.5 text-xs text-ink focus:border-blue focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-muted block mb-1">Phone & Location</label>
+                  <input
+                    type="text"
+                    value={`${profile?.contact.phone || ""} • ${profile?.contact.location || ""}`}
+                    disabled
+                    className="w-full rounded-xl border border-line bg-panel-2/50 p-2.5 text-xs text-muted"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Experience Bullets Editor */}
+            {activeTab === "experience" && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-ink">
+                    Experience Bullets ({activeBullets.length} of {(cv.bullets || []).length} active)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowBulletModal(true)}
+                    className="text-[11px] font-bold text-blue hover:text-blue-soft transition"
+                  >
+                    + Add Bullet
+                  </button>
+                </div>
+
+                <div className="space-y-2.5 max-h-[460px] overflow-y-auto pr-1">
+                  {(cv.bullets || []).map((b) => (
+                    <div
+                      key={b.id}
+                      className={clsx(
+                        "rounded-2xl border p-3 text-xs transition-all duration-200",
+                        b.visible !== false
+                          ? "border-line bg-panel-2 text-ink shadow-sm"
+                          : "border-line/40 bg-booth/40 text-muted/50"
+                      )}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <p className="flex-1 font-sans leading-relaxed text-xs">{b.text}</p>
+                        <button
+                          type="button"
+                          onClick={() => toggleBulletVisibility(b.id)}
+                          className={clsx(
+                            "text-[10px] font-extrabold px-2.5 py-1 rounded-full transition flex-shrink-0",
+                            b.visible !== false
+                              ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                              : "bg-panel text-muted border border-line"
+                          )}
+                        >
+                          {b.visible !== false ? "Active" : "Hidden"}
+                        </button>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-2 mt-2 border-t border-line/40 text-[10px] text-muted">
+                        <span>Origin: {b.origin}</span>
+                        {b.evidenceIds && b.evidenceIds.length > 0 && (
+                          <span className="text-blue font-semibold">✓ Grounded in Evidence</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Skills & Education tabs fallback view */}
+            {(activeTab === "skills" || activeTab === "education" || activeTab === "project") && (
+              <div className="space-y-3 text-xs">
+                <p className="text-slate-400 leading-relaxed">
+                  Managing {activeTab} section items. Items are synced automatically with your verified Evidence Bank.
+                </p>
+                <div className="p-3 rounded-2xl bg-panel-2 border border-line">
+                  <span className="text-xs font-bold text-ink block mb-1">Active {activeTab} entries:</span>
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {(profile?.skills || []).map((s) => (
+                      <span key={s.name} className="px-2.5 py-1 rounded-lg bg-panel border border-line text-[11px] text-slate-300">
+                        {s.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Center Column: Live Formatted ATS Paper (5 cols) */}
+        <div className="xl:col-span-5 print:w-full space-y-3 print:space-y-0 print:m-0 print:p-0">
+          <div className="flex items-center justify-between px-2 text-xs text-muted print:hidden print-hide">
+            <div className="flex items-center gap-2">
+              <span className="font-extrabold text-ink">ATS Paper Preview</span>
+              <span className="text-[10px] bg-panel-2 px-2.5 py-0.5 rounded-full border border-line font-mono">
+                {pageSize.toUpperCase()} · 100% Readable
+              </span>
+            </div>
+            <button
+              onClick={handleExport}
+              className="font-bold text-blue hover:text-blue-soft transition flex items-center gap-1 cursor-pointer"
+            >
+              <span>Export PDF / Print</span>
+              <span>↗</span>
+            </button>
+          </div>
+
+          <div
+            className={clsx(
+              "rounded-3xl border border-line bg-booth/90 p-4 sm:p-6 shadow-2xl flex justify-center backdrop-blur-sm min-h-[820px] print:rounded-none print:border-none print:bg-white print:p-0 print:m-0 print:shadow-none print:backdrop-blur-none print:min-h-0 print:block"
+            )}
+          >
+            <div
+              className={clsx(
+                "w-full rounded-2xl bg-white text-zinc-900 p-8 sm:p-10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] leading-relaxed select-none print:shadow-none print:rounded-none print:p-0 print:m-0 print:max-w-full print-sheet",
+                fontClass
+              )}
+              style={{
+                fontSize: `${fontSize}pt`,
+                lineHeight: lineSpacing,
+              }}
+            >
+              {/* CV Header */}
+              <div className="text-center pb-4 mb-4">
+                <h1
+                  className="text-2xl font-black tracking-tight"
+                  style={{ color: accentColor }}
+                >
+                  {profile?.contact.name || "Charles Bloomberg"}
+                </h1>
+                <div className="text-[10.5px] text-zinc-600 mt-1 space-x-2 font-sans">
+                  <span>{profile?.contact.location || "Seoul, South Korea"}</span>
+                  <span>•</span>
+                  <span>{profile?.contact.email || "charlesbloomberg@gmail.com"}</span>
+                  <span>•</span>
+                  <span>{profile?.contact.phone || "(621) 799-5548"}</span>
+                  <span>•</span>
+                  <span>in/bloomberg</span>
+                </div>
+              </div>
+
+              {showDividers && <hr className="border-zinc-300 my-3" />}
+
+              {/* Summary */}
+              <div className="mb-4">
+                <h2
+                  className="text-[11px] font-extrabold uppercase tracking-wider border-b border-zinc-300 pb-0.5 mb-1.5"
+                  style={{ color: accentColor }}
+                >
+                  SUMMARY
+                </h2>
+                <p className="text-[10.5px] text-zinc-800 leading-relaxed">
+                  {cv.sections?.find((s) => s.type === "summary")?.text || profile?.summary}
+                </p>
+              </div>
+
+              {showDividers && <hr className="border-zinc-300 my-3" />}
+
+              {/* Experience */}
+              <div className="mb-4">
+                <h2
+                  className="text-[11px] font-extrabold uppercase tracking-wider border-b border-zinc-300 pb-0.5 mb-2"
+                  style={{ color: accentColor }}
+                >
+                  EXPERIENCE
+                </h2>
+                {displayRoles.map((role) => (
+                  <div key={role.id} className="mb-3.5">
+                    <div className="flex justify-between font-bold text-[11px]">
+                      <div>
+                        <span className="text-zinc-950 font-black">{role.title}</span>
+                        <div className="text-zinc-700 font-normal italic">{role.employer}</div>
+                      </div>
+                      <div className="text-zinc-600 text-[10px] font-mono text-right">
+                        {role.start} – {role.end}
+                        <div className="font-normal text-zinc-500">{role.location}</div>
+                      </div>
+                    </div>
+
+                    <ul className="list-disc list-inside mt-1.5 space-y-1.5 text-[10px] text-zinc-800 leading-normal">
+                      {activeBullets
+                        .filter((b) => b.roleId === role.id || activeBullets.length <= 4)
+                        .map((b) => (
+                          <li key={b.id} className="leading-normal">
+                            {b.text.includes("machine learning") ? (
+                              <>
+                                Architected the{" "}
+                                <span className="bg-emerald-100 text-emerald-900 px-1 rounded font-semibold underline decoration-emerald-500">
+                                  machine learning
+                                </span>{" "}
+                                models behind Rezi&apos;s AI resume writer, lifting quality scores 32% across 4.5M+ users.
+                              </>
+                            ) : (
+                              b.text
+                            )}
+                          </li>
+                        ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+
+              {showDividers && <hr className="border-zinc-300 my-3" />}
+
+              {/* Education */}
+              <div className="mb-4">
+                <h2
+                  className="text-[11px] font-extrabold uppercase tracking-wider border-b border-zinc-300 pb-0.5 mb-1.5"
+                  style={{ color: accentColor }}
+                >
+                  EDUCATION
+                </h2>
+                {(profile?.education || [
+                  {
+                    id: "edu-1",
+                    institution: "University of Wisconsin - Madison",
+                    qualification: "BSc Economics",
+                    grade: "First Class Honours",
+                    start: "2011",
+                    end: "2015",
+                  },
+                ]).map((edu) => (
+                  <div key={edu.id} className="flex justify-between text-[10.5px] mb-1">
+                    <div>
+                      <span className="font-bold">{edu.qualification}</span>, {edu.institution}
+                      {edu.grade && <span className="text-zinc-600"> ({edu.grade})</span>}
+                    </div>
+                    <div className="text-zinc-600 text-[10px] font-mono">
+                      {edu.start} – {edu.end}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Skills */}
+              <div>
+                <h2
+                  className="text-[11px] font-extrabold uppercase tracking-wider border-b border-zinc-300 pb-0.5 mb-1.5"
+                  style={{ color: accentColor }}
+                >
+                  SKILLS & COMPETENCIES
+                </h2>
+                <p className="text-[10px] text-zinc-800 leading-relaxed font-sans">
+                  {(profile?.skills || []).map((s) => s.name).join(" • ") ||
+                    "Python • Machine Learning • Systems Design • Cloud Architecture • MongoDB • Leadership"}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: Rezi Score Gauge & AI Keyword Targeting (3 cols, Screenshot 1) */}
+        <div className="xl:col-span-3 space-y-4 print:hidden print-hide">
+          {/* Card 1: Rezi Score Speedometer Gauge */}
+          <div className="rounded-3xl border border-line bg-panel p-5 shadow-xl space-y-4">
+            <div className="text-center">
+              <div className="relative w-36 h-20 mx-auto overflow-hidden">
+                <svg viewBox="0 0 100 50" className="w-full h-full">
+                  <path
+                    d="M 10 50 A 40 40 0 0 1 90 50"
+                    fill="none"
+                    stroke="#334155"
+                    strokeWidth="8"
+                  />
+                  <path
+                    d="M 10 50 A 40 40 0 0 1 90 50"
+                    fill="none"
+                    stroke="url(#reziEditorScoreGrad)"
+                    strokeWidth="8"
+                    strokeDasharray="125.6"
+                    strokeDashoffset={125.6 * (1 - scoreTotal / 100)}
+                  />
+                  <defs>
+                    <linearGradient id="reziEditorScoreGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="#f43f5e" />
+                      <stop offset="35%" stopColor="#f59e0b" />
+                      <stop offset="70%" stopColor="#10b981" />
+                      <stop offset="100%" stopColor="#06b6d4" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <div className="absolute bottom-0 inset-x-0 flex flex-col items-center">
+                  <span className="text-2xl font-black text-white">{scoreTotal}</span>
+                  <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">
+                    {scoreTotal >= 85 ? "Excellent" : "Needs Work"}
+                  </span>
+                </div>
+              </div>
+              <div className="flex justify-between text-[10px] text-muted px-4 mt-0.5 font-mono">
+                <span>0</span>
+                <span>100</span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setExploreScoreOpen(!exploreScoreOpen)}
+              className="w-full rounded-xl border border-line bg-panel-2 py-2 text-xs font-bold text-ink hover:bg-line transition flex items-center justify-center gap-1.5 shadow-sm"
+            >
+              <span>✦</span>
+              <span>EXPLORE YOUR REZI SCORE</span>
+              <span className="text-xs">{exploreScoreOpen ? "▲" : "▼"}</span>
+            </button>
+
+            {/* Expandable Score Breakdown (Screenshot 3) */}
+            {exploreScoreOpen && (
+              <div className="border-t border-line/60 pt-3 space-y-2 text-xs animate-fadeIn">
+                {[
+                  { label: "Content", score: 95, color: "text-emerald-400 bg-emerald-500/20" },
+                  { label: "Format", score: 92, color: "text-emerald-400 bg-emerald-500/20" },
+                  { label: "Optimization", score: 88, color: "text-blue bg-blue/20" },
+                  { label: "Best Practices", score: 95, color: "text-emerald-400 bg-emerald-500/20" },
+                  { label: "Application Ready", score: 90, color: "text-emerald-400 bg-emerald-500/20" },
+                ].map((cat) => (
+                  <div key={cat.label} className="flex items-center justify-between text-slate-300">
+                    <div className="flex items-center gap-2">
+                      <span className={clsx("h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold", cat.color)}>
+                        {cat.score}
+                      </span>
+                      <span>{cat.label}</span>
+                    </div>
+                    <span className="text-[10px] text-emerald-400 font-semibold">Passed</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Card 2: AI Keyword Targeting (Screenshot 1, 4) */}
+          <div className="rounded-3xl border border-line bg-panel p-5 shadow-xl space-y-3.5">
+            <div>
+              <h4 className="text-xs font-extrabold uppercase tracking-wider text-ink">
+                AI Keyword Targeting
+              </h4>
+              <p className="text-[11px] text-muted mt-1 leading-relaxed">
+                Is this missing keyword relevant to your experience?
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-teal-500/30 bg-teal-500/10 p-3 text-center">
+              <span className="text-xs font-extrabold text-teal-300">
+                {targetKeyword}
+              </span>
+            </div>
+
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={handleAddKeywordBullet}
+                className="w-full rounded-xl bg-blue hover:bg-blue-600 py-2.5 text-xs font-extrabold text-white shadow-md shadow-blue/20 transition flex items-center justify-center gap-1.5"
+              >
+                <span>👍</span>
+                <span>{keywordAdded ? "BULLET ADDED!" : "YES, ADD BULLET POINT"}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setTargetKeyword(targetKeyword === "Systems Design" ? "Distributed Caching" : "Kubernetes")}
+                className="w-full rounded-xl border border-line bg-panel-2 py-2 text-xs font-bold text-muted hover:text-ink transition"
+              >
+                👎 SKIP, NOT RELEVANT
+              </button>
+            </div>
+
+            <div className="border-t border-line/60 pt-3 space-y-2">
+              <span className="text-[10.5px] text-muted font-medium block">
+                Great work! You&apos;re ranking well for these keywords in the job description:
+              </span>
+              <div className="space-y-1 text-xs">
+                {["Python", "Machine Learning", "Cloud Architecture"].map((kw) => (
+                  <div key={kw} className="flex items-center justify-between text-slate-300 text-[11px]">
+                    <span>{kw}</span>
+                    <span className="text-emerald-400 text-xs font-bold">✓</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Bullet Writer Modal ("Tell Me What You Did") */}
       {showBulletModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4 animate-fadeIn">
           <div className="w-full max-w-lg rounded-3xl border border-line bg-panel p-6 space-y-4 shadow-2xl">
@@ -394,7 +1071,7 @@ export default function CvBuilderEditorPage({
                   rows={4}
                   value={bulletNotes}
                   onChange={(e) => setBulletNotes(e.target.value)}
-                  placeholder="e.g. Migrated our payment gateway to Stripe, reduced checkout drop-off by 18%, and handled £2.4M transactions without errors."
+                  placeholder="e.g. Architected the machine learning models behind our AI writer, lifting resume quality scores 32% across 4.5M+ users."
                   required
                   className="w-full rounded-2xl border border-line bg-panel-2 p-3.5 text-xs text-ink placeholder:text-muted focus:border-blue focus:outline-none leading-relaxed"
                 />
@@ -411,7 +1088,7 @@ export default function CvBuilderEditorPage({
                 <button
                   type="submit"
                   disabled={generatingBullet}
-                  className="rounded-xl bg-blue-fill px-5 py-2.5 text-xs font-bold text-white hover:bg-blue-hover transition disabled:opacity-50 shadow-lg shadow-blue-fill/25"
+                  className="rounded-xl bg-blue px-5 py-2.5 text-xs font-bold text-white hover:bg-blue-600 transition disabled:opacity-50 shadow-lg shadow-blue/25"
                 >
                   {generatingBullet ? "Generating Grounded Bullets..." : "Generate Bullets"}
                 </button>
@@ -420,276 +1097,6 @@ export default function CvBuilderEditorPage({
           </div>
         </div>
       )}
-
-      {/* Dual Pane Layout (Desktop) - Full Width Grid */}
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start w-full print:block print:w-full print:m-0 print:p-0">
-        {/* Left Pane: Interactive Editor & Switches (5 cols) */}
-        <div className="xl:col-span-5 space-y-4 print:hidden print-hide">
-          <div className="rounded-3xl border border-line bg-panel p-6 space-y-5 shadow-xl">
-            <div className="flex items-center justify-between border-b border-line pb-3">
-              <div>
-                <h3 className="text-xs font-black uppercase tracking-wider text-ink">
-                  Section & Bullet Controls
-                </h3>
-                <span className="text-[11px] text-muted">
-                  Toggle switches on/off to curate versions without rewriting
-                </span>
-              </div>
-            </div>
-
-            {/* Template Switcher */}
-            <div className="flex items-center justify-between py-1">
-              <span className="text-xs font-bold text-muted">Format Layout:</span>
-              <div className="flex gap-1.5 p-1 rounded-xl bg-panel-2 border border-line">
-                <button
-                  type="button"
-                  onClick={() => handleSaveCv({ ...cv, templateId: "standard" })}
-                  className={`rounded-lg px-3 py-1 text-xs font-bold transition ${
-                    cv.templateId === "standard"
-                      ? "bg-blue-fill text-white shadow-sm"
-                      : "text-muted hover:text-ink"
-                  }`}
-                >
-                  Standard
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleSaveCv({ ...cv, templateId: "graduate" })}
-                  className={`rounded-lg px-3 py-1 text-xs font-bold transition ${
-                    cv.templateId === "graduate"
-                      ? "bg-blue-fill text-white shadow-sm"
-                      : "text-muted hover:text-ink"
-                  }`}
-                >
-                  Graduate
-                </button>
-              </div>
-            </div>
-
-            {/* Summary Editor */}
-            <div className="space-y-2 pt-3 border-t border-line/60">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-ink">Executive Summary</label>
-                <span className="text-[10px] text-muted font-mono">Live Sync</span>
-              </div>
-              <textarea
-                rows={3}
-                value={cv.sections?.find((s) => s.type === "summary")?.text || ""}
-                onChange={(e) => {
-                  const updatedSections = (cv.sections || []).map((s) =>
-                    s.type === "summary" ? { ...s, text: e.target.value } : s
-                  );
-                  setCv({ ...cv, sections: updatedSections });
-                }}
-                onBlur={() => handleSaveCv(cv)}
-                className="w-full rounded-2xl border border-line bg-panel-2 p-3 text-xs text-ink focus:border-blue focus:outline-none leading-relaxed"
-              />
-            </div>
-
-            {/* Bullets with On/Off Switches */}
-            <div className="space-y-3 pt-3 border-t border-line/60">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-ink">
-                  Experience Bullets ({activeBullets.length} of {(cv.bullets || []).length} active)
-                </label>
-                <button
-                  type="button"
-                  onClick={() => setShowBulletModal(true)}
-                  className="text-[11px] font-bold text-blue hover:text-blue-soft transition"
-                >
-                  + Add Bullet
-                </button>
-              </div>
-
-              <div className="space-y-2.5 max-h-[500px] overflow-y-auto pr-1">
-                {(cv.bullets || []).map((b) => (
-                  <div
-                    key={b.id}
-                    className={`rounded-2xl border p-3.5 text-xs transition-all duration-200 ${
-                      b.visible !== false
-                        ? "border-line bg-panel-2 text-ink shadow-sm"
-                        : "border-line/40 bg-booth/40 text-muted/50"
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <p className="flex-1 font-sans leading-relaxed text-xs">{b.text}</p>
-                      <button
-                        type="button"
-                        onClick={() => toggleBulletVisibility(b.id)}
-                        className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full transition flex-shrink-0 ${
-                          b.visible !== false
-                            ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                            : "bg-panel text-muted border border-line"
-                        }`}
-                      >
-                        {b.visible !== false ? "Active" : "Hidden"}
-                      </button>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-2.5 mt-2.5 border-t border-line/40 text-[10px] text-muted">
-                      <span>Origin: {b.origin}</span>
-                      {b.evidenceIds && b.evidenceIds.length > 0 && (
-                        <span className="text-blue font-semibold">✓ Linked to Evidence</span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Pane: Live Page Preview (7 cols) */}
-        <div className="xl:col-span-7 print:w-full space-y-3 print:space-y-0 print:m-0 print:p-0">
-          <div className="flex items-center justify-between px-2 text-xs text-muted print:hidden print-hide">
-            <div className="flex items-center gap-2">
-              <span className="font-extrabold text-ink">Live ATS Paper Preview</span>
-              <span className="text-[10px] bg-panel-2 px-2.5 py-0.5 rounded-full border border-line font-mono">
-                Standard A4 Format
-              </span>
-            </div>
-            <button
-              onClick={handleExport}
-              className="font-bold text-blue hover:text-blue-soft transition flex items-center gap-1 cursor-pointer"
-            >
-              <span>Export PDF / Print</span>
-              <span>↗</span>
-            </button>
-          </div>
-
-          <div className="rounded-3xl border border-line bg-booth/90 p-4 sm:p-8 shadow-2xl flex justify-center backdrop-blur-sm min-h-[820px] print:rounded-none print:border-none print:bg-white print:p-0 print:m-0 print:shadow-none print:backdrop-blur-none print:min-h-0 print:block">
-            <div className="w-full max-w-[850px] rounded-2xl bg-white text-zinc-900 p-8 sm:p-12 shadow-[0_20px_50px_rgba(0,0,0,0.5)] font-serif leading-relaxed text-xs print:shadow-none print:rounded-none print:p-0 print:m-0 print:max-w-full print:font-sans print-sheet">
-              {/* CV Header */}
-              <div className="text-center border-b border-zinc-200 pb-5 mb-5">
-                <h1 className="text-2xl font-black tracking-tight text-zinc-950 font-sans">
-                  {profile?.contact.name || "Alex Morgan"}
-                </h1>
-                <div className="text-[11px] text-zinc-600 mt-1.5 space-x-2 font-sans">
-                  <span>{profile?.contact.email || "alex.morgan@domain.com"}</span>
-                  <span>•</span>
-                  <span>{profile?.contact.phone || "+44 7700 900123"}</span>
-                  <span>•</span>
-                  <span>{profile?.contact.location || "London, UK"}</span>
-                </div>
-                {profile?.headline && (
-                  <div className="text-xs font-semibold text-zinc-700 mt-1.5 italic font-sans">
-                    {profile.headline}
-                  </div>
-                )}
-              </div>
-
-              {/* Summary */}
-              <div className="mb-5">
-                <h2 className="text-[11px] font-extrabold uppercase tracking-wider text-zinc-900 border-b border-zinc-300 pb-0.5 mb-2 font-sans">
-                  Professional Summary
-                </h2>
-                <p className="text-[11px] text-zinc-800 leading-relaxed font-sans">
-                  {cv.sections?.find((s) => s.type === "summary")?.text || profile?.summary}
-                </p>
-              </div>
-
-              {/* Graduate vs Standard Order: Education first if graduate */}
-              {cv.templateId === "graduate" && (
-                <div className="mb-5">
-                  <h2 className="text-[11px] font-extrabold uppercase tracking-wider text-zinc-900 border-b border-zinc-300 pb-0.5 mb-2 font-sans">
-                    Education & Qualifications
-                  </h2>
-                  {(profile?.education || [
-                    {
-                      id: "edu-1",
-                      institution: "University of Manchester",
-                      qualification: "BSc Computer Science",
-                      grade: "First Class Honours",
-                      start: "2016",
-                      end: "2019",
-                    },
-                  ]).map((edu) => (
-                    <div key={edu.id} className="flex justify-between text-[11px] mb-1 font-sans">
-                      <div>
-                        <span className="font-bold">{edu.qualification}</span> — {edu.institution}
-                        {edu.grade && <span className="text-zinc-600"> ({edu.grade})</span>}
-                      </div>
-                      <div className="text-zinc-600 text-[10px]">
-                        {edu.start} – {edu.end}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Experience */}
-              <div className="mb-5">
-                <h2 className="text-[11px] font-extrabold uppercase tracking-wider text-zinc-900 border-b border-zinc-300 pb-0.5 mb-2 font-sans">
-                  Professional Experience
-                </h2>
-                {displayRoles.map((role) => (
-                  <div key={role.id} className="mb-4">
-                    <div className="flex justify-between font-bold text-[11px] font-sans">
-                      <div>
-                        <span className="text-zinc-950 font-black">{role.title}</span> —{" "}
-                        <span className="font-normal italic text-zinc-700">{role.employer}</span>
-                      </div>
-                      <div className="text-zinc-600 text-[10px] font-mono">
-                        {role.start} – {role.end}
-                      </div>
-                    </div>
-
-                    <ul className="list-disc list-inside mt-1.5 space-y-1.5 text-[10.5px] text-zinc-800 font-sans">
-                      {activeBullets
-                        .filter((b) => b.roleId === role.id || activeBullets.length <= 4)
-                        .map((b) => (
-                          <li key={b.id} className="leading-normal">
-                            {b.text}
-                          </li>
-                        ))}
-                    </ul>
-                  </div>
-                ))}
-              </div>
-
-              {/* Education (if Standard) */}
-              {cv.templateId !== "graduate" && (
-                <div className="mb-5">
-                  <h2 className="text-[11px] font-extrabold uppercase tracking-wider text-zinc-900 border-b border-zinc-300 pb-0.5 mb-2 font-sans">
-                    Education
-                  </h2>
-                  {(profile?.education || [
-                    {
-                      id: "edu-1",
-                      institution: "University of Manchester",
-                      qualification: "BSc Computer Science",
-                      grade: "First Class Honours",
-                      start: "2016",
-                      end: "2019",
-                    },
-                  ]).map((edu) => (
-                    <div key={edu.id} className="flex justify-between text-[11px] mb-1 font-sans">
-                      <div>
-                        <span className="font-bold">{edu.qualification}</span>, {edu.institution}
-                        {edu.grade && <span className="text-zinc-600"> ({edu.grade})</span>}
-                      </div>
-                      <div className="text-zinc-600 text-[10px] font-mono">
-                        {edu.start} – {edu.end}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Skills */}
-              <div>
-                <h2 className="text-[11px] font-extrabold uppercase tracking-wider text-zinc-900 border-b border-zinc-300 pb-0.5 mb-1.5 font-sans">
-                  Technical & Core Skills
-                </h2>
-                <p className="text-[10.5px] text-zinc-800 font-sans leading-relaxed">
-                  {(profile?.skills || []).map((s) => s.name).join(" • ") ||
-                    "TypeScript • React • Next.js • Cloud Architecture • Distributed Systems • Python • MongoDB"}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

@@ -112,145 +112,283 @@ export default function ApplyHomePage() {
         </div>
       </div>
 
-      {/* Main Suite Modules Grid (3 Columns) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        <Link
-          href="/apply/applications"
-          className="group relative rounded-3xl border border-line bg-panel p-6 sm:p-7 hover:border-blue/50 hover:bg-panel-2 transition-all duration-300 space-y-3 shadow-lg hover:shadow-2xl hover:shadow-blue/5 hover:scale-[1.01]"
-        >
-          <div className="flex items-center justify-between">
-            <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-panel-2 border border-line text-2xl group-hover:scale-110 transition duration-300">
-              📋
-            </div>
-            <span className="text-[10px] font-mono text-blue bg-blue/10 px-2.5 py-0.5 rounded-full border border-blue/20 font-bold">
-              Module 7 · Pipeline
-            </span>
-          </div>
-          <h3 className="text-lg font-black text-ink group-hover:text-blue-soft transition">
-            Applications Tracker
-          </h3>
-          <p className="text-xs text-muted leading-relaxed">
-            Full 8-column Kanban board tracking roles from Matched, Preparing, Needs you, Ready, to Sent, Interview, and Offer.
-          </p>
-          <div className="pt-2 text-xs font-bold text-blue flex items-center gap-1 group-hover:translate-x-1 transition duration-200">
-            Open Board <span>→</span>
-          </div>
-        </Link>
+      {/* =================================================================== */}
+      {/* 3 CORE PLATFORM SECTIONS                                            */}
+      {/* =================================================================== */}
 
-        <Link
-          href="/apply/cvs"
-          className="group relative rounded-3xl border border-line bg-panel p-6 sm:p-7 hover:border-blue/50 hover:bg-panel-2 transition-all duration-300 space-y-3 shadow-lg hover:shadow-2xl hover:shadow-blue/5 hover:scale-[1.01]"
-        >
-          <div className="flex items-center justify-between">
-            <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-panel-2 border border-line text-2xl group-hover:scale-110 transition duration-300">
-              📄
-            </div>
-            <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20 font-bold">
-              Module 3 · Builder
-            </span>
-          </div>
-          <h3 className="text-lg font-black text-ink group-hover:text-blue-soft transition">
-            CV & Resume Builder
-          </h3>
-          <p className="text-xs text-muted leading-relaxed">
-            Dual-pane editor with live reactive ATS scoring, section on/off switches, and &quot;Tell me what you did&quot; bullet writer.
-          </p>
-          <div className="pt-2 text-xs font-bold text-blue flex items-center gap-1 group-hover:translate-x-1 transition duration-200">
-            Open Builder <span>→</span>
-          </div>
-        </Link>
+      {/* SECTION 1: CV / Cover Letter, Prep & Application Answers */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 border-b border-line pb-2">
+          <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue/20 text-blue text-xs font-black">
+            1
+          </span>
+          <h2 className="text-base sm:text-lg font-black text-ink uppercase tracking-wide">
+            Section 1 · CV, Cover Letter, Prep & Application Answers
+          </h2>
+          <span className="text-xs text-muted">Rezi-grade ATS Builder & Evidence Grounding</span>
+        </div>
 
-        <Link
-          href="/apply/evidence"
-          className="group relative rounded-3xl border border-line bg-panel p-6 sm:p-7 hover:border-blue/50 hover:bg-panel-2 transition-all duration-300 space-y-3 shadow-lg hover:shadow-2xl hover:shadow-blue/5 hover:scale-[1.01]"
-        >
-          <div className="flex items-center justify-between">
-            <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-panel-2 border border-line text-2xl group-hover:scale-110 transition duration-300">
-              🔒
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
+          <Link
+            href="/apply/cvs"
+            className="group relative rounded-3xl border border-line bg-panel p-5 hover:border-blue/50 hover:bg-panel-2 transition-all duration-300 space-y-3 shadow-lg hover:shadow-2xl hover:shadow-blue/5 hover:scale-[1.01]"
+          >
+            <div className="flex items-center justify-between">
+              <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-panel-2 border border-line text-xl group-hover:scale-110 transition duration-300">
+                📄
+              </div>
+              <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20 font-bold">
+                Rezi ATS Flow
+              </span>
             </div>
-            <span className="text-[10px] font-mono text-purple-300 bg-purple-500/10 px-2.5 py-0.5 rounded-full border border-purple-500/20 font-bold">
-              Module 2 · Grounding
-            </span>
-          </div>
-          <h3 className="text-lg font-black text-ink group-hover:text-blue-soft transition">
-            Evidence Bank
-          </h3>
-          <p className="text-xs text-muted leading-relaxed">
-            The confirmed store of career facts, metrics, and stories. The AI generator is strictly forbidden from inventing facts outside this bank.
-          </p>
-          <div className="pt-2 text-xs font-bold text-blue flex items-center gap-1 group-hover:translate-x-1 transition duration-200">
-            Open Bank <span>→</span>
-          </div>
-        </Link>
+            <h3 className="text-base font-black text-ink group-hover:text-blue-soft transition">
+              CV & Resume Builder
+            </h3>
+            <p className="text-xs text-muted leading-relaxed">
+              Section-by-section ATS architect, live 0–100 speedometer score gauge, AI keyword targeting, and grounded bullet writer.
+            </p>
+            <div className="pt-2 text-xs font-bold text-blue flex items-center gap-1 group-hover:translate-x-1 transition duration-200">
+              Open Builder <span>→</span>
+            </div>
+          </Link>
 
-        <Link
-          href="/apply/voice"
-          className="group relative rounded-3xl border border-line bg-panel p-6 sm:p-7 hover:border-blue/50 hover:bg-panel-2 transition-all duration-300 space-y-3 shadow-lg hover:shadow-2xl hover:shadow-blue/5 hover:scale-[1.01]"
-        >
-          <div className="flex items-center justify-between">
-            <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-panel-2 border border-line text-2xl group-hover:scale-110 transition duration-300">
-              🎙️
+          <Link
+            href="/apply/evidence"
+            className="group relative rounded-3xl border border-line bg-panel p-5 hover:border-blue/50 hover:bg-panel-2 transition-all duration-300 space-y-3 shadow-lg hover:shadow-2xl hover:shadow-blue/5 hover:scale-[1.01]"
+          >
+            <div className="flex items-center justify-between">
+              <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-panel-2 border border-line text-xl group-hover:scale-110 transition duration-300">
+                🔒
+              </div>
+              <span className="text-[10px] font-mono text-purple-300 bg-purple-500/10 px-2.5 py-0.5 rounded-full border border-purple-500/20 font-bold">
+                Single Store
+              </span>
             </div>
-            <span className="text-[10px] font-mono text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/20 font-bold">
-              Module 2 · Voice
-            </span>
-          </div>
-          <h3 className="text-lg font-black text-ink group-hover:text-blue-soft transition">
-            Voice Persona & Style
-          </h3>
-          <p className="text-xs text-muted leading-relaxed">
-            Calibrate mean sentence length, contraction frequency, signature phrases, and eliminate corporate buzzwords from generated letters.
-          </p>
-          <div className="pt-2 text-xs font-bold text-blue flex items-center gap-1 group-hover:translate-x-1 transition duration-200">
-            Tune Voice <span>→</span>
-          </div>
-        </Link>
+            <h3 className="text-base font-black text-ink group-hover:text-blue-soft transition">
+              Evidence Bank
+            </h3>
+            <p className="text-xs text-muted leading-relaxed">
+              Confirmed store of career facts, numbers, and stories. The AI generator is strictly forbidden from inventing facts outside this bank.
+            </p>
+            <div className="pt-2 text-xs font-bold text-blue flex items-center gap-1 group-hover:translate-x-1 transition duration-200">
+              Open Bank <span>→</span>
+            </div>
+          </Link>
 
-        <Link
-          href="/apply/profile"
-          className="group relative rounded-3xl border border-line bg-panel p-6 sm:p-7 hover:border-blue/50 hover:bg-panel-2 transition-all duration-300 space-y-3 shadow-lg hover:shadow-2xl hover:shadow-blue/5 hover:scale-[1.01]"
-        >
-          <div className="flex items-center justify-between">
-            <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-panel-2 border border-line text-2xl group-hover:scale-110 transition duration-300">
-              👤
+          <Link
+            href="/apply/voice"
+            className="group relative rounded-3xl border border-line bg-panel p-5 hover:border-blue/50 hover:bg-panel-2 transition-all duration-300 space-y-3 shadow-lg hover:shadow-2xl hover:shadow-blue/5 hover:scale-[1.01]"
+          >
+            <div className="flex items-center justify-between">
+              <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-panel-2 border border-line text-xl group-hover:scale-110 transition duration-300">
+                🎙️
+              </div>
+              <span className="text-[10px] font-mono text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/20 font-bold">
+                Natural Tone
+              </span>
             </div>
-            <span className="text-[10px] font-mono text-cyan-400 bg-cyan-500/10 px-2.5 py-0.5 rounded-full border border-cyan-500/20 font-bold">
-              Module 2 · Single Source
-            </span>
-          </div>
-          <h3 className="text-lg font-black text-ink group-hover:text-blue-soft transition">
-            Candidate Career Profile
-          </h3>
-          <p className="text-xs text-muted leading-relaxed">
-            Structured career history, education, screening answers, and right-to-work facts that feed all tailored outputs.
-          </p>
-          <div className="pt-2 text-xs font-bold text-blue flex items-center gap-1 group-hover:translate-x-1 transition duration-200">
-            Edit Profile <span>→</span>
-          </div>
-        </Link>
+            <h3 className="text-base font-black text-ink group-hover:text-blue-soft transition">
+              Voice Persona & Style
+            </h3>
+            <p className="text-xs text-muted leading-relaxed">
+              Calibrate sentence length, contraction rate, signature phrases, and write genuine cover letters and tailored answers in your voice.
+            </p>
+            <div className="pt-2 text-xs font-bold text-blue flex items-center gap-1 group-hover:translate-x-1 transition duration-200">
+              Tune Voice <span>→</span>
+            </div>
+          </Link>
 
-        <Link
-          href="/apply/settings"
-          className="group relative rounded-3xl border border-line bg-panel p-6 sm:p-7 hover:border-blue/50 hover:bg-panel-2 transition-all duration-300 space-y-3 shadow-lg hover:shadow-2xl hover:shadow-blue/5 hover:scale-[1.01]"
-        >
-          <div className="flex items-center justify-between">
-            <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-panel-2 border border-line text-2xl group-hover:scale-110 transition duration-300">
-              ⚙️
+          <Link
+            href="/cv-audit"
+            className="group relative rounded-3xl border border-line bg-panel p-5 hover:border-blue/50 hover:bg-panel-2 transition-all duration-300 space-y-3 shadow-lg hover:shadow-2xl hover:shadow-blue/5 hover:scale-[1.01]"
+          >
+            <div className="flex items-center justify-between">
+              <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-panel-2 border border-line text-xl group-hover:scale-110 transition duration-300">
+                🔍
+              </div>
+              <span className="text-[10px] font-mono text-cyan-400 bg-cyan-500/10 px-2.5 py-0.5 rounded-full border border-cyan-500/20 font-bold">
+                Diagnostic
+              </span>
             </div>
-            <span className="text-[10px] font-mono text-rose-400 bg-rose-500/10 px-2.5 py-0.5 rounded-full border border-rose-500/20 font-bold">
-              Module 7 · Controls
-            </span>
-          </div>
-          <h3 className="text-lg font-black text-ink group-hover:text-blue-soft transition">
-            Auto-Apply Settings & Safety
-          </h3>
-          <p className="text-xs text-muted leading-relaxed">
-            Emergency pause switch, daily send caps, minimum fit score filters, excluded employers, and target role criteria.
-          </p>
-          <div className="pt-2 text-xs font-bold text-blue flex items-center gap-1 group-hover:translate-x-1 transition duration-200">
-            Configure Safety <span>→</span>
-          </div>
-        </Link>
+            <h3 className="text-base font-black text-ink group-hover:text-blue-soft transition">
+              Free CV & Letter Audit
+            </h3>
+            <p className="text-xs text-muted leading-relaxed">
+              Weighted scoring benchmarked to Rezi & Resume Worded standards. Flags critical ATS blockers and tells you when to apply.
+            </p>
+            <div className="pt-2 text-xs font-bold text-blue flex items-center gap-1 group-hover:translate-x-1 transition duration-200">
+              Run Audit <span>→</span>
+            </div>
+          </Link>
+        </div>
+      </div>
+
+      {/* SECTION 2: Auto-Application & Job Pipeline */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 border-b border-line pb-2">
+          <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400 text-xs font-black">
+            2
+          </span>
+          <h2 className="text-base sm:text-lg font-black text-ink uppercase tracking-wide">
+            Section 2 · Auto Application & Pipeline
+          </h2>
+          <span className="text-xs text-muted">Intake, Gap Map, Drag & Drop Kanban, Candidate Approval Gate</span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+          <Link
+            href="/apply/applications"
+            className="group relative rounded-3xl border border-line bg-panel p-5 hover:border-blue/50 hover:bg-panel-2 transition-all duration-300 space-y-3 shadow-lg hover:shadow-2xl hover:shadow-blue/5 hover:scale-[1.01]"
+          >
+            <div className="flex items-center justify-between">
+              <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-panel-2 border border-line text-xl group-hover:scale-110 transition duration-300">
+                📋
+              </div>
+              <span className="text-[10px] font-mono text-blue bg-blue/10 px-2.5 py-0.5 rounded-full border border-blue/20 font-bold">
+                Drag & Drop
+              </span>
+            </div>
+            <h3 className="text-base font-black text-ink group-hover:text-blue-soft transition">
+              Applications Tracker Board
+            </h3>
+            <p className="text-xs text-muted leading-relaxed">
+              Full Kanban board with smooth HTML5 drag-and-drop between Matched, Preparing, Ready, Sent, and Screening.
+            </p>
+            <div className="pt-2 text-xs font-bold text-blue flex items-center gap-1 group-hover:translate-x-1 transition duration-200">
+              Open Board <span>→</span>
+            </div>
+          </Link>
+
+          <Link
+            href="/apply/jobs/new"
+            className="group relative rounded-3xl border border-line bg-panel p-5 hover:border-blue/50 hover:bg-panel-2 transition-all duration-300 space-y-3 shadow-lg hover:shadow-2xl hover:shadow-blue/5 hover:scale-[1.01]"
+          >
+            <div className="flex items-center justify-between">
+              <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-panel-2 border border-line text-xl group-hover:scale-110 transition duration-300">
+                🎯
+              </div>
+              <span className="text-[10px] font-mono text-purple-300 bg-purple-500/10 px-2.5 py-0.5 rounded-full border border-purple-500/20 font-bold">
+                Gap Map
+              </span>
+            </div>
+            <h3 className="text-base font-black text-ink group-hover:text-blue-soft transition">
+              Job Intake & Gap Matcher
+            </h3>
+            <p className="text-xs text-muted leading-relaxed">
+              Paste an advert or careers link. The system extracts hard requirements, maps against your Evidence Bank, and generates a fit score.
+            </p>
+            <div className="pt-2 text-xs font-bold text-blue flex items-center gap-1 group-hover:translate-x-1 transition duration-200">
+              Intake Job <span>→</span>
+            </div>
+          </Link>
+
+          <Link
+            href="/apply/settings"
+            className="group relative rounded-3xl border border-line bg-panel p-5 hover:border-blue/50 hover:bg-panel-2 transition-all duration-300 space-y-3 shadow-lg hover:shadow-2xl hover:shadow-blue/5 hover:scale-[1.01]"
+          >
+            <div className="flex items-center justify-between">
+              <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-panel-2 border border-line text-xl group-hover:scale-110 transition duration-300">
+                🛡️
+              </div>
+              <span className="text-[10px] font-mono text-rose-400 bg-rose-500/10 px-2.5 py-0.5 rounded-full border border-rose-500/20 font-bold">
+                Safety Controls
+              </span>
+            </div>
+            <h3 className="text-base font-black text-ink group-hover:text-blue-soft transition">
+              Auto-Apply Approval Gate
+            </h3>
+            <p className="text-xs text-muted leading-relaxed">
+              Provable emergency pause, daily send caps, salary floor filters, and explicit candidate approval before anything leaves.
+            </p>
+            <div className="pt-2 text-xs font-bold text-blue flex items-center gap-1 group-hover:translate-x-1 transition duration-200">
+              Configure Safeguards <span>→</span>
+            </div>
+          </Link>
+        </div>
+      </div>
+
+      {/* SECTION 3: Practice Interviews & Spoken Rehearsal */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 border-b border-line pb-2">
+          <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-purple-500/20 text-purple-300 text-xs font-black">
+            3
+          </span>
+          <h2 className="text-base sm:text-lg font-black text-ink uppercase tracking-wide">
+            Section 3 · Practice Interviews & Rehearsal
+          </h2>
+          <span className="text-xs text-muted">Spoken Interviewer, Instant STAR Scoring, Accent-Neutral</span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+          <Link
+            href="/interviews"
+            className="group relative rounded-3xl border border-line bg-panel p-5 hover:border-blue/50 hover:bg-panel-2 transition-all duration-300 space-y-3 shadow-lg hover:shadow-2xl hover:shadow-blue/5 hover:scale-[1.01]"
+          >
+            <div className="flex items-center justify-between">
+              <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-panel-2 border border-line text-xl group-hover:scale-110 transition duration-300">
+                🎙️
+              </div>
+              <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20 font-bold">
+                Spoken Practice
+              </span>
+            </div>
+            <h3 className="text-base font-black text-ink group-hover:text-blue-soft transition">
+              Spoken Interview Simulator
+            </h3>
+            <p className="text-xs text-muted leading-relaxed">
+              A real-time spoken interviewer built from your job description and CV. Asks out loud, follows up on what you say, and never judges accents.
+            </p>
+            <div className="pt-2 text-xs font-bold text-blue flex items-center gap-1 group-hover:translate-x-1 transition duration-200">
+              Start Practice <span>→</span>
+            </div>
+          </Link>
+
+          <Link
+            href="/practice"
+            className="group relative rounded-3xl border border-line bg-panel p-5 hover:border-blue/50 hover:bg-panel-2 transition-all duration-300 space-y-3 shadow-lg hover:shadow-2xl hover:shadow-blue/5 hover:scale-[1.01]"
+          >
+            <div className="flex items-center justify-between">
+              <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-panel-2 border border-line text-xl group-hover:scale-110 transition duration-300">
+                📊
+              </div>
+              <span className="text-[10px] font-mono text-blue bg-blue/10 px-2.5 py-0.5 rounded-full border border-blue/20 font-bold">
+                STAR Analytics
+              </span>
+            </div>
+            <h3 className="text-base font-black text-ink group-hover:text-blue-soft transition">
+              Practice Hub & Score Reports
+            </h3>
+            <p className="text-xs text-muted leading-relaxed">
+              Answer-by-answer STAR breakdown, rambling overflow detection, metric gap highlighting, and personalized practice drills.
+            </p>
+            <div className="pt-2 text-xs font-bold text-blue flex items-center gap-1 group-hover:translate-x-1 transition duration-200">
+              View Analytics <span>→</span>
+            </div>
+          </Link>
+
+          <Link
+            href="/robot-test"
+            className="group relative rounded-3xl border border-line bg-panel p-5 hover:border-blue/50 hover:bg-panel-2 transition-all duration-300 space-y-3 shadow-lg hover:shadow-2xl hover:shadow-blue/5 hover:scale-[1.01]"
+          >
+            <div className="flex items-center justify-between">
+              <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-panel-2 border border-line text-xl group-hover:scale-110 transition duration-300">
+                🤖
+              </div>
+              <span className="text-[10px] font-mono text-purple-300 bg-purple-500/10 px-2.5 py-0.5 rounded-full border border-purple-500/20 font-bold">
+                5 Personas Audit
+              </span>
+            </div>
+            <h3 className="text-base font-black text-ink group-hover:text-blue-soft transition">
+              Robot Tester & Quality Audit
+            </h3>
+            <p className="text-xs text-muted leading-relaxed">
+              Automated audit bot verifying all 3 sections across Sam (intern), Priya (graduate), Daniel (senior), Margaret (COO), and Aleksandra.
+            </p>
+            <div className="pt-2 text-xs font-bold text-blue flex items-center gap-1 group-hover:translate-x-1 transition duration-200">
+              Run Audit Suite <span>→</span>
+            </div>
+          </Link>
+        </div>
       </div>
 
       {/* Core Spec Guarantees Footer Bar */}
