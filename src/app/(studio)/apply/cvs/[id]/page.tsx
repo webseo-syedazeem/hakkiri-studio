@@ -162,6 +162,7 @@ export default function CvBuilderEditorPage({
   const [pageSize, setPageSize] = useState<"letter" | "a4">("letter");
   const [accentColor, setAccentColor] = useState<string>("#1e293b");
   const [showDividers, setShowDividers] = useState<boolean>(true);
+  const [showProfilePic, setShowProfilePic] = useState<boolean>(false);
 
   // Rezi Score Drawer (Screenshot 1, 3)
   const [exploreScoreOpen, setExploreScoreOpen] = useState(false);
@@ -580,6 +581,22 @@ export default function CvBuilderEditorPage({
           >
             {showDividers ? "Dividers ON" : "Dividers OFF"}
           </button>
+
+          {/* Profile Photo Toggle */}
+          <button
+            type="button"
+            onClick={() => setShowProfilePic(!showProfilePic)}
+            className={clsx(
+              "rounded-xl px-2.5 py-1 text-xs font-bold border transition flex items-center gap-1.5",
+              showProfilePic
+                ? "bg-blue/15 text-blue border-blue/30"
+                : "bg-panel-2 text-muted border-line"
+            )}
+            title="Toggle profile photo on CV header"
+          >
+            <span>👤</span>
+            <span>{showProfilePic ? "Photo ON" : "Photo OFF"}</span>
+          </button>
         </div>
       </div>
 
@@ -770,21 +787,38 @@ export default function CvBuilderEditorPage({
               }}
             >
               {/* CV Header */}
-              <div className="text-center pb-4 mb-4">
-                <h1
-                  className="text-2xl font-black tracking-tight"
-                  style={{ color: accentColor }}
-                >
-                  {profile?.contact.name || "Charles Bloomberg"}
-                </h1>
-                <div className="text-[10.5px] text-zinc-600 mt-1 space-x-2 font-sans">
-                  <span>{profile?.contact.location || "Seoul, South Korea"}</span>
-                  <span>•</span>
-                  <span>{profile?.contact.email || "charlesbloomberg@gmail.com"}</span>
-                  <span>•</span>
-                  <span>{profile?.contact.phone || "(621) 799-5548"}</span>
-                  <span>•</span>
-                  <span>in/bloomberg</span>
+              <div className="flex items-center justify-center gap-4 pb-4 mb-4">
+                {showProfilePic && (
+                  <div
+                    className="relative w-16 h-16 shrink-0 rounded-full overflow-hidden shadow-md ring-2 ring-offset-2 transition-all duration-300 animate-fadeIn"
+                    style={{
+                      outline: `2px solid ${accentColor}`,
+                      outlineOffset: "2px",
+                    }}
+                  >
+                    <img
+                      src="/sam.jpg"
+                      alt="Profile"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+                <div className={clsx(showProfilePic ? "text-left" : "text-center")}>
+                  <h1
+                    className="text-2xl font-black tracking-tight"
+                    style={{ color: accentColor }}
+                  >
+                    {profile?.contact.name || "Charles Bloomberg"}
+                  </h1>
+                  <div className="text-[10.5px] text-zinc-600 mt-1 space-x-2 font-sans">
+                    <span>{profile?.contact.location || "Seoul, South Korea"}</span>
+                    <span>•</span>
+                    <span>{profile?.contact.email || "charlesbloomberg@gmail.com"}</span>
+                    <span>•</span>
+                    <span>{profile?.contact.phone || "(621) 799-5548"}</span>
+                    <span>•</span>
+                    <span>in/bloomberg</span>
+                  </div>
                 </div>
               </div>
 

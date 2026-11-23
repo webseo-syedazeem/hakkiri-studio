@@ -9,8 +9,12 @@ export function ReziProductsFlow() {
 
   // Customize preview state (Screenshot 2)
   const [selectedColor, setSelectedColor] = useState<string>("#2563eb");
-  const [profilePic, setProfilePic] = useState(false);
-  const [showDividers, setShowDividers] = useState(true);
+  const [profilePic, setProfilePic] = useState<boolean>(false);
+  const [showDividers, setShowDividers] = useState<boolean>(true);
+
+  // Score tab preview state (Screenshot 3)
+  // Toggles between initial audit (58 Needs improvement) and optimized (95 Excellent)
+  const [scoreState, setScoreState] = useState<"needs_improvement" | "excellent">("needs_improvement");
 
   // Keyword targeting state (Screenshot 4)
   const [targetedAdded, setTargetedAdded] = useState(false);
@@ -35,7 +39,7 @@ export function ReziProductsFlow() {
               <span>✦</span> The Rezi-Engineered Workflow
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3">
               {/* Tab 1: Build */}
               <div
                 onClick={() => setActiveTab("build")}
@@ -65,6 +69,8 @@ export function ReziProductsFlow() {
                 )}
               </div>
 
+              <div className="h-px bg-white/10 mx-2" />
+
               {/* Tab 2: Score */}
               <div
                 onClick={() => setActiveTab("score")}
@@ -93,6 +99,8 @@ export function ReziProductsFlow() {
                   </div>
                 )}
               </div>
+
+              <div className="h-px bg-white/10 mx-2" />
 
               {/* Tab 3: Target */}
               <div
@@ -126,51 +134,71 @@ export function ReziProductsFlow() {
           </div>
 
           {/* Right Column: Live Interactive Preview Matching Rezi Mockup */}
-          <div className="w-full lg:w-7/12 relative flex justify-center items-center min-h-[460px]">
+          <div className="w-full lg:w-7/12 relative flex justify-center items-center min-h-[500px]">
             {/* The Background Stylized Paper Document */}
-            <div className="w-full max-w-[500px] rounded-2xl bg-white text-slate-900 p-7 shadow-2xl border border-slate-200 font-sans text-xs select-none transition-all">
-              <div className="text-center pb-3">
-                <h4
-                  className="text-lg font-black tracking-tight"
-                  style={{ color: selectedColor }}
-                >
-                  Charles Bloomberg
-                </h4>
-                <div className="text-[10px] text-slate-500 mt-0.5 space-x-1.5">
-                  <span>Seoul, South Korea</span>
-                  <span>•</span>
-                  <span>charlesbloomberg@gmail.com</span>
-                  <span>•</span>
-                  <span>in/bloomberg</span>
+            <div className="w-full max-w-[520px] rounded-2xl bg-white text-slate-900 p-7 shadow-2xl border border-slate-200 font-sans text-xs select-none transition-all">
+              {/* CV Header with Live Profile Pic */}
+              <div className="flex items-center justify-center gap-3.5 pb-3">
+                {profilePic && (
+                  <div
+                    className="relative w-14 h-14 shrink-0 rounded-full overflow-hidden shadow-md ring-2 ring-offset-2 transition-all duration-300 animate-fadeIn"
+                    style={{
+                      outline: `2.5px solid ${selectedColor}`,
+                      outlineOffset: "2px",
+                    }}
+                  >
+                    <img
+                      src="/sam.jpg"
+                      alt="Charles Bloomberg"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+                <div className={clsx(profilePic ? "text-left" : "text-center")}>
+                  <h4
+                    className="text-lg font-black tracking-tight transition-colors duration-200"
+                    style={{ color: selectedColor }}
+                  >
+                    Charles Bloomberg
+                  </h4>
+                  <div className="text-[10px] text-slate-500 mt-0.5 space-x-1.5 font-sans">
+                    <span>📍 Seoul, South Korea</span>
+                    <span>•</span>
+                    <span>✉ charlesbloomberg@gmail.com</span>
+                    <span>•</span>
+                    <span>in/bloomberg</span>
+                  </div>
                 </div>
               </div>
 
-              {showDividers && <hr className="border-slate-200 my-2.5" />}
+              {showDividers && <hr className="border-slate-300 my-2.5 transition-all" />}
 
               <div>
                 <div
-                  className="text-[10px] font-black uppercase tracking-wider mb-1"
+                  className="text-[10px] font-black uppercase tracking-wider mb-1 transition-colors duration-200"
                   style={{ color: selectedColor }}
                 >
                   Professional Summary
                 </div>
                 <p className="text-[9.5px] text-slate-700 leading-relaxed">
-                  Passion for building inspiring consumer software companies through industry-leading tech, design, and execution. An experienced early-stage global executive with an economics degree.
+                  Passion for building inspiring consumer software companies through industry-leading tech, design, and execution. An experienced early-stage global executive with an economics degree from the University of Wisconsin - Madison.
                 </p>
               </div>
 
-              {showDividers && <hr className="border-slate-200 my-2.5" />}
+              {showDividers && <hr className="border-slate-300 my-2.5 transition-all" />}
 
               <div>
                 <div
-                  className="text-[10px] font-black uppercase tracking-wider mb-1.5"
+                  className="text-[10px] font-black uppercase tracking-wider mb-1.5 transition-colors duration-200"
                   style={{ color: selectedColor }}
                 >
                   Professional Experience
                 </div>
                 <div className="flex justify-between text-[10px] font-bold">
-                  <span>CEO & Founder | Rezi</span>
-                  <span className="text-slate-500 font-normal">August 2015 – Present</span>
+                  <span style={{ color: selectedColor }} className="font-black">
+                    CEO & Founder | Rezi
+                  </span>
+                  <span className="text-slate-500 font-normal">August 2015 – Present, Seoul</span>
                 </div>
                 <ul className="list-disc list-inside mt-1 space-y-1 text-[9px] text-slate-700 leading-normal">
                   <li>
@@ -184,19 +212,41 @@ export function ReziProductsFlow() {
                     models behind Rezi&apos;s AI resume writer, lifting quality scores 32%.
                   </li>
                   {targetedAdded && (
-                    <li className="bg-blue-50 text-blue-900 p-1 rounded font-medium animate-fadeIn">
-                      • Integrated Systems Design benchmarks, reducing cloud processing cost by 28%.
+                    <li className="bg-blue-50 text-blue-900 p-1.5 rounded font-medium border border-blue-200 animate-fadeIn">
+                      • Integrated Product Analyst benchmarks, optimizing customer conversion pipelines by 28%.
                     </li>
                   )}
+                </ul>
+
+                <div className="flex justify-between text-[10px] font-bold mt-2.5">
+                  <span className="text-slate-900 font-bold">Web Developer | Kaplan</span>
+                  <span className="text-slate-500 font-normal">May 2015 – November 2015</span>
+                </div>
+                <ul className="list-disc list-inside mt-1 space-y-1 text-[9px] text-slate-700 leading-normal">
+                  {/* Under activeTab === "score", show the Rezi red flagged bullet if needs_improvement */}
+                  {activeTab === "score" && scoreState === "needs_improvement" ? (
+                    <li className="bg-rose-50 text-rose-900 p-1 rounded border border-rose-300 underline decoration-rose-500 animate-pulse">
+                      • Managed SEO campaigns using Moz Analytics, monitored site performance, and prepared ranking reports that were shared with the management.
+                    </li>
+                  ) : (
+                    <li>
+                      • Managed SEO campaigns using Moz Analytics, lifting organic query visibility by 42%.
+                    </li>
+                  )}
+                  <li>
+                    • Executed Google Analytics tracking campaigns to maximize email re-marketing deployed via Salesforce.
+                  </li>
                 </ul>
               </div>
             </div>
 
             {/* FLOATING OVERLAY 1: "Customize" Card (Build Tab, Screenshot 2) */}
             {activeTab === "build" && (
-              <div className="absolute top-6 right-2 sm:right-6 w-64 rounded-2xl bg-[#1e202f]/95 border border-white/20 p-4 shadow-2xl backdrop-blur-xl animate-fadeIn space-y-3.5 z-20">
+              <div className="absolute top-4 right-2 sm:right-6 w-68 rounded-2xl bg-[#1b1c28]/95 border border-white/20 p-4.5 shadow-2xl backdrop-blur-xl animate-fadeIn space-y-3.5 z-20">
                 <div className="flex items-center justify-between border-b border-white/10 pb-2">
-                  <span className="text-xs font-bold text-white">Customize</span>
+                  <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <span>⚙</span> Customize
+                  </span>
                   <span className="text-[10px] text-blue-400 font-mono">Live Sync</span>
                 </div>
 
@@ -206,20 +256,21 @@ export function ReziProductsFlow() {
                   <div className="flex items-center gap-1.5">
                     {[
                       { hex: "#2563eb", name: "blue" },
-                      { hex: "#0d9488", name: "teal" },
+                      { hex: "#14b8a6", name: "teal" },
+                      { hex: "#f43f5e", name: "red" },
                       { hex: "#e11d48", name: "rose" },
-                      { hex: "#9333ea", name: "purple" },
-                      { hex: "#1e293b", name: "dark" },
+                      { hex: "#a855f7", name: "purple" },
+                      { hex: "#0f172a", name: "dark" },
                     ].map((c) => (
                       <button
                         key={c.hex}
                         type="button"
                         onClick={() => setSelectedColor(c.hex)}
                         className={clsx(
-                          "h-5 w-5 rounded-full transition transform hover:scale-110",
+                          "h-5 w-5 rounded-full transition transform hover:scale-110 cursor-pointer",
                           selectedColor === c.hex
-                            ? "ring-2 ring-white ring-offset-2 ring-offset-[#1e202f]"
-                            : ""
+                            ? "ring-2 ring-white ring-offset-2 ring-offset-[#1b1c28] scale-110"
+                            : "opacity-80 hover:opacity-100"
                         )}
                         style={{ backgroundColor: c.hex }}
                         aria-label={c.name}
@@ -230,19 +281,22 @@ export function ReziProductsFlow() {
 
                 {/* Profile Pic Toggle */}
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-slate-300">Profile Pic</span>
+                  <span className="text-xs text-slate-300 flex items-center gap-1.5">
+                    <span>👤</span> Profile Pic
+                  </span>
                   <button
                     type="button"
                     onClick={() => setProfilePic(!profilePic)}
                     className={clsx(
-                      "w-9 h-5 rounded-full transition-colors relative p-0.5",
+                      "w-10 h-5 rounded-full transition-colors relative p-0.5 cursor-pointer",
                       profilePic ? "bg-blue" : "bg-slate-700"
                     )}
+                    aria-label="Toggle profile picture"
                   >
                     <div
                       className={clsx(
-                        "w-4 h-4 rounded-full bg-white transition-transform",
-                        profilePic ? "translate-x-4" : "translate-x-0"
+                        "w-4 h-4 rounded-full bg-white transition-transform shadow-md",
+                        profilePic ? "translate-x-5" : "translate-x-0"
                       )}
                     />
                   </button>
@@ -250,19 +304,22 @@ export function ReziProductsFlow() {
 
                 {/* Dividers Toggle */}
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-slate-300">Dividers</span>
+                  <span className="text-xs text-slate-300 flex items-center gap-1.5">
+                    <span>—</span> Dividers
+                  </span>
                   <button
                     type="button"
                     onClick={() => setShowDividers(!showDividers)}
                     className={clsx(
-                      "w-9 h-5 rounded-full transition-colors relative p-0.5",
+                      "w-10 h-5 rounded-full transition-colors relative p-0.5 cursor-pointer",
                       showDividers ? "bg-blue" : "bg-slate-700"
                     )}
+                    aria-label="Toggle section dividers"
                   >
                     <div
                       className={clsx(
-                        "w-4 h-4 rounded-full bg-white transition-transform",
-                        showDividers ? "translate-x-4" : "translate-x-0"
+                        "w-4 h-4 rounded-full bg-white transition-transform shadow-md",
+                        showDividers ? "translate-x-5" : "translate-x-0"
                       )}
                     />
                   </button>
@@ -272,10 +329,10 @@ export function ReziProductsFlow() {
 
             {/* FLOATING OVERLAY 2: "Rezi Score" Breakdown (Score Tab, Screenshot 3) */}
             {activeTab === "score" && (
-              <div className="absolute top-2 right-2 sm:right-6 w-72 rounded-2xl bg-[#1a1b2a]/95 border border-white/20 p-5 shadow-2xl backdrop-blur-xl animate-fadeIn space-y-3 z-20">
-                {/* Semi-circular Speedometer SVG */}
-                <div className="text-center relative pt-2">
-                  <div className="relative w-40 h-20 mx-auto overflow-hidden">
+              <div className="absolute top-2 right-2 sm:right-6 w-76 rounded-2xl bg-[#181926]/95 border border-white/20 p-5 shadow-2xl backdrop-blur-xl animate-fadeIn space-y-3 z-20">
+                {/* Semi-circular Speedometer SVG matching Screenshot 3 */}
+                <div className="text-center relative pt-1">
+                  <div className="relative w-44 h-22 mx-auto overflow-hidden">
                     <svg viewBox="0 0 100 50" className="w-full h-full">
                       <path
                         d="M 10 50 A 40 40 0 0 1 90 50"
@@ -286,57 +343,95 @@ export function ReziProductsFlow() {
                       <path
                         d="M 10 50 A 40 40 0 0 1 90 50"
                         fill="none"
-                        stroke="url(#scoreGrad)"
+                        stroke="url(#reziScoreGrad)"
                         strokeWidth="8"
                         strokeDasharray="125.6"
-                        strokeDashoffset="45"
+                        strokeDashoffset={scoreState === "excellent" ? "20" : "68"}
+                        className="transition-all duration-700 ease-out"
                       />
                       <defs>
-                        <linearGradient id="scoreGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <linearGradient id="reziScoreGrad" x1="0%" y1="0%" x2="100%" y2="0%">
                           <stop offset="0%" stopColor="#f43f5e" />
                           <stop offset="40%" stopColor="#f59e0b" />
-                          <stop offset="80%" stopColor="#10b981" />
+                          <stop offset="70%" stopColor="#10b981" />
                           <stop offset="100%" stopColor="#06b6d4" />
                         </linearGradient>
                       </defs>
                     </svg>
                     <div className="absolute bottom-0 inset-x-0 flex flex-col items-center">
-                      <span className="text-2xl font-black text-white">95</span>
-                      <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">
-                        Excellent
+                      <span className="text-2xl font-black text-white">
+                        {scoreState === "excellent" ? 95 : 58}
+                      </span>
+                      <span
+                        className={clsx(
+                          "text-[10px] font-bold uppercase tracking-wider",
+                          scoreState === "excellent" ? "text-emerald-400" : "text-amber-400"
+                        )}
+                      >
+                        {scoreState === "excellent" ? "Excellent" : "Needs improvement"}
                       </span>
                     </div>
                   </div>
                   <p className="text-[10px] text-slate-400 mt-1">
-                    Passes ATS filters across 100% of tested enterprise systems.
+                    {scoreState === "excellent"
+                      ? "Surpasses ATS benchmark across 100% of tested enterprise systems."
+                      : "Improve your Rezi score by making suggested adjustments in each category."}
                   </p>
                 </div>
 
+                {/* Score Breakdown List matching Screenshot 3 */}
                 <div className="border-t border-white/10 pt-2.5 space-y-2 text-xs">
                   {[
-                    { label: "Content", score: 95, color: "text-emerald-400 bg-emerald-500/20" },
-                    { label: "Format", score: 92, color: "text-emerald-400 bg-emerald-500/20" },
-                    { label: "Optimization", score: 88, color: "text-blue bg-blue/20" },
-                    { label: "Best Practices", score: 95, color: "text-emerald-400 bg-emerald-500/20" },
-                    { label: "Application Ready", score: 90, color: "text-emerald-400 bg-emerald-500/20" },
+                    { label: "Content", score: 95, state: "passed" },
+                    { label: "Format", score: scoreState === "excellent" ? 92 : 11, state: scoreState === "excellent" ? "passed" : "needs_work" },
+                    { label: "Optimization", score: scoreState === "excellent" ? 88 : 48, state: scoreState === "excellent" ? "passed" : "needs_work" },
+                    { label: "Best Practices", score: 95, state: "passed" },
+                    { label: "Application Ready", score: scoreState === "excellent" ? 90 : 11, state: scoreState === "excellent" ? "passed" : "needs_work" },
                   ].map((cat) => (
                     <div key={cat.label} className="flex items-center justify-between text-slate-300">
                       <div className="flex items-center gap-2">
-                        <span className={clsx("h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold", cat.color)}>
+                        <span
+                          className={clsx(
+                            "h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold",
+                            cat.score >= 80
+                              ? "bg-teal-500/20 text-teal-300 border border-teal-500/30"
+                              : "bg-slate-800 text-slate-400 border border-slate-700"
+                          )}
+                        >
                           {cat.score}
                         </span>
                         <span>{cat.label}</span>
                       </div>
-                      <span className="text-[11px] text-slate-400 font-medium">Passed</span>
+                      <span
+                        className={clsx(
+                          "text-[11px] font-medium",
+                          cat.score >= 80 ? "text-emerald-400" : "text-amber-400"
+                        )}
+                      >
+                        {cat.score >= 80 ? "Passed" : "Needs work"}
+                      </span>
                     </div>
                   ))}
+                </div>
+
+                {/* Interactive Fix Score Switch */}
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setScoreState(scoreState === "needs_improvement" ? "excellent" : "needs_improvement")
+                    }
+                    className="w-full py-1.5 rounded-xl bg-white/10 hover:bg-white/15 text-[11px] font-bold text-white transition cursor-pointer text-center"
+                  >
+                    {scoreState === "needs_improvement" ? "✦ Preview 1-Click ATS Fix" : "↺ Reset to Raw Score (58)"}
+                  </button>
                 </div>
               </div>
             )}
 
             {/* FLOATING OVERLAY 3: "AI Keyword Targeting" (Target Tab, Screenshot 4) */}
             {activeTab === "target" && (
-              <div className="absolute top-2 right-2 sm:right-6 w-80 rounded-2xl bg-[#1a1b2a]/95 border border-white/20 p-5 shadow-2xl backdrop-blur-xl animate-fadeIn space-y-3.5 z-20">
+              <div className="absolute top-2 right-2 sm:right-6 w-80 rounded-2xl bg-[#181926]/95 border border-white/20 p-5 shadow-2xl backdrop-blur-xl animate-fadeIn space-y-3.5 z-20">
                 <div className="border-b border-white/10 pb-2">
                   <h4 className="text-xs font-bold text-white uppercase tracking-wider">
                     AI Keyword Targeting
@@ -346,41 +441,55 @@ export function ReziProductsFlow() {
                   </p>
                 </div>
 
-                <div className="rounded-xl border border-teal-500/30 bg-teal-500/10 p-3 text-center">
-                  <span className="text-xs font-bold text-teal-300">
-                    Systems Design & Architecture
-                  </span>
+                <div className="rounded-xl border border-teal-500/30 bg-teal-500/10 p-2.5 text-center">
+                  <span className="text-xs font-bold text-teal-300">Product Analyst</span>
                 </div>
 
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => setTargetedAdded(true)}
-                    className="flex-1 rounded-xl bg-blue hover:bg-blue-600 px-3 py-2 text-xs font-bold text-white shadow-md transition flex items-center justify-center gap-1.5"
+                    className="flex-1 rounded-xl bg-blue hover:bg-blue-600 px-3 py-2 text-xs font-bold text-white shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer"
                   >
                     <span>👍</span>
-                    <span>{targetedAdded ? "Added to CV!" : "Yes, Add Bullet"}</span>
+                    <span>{targetedAdded ? "Added to CV!" : "YES, ADD BULLET POINT"}</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setTargetedAdded(false)}
-                    className="rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 px-3 py-2 text-xs font-medium text-slate-400 transition"
+                    className="rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 px-3 py-2 text-xs font-medium text-slate-400 transition cursor-pointer"
                   >
                     Skip
                   </button>
                 </div>
 
-                <div className="border-t border-white/10 pt-2.5 space-y-1.5">
+                <div className="border-t border-white/10 pt-2 space-y-1.5">
                   <span className="text-[10px] text-slate-400 font-medium block">
-                    Great work! You&apos;re ranking well for these job keywords:
+                    Great work! You&apos;re ranking well for these keywords in the job description:
                   </span>
                   <div className="space-y-1 text-xs">
-                    {["TypeScript & React", "Cloud Infrastructure", "API Architecture"].map((kw) => (
+                    {["Marketing Strategy", "Analytics", "Marketing Objectives"].map((kw) => (
                       <div key={kw} className="flex items-center justify-between text-slate-300 text-[11px]">
                         <span>{kw}</span>
-                        <span className="text-emerald-400 text-xs font-bold">✓</span>
+                        <span className="h-4 w-4 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] flex items-center justify-center font-bold">
+                          ✓
+                        </span>
                       </div>
                     ))}
+                  </div>
+
+                  <div className="pt-1.5 border-t border-white/5 space-y-1">
+                    <span className="text-[10px] text-slate-400 font-medium block">
+                      Consider adding the following keywords to your resume:
+                    </span>
+                    <div className="space-y-1 text-xs">
+                      {["Product Analyst", "Content Design"].map((kw) => (
+                        <div key={kw} className="flex items-center justify-between text-slate-400 text-[11px]">
+                          <span>{kw}</span>
+                          <span className="h-3 w-3 rounded-full border border-slate-600" />
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -448,31 +557,29 @@ export function ReziProductsFlow() {
             <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
               ATS-friendly resume formats that land jobs
             </h2>
-            <p className="text-xs sm:text-sm text-slate-400 mt-1">
-              Use a template that guides you. Our ATS-compliant designs are trusted by thousands of job seekers.
+            <p className="text-sm text-slate-400 mt-1 max-w-2xl">
+              Engineered to meet the precise technical specifications of enterprise applicant tracking systems while looking beautiful to hiring managers.
             </p>
           </div>
 
           {/* Filter Tabs matching Screenshot 6 */}
-          <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-[#141523] border border-white/10 text-xs font-bold text-slate-400 overflow-x-auto">
-            {(
-              [
-                { id: "popular", label: "Most Popular" },
-                { id: "simple", label: "Simple" },
-                { id: "modern", label: "Modern" },
-                { id: "creative", label: "Creative" },
-                { id: "compact", label: "Compact" },
-              ] as const
-            ).map((tab) => (
+          <div className="flex flex-wrap items-center gap-2 bg-[#12131f] p-1.5 rounded-2xl border border-line">
+            {[
+              { id: "popular", label: "Most Popular" },
+              { id: "simple", label: "Simple" },
+              { id: "modern", label: "Modern" },
+              { id: "creative", label: "Creative" },
+              { id: "compact", label: "Compact" },
+            ].map((tab) => (
               <button
                 key={tab.id}
                 type="button"
-                onClick={() => setFormatFilter(tab.id)}
+                onClick={() => setFormatFilter(tab.id as typeof formatFilter)}
                 className={clsx(
-                  "rounded-xl px-3.5 py-1.5 transition whitespace-nowrap",
+                  "rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer",
                   formatFilter === tab.id
-                    ? "bg-blue text-white shadow-md"
-                    : "hover:text-white hover:bg-white/5"
+                    ? "bg-blue text-white shadow-md shadow-blue/20"
+                    : "text-slate-400 hover:text-white"
                 )}
               >
                 {tab.label}
@@ -481,113 +588,86 @@ export function ReziProductsFlow() {
           </div>
         </div>
 
-        {/* Template Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Card 1: Standard Executive */}
-          <div className="rounded-3xl border border-white/10 bg-[#141523] p-6 space-y-4 hover:border-blue/50 transition-all shadow-xl group">
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-xs font-bold text-blue uppercase tracking-wider">
-                  Classic ATS Standard
-                </span>
-                <h4 className="text-lg font-bold text-white mt-0.5">
-                  Standard Professional CV
-                </h4>
-              </div>
-              <span className="rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-bold px-3 py-1">
-                98% ATS Pass Rate
-              </span>
-            </div>
+        {/* 4 Interactive Format Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[
+            {
+              title: "Standard Professional",
+              category: "popular",
+              tag: "Ashby & Greenhouse Verified",
+              accent: "#2563eb",
+              desc: "Traditional single-column layout prioritizing quantifiable impact bullets and chronological work history.",
+            },
+            {
+              title: "Modern Executive",
+              category: "modern",
+              tag: "Workday & Lever Verified",
+              accent: "#10b981",
+              desc: "Contemporary serif typography with subtle dividers and targeted executive competencies section.",
+            },
+            {
+              title: "Technical Architect",
+              category: "simple",
+              tag: "BambooHR Verified",
+              accent: "#8b5cf6",
+              desc: "Optimized for engineering and data roles with dedicated skills taxonomy and GitHub/project evidence.",
+            },
+            {
+              title: "Compact 1-Page",
+              category: "compact",
+              tag: "Universal ATS Standard",
+              accent: "#f59e0b",
+              desc: "Tight margin engineering for early-career or transition candidates needing strict 1-page compliance.",
+            },
+          ].map((fmt, fIdx) => (
+            <div
+              key={fIdx}
+              className="rounded-2xl border border-line bg-[#131422] p-5 shadow-xl hover:border-blue/50 transition-all flex flex-col justify-between group"
+            >
+              <div className="space-y-3">
+                {/* Mini Resume Skeleton Preview */}
+                <div className="h-40 w-full rounded-xl bg-white p-3 shadow-inner flex flex-col justify-between border border-slate-200 group-hover:scale-[1.02] transition-transform">
+                  <div className="space-y-1.5">
+                    <div
+                      className="h-2 w-24 rounded-full"
+                      style={{ backgroundColor: fmt.accent }}
+                    />
+                    <div className="h-1 w-32 bg-slate-200 rounded-full" />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="h-1 w-full bg-slate-200 rounded-full" />
+                    <div className="h-1 w-5/6 bg-slate-200 rounded-full" />
+                    <div className="h-1 w-4/6 bg-slate-200 rounded-full" />
+                  </div>
+                  <div className="space-y-1 pt-1 border-t border-slate-100">
+                    <div
+                      className="h-1 w-16 rounded-full"
+                      style={{ backgroundColor: fmt.accent }}
+                    />
+                    <div className="h-1 w-full bg-slate-200 rounded-full" />
+                  </div>
+                </div>
 
-            {/* Stylized Preview Sheet */}
-            <div className="rounded-xl bg-white p-5 text-slate-900 text-[10px] space-y-2 border border-slate-200 shadow-inner select-none font-serif">
-              <div className="text-center font-bold text-slate-900 border-b border-slate-200 pb-1">
-                CHARLES BLOOMBERG
-                <div className="text-[8.5px] font-normal text-slate-600 font-sans">
-                  Seoul, South Korea • charles@domain.com • +82 10 1234 5678
+                <div>
+                  <span className="text-[10px] font-mono font-bold text-emerald-400">
+                    {fmt.tag}
+                  </span>
+                  <h3 className="text-base font-bold text-white mt-0.5">{fmt.title}</h3>
+                  <p className="text-xs text-slate-400 mt-1 leading-relaxed">{fmt.desc}</p>
                 </div>
               </div>
-              <div>
-                <span className="font-bold text-[9px] uppercase font-sans text-slate-900 block border-b border-slate-200">
-                  Professional Summary
-                </span>
-                <p className="text-[8.5px] text-slate-700 leading-tight mt-0.5 font-sans">
-                  Results-oriented technology leader with 8+ years experience scaling high-concurrency cloud software.
-                </p>
-              </div>
-              <div>
-                <span className="font-bold text-[9px] uppercase font-sans text-slate-900 block border-b border-slate-200">
-                  Work Experience
-                </span>
-                <div className="flex justify-between font-bold text-[8.5px] font-sans mt-0.5">
-                  <span>CEO & Founder — Rezi</span>
-                  <span>2015 – Present</span>
-                </div>
-                <div className="text-[8px] text-slate-600 font-sans">• Built resume engine trusted by 2.2M+ job seekers.</div>
-              </div>
-            </div>
 
-            <div className="pt-2 flex justify-end">
-              <Link
-                href="/apply/cvs"
-                className="rounded-xl bg-white/10 hover:bg-blue hover:text-white px-4 py-2 text-xs font-bold text-slate-200 transition"
-              >
-                Use Standard Template →
-              </Link>
-            </div>
-          </div>
-
-          {/* Card 2: Modern Compact */}
-          <div className="rounded-3xl border border-white/10 bg-[#141523] p-6 space-y-4 hover:border-blue/50 transition-all shadow-xl group">
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-xs font-bold text-purple-400 uppercase tracking-wider">
-                  Optimized Compact
-                </span>
-                <h4 className="text-lg font-bold text-white mt-0.5">
-                  Compact Single-Page Layout
-                </h4>
-              </div>
-              <span className="rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-bold px-3 py-1">
-                100% Fit Guarantee
-              </span>
-            </div>
-
-            {/* Stylized Preview Sheet */}
-            <div className="rounded-xl bg-white p-5 text-slate-900 text-[10px] space-y-2 border border-slate-200 shadow-inner select-none font-sans">
-              <div className="flex justify-between items-baseline border-b border-slate-300 pb-1">
-                <span className="font-black text-xs text-slate-950">CHARLES BLOOMBERG</span>
-                <span className="text-[8.5px] text-slate-600">alex@domain.com • London, UK</span>
-              </div>
-              <div>
-                <span className="font-bold text-[8.5px] uppercase text-blue-700 block border-b border-slate-200">
-                  Core Competencies
-                </span>
-                <p className="text-[8px] text-slate-700 leading-tight mt-0.5">
-                  Systems Design • Next.js • React • Cloud Architecture • MongoDB • CI/CD
-                </p>
-              </div>
-              <div>
-                <span className="font-bold text-[8.5px] uppercase text-blue-700 block border-b border-slate-200">
-                  Experience
-                </span>
-                <div className="flex justify-between font-bold text-[8.5px] mt-0.5">
-                  <span>Lead Systems Architect — Scaleup</span>
-                  <span>2020 – Present</span>
-                </div>
-                <div className="text-[8px] text-slate-600">• Decreased latency by 42% through caching optimization.</div>
+              <div className="pt-4 mt-2 border-t border-white/5">
+                <Link
+                  href="/apply/cvs"
+                  className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-bold text-white py-2 transition"
+                >
+                  <span>Select Format</span>
+                  <span>→</span>
+                </Link>
               </div>
             </div>
-
-            <div className="pt-2 flex justify-end">
-              <Link
-                href="/apply/cvs"
-                className="rounded-xl bg-white/10 hover:bg-blue hover:text-white px-4 py-2 text-xs font-bold text-slate-200 transition"
-              >
-                Use Compact Template →
-              </Link>
-            </div>
-          </div>
+          ))}
         </div>
       </div>
     </div>
