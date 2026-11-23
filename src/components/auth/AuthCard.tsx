@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Mark } from "@/components/brand/Mark";
 import { useAuth } from "@/lib/auth/AuthContext";
+import { afterSignIn } from "@/lib/cv/carry";
 
 export function AuthCard({ initialMode = "signin" }: { initialMode?: "signin" | "signup" }) {
   const router = useRouter();
@@ -26,7 +27,8 @@ export function AuthCard({ initialMode = "signin" }: { initialMode?: "signin" | 
       if (mode === "signin") {
         const res = await login(email, password);
         if (res.ok) {
-          router.push("/");
+          // To the CV they asked to open from a free check, if one is waiting; otherwise home.
+          router.push(afterSignIn());
           router.refresh();
         } else {
           setError(res.error ?? "Failed to sign in. Please verify your email and password.");
@@ -34,7 +36,7 @@ export function AuthCard({ initialMode = "signin" }: { initialMode?: "signin" | 
       } else {
         const res = await signup(email, password, name);
         if (res.ok) {
-          router.push("/");
+          router.push(afterSignIn());
           router.refresh();
         } else {
           setError(res.error ?? "Failed to create account. Please try again.");

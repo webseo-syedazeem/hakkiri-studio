@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { forgetCheck, fromCheckPath, rememberedCheck } from "@/lib/cv/carry";
 import { type CvDoc, type CvSummary, LEVEL_LABELS } from "@/lib/cv/schema";
 import { docWord } from "@/lib/cv/sections";
 import { ApiError, api, messageOf } from "./client";
@@ -38,6 +39,9 @@ export function Dashboard() {
       .catch((e) => setError(messageOf(e)));
   }, []);
   useEffect(load, [load]);
+  // A free check the person asked to open in the builder before they were signed in, if they arrived here another way.
+  const [waiting, setWaiting] = useState<string | null>(null);
+  useEffect(() => setWaiting(rememberedCheck()), []);
 
   const chosen = cvs?.find((c) => c.id === item);
   // The rename box starts with the current name each time it opens.
@@ -114,6 +118,25 @@ export function Dashboard() {
           </BtnLink>
         </Toolbar>
 
+        {waiting && (
+          <div className="cv-note" style={{ marginBottom: 18 }} data-testid="waiting-check">
+            You checked a CV before you signed in. Open that text in the builder to fix what the check found: you won’t need to paste it again.
+            <div className="cv-row" style={{ marginTop: 8 }}>
+              <BtnLink kind="primary" href={fromCheckPath(waiting)}>
+                Open it in the builder
+              </BtnLink>
+              <Btn
+                kind="quiet"
+                onClick={() => {
+                  forgetCheck();
+                  setWaiting(null);
+                }}
+              >
+                Not now
+              </Btn>
+            </div>
+          </div>
+        )}
         {error && (
           <div className="cv-issue" role="alert" style={{ marginBottom: 18 }}>
             <strong>Couldn’t load your CVs</strong>

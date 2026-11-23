@@ -103,6 +103,35 @@ describe("a save that is refused says why", () => {
   });
 });
 
+describe("a save far larger than any CV", () => {
+  it("is refused with a reason, and a body with no size given is not read to the end", async () => {
+    const cv = await filled();
+    const { MAX_SAVE_BYTES } = await import("./access");
+    // Declared: refused on its size alone.
+    const declared = await one.PATCH(new Request("http://localhost/api", { method: "PATCH", headers: { "Content-Type": "application/json", "content-length": String(20 * 1024 * 1024) }, body: JSON.stringify({ rev: cv.rev, name: "x" }) }), ctx(cv.id));
+    expect(declared.status).toBe(413);
+    expect((await declared.json()).message).toBe("That is more than a CV can hold, so it was not saved. Shorten what you pasted and try again.");
+    // Not declared: counted as it arrives, and stopped just past the limit.
+    let sent = 0;
+    const piece = new TextEncoder().encode("x".repeat(256 * 1024));
+    const body = new ReadableStream<Uint8Array>({
+      start: (c) => c.enqueue(new TextEncoder().encode(`{"rev":${cv.rev},"name":"`)),
+      pull(c) {
+        if (sent >= 40 * 1024 * 1024) return c.close();
+        sent += piece.length;
+        c.enqueue(piece);
+      },
+    });
+    const streamed = await one.PATCH(new Request("http://localhost/api", { method: "PATCH", headers: { "Content-Type": "application/json" }, body, duplex: "half" } as RequestInit), ctx(cv.id));
+    expect(streamed.status).toBe(413);
+    expect(sent).toBeLessThan(MAX_SAVE_BYTES + 2 * 1024 * 1024);
+    // The screen treats it as a refusal, so it is shown and not retried for ever.
+    expect(isRefusal(413)).toBe(true);
+    // Nothing was saved.
+    expect((await store.getOwnCv(cv.id, alice.id))!.rev).toBe(cv.rev);
+  });
+});
+
 describe("what the server keeps is what the form allows", () => {
   it("text at the form's limit is kept whole; nothing is cut behind the person's back", async () => {
     const cv = await filled();

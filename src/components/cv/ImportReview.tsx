@@ -275,8 +275,8 @@ export function ImportReview({ importId, stepKey }: { importId: string; stepKey:
     }
     if (!isLast) return router.push(`/cv/import/${importId}/review/${steps[index + 1].key}`);
     try {
-      const { versionId } = await api<{ versionId: string }>(`/api/cv/imports/${importId}/confirm`, { method: "POST" });
-      router.push(`/cv/v/${versionId}/edit/contact`);
+      const { versionId, next } = await api<{ versionId: string; next?: string }>(`/api/cv/imports/${importId}/confirm`, { method: "POST" });
+      router.push(next === "findings" ? `/cv/v/${versionId}/findings` : `/cv/v/${versionId}/edit/contact`);
     } catch (err) {
       setBusy(false);
       setProblem(messageOf(err));

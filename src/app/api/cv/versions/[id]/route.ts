@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { EditableSchema, badInput, failure, notFound, requireUserId, saveProblem, sectionIdsDiffer, tooBig } from "@/lib/cv/access";
+import { EditableSchema, MAX_SAVE_BYTES, badInput, failure, notFound, readJson, requireUserId, saveProblem, sectionIdsDiffer, tooBig, tooBigToSave } from "@/lib/cv/access";
 import { currentFileChecks, deleteCvAndRecords, getOwnCv, saveCv } from "@/lib/cv/store";
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -30,7 +30,10 @@ export async function PATCH(req: Request, { params }: Ctx) {
     const userId = await requireUserId();
     const cv = await getOwnCv((await params).id, userId);
     if (!cv) return notFound();
-    const parsed = PatchSchema.safeParse(await req.json().catch(() => null));
+    // The body is counted as it arrives: one far larger than any CV is refused without being read to the end.
+    const read = await readJson(req, MAX_SAVE_BYTES);
+    if (!read.ok && read.reason === "too-big") return tooBigToSave();
+    const parsed = PatchSchema.safeParse(read.ok ? read.body : null);
     // The reason is said, so the screen can show it: a save that is refused is never shown as saved.
     if (!parsed.success) return badInput(saveProblem(parsed.error));
     const { rev, saveId, target, letter, ...changes } = parsed.data;

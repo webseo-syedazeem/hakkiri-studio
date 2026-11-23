@@ -4,6 +4,7 @@ import { useEffect, useState, use } from "react";
 import Link from "next/link";
 import { Mark } from "@/components/brand/Mark";
 import type { Finding, InterviewerQuestion } from "@/lib/apply/schema";
+import { fromCheckPath, rememberCheck } from "@/lib/cv/carry";
 
 interface FullAudit {
   id: string;
@@ -20,6 +21,9 @@ interface FullAudit {
   region: string;
   isUnlocked: boolean;
   createdAt: string;
+  /** Said by the server from this check's own results. */
+  summary?: string;
+  isGoodEnough?: boolean;
 }
 
 export default function AuditReportPage({
@@ -93,7 +97,8 @@ export default function AuditReportPage({
         </Link>
         <div className="flex items-center gap-3">
           <Link
-            href="/cv"
+            href={fromCheckPath(audit.id)}
+            onClick={() => rememberCheck(audit.id)}
             className="rounded-lg bg-accent px-3.5 py-1.5 text-xs font-bold text-white hover:bg-accent-hover transition shadow"
           >
             Fix in CV Builder →
@@ -113,21 +118,18 @@ export default function AuditReportPage({
                 {audit.score}
                 <span className="text-xl text-muted font-normal"> / 100</span>
               </div>
-              <p className="mt-2 text-sm font-semibold text-white">
-                {audit.score >= 85 ? (
-                  <span className="text-emerald-400">This CV is ready. Stop polishing and apply.</span>
-                ) : audit.score >= 70 ? (
-                  <span className="text-amber-400">Good with gaps. Focus on the high-severity items below.</span>
-                ) : (
-                  <span className="text-rose-400">Needs work. Significant metrics & formatting gaps detected.</span>
-                )}
+              {/* Said from this check's own results: what was found, and which part scored lowest. */}
+              <p className="mt-2 text-sm font-semibold text-white max-w-xl" data-testid="check-summary">
+                <span className={audit.isGoodEnough ? "text-emerald-400" : "text-amber-400"}>{audit.summary || (audit.isGoodEnough ? "This CV is good enough to apply with." : "The findings below say what to look at first.")}</span>
               </p>
             </div>
 
             {/* Quick Actions */}
             <div className="flex flex-col sm:flex-row gap-3">
               <Link
-                href="/cv"
+                href={fromCheckPath(audit.id)}
+                onClick={() => rememberCheck(audit.id)}
+                data-testid="open-in-builder"
                 className="rounded-xl bg-accent px-5 py-3 text-center text-xs font-bold text-white shadow-lg shadow-accent/25 hover:bg-accent-hover transition"
               >
                 Open in CV Builder →
@@ -141,22 +143,22 @@ export default function AuditReportPage({
             </div>
           </div>
 
-          {/* Subscores Bar */}
+          {/* Subscores Bar: each is the share earned of what could be judged from pasted text. */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-8 pt-6 border-t border-line">
             <div className="rounded-xl bg-card/60 p-3.5 border border-line">
-              <div className="text-[11px] text-muted">Evidence & Metrics (35%)</div>
+              <div className="text-[11px] text-muted">Evidence (45 points)</div>
               <div className="text-xl font-bold text-white mt-1">{audit.subscores.evidence}%</div>
             </div>
             <div className="rounded-xl bg-card/60 p-3.5 border border-line">
-              <div className="text-[11px] text-muted">Clarity & Brevity (25%)</div>
+              <div className="text-[11px] text-muted">Clarity (20 points)</div>
               <div className="text-xl font-bold text-white mt-1">{audit.subscores.clarity}%</div>
             </div>
             <div className="rounded-xl bg-card/60 p-3.5 border border-line">
-              <div className="text-[11px] text-muted">Structure & Norms (20%)</div>
+              <div className="text-[11px] text-muted">Structure (20 points)</div>
               <div className="text-xl font-bold text-white mt-1">{audit.subscores.structure}%</div>
             </div>
             <div className="rounded-xl bg-card/60 p-3.5 border border-line">
-              <div className="text-[11px] text-muted">Readable by software (10%)</div>
+              <div className="text-[11px] text-muted">Readable by software (15 points)</div>
               <div className="text-xl font-bold text-white mt-1">{audit.subscores.software}%</div>
             </div>
           </div>
@@ -246,9 +248,11 @@ export default function AuditReportPage({
                   </span>
                 </div>
 
-                <div className="rounded-lg bg-canvas p-3 border-l-2 border-accent text-xs font-mono text-muted/90 italic">
-                  &quot;{finding.quote}&quot;
-                </div>
+                {finding.quote?.trim() && (
+                  <div className="rounded-lg bg-canvas p-3 border-l-2 border-accent text-xs font-mono text-muted/90 italic">
+                    &quot;{finding.quote}&quot;
+                  </div>
+                )}
 
                 <div className="text-sm font-medium text-white">
                   Problem: <span className="font-normal text-muted">{finding.problem}</span>

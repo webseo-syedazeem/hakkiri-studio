@@ -179,3 +179,45 @@ export function makingTooFast(userId: string): NextResponse | null {
   if (!rateLimited(`cv-make:${userId}`, NEW_CVS_A_MINUTE, 60_000)) return null;
   return NextResponse.json({ error: "slow-down", message: "That’s a lot of new CVs in a short time. Wait a minute, then try again." }, { status: 429 });
 }
+
+/** The most a save may hold. A CV at every one of its limits, with its letter and advert, is well under this. */
+export const MAX_SAVE_BYTES = 4 * 1024 * 1024;
+
+export type JsonBody = { ok: true; body: unknown } | { ok: false; reason: "too-big" | "not-json" };
+
+/**
+ * Reads a JSON body, counting the bytes as they arrive. More than `max` is
+ * refused without reading the rest: the size a request claims for itself is
+ * not relied on, because it can be left out or be wrong.
+ */
+export async function readJson(req: Request, max: number): Promise<JsonBody> {
+  if (Number(req.headers.get("content-length") ?? 0) > max) return { ok: false, reason: "too-big" };
+  if (!req.body) return { ok: false, reason: "not-json" };
+  const reader = req.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    size += value.byteLength;
+    if (size > max) {
+      await reader.cancel().catch(() => {});
+      return { ok: false, reason: "too-big" };
+    }
+    chunks.push(value);
+  }
+  const bytes = new Uint8Array(size);
+  let at = 0;
+  for (const c of chunks) {
+    bytes.set(c, at);
+    at += c.byteLength;
+  }
+  try {
+    return { ok: true, body: JSON.parse(new TextDecoder().decode(bytes)) };
+  } catch {
+    return { ok: false, reason: "not-json" };
+  }
+}
+
+/** The answer to a save that is larger than any CV: said plainly, so the screen can show it. */
+export const tooBigToSave = () => NextResponse.json({ error: "too_large", message: "That is more than a CV can hold, so it was not saved. Shorten what you pasted and try again." }, { status: 413 });

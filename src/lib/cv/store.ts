@@ -1,6 +1,8 @@
 import "server-only";
 import { deleteDoc, getDoc, queryDocsByUser, saveDoc } from "@/lib/apply/db";
 import { type CvImport, CvImportSchema } from "./import/record";
+import type { Audit } from "@/lib/apply/schema";
+import { deleteOwnChecks, listOwnChecks } from "./score/publicCheck";
 import { scoreCv } from "./score/score";
 import { jobFit } from "./tailor/fit";
 import { fontsNeeded, layoutCv } from "./render/layout";
@@ -244,9 +246,10 @@ export async function saveExport(record: ExportRecord): Promise<ExportRecord> {
 export const deleteExport = (id: string) => deleteDoc(CV_COLLECTIONS.EXPORTS, id);
 
 /** Everything held for one person in this section: for "Download my data". */
-export async function exportCvData(userId: string): Promise<{ cvs: CvDoc[]; uploads: CvImport[]; achievements: Achievement[]; exports: ExportRecord[]; fileChecks: FileCheckRecord[] }> {
-  const [cvs, uploads, achievements, exports, fileChecks] = await Promise.all([listOwnCvs(userId), listOwnImports(userId), listOwnAchievements(userId), listOwnExports(userId), listOwnFileChecks(userId)]);
-  return { cvs, uploads, achievements, exports, fileChecks };
+export async function exportCvData(userId: string): Promise<{ cvs: CvDoc[]; uploads: CvImport[]; achievements: Achievement[]; exports: ExportRecord[]; fileChecks: FileCheckRecord[]; freeChecks: Audit[] }> {
+  // `freeChecks`: the free CV checks made or opened while signed in. Each holds the text that was pasted.
+  const [cvs, uploads, achievements, exports, fileChecks, freeChecks] = await Promise.all([listOwnCvs(userId), listOwnImports(userId), listOwnAchievements(userId), listOwnExports(userId), listOwnFileChecks(userId), listOwnChecks(userId)]);
+  return { cvs, uploads, achievements, exports, fileChecks, freeChecks };
 }
 
 /** Deletes everything held for one person in this section: for "Delete all my data". Returns how many records went. */
@@ -257,5 +260,6 @@ export async function deleteCvData(userId: string): Promise<number> {
   for (const a of achievements) await deleteAchievement(a.id);
   for (const e of exports) await deleteExport(e.id);
   for (const f of fileChecks) await deleteFileChecks(f.id);
-  return cvs.length + uploads.length + achievements.length + exports.length + fileChecks.length;
+  const freeChecks = await deleteOwnChecks(userId);
+  return cvs.length + uploads.length + achievements.length + exports.length + fileChecks.length + freeChecks;
 }
