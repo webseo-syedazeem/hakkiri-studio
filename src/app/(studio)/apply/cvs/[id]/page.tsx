@@ -163,12 +163,21 @@ export default function CvBuilderEditorPage({
   const [accentColor, setAccentColor] = useState<string>("#1e293b");
   const [showDividers, setShowDividers] = useState<boolean>(true);
   const [showProfilePic, setShowProfilePic] = useState<boolean>(false);
+  const [userPhoto, setUserPhoto] = useState<string | null>(null);
 
   // Rezi Score Drawer (Screenshot 1, 3)
   const [exploreScoreOpen, setExploreScoreOpen] = useState(false);
 
   // AI Keyword Targeting (Screenshot 1, 4)
-  const [targetKeyword, setTargetKeyword] = useState<string>("Systems Design");
+  const MISSING_KEYWORDS = [
+    "Systems Design",
+    "Distributed Caching",
+    "Kubernetes & Cloud",
+    "Microservices Architecture",
+    "API Gateway Performance",
+  ];
+  const [keywordIndex, setKeywordIndex] = useState(0);
+  const targetKeyword = MISSING_KEYWORDS[keywordIndex % MISSING_KEYWORDS.length];
   const [keywordAdded, setKeywordAdded] = useState(false);
 
   // "Tell me what you did" bullet generator modal
@@ -250,6 +259,10 @@ export default function CvBuilderEditorPage({
     handleSaveCv(updated);
     setKeywordAdded(true);
     showToast(`✓ Added bullet with keyword "${targetKeyword}"!`);
+    setTimeout(() => {
+      setKeywordIndex((idx) => idx + 1);
+      setKeywordAdded(false);
+    }, 1500);
   };
 
   const handleGenerateBullet = async (e: React.FormEvent) => {
@@ -482,10 +495,10 @@ export default function CvBuilderEditorPage({
               aria-label="Font Family"
               className="bg-transparent text-ink text-xs font-bold focus:outline-none cursor-pointer"
             >
-              <option value="merriweather" className="bg-slate-900 text-white">MERRIWEATHER ∨</option>
-              <option value="inter" className="bg-slate-900 text-white">INTER (SANS) ∨</option>
-              <option value="garamond" className="bg-slate-900 text-white">EB GARAMOND ∨</option>
-              <option value="calibri" className="bg-slate-900 text-white">CALIBRI ∨</option>
+              <option value="merriweather" className="bg-slate-900 text-white">MERRIWEATHER</option>
+              <option value="inter" className="bg-slate-900 text-white">INTER (SANS)</option>
+              <option value="garamond" className="bg-slate-900 text-white">EB GARAMOND</option>
+              <option value="calibri" className="bg-slate-900 text-white">CALIBRI</option>
             </select>
           </div>
 
@@ -517,9 +530,9 @@ export default function CvBuilderEditorPage({
               aria-label="Line Spacing"
               className="bg-transparent text-ink text-xs font-bold focus:outline-none cursor-pointer"
             >
-              <option value="1.2" className="bg-slate-900 text-white">1.2 ∨</option>
-              <option value="1.5" className="bg-slate-900 text-white">1.5 ∨</option>
-              <option value="1.8" className="bg-slate-900 text-white">1.8 ∨</option>
+              <option value="1.2" className="bg-slate-900 text-white">1.2 Spacing</option>
+              <option value="1.5" className="bg-slate-900 text-white">1.5 Spacing</option>
+              <option value="1.8" className="bg-slate-900 text-white">1.8 Spacing</option>
             </select>
           </div>
 
@@ -532,9 +545,9 @@ export default function CvBuilderEditorPage({
               aria-label="Margin Spacing"
               className="bg-transparent text-ink text-xs font-bold focus:outline-none cursor-pointer"
             >
-              <option value="compact" className="bg-slate-900 text-white">1.0 Compact ∨</option>
-              <option value="normal" className="bg-slate-900 text-white">1.5 Normal ∨</option>
-              <option value="spacious" className="bg-slate-900 text-white">2.0 Spacious ∨</option>
+              <option value="compact" className="bg-slate-900 text-white">1.0 Compact</option>
+              <option value="normal" className="bg-slate-900 text-white">1.5 Normal</option>
+              <option value="spacious" className="bg-slate-900 text-white">2.0 Spacious</option>
             </select>
           </div>
 
@@ -546,8 +559,8 @@ export default function CvBuilderEditorPage({
               aria-label="Page Size"
               className="bg-transparent text-ink text-xs font-bold focus:outline-none cursor-pointer"
             >
-              <option value="letter" className="bg-slate-900 text-white">LETTER (US) ∨</option>
-              <option value="a4" className="bg-slate-900 text-white">A4 (UK) ∨</option>
+              <option value="letter" className="bg-slate-900 text-white">LETTER (US)</option>
+              <option value="a4" className="bg-slate-900 text-white">A4 (UK)</option>
             </select>
           </div>
 
@@ -560,11 +573,11 @@ export default function CvBuilderEditorPage({
               aria-label="Accent Color"
               className="bg-transparent text-ink text-xs font-bold focus:outline-none cursor-pointer"
             >
-              <option value="#1e293b" className="bg-slate-900 text-white">Classic Slate ∨</option>
-              <option value="#1e3a8a" className="bg-slate-900 text-white">Navy Blue ∨</option>
-              <option value="#065f46" className="bg-slate-900 text-white">Forest Emerald ∨</option>
-              <option value="#4c1d95" className="bg-slate-900 text-white">Royal Purple ∨</option>
-              <option value="#831843" className="bg-slate-900 text-white">Burgundy ∨</option>
+              <option value="#1e293b" className="bg-slate-900 text-white">Classic Slate</option>
+              <option value="#1e3a8a" className="bg-slate-900 text-white">Navy Blue</option>
+              <option value="#065f46" className="bg-slate-900 text-white">Forest Emerald</option>
+              <option value="#4c1d95" className="bg-slate-900 text-white">Royal Purple</option>
+              <option value="#831843" className="bg-slate-900 text-white">Burgundy</option>
             </select>
           </div>
 
@@ -582,21 +595,52 @@ export default function CvBuilderEditorPage({
             {showDividers ? "Dividers ON" : "Dividers OFF"}
           </button>
 
-          {/* Profile Photo Toggle */}
-          <button
-            type="button"
-            onClick={() => setShowProfilePic(!showProfilePic)}
-            className={clsx(
-              "rounded-xl px-2.5 py-1 text-xs font-bold border transition flex items-center gap-1.5",
-              showProfilePic
-                ? "bg-blue/15 text-blue border-blue/30"
-                : "bg-panel-2 text-muted border-line"
+          {/* Profile Photo Toggle & Upload Input */}
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setShowProfilePic(!showProfilePic)}
+              className={clsx(
+                "rounded-xl px-2.5 py-1 text-xs font-bold border transition flex items-center gap-1.5 cursor-pointer",
+                showProfilePic
+                  ? "bg-blue/15 text-blue border-blue/30"
+                  : "bg-panel-2 text-muted border-line"
+              )}
+              title="Toggle profile photo on CV header"
+            >
+              <span>👤</span>
+              <span>{showProfilePic ? "Photo ON" : "Photo OFF"}</span>
+            </button>
+
+            {showProfilePic && (
+              <label
+                htmlFor="builder-photo-upload"
+                className="rounded-xl px-2.5 py-1 text-xs font-bold border border-line bg-panel-2 hover:bg-line text-blue-soft transition flex items-center gap-1 cursor-pointer animate-fadeIn"
+                title="Upload custom photo"
+              >
+                <span>📷</span>
+                <span>{userPhoto ? "Change Pic" : "Upload Your Pic"}</span>
+              </label>
             )}
-            title="Toggle profile photo on CV header"
-          >
-            <span>👤</span>
-            <span>{showProfilePic ? "Photo ON" : "Photo OFF"}</span>
-          </button>
+            <input
+              id="builder-photo-upload"
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  const reader = new FileReader();
+                  reader.onload = (ev) => {
+                    setUserPhoto(ev.target?.result as string);
+                    setShowProfilePic(true);
+                    showToast("✓ Custom profile photo applied to CV!");
+                  };
+                  reader.readAsDataURL(file);
+                }
+              }}
+            />
+          </div>
         </div>
       </div>
 
@@ -790,17 +834,22 @@ export default function CvBuilderEditorPage({
               <div className="flex items-center justify-center gap-4 pb-4 mb-4">
                 {showProfilePic && (
                   <div
-                    className="relative w-16 h-16 shrink-0 rounded-full overflow-hidden shadow-md ring-2 ring-offset-2 transition-all duration-300 animate-fadeIn"
+                    onClick={() => document.getElementById("builder-photo-upload")?.click()}
+                    className="relative w-16 h-16 shrink-0 rounded-full overflow-hidden shadow-md ring-2 ring-offset-2 transition-all duration-300 animate-fadeIn cursor-pointer group"
                     style={{
-                      outline: `2px solid ${accentColor}`,
+                      outline: `2.5px solid ${accentColor}`,
                       outlineOffset: "2px",
                     }}
+                    title="Click to upload your own picture"
                   >
                     <img
-                      src="/sam.jpg"
-                      alt="Profile"
+                      src={userPhoto || "/sam.jpg"}
+                      alt="Profile Avatar"
                       className="w-full h-full object-cover"
                     />
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-[10px] font-bold transition">
+                      📷 Change
+                    </div>
                   </div>
                 )}
                 <div className={clsx(showProfilePic ? "text-left" : "text-center")}>
@@ -1038,8 +1087,12 @@ export default function CvBuilderEditorPage({
 
               <button
                 type="button"
-                onClick={() => setTargetKeyword(targetKeyword === "Systems Design" ? "Distributed Caching" : "Kubernetes")}
-                className="w-full rounded-xl border border-line bg-panel-2 py-2 text-xs font-bold text-muted hover:text-ink transition"
+                onClick={() => {
+                  setKeywordIndex((idx) => idx + 1);
+                  setKeywordAdded(false);
+                  showToast("Skipped to next missing keyword!");
+                }}
+                className="w-full rounded-xl border border-line bg-panel-2 py-2 text-xs font-bold text-muted hover:text-ink transition cursor-pointer"
               >
                 👎 SKIP, NOT RELEVANT
               </button>

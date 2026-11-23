@@ -10,6 +10,7 @@ export function ReziProductsFlow() {
   // Customize preview state (Screenshot 2)
   const [selectedColor, setSelectedColor] = useState<string>("#2563eb");
   const [profilePic, setProfilePic] = useState<boolean>(false);
+  const [customPhoto, setCustomPhoto] = useState<string | null>(null);
   const [showDividers, setShowDividers] = useState<boolean>(true);
 
   // Score tab preview state (Screenshot 3)
@@ -59,7 +60,7 @@ export function ReziProductsFlow() {
                 {activeTab === "build" && (
                   <div className="mt-4 flex items-center gap-3">
                     <Link
-                      href="/apply/cvs"
+                      href="/apply/cvs/cv_master_base"
                       className="inline-flex items-center gap-1.5 rounded-xl bg-white px-4 py-2 text-xs font-bold text-slate-900 shadow-md hover:bg-slate-200 transition"
                     >
                       <span>Open Builder</span>
@@ -141,17 +142,25 @@ export function ReziProductsFlow() {
               <div className="flex items-center justify-center gap-3.5 pb-3">
                 {profilePic && (
                   <div
-                    className="relative w-14 h-14 shrink-0 rounded-full overflow-hidden shadow-md ring-2 ring-offset-2 transition-all duration-300 animate-fadeIn"
+                    className="relative w-14 h-14 shrink-0 rounded-full overflow-hidden shadow-md ring-2 ring-offset-2 transition-all duration-300 animate-fadeIn group cursor-pointer"
                     style={{
                       outline: `2.5px solid ${selectedColor}`,
                       outlineOffset: "2px",
                     }}
+                    title="Click to upload your own picture"
+                    onClick={() => {
+                      const input = document.getElementById("rezi-preview-photo-input");
+                      input?.click();
+                    }}
                   >
                     <img
-                      src="/sam.jpg"
-                      alt="Charles Bloomberg"
+                      src={customPhoto || "/sam.jpg"}
+                      alt="Profile Avatar"
                       className="w-full h-full object-cover"
                     />
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-[10px] transition font-bold">
+                      📷 Upload
+                    </div>
                   </div>
                 )}
                 <div className={clsx(profilePic ? "text-left" : "text-center")}>
@@ -280,26 +289,65 @@ export function ReziProductsFlow() {
                 </div>
 
                 {/* Profile Pic Toggle */}
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-slate-300 flex items-center gap-1.5">
-                    <span>👤</span> Profile Pic
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setProfilePic(!profilePic)}
-                    className={clsx(
-                      "w-10 h-5 rounded-full transition-colors relative p-0.5 cursor-pointer",
-                      profilePic ? "bg-blue" : "bg-slate-700"
-                    )}
-                    aria-label="Toggle profile picture"
-                  >
-                    <div
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-slate-300 flex items-center gap-1.5">
+                      <span>👤</span> Profile Pic
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setProfilePic(!profilePic)}
                       className={clsx(
-                        "w-4 h-4 rounded-full bg-white transition-transform shadow-md",
-                        profilePic ? "translate-x-5" : "translate-x-0"
+                        "w-10 h-5 rounded-full transition-colors relative p-0.5 cursor-pointer",
+                        profilePic ? "bg-blue" : "bg-slate-700"
                       )}
-                    />
-                  </button>
+                      aria-label="Toggle profile picture"
+                    >
+                      <div
+                        className={clsx(
+                          "w-4 h-4 rounded-full bg-white transition-transform shadow-md",
+                          profilePic ? "translate-x-5" : "translate-x-0"
+                        )}
+                      />
+                    </button>
+                  </div>
+
+                  {profilePic && (
+                    <div className="flex items-center justify-between pt-1 animate-fadeIn text-[11px] bg-white/[0.04] p-2 rounded-xl border border-white/5">
+                      <label
+                        htmlFor="rezi-preview-photo-input"
+                        className="text-blue-400 hover:text-blue-300 font-bold flex items-center gap-1 cursor-pointer"
+                      >
+                        <span>📷</span>
+                        <span>{customPhoto ? "Change Your Photo" : "Upload Your Own Photo"}</span>
+                      </label>
+                      <input
+                        id="rezi-preview-photo-input"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (ev) => {
+                              setCustomPhoto(ev.target?.result as string);
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                      {customPhoto && (
+                        <button
+                          type="button"
+                          onClick={() => setCustomPhoto(null)}
+                          className="text-slate-400 hover:text-rose-400 text-[10px] cursor-pointer"
+                        >
+                          Reset
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Dividers Toggle */}
@@ -659,7 +707,7 @@ export function ReziProductsFlow() {
 
               <div className="pt-4 mt-2 border-t border-white/5">
                 <Link
-                  href="/apply/cvs"
+                  href="/apply/cvs/cv_master_base"
                   className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-bold text-white py-2 transition"
                 >
                   <span>Select Format</span>
