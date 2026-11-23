@@ -104,11 +104,24 @@ function writeFallback<T>(collection: string, data: Record<string, T>) {
    GENERIC DOCUMENT OPERATIONS
 -------------------------------------------------------------------------- */
 
+/**
+ * A document key is used as a property name in the local store, and some keys
+ * come straight from a web address. "__proto__", "constructor" and the like
+ * are not documents: looking one up used to hand back JavaScript's own base
+ * object, and a route that then wrote to "the document" changed every object
+ * in the server. Such a key is treated as a document that does not exist.
+ */
+export function isDocKey(key: unknown): key is string {
+  return typeof key === "string" && key.length > 0 && key.length <= 200 && key !== "__proto__" && key !== "constructor" && key !== "prototype" && !/[\u0000-\u001f]/.test(key);
+}
+const own = <T>(store: Record<string, T>, key: string): T | null => (Object.prototype.hasOwnProperty.call(store, key) ? store[key] : null);
+
 export async function saveDoc<T extends { id?: string; userId?: string }>(
   collectionName: string,
   docKey: string,
   doc: T,
 ): Promise<T> {
+  if (!isDocKey(docKey)) throw new Error("That is not a document key.");
   // 1. Try MongoDB
   if (isMongoConfigured()) {
     try {
@@ -143,6 +156,7 @@ export async function getDoc<T>(
   collectionName: string,
   docKey: string,
 ): Promise<T | null> {
+  if (!isDocKey(docKey)) return null;
   // 1. Try MongoDB
   if (isMongoConfigured()) {
     try {
@@ -164,13 +178,14 @@ export async function getDoc<T>(
 
   // 2. Fallback
   const store = readFallback<T>(collectionName);
-  return store[docKey] || null;
+  return own(store, docKey);
 }
 
 export async function deleteDoc(
   collectionName: string,
   docKey: string,
 ): Promise<boolean> {
+  if (!isDocKey(docKey)) return false;
   if (isMongoConfigured()) {
     try {
       const db = await getMongoDb();
