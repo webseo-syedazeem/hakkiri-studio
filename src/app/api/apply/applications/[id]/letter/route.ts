@@ -35,11 +35,10 @@ export async function POST(
     const sentences: OutputSentence[] = [];
 
     if (!whyThisJob || typeof whyThisJob !== "string" || whyThisJob.trim().length < 15) {
-      // 3-line covering note as explicitly instructed in the spec
+      // A short covering note. It says nothing about the person that they have not said themselves.
       letterText = `Dear Hiring Team at ${job?.employer || "the company"},\n\n` +
-        `Please accept my application for the ${job?.title || "role"}. ` +
-        `With over 6 years of commercial experience delivering resilient systems, my CV is attached detailing my background.\n\n` +
-        `I welcome the opportunity to discuss how my experience directly supports your goals.\n\n` +
+        `Please accept my application for the ${job?.title || "role"}. My CV is attached.\n\n` +
+        `I would welcome the opportunity to discuss it.\n\n` +
         `Sincerely,\n${candidateName}`;
 
       sentences.push({
@@ -48,24 +47,18 @@ export async function POST(
         isConnective: true,
       });
     } else {
-      // Full structured cover letter
-      const strongEv = evidenceList.slice(0, 2);
-      const ev1 = strongEv[0]?.text || "Delivered cloud system migrations with high reliability.";
-      const ev2 = strongEv[1]?.text || "Mentored engineering teams and scaled agile sprint velocity.";
-
+      // The person's reason, then their own saved evidence, word for word. Nothing is filled in when there is none.
+      const strongEv = evidenceList.slice(0, 2).filter((e) => e.text?.trim());
       const p1 = `I am applying for the ${job?.title || "role"} at ${job?.employer || "your team"} because ${whyThisJob.trim()}`;
-      const p2 = `In my recent roles, I have consistently focused on engineering outcomes that matter. ${ev1}`;
-      const p3 = `Beyond pure execution, I prioritize sustainable architecture and high-velocity teamwork. ${ev2}`;
-      const p4 = `I would welcome the opportunity to speak with your team about how this background can add immediate value.`;
+      const p4 = `I would welcome the opportunity to speak with your team.`;
 
       letterText = `Dear Hiring Team at ${job?.employer || "the company"},\n\n` +
-        `${p1}\n\n${p2}\n\n${p3}\n\n${p4}\n\n` +
-        `Warm regards,\n${candidateName}`;
+        [p1, ...strongEv.map((e) => e.text.trim()), p4].join("\n\n") +
+        `\n\nWarm regards,\n${candidateName}`;
 
       sentences.push(
         { text: p1, evidenceIds: [], isConnective: true },
-        { text: p2, evidenceIds: strongEv[0] ? [strongEv[0].id] : [], isConnective: false },
-        { text: p3, evidenceIds: strongEv[1] ? [strongEv[1].id] : [], isConnective: false },
+        ...strongEv.map((e) => ({ text: e.text.trim(), evidenceIds: [e.id], isConnective: false })),
         { text: p4, evidenceIds: [], isConnective: true },
       );
     }

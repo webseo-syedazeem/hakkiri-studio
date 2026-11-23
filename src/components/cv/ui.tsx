@@ -121,7 +121,9 @@ interface FieldProps {
 
 /** A labelled input. Its rule, error and note are tied to it for screen readers. */
 export function Field({ label, rule, error, uncertain, note, multiline, rows = 3, value, onChange, className, fieldKey, ...rest }: FieldProps & Omit<ComponentProps<"input">, "value" | "onChange">) {
-  const id = useId();
+  // A field that something else needs to find (to put the cursor in it) can be given its own id.
+  const auto = useId();
+  const id = rest.id ?? auto;
   const describedBy = [rule && `${id}-rule`, error && `${id}-error`, note && `${id}-note`].filter(Boolean).join(" ") || undefined;
   // A text box grows with what is in it, so a whole bullet can be read without scrolling inside the box.
   // Browsers that can size a field to its content do it themselves (see cv.css); the rest are measured here.

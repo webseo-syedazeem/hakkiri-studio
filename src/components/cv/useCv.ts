@@ -85,7 +85,7 @@ export function useCv(id: string) {
     const sending = [...dirty.current];
     dirty.current.clear();
     const changes: Record<string, unknown> = {};
-    for (const k of sending) changes[k] = k === "target" ? (doc.target ?? null) : doc[k];
+    for (const k of sending) changes[k] = k === "target" || k === "letter" ? (doc[k] ?? null) : doc[k];
     try {
       const { cv: saved } = await api<{ cv: CvDoc }>(`/api/cv/versions/${id}`, { method: "PATCH", json: { rev: doc.rev, saveId: crypto.randomUUID().slice(0, 36), ...changes }, keepalive: true });
       // Take the new revision, and leave what is on screen exactly as it was typed. The server tidies what it
@@ -212,7 +212,7 @@ export function useCv(id: string) {
     if (!doc || !other) return "";
     const mine = snapshotOf(doc);
     const changes: Record<string, unknown> = {};
-    for (const k of dirty.current) changes[k] = k === "target" ? (mine.target ?? null) : mine[k];
+    for (const k of dirty.current) changes[k] = k === "target" || k === "letter" ? (mine[k] ?? null) : mine[k];
     const made = await api<{ id: string }>(`/api/cv/versions/${id}/duplicate`, { method: "POST", json: { changes } });
     takeTheirs();
     return made.id;

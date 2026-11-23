@@ -224,6 +224,8 @@ export interface ParaSpec {
   keepWithNext: boolean;
   mark?: { text: string; font: FontKey; size: number; color: string };
   rule?: RuleSpec;
+  /** Starts a new page. */
+  pageBreak?: boolean;
 }
 
 /** Describes each paragraph of a flow in a style. Needs no fonts: nothing is measured yet. */
@@ -239,7 +241,7 @@ export function describeFlow(flow: Flow, style: PaperStyle): ParaSpec[] {
   nodes.forEach((n, i) => {
     const prev = nodes[i - 1];
     const next = nodes[i + 1];
-    const base = { node: i, kind: n.kind, at: "at" in n ? n.at : { section: "contact" }, indent: 0, after: 0, align: "left" as const };
+    const base = { node: i, kind: n.kind, at: "at" in n ? n.at : { section: "contact" }, indent: 0, after: 0, align: "left" as const, pageBreak: flow.breaks?.includes(i) || undefined };
     if (n.kind === "name") {
       const size = t.title.size;
       specs.push({
@@ -312,7 +314,7 @@ export function describeFlow(flow: Flow, style: PaperStyle): ParaSpec[] {
       const meta = n.role === "meta";
       const size = meta ? 9.5 : BODY_SIZE;
       const sameEntryBefore = !!prev && "entryId" in prev && !!n.entryId && prev.entryId === n.entryId;
-      const before = prev?.kind === "heading" ? 0 : sameEntryBefore ? (meta ? 1 : 2.5 * d) : prev?.kind === "para" && prev.role === "body" ? 3.5 * d : t.space.entry * d;
+      const before = n.space !== undefined ? n.space * d : prev?.kind === "heading" ? 0 : sameEntryBefore ? (meta ? 1 : 2.5 * d) : prev?.kind === "para" && prev.role === "body" ? 3.5 * d : t.space.entry * d;
       specs.push({
         ...base,
         tag: "P",
@@ -323,7 +325,7 @@ export function describeFlow(flow: Flow, style: PaperStyle): ParaSpec[] {
         size,
         font: body,
         before,
-        keepWithNext: n.role !== "body" && !!next && "entryId" in next && next.entryId === n.entryId,
+        keepWithNext: n.keep ? !!next : n.role !== "body" && !!next && "entryId" in next && next.entryId === n.entryId,
       });
     } else {
       const sameEntryBefore = !!prev && "entryId" in prev && prev.entryId === n.entryId;
@@ -345,6 +347,11 @@ export function describeFlow(flow: Flow, style: PaperStyle): ParaSpec[] {
     }
   });
   return specs;
+}
+
+/** The width of a piece of text in a font, in points: the same sum the layout uses. */
+export function textWidth(fonts: Fonts, key: FontKey, text: string, size: number, tracking = 0): number {
+  return new Measurer(fonts).width(text, key, size, tracking);
 }
 
 /** Lays out a flow with a style. Every font the style needs must be loaded. */
@@ -380,7 +387,12 @@ export function layoutFlow(flow: Flow, style: PaperStyle, fonts: Fonts): Layout 
   for (let i = 0; i < drafts.length; ) {
     // The run of pieces that must start on the same page.
     let end = i;
-    while (drafts[end].keepWithNext && end + 1 < drafts.length) end++;
+    while (drafts[end].keepWithNext && end + 1 < drafts.length && !drafts[end + 1].pageBreak) end++;
+    // A piece that starts a new page (the CV after a cover letter).
+    if (drafts[i].pageBreak && blocks.length) {
+      pg++;
+      y = top;
+    }
     let need = 0;
     for (let k = i; k <= end; k++) {
       const b = drafts[k];

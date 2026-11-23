@@ -212,7 +212,7 @@ run("CV tailoring", async (browser) => {
   const rows = await page.locator(".cv-pick").evaluateAll((els) => els.map((e) => [e.innerText.replace(/\s+/g, " "), e.style.paddingLeft]));
   check(rows.length === 2 && /Maya base CV – Example Travel/.test(rows[1][0]) && rows[1][1] === "44px" && new RegExp(`Job fit ${to}`).test(rows[1][0]), "the list shows the tailored version under its base, with its job fit", JSON.stringify(rows));
   await bothThemes(page, "tailor-list");
-  await page.getByRole("link", { name: "Maya base CV – Example Travel" }).click();
+  await page.getByRole("link", { name: "Maya base CV – Example Travel", exact: true }).click();
   await page.waitForURL(/\/tailor/);
   check(true, "a tailored version opens on its tailoring screen");
   await page.goto(`${BASE}/cv/v/${id}/edit/experience`);

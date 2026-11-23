@@ -91,6 +91,8 @@ const LINE_OF: Record<string, string> = { title: "title", org: "title", subject:
  */
 export function samePassage(cv: Pick<CvDoc, "sections">, at: Locator, focus: Locator | null): boolean {
   if (!focus || at.section !== focus.section) return false;
+  // A cover letter: a paragraph, or one of its fixed lines (the date, the greeting, the sign-off).
+  if (at.section === "letter") return (at.entry ?? at.field ?? "") === (focus.entry ?? focus.field ?? "");
   if (at.section === "contact") return (at.field === "fullName") === (focus.field === "fullName");
   const s = cv.sections.find((x) => x.id === at.section);
   if (!s) return false;
@@ -204,10 +206,10 @@ export function stateAt(sections: Section[], at: Locator): "on" | "off" | "gone"
 /* --------------------------------------------------------------------- undo */
 
 /** Everything a person can change about a CV. One of these is what Undo goes back to. */
-export type Snapshot = Pick<CvDoc, "name" | "level" | "region" | "target" | "contact" | "sections" | "design" | "accepted" | "requirements" | "changes">;
-export const SNAPSHOT_KEYS = ["name", "level", "region", "target", "contact", "sections", "design", "accepted", "requirements", "changes"] as const;
+export type Snapshot = Pick<CvDoc, "name" | "level" | "region" | "target" | "contact" | "sections" | "design" | "accepted" | "requirements" | "changes" | "letter">;
+export const SNAPSHOT_KEYS = ["name", "level", "region", "target", "contact", "sections", "design", "accepted", "requirements", "changes", "letter"] as const;
 
-export const snapshotOf = (cv: Snapshot): Snapshot => ({ name: cv.name, level: cv.level, region: cv.region, target: cv.target, contact: cv.contact, sections: cv.sections, design: cv.design, accepted: cv.accepted, requirements: cv.requirements, changes: cv.changes });
+export const snapshotOf = (cv: Snapshot): Snapshot => ({ name: cv.name, level: cv.level, region: cv.region, target: cv.target, contact: cv.contact, sections: cv.sections, design: cv.design, accepted: cv.accepted, requirements: cv.requirements, changes: cv.changes, letter: cv.letter });
 
 export interface History {
   past: Snapshot[];
@@ -293,6 +295,8 @@ export function diffParts(mine: Snapshot, theirs: Snapshot): PartDiff[] {
   add("Layout", design(mine.design), design(theirs.design));
   const target = (t: Snapshot["target"]) => [t?.title ?? "", t?.employer ?? "", t?.advert ?? ""].filter(Boolean);
   add("Target job", target(mine.target), target(theirs.target));
+  const letter = (l: Snapshot["letter"]) => (l ? [l.recipient ? `To: ${l.recipient}` : "", ...l.paragraphs.map((p) => p.sentences.map((x) => x.text).join(" ")), l.reason ? `Your reason: ${l.reason}` : "", ...l.notes.map((n) => `Note: ${n.text}`)].filter(Boolean) : []);
+  add("Cover letter", letter(mine.letter), letter(theirs.letter));
   if (mine.level !== theirs.level || mine.region !== theirs.region) out.push({ label: "Level and region", mine: [mine.level, mine.region], theirs: [theirs.level, theirs.region] });
   // The form's own order is shown by name, not by id.
   return out.map((d) => (d.label === "Order of sections in the form" ? { ...d, mine: mine.sections.map((s) => sectionHeading(s, mine.region)), theirs: theirs.sections.map((s) => sectionHeading(s, mine.region)) } : d));

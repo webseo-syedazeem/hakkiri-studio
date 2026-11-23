@@ -65,6 +65,8 @@ export async function writeDocx(flow: Flow, style: PaperStyle, info: DocxInfo): 
       `<w:pStyle w:val="${STYLE_OF[s.tag]}"/>`,
       s.keepWithNext ? "<w:keepNext/>" : "",
       s.tag !== "P" || s.kind === "contact" ? "<w:keepLines/>" : "",
+      // In the order Word's own files use: keepNext, keepLines, pageBreakBefore.
+      s.pageBreak ? "<w:pageBreakBefore/>" : "",
       s.tag === "LI" ? '<w:numPr><w:ilvl w:val="0"/><w:numId w:val="1"/></w:numPr>' : "",
       borders,
       `<w:spacing w:before="${twips(s.before)}" w:after="${twips(s.after)}" w:line="${twips(s.lineHeight)}" w:lineRule="exact"/>`,

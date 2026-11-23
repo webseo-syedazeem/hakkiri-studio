@@ -321,3 +321,27 @@ textarea.cv-input { resize: vertical; field-sizing: content; }
 @media (max-width: 767px) {
   .cv-mini { min-height: 44px; font-size: 16px; }
 }
+
+/* ---------------------------------------------------------- the cover letter */
+
+.cv-lfield { border: 0; padding: 0; margin: 0; min-width: 0; }
+.cv-lpara { padding: 12px 14px; border: 1px solid var(--cv-edge); border-radius: 8px; background: var(--color-panel); }
+.cv-lpara[data-over] { border-color: var(--cv-issue-edge); box-shadow: inset 3px 0 var(--color-red); }
+.cv .cv-plainlist.cv-lsents { margin-top: 8px; border-top: 1px solid var(--color-line); }
+.cv .cv-plainlist li.cv-lsent { padding: 8px 0 8px 11px; border-bottom: 1px solid var(--color-line); border-left: 3px solid transparent; font-size: 14px; line-height: 1.5; }
+.cv .cv-plainlist li.cv-lsent:last-child { border-bottom: 0; }
+.cv .cv-plainlist li.cv-lsent[data-state="unsupported"] { border-left-color: var(--color-red); }
+.cv .cv-plainlist li.cv-lsent[data-state="review"] { border-left-color: var(--cv-note-ink); }
+.cv .cv-plainlist li.cv-lsent[data-selected] { background: var(--cv-selected); }
+.cv-lsent > button { display: block; width: 100%; }
+.cv-lstate { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 650; color: var(--color-muted); white-space: nowrap; }
+.cv-lstate[data-state="sourced"] { color: var(--cv-green); }
+.cv-lstate[data-state="unsupported"] { color: var(--color-red); }
+.cv-lstate[data-state="review"] { color: var(--cv-note-ink); }
+/* On a selected row the tint behind the label is darker: the label is set in ink there, and the row's edge keeps the colour. */
+.cv-lsent[data-selected] .cv-lstate { color: var(--color-ink); }
+.cv-lsources { padding: 8px 10px 4px 2px; font-size: 13px; }
+.cv .cv-plainlist li.cv-lsource { padding: 6px 0 6px 10px; border-left: 2px solid var(--color-blue); margin-top: 6px; }
+.cv .cv-plainlist li.cv-lsource[data-kind="advert"], .cv .cv-plainlist li.cv-lsource[data-kind="job"] { border-left-color: var(--cv-input-edge); }
+.cv .cv-plainlist.cv-lproblems li { padding: 4px 0 4px 10px; border-left: 2px solid var(--color-red); margin-top: 6px; }
+.cv button.cv-link { font: inherit; font-size: 13px; background: none; border: 0; padding: 0; margin-top: 2px; cursor: pointer; }

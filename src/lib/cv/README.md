@@ -159,6 +159,32 @@ Things worth knowing:
 - `cv.changes` is the report: each change made while tailoring, with before, after, the reason and the requirement it was for.
 - The list of CVs shows each CV's score and, where it has an advert, its job fit (`store.listCvSummaries`).
 
+## Step 6: the cover letter
+
+| Where | What |
+| --- | --- |
+| `schema.ts` (`LetterSchema`) | The letter is part of its version (`cv.letter`): what it is written from (the reason, one or two chosen CV lines, a passage for tone, the recipient, the date, the sign-off, the person's notes) and the paragraphs, each a list of sentences. Every sentence keeps the lines it was last checked against. |
+| `letter/sources.ts` | What a letter may rest on, in two kinds kept apart: the person's own (every CV line that is switched on, their reason, their notes) and the employer's (the advert, clause by clause, and the job's title and employer). `sourceState` says whether a noted source still reads the same. |
+| `letter/check.ts` | `checkSentence`: the review every sentence goes through, drafted or typed. `reviewLetter`: every sentence as Sourced, No source needed, Needs a source or Review source. `recordSources`, `acceptSources`, and `reflow` (editing a paragraph keeps the sentences that were not touched). |
+| `letter/draft.ts` | The letter assembled by rule from the person's own words (`letterByRule`), `voiceOf` (contractions, their word for the job), a CV line as a first-person sentence (`lineSentence`), `insertEvidence`, and `shortenings` (ways to shorten a paragraph that keep its sources). |
+| `letter/flow.ts` | The letter in reading order as the same kind of flow the CV is printed from, `joinFlows` (letter, then the CV on a new page), `layoutLetter` and `letterFit` (one page, and which paragraph crosses the boundary). |
+| `letter/assist.ts` | The AI path: a draft, and a shorter wording of one paragraph, each put through `checkSentence` before it is returned. A draft that fails is replaced by the rule-assembled letter. |
+| `src/app/api/cv/versions/[id]/letter/[tool]` | `POST draft`, `POST shorten`, `POST check`, `GET export?format=pdf|docx[&with=cv]`. |
+| `src/components/cv/Letter.tsx` | The letter screen (`/cv/v/[id]/letter`, 552 / 616): inputs or paragraph editor on the left, the letter on its page on the right. Dialogs: `edit-job`, `choose-evidence`, `review-letter-claim`, `page-overflow`. |
+
+Things worth knowing:
+
+- **The rule.** What a sentence says about the person (experience, results, motivation) must be in their CV, their reason or a note. What it says about the employer must be in the advert. A word from the advert does not become the person's experience by being said in the first person: "I have experience with Spectrum" is refused when Spectrum is only in the advert, while "I would welcome the chance to catalogue new acquisitions" (a wish, in the advert's words) passes.
+- **A figure must come from a line about the same thing.** "Six pupils" on the CV does not back "six new starters" in the letter.
+- **Words that carry no claim** (`LETTER_GLUE`: apply, role, thank, welcome…) need no source. Praise and character words are not in it: "passionate" passes only if the person wrote it.
+- **The same review for typed text.** Editing a paragraph re-checks the sentences that changed. Nothing is exempt for having been typed by hand.
+- **A letter with an open sentence cannot be downloaded.** The export route refuses (409 `unsourced`, naming each sentence), and the buttons are off. The three ways out are the spec's: remove it, rewrite it from a CV line, or back it with a note in the person's own words. A note cannot back a claim about the employer.
+- **Review source.** Each sentence keeps the wording of the lines it passed against. If one of those lines is later changed, switched off or removed, that sentence alone is marked; "It still holds" re-reads the line as it is now and is refused when the sentence no longer matches.
+- **In their voice** means their words: the opening is their reason word for word, each evidence sentence is their CV line in the first person, and the few joining sentences follow whether they write "I'm" or "I am" and whether they say role, position or job. The passage for tone is never used as a fact.
+- **Same paper as the CV.** The letter uses the version's template, fonts, accent colour, paper size and margins, and the same writers and read-back check. One page is the target; a longer letter is reported, never shrunk. With the CV in the same file, the CV starts on a new page.
+- **Download records** keep the letter, the CV and the advert as they were, with the date the letter was sent with, so "Download this file again" gives the same bytes.
+- **A letter belongs to one job.** A duplicate keeps it; a version tailored to another job starts without one.
+
 ## Tests
 
 - `npx vitest run src/lib/cv`: every reading rule (`dates`, `lines`, `reader`), every sample file
@@ -180,7 +206,11 @@ Things worth knowing:
   public check. The Software view, the ATS-ready label and download records are in `api.test.ts`.
 - `tailor/*.test.ts`: reading an advert, each status, the fit arithmetic (including the worked example
   from the design: 5 of 8, shown as 63), no floor, proposals and their records, side effects.
-- Browser tests: `e2e/cv-cleanup.cjs`, `e2e/cv-start.cjs`, `e2e/cv-upload.cjs`, `e2e/cv-editor.cjs`, `e2e/cv-writing.cjs`, `e2e/cv-score.cjs`, `e2e/cv-tailor.cjs`
+- `letter/*.test.ts`: the source rules sentence by sentence (the person's against the employer's, borrowed
+  figures, wishes against experience), Review source, the rule-assembled letter, the letter on its page,
+  every template exported to PDF and Word on its own and with the CV and read back, and the routes with
+  the AI service replaced by a stand-in that replies with good drafts and with invented ones.
+- Browser tests: `e2e/cv-cleanup.cjs`, `e2e/cv-start.cjs`, `e2e/cv-upload.cjs`, `e2e/cv-editor.cjs`, `e2e/cv-writing.cjs`, `e2e/cv-score.cjs`, `e2e/cv-tailor.cjs`, `e2e/cv-letter.cjs`
   (see `e2e/README.md`). `cv-editor.cjs` downloads every file it makes into `e2e/out/cv-downloads/`,
   opens each one and compares its text with the saved CV (`e2e/cv-files.cjs`).
 
@@ -221,6 +251,20 @@ Things worth knowing:
   need the practice side to accept a question that is not from an interview's set.
 - **Two banks.** `/cv/bank` (`cv_achievements`) is separate from the older Evidence Bank at
   `/apply/evidence`. They should probably become one; that is a product decision.
+- **The letter's review is by rule.** It reads words, figures and who a clause is about. It will sometimes
+  ask for a source for something harmless; the person can reword it or add a note. It is strict on
+  purpose: a sentence it passes is one whose claims can each be pointed to.
+- **The letter's AI draft has not been run with real keys** (see "Real model output" above). Until it has,
+  expect the rule-assembled letter to be what people get whenever the model's draft fails a check.
+- **The older letter writer on `/apply`** (`/api/apply/applications/[id]/letter`) is separate and belongs
+  to the application tracker. Its invented sentences ("over 6 years of commercial experience…", two
+  made-up achievements) have been taken out; it now uses only the person's reason and their own saved
+  evidence. Decide whether to retire it in favour of this letter. `/cover-letter-audit` is an alias of
+  the CV check page and checks nothing about a letter.
+- **Private achievements** (`privacy.ts`). A CV line taken from an achievement marked private is not
+  offered as letter evidence, and a CV or letter that already uses one is not made into a file: the
+  download and the file check answer 409 `private`, naming the line. Practice from a CV does not yet
+  leave private lines out; that is on the practice side.
 - **Scanned PDFs** cannot be read (no OCR). The person is told so and can paste the text.
 - **Old code.** `CvSchema`, `getCv`, `saveCv` and `listCvs` in `src/lib/apply/` are no longer used by
   this section and can be removed once nothing else needs them.

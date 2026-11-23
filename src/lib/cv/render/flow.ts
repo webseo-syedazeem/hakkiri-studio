@@ -24,7 +24,18 @@ export type FlowNode =
   /** The first line of an entry: "Archive assistant · Paper Kite Archive". */
   | { kind: "entry"; runs: FlowText[]; sectionId: string; entryId: string; at: Locator }
   /** A paragraph: dates and place, a line about the employer, a profile, a line of skills. */
-  | { kind: "para"; runs: FlowText[]; role: "meta" | "context" | "body"; sectionId: string; entryId?: string; at: Locator }
+  | {
+      kind: "para";
+      runs: FlowText[];
+      role: "meta" | "context" | "body";
+      sectionId: string;
+      entryId?: string;
+      at: Locator;
+      /** For a letter: the space above this paragraph in points, in place of the CV's own spacing. */
+      space?: number;
+      /** For a letter: stays on the same page as the paragraph after it (a greeting, a sign-off). */
+      keep?: boolean;
+    }
   | { kind: "bullet"; text: string; sectionId: string; entryId: string; at: Locator };
 
 export interface Flow {
@@ -35,6 +46,8 @@ export interface Flow {
   docWord: string;
   /** The document's title: "[Name] – [Target role] – CV", leaving out what is empty. */
   title: string;
+  /** Pieces that start a new page: the CV, when it follows a cover letter in the same file. */
+  breaks?: number[];
 }
 
 const SEP = " · ";

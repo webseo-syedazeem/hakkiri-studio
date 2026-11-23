@@ -29,7 +29,7 @@ export async function PATCH(req: Request, { params }: Ctx) {
     if (!cv) return notFound();
     const parsed = PatchSchema.safeParse(await req.json().catch(() => null));
     if (!parsed.success) return badInput("That change could not be saved.");
-    const { rev, saveId, target, ...changes } = parsed.data;
+    const { rev, saveId, target, letter, ...changes } = parsed.data;
     if (saveId && cv.lastSaveId === saveId) return NextResponse.json({ cv });
     if (rev !== cv.rev) return NextResponse.json({ error: "conflict", message: "This CV was changed somewhere else.", cv }, { status: 409 });
     if (!sectionIdsDiffer(changes.sections)) return badInput("That change could not be saved.");
@@ -37,6 +37,7 @@ export async function PATCH(req: Request, { params }: Ctx) {
       ...cv,
       ...changes,
       target: target === null ? undefined : (target ?? cv.target),
+      letter: letter === null ? undefined : (letter ?? cv.letter),
       rev: cv.rev + 1,
       lastSaveId: saveId,
       updatedAt: new Date().toISOString(),

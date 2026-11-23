@@ -305,6 +305,11 @@ function Row({ cv, indent, onAction }: { cv: CvSummary; indent?: boolean; onActi
             Tailor to a job
           </Btn>
         )}
+        {!cv.empty && !cv.pendingImportId && (
+          <BtnLink kind="quiet" href={`/cv/v/${cv.id}/letter`} aria-label={`${cv.letter ? "Open the cover letter for" : "Write a cover letter for"} ${cv.name}`} data-testid="row-letter">
+            {cv.letter ? "Letter" : "Write letter"}
+          </BtnLink>
+        )}
         <Btn kind="quiet" onClick={() => onAction("rename")} aria-label={`Rename ${cv.name}`}>
           Rename
         </Btn>

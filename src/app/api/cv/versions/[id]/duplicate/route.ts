@@ -18,12 +18,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     if (!cv) return notFound();
     const parsed = BodySchema.safeParse(await req.json().catch(() => ({})));
     if (!parsed.success || !sectionIdsDiffer(parsed.data.changes?.sections)) return badInput("The copy could not be made.");
-    const { target, name, ...changes } = parsed.data.changes ?? {};
+    const { target, letter, name, ...changes } = parsed.data.changes ?? {};
     const now = new Date().toISOString();
     const copy = await saveCv({
       ...structuredClone(cv),
       ...changes,
       target: target === null ? undefined : (target ?? cv.target),
+      letter: letter === null ? undefined : (letter ?? structuredClone(cv.letter)),
       id: newCvId(),
       userId,
       rev: 1,

@@ -48,7 +48,7 @@ function termBoxes(layout: Layout, page: number, term: string): { x: number; y: 
   return out;
 }
 
-function Page({ layout, flow, page, margin, cv, focus, onPick, label, highlight }: { layout: Layout; flow: Flow; page: number; margin: number; cv: Pick<CvDoc, "sections">; focus: Locator | null; onPick?: (at: Locator) => void; label: string; highlight?: string }) {
+function Page({ layout, flow, page, margin, cv, focus, onPick, label, highlight, overlay }: { layout: Layout; flow: Flow; page: number; margin: number; cv: Pick<CvDoc, "sections">; focus: Locator | null; onPick?: (at: Locator) => void; label: string; highlight?: string; overlay?: (page: number) => ReactNode }) {
   return (
     <svg className="cv-paper" viewBox={`0 0 ${layout.width} ${layout.height}`} role="img" aria-label={label} style={{ fontKerning: "none", fontVariantLigatures: "none" }}>
       <rect width={layout.width} height={layout.height} fill={PAPER} />
@@ -93,6 +93,7 @@ function Page({ layout, flow, page, margin, cv, focus, onPick, label, highlight 
           </g>
         );
       })}
+      {overlay?.(page)}
     </svg>
   );
 }
@@ -148,10 +149,14 @@ export interface PaperViewProps {
   children?: ReactNode;
   /** A term to mark wherever it appears on the page (a matched word from the advert). On screen only. */
   highlight?: string;
+  /** Marks drawn over a page, in the page's own points (a letter's sentences). On screen only: never in a file. */
+  overlay?: (page: number) => ReactNode;
+  /** The page to show, when something outside the paper asks for one (a sentence was selected). */
+  showPage?: number;
 }
 
 /** The paper with its controls: which page, how large, and the Text view. */
-export function PaperView({ paper, state, retry, cv, focus, onPick, word, children, highlight }: PaperViewProps) {
+export function PaperView({ paper, state, retry, cv, focus, onPick, word, children, highlight, overlay, showPage }: PaperViewProps) {
   const [page, setPage] = useState(0);
   const [zoom, setZoom] = useState<number | "fit">("fit");
   const [asText, setAsText] = useState(false);
@@ -168,6 +173,10 @@ export function PaperView({ paper, state, retry, cv, focus, onPick, word, childr
     // Only when the field changes, not on every keystroke.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focus?.section, focus?.entry, focus?.field]);
+
+  useEffect(() => {
+    if (showPage !== undefined) setPage(showPage);
+  }, [showPage]);
 
   // And onto the first page where a marked term appears.
   useEffect(() => {
@@ -243,7 +252,7 @@ export function PaperView({ paper, state, retry, cv, focus, onPick, word, childr
       ) : (
         <div className="cv-paperscroll" data-state={state} tabIndex={0} role="region" aria-label={`Your ${word} on paper`}>
           <div className="cv-papersheet" style={{ width: widthPx ?? "100%" }}>
-            <Page layout={paper.layout} flow={paper.flow} page={current} margin={paper.style.page.marginX} cv={cv} focus={focus} onPick={onPick} highlight={highlight} label={empty ? `An empty page. Your ${word} will appear here as you fill it in.` : `Page ${current + 1} of ${pages} of your ${word}. Use Text view to read it.`} />
+            <Page layout={paper.layout} flow={paper.flow} page={current} margin={paper.style.page.marginX} cv={cv} focus={focus} onPick={onPick} highlight={highlight} overlay={overlay} label={empty ? `An empty page. Your ${word} will appear here as you fill it in.` : `Page ${current + 1} of ${pages} of your ${word}. Use Text view to read it.`} />
             {empty && <p className="cv-paperhint">Your {word} will appear here as you fill it in.</p>}
           </div>
         </div>

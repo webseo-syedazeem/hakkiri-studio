@@ -181,6 +181,11 @@ export function Tailor() {
         <Toolbar eyebrow={[cv.target?.title, cv.target?.employer].filter(Boolean).join(" · ") || cv.name} title="Tailor to this job" subtitle={`What the advert asks for, and where your ${word} shows it.`}>
           <Btn onClick={() => open("edit-advert")}>{none ? "Paste the advert" : "Edit advert"}</Btn>
           {!none && (
+            <BtnLink href={`${base}/letter`} onClick={() => void flush()}>
+              Cover letter
+            </BtnLink>
+          )}
+          {!none && (
             <BtnLink kind="primary" href={`${base}/changes/proposed`} onClick={() => void flush()}>
               Review proposed changes
             </BtnLink>

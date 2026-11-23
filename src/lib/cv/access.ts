@@ -2,7 +2,7 @@ import "server-only";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth/require";
-import { type CvDoc, CV_LEVELS, CV_REGIONS, ChangeRecordSchema, ContactSchema, DesignSchema, ExcerptSchema, RequirementSchema, SectionSchema, TargetSchema, coreSections, emptyContact, newId } from "./schema";
+import { type CvDoc, CV_LEVELS, CV_REGIONS, ChangeRecordSchema, ContactSchema, DesignSchema, ExcerptSchema, LetterSchema, RequirementSchema, SectionSchema, TargetSchema, coreSections, emptyContact, newId } from "./schema";
 
 /** The signed-in person's id. Throws the same 401 response as requireUser when signed out. */
 export async function requireUserId(): Promise<string> {
@@ -61,6 +61,7 @@ export const EditableSchema = z
     accepted: z.array(oneLine(60)).max(200).optional(),
     requirements: z.array(RequirementSchema).max(40).optional(),
     changes: z.array(ChangeRecordSchema).max(200).optional(),
+    letter: LetterSchema.nullable().optional(),
   })
   .strict();
 

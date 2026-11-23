@@ -536,7 +536,7 @@ run("CV editor", async (browser) => {
   await dialog.getByLabel("CV name").fill("Fern – archives");
   await bothThemes(page, "list-rename");
   await dialog.getByRole("button", { name: "Save name" }).click();
-  await page.getByRole("link", { name: "Fern – archives" }).waitFor();
+  await page.getByRole("link", { name: "Fern – archives", exact: true }).waitFor();
   check((await getCv(page, fernId)).name === "Fern – archives", "the new name is saved");
 
   await page.getByRole("button", { name: "Duplicate Fern – archives" }).click();

@@ -34,7 +34,7 @@ const RULES = `You help a person word their own CV. You never add a fact.
 - Reply with one JSON object and nothing else.`;
 
 /** One checked call: the draft and, when it was refused twice, why. Null when the service did not answer. */
-async function drafted<T>(o: { label: string; system: string; user: string; maxTokens: number; schema: z.ZodType<T> }, verify: (value: T) => Verdict): Promise<{ value: T } | { refused: Verdict } | null> {
+export async function drafted<T>(o: { label: string; system: string; user: string; maxTokens: number; schema: z.ZodType<T> }, verify: (value: T) => Verdict): Promise<{ value: T } | { refused: Verdict } | null> {
   let last: Verdict | null = null;
   const value = await ask<T>({
     model: aiConfig.mainModel,

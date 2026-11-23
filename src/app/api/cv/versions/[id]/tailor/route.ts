@@ -44,6 +44,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       target: { title, employer, advert },
       requirements: extractRequirements(advert),
       changes: [],
+      // A cover letter belongs to one job: the new version starts without one.
+      letter: undefined,
       createdAt: now,
       updatedAt: now,
     });

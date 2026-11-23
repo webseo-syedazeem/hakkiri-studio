@@ -618,7 +618,7 @@ describe("the Software view and the record of each download", () => {
   it("keeps the newest thirty downloads for a CV", async () => {
     const id = await filled();
     const cv = (await store.getOwnCv(id, alice.id))!;
-    for (let i = 0; i < 33; i++) await store.saveExport({ id: `exp_${i.toString(16).padStart(16, "0")}`, userId: alice.id, versionId: id, rev: 2, format: "pdf", name: `n${i}.pdf`, at: new Date(Date.UTC(2026, 0, 1, 0, i)).toISOString(), checked: true, pages: 1, cv });
+    for (let i = 0; i < 33; i++) await store.saveExport({ id: `exp_${i.toString(16).padStart(16, "0")}`, userId: alice.id, versionId: id, rev: 2, format: "pdf", what: "cv", name: `n${i}.pdf`, at: new Date(Date.UTC(2026, 0, 1, 0, i)).toISOString(), checked: true, pages: 1, cv });
     const kept = await store.listOwnExports(alice.id, id);
     expect(kept).toHaveLength(30);
     expect(kept[0].name).toBe("n32.pdf");

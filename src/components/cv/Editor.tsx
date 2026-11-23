@@ -265,6 +265,9 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
         <BtnLink href={`/cv/v/${cv.id}/tailor`} onClick={() => void flush()} data-testid="fit-button">
           {fitLabel(cv.requirements.length ? jobFit(cv).score : null)}
         </BtnLink>
+        <BtnLink href={`/cv/v/${cv.id}/letter`} onClick={() => void flush()} data-testid="letter-button">
+          Cover letter
+        </BtnLink>
         <small role="status" data-testid="save-state">
           {SAVE_WORDS[save]}
         </small>

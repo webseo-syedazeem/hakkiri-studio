@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { failure, notFound, requireUserId } from "@/lib/cv/access";
 import { exportCv } from "@/lib/cv/render/server";
 import { cvIsEmpty } from "@/lib/cv/schema";
-import { getOwnCv } from "@/lib/cv/store";
+import { privateLines, privateMessage } from "@/lib/cv/privacy";
+import { getOwnCv, listOwnAchievements } from "@/lib/cv/store";
 import { guard } from "@/lib/usage/limits";
 
 export const runtime = "nodejs";
@@ -21,6 +22,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const cv = await getOwnCv((await params).id, userId);
     if (!cv) return notFound();
     if (cvIsEmpty(cv)) return NextResponse.json({ error: "empty", message: "There is nothing to check yet. Add your details first." }, { status: 409 });
+    const kept = privateLines(cv, await listOwnAchievements(userId));
+    if (kept.length) return NextResponse.json({ error: "private", message: privateMessage(kept, cv.region === "us" ? "resume" : "CV"), lines: kept }, { status: 409 });
     const results: Record<string, unknown> = {};
     for (const format of ["pdf", "docx"] as const) {
       try {
