@@ -24,9 +24,8 @@ import {
 } from "@/lib/usage/store";
 import { LIMITS, limitStanding } from "@/lib/usage/limits";
 import { dollars } from "@/lib/usage/prices";
-import { dataCounts, hasData } from "@/lib/data/account";
+import { dataCounts, hasData, pruneOldRecordings } from "@/lib/data/account";
 import { getSettings } from "@/lib/settings/store";
-import { pruneRecordings } from "@/lib/answers/audio";
 import { alertsConfigured, recentProblems } from "@/lib/alerts/store";
 import { recentSurveys } from "@/lib/feedback/survey-store";
 import { listEveryInterviewForAdmin } from "@/lib/interviews/store";
@@ -140,7 +139,8 @@ export default async function SettingsPage() {
 
   const isAdmin = isAdminUser(user);
 
-  pruneRecordings();
+  // Recordings older than this person chose to keep them go now (theirs only).
+  pruneOldRecordings({ userId: user.id });
   const today = londonToday();
   const standing = limitStanding(today, user.id);
   const todayT = totals(usageOn(today, user.id));

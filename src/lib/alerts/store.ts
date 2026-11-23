@@ -10,6 +10,11 @@ import { loadJson, saveJson } from "@/lib/storage/disk";
  * The same problem alerts again only after 30 minutes, so a bad hour is one
  * message, not hundreds. Messages are cut short and carry no recordings,
  * CVs or answers.
+ *
+ * A feedback note or a survey also goes out through this channel, but it is
+ * somebody's own words (and, for the survey, their address), so it is sent
+ * and not kept here: it lives in the feedback stores, where its owner can
+ * download and delete it.
  */
 
 export type ProblemSource = "server" | "browser" | "service" | "spending" | "feedback";
@@ -32,7 +37,7 @@ const KEEP_DAYS = 30;
 const REALERT_MS = 30 * 60_000;
 
 const g = globalThis as unknown as { __hakkiriProblems?: Problem[] };
-const problems = (g.__hakkiriProblems ??= loadJson<Problem[]>(FILE, []));
+const problems = (g.__hakkiriProblems ??= loadJson<Problem[]>(FILE, []).filter((p) => p && p.source !== "feedback"));
 
 const clip = (s: string, n: number) => (s.length > n ? `${s.slice(0, n)}…` : s);
 /** Numbers, ids and quoted values vary between occurrences of the same problem. */
@@ -89,6 +94,12 @@ export async function reportProblem(input: { source: ProblemSource; where: strin
     const message = clip(input.message.trim() || "Unknown error", maxLen);
     const key = `${input.source}|${input.where}|${shape(message)}`;
     const at = now.toISOString();
+    if (input.source === "feedback") {
+      // Sent to the team, never kept in this list (see the note at the top).
+      const note: Problem = { key, source: input.source, where: clip(input.where, 120), message, first: at, last: at, count: 1 };
+      if (alertsConfigured().webhook || alertsConfigured().email) await sendAlert(note);
+      return note;
+    }
     let p = problems.find((x) => x.key === key);
     if (p) {
       p.count += 1;
@@ -111,7 +122,7 @@ export async function reportProblem(input: { source: ProblemSource; where: strin
   }
 }
 
-/** For tests and "Delete all my data" (problems hold no personal data, but start clean). */
+/** For tests: start clean. (The list holds errors, not people's words: feedback and surveys are not kept in it.) */
 export function clearProblems() {
   problems.length = 0;
   saveJson(FILE, problems);

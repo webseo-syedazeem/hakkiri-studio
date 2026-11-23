@@ -95,6 +95,9 @@ export class FakeDb {
   listCollections() {
     return { toArray: async () => [...this.collections.keys()].map((name) => ({ name })) };
   }
+  listCollectionNames(): string[] {
+    return [...this.collections.keys()];
+  }
   /** Everything stored in a collection, for assertions. */
   docs(name: string): Doc[] {
     return [...this.collection(name).rows.values()];

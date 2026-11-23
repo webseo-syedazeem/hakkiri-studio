@@ -31,6 +31,12 @@ export interface DbUserRecord {
   tier: "free" | "beta" | "job_search" | "monthly";
   /** When Google first confirmed this address belongs to the person signing in. */
   googleVerifiedAt?: Date;
+  /**
+   * When this account asked for the beta's survey voucher. Kept on the account
+   * so that deleting your data (which removes the survey answers and the
+   * address you gave) doesn't let the same account claim twice.
+   */
+  voucherClaimedAt?: Date;
 }
 
 export interface DbSessionRecord {
@@ -48,7 +54,12 @@ const SESSION_MS = 30 * 24 * 60 * 60 * 1000;
 const NO_PASSWORD = "oauth:google";
 
 const date = (v: unknown) => (v instanceof Date ? v : new Date(String(v)));
-const reviveUser = (u: DbUserRecord): DbUserRecord => ({ ...u, createdAt: date(u.createdAt), ...(u.googleVerifiedAt ? { googleVerifiedAt: date(u.googleVerifiedAt) } : {}) });
+const reviveUser = (u: DbUserRecord): DbUserRecord => ({
+  ...u,
+  createdAt: date(u.createdAt),
+  ...(u.googleVerifiedAt ? { googleVerifiedAt: date(u.googleVerifiedAt) } : {}),
+  ...(u.voucherClaimedAt ? { voucherClaimedAt: date(u.voucherClaimedAt) } : {}),
+});
 const reviveSession = (s: DbSessionRecord): DbSessionRecord => ({ ...s, createdAt: date(s.createdAt), expiresAt: date(s.expiresAt) });
 
 // Without a database: kept in memory (on globalThis, so every route sees the same accounts) and saved to the data folder.
@@ -289,7 +300,7 @@ export async function checkPassword(userId: string, password: string): Promise<b
 }
 
 /** What the account record holds, for Settings and "Download my data". Never the password hash. */
-export async function accountOf(userId: string): Promise<{ id: string; email: string; name: string; createdAt?: string; tier: string; hasPassword: boolean; signsInWithGoogle: boolean } | null> {
+export async function accountOf(userId: string): Promise<{ id: string; email: string; name: string; createdAt?: string; tier: string; hasPassword: boolean; signsInWithGoogle: boolean; voucherClaimedAt?: string } | null> {
   if (!userId) return null;
   let record: DbUserRecord | null = null;
   try {
@@ -306,7 +317,18 @@ export async function accountOf(userId: string): Promise<{ id: string; email: st
     tier: record.tier,
     hasPassword: isPasswordHash(record.passwordHash),
     signsInWithGoogle: !!record.googleVerifiedAt || record.passwordHash === NO_PASSWORD,
+    ...(record.voucherClaimedAt ? { voucherClaimedAt: record.voucherClaimedAt.toISOString() } : {}),
   };
+}
+
+/** Records that this account has asked for the survey voucher. */
+export async function noteVoucherClaim(userId: string): Promise<void> {
+  if (!userId) return;
+  try {
+    await changeUser(userId, { voucherClaimedAt: new Date() });
+  } catch (err) {
+    console.error("[auth] error noting the voucher claim:", err);
+  }
 }
 
 /* -------------------------------------------------------------- sessions */

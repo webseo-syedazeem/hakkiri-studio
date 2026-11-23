@@ -99,7 +99,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ draftI
     });
     await saveAnswerAsync(answer, user.id);
     await recordAskedQuestionAsync(draft.sessionId, answer.questionId, user.id);
-    saveRecordings(answer.id, draft.audio ?? []);
+    saveRecordings(answer.id, draft.audio ?? [], user.id);
     await deleteDraftAsync(draft.id);
     await flushStorage();
     // The measured row comes back too, so a drill can show feedback straight away.

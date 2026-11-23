@@ -15,7 +15,7 @@ import { addSurveySubmission, clearSurveys, recentSurveys } from "./survey-store
 
 describe("beta interview survey (£15 Amazon voucher)", () => {
   beforeEach(() => {
-    clearSurveys();
+    void clearSurveys();
     report.mockClear();
   });
 
