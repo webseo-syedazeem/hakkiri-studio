@@ -8,7 +8,7 @@ import { Button, Crumbs, Icon, Panel } from "@/components/ui";
 import { pastedDocument, readDocument, type ReadDoc } from "./read-docs";
 import { CalendarPopup, TimePickerPopup } from "./DatePicker";
 import { DraftStorageModal } from "./DraftStorageModal";
-import { saveClientInterview } from "@/lib/interviews/client-store";
+import { buildRequest, focusMix, hasDraftContent, mixLine, roundsSelected as existingRounds, setupProblems, type SetupForm } from "@/lib/interviews/setup-form";
 
 /* ------------------------------------------------------------------ DocField (exported for RebuildFlow) */
 export function DocField({
@@ -181,21 +181,43 @@ export function InterviewSetup() {
   const jobInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
 
+  // Why a chosen file wasn't accepted. A file that can't be read is refused with the reason and a way forward:
+  // nothing is ever put in place of the text it should have held.
+  const [cvError, setCvError] = useState<string | null>(null);
+  const [jobFileError, setJobFileError] = useState<string | null>(null);
+  const [coverError, setCoverError] = useState<string | null>(null);
+  const cantRead = (file: File, err: unknown) => `“${file.name}” couldn’t be used. ${err instanceof Error && err.message ? err.message : "It couldn’t be read. Paste the text instead."}`;
+
   const handleCvFile = async (file: File) => {
+    setCvError(null);
     try {
       const doc = await readDocument(file, { minWords: 15 });
       setCvDoc({ name: doc.name, uploaded: true, text: doc.text, detail: doc.detail });
-    } catch {
-      setCvDoc({ name: file.name, uploaded: true, text: `CV content for ${file.name}` });
+    } catch (err) {
+      setCvDoc(null);
+      setCvError(cantRead(file, err));
     }
   };
 
   const handleJobFile = async (file: File) => {
+    setJobFileError(null);
     try {
       const doc = await readDocument(file, { minWords: 15 });
       setJobDoc({ name: doc.name, uploaded: true, text: doc.text, detail: doc.detail });
-    } catch {
-      setJobDoc({ name: file.name, uploaded: true, text: `Job description for ${file.name}` });
+    } catch (err) {
+      setJobDoc(null);
+      setJobFileError(cantRead(file, err));
+    }
+  };
+
+  const handleCoverFile = async (file: File) => {
+    setCoverError(null);
+    try {
+      const doc = await readDocument(file, { minWords: 15 });
+      setCoverDoc({ name: doc.name, uploaded: true, text: doc.text, detail: doc.detail });
+    } catch (err) {
+      setCoverDoc(null);
+      setCoverError(cantRead(file, err));
     }
   };
 
@@ -224,24 +246,16 @@ export function InterviewSetup() {
           text: data.text,
           detail: `${wordsCount} words extracted`,
         });
-        setJobLinkSuccess(`Successfully extracted ${wordsCount} words from ${domain}`);
+        setJobLinkSuccess(`Read ${wordsCount} words from ${domain}`);
       } else {
-        setJobLinkError(data.message || "Could not extract text from this link. You can paste the job description instead.");
-        setJobDoc({
-          name: rawUrl,
-          uploaded: true,
-          text: "",
-          detail: "Link attached",
-        });
+        // The link couldn't be read, so nothing is attached. The address is still sent with the build, where the
+        // server tries once more and says so on the interview if it fails again.
+        setJobLinkError(data.message || "This link couldn’t be read, so nothing has been attached from it. Paste the job description instead.");
+        setJobDoc(null);
       }
     } catch {
-      setJobLinkError("Network error checking link. You can paste the job description instead.");
-      setJobDoc({
-        name: rawUrl,
-        uploaded: true,
-        text: "",
-        detail: "Link attached",
-      });
+      setJobLinkError("The link couldn’t be checked because the app couldn’t be reached. Paste the job description instead.");
+      setJobDoc(null);
     } finally {
       setJobLinkLoading(false);
     }
@@ -258,7 +272,7 @@ export function InterviewSetup() {
         detail: `${wordsCount} words`,
       });
     } else {
-      setJobDoc({ name: "Job_description.pdf", uploaded: false, text: "" });
+      setJobDoc(null);
     }
   };
 
@@ -273,7 +287,7 @@ export function InterviewSetup() {
         detail: `${wordsCount} words`,
       });
     } else {
-      setCvDoc({ name: "CV.pdf", uploaded: false, text: "" });
+      setCvDoc(null);
     }
   };
 
@@ -333,6 +347,7 @@ export function InterviewSetup() {
 
   const handleRemoveStage = (id: string) => {
     setStages((prev) => prev.filter((s) => s.id !== id));
+    setSelectedRounds((prev) => prev.filter((x) => x !== id));
   };
 
   const handleSelectExpectation = (opt: "single" | "multiple" | "practice") => {
@@ -369,7 +384,7 @@ export function InterviewSetup() {
             time: "",
             format: "Video call",
             interviewer: "",
-            status: "completed",
+            status: "next",
             icon: "phone",
           },
           {
@@ -379,7 +394,7 @@ export function InterviewSetup() {
             time: "",
             format: "Video call",
             interviewer: "",
-            status: "next",
+            status: "not_scheduled",
             icon: "code",
           },
           {
@@ -463,7 +478,7 @@ export function InterviewSetup() {
   };
 
   // Step 3: Practice Setup State
-  const [selectedRounds, setSelectedRounds] = useState<string[]>(["1", "3"]); // Recruiter screen and Technical round
+  const [selectedRounds, setSelectedRounds] = useState<string[]>(["1"]); // the one stage a new form starts with
   const [techFocus, setTechFocus] = useState(50);
   const [skillsFocus, setSkillsFocus] = useState(30);
   const [expFocus, setExpFocus] = useState(20);
@@ -473,6 +488,10 @@ export function InterviewSetup() {
 
   // Loading & Submission State
   const [isBuilding, setIsBuilding] = useState(false);
+  /** Why the interview couldn't be built, from the form's own checks or from the server. */
+  const [buildError, setBuildError] = useState<string | null>(null);
+  /** True once a saved draft (if any) has been read back, so an empty form never overwrites it. */
+  const [draftRead, setDraftRead] = useState(false);
   const [lastSavedTime, setLastSavedTime] = useState<string | null>(null);
   const [showDraftModal, setShowDraftModal] = useState(false);
   const [draftToast, setDraftToast] = useState<{ title: string; subtitle: string } | null>(null);
@@ -512,15 +531,38 @@ export function InterviewSetup() {
         if (parsed.cvPastedText) setCvPastedText(parsed.cvPastedText);
         if (parsed.savedAt) {
           setLastSavedTime(parsed.savedAt);
-          setDraftRestoredBanner(`Continuing saved draft for ${parsed.jobTitle || "Role"} at ${parsed.companyName || "Company"}`);
+          setDraftRestoredBanner(`Continuing your saved draft${parsed.jobTitle ? ` for ${parsed.jobTitle}` : ""}${parsed.companyName ? ` at ${parsed.companyName}` : ""}`);
         }
       }
     } catch {}
+    setDraftRead(true);
   }, []);
 
-  const saveDraft = () => {
-    const now = new Date();
-    const timeStr = `Today at ${now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+  // What the form holds, in the shape its rules use.
+  const form: SetupForm = {
+    company: companyName,
+    title: jobTitle,
+    website: companyWebsite,
+    jobText: jobDoc?.text?.trim() || jobPastedText.trim(),
+    jobUrl: jobUrl,
+    jobLabel: jobDoc?.name ?? "",
+    cvText: cvDoc?.text?.trim() || cvPastedText.trim(),
+    cvLabel: cvDoc?.name ?? "",
+    coverText: coverDoc?.text?.trim() ?? "",
+    coverLabel: coverDoc?.name ?? "",
+    stages,
+    difficulty,
+    minutes: duration,
+    focus: { technical: techFocus, skills: skillsFocus, experience: expFocus },
+  };
+  const problems = setupProblems(form);
+  const mixToSend = focusMix(form.focus);
+  const rounds = existingRounds(selectedRounds, stages);
+  const missing = (field: "company" | "job" | "cv") => problems.some((p) => p.field === field);
+
+  /** Writes the draft to this browser. Returns the time it was saved, or null when it couldn't be. */
+  const writeDraft = (): string | null => {
+    const timeStr = `Today at ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
     const draftData = {
       companyName,
       jobTitle,
@@ -547,12 +589,36 @@ export function InterviewSetup() {
     try {
       localStorage.setItem("hk_interview_wizard_draft", JSON.stringify(draftData));
       window.dispatchEvent(new Event("hk_draft_updated"));
-    } catch {}
+      return timeStr;
+    } catch {
+      return null;
+    }
+  };
 
-    setLastSavedTime(timeStr);
+  // The draft is saved as the person goes, once there is something to save, so a refresh brings it back.
+  // "Draft saved" is only ever shown after it really has been.
+  const draftSnapshot = JSON.stringify([companyName, jobTitle, companyWebsite, cvDoc, jobDoc, coverDoc, jobMode, jobUrl, jobPastedText, cvMode, cvPastedText, stagesExpectation, stages, selectedRounds, techFocus, skillsFocus, expFocus, difficulty, duration, step]);
+  useEffect(() => {
+    if (!draftRead || isBuilding || !hasDraftContent(form)) return;
+    const timer = setTimeout(() => {
+      const saved = writeDraft();
+      if (saved) setLastSavedTime(saved);
+    }, 600);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draftSnapshot, draftRead, isBuilding]);
+
+  const saveDraft = () => {
+    const saved = writeDraft();
+    if (!saved) {
+      setDraftToast({ title: "The draft couldn’t be saved", subtitle: "This browser’s storage is full or switched off, so nothing was kept." });
+      setTimeout(() => setDraftToast(null), 4500);
+      return;
+    }
+    setLastSavedTime(saved);
     setDraftToast({
-      title: "Draft saved to workspace",
-      subtitle: `${companyName || "Halden"} · ${jobTitle || "Role"} (Step ${step} of 4) saved. You can safely close or resume anytime.`,
+      title: "Draft saved in this browser",
+      subtitle: `${[companyName.trim(), jobTitle.trim()].filter(Boolean).join(" · ") || "Your set-up"} (step ${step} of 4). It is kept on this device only, until you build the interview or discard the draft.`,
     });
     setTimeout(() => setDraftToast(null), 4500);
   };
@@ -563,10 +629,16 @@ export function InterviewSetup() {
         localStorage.removeItem("hk_interview_wizard_draft");
         window.dispatchEvent(new Event("hk_draft_updated"));
       } catch {}
-      setCompanyName("Halden");
-      setJobTitle("Senior Product Manager, Payments");
-      setCompanyWebsite("https://halden.com");
+      // Back to an empty form: nothing is filled in.
+      setCompanyName("");
+      setJobTitle("");
+      setCompanyWebsite("");
+      setCvDoc(null);
+      setJobDoc(null);
       setCoverDoc(null);
+      setJobUrl("");
+      setJobPastedText("");
+      setCvPastedText("");
       setStep(1);
       setLastSavedTime(null);
       setShowDraftModal(false);
@@ -574,97 +646,39 @@ export function InterviewSetup() {
     }
   };
 
+  /**
+   * Builds the interview on the server from exactly what the form holds. If something is missing the person is
+   * told what, and nothing is sent. If the server can't build it, its message is shown and the form stays as it
+   * is: no interview is made up in its place.
+   */
   const handleBuildInterview = async () => {
+    setBuildError(null);
+    const body = buildRequest(form);
+    if (!body) {
+      setBuildError(problems.map((p) => p.message).join(" "));
+      setStep(1);
+      return;
+    }
     setIsBuilding(true);
-
-    const validMinutes = [10, 20, 30, 45, 60].includes(duration as any) ? (duration as 10 | 20 | 30 | 45 | 60) : 30;
-    const validDifficulty = ["easy", "medium", "hard"].includes(difficulty.toLowerCase() as any) ? (difficulty.toLowerCase() as "easy" | "medium" | "hard") : "medium";
-    const apiFormat = stages[0]?.format === "In person" ? "in-person" : stages[0]?.format === "Phone call" ? "phone" : "video";
-
-    const finalJobText = jobDoc?.text?.trim() || jobPastedText.trim() || "";
-    const finalCvText = cvDoc?.text?.trim() || cvPastedText.trim() || `CV text for ${companyName.trim() || "Target Role"}`;
-    const finalJobUrl = jobUrl.trim() || (jobDoc?.name?.startsWith("http") ? jobDoc.name : undefined);
-
-    let destId = "";
     try {
-      const res = await fetch("/api/interviews", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          company: {
-            name: companyName.trim() || "Halden",
-            url: companyWebsite.trim() || undefined,
-          },
-          job: {
-            title: jobTitle.trim() || "Senior Product Manager, Payments",
-            text: finalJobText || undefined,
-            url: finalJobUrl,
-            label: jobDoc?.name || (finalJobUrl ? "Job link" : "Job description"),
-          },
-          cv: {
-            text: finalCvText,
-            label: cvDoc?.name || "CV.pdf",
-          },
-          coverLetter: coverDoc?.uploaded
-            ? { text: coverDoc.text || "Cover letter text", label: coverDoc.name }
-            : undefined,
-          format: apiFormat,
-          settings: {
-            difficulty: validDifficulty,
-            minutes: validMinutes,
-            preset: "balanced",
-            mix: { cv: 20, competency: 20, technical: 20, motivation: 20, curveball: 20 },
-          },
-          stages: stages.map((s) => ({
-            id: s.id,
-            name: s.name,
-            date: s.date,
-            time: s.time,
-            format: s.format,
-            interviewer: s.interviewer,
-            status: s.status,
-          })),
-        }),
-      });
-      if (res.ok) {
-        const data = await res.json().catch(() => ({}));
-        destId = data.id;
+      const res = await fetch("/api/interviews", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+      const data = (await res.json().catch(() => ({}))) as { id?: string; message?: string };
+      if (!res.ok || !data.id) {
+        setBuildError(data.message ?? "The interview couldn’t be built. Nothing was saved: check the form and try again.");
+        setIsBuilding(false);
+        return;
       }
-    } catch (err) {
-      console.warn("API build error:", err);
+    } catch {
+      setBuildError("The interview couldn’t be built because the app couldn’t be reached. Your set-up is still here: check your connection and try again.");
+      setIsBuilding(false);
+      return;
     }
 
-    if (!destId) {
-      const slug = (companyName.trim() || "interview").toLowerCase().replace(/[^a-z0-9]+/g, "-");
-      destId = `${slug}-${Date.now().toString(36).slice(-4)}`;
-    }
-
-    // Persist to client store so it appears in the Interviews grid immediately
-    saveClientInterview({
-      id: destId,
-      company: companyName.trim() || "Halden",
-      companyInitial: (companyName.trim() || "H").charAt(0).toUpperCase(),
-      role: jobTitle.trim() || "Senior Product Manager, Payments",
-      date: stagesExpectation === "practice" ? "Just Practice" : (stages[0]?.date || "12 Nov 2026"),
-      time: stagesExpectation === "practice" ? "On-demand" : (stages[0]?.time || "10:00"),
-      format: stages[0]?.format || "Video call",
-      settings: {
-        difficulty: validDifficulty,
-        minutes: validMinutes,
-        preset: "balanced",
-      },
-      stages,
-      createdAt: new Date().toISOString(),
-      freshCount: 0,
-    });
-
-    // Clear draft from localStorage
+    // Built and saved on the server: the draft has done its job.
     try {
       localStorage.removeItem("hk_interview_wizard_draft");
       window.dispatchEvent(new Event("hk_draft_updated"));
     } catch {}
-
-    // Navigate to /interviews page so the user sees their new interview in the list!
     router.push("/interviews");
     router.refresh();
   };
@@ -712,8 +726,8 @@ export function InterviewSetup() {
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#10b981] opacity-75" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-[#10b981]" />
             </span>
-            <span>Draft {lastSavedTime ? `saved (${lastSavedTime})` : "saved locally"}</span>
-            <span className="text-[10px] font-semibold text-blue-soft group-hover:underline">Storage info</span>
+            <span data-testid="draft-status">{lastSavedTime ? `Draft saved in this browser (${lastSavedTime})` : "Nothing to save yet"}</span>
+            <span className="text-[10px] font-semibold text-blue-soft group-hover:underline">Where it’s kept</span>
           </button>
         </div>
 
@@ -771,6 +785,12 @@ export function InterviewSetup() {
         </div>
       </div>
 
+      {buildError && step !== 4 && (
+        <p role="alert" data-testid="build-error" className="rounded-xl border border-red/30 bg-red/10 px-4 py-3 text-xs leading-relaxed text-red-soft">
+          {buildError}
+        </p>
+      )}
+
       {/* Restored Draft Banner if draft exists */}
       {draftRestoredBanner && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-gradient-to-r from-[#171d32] to-[#1c2444] px-4 py-3 text-xs text-ink border border-line shadow-sm animate-fade-in">
@@ -780,7 +800,7 @@ export function InterviewSetup() {
             </div>
             <div className="truncate">
               <span className="font-bold text-white">Draft in progress: </span>
-              <span className="text-muted">{draftRestoredBanner} · All progress safely preserved.</span>
+              <span className="text-muted">{draftRestoredBanner}. It was kept in this browser.</span>
             </div>
           </div>
           <div className="flex items-center gap-3 shrink-0">
@@ -1131,23 +1151,38 @@ export function InterviewSetup() {
                         type="file"
                         accept=".pdf,.docx,.txt"
                         className="hidden"
-                        onChange={async (e) => {
+                        onChange={(e) => {
                           const file = e.target.files?.[0];
-                          if (file) {
-                            try {
-                              const doc = await readDocument(file, { minWords: 15 });
-                              setCoverDoc({ name: doc.name, uploaded: true, text: doc.text, detail: doc.detail });
-                            } catch {
-                              setCoverDoc({ name: file.name, uploaded: true, text: `Cover letter for ${file.name}` });
-                            }
-                          }
+                          if (file) void handleCoverFile(file);
+                          e.target.value = "";
                         }}
                       />
+                      {coverError && (
+                        <p role="alert" data-testid="cover-error" className="mt-2 text-[11px] leading-relaxed text-red-soft">
+                          {coverError}
+                        </p>
+                      )}
                     </div>
                   </div>
 
+                  {cvError && (
+                    <p role="alert" data-testid="cv-error" className="rounded-[10px] border border-red/30 bg-red/10 px-3 py-2 text-xs leading-relaxed text-red-soft">
+                      {cvError}{" "}
+                      <button type="button" onClick={() => setCvMode("paste")} className="font-semibold underline">
+                        Paste your CV’s text
+                      </button>
+                    </p>
+                  )}
+                  {jobFileError && (
+                    <p role="alert" data-testid="job-error" className="rounded-[10px] border border-red/30 bg-red/10 px-3 py-2 text-xs leading-relaxed text-red-soft">
+                      {jobFileError}{" "}
+                      <button type="button" onClick={() => setJobMode("paste")} className="font-semibold underline">
+                        Paste the job description
+                      </button>
+                    </p>
+                  )}
                   <p className="text-[11px] text-muted">
-                    Accepted formats: PDF, DOC or DOCX. Your documents are processed privately to calibrate questions.
+                    Accepted files: PDF, Word (.docx) or plain text. Only the text is read from them, in this browser, and sent to write your questions. A scanned PDF has no text to read: paste it instead.
                   </p>
                 </div>
 
@@ -1734,7 +1769,7 @@ export function InterviewSetup() {
                 <div>
                   <h2 className="text-[18px] font-bold text-ink">Stages to practise</h2>
                   <p className="mt-0.5 text-[13px] text-muted">
-                    Select one or more interview rounds to include in this practice session.
+                    Tick the rounds you plan to practise. One set of questions is written for the whole job, and you choose the round each time you start a session.
                   </p>
                 </div>
               </div>
@@ -1808,20 +1843,19 @@ export function InterviewSetup() {
               {/* Summary Pill */}
               <div className="mt-4 flex items-center gap-2 rounded-xl bg-panel-2 px-3.5 py-2.5 text-xs text-muted">
                 <span className="rounded bg-[#1e2544] px-2 py-0.5 font-semibold text-[#818cf8]">
-                  {selectedRounds.length} {selectedRounds.length === 1 ? "round" : "rounds"} selected
+                  {rounds.length} {rounds.length === 1 ? "round" : "rounds"} selected
                 </span>
                 <span className="truncate">
-                  {selectedRounds
-                    .map((id) => stages.find((s) => s.id === id)?.name || "Round")
-                    .join(", ")}
+                  {rounds.map((id) => stages.find((s) => s.id === id)?.name || "Round").join(", ") || "None"}
                 </span>
               </div>
 
               {/* Question Focus Sliders with Interactive Tracks */}
               <div className="mt-6 border-t border-line pt-5">
                 <h3 className="text-[14px] font-bold text-ink">Question focus</h3>
-                <p className="mt-0.5 text-xs text-muted">
-                  Set the question mix across your selected stages.
+                <p className="mt-0.5 text-xs text-muted">How much of each kind of question to write. The three are shared out of 100%.</p>
+                <p className="mt-1 text-xs text-ink" data-testid="mix-sent">
+                  Your questions will be: <b className="font-semibold">{mixLine(mixToSend)}</b>
                 </p>
 
                 <div className="mt-4 flex flex-col gap-4">
@@ -2041,15 +2075,15 @@ export function InterviewSetup() {
               <div className="mt-3 flex flex-col gap-2">
                 <div className="flex items-center justify-between rounded-[10px] bg-panel-2 px-3 py-2 text-xs">
                   <span className="flex items-center gap-2 font-medium text-ink">
-                    <Icon name="check" size={14} className={cvDoc?.uploaded ? "text-[#10b981]" : "text-muted"} /> {cvDoc?.name || "CV (optional)"}
+                    <Icon name={missing("cv") ? "x" : "check"} size={14} className={missing("cv") ? "text-red-soft" : "text-[#10b981]"} /> {form.cvLabel || "CV"}
                   </span>
-                  <span className={cvDoc?.uploaded ? "text-[#10b981] font-semibold" : "text-muted"}>{cvDoc?.detail || (cvDoc ? "Attached" : "Not provided")}</span>
+                  <span className={missing("cv") ? "text-red-soft font-semibold" : "text-[#10b981] font-semibold"} data-testid="review-cv">{missing("cv") ? "Needed: not added yet" : cvDoc?.detail || `${form.cvText.split(/\s+/).filter(Boolean).length} words`}</span>
                 </div>
                 <div className="flex items-center justify-between rounded-[10px] bg-panel-2 px-3 py-2 text-xs">
                   <span className="flex items-center gap-2 font-medium text-ink">
-                    <Icon name="check" size={14} className={jobDoc?.uploaded ? "text-[#10b981]" : "text-muted"} /> {jobDoc?.name || "Job description"}
+                    <Icon name="check" size={14} className={form.jobText ? "text-[#10b981]" : "text-muted"} /> {form.jobText ? form.jobLabel || "Job description" : "Job description"}
                   </span>
-                  <span className={jobDoc?.uploaded ? "text-[#10b981] font-semibold" : "text-muted"}>{jobDoc?.detail || (jobDoc ? "Attached" : "Not provided")}</span>
+                  <span className={form.jobText ? "text-[#10b981] font-semibold" : "text-muted"} data-testid="review-job">{form.jobText ? jobDoc?.detail || `${form.jobText.split(/\s+/).filter(Boolean).length} words` : form.jobUrl.trim() ? "Link only: not read yet" : "Not provided"}</span>
                 </div>
               </div>
             </Panel>
@@ -2157,9 +2191,7 @@ export function InterviewSetup() {
                 <div>
                   <span className="text-dim block">Stages to practise</span>
                   <span className="font-semibold text-ink mt-0.5 truncate block">
-                    {selectedRounds
-                      .map((id) => stages.find((s) => s.id === id)?.name || "Stage")
-                      .join(", ")}
+                    {rounds.map((id) => stages.find((s) => s.id === id)?.name || "Stage").join(", ") || "None"}
                   </span>
                 </div>
               </div>
@@ -2175,25 +2207,31 @@ export function InterviewSetup() {
           {step === 1 && (
             <Panel className="rounded-[18px] p-5 shadow-[inset_0_0_0_1px_var(--color-line)]">
               <h3 className="text-[15px] font-bold text-ink">Interview overview</h3>
-              <p className="mt-0.5 text-xs text-muted truncate">
-                {companyName} · {jobTitle}
-              </p>
+              <p className="mt-0.5 text-xs text-muted truncate">{[companyName.trim(), jobTitle.trim()].filter(Boolean).join(" · ") || "No company or job title yet"}</p>
               <div className="mt-4 flex flex-col gap-2.5 text-xs">
                 <div className="flex items-center justify-between border-b border-line pb-2">
                   <span className="text-muted">CV</span>
-                  <span className="flex items-center gap-1 font-semibold text-[#10b981]">
-                    Uploaded <Icon name="check" size={12} strokeWidth={3} />
-                  </span>
+                  {missing("cv") ? (
+                    <span className="text-dim" data-testid="side-cv">Not added yet</span>
+                  ) : (
+                    <span className="flex items-center gap-1 font-semibold text-[#10b981]" data-testid="side-cv">
+                      Added <Icon name="check" size={12} strokeWidth={3} />
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-center justify-between border-b border-line pb-2">
                   <span className="text-muted">Job description</span>
-                  <span className="flex items-center gap-1 font-semibold text-[#10b981]">
-                    Uploaded <Icon name="check" size={12} strokeWidth={3} />
-                  </span>
+                  {form.jobText ? (
+                    <span className="flex items-center gap-1 font-semibold text-[#10b981]" data-testid="side-job">
+                      Added <Icon name="check" size={12} strokeWidth={3} />
+                    </span>
+                  ) : (
+                    <span className="text-dim" data-testid="side-job">{form.jobUrl.trim() ? "Link only: not read yet" : "Not added yet"}</span>
+                  )}
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-muted">Cover letter</span>
-                  <span className="text-dim">{coverDoc ? "Uploaded ✓" : "Not added yet"}</span>
+                  <span className="text-dim">{form.coverText ? "Added ✓" : "Not added yet"}</span>
                 </div>
               </div>
             </Panel>
@@ -2202,21 +2240,27 @@ export function InterviewSetup() {
           {step === 2 && (
             <Panel className="rounded-[18px] p-5 shadow-[inset_0_0_0_1px_var(--color-line)]">
               <h3 className="text-[15px] font-bold text-ink">Interview overview</h3>
-              <p className="mt-0.5 text-xs text-muted truncate">
-                {companyName} · {jobTitle}
-              </p>
+              <p className="mt-0.5 text-xs text-muted truncate">{[companyName.trim(), jobTitle.trim()].filter(Boolean).join(" · ") || "No company or job title yet"}</p>
               <div className="mt-4 flex flex-col gap-2.5 text-xs">
                 <div className="flex items-center justify-between border-b border-line pb-2">
                   <span className="text-muted">CV</span>
-                  <span className="flex items-center gap-1 font-semibold text-[#10b981]">
-                    Uploaded <Icon name="check" size={12} strokeWidth={3} />
-                  </span>
+                  {missing("cv") ? (
+                    <span className="text-dim" data-testid="side-cv">Not added yet</span>
+                  ) : (
+                    <span className="flex items-center gap-1 font-semibold text-[#10b981]" data-testid="side-cv">
+                      Added <Icon name="check" size={12} strokeWidth={3} />
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-center justify-between border-b border-line pb-2">
                   <span className="text-muted">Job description</span>
-                  <span className="flex items-center gap-1 font-semibold text-[#10b981]">
-                    Uploaded <Icon name="check" size={12} strokeWidth={3} />
-                  </span>
+                  {form.jobText ? (
+                    <span className="flex items-center gap-1 font-semibold text-[#10b981]" data-testid="side-job">
+                      Added <Icon name="check" size={12} strokeWidth={3} />
+                    </span>
+                  ) : (
+                    <span className="text-dim" data-testid="side-job">{form.jobUrl.trim() ? "Link only: not read yet" : "Not added yet"}</span>
+                  )}
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-muted">Interview stages</span>
@@ -2229,13 +2273,15 @@ export function InterviewSetup() {
           {step === 3 && (
             <Panel className="rounded-[18px] p-5 shadow-[inset_0_0_0_1px_var(--color-line)]">
               <h3 className="text-[15px] font-bold text-ink">Practice preview</h3>
-              <p className="mt-0.5 text-xs text-muted">{companyName} · Multiple rounds</p>
+              <p className="mt-0.5 text-xs text-muted">
+                {companyName.trim() || "No company yet"} · {stages.length} {stages.length === 1 ? "stage" : "stages"}
+              </p>
 
               <div className="mt-4 flex flex-col gap-3 text-xs">
                 <div className="border-b border-line pb-2.5">
-                  <span className="text-muted block mb-1.5">Stages ({selectedRounds.length})</span>
+                  <span className="text-muted block mb-1.5">Stages ({rounds.length})</span>
                   <div className="flex flex-wrap gap-1.5">
-                    {selectedRounds.map((id) => {
+                    {rounds.map((id) => {
                       const stg = stages.find((s) => s.id === id);
                       return (
                         <span
@@ -2261,15 +2307,11 @@ export function InterviewSetup() {
 
                 <div className="border-b border-line pb-2">
                   <span className="text-muted block mb-1">Question mix</span>
-                  <div className="flex justify-between text-[11px] text-ink">
-                    <span>Technical {techFocus}%</span>
-                    <span>Skills {skillsFocus}%</span>
-                    <span>Experience {expFocus}%</span>
-                  </div>
+                  <div className="text-[11px] text-ink">{mixLine(mixToSend)}</div>
                 </div>
 
                 <p className="text-[11px] text-muted">
-                  A single practice session that includes your selected rounds and their questions.
+                  One set of questions is written for the whole job. You choose which round to practise each time you start a session.
                 </p>
               </div>
             </Panel>
@@ -2279,17 +2321,17 @@ export function InterviewSetup() {
             <Panel className="rounded-[18px] p-5 shadow-[inset_0_0_0_1px_var(--color-line)]">
               <h3 className="text-[16px] font-bold text-ink">Ready to build?</h3>
               <p className="mt-0.5 text-xs text-muted">
-                Your tailored interview practice is set up. You can add more stages and sessions later.
+                {problems.length ? "Something is still needed before your questions can be written." : "Everything needed is here. You can add more stages and sessions later."}
               </p>
 
-              <div className="mt-4 flex flex-col gap-2 text-xs">
+              <div className="mt-4 flex flex-col gap-2 text-xs" data-testid="build-checks">
                 <div className="flex items-center justify-between py-1 text-ink">
-                  <span>Job details</span>
-                  <Icon name="check" size={13} strokeWidth={3} className="text-[#10b981]" />
+                  <span>Company and job</span>
+                  {missing("company") || missing("job") ? <span className="font-semibold text-red-soft">Missing</span> : <Icon name="check" size={13} strokeWidth={3} className="text-[#10b981]" />}
                 </div>
                 <div className="flex items-center justify-between py-1 text-ink">
-                  <span>CV and job description</span>
-                  <Icon name="check" size={13} strokeWidth={3} className="text-[#10b981]" />
+                  <span>Your CV</span>
+                  {missing("cv") ? <span className="font-semibold text-red-soft">Missing</span> : <Icon name="check" size={13} strokeWidth={3} className="text-[#10b981]" />}
                 </div>
                 <div className="flex items-center justify-between py-1 text-ink">
                   <span>{stages.length} interview stages</span>
@@ -2300,6 +2342,12 @@ export function InterviewSetup() {
                   <Icon name="check" size={13} strokeWidth={3} className="text-[#10b981]" />
                 </div>
               </div>
+
+              {buildError && (
+                <p role="alert" data-testid="build-error" className="mt-4 rounded-[10px] border border-red/30 bg-red/10 px-3 py-2 text-xs leading-relaxed text-red-soft">
+                  {buildError}
+                </p>
+              )}
 
               <div className="mt-5 flex flex-col gap-2.5">
                 <button
@@ -2486,7 +2534,7 @@ export function InterviewSetup() {
           difficulty,
           duration,
           step,
-          savedAt: lastSavedTime || "Recently",
+          savedAt: lastSavedTime ?? "",
         }}
         onDraftDiscarded={handleDiscardDraft}
       />

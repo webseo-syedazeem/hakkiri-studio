@@ -84,10 +84,10 @@ export function DraftInterviewCard() {
             </span>
           </div>
           <h3 className="mt-1 text-base font-bold text-ink truncate">
-            {draft.jobTitle || "Senior Product Manager, Payments"}
+            {draft.jobTitle || "Interview set-up in progress"}
           </h3>
           <p className="text-xs text-muted truncate">
-            {draft.companyName || "Halden"} · {draft.stages?.length || 4} stages configured · Ready to resume
+            {draft.companyName || "No company entered yet"} · {draft.stages?.length ?? 0} {draft.stages?.length === 1 ? "stage" : "stages"} · saved in this browser
           </p>
         </div>
       </div>
