@@ -140,7 +140,7 @@ run("CV start", async (browser) => {
   await page.getByLabel("Name").fill("Fern A. Example");
   await page.locator("header.cv-bar").getByText("Saved", { exact: true }).waitFor();
   await tab2.getByLabel("Town or city").fill("Leeds");
-  await tab2.getByText("Changed in another tab").first().waitFor({ timeout: 10000 });
+  await tab2.getByText("Changed somewhere else").first().waitFor({ timeout: 10000 });
   const kept = await page.evaluate(async (cvId) => (await (await fetch(`/api/cv/versions/${cvId}`)).json()).cv.contact, id);
   check(kept.fullName === "Fern A. Example" && kept.location === "York", "a second tab's out-of-date save is refused and nothing is overwritten", JSON.stringify(kept));
   await tab2.close();
@@ -167,8 +167,9 @@ run("CV start", async (browser) => {
   await fitsWidth(p.page, "editor on a phone");
   const sizes = await p.page.locator(".cv .cv-input").evaluateAll((els) => els.map((e) => [parseFloat(getComputedStyle(e).fontSize), e.getBoundingClientRect().height]));
   check(sizes.every(([font, height]) => font >= 16 && height >= 44), "on a phone, inputs are at least 16px text and 44px tall", JSON.stringify(sizes.slice(0, 4)));
-  const order = await p.page.getByRole("navigation", { name: "Sections" }).getByRole("link").allInnerTexts();
-  check(order.join(",") === "Contact,Experience,Education,Skills,Summary", "a US resume calls the profile “Summary”", order.join(","));
+  // On a phone the tabs are a picker.
+  const order = await p.page.getByLabel("Section", { exact: true }).locator("option").allInnerTexts();
+  check(order.join(",") === "Contact,Experience,Education,Skills,Summary,Finish", "a US resume calls the profile “Summary”", order.join(","));
   await p.page.getByLabel("Name").fill("Sam Student");
   await p.page.locator("header.cv-bar").getByText("Saved", { exact: true }).waitFor();
   await p.page.screenshot({ path: require("node:path").join(require("./cv-helpers.cjs").OUT, "cv-editor-phone.png"), fullPage: true });

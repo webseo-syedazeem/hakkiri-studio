@@ -4,6 +4,10 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   // pdf.js reads uploaded CVs on the server; it loads its own worker file, so it must not be bundled.
   serverExternalPackages: ["pdfjs-dist"],
+  // The CV fonts are read from disk when a file is exported or previewed, so they must travel with those routes.
+  outputFileTracingIncludes: {
+    "/api/cv/**": ["./src/lib/cv/render/fonts/*.ttf"],
+  },
   experimental: {
     // src/proxy.ts sees every API request, so Next buffers request bodies up to this size.
     // It must fit the largest recording: 25 MB for an answer, 50 MB for a presentation run.

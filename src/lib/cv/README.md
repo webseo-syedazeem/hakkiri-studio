@@ -49,6 +49,43 @@ A file becomes lines, and lines become a CV:
 Saving uses the revision number: a save from an out-of-date copy gets `409` and nothing is overwritten;
 the same save sent twice is applied once (`saveId`).
 
+## Step 2: the builder, templates and files
+
+| Where | What |
+| --- | --- |
+| `edit.ts` | The rules of editing that do not depend on the screen: the form's tabs, moving an item, switching a passage off, what one step of Undo is, which field a passage on the paper opens, how two copies of a CV differ. |
+| `render/flow.ts` | The CV as it will be printed, in reading order, with only what is switched on. **Everything below starts from this one list**, so the paper, the PDF, the Word file and the check cannot disagree about what the CV says. |
+| `render/templates.ts` | The eight templates and what a person may change (font pairing, accent, spacing, order). All are one column of real text. Body text is 10.5pt and never changes. |
+| `render/layout.ts` | Lays the flow out on pages from the font files' own measurements. Used by the browser for the paper and by the server for the PDF, so both break lines and pages in the same places. `fitToPages` changes spacing only; it never crops or shrinks, and returns the lines that ran over when a CV is too long. |
+| `render/ttf.ts`, `render/fonts/` | A small TrueType reader and subsetter, and the four font families (all SIL Open Font Licence; licence texts are beside the files). |
+| `render/pdf.ts` | The PDF writer: embedded subset fonts with Unicode maps, a tag tree (H1 name, H2 sections, H3 entries, lists, links), title and language set, no author. Drawn rules are marked as decoration. |
+| `render/docx.ts` | The Word writer: real headings, a real bulleted list, hyperlinks, no tables. Fonts are named with fallbacks, not embedded. |
+| `render/readback.ts` | Reads a finished file back **with the upload reader** (`import/pdf.ts`, `import/docx.ts`), which shares no code with the writers, and compares it word for word with the flow. |
+| `render/server.ts` | `exportCv`: make the file, read it back, return the bytes that were checked. |
+| `src/app/api/cv/versions/[id]/export` | The download. A file is sent only if it read back the same as the CV; otherwise `409` with the differences. If the reader itself fails, `503`, and the file is sent only when asked for as `unchecked=1`. |
+| `src/app/api/cv/versions/[id]/check` | Makes both files and reports each one's read-back, with the revision checked. |
+| `src/app/api/cv/versions/[id]/duplicate` | A separate copy ("Copy of …"); can carry unsaved changes, for "save as a separate version". |
+| `src/app/api/cv/fonts/[file]` | Serves the listed font files to the paper preview. |
+| `src/components/cv/Workspace.tsx` | One loaded CV shared by all its screens (in `cv/v/[versionId]/layout.tsx`): save state, undo history, the paper, the field in focus. Moving between tabs reloads nothing. |
+| `src/components/cv/useCv.ts` | Autosave (800ms idle, on leaving a field, on leaving the page), "Saved on this device" when offline, Undo and Redo, and the three choices when the CV was changed somewhere else. What is on screen is never replaced by the server's tidied copy while typing. |
+| `src/components/cv/Paper.tsx`, `usePaper.ts` | The paper: an SVG drawn from the layout with the same font files the PDF embeds. Clicking a passage opens its field; the line being edited is marked. Text view is the same content as plain text. |
+| `src/components/cv/Arrange.tsx` | The inclusion switch, the drag handle and the Move menu (Move up, Move down, Move to). |
+| `src/components/cv/Editor.tsx`, `Finish.tsx` | The builder (form 552 / paper 616) and the Finish tab (settings 352 / paper 816): template, fonts, colour, paper size, page target, spacing, order on the page, file name, checks and downloads. |
+
+Things worth knowing:
+
+- **Switched off is not deleted.** Sections, entries, bullets, skill groups, single skills and list items
+  each have `visible`. Off means "left off the page in this version"; it stays in the form and in the data.
+- **The order on the page is separate from the form's tabs.** `design.order` holds section ids when the
+  person has set their own order; otherwise the template's order is used.
+- **A file is "Checked" only for the revision it was made from.** Any later save makes it "Out of date".
+- **Fonts in production.** `next.config.ts` lists the font files under `outputFileTracingIncludes` so
+  they travel with the `/api/cv/**` routes. They are read from `src/lib/cv/render/fonts` at run time.
+- **A character none of the fonts can draw** (Chinese, say) would print as an empty box. The PDF is
+  withheld and the character is named. The fonts cover Latin, Latin Extended, Greek and Cyrillic.
+- Dialogs are in the address (`?panel=add-section`, `page-overflow`, `save-conflict`, `file-loss`,
+  `rename`, `duplicate`, `delete-version`), so Back closes them.
+
 ## Tests
 
 - `npx vitest run src/lib/cv`: every reading rule (`dates`, `lines`, `reader`), every sample file
@@ -58,7 +95,14 @@ the same save sent twice is applied once (`saveId`).
   (needs Chromium, LibreOffice and python-docx; the built files are committed). They come from three
   different programs so the reader is not only tested against one writer's habits. The LinkedIn sample
   is a hand-built copy of LinkedIn's "Save to PDF" layout, not a real export.
-- Browser tests: `e2e/cv-cleanup.cjs`, `e2e/cv-start.cjs`, `e2e/cv-upload.cjs` (see `e2e/README.md`).
+- `edit.test.ts`: tabs, moving, switching off, undo and redo, paper-to-field, comparing two copies.
+- `render/*.test.ts`: the font reader, the layout rules (keeping headings with their entries, fitting,
+  never shrinking type), and every template exported to PDF and Word and read back three ways:
+  pdf.js, poppler (`pdftotext`, `pdffonts`, `pdfinfo`) and LibreOffice. The poppler and LibreOffice
+  checks are skipped on a machine that does not have them.
+- Browser tests: `e2e/cv-cleanup.cjs`, `e2e/cv-start.cjs`, `e2e/cv-upload.cjs`, `e2e/cv-editor.cjs`
+  (see `e2e/README.md`). `cv-editor.cjs` downloads every file it makes into `e2e/out/cv-downloads/`,
+  opens each one and compares its text with the saved CV (`e2e/cv-files.cjs`).
 
 ## Left for the developer (so far)
 
@@ -67,6 +111,12 @@ the same save sent twice is applied once (`saveId`).
   `cv_imports`. The old `apply_cvs` collection is no longer read.
 - **Limits.** Uploads use the existing `guard(req, "read")` rate limit only. Per-plan limits (how many
   CVs, how many uploads) are not set.
+- **Downloads** use the same `guard(req, "read")` limit (30 a minute per address). There is no per-plan
+  limit on downloads, and no decision yet on what is free (requirement 47).
+- **Export records** (a saved snapshot of exactly what was sent) and the "ATS-ready" label come with
+  step 4; today a file is "Checked" or it is not sent.
+- **Word page count.** The Word file names its fonts and falls back to Arial or Georgia where they are
+  not installed, so its page breaks can differ from the PDF's. The PDF embeds its fonts.
 - **Scanned PDFs** cannot be read (no OCR). The person is told so and can paste the text.
 - **Old code.** `CvSchema`, `getCv`, `saveCv` and `listCvs` in `src/lib/apply/` are no longer used by
   this section and can be removed once nothing else needs them.

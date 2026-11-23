@@ -2,7 +2,7 @@ import "server-only";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth/require";
-import { type CvDoc, CV_LEVELS, CV_REGIONS, coreSections, emptyContact, newId } from "./schema";
+import { type CvDoc, CV_LEVELS, CV_REGIONS, ContactSchema, DesignSchema, SectionSchema, TargetSchema, coreSections, emptyContact, newId } from "./schema";
 
 /** The signed-in person's id. Throws the same 401 response as requireUser when signed out. */
 export async function requireUserId(): Promise<string> {
@@ -45,6 +45,25 @@ export function fieldErrors(error: z.ZodError): Record<string, string> {
   return out;
 }
 
+/**
+ * What the browser may change about a CV. The owner, the id and the dates are
+ * never taken from the browser.
+ */
+export const EditableSchema = z
+  .object({
+    name: z.string().trim().min(1).max(120).optional(),
+    level: z.enum(CV_LEVELS).optional(),
+    region: z.enum(CV_REGIONS).optional(),
+    target: TargetSchema.nullable().optional(),
+    contact: ContactSchema.optional(),
+    sections: z.array(SectionSchema).max(24).optional(),
+    design: DesignSchema.optional(),
+  })
+  .strict();
+
+/** Every section id in a change must be different. */
+export const sectionIdsDiffer = (sections: { id: string }[] = []) => new Set(sections.map((s) => s.id)).size === sections.length;
+
 export const newCvId = () => newId("cv_").slice(0, 19);
 
 /**
@@ -65,7 +84,8 @@ export function newCv(userId: string, setup: Setup, now: string): CvDoc {
     target: hasTarget ? { title: setup.targetTitle, employer: setup.targetEmployer, advert: setup.targetAdvert } : undefined,
     contact: emptyContact(),
     sections: coreSections(setup.level),
-    design: { template: setup.level === "student" ? "graduate" : "standard", pageSize: setup.region === "us" ? "letter" : "a4", density: 0 },
+    // One page for students, graduates and early career; up to two for experienced and senior.
+    design: { template: setup.level === "student" ? "graduate" : "standard", pageSize: setup.region === "us" ? "letter" : "a4", density: "default", pageTarget: setup.level === "student" || setup.level === "early" ? 1 : 2 },
     createdAt: now,
     updatedAt: now,
   };

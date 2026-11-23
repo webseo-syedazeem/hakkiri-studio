@@ -51,7 +51,7 @@ export const SECTION_DEFS: Record<SectionKind, SectionDef> = {
     fields: [
       { field: "title", label: "Job title" },
       { field: "org", label: "Employer" },
-      { field: "orgInfo", label: "What the employer does", hint: "One line: what it does and how big it is. Used for writing help; not printed." },
+      { field: "orgInfo", label: "Employer context", hint: "Optional. One line: what the employer does and how big it is." },
       { field: "location", label: "Location", hint: "Town or city." },
       { field: "start", label: "Start", date: month },
       { field: "end", label: "End", date: month },
@@ -166,6 +166,15 @@ export const SECTION_DEFS: Record<SectionKind, SectionDef> = {
   },
   languages: { kind: "languages", heading: both("Languages"), core: false, rule: both("Each language with your level.") },
   interests: { kind: "interests", heading: both("Interests"), core: false, rule: both("A short list. Leave it out if space is tight.") },
+  achievements: {
+    kind: "achievements",
+    heading: both("Selected achievements"),
+    core: false,
+    entryNoun: "group",
+    fields: [{ field: "title", label: "Heading", hint: "Optional." }],
+    bullets: { label: "Achievements", hint: "3 to 5 of your strongest results, each with what changed." },
+    rule: both("A short list near the top for senior roles. Each one should also appear under the role it came from."),
+  },
   custom: {
     kind: "custom",
     heading: both("Additional information"),

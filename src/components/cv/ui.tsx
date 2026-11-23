@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import clsx from "clsx";
-import { type ComponentProps, type ReactNode, useId } from "react";
+import { type ComponentProps, type ReactNode, useId, useLayoutEffect, useRef } from "react";
 
 /**
  * The small pieces every CV screen is built from: the bar across the top, a
@@ -115,13 +115,24 @@ interface FieldProps {
   rows?: number;
   value: string;
   onChange: (value: string) => void;
+  /** Names the field ("entry:field") so a click on the paper can find and focus it. */
+  fieldKey?: string;
 }
 
 /** A labelled input. Its rule, error and note are tied to it for screen readers. */
-export function Field({ label, rule, error, uncertain, note, multiline, rows = 3, value, onChange, className, ...rest }: FieldProps & Omit<ComponentProps<"input">, "value" | "onChange">) {
+export function Field({ label, rule, error, uncertain, note, multiline, rows = 3, value, onChange, className, fieldKey, ...rest }: FieldProps & Omit<ComponentProps<"input">, "value" | "onChange">) {
   const id = useId();
   const describedBy = [rule && `${id}-rule`, error && `${id}-error`, note && `${id}-note`].filter(Boolean).join(" ") || undefined;
-  const shared = { id, "aria-describedby": describedBy, "aria-invalid": error ? true : undefined, className: clsx("cv-input", uncertain && "cv-uncertain") };
+  // A text box grows with what is in it, so a whole bullet can be read without scrolling inside the box.
+  // Browsers that can size a field to its content do it themselves (see cv.css); the rest are measured here.
+  const area = useRef<HTMLTextAreaElement>(null);
+  useLayoutEffect(() => {
+    const el = area.current;
+    if (!el || (typeof CSS !== "undefined" && CSS.supports("field-sizing", "content"))) return;
+    el.style.height = "auto";
+    if (el.scrollHeight > 0) el.style.height = `${el.scrollHeight + 2}px`;
+  }, [value, multiline]);
+  const shared = { id, "data-cvf": fieldKey, "aria-describedby": describedBy, "aria-invalid": error ? true : undefined, className: clsx("cv-input", uncertain && "cv-uncertain") };
   return (
     <div className={className}>
       <label className="cv-label" htmlFor={id}>
@@ -133,7 +144,7 @@ export function Field({ label, rule, error, uncertain, note, multiline, rows = 3
         </span>
       )}
       {multiline ? (
-        <textarea {...shared} rows={rows} value={value} onChange={(e) => onChange(e.target.value)} onFocus={rest.onFocus as never} onBlur={rest.onBlur as never} placeholder={rest.placeholder} maxLength={rest.maxLength} />
+        <textarea {...shared} ref={area} rows={rows} style={{ minHeight: `calc(${rows} * 1.4em + 16px)` }} value={value} onChange={(e) => onChange(e.target.value)} onFocus={rest.onFocus as never} onBlur={rest.onBlur as never} placeholder={rest.placeholder} maxLength={rest.maxLength} disabled={rest.disabled} />
       ) : (
         <input {...rest} {...shared} value={value} onChange={(e) => onChange(e.target.value)} />
       )}

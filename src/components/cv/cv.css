@@ -85,7 +85,7 @@
 .cv-rule { display: block; font-size: 12px; color: var(--color-muted); margin-top: 2px; font-weight: 400; }
 .cv-input { width: 100%; font: inherit; color: var(--color-ink); background: var(--color-panel-2); border: 1px solid var(--cv-input-edge); border-radius: 5px; padding: 7px 9px; margin-top: 4px; display: block; line-height: 1.4; }
 .cv-input::placeholder { color: var(--color-dim); opacity: 1; }
-textarea.cv-input { resize: vertical; }
+textarea.cv-input { resize: vertical; field-sizing: content; }
 .cv-input[aria-invalid="true"] { border-color: var(--color-red); }
 .cv-input.cv-uncertain { border-color: var(--color-blue); box-shadow: inset 3px 0 var(--color-blue); }
 .cv-note { margin-top: 6px; padding: 9px 12px; color: var(--cv-note-ink); background: var(--cv-note-bg); border-left: 2px solid var(--color-blue); font-size: 13px; border-radius: 0 4px 4px 0; }
@@ -147,4 +147,115 @@ textarea.cv-input { resize: vertical; }
   .cv-btn { min-height: 44px; padding: 9px 14px; }
   .cv-tabs a, .cv-tabs button { min-height: 44px; }
   .cv-pad, .cv-panelhead, .cv-panelfoot { padding-left: 16px; padding-right: 16px; }
+}
+
+/* ------------------------------------------------------------ the builder */
+
+/* Shown only on phones, or only from tablet width up. */
+@media (min-width: 768px) { .cv .cv-phone { display: none !important; } }
+@media (max-width: 767px) { .cv .cv-notphone { display: none !important; } }
+.cv-tabs a[data-off="true"] { font-style: italic; opacity: 0.75; }
+
+/* A two- or three-way choice: Edit / Paper, A4 / US Letter, Tighter / Default / Looser. */
+.cv-seg { display: inline-flex; border: 1px solid var(--cv-input-edge); border-radius: 6px; overflow: hidden; background: var(--color-panel-2); }
+.cv-seg > button, .cv-seg > label > span { display: block; font: inherit; font-size: 13px; color: var(--color-ink); background: none; border: 0; padding: 6px 12px; cursor: pointer; white-space: nowrap; }
+.cv-seg > * + * { border-left: 1px solid var(--cv-edge); }
+.cv-seg > button[aria-pressed="true"], .cv-seg > label:has(input:checked) > span { background: var(--cv-selected); box-shadow: inset 0 -2px var(--color-blue); font-weight: 650; }
+.cv-seg > label:has(input:focus-visible) { outline: 2px solid var(--color-blue-soft); outline-offset: -2px; }
+.cv-seg.cv-narrow { margin-bottom: 14px; }
+
+/* The inclusion switch. On: in this version. Off: kept, but left off the page. The button is the touch area; the track is drawn inside it. */
+.cv-switch { position: relative; width: 36px; height: 20px; flex: none; padding: 0; border: 0; background: none; cursor: pointer; border-radius: 10px; }
+.cv-switch::before { content: ""; position: absolute; left: 50%; top: 50%; width: 36px; height: 20px; transform: translate(-50%, -50%); box-sizing: border-box; border-radius: 10px; border: 1px solid var(--cv-input-edge); background: var(--color-panel-2); }
+.cv-switch > span { position: absolute; left: 50%; top: 50%; width: 14px; height: 14px; margin: -7px 0 0 -15px; border-radius: 50%; background: var(--color-muted); transition: transform 0.12s; }
+.cv-switch[aria-checked="true"]::before { background: var(--color-blue-fill); border-color: var(--color-blue-fill); }
+.cv-switch[aria-checked="true"] > span { transform: translateX(16px); background: #fff; }
+.cv-off-chip { color: var(--color-muted); font-style: italic; }
+.cv-controls { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; flex-wrap: wrap; justify-content: flex-end; }
+.cv-controls .cv-btn-quiet { padding-top: 4px; padding-bottom: 4px; }
+
+/* The handle an item is dragged by. */
+.cv-grip { cursor: grab; color: var(--color-muted); font-size: 16px; line-height: 1; padding: 6px 2px; user-select: none; flex: none; }
+.cv-grip:active { cursor: grabbing; }
+[data-drop="true"] { box-shadow: inset 0 2px var(--color-blue); }
+@media (pointer: coarse) { .cv-grip { display: none; } }
+
+/* The Move menu. */
+.cv-menu { position: relative; display: inline-flex; }
+.cv-menu-list { position: absolute; z-index: 20; top: 100%; right: 0; min-width: 170px; display: flex; flex-direction: column; gap: 2px; padding: 6px; background: var(--color-panel); border: 1px solid var(--cv-input-edge); border-radius: 8px; box-shadow: 0 10px 28px rgb(0 0 0 / 0.35); }
+.cv-menu-list > button { font: inherit; font-size: 14px; color: var(--color-ink); background: none; border: 0; border-radius: 5px; padding: 7px 9px; text-align: left; cursor: pointer; }
+.cv-menu-list > button:hover:not(:disabled) { background: var(--cv-selected); }
+.cv-menu-list > button:disabled { opacity: 0.45; cursor: default; }
+.cv-menu-list > .cv-menu-to { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 14px; padding: 5px 9px; }
+.cv-menu-list select { font: inherit; color: var(--color-ink); background: var(--color-panel-2); border: 1px solid var(--cv-input-edge); border-radius: 5px; padding: 3px 6px; }
+
+/* Repeatable items: an entry, a bullet, a group of skills, a language. */
+.cv-entry { border-bottom: 1px solid var(--color-line); }
+.cv-entryhead { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.cv-entry[data-off] h3, .cv-orderlist li[data-off] > span:not(.cv-controls):not(.cv-grip) { color: var(--color-muted); }
+.cv-item { display: flex; align-items: flex-start; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.cv-item-main { min-width: 0; flex: 1 1 220px; }
+.cv-item > .cv-controls, .cv-item > .cv-btn { margin-top: 4px; }
+.cv-item > .cv-grip { margin-top: 8px; }
+.cv-item[data-off] .cv-input { color: var(--color-muted); border-style: dashed; }
+.cv-group { display: flex; gap: 8px; align-items: flex-start; padding-top: 14px; border-top: 1px solid var(--color-line); }
+.cv-group:first-of-type { border-top: 0; padding-top: 0; }
+.cv-skillchip { font: inherit; font-size: 13px; color: var(--color-ink); cursor: pointer; }
+.cv-skillchip[aria-pressed="true"] { border-color: var(--color-blue); }
+.cv-skillchip[aria-pressed="false"] { color: var(--color-muted); text-decoration: line-through; border-style: dashed; }
+
+/* The paper pane: tools, then the page. The page itself is always light: it is the printed sheet. */
+.cv-paperpane { min-width: 0; }
+.cv-papertools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-height: 42px; margin-bottom: 10px; }
+.cv-papertools .cv-btn-quiet { padding: 4px 8px; min-width: 32px; }
+.cv-papertools [aria-pressed="true"] { color: var(--color-ink); background: var(--cv-selected); }
+.cv-paperscroll { overflow: auto; max-height: calc(100vh - 150px); border-radius: 6px; background: var(--color-panel-2); border: 1px solid var(--cv-edge); padding: 12px; }
+.cv-paperscroll[data-state="loading"] { opacity: 0.6; }
+.cv-papersheet { position: relative; margin: 0 auto; }
+.cv-paper { display: block; width: 100%; height: auto; box-shadow: 0 0 0 1px var(--cv-edge), 0 6px 18px rgb(0 0 0 / 0.12); }
+.cv-paper text { cursor: pointer; }
+.cv-passage > rect { cursor: pointer; }
+.cv-passage:hover > rect { fill: #f0f1ff; }
+.cv-passage[data-marked] > rect, .cv-passage[data-marked]:hover > rect { fill: #e6e8ff; }
+.cv-paperhint { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; padding: 24px; color: #5d5f6c; font-size: 14px; pointer-events: none; }
+.cv-textview { background: var(--color-panel); border: 1px solid var(--cv-edge); border-radius: 10px; padding: 18px 20px; max-height: calc(100vh - 150px); overflow: auto; font-size: 15px; line-height: 1.5; }
+.cv-textview h3 { margin: 18px 0 4px; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-muted); }
+.cv-textview h4 { margin: 10px 0 0; font-size: 15px; font-weight: 650; }
+.cv-textview p[data-role="meta"] { color: var(--color-muted); font-size: 13px; }
+.cv-textview ul { margin: 4px 0 0; padding-left: 20px; list-style: disc; }
+.cv-textview .cv-text-name { font-size: 22px; font-weight: 700; }
+.cv-textview .cv-text-contact { display: flex; flex-wrap: wrap; gap: 2px 14px; color: var(--color-muted); }
+.cv-text-passage { font: inherit; color: inherit; background: none; border: 0; padding: 1px 2px; margin: 0 -2px; text-align: left; cursor: pointer; border-radius: 3px; }
+.cv-text-passage:hover { background: var(--cv-selected); }
+
+/* Finish: templates, colours, order, files. */
+.cv-templates { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+.cv-template { align-items: center; padding: 8px; font-size: 13px; }
+.cv-template small { font-size: 11px; line-height: 1.3; }
+.cv-thumb { flex: none; border-radius: 2px; box-shadow: 0 0 0 1px rgb(0 0 0 / 0.18); width: 42px; height: 55px; }
+.cv-swatch { cursor: pointer; display: inline-flex; padding: 3px; border-radius: 50%; border: 2px solid transparent; }
+.cv-swatch > span[aria-hidden] { width: 22px; height: 22px; border-radius: 50%; display: block; box-shadow: 0 0 0 1px rgb(255 255 255 / 0.35); }
+.cv-swatch:has(input:checked) { border-color: var(--color-ink); }
+.cv-swatch:has(input:focus-visible) { outline: 2px solid var(--color-blue-soft); outline-offset: 2px; }
+.cv-orderlist, .cv-filelist, .cv-overlist, .cv-plainlist { list-style: none; margin: 0; padding: 0; }
+.cv-orderlist li { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 9px 20px; border-bottom: 1px solid var(--color-line); font-size: 14px; }
+.cv-filelist li { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 0; border-bottom: 1px solid var(--color-line); }
+.cv-filelist li:first-child { border-top: 1px solid var(--color-line); }
+.cv-overlist li { display: flex; align-items: flex-start; gap: 8px; flex-wrap: wrap; padding: 9px 0; border-bottom: 1px solid var(--color-line); font-size: 14px; }
+.cv-plainlist li { padding: 5px 0; border-bottom: 1px solid var(--color-line); font-size: 14px; overflow-wrap: anywhere; }
+.cv-compare > div { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 6px; }
+.cv-compare > div > div { background: var(--color-panel-2); border-radius: 6px; padding: 10px 12px; font-size: 13px; min-width: 0; overflow-wrap: anywhere; }
+.cv-compare p + p { margin-top: 4px; }
+
+@media (max-width: 767px) {
+  .cv-compare > div { grid-template-columns: minmax(0, 1fr); }
+  .cv-switch { width: 48px; height: 44px; }
+  .cv-seg > button, .cv-seg > label > span { padding: 11px 14px; font-size: 14px; min-height: 44px; }
+  .cv-controls { gap: 8px; }
+  .cv-papertools .cv-btn-quiet { min-width: 44px; }
+  .cv-menu-list > .cv-menu-to { min-height: 44px; }
+  .cv-menu-list select { min-height: 40px; font-size: 16px; }
+  .cv-skillchip { min-height: 44px; padding: 8px 12px; }
+  .cv-menu-list > button { padding: 12px 10px; }
+  .cv-paperscroll, .cv-textview { max-height: none; }
 }

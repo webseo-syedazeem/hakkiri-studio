@@ -257,7 +257,8 @@ function dropFurniture(lines: Raw[], pages: number): Raw[] {
     const atEdge = l.top < 0.07 || l.top > 0.93;
     if (!atEdge) return true;
     if (PAGE_NUMBER.test(l.text)) return false;
-    return !(pages > 1 && (seen.get(key(l.text))?.size ?? 0) > 1);
+    // A running header or footer is short. A full line of text that happens to repeat is content.
+    return !(pages > 1 && l.text.split(/\s+/).length <= 6 && (seen.get(key(l.text))?.size ?? 0) > 1);
   });
 }
 
@@ -267,7 +268,7 @@ export interface ExtractedFile {
 }
 
 /** Reads a PDF into lines. Throws an ImportError with a plain reason when the file cannot be read. */
-export async function extractPdf(bytes: Uint8Array, isDates: (s: string) => boolean): Promise<ExtractedFile> {
+export async function extractPdf(bytes: Uint8Array, isDates: (s: string) => boolean, opts: { /** Keep every line: the file is known to have no running headers or footers. */ keepEdges?: boolean } = {}): Promise<ExtractedFile> {
   // The legacy build runs on the server without a browser.
   const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
   const task = pdfjs.getDocument({ data: new Uint8Array(bytes), verbosity: 0, fontExtraProperties: true, useSystemFonts: false });
@@ -354,7 +355,8 @@ export async function extractPdf(bytes: Uint8Array, isDates: (s: string) => bool
     if (chars < 40) throw new ImportError("scanned", "No text was found in the PDF.");
 
     // The main column of every page, then the side column of every page.
-    const ordered = dropFurniture([...raw[0], ...raw[1]], doc.numPages);
+    const all = [...raw[0], ...raw[1]];
+    const ordered = opts.keepEdges ? all : dropFurniture(all, doc.numPages);
     const joined = joinWrapped(ordered);
     markIndentedBullets(joined);
     const left = new Map<string, number>();

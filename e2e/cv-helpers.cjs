@@ -25,17 +25,17 @@ async function noForbidden(page, where) {
 
 /** A brand-new account, signed in, in its own browser context (so cookies never mix). */
 async function newUser(browser, label, opts = {}) {
-  const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, acceptDownloads: true, ...opts });
+  // Limits are counted per address. The test server trusts the forwarded address (HAKKIRI_TRUST_PROXY=1),
+  // so each test account gets its own, as each real person has.
+  const from = `10.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}.${1 + Math.floor(Math.random() * 250)}`;
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, acceptDownloads: true, extraHTTPHeaders: { "x-forwarded-for": from }, ...opts });
   // The app's "best on desktop" notice is dismissed, as a person would on first visit.
   await context.addInitScript(() => sessionStorage.setItem("dismiss_phone_notice", "1"));
   const page = await context.newPage();
   const errors = [];
   page.on("pageerror", (e) => errors.push(String(e)));
   const email = `${label}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}@example.com`;
-  // Sign-ups are limited per address. The test server trusts the forwarded address (HAKKIRI_TRUST_PROXY=1),
-  // so each test account signs up from its own.
-  const from = `10.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}.${1 + Math.floor(Math.random() * 250)}`;
-  const res = await page.request.post(`${BASE}/api/auth/signup`, { data: { email, password: "Password123!", name: label }, headers: { "x-forwarded-for": from } });
+  const res = await page.request.post(`${BASE}/api/auth/signup`, { data: { email, password: "Password123!", name: label } });
   if (!res.ok()) throw new Error(`Sign-up failed for ${label}: ${res.status()} ${await res.text()}`);
   return { context, page, email, errors };
 }

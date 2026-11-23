@@ -202,7 +202,7 @@ export function unplacedLines(lines: DocLine[], skip: Set<number>, placed: Set<n
 
 /* ---------------------------------------------------------------- the reader */
 
-const KEEP_TITLE: SectionKind[] = ["volunteering", "custom", "projects", "awards", "certificates", "publications", "courses"];
+const KEEP_TITLE: SectionKind[] = ["volunteering", "custom", "achievements", "projects", "awards", "certificates", "publications", "courses"];
 const PRIVATE_REASON = "Personal details such as date of birth or nationality are not needed on a CV.";
 const REFERENCES_REASON = "References are not needed on a CV. Employers ask for them later.";
 
@@ -313,7 +313,7 @@ export function parseCv(input: DocLine[], opts: { linkedin?: boolean } = {}): Pa
             ? parseEducation(b.lines, ctx)
             : k === "projects"
               ? parseProjects(b.lines, ctx)
-              : k === "custom"
+              : k === "custom" || k === "achievements"
                 ? parseCustom(b.lines)
                 : parseSimple(b.lines, k);
       section.entries.push(...r.entries.slice(0, 40 - section.entries.length));

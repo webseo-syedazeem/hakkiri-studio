@@ -4,6 +4,7 @@ import { type ReactNode, useEffect, useState } from "react";
 import { findDates } from "@/lib/cv/import/dates";
 import { type Bullet, type Contact, type CvRegion, type Entry, type EntrySection, type ListSection, type Section, type SkillGroup, type SkillsSection, type SummarySection, emptyEntry, newBullet, newId } from "@/lib/cv/schema";
 import { type FieldDef, SECTION_DEFS, fieldLabel, formatDate, formatDates } from "@/lib/cv/sections";
+import { Grip, ItemControls, useDragOrder } from "./Arrange";
 import { Btn, Field } from "./ui";
 
 /**
@@ -26,6 +27,7 @@ const hook = (h: FieldHooks | undefined, entryId: string, field: string) => ({
   uncertain: h?.uncertain?.(entryId, field) ?? false,
   note: h?.note?.(entryId, field),
   onFocus: () => h?.onFocus?.(entryId, field),
+  fieldKey: `${entryId}:${field}`,
 });
 
 /* ------------------------------------------------------------------- contact */
@@ -126,15 +128,17 @@ function DateField({ label, value, onChange, yearOnly, disabled, ...rest }: { la
 
 /* ------------------------------------------------------------------- bullets */
 
-function BulletsEditor({ bullets, onChange, label, rule, hooks, entryId }: { bullets: Bullet[]; onChange: (b: Bullet[]) => void; label: string; rule: string; hooks?: FieldHooks; entryId: string }) {
+function BulletsEditor({ bullets, onChange, label, rule, hooks, entryId, arrange }: { bullets: Bullet[]; onChange: (b: Bullet[]) => void; label: string; rule: string; hooks?: FieldHooks; entryId: string; arrange?: boolean }) {
+  const drag = useDragOrder(bullets, onChange);
   return (
     <div>
       <h3>{label}</h3>
       <small>{rule}</small>
       {bullets.map((b, i) => (
-        <div key={b.id} className="cv-row" style={{ alignItems: "flex-start", flexWrap: "nowrap", marginTop: 8 }}>
+        <div key={b.id} className="cv-item" data-off={!b.visible || undefined} {...(arrange ? drag.row(b.id) : {})}>
+          {arrange && <Grip {...drag.grip(b.id)} />}
           <Field
-            className="min-w-0 grow [&>label]:sr-only"
+            className="cv-item-main [&>label]:sr-only"
             label={`Bullet ${i + 1}`}
             multiline
             rows={2}
@@ -146,9 +150,13 @@ function BulletsEditor({ bullets, onChange, label, rule, hooks, entryId }: { bul
             }}
             {...hook(hooks, entryId, b.id)}
           />
-          <Btn kind="quiet" style={{ marginTop: 4 }} onClick={() => onChange(bullets.filter((x) => x.id !== b.id))} aria-label={`Remove bullet ${i + 1}`}>
-            Remove
-          </Btn>
+          {arrange ? (
+            <ItemControls name={`bullet ${i + 1}`} index={i} count={bullets.length} visible={b.visible} onVisible={(visible) => onChange(bullets.map((x) => (x.id === b.id ? { ...x, visible } : x)))} onMove={(to) => drag.move(b.id, to)} onRemove={() => onChange(bullets.filter((x) => x.id !== b.id))} />
+          ) : (
+            <Btn kind="quiet" style={{ marginTop: 4 }} onClick={() => onChange(bullets.filter((x) => x.id !== b.id))} aria-label={`Remove bullet ${i + 1}`}>
+              Remove
+            </Btn>
+          )}
         </div>
       ))}
       <Btn style={{ marginTop: 10 }} onClick={() => onChange([...bullets, newBullet("")])}>
@@ -160,7 +168,7 @@ function BulletsEditor({ bullets, onChange, label, rule, hooks, entryId }: { bul
 
 /* ------------------------------------------------------------------- entries */
 
-function EntryFields({ kind, entry, onChange, region, hooks }: { kind: EntrySection["kind"]; entry: Entry; onChange: (e: Entry) => void; region: CvRegion; hooks?: FieldHooks }) {
+function EntryFields({ kind, entry, onChange, region, hooks, arrange }: { kind: EntrySection["kind"]; entry: Entry; onChange: (e: Entry) => void; region: CvRegion; hooks?: FieldHooks; arrange?: boolean }) {
   const def = SECTION_DEFS[kind];
   const fields = def.fields ?? [];
   const set = (field: string, v: string) => {
@@ -212,7 +220,7 @@ function EntryFields({ kind, entry, onChange, region, hooks }: { kind: EntrySect
           I still do this
         </label>
       )}
-      {def.bullets && <BulletsEditor bullets={entry.bullets} onChange={(bullets) => onChange({ ...entry, bullets })} label={def.bullets.label} rule={def.bullets.hint} hooks={hooks} entryId={entry.id} />}
+      {def.bullets && <BulletsEditor bullets={entry.bullets} onChange={(bullets) => onChange({ ...entry, bullets })} label={def.bullets.label} rule={def.bullets.hint} hooks={hooks} entryId={entry.id} arrange={arrange} />}
     </div>
   );
 }
@@ -222,15 +230,38 @@ export function entryLabel(e: Entry, fallback: string): string {
   return [e.title, e.subject].filter(Boolean).join(" ") || e.org || fallback;
 }
 
-export function EntriesForm({ value, onChange, region, hooks, expandAll, entryNote }: { value: EntrySection; onChange: (s: EntrySection) => void; region: CvRegion; hooks?: FieldHooks; /** Show every entry open (the upload check); otherwise one at a time. */ expandAll?: boolean; /** A note for the entry as a whole (a paragraph that was split, say). */ entryNote?: (entryId: string) => ReactNode }) {
+interface EntriesFormProps {
+  value: EntrySection;
+  onChange: (s: EntrySection) => void;
+  region: CvRegion;
+  hooks?: FieldHooks;
+  /** Show every entry open (the upload check); otherwise one at a time. */
+  expandAll?: boolean;
+  /** A note for the entry as a whole (a paragraph that was split, say). */
+  entryNote?: (entryId: string) => ReactNode;
+  /** The builder: each entry and bullet can be switched off, dragged and moved. */
+  arrange?: boolean;
+  /** Which entry is open, when the screen decides (a click on the paper opens one). */
+  openId?: string;
+  onOpen?: (entryId: string) => void;
+}
+
+export function EntriesForm({ value, onChange, region, hooks, expandAll, entryNote, arrange, openId, onOpen }: EntriesFormProps) {
   const def = SECTION_DEFS[value.kind];
   const noun = def.entryNoun ?? "item";
-  const [open, setOpen] = useState<string>(value.entries[0]?.id ?? "");
+  const [own, setOwn] = useState<string>(value.entries[0]?.id ?? "");
+  const open = openId ?? own;
+  const setOpen = (id: string) => {
+    setOwn(id);
+    onOpen?.(id);
+  };
+  const drag = useDragOrder(value.entries, (entries) => onChange({ ...value, entries }));
   const add = () => {
     const e = emptyEntry();
     onChange({ ...value, entries: [...value.entries, e] });
     setOpen(e.id);
   };
+  const remove = (id: string) => onChange({ ...value, entries: value.entries.filter((x) => x.id !== id) });
   return (
     <div>
       {value.entries.length === 0 && <p className="cv-pad cv-muted">Nothing here yet.</p>}
@@ -238,27 +269,48 @@ export function EntriesForm({ value, onChange, region, hooks, expandAll, entryNo
         const isOpen = expandAll || open === e.id;
         const title = entryLabel(e, `${noun.charAt(0).toUpperCase() + noun.slice(1)} ${i + 1}`);
         return (
-          <div key={e.id} style={{ borderBottom: "1px solid var(--color-line)" }} data-entry={e.id}>
-            <div className="cv-pad cv-row" style={{ paddingBottom: isOpen ? 0 : undefined }}>
-              <div className="min-w-0">
+          <div key={e.id} className="cv-entry" data-entry={e.id} data-off={!e.visible || undefined} {...(arrange ? drag.row(e.id) : {})}>
+            <div className="cv-pad cv-entryhead" style={{ paddingBottom: isOpen ? 0 : undefined }}>
+              {arrange && <Grip {...drag.grip(e.id)} />}
+              <div className="min-w-0 grow">
                 <h3 style={{ overflowWrap: "anywhere" }}>{title}</h3>
                 {!isOpen && <small>{[e.org !== title ? e.org : "", formatDates(e)].filter(Boolean).join(" · ")}</small>}
               </div>
-              <span className="cv-push cv-row" style={{ gap: 4 }}>
-                {!expandAll && (
-                  <Btn kind="quiet" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? "" : e.id)}>
+              {arrange ? (
+                <ItemControls
+                  name={title}
+                  index={i}
+                  count={value.entries.length}
+                  visible={e.visible}
+                  onVisible={(visible) => {
+                    onChange({ ...value, entries: value.entries.map((x) => (x.id === e.id ? { ...x, visible } : x)) });
+                    // A switched-off entry stays in the list, collapsed.
+                    if (!visible && isOpen) setOpen("");
+                  }}
+                  onMove={(to) => drag.move(e.id, to)}
+                  onRemove={() => remove(e.id)}
+                >
+                  <Btn kind="quiet" aria-expanded={isOpen} aria-label={`${isOpen ? "Close" : "Edit"} ${title}`} onClick={() => setOpen(isOpen ? "" : e.id)}>
                     {isOpen ? "Close" : "Edit"}
                   </Btn>
-                )}
-                <Btn kind="quiet" onClick={() => onChange({ ...value, entries: value.entries.filter((x) => x.id !== e.id) })} aria-label={`Remove ${title}`}>
-                  Remove
-                </Btn>
-              </span>
+                </ItemControls>
+              ) : (
+                <span className="cv-push cv-row" style={{ gap: 4 }}>
+                  {!expandAll && (
+                    <Btn kind="quiet" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? "" : e.id)}>
+                      {isOpen ? "Close" : "Edit"}
+                    </Btn>
+                  )}
+                  <Btn kind="quiet" onClick={() => remove(e.id)} aria-label={`Remove ${title}`}>
+                    Remove
+                  </Btn>
+                </span>
+              )}
             </div>
             {isOpen && (
               <div className="cv-pad cv-stack">
                 {entryNote?.(e.id)}
-                <EntryFields kind={value.kind} entry={e} region={region} hooks={hooks} onChange={(next) => onChange({ ...value, entries: value.entries.map((x) => (x.id === e.id ? next : x)) })} />
+                <EntryFields kind={value.kind} entry={e} region={region} hooks={hooks} arrange={arrange} onChange={(next) => onChange({ ...value, entries: value.entries.map((x) => (x.id === e.id ? next : x)) })} />
               </div>
             )}
           </div>
@@ -283,7 +335,7 @@ function skillsFromText(text: string, group: SkillGroup): SkillGroup["skills"] {
   });
 }
 
-function SkillGroupFields({ group, onChange, onRemove, hooks }: { group: SkillGroup; onChange: (g: SkillGroup) => void; onRemove: () => void; hooks?: FieldHooks }) {
+function SkillGroupFields({ group, onChange, onRemove, hooks, controls, arrange }: { group: SkillGroup; onChange: (g: SkillGroup) => void; onRemove: () => void; hooks?: FieldHooks; controls?: ReactNode; arrange?: boolean }) {
   // What is being typed is kept as text, so a comma can be typed without the list rearranging under the cursor.
   const joined = group.skills.map((k) => k.name).join(", ");
   const [text, setText] = useState(joined);
@@ -291,13 +343,16 @@ function SkillGroupFields({ group, onChange, onRemove, hooks }: { group: SkillGr
     if (skillsFromText(text, group).map((k) => k.name).join(", ") !== joined) setText(joined);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [joined]);
+  const off = group.skills.filter((k) => !k.visible).length;
   return (
-    <div className="cv-stack" data-entry={group.id}>
-      <div className="cv-row" style={{ alignItems: "flex-end", flexWrap: "nowrap" }}>
-        <Field className="min-w-0 grow" label="Group name" rule="Optional: “Tools”, “Languages”." value={group.name} onChange={(name) => onChange({ ...group, name })} {...hook(hooks, group.id, "name")} />
-        <Btn kind="quiet" onClick={onRemove} aria-label={`Remove group ${group.name || "of skills"}`}>
-          Remove
-        </Btn>
+    <div className="cv-stack">
+      <div className="cv-row" style={{ alignItems: "flex-end" }}>
+        <Field className="min-w-0 grow basis-[200px]" label="Group name" rule="Optional: “Tools”, “Languages”." value={group.name} onChange={(name) => onChange({ ...group, name })} {...hook(hooks, group.id, "name")} />
+        {controls ?? (
+          <Btn kind="quiet" onClick={onRemove} aria-label={`Remove group ${group.name || "of skills"}`}>
+            Remove
+          </Btn>
+        )}
       </div>
       <Field
         label="Skills"
@@ -310,23 +365,54 @@ function SkillGroupFields({ group, onChange, onRemove, hooks }: { group: SkillGr
           hooks?.onEdit?.("", "skills");
           onChange({ ...group, skills: skillsFromText(t, group) });
         }}
-        onFocus={() => hooks?.onFocus?.("", group.skills[0]?.id ?? "")}
+        onFocus={() => (arrange ? hooks?.onFocus?.(group.id, "skills") : hooks?.onFocus?.("", group.skills[0]?.id ?? ""))}
+        fieldKey={`${group.id}:skills`}
         uncertain={group.skills.some((k) => hooks?.uncertain?.("", k.id))}
         note={group.skills.map((k) => hooks?.note?.("", k.id)).find(Boolean)}
       />
+      {arrange && group.skills.length > 0 && (
+        <div role="group" aria-label={`Skills in ${group.name || "this group"}: switch one off to leave it out of this version`}>
+          <small style={{ display: "block", marginBottom: 6 }}>
+            Press a skill to leave it out of this version. It stays here.{off ? ` ${off} off.` : ""}
+          </small>
+          <div className="cv-row" style={{ gap: 6 }}>
+            {group.skills.map((k) => (
+              <button key={k.id} type="button" className="cv-chip cv-skillchip" aria-pressed={k.visible} onClick={() => onChange({ ...group, skills: group.skills.map((x) => (x.id === k.id ? { ...x, visible: !x.visible } : x)) })}>
+                {k.name}
+                <span className="sr-only">{k.visible ? ", in this version" : ", off in this version"}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-export function SkillsForm({ value, onChange, region, hooks }: { value: SkillsSection; onChange: (s: SkillsSection) => void; region: CvRegion; hooks?: FieldHooks }) {
-  const groups = value.groups.length ? value.groups : [];
+export function SkillsForm({ value, onChange, region, hooks, arrange }: { value: SkillsSection; onChange: (s: SkillsSection) => void; region: CvRegion; hooks?: FieldHooks; arrange?: boolean }) {
+  const groups = value.groups;
   const add = () => onChange({ ...value, groups: [...value.groups, { id: newId("g_"), name: "", visible: true, skills: [] }] });
+  const drag = useDragOrder(groups, (next) => onChange({ ...value, groups: next }));
+  const set = (next: SkillGroup) => onChange({ ...value, groups: value.groups.map((x) => (x.id === next.id ? next : x)) });
+  const remove = (id: string) => onChange({ ...value, groups: value.groups.filter((x) => x.id !== id) });
   return (
     <div className="cv-pad cv-stack">
       <small>{SECTION_DEFS.skills.rule[region]}</small>
       {groups.length === 0 && <p className="cv-muted">Nothing here yet.</p>}
-      {groups.map((g) => (
-        <SkillGroupFields key={g.id} group={g} hooks={hooks} onChange={(next) => onChange({ ...value, groups: value.groups.map((x) => (x.id === g.id ? next : x)) })} onRemove={() => onChange({ ...value, groups: value.groups.filter((x) => x.id !== g.id) })} />
+      {groups.map((g, i) => (
+        <div key={g.id} className={arrange ? "cv-group" : undefined} data-entry={g.id} data-off={!g.visible || undefined} {...(arrange ? drag.row(g.id) : {})}>
+          {arrange && <Grip {...drag.grip(g.id)} />}
+          <div className="min-w-0 grow">
+            <SkillGroupFields
+              group={g}
+              hooks={hooks}
+              arrange={arrange}
+              onChange={set}
+              onRemove={() => remove(g.id)}
+              controls={arrange ? <ItemControls name={`group ${g.name || "of skills"}`} index={i} count={groups.length} visible={g.visible} onVisible={(visible) => set({ ...g, visible })} onMove={(to) => drag.move(g.id, to)} onRemove={() => remove(g.id)} /> : undefined}
+            />
+          </div>
+        </div>
       ))}
       <Btn onClick={add}>+ Add {groups.length ? "another group" : "skills"}</Btn>
     </div>
@@ -335,20 +421,28 @@ export function SkillsForm({ value, onChange, region, hooks }: { value: SkillsSe
 
 /* --------------------------------------------------------------------- lists */
 
-export function ListForm({ value, onChange, region, hooks }: { value: ListSection; onChange: (s: ListSection) => void; region: CvRegion; hooks?: FieldHooks }) {
+export function ListForm({ value, onChange, region, hooks, arrange }: { value: ListSection; onChange: (s: ListSection) => void; region: CvRegion; hooks?: FieldHooks; arrange?: boolean }) {
   const isLanguages = value.kind === "languages";
   const noun = isLanguages ? "language" : "interest";
+  const drag = useDragOrder(value.items, (items) => onChange({ ...value, items }));
+  const set = (id: string, changes: Partial<ListSection["items"][number]>) => onChange({ ...value, items: value.items.map((x) => (x.id === id ? { ...x, ...changes } : x)) });
+  const remove = (id: string) => onChange({ ...value, items: value.items.filter((x) => x.id !== id) });
   return (
     <div className="cv-pad cv-stack">
       <small>{SECTION_DEFS[value.kind].rule[region]}</small>
       {value.items.length === 0 && <p className="cv-muted">Nothing here yet.</p>}
       {value.items.map((item, i) => (
-        <div key={item.id} className="cv-row" style={{ alignItems: "flex-end", flexWrap: "nowrap" }} data-entry={item.id}>
-          <Field className="min-w-0 grow" label={isLanguages ? "Language" : `Interest ${i + 1}`} value={item.name} onChange={(name) => onChange({ ...value, items: value.items.map((x) => (x.id === item.id ? { ...x, name } : x)) })} {...hook(hooks, "", item.id)} />
-          {isLanguages && <Field className="min-w-0 grow" label="Level" placeholder="Native, fluent, B2…" value={item.level} onChange={(level) => onChange({ ...value, items: value.items.map((x) => (x.id === item.id ? { ...x, level } : x)) })} onFocus={() => hooks?.onFocus?.("", item.id)} />}
-          <Btn kind="quiet" onClick={() => onChange({ ...value, items: value.items.filter((x) => x.id !== item.id) })} aria-label={`Remove ${item.name || noun}`}>
-            Remove
-          </Btn>
+        <div key={item.id} className="cv-item" style={{ alignItems: "flex-end" }} data-entry={item.id} data-off={!item.visible || undefined} {...(arrange ? drag.row(item.id) : {})}>
+          {arrange && <Grip {...drag.grip(item.id)} />}
+          <Field className="cv-item-main" label={isLanguages ? "Language" : `Interest ${i + 1}`} value={item.name} onChange={(name) => set(item.id, { name })} {...hook(hooks, "", item.id)} />
+          {isLanguages && <Field className="cv-item-main" label="Level" placeholder="Native, fluent, B2…" value={item.level} onChange={(level) => set(item.id, { level })} onFocus={() => hooks?.onFocus?.("", item.id)} />}
+          {arrange ? (
+            <ItemControls name={item.name || noun} index={i} count={value.items.length} visible={item.visible} onVisible={(visible) => set(item.id, { visible })} onMove={(to) => drag.move(item.id, to)} onRemove={() => remove(item.id)} />
+          ) : (
+            <Btn kind="quiet" onClick={() => remove(item.id)} aria-label={`Remove ${item.name || noun}`}>
+              Remove
+            </Btn>
+          )}
         </div>
       ))}
       <Btn onClick={() => onChange({ ...value, items: [...value.items, { id: newId("i_"), name: "", level: "", visible: true }] })}>+ Add {noun}</Btn>
@@ -359,21 +453,21 @@ export function ListForm({ value, onChange, region, hooks }: { value: ListSectio
 /* ---------------------------------------------------------------- any section */
 
 /** The right form for a section, whatever its kind. */
-export function SectionForm({ section, onChange, region, hooks, expandAll, entryNote }: { section: Section; onChange: (s: Section) => void; region: CvRegion; hooks?: FieldHooks; expandAll?: boolean; entryNote?: (entryId: string) => ReactNode }) {
+export function SectionForm({ section, onChange, region, hooks, expandAll, entryNote, arrange, openId, onOpen }: { section: Section; onChange: (s: Section) => void; region: CvRegion } & Pick<EntriesFormProps, "hooks" | "expandAll" | "entryNote" | "arrange" | "openId" | "onOpen">) {
   if (section.kind === "summary")
     return (
       <div className="cv-pad">
         <SummaryForm value={section} onChange={onChange} region={region} hooks={hooks} />
       </div>
     );
-  if (section.kind === "skills") return <SkillsForm value={section} onChange={onChange} region={region} hooks={hooks} />;
-  if (section.kind === "languages" || section.kind === "interests") return <ListForm value={section as ListSection} onChange={onChange} region={region} hooks={hooks} />;
+  if (section.kind === "skills") return <SkillsForm value={section} onChange={onChange} region={region} hooks={hooks} arrange={arrange} />;
+  if (section.kind === "languages" || section.kind === "interests") return <ListForm value={section as ListSection} onChange={onChange} region={region} hooks={hooks} arrange={arrange} />;
   return (
     <>
       <p className="cv-pad cv-small" style={{ paddingBottom: 0 }}>
         {SECTION_DEFS[section.kind].rule[region]}
       </p>
-      <EntriesForm value={section as EntrySection} onChange={onChange} region={region} hooks={hooks} expandAll={expandAll} entryNote={entryNote} />
+      <EntriesForm value={section as EntrySection} onChange={onChange} region={region} hooks={hooks} expandAll={expandAll} entryNote={entryNote} arrange={arrange} openId={openId} onOpen={onOpen} />
     </>
   );
 }
