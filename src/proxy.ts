@@ -41,6 +41,7 @@ export function proxy(req: NextRequest) {
     pathname === "/signup" ||
     pathname === "/landing" ||
     pathname === "/present" ||
+    pathname === "/about" ||
     pathname === "/privacy" ||
     pathname === "/terms" ||
     pathname.startsWith("/cv-audit") ||
