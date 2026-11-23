@@ -22,7 +22,7 @@ export async function POST(req: Request) {
     return r as Response;
   }
 
-  const blocked = guard(req, "read");
+  const blocked = guard(req, "read", { userId: user.id });
   if (blocked) return blocked;
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ ok: false, message: "That doesn’t look like a web address." }, { status: 400 });

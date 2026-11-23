@@ -33,9 +33,9 @@ export async function POST(req: Request) {
     return r as Response;
   }
 
-  const blocked = guard(req, "ai");
+  const blocked = guard(req, "ai", { userId: user.id });
   if (blocked) return blocked;
-  setUsageContext({ feature: "presentation" });
+  setUsageContext({ userId: user.id, feature: "presentation" });
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "bad-request", message: "Those slides couldn’t be read." }, { status: 400 });
   return NextResponse.json(await suggestPlan(parsed.data));

@@ -40,7 +40,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ draftI
   if (blocked) return blocked;
 
   const { draftId } = await params;
-  const limited = guard(_req, "answer", { inSession: true });
+  const limited = guard(_req, "answer", { inSession: true, userId: user.id });
   if (limited) return limited;
   const draft = (await getDraftAsync(draftId)) ?? getDraft(draftId);
   if (draft && draft.userId !== user.id) {

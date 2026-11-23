@@ -7,9 +7,14 @@ import { reportProblem } from "@/lib/alerts/store";
 
 /**
  * Spending and practice limits, and a guard on every route that calls an AI
- * service. Until accounts land these apply to the whole app (it's one person
- * on one laptop); with accounts they become limits per person.
- * Set any limit to 0 in .env.local to turn it off.
+ * service. There are two kinds:
+ *   - a person's own allowance: minutes of practice per day and per month,
+ *     and a ceiling on what one account can spend. Counted from that
+ *     account's usage only, so one person reaching theirs never stops
+ *     anyone else;
+ *   - the whole app's spending ceilings, counted across everyone, which
+ *     protect the bill.
+ * Set any limit to 0 in the environment to turn it off.
  */
 
 const num = (v: string | undefined, fallback: number) => {
@@ -37,28 +42,53 @@ export const LIMITS = {
     process.env.HAKKIRI_MONTHLY_SPEND_USD,
     isBeta() ? BETA.monthlyUsd : 60,
   ),
+  /**
+   * Estimated dollars one account may use per day and per month. Without
+   * these a single account could use up the whole app's ceiling and stop
+   * everyone. In the beta the defaults leave room for a tester's full ten
+   * hours (roughly $15 of speech, voice and scoring); outside it they are off,
+   * because the prototype is one person on one machine.
+   */
+  userDailyUsd: num(process.env.HAKKIRI_USER_DAILY_SPEND_USD, isBeta() ? 5 : 0),
+  userMonthlyUsd: num(process.env.HAKKIRI_USER_MONTHLY_SPEND_USD, isBeta() ? 25 : 0),
 };
 
 /** Test-mode samples don't count towards limits. */
 const real = (list: UsageEntry[]) => list.filter((e) => !e.simulated);
 
 export interface Standing {
+  /** The person's own minutes of practice today. */
   minutesToday: number;
+  /** Estimated spend across the whole app, today and this month. */
   spentToday: number;
   spentMonth: number;
-  /** Minutes of practice this calendar month; only read in the beta. */
+  /** The person's own minutes this calendar month; only read in the beta. */
   minutesMonth?: number;
+  /** The person's own estimated spend. Absent when no account was named. */
+  mySpentToday?: number;
+  mySpentMonth?: number;
 }
 
+const cost = (list: UsageEntry[]) => list.reduce((s, e) => s + e.costUsd, 0);
+const minutes = (list: UsageEntry[]) => list.reduce((s, e) => s + (e.seconds ?? 0), 0) / 60;
+
+/**
+ * Where things stand against the limits. Minutes and "my" spending are the
+ * named account's own; the app's spending is everyone's. With no account
+ * named (the prototype on one machine, or work done in the background) the
+ * minutes are everyone's too and there is no personal spending figure.
+ */
 export function limitStanding(today = londonToday(), userId?: string): Standing {
-  const t = real(usageOn(today, userId));
+  const everyoneToday = real(usageOn(today));
+  const everyoneMonth = real(usageInMonth(today));
+  const mineToday = userId ? everyoneToday.filter((e) => e.userId === userId) : everyoneToday;
+  const mineMonth = userId ? everyoneMonth.filter((e) => e.userId === userId) : everyoneMonth;
   return {
-    minutesToday: t.reduce((s, e) => s + (e.seconds ?? 0), 0) / 60,
-    spentToday: t.reduce((s, e) => s + e.costUsd, 0),
-    spentMonth: real(usageInMonth(today, userId)).reduce((s, e) => s + e.costUsd, 0),
-    minutesMonth: LIMITS.monthlyMinutes
-      ? real(usageInMonth(today, userId)).reduce((s, e) => s + (e.seconds ?? 0), 0) / 60
-      : undefined,
+    minutesToday: minutes(mineToday),
+    spentToday: cost(everyoneToday),
+    spentMonth: cost(everyoneMonth),
+    minutesMonth: LIMITS.monthlyMinutes ? minutes(mineMonth) : undefined,
+    ...(userId ? { mySpentToday: cost(mineToday), mySpentMonth: cost(mineMonth) } : {}),
   };
 }
 
@@ -89,6 +119,13 @@ export function limitReached(
       `Today’s spending limit ($${LIMITS.dailyUsd}) is reached. Raise HAKKIRI_DAILY_SPEND_USD in .env.local, or carry on tomorrow.`,
       "You’ve reached today’s practice limit. It resets at midnight.",
     );
+  }
+  // One account's own ceiling: reached by that account only, and it stops that account only.
+  if (LIMITS.userMonthlyUsd && (s.mySpentMonth ?? 0) >= LIMITS.userMonthlyUsd * grace) {
+    return "You’ve reached this month’s practice limit for your account. It resets on the 1st. If you need more before then, say so with the Feedback button.";
+  }
+  if (LIMITS.userDailyUsd && (s.mySpentToday ?? 0) >= LIMITS.userDailyUsd * grace) {
+    return "You’ve reached today’s practice limit for your account. It resets at midnight.";
   }
   if (
     opts.practice &&
@@ -199,6 +236,11 @@ const RATE: Record<GuardKind, [number, number]> = {
 /**
  * The first line of every route that calls an AI service: too many requests,
  * or a limit reached, returns a 429 with a plain message; otherwise null.
+ *   userId: the signed-in account. Every signed-in route passes it: requests
+ *     are then counted per account (not per address, which a whole office or
+ *     a whole phone network shares), and the allowance checked is that
+ *     account's own. Only a route open to visitors leaves it out, and is
+ *     counted by address.
  *   practice: starts new speaking practice (counts against daily minutes)
  *   inSession: part of something already started, so it may finish (25% grace)
  */
@@ -208,7 +250,8 @@ export function guard(
   opts: { practice?: boolean; inSession?: boolean; userId?: string } = {},
 ): NextResponse | null {
   const [limit, windowMs] = RATE[kind];
-  if (rateLimited(`${kind}:${clientKey(req)}`, limit, windowMs)) {
+  const who = opts.userId ? `user:${opts.userId}` : `addr:${clientKey(req)}`;
+  if (rateLimited(`${kind}:${who}`, limit, windowMs)) {
     return NextResponse.json(
       {
         error: "slow-down",

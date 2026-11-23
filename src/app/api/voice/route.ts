@@ -37,7 +37,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "not-configured" }, { status: 501 });
   }
 
-  const blocked = guard(req, "voice");
+  const blocked = guard(req, "voice", { userId: user.id });
   if (blocked) return blocked;
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "bad-request" }, { status: 400 });
@@ -58,7 +58,7 @@ export async function POST(req: Request) {
       ? await synthesise(text, voice, elevenKey)
       : await synthesiseDeepgram(text, voice, deepgramKey);
     saveFile(file, audio);
-    recordUsage({ service: provider, label: "interviewer-voice", model, characters: text.length, feature: "voice" });
+    recordUsage({ userId: user.id, service: provider, label: "interviewer-voice", model, characters: text.length, feature: "voice" });
     return new Response(audio, { headers });
   } catch (err) {
     console.warn(`[voice] ${provider} failed, the browser voice takes over:`, err instanceof Error ? err.message : err);

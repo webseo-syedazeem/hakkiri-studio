@@ -34,7 +34,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return r as Response;
   }
 
-  const limited = guard(req, "answer", { practice: true });
+  const limited = guard(req, "answer", { practice: true, userId: user.id });
   if (limited) return limited;
   setUsageContext({ userId: user.id, presentationId: (await params).id, feature: "presentation" });
   const blocked = notConfigured();

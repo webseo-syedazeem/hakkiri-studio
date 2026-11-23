@@ -24,7 +24,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ session
     return r as Response;
   }
 
-  const limited = guard(req, "answer", { inSession: true });
+  const limited = guard(req, "answer", { inSession: true, userId: user.id });
   if (limited) return limited;
   setUsageContext({ userId: user.id, sessionId: (await params).sessionId, feature: "q&a" });
   const blocked = notConfigured();

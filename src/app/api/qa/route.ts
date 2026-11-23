@@ -23,7 +23,7 @@ export async function POST(req: Request) {
     return r as Response;
   }
 
-  const blocked = guard(req, "plan", { practice: true });
+  const blocked = guard(req, "plan", { practice: true, userId: user.id });
   if (blocked) return blocked;
   setUsageContext({ userId: user.id, feature: "q&a" });
   const parsed = Body.safeParse(await req.json().catch(() => null));

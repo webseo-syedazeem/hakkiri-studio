@@ -41,7 +41,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   }
 
   const { id } = await params;
-  const blocked = guard(req, "ai", { practice: true });
+  const blocked = guard(req, "ai", { practice: true, userId: user.id });
   if (blocked) return blocked;
   setUsageContext({ userId: user.id, interviewId: id, feature: "questions" });
   const parsed = Body.safeParse(await req.json().catch(() => null));

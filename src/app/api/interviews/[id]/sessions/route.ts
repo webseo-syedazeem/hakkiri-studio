@@ -45,7 +45,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   }
 
   const { id } = await params;
-  const blocked = guard(req, "plan", { practice: true });
+  const blocked = guard(req, "plan", { practice: true, userId: user.id });
   if (blocked) return blocked;
   setUsageContext({ userId: user.id, interviewId: id, feature: "questions" });
   if (!((await getInterviewAsync(id, user.id)) ?? getInterview(id, user.id))) return NextResponse.json({ error: "not-found", message: "That interview doesn’t exist any more." }, { status: 404 });

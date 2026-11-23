@@ -47,9 +47,9 @@ export async function POST(req: Request) {
     return r as Response;
   }
 
-  const blocked = guard(req, "build");
+  const blocked = guard(req, "build", { userId: user.id });
   if (blocked) return blocked;
-  setUsageContext({ feature: "set-up" });
+  setUsageContext({ userId: user.id, feature: "set-up" });
   
   const rawBody = (await req.json().catch(() => null)) as Record<string, any> | null;
   if (rawBody?.settings && !rawBody.settings.mix) {

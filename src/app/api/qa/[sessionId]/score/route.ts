@@ -19,7 +19,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ session
   }
 
   const { sessionId } = await params;
-  const limited = guard(req, "answer", { inSession: true });
+  const limited = guard(req, "answer", { inSession: true, userId: user.id });
   if (limited) return limited;
   const draft = (await getQaDraftAsync(sessionId)) ?? getQaDraft(sessionId);
   if (!draft || draft.userId !== user.id) return NextResponse.json({ error: "not-found", message: "This Q&A has expired." }, { status: 404 });

@@ -37,7 +37,7 @@ export async function POST(req: Request) {
   // A body that isn't a form (a wrong client, or a probe) is a 400, not a crash.
   const form = await req.formData().catch(() => null);
   if (!form) return NextResponse.json({ error: "bad-request", message: "Missing the recording or the question." }, { status: 400 });
-  const limited = guard(req, "answer", form.get("session") ? { inSession: true } : { practice: true });
+  const limited = guard(req, "answer", { userId: user.id, ...(form.get("session") ? { inSession: true } : { practice: true }) });
   if (limited) return limited;
 
   const audio = form.get("audio");

@@ -26,7 +26,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ draftId
   if (blocked) return blocked;
 
   const { draftId } = await params;
-  const limited = guard(req, "answer", { inSession: true });
+  const limited = guard(req, "answer", { inSession: true, userId: user.id });
   if (limited) return limited;
   const draft = (await getDraftAsync(draftId)) ?? getDraft(draftId);
   if (!draft || draft.userId !== user.id) return NextResponse.json({ error: "not-found", message: "This answer has expired. Start the question again." }, { status: 404 });
