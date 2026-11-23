@@ -11,7 +11,6 @@ import { understandingOf } from "@/lib/interviews/build";
 import { categoryLabel, settingsLine } from "@/lib/interviews/settings";
 import { findAnswer } from "@/lib/answers/store";
 import { doneSessions, findMock, findMockAsync, isFresh, previousScore, rerunOf, rowsFor, rowsForAsync, SKIP_REASON_LABEL, type MockRecord } from "@/lib/mocks/store";
-import { demoMock, roadmapAnswer } from "@/lib/mock-data";
 import { buildReport, countsLine, VERDICT_LABEL, type MockRow } from "@/lib/mocks/report";
 import { compareRuns } from "@/lib/sessions/compare";
 import { HABIT_FOR_FIX, HABIT_LABEL, habitLine, rowHabit, suggestDrills } from "@/lib/sessions/drills";
@@ -26,13 +25,9 @@ import { devOr, isLaunch } from "@/lib/launch";
 import { totals, usageFor } from "@/lib/usage/store";
 import { dollars } from "@/lib/usage/prices";
 import { requirePageUser } from "@/lib/auth/require";
+import { mockAiEnabled } from "@/lib/ai/mock";
 
 export const dynamic = "force-dynamic";
-
-const DEMO_NOTE: Record<string, string> = {
-  "no-keys": devOr("This is the demo report. Add DEEPGRAM_API_KEY and GEMINI_API_KEY or ANTHROPIC_API_KEY to .env.local to get a report on your own answers.", "Scoring isn’t available right now, so this is an example. Try again in a few minutes."),
-  "no-audio": "No recording was captured (the mic may be blocked), so this is the demo report.",
-};
 
 const verdictTone = { ready: "text-blue-soft", nearly: "text-lilac", "not-yet": "text-red-soft" } as const;
 
@@ -123,10 +118,9 @@ export default async function SessionReportPage({ params, searchParams }: { para
   const { id, mockId } = await params;
   const { demo } = await searchParams;
   const interview = (await getInterviewAsync(id, user.id)) ?? getInterview(id, user.id);
-  let mock = (await findMockAsync(mockId, user.id)) ?? findMock(mockId, user.id);
-  if (!mock && interview?.id === "halden" && !isLaunch()) {
-    mock = { ...demoMock, answerIds: [roadmapAnswer.id], planned: 6, id: mockId };
-  }
+  // Only a session that exists for this person. An address that names no session is "not found": the demo's
+  // session is never shown in its place.
+  const mock = (await findMockAsync(mockId, user.id)) ?? findMock(mockId, user.id);
   if (!interview || !mock || mock.interviewId !== interview.id) notFound();
 
   const micOk = (await cookies()).get("hk_mic_ok")?.value === "1";
@@ -138,8 +132,6 @@ export default async function SessionReportPage({ params, searchParams }: { para
   const title = sessionTitle(mock, interview);
   const answerHref = (answerId: string, followUps = false) => `/interviews/${interview.id}/answers/${answerId}?mock=${mock.id}${followUps ? "&tab=follow-ups" : ""}`;
   const shortOf = (qid: string) => resolveInterviewQuestion(interview, qid)?.short ?? "this question";
-
-  const demoNote = null;
 
   /* ------------------------------------------------------------ stopped */
   if ((mock.status === "stopped" || mock.status === "planned") && rows.length === 0) {
@@ -179,7 +171,6 @@ export default async function SessionReportPage({ params, searchParams }: { para
     const up = c.score.before != null && c.score.after != null ? c.score.after - c.score.before : null;
     return (
       <div className="flex grow flex-col">
-        {demoNote}
         <Header
           interview={interview}
           mock={mock}
@@ -336,7 +327,6 @@ export default async function SessionReportPage({ params, searchParams }: { para
               : "";
     return (
       <div className="flex grow flex-col">
-        {demoNote}
         <Header
           interview={interview}
           mock={mock}
@@ -478,18 +468,20 @@ export default async function SessionReportPage({ params, searchParams }: { para
 
   return (
     <div className="flex grow flex-col">
-      {demoNote}
       <InterviewReportView
         interview={interview}
         mock={mock}
         rows={rows}
         report={report}
         whenFormatted={whenSaid(mock.startedAt)}
-        durationFormatted={minutesLong(lengthSec)}
-        difficultyFormatted="Medium"
+        durationFormatted={lengthSec > 0 ? minutesLong(lengthSec) : ""}
+        difficultyFormatted={mock.settings ? settingsLine(mock.settings) : ""}
         isFullInterview={isFullInterview}
         endedEarly={endedEarly}
         micOk={micOk}
+        drills={drills}
+        skipped={skipped.map((s) => ({ question: textOf(s.questionId), reason: SKIP_REASON_LABEL[s.reason] }))}
+        testMode={mockAiEnabled()}
       />
     </div>
   );

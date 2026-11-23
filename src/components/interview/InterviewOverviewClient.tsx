@@ -33,7 +33,6 @@ export const FOCUS_PRESETS: Record<
   "strengths-competency": {
     label: "Strengths & Competency (STAR)",
     description: "STAR behavioural competencies + spontaneous strengths questions",
-    badge: "Civil Service / HMRC",
     mix: { curveball: 50, competency: 50, cv: 0, technical: 0, motivation: 0 },
   },
   balanced: {
@@ -53,12 +52,12 @@ export const FOCUS_PRESETS: Record<
   },
   technical: {
     label: "Role Knowledge & Technical",
-    description: "GDS standards, delivery methods, WCAG accessibility and technical execution",
+    description: "The methods, standards and technical detail this job asks for",
     mix: { technical: 60, competency: 20, motivation: 20, cv: 0, curveball: 0 },
   },
   motivation: {
-    label: "Motivation & Why HMRC",
-    description: "Public service motivation, why this role and organisation",
+    label: "Motivation & why this role",
+    description: "Why you want this role and this organisation",
     mix: { motivation: 60, cv: 20, competency: 20, technical: 0, curveball: 0 },
   },
 };
@@ -78,12 +77,11 @@ export type OverviewStageOption = {
   mix: Mix;
 };
 
+/** A category's score from the person's own interviews. `delta` is null until two of them have scored it. */
 export type OverviewScoreCategory = {
   name: string;
   score: number;
-  delta: string;
-  positive: boolean;
-  tone: "purple" | "red";
+  delta: number | null;
 };
 
 export type OverviewPracticeItem = {
@@ -272,70 +270,10 @@ export function InterviewOverviewClient({
     isPracticeMinutes(initialSettings.minutes) ? initialSettings.minutes : 10,
   );
 
-  const [recentSessions, setRecentSessions] = useState<OverviewPracticeItem[]>(
-    initialRecentSessions && initialRecentSessions.length > 0
-      ? initialRecentSessions
-      : interviewId === "halden"
-        ? [
-            {
-              id: "halden-m1",
-              title: "Full mock interview",
-              dateText: "Yesterday · 30 min",
-              score: 3.5,
-              href: `/interviews/${interviewId}/mocks`,
-            },
-            {
-              id: "halden-m2",
-              title: "Technical questions",
-              dateText: "Wed 5 Nov · 8 min",
-              score: 2.6,
-              href: `/interviews/${interviewId}/mocks`,
-            },
-            {
-              id: "halden-m3",
-              title: "“A payments metric drops” (follow-ups)",
-              dateText: "Tue 4 Nov · 5 min",
-              score: 3.8,
-              href: `/interviews/${interviewId}/mocks`,
-            },
-          ]
-        : []
-  );
-
-  useEffect(() => {
-    const updateSessions = () => {
-      try {
-        const raw =
-          localStorage.getItem(`hk_recent_practice_${interviewId}`) ||
-          localStorage.getItem("hk_recent_practice");
-        if (raw) {
-          const list = JSON.parse(raw);
-          if (Array.isArray(list) && list.length > 0) {
-            const forThis = list.filter((it: any) => !it.interviewId || it.interviewId === interviewId);
-            if (forThis.length > 0) {
-              setRecentSessions(forThis);
-            }
-          }
-        }
-      } catch {}
-    };
-    updateSessions();
-    window.addEventListener("hk_practice_updated", updateSessions);
-    return () => window.removeEventListener("hk_practice_updated", updateSessions);
-  }, [interviewId]);
-
-  const effectiveCategories: OverviewScoreCategory[] =
-    scoreCategories.length > 0
-      ? scoreCategories
-      : recentSessions.length > 0
-        ? [
-            { name: "Experience", score: 4.0, delta: "+0.4", positive: true, tone: "purple" },
-            { name: "Skills", score: 3.4, delta: "+0.2", positive: true, tone: "purple" },
-            { name: "Technical", score: 3.1, delta: "+0.1", positive: true, tone: "purple" },
-            { name: "Motivation", score: 4.4, delta: "+0.3", positive: true, tone: "purple" },
-            { name: "Situational", score: 3.5, delta: "+0.2", positive: true, tone: "purple" },
-          ]
-        : [];
+  // The sessions and scores shown are the ones the server holds for this person and this interview. Nothing is
+  // read from the browser in their place, and nothing is shown before there is a real session.
+  const recentSessions: OverviewPracticeItem[] = initialRecentSessions ?? [];
+  const effectiveCategories: OverviewScoreCategory[] = scoreCategories;
 
   useEffect(() => {
     const syncStages = () => {
@@ -625,11 +563,7 @@ export function InterviewOverviewClient({
               <div>
                 <h2 className="text-sm font-bold text-white">Latest practice results</h2>
                 <p className="text-xs text-muted">
-                  {effectiveCategories.length > 0
-                    ? recentSessions[0]?.title
-                      ? `${recentSessions[0].title} · ${recentSessions[0].dateText}`
-                      : "Practice session · Completed"
-                    : "No practice scores recorded yet"}
+                  {effectiveCategories.length > 0 ? "Each category’s score from your latest interview that included it." : "No practice scores recorded yet"}
                 </p>
               </div>
               {effectiveCategories.length > 0 && (
@@ -654,21 +588,19 @@ export function InterviewOverviewClient({
                           <span className="font-medium text-ink">{cat.name}</span>
                           <div className="flex items-center gap-2">
                             <span className="font-semibold text-white num">{cat.score.toFixed(1)}/5</span>
-                            <span
-                              className={clsx(
-                                "text-[11px] font-bold num",
-                                cat.positive ? "text-emerald-400" : "text-rose-400",
-                              )}
-                            >
-                              {cat.positive ? "▲" : "▼"} {cat.delta}
-                            </span>
+                            {cat.delta != null && cat.delta !== 0 && (
+                              <span className={clsx("text-[11px] font-bold num", cat.delta > 0 ? "text-emerald-300" : "text-rose-300")}>
+                                <span aria-hidden>{cat.delta > 0 ? "▲" : "▼"}</span>
+                                <span className="sr-only">{cat.delta > 0 ? "up" : "down"}</span> {Math.abs(cat.delta).toFixed(1)}
+                              </span>
+                            )}
                           </div>
                         </div>
                         <div className="h-2 w-full overflow-hidden rounded-full bg-white/[0.07]">
                           <div
                             className={clsx(
                               "h-full rounded-full transition-all duration-500",
-                              cat.tone === "red"
+                              cat.score < 3
                                 ? "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]"
                                 : "bg-indigo-400 shadow-[0_0_8px_rgba(129,140,248,0.5)]",
                             )}
@@ -682,7 +614,7 @@ export function InterviewOverviewClient({
 
                 <p className="pt-2 text-[11px] text-muted border-t border-line/60 flex items-center gap-1.5">
                   <span>ⓘ</span>
-                  <span>Scores reflect your latest mock interview, not your likelihood of receiving an offer.</span>
+                  <span>These are scores on your practice answers. The arrows show the change since your previous interview. They don’t predict whether you’ll get an offer.</span>
                 </p>
               </>
             ) : (

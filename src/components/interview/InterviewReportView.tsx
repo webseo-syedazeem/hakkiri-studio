@@ -3,10 +3,14 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import clsx from "clsx";
-import { Button, Icon, CustomSelect, type IconName } from "@/components/ui";
+import { Icon, CustomSelect, type IconName } from "@/components/ui";
 import { StartButton } from "@/components/interview/StartSession";
 import { BetaInterviewFeedbackModal } from "@/components/feedback/BetaInterviewFeedbackModal";
-import type { MockReport, MockRow } from "@/lib/mocks/report";
+import { PrintButton } from "@/components/interview/PrintButton";
+import { TestModeNotice } from "@/components/shell/TestModeNotice";
+import { countsLine, type MockReport, type MockRow } from "@/lib/mocks/report";
+import { GROUP_LABEL, categoryLines, reportHeadline, reportSummary, rowFeedback, takeaways, type CategoryLine } from "@/lib/mocks/report-lines";
+import type { DrillSuggestion } from "@/lib/sessions/drills";
 import type { Interview } from "@/lib/types";
 import type { MockRecord } from "@/lib/mocks/store";
 
@@ -16,12 +20,22 @@ interface InterviewReportViewProps {
   rows: MockRow[];
   report: MockReport;
   whenFormatted: string;
+  /** How long the session ran. Empty when it wasn't recorded. */
   durationFormatted: string;
+  /** The session's own practice settings ("Hard · 20 min · Balanced"). Empty when it has none. */
   difficultyFormatted: string;
   isFullInterview: boolean;
   endedEarly: boolean;
   micOk: boolean;
+  /** Practice suggested from this session's answers, by rule. Empty when nothing is suggested. */
+  drills: (DrillSuggestion & { done: boolean })[];
+  /** Questions that were skipped or replaced, with the reason given. */
+  skipped: { question: string; reason: string }[];
+  /** The app is running on stand-in AI: the scores were not worked out from what was said. */
+  testMode?: boolean;
 }
+
+const CATEGORY_ICON: Record<CategoryLine["key"], IconName> = { cv: "brief", competency: "layers", technical: "code", motivation: "user", curveball: "chat", "opening-close": "sparkle" };
 
 function getPlaybooks(role?: string, company?: string) {
   const roleName = role || "the role";
@@ -113,88 +127,18 @@ function getPlaybooks(role?: string, company?: string) {
 
 export function InterviewReportView(p: InterviewReportViewProps) {
   const { interview, mock, rows, report } = p;
-  const [activeTab, setActiveTab] = useState<"review" | "transcript" | "details">("review");
+  const [activeTab, setActiveTab] = useState<"review" | "details">("review");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [expandedAll, setExpandedAll] = useState(false);
   const [activePlaybookId, setActivePlaybookId] = useState("tell-me-about-yourself");
-  const [shareCopied, setShareCopied] = useState(false);
 
-  // Overall score: fallback to 3.5 if null
-  const overallScore = report.score != null ? Number(report.score.toFixed(1)) : 3.5;
-  const scorePercent = Math.min(100, Math.round((overallScore / 5) * 100));
-
-  // Dynamic Category data mapping based on actual answers and interview stages
-  const categoryScores = useMemo<{ label: string; score: number; icon: IconName; isLow: boolean }[]>(() => {
-    // Check if interview stage specifically mentions stages like "competency", "strength", "presentation"
-    const stageNames = (interview.stages ?? []).map((s) => s.name).join(" ").toLowerCase();
-    const hasStrengthsStage = stageNames.includes("strength");
-    const hasPresentationStage = stageNames.includes("presen");
-
-    // Group actual question scores from rows
-    const groupScores: Record<string, number[]> = {};
-    rows.forEach((r) => {
-      const g = r.group || "competency";
-      if (!groupScores[g]) groupScores[g] = [];
-      if (r.overall != null) groupScores[g].push(r.overall);
-    });
-
-    const list: { label: string; score: number; icon: IconName; isLow: boolean }[] = [];
-
-    // Helper to calculate average or fall back to report.categories if available, otherwise overall
-    const getAvg = (gKey: string, reportVal: number | null | undefined): number => {
-      const arr = groupScores[gKey];
-      if (arr && arr.length > 0) return Number((arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(1));
-      if (reportVal != null) return Number(reportVal.toFixed(1));
-      return overallScore;
-    };
-
-    // If civil service / multi-format interview (Competency, Strengths, Presentation)
-    if (hasStrengthsStage || hasPresentationStage) {
-      const compScore = getAvg("competency", report.categories.competency);
-      list.push({ label: "Competency", score: compScore, icon: "layers", isLow: compScore < 3.0 });
-
-      const strengthScore = getAvg("strengths", report.categories.motivation);
-      list.push({ label: "Strengths", score: strengthScore, icon: "sparkle", isLow: strengthScore < 3.0 });
-
-      if (hasPresentationStage || groupScores["presentation"]) {
-        const presScore = getAvg("presentation", report.categories.cv);
-        list.push({ label: "Presentation", score: presScore, icon: "present", isLow: presScore < 3.0 });
-      }
-
-      if (groupScores["technical"] || report.categories.technical != null) {
-        const techScore = getAvg("technical", report.categories.technical);
-        list.push({ label: "Technical depth", score: techScore, icon: "code", isLow: techScore < 3.0 });
-      }
-      return list;
-    }
-
-    // Standard / General categorization based on assessed groups in rows
-    const assessedGroups = new Set(Object.keys(groupScores));
-    if (assessedGroups.has("cv") || report.categories.cv != null) {
-      const sc = getAvg("cv", report.categories.cv);
-      list.push({ label: "Experience", score: sc, icon: "brief", isLow: sc < 3.0 });
-    }
-    if (assessedGroups.has("competency") || report.categories.competency != null || list.length === 0) {
-      const sc = getAvg("competency", report.categories.competency);
-      list.push({ label: "Skills & Competency", score: sc, icon: "layers", isLow: sc < 3.0 });
-    }
-    if (assessedGroups.has("technical") || report.categories.technical != null) {
-      const sc = getAvg("technical", report.categories.technical);
-      list.push({ label: "Technical", score: sc, icon: "code", isLow: sc < 3.0 });
-    }
-    if (assessedGroups.has("motivation") || report.categories.motivation != null) {
-      const sc = getAvg("motivation", report.categories.motivation);
-      list.push({ label: "Motivation", score: sc, icon: "user", isLow: sc < 3.0 });
-    }
-    if (assessedGroups.has("curveball") || report.categories.curveball != null) {
-      const sc = getAvg("curveball", report.categories.curveball);
-      list.push({ label: "Situational", score: sc, icon: "chat", isLow: sc < 3.0 });
-    }
-
-    return list.length > 0 ? list : [
-      { label: "Overall Performance", score: overallScore, icon: "sparkle", isLow: overallScore < 3.0 }
-    ];
-  }, [interview.stages, rows, report.categories, overallScore]);
+  // Every figure below is this session's own. With nothing scored, the gauge is empty and says "Not scored".
+  const scorePercent = report.score != null ? Math.min(100, Math.round((report.score / 5) * 100)) : 0;
+  const categories = useMemo(() => categoryLines(report), [report]);
+  const filterOptions = useMemo(
+    () => [{ value: "all", label: "All categories" }, ...Array.from(new Set(rows.map((r) => r.group))).map((g) => ({ value: g as string, label: GROUP_LABEL[g] ?? g }))],
+    [rows],
+  );
 
   const playbooks = useMemo(() => getPlaybooks(interview.role, interview.company), [interview.role, interview.company]);
   const activePlaybook = playbooks.find((x) => x.id === activePlaybookId) ?? playbooks[0];
@@ -206,13 +150,6 @@ export function InterviewReportView(p: InterviewReportViewProps) {
 
   const visibleRows = expandedAll ? filteredRows : filteredRows.slice(0, 3);
 
-  const handleShare = () => {
-    if (typeof window !== "undefined") {
-      void navigator.clipboard?.writeText(window.location.href);
-      setShareCopied(true);
-      setTimeout(() => setShareCopied(false), 2000);
-    }
-  };
 
   return (
     <div className="flex flex-col gap-6 w-full pb-20 animate-rise">
@@ -239,11 +176,19 @@ export function InterviewReportView(p: InterviewReportViewProps) {
               {p.whenFormatted}
             </span>
             <span className="text-white/20">·</span>
-            <span>{p.rows.length || 6} questions</span>
-            <span className="text-white/20">·</span>
-            <span>{p.difficultyFormatted || "Medium"}</span>
-            <span className="text-white/20">·</span>
-            <span>{p.durationFormatted || "24 minutes"}</span>
+            <span>{countsLine(report.questionCount, report.followUpCount)}</span>
+            {p.difficultyFormatted ? (
+              <>
+                <span className="text-white/20">·</span>
+                <span>{p.difficultyFormatted}</span>
+              </>
+            ) : null}
+            {p.durationFormatted ? (
+              <>
+                <span className="text-white/20">·</span>
+                <span>{p.durationFormatted}</span>
+              </>
+            ) : null}
           </div>
         </div>
 
@@ -260,21 +205,14 @@ export function InterviewReportView(p: InterviewReportViewProps) {
             <span>Run it again</span>
           </StartButton>
 
-          <button
-            type="button"
-            onClick={handleShare}
-            className="bg-[#141326] border border-white/10 hover:border-white/25 text-white flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-colors"
-          >
-            <Icon name="share" size={14} />
-            <span>{shareCopied ? "Copied link!" : "Share report"}</span>
-          </button>
+          <PrintButton label="Print or save as PDF" />
 
           <Link
-            href={`/interviews/${interview.id}#training`}
+            href={`/interviews/${interview.id}`}
             className="pro-btn-glow bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:brightness-110 text-white flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold shadow-lg shadow-indigo-500/20 transition-all"
           >
             <Icon name="diamond" size={14} />
-            <span>Practise recommended areas</span>
+            <span>Back to your training</span>
           </Link>
         </div>
       </header>
@@ -288,6 +226,8 @@ export function InterviewReportView(p: InterviewReportViewProps) {
         isEligible={p.isFullInterview}
         ineligibleReason={p.endedEarly ? "ended-early" : "not-full-interview"}
       />
+
+      {p.testMode && <TestModeNotice what="The scores and feedback in this report" />}
 
       {/* 2. HERO SUMMARY CARD */}
       <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-6 lg:p-7 shadow-xl grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-6 items-center">
@@ -317,82 +257,70 @@ export function InterviewReportView(p: InterviewReportViewProps) {
               </defs>
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-              <span className="num text-2xl font-bold text-white tracking-tight leading-none">{overallScore}</span>
-              <span className="text-[11px] text-muted font-medium mt-0.5">/ 5</span>
+              <span className="num text-2xl font-bold text-white tracking-tight leading-none" data-testid="report-score">{report.score != null ? report.score.toFixed(1) : "–"}</span>
+              <span className="text-[11px] text-muted font-medium mt-0.5">{report.score != null ? "/ 5" : "Not scored"}</span>
             </div>
           </div>
 
-          {/* Title & Copy */}
-          <div>
-            <h2 className="text-xl font-bold text-white tracking-tight">
-              {overallScore >= 4 ? "An outstanding performance" : overallScore >= 3.2 ? "A solid performance" : "Room for improvement"}
-            </h2>
-            <p className="mt-2 text-sm text-[#c9cad3] leading-relaxed max-w-xl">
-              Clear strengths in experience and motivation. Focus on adding more technical depth and being more concise in your answers.
-            </p>
+          {/* Headline and summary, from this session's own score and categories */}
+          <div data-testid="report-summary">
+            <h2 className="text-xl font-bold text-white tracking-tight">{reportHeadline(report)}</h2>
+            <p className="mt-2 text-sm text-[#c9cad3] leading-relaxed max-w-xl">{reportSummary(report)}</p>
           </div>
         </div>
 
-        {/* Right: Key takeaways */}
-        <div className="lg:border-l lg:border-white/[0.08] lg:pl-6 space-y-3">
+        {/* Key takeaways: the strongest area and the patterns that repeated in this session */}
+        <div className="lg:border-l lg:border-white/[0.08] lg:pl-6 space-y-3" data-testid="report-takeaways">
           <h3 className="text-xs font-semibold text-white tracking-wide uppercase">Key takeaways</h3>
-          <div className="space-y-2.5">
-            <div className="flex items-start gap-2.5 text-xs text-[#d1d2dc] leading-relaxed">
-              <Icon name="checkCircle" size={15} className="text-emerald-400 shrink-0 mt-0.5" />
-              <span>Strong, relevant examples and clear motivation.</span>
-            </div>
-            <div className="flex items-start gap-2.5 text-xs text-[#d1d2dc] leading-relaxed">
-              <Icon name="alertCircle" size={15} className="text-amber-400 shrink-0 mt-0.5" />
-              <span>Add more technical detail and first-step thinking.</span>
-            </div>
-            <div className="flex items-start gap-2.5 text-xs text-[#d1d2dc] leading-relaxed">
-              <Icon name="info" size={15} className="text-blue-soft shrink-0 mt-0.5" />
-              <span>Be more concise, especially in longer answers.</span>
-            </div>
-          </div>
+          <ul className="space-y-2.5">
+            {takeaways(report).map((t) => (
+              <li key={t.title} className="flex items-start gap-2.5 text-xs text-[#d1d2dc] leading-relaxed">
+                <Icon name={t.tone === "good" ? "checkCircle" : t.tone === "fix" ? "alertCircle" : "info"} size={15} className={clsx("shrink-0 mt-0.5", t.tone === "good" ? "text-emerald-300" : t.tone === "fix" ? "text-amber-300" : "text-blue-soft")} />
+                <span>
+                  {t.detail ? <b className="font-semibold text-white">{t.title}. </b> : t.title}
+                  {t.detail}
+                </span>
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
 
       {/* 3. ROW 2: 3 CARDS IN A GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-stretch">
-        {/* CARD 1: Scores by category */}
-        <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-5 shadow-xl flex flex-col justify-between">
+        {/* CARD 1: Scores by category: only the categories with a scored answer */}
+        <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-5 shadow-xl flex flex-col justify-between" data-testid="report-categories">
           <div>
-            <div className="flex items-center justify-between pb-3 border-b border-white/[0.07]">
-              <div className="flex items-center gap-1.5 text-sm font-semibold text-white">
-                <span>Scores by category</span>
-                <Icon name="info" size={13} className="text-muted hover:text-white cursor-pointer" />
-              </div>
+            <div className="pb-3 border-b border-white/[0.07]">
+              <h3 className="text-sm font-semibold text-white">Scores by category</h3>
+              <p className="mt-0.5 text-[11px] text-muted">The average of your scored answers in each category.</p>
             </div>
 
-            <div className="mt-4 space-y-3.5">
-              {categoryScores.map((cat) => (
-                <div key={cat.label} className="space-y-1.5">
-                  <div className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2 text-[#c9cad3] font-medium">
-                      <Icon name={cat.icon} size={14} className="text-muted" />
-                      <span>{cat.label}</span>
+            {categories.length === 0 ? (
+              <p className="mt-4 text-xs text-muted">No category could be scored in this session.</p>
+            ) : (
+              <div className="mt-4 space-y-3.5">
+                {categories.map((cat) => (
+                  <div key={cat.key} className="space-y-1.5">
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2 text-[#c9cad3] font-medium">
+                        <Icon name={CATEGORY_ICON[cat.key]} size={14} className="text-muted" />
+                        <span>{cat.label}</span>
+                      </div>
+                      <span className="num font-semibold text-white">{cat.score.toFixed(1)} / 5</span>
                     </div>
-                    <span className="num font-semibold text-white">{cat.score.toFixed(1)} / 5</span>
+                    <div className="h-2 w-full rounded-full bg-white/[0.08] overflow-hidden" aria-hidden>
+                      <div className={clsx("h-full rounded-full transition-all duration-700", cat.score < 3 ? "bg-gradient-to-r from-rose-500 to-red-400" : "bg-gradient-to-r from-indigo-500 to-purple-400")} style={{ width: `${Math.min(100, (cat.score / 5) * 100)}%` }} />
+                    </div>
                   </div>
-                  {/* Progress Meter Bar */}
-                  <div className="h-2 w-full rounded-full bg-white/[0.08] overflow-hidden">
-                    <div
-                      className={clsx(
-                        "h-full rounded-full transition-all duration-700",
-                        cat.isLow ? "bg-gradient-to-r from-rose-500 to-red-400" : "bg-gradient-to-r from-indigo-500 to-purple-400"
-                      )}
-                      style={{ width: `${Math.min(100, (cat.score / 5) * 100)}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* CARD 2: Recommended next steps */}
-        <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-5 shadow-xl flex flex-col justify-between">
+        {/* CARD 2: Recommended next steps, worked out from this session */}
+        <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-5 shadow-xl flex flex-col justify-between" data-testid="report-next-steps">
           <div>
             <div className="flex items-center gap-2 pb-1">
               <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue/15 text-blue-soft">
@@ -400,41 +328,39 @@ export function InterviewReportView(p: InterviewReportViewProps) {
               </div>
               <h3 className="text-sm font-semibold text-white">Recommended next steps</h3>
             </div>
-            <p className="text-xs text-muted mb-4 border-b border-white/[0.07] pb-3">Focus on the areas that will have the biggest impact.</p>
+            <p className="text-xs text-muted mb-4 border-b border-white/[0.07] pb-3">Worked out from this session’s answers: your weakest answer, your lowest category and any habit that repeated.</p>
 
-            <div className="space-y-2.5">
-              <Link
-                href={`/interviews/${interview.id}#training`}
-                className="group flex items-center justify-between gap-3 p-3 rounded-xl bg-[#141326] border border-white/10 hover:border-white/20 transition-all"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/[0.06] text-blue-soft group-hover:bg-blue/20 transition-colors">
-                    <Icon name="code" size={17} />
-                  </div>
-                  <div>
-                    <div className="text-xs font-semibold text-white group-hover:text-blue-soft transition-colors">Build technical depth</div>
-                    <div className="text-[11px] text-muted line-clamp-1 mt-0.5">Practise questions that explore your approach and trade-offs.</div>
-                  </div>
-                </div>
-                <Icon name="chevronRight" size={14} className="text-muted group-hover:text-white transition-colors shrink-0" />
-              </Link>
-
-              <Link
-                href={`/interviews/${interview.id}#training`}
-                className="group flex items-center justify-between gap-3 p-3 rounded-xl bg-[#141326] border border-white/10 hover:border-white/20 transition-all"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/[0.06] text-purple-400 group-hover:bg-purple-500/20 transition-colors">
-                    <Icon name="chat" size={17} />
-                  </div>
-                  <div>
-                    <div className="text-xs font-semibold text-white group-hover:text-purple-400 transition-colors">Be more concise</div>
-                    <div className="text-[11px] text-muted line-clamp-1 mt-0.5">Practise giving clear, structured answers within 1–2 minutes.</div>
-                  </div>
-                </div>
-                <Icon name="chevronRight" size={14} className="text-muted group-hover:text-white transition-colors shrink-0" />
-              </Link>
-            </div>
+            {p.drills.length === 0 ? (
+              <p className="text-xs text-muted">{report.score == null ? "Nothing was scored in this session, so there is nothing to recommend from it." : "Nothing is recommended from this session: no answer, category or habit needs a drill."}</p>
+            ) : (
+              <ul className="space-y-2.5">
+                {p.drills.map((d) => (
+                  <li key={d.title} className="flex items-center justify-between gap-3 p-3 rounded-xl bg-[#141326] border border-white/10">
+                    <div className="min-w-0">
+                      <div className="text-xs font-semibold text-white">
+                        {d.title}
+                        {d.done ? <span className="ml-1.5 font-medium text-emerald-300">Done</span> : null}
+                      </div>
+                      <div className="text-[11px] text-muted mt-0.5">
+                        {d.detail} About {d.minutes} min.
+                      </div>
+                    </div>
+                    {d.spec.kind === "story" ? (
+                      <Link
+                        href={`/interviews/${interview.id}/story?skill=${encodeURIComponent(d.spec.skill ?? "")}&question=${encodeURIComponent(d.spec.question ?? "")}`}
+                        className="shrink-0 rounded-xl bg-[#252048] hover:bg-[#322a61] border border-indigo-500/30 px-3 py-1.5 text-xs font-semibold text-white transition-colors"
+                      >
+                        Build it
+                      </Link>
+                    ) : (
+                      <StartButton interviewId={interview.id} micOk={p.micOk} size="sm" body={{ kind: "drill", drill: d.spec }} className="shrink-0">
+                        {d.done ? "Again" : "Start"}
+                      </StartButton>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
 
@@ -509,171 +435,186 @@ export function InterviewReportView(p: InterviewReportViewProps) {
       <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-6 shadow-xl">
         {/* Tabs Row */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/[0.08] pb-4">
-          <div className="flex items-center gap-6">
+          <div role="tablist" aria-label="Report" className="flex items-center gap-6">
             <button
               type="button"
+              role="tab"
+              aria-selected={activeTab === "review"}
               onClick={() => setActiveTab("review")}
               className={clsx(
                 "text-sm font-semibold pb-1 relative transition-colors",
-                activeTab === "review" ? "text-white after:absolute after:bottom-[-17px] after:left-0 after:right-0 after:h-0.5 after:bg-blue-500" : "text-muted hover:text-white"
+                activeTab === "review" ? "text-white after:absolute after:bottom-[-17px] after:left-0 after:right-0 after:h-0.5 after:bg-blue-500" : "text-[#a9abc0] hover:text-white"
               )}
             >
               Question review
             </button>
             <button
               type="button"
-              onClick={() => setActiveTab("transcript")}
-              className={clsx(
-                "text-sm font-semibold pb-1 relative transition-colors",
-                activeTab === "transcript" ? "text-white after:absolute after:bottom-[-17px] after:left-0 after:right-0 after:h-0.5 after:bg-blue-500" : "text-muted hover:text-white"
-              )}
-            >
-              Full transcript
-            </button>
-            <button
-              type="button"
+              role="tab"
+              aria-selected={activeTab === "details"}
               onClick={() => setActiveTab("details")}
               className={clsx(
                 "text-sm font-semibold pb-1 relative transition-colors",
-                activeTab === "details" ? "text-white after:absolute after:bottom-[-17px] after:left-0 after:right-0 after:h-0.5 after:bg-blue-500" : "text-muted hover:text-white"
+                activeTab === "details" ? "text-white after:absolute after:bottom-[-17px] after:left-0 after:right-0 after:h-0.5 after:bg-blue-500" : "text-[#a9abc0] hover:text-white"
               )}
             >
-              Interview details
+              Session details
             </button>
           </div>
 
-          {/* Filter dropdown */}
-          <div className="w-48">
-            <CustomSelect
-              value={categoryFilter}
-              onChange={setCategoryFilter}
-              options={[
-                { value: "all", label: "All categories" },
-                ...Array.from(new Set(rows.map((r) => r.group).filter(Boolean))).map((rawCat) => {
-                  const cat = rawCat as string;
-                  const label =
-                    cat === "competency"
-                      ? "Competency & Skills"
-                      : cat === "strengths"
-                      ? "Strengths"
-                      : cat === "presentation"
-                      ? "Presentation"
-                      : cat === "technical"
-                      ? "Technical"
-                      : cat === "cv"
-                      ? "Experience"
-                      : cat === "motivation"
-                      ? "Motivation"
-                      : cat;
-                  return { value: cat, label };
-                }),
-                ...(rows.length === 0
-                  ? [
-                      { value: "competency", label: "Skills" },
-                      { value: "technical", label: "Technical" },
-                      { value: "cv", label: "Experience" },
-                    ]
-                  : []),
-              ]}
-              size="sm"
-              align="right"
-            />
-          </div>
+          {activeTab === "review" && filterOptions.length > 2 && (
+            <div className="w-48">
+              <CustomSelect value={categoryFilter} onChange={setCategoryFilter} options={filterOptions} size="sm" align="right" />
+            </div>
+          )}
         </div>
 
-        {/* Question Review Header Banner (Exact match to Image 1) */}
-        <div className="mt-5 rounded-2xl bg-[#141326] border border-white/[0.08] p-5 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3.5">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-500/15 text-purple-400 border border-purple-500/25">
-              <Icon name="chat" size={20} />
+        {activeTab === "review" && (
+          <>
+            <div className="mt-5 rounded-2xl bg-[#141326] border border-white/[0.08] p-5 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3.5">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-500/15 text-purple-300 border border-purple-500/25">
+                  <Icon name="chat" size={20} />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-white tracking-tight">Question review</h2>
+                  <p className="text-xs text-[#a5a7b8]">Open a question to hear your answer and read its transcript and feedback. The notes beside each one are what was measured in that answer.</p>
+                </div>
+              </div>
+              <span className="rounded-full bg-white/10 border border-white/10 px-3 py-1 text-xs font-semibold text-white shrink-0">
+                {filteredRows.length} question{filteredRows.length === 1 ? "" : "s"}
+              </span>
             </div>
-            <div>
-              <h2 className="text-base font-bold text-white tracking-tight">Question review</h2>
-              <p className="text-xs text-[#a5a7b8]">
-                Select any question to see your recorded answer, transcript, detailed feedback and a refined answer.
+
+            {filteredRows.length === 0 ? (
+              <p className="mt-4 rounded-xl bg-[#141326] border border-white/[0.06] p-5 text-xs text-muted" data-testid="report-no-rows">
+                {rows.length === 0 ? "No questions were answered in this session." : "No questions in this category."}
               </p>
+            ) : (
+              <div className="mt-4 overflow-x-auto">
+                <table className="w-full text-left text-xs" data-testid="report-rows">
+                  <thead className="text-muted border-b border-white/[0.06]">
+                    <tr>
+                      <th scope="col" className="py-3 px-3 font-medium w-8">#</th>
+                      <th scope="col" className="py-3 px-3 font-medium min-w-[280px]">Question</th>
+                      <th scope="col" className="py-3 px-3 font-medium w-28">Category</th>
+                      <th scope="col" className="py-3 px-3 font-medium w-24">Your score</th>
+                      <th scope="col" className="py-3 px-3 font-medium">What was measured</th>
+                      <th scope="col" className="py-3 px-3 w-44 min-w-[170px] text-right whitespace-nowrap">
+                        <span className="sr-only">Open</span>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/[0.05] text-[#c9cad3]">
+                    {visibleRows.map((r) => {
+                      const measured = rowFeedback(r);
+                      // Only an answer that was saved can be opened. A row without one has no link.
+                      const answerHref = r.answerId ? `/interviews/${interview.id}/answers/${r.answerId}?mock=${mock.id}` : null;
+                      const pill = r.slot === "opening" ? "Opening" : r.slot === "closing" ? "Close" : GROUP_LABEL[r.group];
+                      return (
+                        <tr key={r.number} className="hover:bg-white/[0.03] transition-colors">
+                          <td className="py-4 px-3 num text-muted">{r.number}</td>
+                          <td className="py-4 px-3 font-medium text-white max-w-[340px]">
+                            {answerHref ? (
+                              <Link href={answerHref} className="hover:text-blue-soft transition-colors">
+                                {r.question}
+                              </Link>
+                            ) : (
+                              r.question
+                            )}
+                          </td>
+                          <td className="py-4 px-3">
+                            <span className="inline-flex px-3 py-1 rounded-md text-[11px] font-semibold bg-[#2a1b42] text-[#d8b4fe] border border-[#581c87]/50">{pill}</span>
+                          </td>
+                          <td className="py-4 px-3 num font-bold text-white whitespace-nowrap">{r.overall != null ? `${r.overall.toFixed(1)} / 5` : <span className="font-medium text-muted">Not scored</span>}</td>
+                          <td className="py-4 px-3">
+                            {measured.good.length + measured.improve.length === 0 ? (
+                              <span className="text-muted">Nothing could be measured in this answer.</span>
+                            ) : (
+                              <ul className="space-y-1.5 text-xs">
+                                {measured.improve.slice(0, 2).map((line) => (
+                                  <li key={line} className="flex items-start gap-2">
+                                    <span aria-hidden className="mt-0.5 flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border border-amber-400/60 text-amber-300 text-[9px] font-bold">!</span>
+                                    <span className="text-[#d1d2dc] leading-tight">{line}</span>
+                                  </li>
+                                ))}
+                                {measured.good.slice(0, 2).map((line) => (
+                                  <li key={line} className="flex items-start gap-2">
+                                    <span aria-hidden className="mt-0.5 flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">✓</span>
+                                    <span className="text-[#a5a7b8] leading-tight">{line}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </td>
+                          <td className="py-4 px-3 text-right whitespace-nowrap">
+                            {answerHref ? (
+                              <Link href={answerHref} aria-label={`Review your answer to question ${r.number}`} className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-[#252048] hover:bg-[#322a61] border border-indigo-500/30 hover:border-indigo-400/60 text-xs font-semibold text-white whitespace-nowrap transition-colors">
+                                <span className="whitespace-nowrap">Review answer</span>
+                                <span aria-hidden className="text-sm leading-none shrink-0">→</span>
+                              </Link>
+                            ) : (
+                              <span className="text-muted">No saved answer</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {filteredRows.length > 3 && (
+              <div className="mt-4 border-t border-white/[0.06] pt-3 text-center">
+                <button type="button" onClick={() => setExpandedAll((v) => !v)} aria-expanded={expandedAll} className="text-xs font-semibold text-[#a9abc0] hover:text-white inline-flex items-center gap-1.5 transition-colors">
+                  {expandedAll ? "Show fewer questions" : `View all ${filteredRows.length} questions`}
+                </button>
+              </div>
+            )}
+          </>
+        )}
+
+        {activeTab === "details" && (
+          <dl className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 text-xs" data-testid="report-details">
+            {(
+              [
+                ["Started", p.whenFormatted],
+                ["Length", p.durationFormatted || "Not recorded"],
+                ["Practice settings", p.difficultyFormatted || "Not recorded"],
+                ["Questions planned", String(mock.planned)],
+                ["Questions answered", countsLine(report.questionCount, report.followUpCount)],
+                ["Overall score", report.score != null ? `${report.score.toFixed(1)} out of 5` : "Not scored"],
+              ] as const
+            ).map(([label, value]) => (
+              <div key={label}>
+                <dt className="text-muted font-medium">{label}</dt>
+                <dd className="mt-0.5 text-white">{value}</dd>
+              </div>
+            ))}
+            {p.endedEarly && (
+              <div className="sm:col-span-2">
+                <dt className="text-muted font-medium">Ended early</dt>
+                <dd className="mt-0.5 text-white">This interview was ended before every planned question was answered, so the score covers only the answers above.</dd>
+              </div>
+            )}
+            <div className="sm:col-span-2">
+              <dt className="text-muted font-medium">Questions skipped or replaced</dt>
+              <dd className="mt-1 text-white">
+                {p.skipped.length === 0 ? (
+                  "None."
+                ) : (
+                  <ul className="space-y-1.5">
+                    {p.skipped.map((s, i) => (
+                      <li key={i}>
+                        {s.question} <span className="text-muted">({s.reason})</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </dd>
             </div>
-          </div>
-          <span className="rounded-full bg-white/10 border border-white/10 px-3 py-1 text-xs font-semibold text-white shrink-0">
-            {filteredRows.length} questions
-          </span>
-        </div>
-
-        {/* Questions Table */}
-        <div className="mt-4 overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="text-muted border-b border-white/[0.06]">
-              <tr>
-                <th className="py-3 px-3 font-medium w-8">#</th>
-                <th className="py-3 px-3 font-medium min-w-[280px]">Question</th>
-                <th className="py-3 px-3 font-medium w-28">Category</th>
-                <th className="py-3 px-3 font-medium w-24">Your score</th>
-                <th className="py-3 px-3 font-medium">Key feedback</th>
-                <th className="py-3 px-3 w-44 min-w-[170px] text-right whitespace-nowrap" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-white/[0.05] text-[#c9cad3]">
-              {visibleRows.map((r) => {
-                const categoryPillLabel = r.group === "cv" ? "Experience" : r.group === "competency" ? "Skills" : r.group === "motivation" ? "Motivation" : r.group === "technical" ? "Technical" : "Situational";
-                const positiveFeedback = r.overall && r.overall >= 4.0 ? "Clear career interest and relevance." : "Described the issue and your actions.";
-                const improveFeedback = r.overall && r.overall >= 4.0 ? "Add stronger, role-specific reasons and impact." : "Add more detail on the outcome and what you learnt.";
-                const answerHref = `/interviews/${interview.id}/answers/${r.answerId || r.questionId || `q-${r.number}`}?mock=${mock.id}&q=${r.questionId}`;
-
-                return (
-                  <tr key={r.number} className="hover:bg-white/[0.03] transition-colors group">
-                    <td className="py-4 px-3 num text-muted">{r.number}</td>
-                    <td className="py-4 px-3 font-medium text-white max-w-[340px]">
-                      <Link href={answerHref} className="hover:text-blue-soft transition-colors">
-                        {r.question}
-                      </Link>
-                    </td>
-                    <td className="py-4 px-3">
-                      <span className="inline-flex px-3 py-1 rounded-md text-[11px] font-semibold bg-[#2a1b42] text-[#c084fc] border border-[#581c87]/50">
-                        {categoryPillLabel}
-                      </span>
-                    </td>
-                    <td className="py-4 px-3 num font-bold text-white">
-                      {r.overall ? `${r.overall.toFixed(1)} / 5` : "2.0 / 5"}
-                    </td>
-                    <td className="py-4 px-3">
-                      <div className="space-y-1.5 text-xs">
-                        <div className="flex items-center gap-2">
-                          <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-bold">✓</span>
-                          <span className="text-[#d1d2dc] leading-tight">{positiveFeedback}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border border-white/30 text-white/40 text-[10px]">○</span>
-                          <span className="text-[#a5a7b8] leading-tight">{improveFeedback}</span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-4 px-3 text-right whitespace-nowrap">
-                      <Link
-                        href={answerHref}
-                        className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-[#252048] hover:bg-[#322a61] border border-indigo-500/30 hover:border-indigo-400/60 text-xs font-semibold text-white whitespace-nowrap transition-all shadow-sm shrink-0 group/btn"
-                      >
-                        <span className="whitespace-nowrap">Review answer</span>
-                        <span className="text-sm leading-none transition-transform group-hover/btn:translate-x-0.5 shrink-0">→</span>
-                      </Link>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-
-        {/* View all questions toggle */}
-        {filteredRows.length > 3 && (
-          <div className="mt-4 border-t border-white/[0.06] pt-3 text-center">
-            <button
-              type="button"
-              onClick={() => setExpandedAll((v) => !v)}
-              className="text-xs font-semibold text-muted hover:text-white inline-flex items-center gap-1.5 transition-colors"
-            >
-              <span>{expandedAll ? "Show fewer questions ∧" : `View all ${filteredRows.length} questions ∨`}</span>
-            </button>
-          </div>
+          </dl>
         )}
       </div>
 

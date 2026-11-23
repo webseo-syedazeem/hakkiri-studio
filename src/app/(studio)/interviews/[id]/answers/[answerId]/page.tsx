@@ -6,6 +6,7 @@ import { scoreAnswerView } from "@/lib/answers/view";
 import { findMock, findMockAsync } from "@/lib/mocks/store";
 import { hasRecording } from "@/lib/answers/audio";
 import { requirePageUser } from "@/lib/auth/require";
+import { mockAiEnabled } from "@/lib/ai/mock";
 import { QuestionFeedbackView } from "@/components/feedback/QuestionFeedbackView";
 import type { Question } from "@/lib/types";
 
@@ -36,7 +37,9 @@ export default async function AnswerFeedbackPage({
   const question: Question | undefined = resolveInterviewQuestion(interview, answer.questionId) ?? (queryQid ? resolveInterviewQuestion(interview, queryQid) : undefined);
   if (!question) notFound();
 
-  const { overall } = scoreAnswerView(answer, question.type);
+  // Every number on the screen is worked out here from the saved answer. An answer that couldn't be scored
+  // is shown as "Not scored": no figure is put in its place.
+  const scored = scoreAnswerView(answer, question.type);
 
   // 3. Navigation Links (Previous & Next question)
   let prevAnswerId: string | null = null;
@@ -74,22 +77,28 @@ export default async function AnswerFeedbackPage({
       : "Situational";
 
   const audioSrc = hasRecording(answer.id) ? `/api/answers/${answer.id}/audio/0` : null;
+  const followUps = scored.followUps.map((f, i) => ({ ...f, audioSrc: hasRecording(answer.id, i + 1) ? `/api/answers/${answer.id}/audio/${i + 1}` : null }));
 
   return (
     <QuestionFeedbackView
       interviewId={interview.id}
       mockId={mock?.id}
       roleTitle={interview.role}
-      companyName={interview.company}
       categoryLabel={categoryLabel}
       question={question}
       answer={answer}
-      overallScore={overall ?? 3.5}
+      overallScore={scored.overall}
+      scores={scored.scores}
+      lengthSec={scored.metrics.lengthSec}
+      wordsPerMinute={scored.metrics.wordsPerMinute}
+      fillerCount={scored.metrics.fillerCount}
+      followUps={followUps}
+      interviewerName={interview.interviewer?.name ?? "The interviewer"}
+      testMode={mockAiEnabled()}
       prevAnswerId={prevAnswerId}
       nextAnswerId={nextAnswerId}
       nextQuestionId={nextQuestionId}
       audioSrc={audioSrc}
-      jobDescription={interview.sources?.job}
     />
   );
 }

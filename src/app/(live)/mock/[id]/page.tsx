@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { LiveInterview, type LiveQuestion, type LiveSession } from "@/components/live/LiveInterview";
-import { demoMock, roadmapAnswer } from "@/lib/mock-data";
+
 import { isLaunch } from "@/lib/launch";
 import { getInterview, getInterviewAsync } from "@/lib/interviews/store";
 import { understandingOf } from "@/lib/interviews/build";
@@ -70,10 +70,6 @@ export default async function MockInterviewPage({
   const common = {
     interviewId: interview.id,
     heading: `${interview.company}, ${interview.role.split(",")[0]}`,
-    // Without keys (or a recording), the demo feedback and report are shown: they belong to the Halden demo.
-    // The demo is hidden at launch, so don't point anyone at it.
-    demoFeedbackHref: isLaunch() ? undefined : `/interviews/${demoMock.interviewId}/answers/${roadmapAnswer.id}`,
-    demoReportHref: isLaunch() ? undefined : `/interviews/${demoMock.interviewId}/mocks/${demoMock.id}`,
   };
   const byId = (qid: string) => resolveInterviewQuestion(interview, qid);
 

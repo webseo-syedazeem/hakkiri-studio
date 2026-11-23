@@ -97,8 +97,6 @@ export interface LiveInterviewProps {
   spares?: LiveQuestion[];
   /** Shown when there are no API keys yet, or no audio was recorded. */
   /** The demo screens to show when nothing could be scored. Absent at launch (the demo is hidden). */
-  demoFeedbackHref?: string;
-  demoReportHref?: string;
 }
 
 const BARS = 206;
@@ -321,10 +319,10 @@ export function LiveInterview(p: LiveInterviewProps) {
       results = await Promise.all(scored.current.map((s) => s.promise));
       setScoredCount(results.filter((r) => r.id).length);
     }
-    let answerIds = results.flatMap((r) => (r.id ? [r.id] : []));
-    if (!answerIds.length) {
-      answerIds = queue.slice(0, Math.max(1, qIndex)).map((_, i) => `ans_${Date.now()}_${i}`);
-    }
+    const answerIds = results.flatMap((r) => (r.id ? [r.id] : []));
+    // A report is made only from answers that were really scored. With none, the person is told so:
+    // no answer is made up to stand in for them.
+    if (!answerIds.length) return fail("None of your answers could be scored, so there is no report for this session. Try again, or go back to your interviews.", "report");
     try {
       const res = await fetch("/api/mocks", {
         method: "POST",
@@ -345,46 +343,16 @@ export function LiveInterview(p: LiveInterviewProps) {
         }),
       });
       const json = (await res.json().catch(() => ({}))) as { id?: string; message?: string };
-      const savedMockId = json.id || session?.id;
-
-      // Persist completed practice session to client cache for instantaneous updates
-      try {
-        const practiceItem = {
-          id: savedMockId || `mock_${Date.now()}`,
-          interviewId: p.interviewId,
-          title: session?.drill?.title || (session?.mode === "drill" ? "Targeted practice drill" : "Full practice interview"),
-          dateText: "Today · Completed",
-          score: 3.6,
-          timestamp: Date.now(),
-          href: savedMockId ? `/interviews/${p.interviewId}/mocks/${savedMockId}` : `/interviews/${p.interviewId}/mocks`,
-        };
-        const rawAll = localStorage.getItem("hk_recent_practice");
-        const listAll = rawAll ? JSON.parse(rawAll) : [];
-        localStorage.setItem(
-          "hk_recent_practice",
-          JSON.stringify([practiceItem, ...listAll.filter((x: any) => x.id !== practiceItem.id)].slice(0, 10))
-        );
-
-        const rawIv = localStorage.getItem(`hk_recent_practice_${p.interviewId}`);
-        const listIv = rawIv ? JSON.parse(rawIv) : [];
-        localStorage.setItem(
-          `hk_recent_practice_${p.interviewId}`,
-          JSON.stringify([practiceItem, ...listIv.filter((x: any) => x.id !== practiceItem.id)].slice(0, 10))
-        );
-        window.dispatchEvent(new Event("hk_practice_updated"));
-      } catch {}
-
       if (res.ok && json.id) {
         router.push(`/interviews/${p.interviewId}/mocks/${json.id}`);
         return;
       }
-      console.warn("[LiveInterview] mock report save issue, navigating to mocks overview:", json.message);
-      router.push(`/interviews/${p.interviewId}/mocks`);
-    } catch (err) {
-      console.warn("[LiveInterview] network error saving mock, navigating to interviews:", err);
-      router.push(`/interviews/${p.interviewId}/mocks`);
+      // The session was not saved. The person is told, and can try again: nothing is recorded as if it had been.
+      fail(json.message ?? "Your answers were scored, but the report couldn’t be saved. Try again.", "report");
+    } catch {
+      fail("Your answers were scored, but the report couldn’t be saved because the app couldn’t be reached. Check your connection and try again.", "report");
     }
-  }, [scoreDraft, router, p.interviewId, session?.id, style, queue, qIndex]);
+  }, [scoreDraft, router, fail, p.interviewId, session?.id, session?.mode, session?.drill, style, queue]);
 
   /** The next question, or the end. With little time left, the interviewer goes to the closing question. */
   const advance = useCallback(
@@ -566,10 +534,9 @@ export function LiveInterview(p: LiveInterviewProps) {
 
     if (turn.kind === "main") {
       if (!audio || audio.size < 2000) {
-        // Nothing usable was recorded. In an interview, ask the same question again rather than leave.
-        const demo = isRun ? p.demoReportHref : p.demoFeedbackHref;
-        if (!isRun && demo) router.push(`${demo}?demo=no-audio`);
-        else fail("We didn’t catch an answer there. Check your microphone and try again.", "main");
+        // Nothing usable was recorded. The person is told and can answer again. They are never sent to
+        // someone else's (the demo's) feedback as though it were a result of their own answer.
+        fail("We didn’t catch an answer there. Check your microphone and try again.", "main");
         return;
       }
       setMainSec(seconds);
@@ -593,8 +560,8 @@ export function LiveInterview(p: LiveInterviewProps) {
         } else if (res.ok && json.draftId) {
           draftId.current = json.draftId;
           next(json.followUp ?? null);
-        } else if (json.error === "not-configured" && (isRun ? p.demoReportHref : p.demoFeedbackHref)) {
-          router.push(`${isRun ? p.demoReportHref : p.demoFeedbackHref}?demo=no-keys`);
+        } else if (json.error === "not-configured") {
+          fail(json.message ?? "Scoring isn’t switched on in this copy of Hakkiri, so your answer couldn’t be scored. Nothing was saved.", "main");
         } else {
           fail(json.message ?? "Something went wrong with your answer.", "main");
         }
@@ -1198,8 +1165,8 @@ export function LiveInterview(p: LiveInterviewProps) {
                   <h1 className="mt-3 text-2xl sm:text-3xl font-bold tracking-tight text-white leading-tight">
                     {session?.mode === "drill" ? "That’s the focused practice done." : "Thank you. That’s the end of the interview."}
                   </h1>
-                  <p className="mt-3 text-sm text-[#a1a2b3] leading-relaxed max-w-xl">
-                    Your report is being written now: every answer and follow-up, scored the same way.
+                  <p className="mt-3 text-sm text-[#a1a2b3] leading-relaxed max-w-xl" role={phase === "error" ? "alert" : undefined}>
+                    {phase === "error" ? (problem?.message ?? "Your report couldn’t be made.") : "Your report is being written now: every answer and follow-up, scored the same way."}
                   </p>
                   <div className="mt-6 rounded-xl bg-[#141326] border border-white/10 p-5">
                     <div className="flex items-center justify-between text-xs font-medium">
@@ -1562,10 +1529,6 @@ export function LiveInterview(p: LiveInterviewProps) {
                         <Button onClick={skipAfterError}>{turn.kind === "follow-up" ? "Skip this follow-up" : "Skip this question"}</Button>
                       ) : problem?.stage === "follow-up" ? (
                         <Button onClick={() => void scoreSingle()}>Skip to feedback</Button>
-                      ) : p.demoFeedbackHref ? (
-                        <Link href={`${p.demoFeedbackHref}?demo=error`} className={buttonClass("secondary", "md")}>
-                          See demo feedback
-                        </Link>
                       ) : null}
                       <Button variant="primary" className="px-6 rounded-xl text-xs font-semibold" onClick={answerAgain}>
                         <Icon name="mic" size={15} />
