@@ -15,7 +15,7 @@ That starts the app on port 3179 with a fresh, throwaway data folder, runs every
 | `flow.cjs` | The whole interview: set up from a CV and job, understanding, live interview with follow-ups and a skip, report, feedback, drills, re-run, prep sheet |
 | `slots.cjs` | Opening and closing questions always in the right place |
 | `pay.cjs` | Talking about pay: the drill, its checks and the prep sheet |
-| `cv-cleanup.cjs` | CV section, as new users: an empty start, saves that survive a reload, no sample content or unsupported claims, and a second account unable to open or save over another's CV |
+| `cv-cleanup.cjs` | CV section, as new users: an empty start, saves that survive a reload, no sample content or unsupported claims, a second account unable to open or save over another's CV, and an empty Evidence Bank for a new account |
 | `audit.cjs` | Every page, every button and link: no dead links, no dead ends, no page errors (ends by deleting a throwaway interview) |
 | `a11y-page.cjs` | axe (WCAG 2.1 AA) on the main pages; `a11y.cjs` crawls everything |
 

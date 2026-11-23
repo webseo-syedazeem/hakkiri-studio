@@ -60,6 +60,19 @@ run("CV clean-up", async (browser) => {
   await a.page.waitForLoadState("networkidle");
   const hub = await a.page.locator("body").innerText();
   check(!/Ashby|Greenhouse|Workday/.test(hub), "Apply hub names no applicant-tracking systems");
+  check(!/verified/i.test(hub), "Apply hub does not call facts 'verified'");
+  check(/facts you (have )?confirmed/i.test(hub), "Apply hub says the facts are confirmed by you");
+
+  // --- A new account's Evidence Bank is empty ---
+  const c = await newUser(browser, "carol");
+  await c.page.goto(`${BASE}/apply/evidence`);
+  const bank = await c.page.evaluate(async () => (await fetch("/api/apply/evidence")).json());
+  check(Array.isArray(bank) && bank.length === 0, "a new account's Evidence Bank is empty", JSON.stringify(bank).slice(0, 200));
+  await c.page.goto(`${BASE}/apply/evidence`);
+  await c.page.waitForLoadState("networkidle");
+  const bankText = await c.page.locator("body").innerText();
+  check(!/Spearheaded|Black Friday|Playwright/.test(bankText), "the Evidence Bank page shows no invented achievements");
+  check(!/verified/i.test(bankText), "the Evidence Bank page does not call facts 'verified'");
 
   check(a.errors.length === 0 && b.errors.length === 0, "no page errors", [...a.errors, ...b.errors].join("\n"));
 });

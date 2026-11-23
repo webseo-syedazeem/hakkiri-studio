@@ -57,7 +57,7 @@ export default function ApplyHomePage() {
               Applications & Job Intake Hub
             </h1>
             <p className="text-xs sm:text-sm text-muted max-w-3xl leading-relaxed">
-              End-to-end career intelligence: free diagnostic audit, verified evidence store,
+              End-to-end career intelligence: free diagnostic audit, an evidence store of facts you have confirmed,
               ATS CV architect, intelligent Gap Map, and seamless mock practice hand-off.
             </p>
           </div>
@@ -102,7 +102,7 @@ export default function ApplyHomePage() {
           <div className="rounded-2xl border border-line bg-panel-2/70 p-4 backdrop-blur-sm shadow-sm hover:border-blue/40 transition">
             <div className="text-[11px] text-muted font-bold uppercase tracking-wider">Ready to Review</div>
             <div className="text-3xl font-black text-amber-400 mt-1">{readyCount}</div>
-            <div className="text-[11px] text-muted font-medium mt-1">Grounded in verified facts</div>
+            <div className="text-[11px] text-muted font-medium mt-1">Built from facts you confirmed</div>
           </div>
           <div className="rounded-2xl border border-line bg-panel-2/70 p-4 backdrop-blur-sm shadow-sm hover:border-blue/40 transition">
             <div className="text-[11px] text-muted font-bold uppercase tracking-wider">Active Job Matches</div>
@@ -406,7 +406,7 @@ export default function ApplyHomePage() {
               <span className="text-emerald-400">✓</span> Nothing Invented
             </div>
             <p className="text-[11px] text-muted leading-relaxed">
-              Output contains only verified facts from your profile and Evidence Bank.
+              Output contains only facts you have confirmed in your profile and Evidence Bank.
             </p>
           </div>
 

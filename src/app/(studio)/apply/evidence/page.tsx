@@ -125,7 +125,7 @@ export default function EvidenceBankPage() {
         {/* Quick Highlights Bar */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-6 mt-6 border-t border-line/60">
           <div className="p-4 rounded-2xl bg-booth/70 border border-line/80 backdrop-blur-sm">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Verified Facts</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Confirmed facts</span>
             <div className="text-2xl font-black text-ink mt-0.5">{safeList.length}</div>
           </div>
           <div className="p-4 rounded-2xl bg-booth/70 border border-line/80 backdrop-blur-sm">

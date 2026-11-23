@@ -14,6 +14,7 @@ import type {
   SendLog,
   ApplySettings,
 } from "./schema";
+import { isSeededEvidence } from "./seeded";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
@@ -236,8 +237,16 @@ export async function saveVoice(voice: Voice): Promise<Voice> {
   return saveDoc<Voice>(APPLY_COLLECTIONS.VOICES, voice.userId, voice);
 }
 
+/** A person's evidence. The invented entries an earlier build seeded are never returned (see seeded.ts). */
 export async function listEvidence(userId: string): Promise<Evidence[]> {
-  return queryDocs<Evidence>(APPLY_COLLECTIONS.EVIDENCE, (e) => e.userId === userId);
+  return queryDocs<Evidence>(APPLY_COLLECTIONS.EVIDENCE, (e) => e.userId === userId && !isSeededEvidence(e));
+}
+
+/** Deletes the invented entries an earlier build seeded into this person's bank. Returns how many were removed. */
+export async function removeSeededEvidence(userId: string): Promise<number> {
+  const seeded = await queryDocs<Evidence>(APPLY_COLLECTIONS.EVIDENCE, (e) => e.userId === userId && isSeededEvidence(e));
+  for (const e of seeded) await deleteDoc(APPLY_COLLECTIONS.EVIDENCE, e.id);
+  return seeded.length;
 }
 
 export async function saveEvidence(ev: Evidence): Promise<Evidence> {
