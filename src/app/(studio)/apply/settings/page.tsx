@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import type { ApplySettings } from "@/lib/apply/schema";
 
 export default function ApplySettingsPage() {
@@ -8,6 +9,8 @@ export default function ApplySettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savedMsg, setSavedMsg] = useState(false);
+  const [newTitle, setNewTitle] = useState("");
+  const [newExcluded, setNewExcluded] = useState("");
 
   useEffect(() => {
     async function load() {
@@ -71,10 +74,49 @@ export default function ApplySettingsPage() {
     handleSave(updated);
   };
 
+  const handleAddTitle = () => {
+    if (!settings || !newTitle.trim()) return;
+    if (settings.titles.includes(newTitle.trim())) return;
+    const updated = {
+      ...settings,
+      titles: [...settings.titles, newTitle.trim()],
+    };
+    setNewTitle("");
+    handleSave(updated);
+  };
+
+  const handleRemoveTitle = (t: string) => {
+    if (!settings) return;
+    const updated = {
+      ...settings,
+      titles: settings.titles.filter((item) => item !== t),
+    };
+    handleSave(updated);
+  };
+
+  const handleAddExcluded = () => {
+    if (!settings || !newExcluded.trim()) return;
+    const updated = {
+      ...settings,
+      excludeEmployers: [...settings.excludeEmployers, newExcluded.trim()],
+    };
+    setNewExcluded("");
+    handleSave(updated);
+  };
+
+  const handleRemoveExcluded = (e: string) => {
+    if (!settings) return;
+    const updated = {
+      ...settings,
+      excludeEmployers: settings.excludeEmployers.filter((item) => item !== e),
+    };
+    handleSave(updated);
+  };
+
   if (loading || !settings) {
     return (
       <div className="flex h-64 items-center justify-center text-muted">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue border-t-transparent" />
       </div>
     );
   }
@@ -82,144 +124,276 @@ export default function ApplySettingsPage() {
   const isPaused = Boolean(settings.pausedAt);
 
   return (
-    <div className="max-w-4xl space-y-8 animate-fadeIn w-full mx-auto">
+    <div className="w-full space-y-6 animate-fadeIn pb-16">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-line pb-5">
-        <div>
-          <span className="text-xs font-bold uppercase tracking-wider text-accent">Hakkiri Apply</span>
-          <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight">
+        <div className="space-y-1">
+          <div className="inline-flex items-center gap-2 px-3 py-0.5 rounded-full bg-blue/10 border border-blue/20 text-blue text-[11px] font-bold tracking-wide uppercase">
+            <span className="h-1.5 w-1.5 rounded-full bg-blue animate-pulse" />
+            Hakkiri Apply Suite · Safety & Governance
+          </div>
+          <h1 className="text-2xl md:text-3xl font-black text-ink tracking-tight">
             Auto-Apply Settings & Safety Limits
           </h1>
-          <p className="text-xs text-muted mt-1">
+          <p className="text-xs text-muted max-w-2xl">
             Configure search titles, safety caps, and emergency pause controls. You approve everything that leaves.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           {savedMsg && (
-            <span className="text-xs font-semibold text-emerald-400">
+            <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-3.5 py-1.5 rounded-xl border border-emerald-500/20 animate-fadeIn">
               ✓ Settings saved
             </span>
           )}
           <button
             onClick={() => handleSave(settings)}
             disabled={saving}
-            className="rounded-xl bg-accent px-5 py-2.5 text-xs font-bold text-white shadow hover:bg-accent-hover transition disabled:opacity-50"
+            className="rounded-2xl bg-gradient-to-r from-blue-fill to-blue-hover px-5 py-2.5 text-xs font-bold text-white shadow-xl shadow-blue-fill/25 hover:scale-[1.02] active:scale-[0.98] transition disabled:opacity-50"
           >
             {saving ? "Saving..." : "Save Settings"}
           </button>
         </div>
       </div>
 
-      {/* Emergency Pause Box (As specified in spec) */}
+      {/* Emergency Pause Box (Prominent Spec Feature) */}
       <div
-        className={`rounded-2xl border p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition ${
+        className={`rounded-3xl border p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-5 transition shadow-xl backdrop-blur-sm ${
           isPaused
             ? "border-rose-500/50 bg-rose-500/10 text-rose-300"
-            : "border-line bg-booth text-ink"
+            : "border-line bg-panel text-ink"
         }`}
       >
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="text-lg">{isPaused ? "🛑" : "🟢"}</span>
-            <h3 className="text-sm font-bold text-white">
-              {isPaused ? "Auto-Apply is PAUSED" : "Auto-Apply Status: Active"}
+        <div className="space-y-1">
+          <div className="flex items-center gap-2.5">
+            <span className="text-xl">{isPaused ? "🛑" : "🟢"}</span>
+            <h3 className="text-base font-extrabold text-ink">
+              {isPaused ? "Auto-Apply is PAUSED" : "Auto-Apply Status: Active & Ready"}
             </h3>
           </div>
-          <p className="text-xs text-muted mt-1">
+          <p className="text-xs text-muted max-w-3xl leading-relaxed">
             {isPaused
-              ? `Paused at ${new Date(settings.pausedAt!).toLocaleTimeString()}. No tokens will be issued and nothing will be sent to employers.`
-              : "Pause means stop. Pressing pause halts all queued applications and cancels approval tokens immediately."}
+              ? `Paused at ${new Date(settings.pausedAt!).toLocaleTimeString()}. All outgoing browser form fills, token approvals, and auto-sends are provably stopped.`
+              : "Pause means provable stop. Pressing pause immediately halts all queued applications, disarms browser extensions, and blocks any sends."}
           </p>
         </div>
 
         <button
           onClick={handleTogglePause}
-          className={`rounded-xl px-5 py-2.5 text-xs font-extrabold transition shadow ${
+          className={`rounded-2xl px-6 py-3 text-xs font-black uppercase tracking-wider transition shadow-lg shrink-0 ${
             isPaused
-              ? "bg-emerald-500 text-white hover:bg-emerald-600 shadow-emerald-500/20"
-              : "bg-rose-500 text-white hover:bg-rose-600 shadow-rose-500/20"
+              ? "bg-emerald-500 text-white hover:bg-emerald-600 shadow-emerald-500/25"
+              : "bg-rose-500 text-white hover:bg-rose-600 shadow-rose-500/25"
           }`}
         >
           {isPaused ? "Resume Auto-Apply" : "Emergency Pause All Sends"}
         </button>
       </div>
 
-      {/* Limits & Controls */}
-      <div className="rounded-2xl border border-line bg-booth p-6 space-y-6">
-        <h2 className="text-sm font-bold uppercase tracking-wider text-white border-b border-line pb-3">
-          Safety Caps & Quality Thresholds
-        </h2>
+      {/* Main 2-Column Responsive Workspace */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start w-full">
+        {/* Left Column: Limits, Caps, and Role Criteria (8 cols) */}
+        <div className="xl:col-span-8 space-y-6">
+          {/* Safety Caps & Quality Thresholds */}
+          <div className="rounded-3xl border border-line bg-panel p-6 space-y-6 shadow-xl">
+            <h2 className="text-xs font-black uppercase tracking-wider text-ink border-b border-line pb-3">
+              Safety Caps & Quality Thresholds
+            </h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          {/* Daily Cap */}
-          <div>
-            <div className="flex justify-between text-xs font-medium mb-1.5">
-              <span className="text-white">Daily Applications Cap</span>
-              <span className="text-accent font-bold">{settings.dailyCap} per day</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              {/* Daily Cap */}
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs font-bold">
+                  <span className="text-muted">Daily Applications Cap</span>
+                  <span className="text-blue font-extrabold">{settings.dailyCap} per day</span>
+                </div>
+                <input
+                  type="range"
+                  min={1}
+                  max={10}
+                  value={settings.dailyCap}
+                  onChange={(e) => setSettings({ ...settings, dailyCap: Number(e.target.value) })}
+                  className="w-full accent-blue cursor-pointer"
+                />
+                <p className="text-[11px] text-muted">
+                  Focussed quality beats spam. Recommended default is 3 to 5 tailored applications daily.
+                </p>
+              </div>
+
+              {/* Min Fit Score */}
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs font-bold">
+                  <span className="text-muted">Minimum Match Fit Threshold</span>
+                  <span className="text-emerald-400 font-extrabold">{settings.minFit}% minimum</span>
+                </div>
+                <input
+                  type="range"
+                  min={60}
+                  max={90}
+                  step={5}
+                  value={settings.minFit}
+                  onChange={(e) => setSettings({ ...settings, minFit: Number(e.target.value) })}
+                  className="w-full accent-blue cursor-pointer"
+                />
+                <p className="text-[11px] text-muted">
+                  Roles with Gap Map scores below {settings.minFit}% will not be queued for sending.
+                </p>
+              </div>
+
+              {/* Salary Minimum */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-ink block">
+                  Minimum Base Salary Floor (£)
+                </label>
+                <input
+                  type="number"
+                  value={settings.salaryMin}
+                  onChange={(e) => setSettings({ ...settings, salaryMin: Number(e.target.value) })}
+                  className="w-full rounded-2xl border border-line bg-panel-2 p-3 text-xs text-ink focus:border-blue focus:outline-none"
+                />
+              </div>
+
+              {/* Remote Preference */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-ink block">
+                  Remote Work Filter
+                </label>
+                <div className="flex items-center gap-2.5 pt-2">
+                  <input
+                    type="checkbox"
+                    id="remote-opt"
+                    checked={settings.remote}
+                    onChange={(e) => setSettings({ ...settings, remote: e.target.checked })}
+                    className="h-4 w-4 rounded border-line accent-blue"
+                  />
+                  <label htmlFor="remote-opt" className="text-xs font-bold text-ink cursor-pointer">
+                    Include remote and hybrid vacancy adverts
+                  </label>
+                </div>
+              </div>
             </div>
-            <input
-              type="range"
-              min={1}
-              max={10}
-              value={settings.dailyCap}
-              onChange={(e) => setSettings({ ...settings, dailyCap: Number(e.target.value) })}
-              className="w-full accent-accent"
-            />
-            <p className="text-[11px] text-muted mt-1">
-              Focussed quality beats mass spam. Default is 3 tailored applications per day.
-            </p>
           </div>
 
-          {/* Min Fit Score */}
-          <div>
-            <div className="flex justify-between text-xs font-medium mb-1.5">
-              <span className="text-white">Minimum Match Fit Threshold</span>
-              <span className="text-emerald-400 font-bold">{settings.minFit}% minimum</span>
-            </div>
-            <input
-              type="range"
-              min={60}
-              max={90}
-              step={5}
-              value={settings.minFit}
-              onChange={(e) => setSettings({ ...settings, minFit: Number(e.target.value) })}
-              className="w-full accent-accent"
-            />
-            <p className="text-[11px] text-muted mt-1">
-              Jobs with Gap Map scores below {settings.minFit}% will not be queued for sending.
-            </p>
-          </div>
+          {/* Search Target Titles */}
+          <div className="rounded-3xl border border-line bg-panel p-6 space-y-4 shadow-xl">
+            <h2 className="text-xs font-black uppercase tracking-wider text-ink border-b border-line pb-3">
+              Target Job Titles ({settings.titles.length}/8)
+            </h2>
 
-          {/* Salary Minimum */}
-          <div>
-            <label className="text-xs font-semibold text-white block mb-1">
-              Minimum Base Salary Floor (£)
-            </label>
-            <input
-              type="number"
-              value={settings.salaryMin}
-              onChange={(e) => setSettings({ ...settings, salaryMin: Number(e.target.value) })}
-              className="w-full rounded-xl border border-line bg-canvas p-3 text-xs text-ink focus:border-accent focus:outline-none"
-            />
-          </div>
-
-          {/* Remote Preference */}
-          <div>
-            <label className="text-xs font-semibold text-white block mb-1">
-              Remote Work Filter
-            </label>
-            <div className="flex items-center gap-2 mt-2">
+            <div className="flex gap-2">
               <input
-                type="checkbox"
-                id="remote-opt"
-                checked={settings.remote}
-                onChange={(e) => setSettings({ ...settings, remote: e.target.checked })}
-                className="rounded border-line"
+                type="text"
+                placeholder="e.g., Staff Engineer, Lead Architect"
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddTitle())}
+                className="flex-1 rounded-2xl border border-line bg-panel-2 px-4 py-2.5 text-xs text-ink placeholder:text-muted focus:border-blue focus:outline-none"
               />
-              <label htmlFor="remote-opt" className="text-xs text-ink cursor-pointer">
-                Include remote and hybrid listings
-              </label>
+              <button
+                type="button"
+                onClick={handleAddTitle}
+                className="rounded-2xl bg-panel-2 border border-line-strong px-4 py-2.5 text-xs font-bold text-ink hover:bg-blue-fill hover:text-white transition"
+              >
+                Add Title
+              </button>
+            </div>
+
+            <div className="flex flex-wrap gap-2 pt-1">
+              {settings.titles.map((t, idx) => (
+                <span
+                  key={idx}
+                  className="inline-flex items-center gap-2 rounded-full border border-blue/30 bg-blue/10 px-3.5 py-1 text-xs font-bold text-blue"
+                >
+                  {t}
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveTitle(t)}
+                    className="text-blue/60 hover:text-white text-xs"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Excluded Employers */}
+          <div className="rounded-3xl border border-line bg-panel p-6 space-y-4 shadow-xl">
+            <h2 className="text-xs font-black uppercase tracking-wider text-rose-400 border-b border-line pb-3">
+              Excluded Employers & Scam Filter
+            </h2>
+
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="e.g., Unverified Agency Ltd"
+                value={newExcluded}
+                onChange={(e) => setNewExcluded(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddExcluded())}
+                className="flex-1 rounded-2xl border border-line bg-panel-2 px-4 py-2.5 text-xs text-ink placeholder:text-muted focus:border-rose-500 focus:outline-none"
+              />
+              <button
+                type="button"
+                onClick={handleAddExcluded}
+                className="rounded-2xl bg-rose-500/20 border border-rose-500/30 px-4 py-2.5 text-xs font-bold text-rose-300 hover:bg-rose-500 hover:text-white transition"
+              >
+                Block
+              </button>
+            </div>
+
+            <div className="flex flex-wrap gap-2 pt-1">
+              {settings.excludeEmployers.map((e, idx) => (
+                <span
+                  key={idx}
+                  className="inline-flex items-center gap-2 rounded-full border border-rose-500/30 bg-rose-500/10 px-3.5 py-1 text-xs font-bold text-rose-300"
+                >
+                  {e}
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveExcluded(e)}
+                    className="text-rose-400 hover:text-white text-xs"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: Governance Rules & ATS Adapters (4 cols) */}
+        <div className="xl:col-span-4 space-y-6">
+          {/* Rules Guarantee */}
+          <div className="rounded-3xl border border-line bg-panel p-6 space-y-3 shadow-xl">
+            <h3 className="text-xs font-black uppercase tracking-wider text-ink border-b border-line pb-3">
+              Core Spec Rules
+            </h3>
+            <ul className="space-y-2.5 text-xs text-muted leading-relaxed">
+              <li className="flex items-start gap-2">
+                <span className="text-emerald-400 font-bold">✓</span>
+                <span><strong className="text-ink">They Approve What Leaves:</strong> Nothing is ever submitted to an employer without explicit manual sign-off.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-emerald-400 font-bold">✓</span>
+                <span><strong className="text-ink">Fail Visibly:</strong> If a form field cannot be confidently resolved from your profile, the extension pauses and asks you.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-emerald-400 font-bold">✓</span>
+                <span><strong className="text-ink">Traceable History:</strong> Every send creates a tamper-proof timestamped audit trail.</span>
+              </li>
+            </ul>
+          </div>
+
+          {/* Supported Adapters */}
+          <div className="rounded-3xl border border-line bg-panel p-6 space-y-3 shadow-xl">
+            <h3 className="text-xs font-black uppercase tracking-wider text-ink border-b border-line pb-2">
+              Supported Application Systems
+            </h3>
+            <div className="grid grid-cols-2 gap-2 text-xs font-bold text-ink">
+              <div className="p-2.5 rounded-xl bg-panel-2 border border-line">Greenhouse</div>
+              <div className="p-2.5 rounded-xl bg-panel-2 border border-line">Workday</div>
+              <div className="p-2.5 rounded-xl bg-panel-2 border border-line">Lever</div>
+              <div className="p-2.5 rounded-xl bg-panel-2 border border-line">Ashby</div>
             </div>
           </div>
         </div>

@@ -146,7 +146,7 @@ export default function ApplicationWorkspacePage({
   const strongMatchesCount = app.gapMap.filter((g) => g.strength === "strong").length;
 
   return (
-    <div className="space-y-6 animate-fadeIn max-w-6xl mx-auto w-full">
+    <div className="space-y-6 animate-fadeIn w-full max-w-none px-2 sm:px-6 pb-16">
       {/* Workspace Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-line pb-4">
         <div>
@@ -157,30 +157,30 @@ export default function ApplicationWorkspacePage({
             ← Back to Applications Tracker
           </Link>
           <div className="flex items-center gap-2 mt-2">
-            <h1 className="text-xl md:text-2xl font-extrabold text-white tracking-tight">
+            <h1 className="text-xl md:text-2xl font-black text-ink tracking-tight">
               {job.title}
             </h1>
-            <span className="text-muted text-sm">@ {job.employer}</span>
+            <span className="text-muted text-sm font-medium">@ {job.employer}</span>
           </div>
           <div className="flex items-center gap-3 text-xs text-muted mt-1 font-mono">
             <span>📍 {job.location}</span>
             <span>•</span>
-            <span className="text-accent font-semibold">{job.applyRoute} route</span>
+            <span className="text-blue font-semibold">{job.applyRoute} route</span>
           </div>
         </div>
 
         {/* Status & Match Fit Pill */}
         <div className="flex items-center gap-3">
-          <div className="rounded-xl bg-card border border-line px-3.5 py-1.5 text-center">
-            <div className="text-[10px] text-muted">Match Fit</div>
-            <div className="text-sm font-extrabold text-emerald-400">{app.fit}%</div>
+          <div className="rounded-2xl bg-panel border border-line px-4 py-2 text-center shadow-sm">
+            <div className="text-[10px] text-muted font-bold uppercase">Match Fit</div>
+            <div className="text-base font-black text-emerald-400">{app.fit}%</div>
           </div>
 
           <select
             value={app.status}
             onChange={(e) => handleStatusChange(e.target.value)}
             disabled={updatingStatus}
-            className="rounded-xl border border-line bg-booth px-3 py-2 text-xs font-bold text-white focus:outline-none"
+            className="rounded-2xl border border-line bg-panel-2 px-3.5 py-2.5 text-xs font-bold text-ink focus:outline-none"
           >
             <option value="draft">Draft</option>
             <option value="ready">Ready to Send</option>
@@ -194,7 +194,7 @@ export default function ApplicationWorkspacePage({
           {app.status === "sent" || app.status === "interview" ? (
             <Link
               href="/interviews"
-              className="rounded-xl bg-accent px-4 py-2 text-xs font-bold text-white shadow hover:bg-accent-hover transition"
+              className="rounded-2xl bg-blue-fill px-4 py-2.5 text-xs font-bold text-white shadow hover:bg-blue-hover transition"
             >
               Practise for this Role →
             </Link>

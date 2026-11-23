@@ -147,7 +147,7 @@ export default function ApplicationsTrackerPage() {
   const safeApps = Array.isArray(applications) ? applications : [];
 
   return (
-    <div className="space-y-6 animate-fadeIn w-full max-w-[1550px] mx-auto pb-16 px-2 sm:px-4">
+    <div className="space-y-6 animate-fadeIn w-full max-w-none pb-16">
       {/* Tracker Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-line pb-5">
         <div className="space-y-1">
@@ -158,7 +158,7 @@ export default function ApplicationsTrackerPage() {
           <h1 className="text-2xl md:text-3xl font-black text-ink tracking-tight">
             Job Applications Board ({safeApps.length})
           </h1>
-          <p className="text-xs text-muted max-w-xl">
+          <p className="text-xs text-muted max-w-2xl">
             Track and manage every role from automated intake to tailoring, sending, and mock practice hand-off.
           </p>
         </div>
@@ -168,7 +168,7 @@ export default function ApplicationsTrackerPage() {
           <div className="flex rounded-2xl bg-panel p-1 border border-line">
             <button
               onClick={() => setViewMode("board")}
-              className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition ${
+              className={`rounded-xl px-4 py-2 text-xs font-bold transition ${
                 viewMode === "board"
                   ? "bg-blue-fill text-white shadow-sm"
                   : "text-muted hover:text-ink"
@@ -178,7 +178,7 @@ export default function ApplicationsTrackerPage() {
             </button>
             <button
               onClick={() => setViewMode("list")}
-              className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition ${
+              className={`rounded-xl px-4 py-2 text-xs font-bold transition ${
                 viewMode === "list"
                   ? "bg-blue-fill text-white shadow-sm"
                   : "text-muted hover:text-ink"
@@ -190,7 +190,7 @@ export default function ApplicationsTrackerPage() {
 
           <Link
             href="/apply/jobs/new"
-            className="rounded-2xl bg-gradient-to-r from-blue-fill to-blue-hover px-4 py-2 text-xs font-bold text-white shadow-lg shadow-blue-fill/25 hover:shadow-blue-fill/40 hover:scale-[1.02] active:scale-[0.98] transition"
+            className="rounded-2xl bg-gradient-to-r from-blue-fill to-blue-hover px-5 py-2.5 text-xs font-bold text-white shadow-xl shadow-blue-fill/25 hover:shadow-blue-fill/40 hover:scale-[1.02] active:scale-[0.98] transition"
           >
             + Add Job Advert
           </Link>
@@ -202,15 +202,15 @@ export default function ApplicationsTrackerPage() {
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue border-t-transparent" />
         </div>
       ) : viewMode === "board" ? (
-        /* Kanban Columns */
-        <div className="flex gap-4 overflow-x-auto pb-8 items-start scrollbar-thin">
+        /* Kanban Columns: Full Viewport Stretch */
+        <div className="flex gap-5 overflow-x-auto pb-8 items-stretch w-full scrollbar-thin">
           {COLUMNS.map((col) => {
             const columnApps = safeApps.filter((a) => a.status === col.id);
 
             return (
               <div
                 key={col.id}
-                className="w-72 shrink-0 rounded-3xl border border-line bg-panel/70 p-4 space-y-3 shadow-lg backdrop-blur-sm"
+                className="w-80 shrink-0 rounded-3xl border border-line bg-panel/85 p-4 space-y-3 shadow-xl backdrop-blur-md min-h-[calc(100vh-260px)] flex flex-col"
               >
                 {/* Column Title & Badge */}
                 <div className="flex items-center justify-between border-b border-line pb-2.5">
@@ -218,23 +218,23 @@ export default function ApplicationsTrackerPage() {
                     {col.title}
                   </span>
                   <span
-                    className={`text-[10px] font-extrabold rounded-full px-2 py-0.5 border ${col.badge}`}
+                    className={`text-[10px] font-extrabold rounded-full px-2.5 py-0.5 border ${col.badge}`}
                   >
                     {columnApps.length}
                   </span>
                 </div>
 
                 {/* Column Items */}
-                <div className="space-y-3 min-h-[140px]">
+                <div className="space-y-3 flex-1">
                   {columnApps.length === 0 ? (
-                    <div className="flex h-28 items-center justify-center rounded-2xl border border-dashed border-line/60 text-[11px] text-muted/60">
+                    <div className="flex h-40 items-center justify-center rounded-2xl border border-dashed border-line/60 text-xs font-medium text-muted/60">
                       Empty stage
                     </div>
                   ) : (
                     columnApps.map((app) => (
                       <div
                         key={app.id}
-                        className="group relative rounded-2xl border border-line bg-panel-2/80 p-4 space-y-3 hover:border-blue/50 hover:bg-panel-2 transition shadow-md"
+                        className="group relative rounded-2xl border border-line bg-panel-2 p-4 space-y-3 hover:border-blue/50 hover:shadow-lg transition shadow-md"
                       >
                         <div className="space-y-1">
                           <div className="flex items-start justify-between gap-2">
@@ -273,7 +273,7 @@ export default function ApplicationsTrackerPage() {
                             {col.id === "queued" && (
                               <button
                                 onClick={() => handleMoveStage(app.id, "ready")}
-                                className="w-full rounded-xl bg-blue-fill/10 border border-blue-fill/30 py-1 text-[10px] font-bold text-blue hover:bg-blue-fill hover:text-white transition"
+                                className="w-full rounded-xl bg-blue-fill/10 border border-blue-fill/30 py-1.5 text-[10px] font-bold text-blue hover:bg-blue-fill hover:text-white transition"
                               >
                                 Mark Ready
                               </button>
@@ -281,7 +281,7 @@ export default function ApplicationsTrackerPage() {
                             {col.id === "ready" && (
                               <button
                                 onClick={() => handleMoveStage(app.id, "sent")}
-                                className="w-full rounded-xl bg-emerald-500/10 border border-emerald-500/30 py-1 text-[10px] font-bold text-emerald-400 hover:bg-emerald-500 hover:text-white transition"
+                                className="w-full rounded-xl bg-emerald-500/10 border border-emerald-500/30 py-1.5 text-[10px] font-bold text-emerald-400 hover:bg-emerald-500 hover:text-white transition"
                               >
                                 Mark Sent
                               </button>
@@ -289,7 +289,7 @@ export default function ApplicationsTrackerPage() {
                             {(col.id === "sent" || col.id === "screen" || col.id === "interview") && (
                               <Link
                                 href="/practice"
-                                className="w-full text-center rounded-xl bg-blue/10 border border-blue/30 py-1 text-[10px] font-bold text-blue hover:bg-blue hover:text-white transition"
+                                className="w-full text-center rounded-xl bg-blue/10 border border-blue/30 py-1.5 text-[10px] font-bold text-blue hover:bg-blue hover:text-white transition"
                               >
                                 Mock Practice →
                               </Link>

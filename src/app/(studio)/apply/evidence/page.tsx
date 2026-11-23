@@ -69,7 +69,9 @@ export default function EvidenceBankPage() {
     }
   };
 
-  const filtered = evidenceList.filter((item) => {
+  const safeList = Array.isArray(evidenceList) ? evidenceList : [];
+
+  const filtered = safeList.filter((item) => {
     const matchesSource = filterSource === "all" || item.sourceKind === filterSource;
     const matchesSearch =
       search === "" ||
@@ -79,39 +81,70 @@ export default function EvidenceBankPage() {
     return matchesSource && matchesSearch;
   });
 
+  const totalMetrics = safeList.reduce((acc, curr) => acc + (curr.numbers?.length || 0), 0);
+  const totalSkills = new Set(safeList.flatMap((e) => e.skillTags || [])).size;
+
   return (
-    <div className="max-w-5xl space-y-8 animate-fadeIn">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-line pb-5">
-        <div>
-          <span className="text-xs font-bold uppercase tracking-wider text-accent">Hakkiri Apply</span>
-          <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight">
-            Evidence Bank ({evidenceList.length})
-          </h1>
-          <p className="text-xs text-muted mt-1">
-            The confirmed store of career facts, numbers, and stories. The AI generator is strictly prohibited from inventing anything outside this bank.
-          </p>
+    <div className="w-full space-y-6 animate-fadeIn pb-16">
+      {/* Hero Header - Full Width */}
+      <div className="relative overflow-hidden rounded-3xl border border-line bg-gradient-to-r from-panel via-panel-2 to-panel p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
+        <div className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-blue/15 blur-3xl animate-pulse" />
+        <div className="pointer-events-none absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-emerald-500/10 blur-3xl" />
+
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 px-3 py-0.5 rounded-full bg-blue/10 border border-blue/20 text-blue text-[11px] font-bold tracking-wide uppercase">
+              <span className="h-1.5 w-1.5 rounded-full bg-blue animate-pulse" />
+              Hakkiri Apply Suite · Truth Repository
+            </div>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-ink tracking-tight">
+              Evidence Bank ({safeList.length})
+            </h1>
+            <p className="text-xs sm:text-sm text-muted max-w-2xl leading-relaxed">
+              The confirmed store of career facts, numbers, and stories. The AI generator is strictly prohibited from inventing anything outside this bank.
+            </p>
+          </div>
+
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="rounded-2xl bg-gradient-to-r from-blue-fill to-blue-hover px-5 py-3 text-xs font-bold text-white shadow-xl shadow-blue-fill/25 hover:shadow-blue-fill/40 hover:scale-[1.02] active:scale-[0.98] transition self-start md:self-auto"
+          >
+            + Add New Evidence
+          </button>
         </div>
 
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="rounded-xl bg-accent px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-accent/25 hover:bg-accent-hover transition"
-        >
-          + Add New Evidence
-        </button>
+        {/* Quick Highlights Bar */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-6 mt-6 border-t border-line/60">
+          <div className="p-4 rounded-2xl bg-booth/70 border border-line/80 backdrop-blur-sm">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Verified Facts</span>
+            <div className="text-2xl font-black text-ink mt-0.5">{safeList.length}</div>
+          </div>
+          <div className="p-4 rounded-2xl bg-booth/70 border border-line/80 backdrop-blur-sm">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Quantified Metrics</span>
+            <div className="text-2xl font-black text-emerald-400 mt-0.5">{totalMetrics}</div>
+          </div>
+          <div className="p-4 rounded-2xl bg-booth/70 border border-line/80 backdrop-blur-sm">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Unique Skills</span>
+            <div className="text-2xl font-black text-blue-soft mt-0.5">{totalSkills}</div>
+          </div>
+          <div className="p-4 rounded-2xl bg-booth/70 border border-line/80 backdrop-blur-sm">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Grounding Rule</span>
+            <div className="text-2xl font-black text-purple-300 mt-0.5">100% Truth</div>
+          </div>
+        </div>
       </div>
 
-      {/* Filter and Search Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2 flex-wrap">
+      {/* Filter and Search Bar */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-panel border border-line w-full sm:w-auto flex-wrap">
           {["all", "cv-bullet", "story", "typed-note", "spoken-note", "practice-answer"].map((src) => (
             <button
               key={src}
               onClick={() => setFilterSource(src)}
-              className={`rounded-lg px-3 py-1.5 text-xs font-medium capitalize transition ${
+              className={`rounded-xl px-3.5 py-1.5 text-xs font-bold capitalize transition ${
                 filterSource === src
-                  ? "bg-accent text-white"
-                  : "bg-card border border-line text-muted hover:text-white"
+                  ? "bg-panel-2 text-ink shadow-sm"
+                  : "text-muted hover:text-ink"
               }`}
             >
               {src.replace("-", " ")}
@@ -119,137 +152,172 @@ export default function EvidenceBankPage() {
           ))}
         </div>
 
-        <div className="w-full sm:w-64">
+        <div className="relative w-full sm:w-72">
           <input
             type="text"
+            placeholder="Search keywords, metrics, skills..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search facts, numbers, skills..."
-            className="w-full rounded-xl border border-line bg-canvas px-3.5 py-1.5 text-xs text-ink placeholder:text-muted/60 focus:border-accent focus:outline-none"
+            className="w-full rounded-2xl bg-panel border border-line px-4 py-2.5 text-xs text-ink placeholder:text-muted focus:outline-none focus:border-blue transition shadow-sm"
           />
         </div>
       </div>
 
-      {/* Add Modal */}
+      {/* Main Grid: Full Width Multi-Column */}
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-60 rounded-3xl border border-line bg-panel p-6 animate-pulse space-y-4" />
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="rounded-3xl border border-line bg-panel p-12 text-center space-y-4">
+          <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-panel-2 text-blue text-xl font-bold">
+            🔒
+          </div>
+          <h3 className="text-lg font-bold text-ink">No evidence items match</h3>
+          <p className="text-xs text-muted max-w-sm mx-auto">
+            Add real career achievements, metrics, and outcomes to feed the AI generator.
+          </p>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="rounded-xl bg-blue-fill px-4 py-2 text-xs font-bold text-white hover:bg-blue-hover transition"
+          >
+            + Add Evidence Item
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {filtered.map((item) => (
+            <div
+              key={item.id}
+              className="group relative rounded-3xl border border-line bg-panel/90 p-6 space-y-4 hover:border-blue/50 hover:bg-panel transition-all duration-300 shadow-xl hover:shadow-[0_16px_36px_-8px_rgba(0,0,0,0.7),0_0_25px_rgba(123,136,255,0.2)] hover:-translate-y-1 flex flex-col justify-between"
+            >
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-blue bg-blue/10 border border-blue/20 px-2.5 py-0.5 rounded-full">
+                    {item.sourceKind.replace("-", " ")}
+                  </span>
+                  <button
+                    onClick={() => handleDelete(item.id)}
+                    className="text-muted hover:text-rose-400 text-xs transition p-1"
+                    title="Delete evidence"
+                  >
+                    🗑️
+                  </button>
+                </div>
+
+                <p className="text-xs text-ink leading-relaxed font-sans">{item.text}</p>
+              </div>
+
+              <div className="space-y-3 pt-3 border-t border-line/60">
+                {/* Numbers & Metrics */}
+                {item.numbers && item.numbers.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 items-center">
+                    <span className="text-[10px] font-bold text-muted">Metrics:</span>
+                    {item.numbers.map((num, i) => (
+                      <span
+                        key={i}
+                        className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-md"
+                      >
+                        {num}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Skill Tags */}
+                {item.skillTags && item.skillTags.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {item.skillTags.map((tag, i) => (
+                      <span
+                        key={i}
+                        className="text-[10px] font-bold text-muted bg-panel-2 border border-line px-2 py-0.5 rounded-md"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                <div className="text-[10px] text-muted font-mono pt-1">
+                  Confirmed: {new Date(item.createdAt).toLocaleDateString()}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Add Evidence Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="w-full max-w-lg rounded-2xl border border-line bg-booth p-6 space-y-4 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-4 animate-fadeIn">
+          <div className="w-full max-w-lg rounded-3xl border border-line bg-panel p-6 space-y-4 shadow-2xl">
             <div className="flex items-center justify-between border-b border-line pb-3">
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider">
-                Add Career Fact or Story
-              </h3>
+              <div>
+                <h3 className="text-base font-extrabold text-ink">
+                  Add Confirmed Evidence Fact
+                </h3>
+                <p className="text-xs text-muted mt-0.5">
+                  Numbers and skills will be automatically extracted and tagged.
+                </p>
+              </div>
               <button
                 onClick={() => setShowAddModal(false)}
-                className="text-muted hover:text-white text-xs font-bold"
+                className="text-muted hover:text-ink text-sm font-bold p-1"
               >
-                ✕ Close
+                ✕
               </button>
             </div>
 
             <form onSubmit={handleAddEvidence} className="space-y-4">
               <div>
-                <label className="text-xs font-medium text-muted block mb-1">Source Type</label>
+                <label className="text-xs font-bold text-muted block mb-1.5">Source Kind</label>
                 <select
                   value={newSourceKind}
                   onChange={(e) => setNewSourceKind(e.target.value as EvidenceSourceKind)}
-                  className="w-full rounded-xl border border-line bg-canvas p-2.5 text-xs text-ink focus:border-accent focus:outline-none"
+                  className="w-full rounded-2xl border border-line bg-panel-2 p-3 text-xs text-ink focus:border-blue focus:outline-none"
                 >
                   <option value="typed-note">Typed Note</option>
-                  <option value="story">STAR Story</option>
-                  <option value="spoken-note">Spoken Note Transcript</option>
-                  <option value="cv-bullet">CV Experience Bullet</option>
+                  <option value="cv-bullet">Existing CV Bullet</option>
+                  <option value="story">Career Story</option>
+                  <option value="spoken-note">Spoken / Audio Note</option>
+                  <option value="practice-answer">Practice Answer</option>
                 </select>
               </div>
 
               <div>
-                <label className="text-xs font-medium text-muted block mb-1">
-                  What did you achieve? (Include numbers, team size, tools, or outcome)
+                <label className="text-xs font-bold text-muted block mb-1.5">
+                  Achievement or Fact (Include metrics, £/$, scale, timeframes)
                 </label>
                 <textarea
                   rows={4}
                   value={newText}
                   onChange={(e) => setNewText(e.target.value)}
-                  placeholder="e.g., Reduced AWS RDS latency by 45% by optimizing indexed queries and implementing Redis caching for 250k daily active users."
+                  placeholder="e.g., Reduced server latency by 42% through distributed caching, improving response time to under 80ms."
                   required
-                  className="w-full rounded-xl border border-line bg-canvas p-3 text-xs text-ink placeholder:text-muted/60 focus:border-accent focus:outline-none"
+                  className="w-full rounded-2xl border border-line bg-panel-2 p-3.5 text-xs text-ink placeholder:text-muted focus:border-blue focus:outline-none leading-relaxed"
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="flex justify-end gap-2.5 pt-2">
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="rounded-xl border border-line bg-card px-4 py-2 text-xs font-medium text-muted hover:text-white"
+                  className="rounded-xl border border-line bg-panel-2 px-4 py-2.5 text-xs font-bold text-muted hover:text-ink transition"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={creating}
-                  className="rounded-xl bg-accent px-4 py-2 text-xs font-bold text-white hover:bg-accent-hover transition disabled:opacity-50"
+                  className="rounded-xl bg-blue-fill px-5 py-2.5 text-xs font-bold text-white hover:bg-blue-hover transition disabled:opacity-50 shadow-lg shadow-blue-fill/25"
                 >
-                  {creating ? "Saving..." : "Save Evidence"}
+                  {creating ? "Saving Fact..." : "Confirm & Save Fact"}
                 </button>
               </div>
             </form>
           </div>
-        </div>
-      )}
-
-      {/* Evidence List Grid */}
-      {loading ? (
-        <div className="flex h-48 items-center justify-center text-muted">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-accent border-t-transparent" />
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-line p-12 text-center text-muted">
-          <p className="text-sm">No evidence found matching your criteria.</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {filtered.map((item) => (
-            <div
-              key={item.id}
-              className="rounded-2xl border border-line bg-booth p-5 space-y-3 hover:border-line-hover transition relative group"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-accent bg-accent/10 px-2 py-0.5 rounded border border-accent/20">
-                  {item.sourceKind.replace("-", " ")}
-                </span>
-                <button
-                  onClick={() => handleDelete(item.id)}
-                  className="opacity-0 group-hover:opacity-100 text-muted hover:text-rose-400 text-xs transition"
-                  title="Delete evidence"
-                >
-                  ✕
-                </button>
-              </div>
-
-              <p className="text-xs text-ink/90 leading-relaxed font-sans">
-                {item.text}
-              </p>
-
-              {/* Tagged Numbers & Skills */}
-              <div className="flex flex-wrap gap-1.5 pt-2 border-t border-line/60">
-                {item.numbers.map((num, i) => (
-                  <span
-                    key={i}
-                    className="text-[10px] font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20"
-                  >
-                    #{num}
-                  </span>
-                ))}
-                {item.skillTags.map((tag, i) => (
-                  <span
-                    key={i}
-                    className="text-[10px] font-medium text-muted bg-card px-2 py-0.5 rounded border border-line"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </div>
-          ))}
         </div>
       )}
     </div>

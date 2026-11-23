@@ -283,7 +283,7 @@ export default function CvBuilderEditorPage({
         ];
 
   return (
-    <div className="space-y-6 animate-fadeIn w-full max-w-7xl mx-auto pb-16 px-2 sm:px-4">
+    <div className="space-y-6 animate-fadeIn w-full max-w-none pb-16">
       {/* Top Bar Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-line pb-4">
         <div className="flex items-center gap-3">
@@ -312,7 +312,7 @@ export default function CvBuilderEditorPage({
 
           {/* Live Score Pill */}
           <div className="flex items-center gap-2 rounded-2xl bg-panel border border-line px-3.5 py-1.5 shadow-sm">
-            <span className="text-xs text-muted">ATS Quality:</span>
+            <span className="text-xs text-muted font-medium">ATS Quality:</span>
             <span
               className={`text-sm font-black ${
                 isGoodEnough
@@ -419,10 +419,10 @@ export default function CvBuilderEditorPage({
         </div>
       )}
 
-      {/* Dual Pane Layout (Desktop) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      {/* Dual Pane Layout (Desktop) - Full Width Grid */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start w-full">
         {/* Left Pane: Interactive Editor & Switches (5 cols) */}
-        <div className="lg:col-span-5 space-y-4">
+        <div className="xl:col-span-5 space-y-4">
           <div className="rounded-3xl border border-line bg-panel p-6 space-y-5 shadow-xl">
             <div className="flex items-center justify-between border-b border-line pb-3">
               <div>
@@ -499,7 +499,7 @@ export default function CvBuilderEditorPage({
                 </button>
               </div>
 
-              <div className="space-y-2.5 max-h-[480px] overflow-y-auto pr-1">
+              <div className="space-y-2.5 max-h-[500px] overflow-y-auto pr-1">
                 {(cv.bullets || []).map((b) => (
                   <div
                     key={b.id}
@@ -538,134 +538,152 @@ export default function CvBuilderEditorPage({
         </div>
 
         {/* Right Pane: Live Page Preview (7 cols) */}
-        <div className="lg:col-span-7 print:w-full">
-          <div className="rounded-3xl border border-line-strong bg-white text-zinc-900 p-8 sm:p-10 shadow-2xl min-h-[720px] font-serif leading-relaxed text-xs">
-            {/* CV Header */}
-            <div className="text-center border-b border-zinc-200 pb-5 mb-5">
-              <h1 className="text-2xl font-black tracking-tight text-zinc-950 font-sans">
-                {profile?.contact.name || "Alex Morgan"}
-              </h1>
-              <div className="text-[11px] text-zinc-600 mt-1.5 space-x-2 font-sans">
-                <span>{profile?.contact.email || "alex.morgan@domain.com"}</span>
-                <span>•</span>
-                <span>{profile?.contact.phone || "+44 7700 900123"}</span>
-                <span>•</span>
-                <span>{profile?.contact.location || "London, UK"}</span>
+        <div className="xl:col-span-7 print:w-full space-y-3">
+          <div className="flex items-center justify-between px-2 text-xs text-muted">
+            <div className="flex items-center gap-2">
+              <span className="font-extrabold text-ink">Live ATS Paper Preview</span>
+              <span className="text-[10px] bg-panel-2 px-2.5 py-0.5 rounded-full border border-line font-mono">
+                Standard A4 Format
+              </span>
+            </div>
+            <button
+              onClick={handleExport}
+              className="font-bold text-blue hover:text-blue-soft transition flex items-center gap-1"
+            >
+              <span>Export PDF / Print</span>
+              <span>↗</span>
+            </button>
+          </div>
+
+          <div className="rounded-3xl border border-line bg-booth/90 p-4 sm:p-8 shadow-2xl flex justify-center backdrop-blur-sm min-h-[820px]">
+            <div className="w-full max-w-[850px] rounded-2xl bg-white text-zinc-900 p-8 sm:p-12 shadow-[0_20px_50px_rgba(0,0,0,0.5)] font-serif leading-relaxed text-xs">
+              {/* CV Header */}
+              <div className="text-center border-b border-zinc-200 pb-5 mb-5">
+                <h1 className="text-2xl font-black tracking-tight text-zinc-950 font-sans">
+                  {profile?.contact.name || "Alex Morgan"}
+                </h1>
+                <div className="text-[11px] text-zinc-600 mt-1.5 space-x-2 font-sans">
+                  <span>{profile?.contact.email || "alex.morgan@domain.com"}</span>
+                  <span>•</span>
+                  <span>{profile?.contact.phone || "+44 7700 900123"}</span>
+                  <span>•</span>
+                  <span>{profile?.contact.location || "London, UK"}</span>
+                </div>
+                {profile?.headline && (
+                  <div className="text-xs font-semibold text-zinc-700 mt-1.5 italic font-sans">
+                    {profile.headline}
+                  </div>
+                )}
               </div>
-              {profile?.headline && (
-                <div className="text-xs font-semibold text-zinc-700 mt-1.5 italic font-sans">
-                  {profile.headline}
+
+              {/* Summary */}
+              <div className="mb-5">
+                <h2 className="text-[11px] font-extrabold uppercase tracking-wider text-zinc-900 border-b border-zinc-300 pb-0.5 mb-2 font-sans">
+                  Professional Summary
+                </h2>
+                <p className="text-[11px] text-zinc-800 leading-relaxed font-sans">
+                  {cv.sections?.find((s) => s.type === "summary")?.text || profile?.summary}
+                </p>
+              </div>
+
+              {/* Graduate vs Standard Order: Education first if graduate */}
+              {cv.templateId === "graduate" && (
+                <div className="mb-5">
+                  <h2 className="text-[11px] font-extrabold uppercase tracking-wider text-zinc-900 border-b border-zinc-300 pb-0.5 mb-2 font-sans">
+                    Education & Qualifications
+                  </h2>
+                  {(profile?.education || [
+                    {
+                      id: "edu-1",
+                      institution: "University of Manchester",
+                      qualification: "BSc Computer Science",
+                      grade: "First Class Honours",
+                      start: "2016",
+                      end: "2019",
+                    },
+                  ]).map((edu) => (
+                    <div key={edu.id} className="flex justify-between text-[11px] mb-1 font-sans">
+                      <div>
+                        <span className="font-bold">{edu.qualification}</span> — {edu.institution}
+                        {edu.grade && <span className="text-zinc-600"> ({edu.grade})</span>}
+                      </div>
+                      <div className="text-zinc-600 text-[10px]">
+                        {edu.start} – {edu.end}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
-            </div>
 
-            {/* Summary */}
-            <div className="mb-5">
-              <h2 className="text-[11px] font-extrabold uppercase tracking-wider text-zinc-900 border-b border-zinc-300 pb-0.5 mb-2 font-sans">
-                Professional Summary
-              </h2>
-              <p className="text-[11px] text-zinc-800 leading-relaxed font-sans">
-                {cv.sections?.find((s) => s.type === "summary")?.text || profile?.summary}
-              </p>
-            </div>
-
-            {/* Graduate vs Standard Order: Education first if graduate */}
-            {cv.templateId === "graduate" && (
+              {/* Experience */}
               <div className="mb-5">
                 <h2 className="text-[11px] font-extrabold uppercase tracking-wider text-zinc-900 border-b border-zinc-300 pb-0.5 mb-2 font-sans">
-                  Education & Qualifications
+                  Professional Experience
                 </h2>
-                {(profile?.education || [
-                  {
-                    id: "edu-1",
-                    institution: "University of Manchester",
-                    qualification: "BSc Computer Science",
-                    grade: "First Class Honours",
-                    start: "2016",
-                    end: "2019",
-                  },
-                ]).map((edu) => (
-                  <div key={edu.id} className="flex justify-between text-[11px] mb-1 font-sans">
-                    <div>
-                      <span className="font-bold">{edu.qualification}</span> — {edu.institution}
-                      {edu.grade && <span className="text-zinc-600"> ({edu.grade})</span>}
+                {displayRoles.map((role) => (
+                  <div key={role.id} className="mb-4">
+                    <div className="flex justify-between font-bold text-[11px] font-sans">
+                      <div>
+                        <span className="text-zinc-950 font-black">{role.title}</span> —{" "}
+                        <span className="font-normal italic text-zinc-700">{role.employer}</span>
+                      </div>
+                      <div className="text-zinc-600 text-[10px] font-mono">
+                        {role.start} – {role.end}
+                      </div>
                     </div>
-                    <div className="text-zinc-600 text-[10px]">
-                      {edu.start} – {edu.end}
-                    </div>
+
+                    <ul className="list-disc list-inside mt-1.5 space-y-1.5 text-[10.5px] text-zinc-800 font-sans">
+                      {activeBullets
+                        .filter((b) => b.roleId === role.id || activeBullets.length <= 4)
+                        .map((b) => (
+                          <li key={b.id} className="leading-normal">
+                            {b.text}
+                          </li>
+                        ))}
+                    </ul>
                   </div>
                 ))}
               </div>
-            )}
 
-            {/* Experience */}
-            <div className="mb-5">
-              <h2 className="text-[11px] font-extrabold uppercase tracking-wider text-zinc-900 border-b border-zinc-300 pb-0.5 mb-2 font-sans">
-                Professional Experience
-              </h2>
-              {displayRoles.map((role) => (
-                <div key={role.id} className="mb-4">
-                  <div className="flex justify-between font-bold text-[11px] font-sans">
-                    <div>
-                      <span className="text-zinc-950 font-black">{role.title}</span> —{" "}
-                      <span className="font-normal italic text-zinc-700">{role.employer}</span>
+              {/* Education (if Standard) */}
+              {cv.templateId !== "graduate" && (
+                <div className="mb-5">
+                  <h2 className="text-[11px] font-extrabold uppercase tracking-wider text-zinc-900 border-b border-zinc-300 pb-0.5 mb-2 font-sans">
+                    Education
+                  </h2>
+                  {(profile?.education || [
+                    {
+                      id: "edu-1",
+                      institution: "University of Manchester",
+                      qualification: "BSc Computer Science",
+                      grade: "First Class Honours",
+                      start: "2016",
+                      end: "2019",
+                    },
+                  ]).map((edu) => (
+                    <div key={edu.id} className="flex justify-between text-[11px] mb-1 font-sans">
+                      <div>
+                        <span className="font-bold">{edu.qualification}</span>, {edu.institution}
+                        {edu.grade && <span className="text-zinc-600"> ({edu.grade})</span>}
+                      </div>
+                      <div className="text-zinc-600 text-[10px] font-mono">
+                        {edu.start} – {edu.end}
+                      </div>
                     </div>
-                    <div className="text-zinc-600 text-[10px] font-mono">
-                      {role.start} – {role.end}
-                    </div>
-                  </div>
-
-                  <ul className="list-disc list-inside mt-1.5 space-y-1.5 text-[10.5px] text-zinc-800 font-sans">
-                    {activeBullets
-                      .filter((b) => b.roleId === role.id || activeBullets.length <= 4)
-                      .map((b) => (
-                        <li key={b.id} className="leading-normal">
-                          {b.text}
-                        </li>
-                      ))}
-                  </ul>
+                  ))}
                 </div>
-              ))}
-            </div>
+              )}
 
-            {/* Education (if Standard) */}
-            {cv.templateId !== "graduate" && (
-              <div className="mb-5">
-                <h2 className="text-[11px] font-extrabold uppercase tracking-wider text-zinc-900 border-b border-zinc-300 pb-0.5 mb-2 font-sans">
-                  Education
+              {/* Skills */}
+              <div>
+                <h2 className="text-[11px] font-extrabold uppercase tracking-wider text-zinc-900 border-b border-zinc-300 pb-0.5 mb-1.5 font-sans">
+                  Technical & Core Skills
                 </h2>
-                {(profile?.education || [
-                  {
-                    id: "edu-1",
-                    institution: "University of Manchester",
-                    qualification: "BSc Computer Science",
-                    grade: "First Class Honours",
-                    start: "2016",
-                    end: "2019",
-                  },
-                ]).map((edu) => (
-                  <div key={edu.id} className="flex justify-between text-[11px] mb-1 font-sans">
-                    <div>
-                      <span className="font-bold">{edu.qualification}</span>, {edu.institution}
-                      {edu.grade && <span className="text-zinc-600"> ({edu.grade})</span>}
-                    </div>
-                    <div className="text-zinc-600 text-[10px] font-mono">
-                      {edu.start} – {edu.end}
-                    </div>
-                  </div>
-                ))}
+                <p className="text-[10.5px] text-zinc-800 font-sans leading-relaxed">
+                  {(profile?.skills || []).map((s) => s.name).join(" • ") ||
+                    "TypeScript • React • Next.js • Cloud Architecture • Distributed Systems • Python • MongoDB"}
+                </p>
               </div>
-            )}
-
-            {/* Skills */}
-            <div>
-              <h2 className="text-[11px] font-extrabold uppercase tracking-wider text-zinc-900 border-b border-zinc-300 pb-0.5 mb-1.5 font-sans">
-                Technical & Core Skills
-              </h2>
-              <p className="text-[10.5px] text-zinc-800 font-sans leading-relaxed">
-                {(profile?.skills || []).map((s) => s.name).join(" • ") ||
-                  "TypeScript • React • Next.js • Cloud Architecture • Distributed Systems • Python • MongoDB"}
-              </p>
             </div>
           </div>
         </div>
