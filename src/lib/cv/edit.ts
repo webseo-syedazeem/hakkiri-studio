@@ -170,13 +170,44 @@ export function addBullets(sections: Section[], sectionId: string, entryId: stri
   return { sections: next, entryId: id };
 }
 
+/**
+ * Whether the place a pointer names is on the page ("on"), kept but switched
+ * off ("off"), or no longer in the CV ("gone"). A finding about a line that
+ * was switched off is "excluded from this version", which is not the same as fixed.
+ */
+export function stateAt(sections: Section[], at: Locator): "on" | "off" | "gone" {
+  if (at.section === "contact" || at.section === "finish") return "on";
+  const s = sections.find((x) => x.id === at.section);
+  if (!s) return "gone";
+  if (!s.visible) return "off";
+  if (!at.entry && !at.field) return "on";
+  if (s.kind === "summary") return "on";
+  if (s.kind === "skills") {
+    const g = s.groups.find((x) => x.id === at.entry || x.skills.some((k) => k.id === at.field));
+    if (!g) return "gone";
+    const k = g.skills.find((x) => x.id === at.field);
+    return !g.visible || (k && !k.visible) ? "off" : at.field && !k && at.field !== "name" && at.field !== "skills" ? "gone" : "on";
+  }
+  if (isListSection(s)) {
+    const i = s.items.find((x) => x.id === at.field);
+    return !i ? "gone" : i.visible ? "on" : "off";
+  }
+  if (!isEntrySection(s)) return "gone";
+  const e = s.entries.find((x) => x.id === at.entry);
+  if (!e) return at.entry ? "gone" : "on";
+  if (!e.visible) return "off";
+  const b = e.bullets.find((x) => x.id === at.field);
+  if (b) return b.visible ? "on" : "off";
+  return at.field && /^b_/.test(at.field) ? "gone" : "on";
+}
+
 /* --------------------------------------------------------------------- undo */
 
 /** Everything a person can change about a CV. One of these is what Undo goes back to. */
-export type Snapshot = Pick<CvDoc, "name" | "level" | "region" | "target" | "contact" | "sections" | "design">;
-export const SNAPSHOT_KEYS = ["name", "level", "region", "target", "contact", "sections", "design"] as const;
+export type Snapshot = Pick<CvDoc, "name" | "level" | "region" | "target" | "contact" | "sections" | "design" | "accepted">;
+export const SNAPSHOT_KEYS = ["name", "level", "region", "target", "contact", "sections", "design", "accepted"] as const;
 
-export const snapshotOf = (cv: Snapshot): Snapshot => ({ name: cv.name, level: cv.level, region: cv.region, target: cv.target, contact: cv.contact, sections: cv.sections, design: cv.design });
+export const snapshotOf = (cv: Snapshot): Snapshot => ({ name: cv.name, level: cv.level, region: cv.region, target: cv.target, contact: cv.contact, sections: cv.sections, design: cv.design, accepted: cv.accepted });
 
 export interface History {
   past: Snapshot[];

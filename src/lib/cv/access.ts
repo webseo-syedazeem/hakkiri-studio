@@ -58,6 +58,7 @@ export const EditableSchema = z
     contact: ContactSchema.optional(),
     sections: z.array(SectionSchema).max(24).optional(),
     design: DesignSchema.optional(),
+    accepted: z.array(oneLine(60)).max(200).optional(),
   })
   .strict();
 
@@ -97,6 +98,7 @@ export function newCv(userId: string, setup: Setup, now: string): CvDoc {
     target: hasTarget ? { title: setup.targetTitle, employer: setup.targetEmployer, advert: setup.targetAdvert } : undefined,
     contact: emptyContact(),
     sections: coreSections(setup.level),
+    accepted: [],
     // One page for students, graduates and early career; up to two for experienced and senior.
     design: { template: setup.level === "student" ? "graduate" : "standard", pageSize: setup.region === "us" ? "letter" : "a4", density: "default", pageTarget: setup.level === "student" || setup.level === "early" ? 1 : 2 },
     createdAt: now,

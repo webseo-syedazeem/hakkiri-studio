@@ -1,7 +1,7 @@
 import "server-only";
 import { deleteDoc, getDoc, queryDocsByUser, saveDoc } from "@/lib/apply/db";
 import { type CvImport, CvImportSchema } from "./import/record";
-import { type Achievement, AchievementSchema, type CvDoc, type CvSummary, CvDocSchema, isEntrySection, summarise } from "./schema";
+import { type Achievement, AchievementSchema, type CvDoc, type CvSummary, CvDocSchema, type ExportRecord, ExportRecordSchema, isEntrySection, summarise } from "./schema";
 
 /**
  * Where CVs and uploads are kept. Every read takes the person's id and returns
@@ -9,7 +9,7 @@ import { type Achievement, AchievementSchema, type CvDoc, type CvSummary, CvDocS
  * same from here, so an address cannot be used to find out which is which.
  */
 
-export const CV_COLLECTIONS = { VERSIONS: "cv_versions", IMPORTS: "cv_imports", ACHIEVEMENTS: "cv_achievements" } as const;
+export const CV_COLLECTIONS = { VERSIONS: "cv_versions", IMPORTS: "cv_imports", ACHIEVEMENTS: "cv_achievements", EXPORTS: "cv_exports" } as const;
 
 /** A stored record that no longer fits the rules is treated as missing, not served half-read. */
 function valid<T>(schema: { safeParse: (v: unknown) => { success: boolean; data?: T } }, raw: unknown, what: string): T | null {
@@ -103,17 +103,46 @@ export async function achievementUse(userId: string): Promise<Record<string, { i
   return out;
 }
 
+/* ---------------------------------------------------------- export records */
+
+export async function getOwnExport(id: string, userId: string): Promise<ExportRecord | null> {
+  if (!id || !userId) return null;
+  const r = valid<ExportRecord>(ExportRecordSchema, await getDoc(CV_COLLECTIONS.EXPORTS, id), "export record");
+  return r && r.userId === userId ? r : null;
+}
+
+export async function listOwnExports(userId: string, versionId?: string): Promise<ExportRecord[]> {
+  const raw = await queryDocsByUser<ExportRecord>(CV_COLLECTIONS.EXPORTS, userId);
+  return raw
+    .map((r) => valid<ExportRecord>(ExportRecordSchema, r, "export record"))
+    .filter((r): r is ExportRecord => !!r && r.userId === userId && (!versionId || r.versionId === versionId))
+    .sort((a, b) => b.at.localeCompare(a.at));
+}
+
+/** How many downloads are remembered for one CV. Older ones are dropped. */
+export const EXPORTS_KEPT = 30;
+
+export async function saveExport(record: ExportRecord): Promise<ExportRecord> {
+  const clean = ExportRecordSchema.parse(record);
+  await saveDoc(CV_COLLECTIONS.EXPORTS, clean.id, clean);
+  for (const old of (await listOwnExports(clean.userId, clean.versionId)).slice(EXPORTS_KEPT)) await deleteDoc(CV_COLLECTIONS.EXPORTS, old.id);
+  return clean;
+}
+
+export const deleteExport = (id: string) => deleteDoc(CV_COLLECTIONS.EXPORTS, id);
+
 /** Everything held for one person in this section: for "Download my data". */
-export async function exportCvData(userId: string): Promise<{ cvs: CvDoc[]; uploads: CvImport[]; achievements: Achievement[] }> {
-  const [cvs, uploads, achievements] = await Promise.all([listOwnCvs(userId), listOwnImports(userId), listOwnAchievements(userId)]);
-  return { cvs, uploads, achievements };
+export async function exportCvData(userId: string): Promise<{ cvs: CvDoc[]; uploads: CvImport[]; achievements: Achievement[]; exports: ExportRecord[] }> {
+  const [cvs, uploads, achievements, exports] = await Promise.all([listOwnCvs(userId), listOwnImports(userId), listOwnAchievements(userId), listOwnExports(userId)]);
+  return { cvs, uploads, achievements, exports };
 }
 
 /** Deletes everything held for one person in this section: for "Delete all my data". Returns how many records went. */
 export async function deleteCvData(userId: string): Promise<number> {
-  const { cvs, uploads, achievements } = await exportCvData(userId);
+  const { cvs, uploads, achievements, exports } = await exportCvData(userId);
   for (const c of cvs) await deleteCv(c.id);
   for (const u of uploads) await deleteImport(u.id);
   for (const a of achievements) await deleteAchievement(a.id);
-  return cvs.length + uploads.length + achievements.length;
+  for (const e of exports) await deleteExport(e.id);
+  return cvs.length + uploads.length + achievements.length + exports.length;
 }

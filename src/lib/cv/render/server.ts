@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import type { CvDoc } from "../schema";
 import { writeDocx } from "./docx";
+import type { Flow } from "./flow";
 import { contentDisposition, fileName } from "./filename";
 import { FONT_FILES, type FontKey } from "./fonts";
 import { type Fonts, fontsNeeded, layoutCv } from "./layout";
@@ -37,6 +38,8 @@ export interface Exported {
   missing: string[];
   /** The headers for sending the file as a download. */
   headers: Record<string, string>;
+  /** The CV as it was printed, in reading order. */
+  flow: Flow;
 }
 
 type Printable = Pick<CvDoc, "contact" | "sections" | "design" | "region" | "target">;
@@ -58,5 +61,5 @@ export async function exportCv(cv: Printable, format: ExportFormat, now = new Da
     console.error(`[cv export] the ${format} file could not be read back:`, err);
   }
   const name = fileName(cv, format);
-  return { bytes, name, mime: MIME[format], pages: layout.pages, check, missing: layout.missing, headers: { "content-type": MIME[format], "content-disposition": contentDisposition(name), "cache-control": "no-store" } };
+  return { bytes, name, mime: MIME[format], pages: layout.pages, check, missing: layout.missing, flow, headers: { "content-type": MIME[format], "content-disposition": contentDisposition(name), "cache-control": "no-store" } };
 }

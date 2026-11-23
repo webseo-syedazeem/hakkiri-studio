@@ -269,6 +269,8 @@ export const CvDocSchema = z.object({
   design: DesignSchema,
   /** The upload this CV was started from, if any. */
   importId: z.string().optional(),
+  /** Words the person has told the checks to leave alone: a name, a specialist term, an acronym they chose not to spell out. */
+  accepted: z.array(line(60)).max(200).default([]),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -291,6 +293,31 @@ export interface CvSummary {
   roles: number;
   updatedAt: string;
 }
+
+/* ----------------------------------------------------------- export records */
+
+/**
+ * A record of one download: the CV exactly as it was when the file was made,
+ * so the person can later reopen what they sent. The file itself is not kept;
+ * it is made again from this copy, at the same time stamp, and is the same file.
+ */
+export const ExportRecordSchema = z.object({
+  id: z.string().regex(/^exp_[a-f0-9]{16}$/),
+  userId: z.string().min(1),
+  versionId: z.string(),
+  /** The revision of the CV the file was made from. */
+  rev: z.number().int().min(1),
+  format: z.enum(["pdf", "docx"]),
+  /** The file's name. */
+  name: line(200),
+  /** When it was downloaded: also the time written into the file. */
+  at: z.string(),
+  /** True when the file read back the same as the CV. False when it was downloaded as "unchecked". */
+  checked: z.boolean(),
+  pages: z.number().int().min(0).default(0),
+  cv: z.object({ name: line(120), level: z.enum(CV_LEVELS), region: z.enum(CV_REGIONS), target: TargetSchema.optional(), contact: ContactSchema, sections: z.array(SectionSchema).max(24), design: DesignSchema }),
+});
+export type ExportRecord = z.infer<typeof ExportRecordSchema>;
 
 /* ----------------------------------------------------------------- helpers */
 

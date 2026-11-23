@@ -33,7 +33,7 @@ export function usePanel() {
   return { panel, item: params.get("item") ?? "", open, close };
 }
 
-export function Dialog({ title, onClose, children, actions, wide }: { title: string; onClose: () => void; children: ReactNode; actions?: ReactNode; wide?: boolean }) {
+export function Dialog({ title, onClose, children, actions, wide, readable }: { title: string; onClose: () => void; children: ReactNode; actions?: ReactNode; wide?: boolean; /** A long dialog with nothing in it to tab to: its body can then be focused, so it can be scrolled from the keyboard. */ readable?: boolean }) {
   const ref = useDialogFocus<HTMLDivElement>(true);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -49,7 +49,9 @@ export function Dialog({ title, onClose, children, actions, wide }: { title: str
             Close
           </Btn>
         </div>
-        <div className="cv-pad cv-stack overflow-y-auto">{children}</div>
+        <div className="cv-pad cv-stack overflow-y-auto" {...(readable ? { tabIndex: 0, role: "region", "aria-label": `${title}: details` } : {})}>
+          {children}
+        </div>
         {actions && <div className="cv-panelfoot">{actions}</div>}
       </div>
     </div>

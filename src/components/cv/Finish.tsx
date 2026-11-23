@@ -11,7 +11,8 @@ import { docWord, sectionHeading } from "@/lib/cv/sections";
 import { Grip, ItemControls, useDragOrder } from "./Arrange";
 import { ApiError, api, messageOf } from "./client";
 import { Dialog, usePanel } from "./Dialog";
-import { Btn, Field, Panel } from "./ui";
+import { Downloads } from "./Software";
+import { Btn, BtnLink, Field, Panel } from "./ui";
 import { type FileCheck, type FileChecks, useWorkspace } from "./Workspace";
 
 type Format = "pdf" | "docx";
@@ -76,6 +77,7 @@ export function Finish({ onOverflow, say }: { onOverflow: () => void; say: (text
   const { panel, item, open, close } = usePanel();
   const [busy, setBusy] = useState<"" | "check" | Format>("");
   const [problem, setProblem] = useState("");
+  const [downloads, setDownloads] = useState(0);
   const design = cv.design;
   const word = docWord(cv.region);
   const template = TEMPLATES[design.template];
@@ -143,6 +145,7 @@ export function Finish({ onOverflow, say }: { onOverflow: () => void; say: (text
         a.click();
         a.remove();
         setTimeout(() => URL.revokeObjectURL(url), 30000);
+        setDownloads((n) => n + 1);
         if (res.headers.get("x-cv-check") === "checked") {
           setChecks((c) => keep(c, { status: "checked", name, pages: Number(res.headers.get("x-cv-pages")) || undefined, size: blob.size }));
           say(`${name} downloaded. It was checked first: it reads back the same as your ${word}.`);
@@ -342,6 +345,7 @@ export function Finish({ onOverflow, say }: { onOverflow: () => void; say: (text
                 <Btn busy={busy === "check"} disabled={!!busy} onClick={() => void check()}>
                   Check both files
                 </Btn>
+                <BtnLink href={`/cv/v/${cv.id}/software/pdf`}>See what software reads</BtnLink>
               </div>
               <small style={{ display: "block" }}>Each file is made, then read back and compared with your {word} word for word. A file that doesn’t match is not sent. The Word file names its fonts instead of carrying them, so its page breaks can differ on a computer without them.</small>
             </>
@@ -351,6 +355,7 @@ export function Finish({ onOverflow, say }: { onOverflow: () => void; say: (text
               {problem}
             </p>
           )}
+          <Downloads versionId={cv.id} refresh={downloads} />
         </div>
       </Panel>
 

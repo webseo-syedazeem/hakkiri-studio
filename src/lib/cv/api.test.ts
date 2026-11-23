@@ -531,6 +531,123 @@ describe("downloading a CV", () => {
   });
 });
 
+describe("the Software view and the record of each download", () => {
+  const softwareRoute = () => import("@/app/api/cv/versions/[id]/software/route");
+  const exportRoute = () => import("@/app/api/cv/versions/[id]/export/route");
+  const listRoute = () => import("@/app/api/cv/versions/[id]/exports/route");
+  const oneRoute = () => import("@/app/api/cv/exports/[exportId]/route");
+  const fileRoute = () => import("@/app/api/cv/exports/[exportId]/file/route");
+  const of = (format: string) => new Request(`http://localhost/api?format=${format}`);
+  const rec = (exportId: string) => ({ params: Promise.resolve({ exportId }) });
+  async function filled() {
+    const made = await makeImport();
+    await importConfirm.POST(json({}), ctx(made.versionId ? made.importId : made.importId));
+    return made.versionId;
+  }
+
+  it("shows what a program reads from the real file, beside what the CV says", async () => {
+    const id = await filled();
+    for (const format of ["pdf", "docx"]) {
+      const res = await (await softwareRoute()).GET(of(format), ctx(id));
+      expect(res.status).toBe(200);
+      const view = await res.json();
+      expect(view).toMatchObject({ format, status: "checked", missing: [], unexpected: [], unsupported: [], rev: 2 });
+      expect(view.expected[0]).toBe("Maya Chen");
+      expect(view.read.join("\n")).toContain("Maya Chen");
+      const field = (label: string) => view.fields.find((f: { label: string }) => f.label === label);
+      expect(field("Name")).toMatchObject({ expected: "Maya Chen", read: "Maya Chen", ok: true });
+      expect(field("Email").ok).toBe(true);
+      expect(field("Role 1")).toMatchObject({ expected: "Paid Media Manager · Northlight Agency", ok: true });
+      expect(field("Role 1: dates")).toMatchObject({ expected: "Mar 2021 – Present", ok: true });
+      expect(field("Role 2: dates").ok).toBe(true);
+      expect(field("Role 1: bullets").ok).toBe(true);
+      expect(field("Section headings").expected).toContain("Experience");
+    }
+  });
+
+  it("gives “ATS-ready” only to a file that reads back, has standard headings and every field in place", async () => {
+    const id = await filled();
+    const view = await (await (await softwareRoute()).GET(of("pdf"), ctx(id))).json();
+    expect(view.why).toEqual([]);
+    expect(view.atsReady).toBe(true);
+    // A heading software does not look for takes the label away, and says why.
+    const cv = (await store.getOwnCv(id, alice.id))!;
+    await store.saveCv({ ...cv, sections: cv.sections.map((s) => (s.kind === "experience" ? { ...s, title: "Where I have been" } : s)) });
+    const odd = await (await (await softwareRoute()).GET(of("pdf"), ctx(id))).json();
+    expect(odd.status).toBe("checked");
+    expect(odd.atsReady).toBe(false);
+    expect(odd.why.join(" ")).toContain("“Where I have been”");
+    // A character that would print as a box does too.
+    await store.saveCv({ ...cv, contact: { ...cv.contact, fullName: "Maya 陈 Chen" } });
+    const boxes = await (await (await softwareRoute()).GET(of("pdf"), ctx(id))).json();
+    expect(boxes).toMatchObject({ status: "loss", atsReady: false, unsupported: ["陈"] });
+  });
+
+  it("keeps a record of each download, and makes the same file again from it", async () => {
+    const id = await filled();
+    const first = await (await exportRoute()).GET(of("pdf"), ctx(id));
+    const exportId = first.headers.get("x-cv-export")!;
+    expect(exportId).toMatch(/^exp_[a-f0-9]{16}$/);
+    const sent = new Uint8Array(await first.arrayBuffer());
+    const list = await (await (await listRoute()).GET(get(), ctx(id))).json();
+    expect(list.exports).toHaveLength(1);
+    expect(list.exports[0]).toMatchObject({ id: exportId, format: "pdf", name: "Maya Chen - CV.pdf", checked: true, rev: 2 });
+    expect(list.exports[0].cv).toBeUndefined();
+
+    // The CV changes afterwards. The record does not.
+    const cv = (await store.getOwnCv(id, alice.id))!;
+    await store.saveCv({ ...cv, rev: 3, contact: { ...cv.contact, fullName: "Maya Chen-Okafor" } });
+    const one = await (await (await oneRoute()).GET(get(), rec(exportId))).json();
+    expect(one.export.cv.contact.fullName).toBe("Maya Chen");
+    expect(one.export.userId).toBeUndefined();
+    const again = await (await fileRoute()).GET(get(), rec(exportId));
+    expect(again.status).toBe(200);
+    expect(again.headers.get("content-disposition")).toContain('filename="Maya Chen - CV.pdf"');
+    const bytes = new Uint8Array(await again.arrayBuffer());
+    expect(Buffer.from(bytes).equals(Buffer.from(sent))).toBe(true);
+  });
+
+  it("a file that was withheld leaves no record", async () => {
+    const id = await filled();
+    const cv = (await store.getOwnCv(id, alice.id))!;
+    await store.saveCv({ ...cv, contact: { ...cv.contact, fullName: "Maya 陈 Chen" } });
+    expect((await (await exportRoute()).GET(of("pdf"), ctx(id))).status).toBe(409);
+    expect((await (await (await listRoute()).GET(get(), ctx(id))).json()).exports).toEqual([]);
+  });
+
+  it("keeps the newest thirty downloads for a CV", async () => {
+    const id = await filled();
+    const cv = (await store.getOwnCv(id, alice.id))!;
+    for (let i = 0; i < 33; i++) await store.saveExport({ id: `exp_${i.toString(16).padStart(16, "0")}`, userId: alice.id, versionId: id, rev: 2, format: "pdf", name: `n${i}.pdf`, at: new Date(Date.UTC(2026, 0, 1, 0, i)).toISOString(), checked: true, pages: 1, cv });
+    const kept = await store.listOwnExports(alice.id, id);
+    expect(kept).toHaveLength(30);
+    expect(kept[0].name).toBe("n32.pdf");
+    expect(kept.at(-1)!.name).toBe("n3.pdf");
+  });
+
+  it("another account cannot see the Software view or anyone else's downloads", async () => {
+    const id = await filled();
+    const exportId = (await (await exportRoute()).GET(of("docx"), ctx(id))).headers.get("x-cv-export")!;
+    signedIn = bob;
+    expect((await (await softwareRoute()).GET(of("pdf"), ctx(id))).status).toBe(404);
+    expect((await (await listRoute()).GET(get(), ctx(id))).status).toBe(404);
+    expect((await (await oneRoute()).GET(get(), rec(exportId))).status).toBe(404);
+    expect((await (await fileRoute()).GET(get(), rec(exportId))).status).toBe(404);
+    expect((await (await oneRoute()).DELETE(get(), rec(exportId))).status).toBe(404);
+    signedIn = alice;
+    expect((await (await oneRoute()).DELETE(get(), rec(exportId))).status).toBe(200);
+    expect(await store.listOwnExports(alice.id, id)).toEqual([]);
+  });
+
+  it("downloads are part of “Download my data” and go with “Delete all my data”", async () => {
+    const id = await filled();
+    await (await exportRoute()).GET(of("pdf"), ctx(id));
+    expect((await store.exportCvData(alice.id)).exports).toHaveLength(1);
+    await store.deleteCvData(alice.id);
+    expect((await store.exportCvData(alice.id)).exports).toEqual([]);
+  });
+});
+
 describe("your data, from Settings", () => {
   it("“Download my data” includes the CVs and uploads; “Delete all my data” removes them", async () => {
     const JSZip = (await import("jszip")).default;
@@ -543,7 +660,7 @@ describe("your data, from Settings", () => {
     expect(held.uploads[0]).toMatchObject({ id: made.importId, fileName: "maya-chen.chrome.pdf" });
     expect(await zip.file("README.txt")!.async("string")).toContain("cvs.json");
     expect((await deleteRoute(json({ confirm: "delete" }))).status).toBe(200);
-    expect(await store.exportCvData(alice.id)).toEqual({ cvs: [], uploads: [], achievements: [] });
+    expect(await store.exportCvData(alice.id)).toEqual({ cvs: [], uploads: [], achievements: [], exports: [] });
   });
 });
 
@@ -556,7 +673,7 @@ describe("your data", () => {
     const held = await store.exportCvData(alice.id);
     expect([held.cvs.length, held.uploads.length]).toEqual([2, 1]);
     expect(await store.deleteCvData(alice.id)).toBe(3);
-    expect(await store.exportCvData(alice.id)).toEqual({ cvs: [], uploads: [], achievements: [] });
+    expect(await store.exportCvData(alice.id)).toEqual({ cvs: [], uploads: [], achievements: [], exports: [] });
     expect(await store.getOwnCv(bobs, bob.id)).not.toBeNull();
   });
 });
