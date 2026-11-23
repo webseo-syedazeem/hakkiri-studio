@@ -15,10 +15,14 @@ That starts the app on port 3179 with a fresh, throwaway data folder, runs every
 | `flow.cjs` | The whole interview: set up from a CV and job, understanding, live interview with follow-ups and a skip, report, feedback, drills, re-run, prep sheet |
 | `slots.cjs` | Opening and closing questions always in the right place |
 | `pay.cjs` | Talking about pay: the drill, its checks and the prep sheet |
-| `cv-cleanup.cjs` | CV section, as new users: an empty start, saves that survive a reload, no sample content or unsupported claims, a second account unable to open or save over another's CV, and an empty Evidence Bank for a new account |
+| `cv-cleanup.cjs` | The old CV screens are gone: no sample content or unsupported claims, old addresses lead to `/cv`, a new account's Evidence Bank is empty |
+| `cv-start.cjs` | Starting a CV as a new user: set-up form and its checks, an empty start, typing saved as you go, dates, two tabs, a lost connection, a second account kept out; each screen in dark and light with an accessibility pass, and on a phone |
+| `cv-upload.cjs` | Uploading a CV: PDF and Word files read into sections, each checked against the file, uncertain fields confirmed, corrected or left blank, leftover text placed, then opened in the builder; scans, locked PDFs and old Word files each get their way forward; another account kept out; phone layout |
 | `audit.cjs` | Every page, every button and link: no dead links, no dead ends, no page errors (ends by deleting a throwaway interview) |
 | `a11y-page.cjs` | axe (WCAG 2.1 AA) on the main pages; `a11y.cjs` crawls everything |
 
-Each script also runs on its own against any server: `BASE=http://127.0.0.1:3000 node e2e/flow.cjs`. The fixtures in `fixtures/` are a sample CV and two sample slide decks; `speechlike.wav` is fed to the fake microphone.
+Each script also runs on its own against any server: `BASE=http://127.0.0.1:3000 node e2e/flow.cjs`. The fixtures in `fixtures/` are a sample CV and two sample slide decks, and `fixtures/cv/` holds sample CVs in several layouts for the upload tests (made-up people; rebuilt with `node e2e/fixtures/cv/src/build.cjs`); `speechlike.wav` is fed to the fake microphone.
 
 The interview flow takes about ten minutes because it waits for the (fake) interviewer to speak and for follow-ups.
+
+To run one CV script by hand: `npm run build && e2e/serve.sh 3179`, then `BASE=http://127.0.0.1:3179 node e2e/cv-upload.cjs`. The test server runs with `HAKKIRI_TRUST_PROXY=1` so each test account can sign up from its own address without hitting the sign-up limit.

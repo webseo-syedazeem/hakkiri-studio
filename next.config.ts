@@ -2,10 +2,19 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // pdf.js reads uploaded CVs on the server; it loads its own worker file, so it must not be bundled.
+  serverExternalPackages: ["pdfjs-dist"],
   experimental: {
     // src/proxy.ts sees every API request, so Next buffers request bodies up to this size.
     // It must fit the largest recording: 25 MB for an answer, 50 MB for a presentation run.
     proxyClientMaxBodySize: "60mb",
+  },
+  // The CV section moved from /apply/cvs to /cv. Old links still work.
+  async redirects() {
+    return [
+      { source: "/apply/cvs", destination: "/cv", permanent: false },
+      { source: "/apply/cvs/:id", destination: "/cv/v/:id", permanent: false },
+    ];
   },
   // Microphone access is needed on the live practice screens.
   async headers() {

@@ -15,7 +15,8 @@ fs.mkdirSync(out, { recursive: true });
 
 const server = spawn(process.platform === "win32" ? "npx.cmd" : "npx", ["next", "start", "-p", PORT, "-H", "127.0.0.1"], {
   cwd: root,
-  env: { ...process.env, HAKKIRI_DATA_DIR: data, HAKKIRI_MOCK_AI: "1", HAKKIRI_SAVE: undefined },
+  // HAKKIRI_TRUST_PROXY lets each test account sign up from its own address, so the sign-up limit isn't hit.
+  env: { ...process.env, HAKKIRI_DATA_DIR: data, HAKKIRI_MOCK_AI: "1", HAKKIRI_TRUST_PROXY: "1", HAKKIRI_SAVE: undefined },
   stdio: ["ignore", "ignore", "inherit"],
 });
 
@@ -44,7 +45,7 @@ function run(script, extraEnv = {}) {
   try {
     await waitForServer();
     // Order matters: stories and pitch expect only the demo data; flow adds an interview; audit clicks everything.
-    for (const s of ["stories", "pitch", "flow", "slots", "pay", "cv-cleanup"]) ok = run(s) && ok;
+    for (const s of ["stories", "pitch", "flow", "slots", "pay", "cv-cleanup", "cv-start", "cv-upload"]) ok = run(s) && ok;
     ok = run("audit", { EXTRA: "/settings,/landing,/present,/privacy,/terms,/story-bank" }) && ok;
     ok = run("a11y-page", {}) && ok;
   } finally {

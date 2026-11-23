@@ -1,27 +1,72 @@
 import "server-only";
 import { NextResponse } from "next/server";
-import { getCv } from "@/lib/apply/db";
+import { z } from "zod";
 import { requireUser } from "@/lib/auth/require";
-import type { Cv } from "@/lib/apply/schema";
-
-/**
- * Loads a CV only if it belongs to this user. Anything else (no such CV, or
- * someone else's) answers the same 404, so an address can't be used to find
- * out that another person's CV exists.
- */
-export async function loadOwnCv(id: string, userId: string): Promise<Cv | null> {
-  if (!id || !userId) return null;
-  const cv = await getCv(id);
-  if (!cv || cv.userId !== userId) return null;
-  return cv;
-}
-
-export function cvNotFound() {
-  return NextResponse.json({ error: "not_found", message: "CV not found." }, { status: 404 });
-}
+import { type CvDoc, CV_LEVELS, CV_REGIONS, coreSections, emptyContact, newId } from "./schema";
 
 /** The signed-in person's id. Throws the same 401 response as requireUser when signed out. */
 export async function requireUserId(): Promise<string> {
   const user = await requireUser();
   return user.id as string;
+}
+
+/** Someone else's CV and a CV that does not exist get the same answer. */
+export const notFound = (what = "CV") => NextResponse.json({ error: "not_found", message: `${what} not found.` }, { status: 404 });
+
+export const badInput = (message: string, fields: Record<string, string> = {}) => NextResponse.json({ error: "invalid_input", message, fields }, { status: 400 });
+
+/** Turns a thrown value into a response: the 401 from requireUser passes through; anything else is logged and hidden. */
+export function failure(where: string, err: unknown, message: string) {
+  if (err instanceof Response) return err;
+  console.error(`[${where}]`, err);
+  return NextResponse.json({ error: "server_error", message }, { status: 500 });
+}
+
+const oneLine = (max: number) => z.string().max(max * 2).transform((s) => s.replace(/\s+/g, " ").trim().slice(0, max));
+
+/** The set-up form: what the CV is called, who it is for, and (optionally) the job it is aimed at. */
+export const SetupSchema = z.object({
+  name: oneLine(120).refine((s) => s.length > 0, "Give your CV a name."),
+  level: z.enum(CV_LEVELS, "Choose the level that fits you best."),
+  region: z.enum(CV_REGIONS, "Choose UK or US."),
+  targetTitle: oneLine(160).default(""),
+  targetEmployer: oneLine(160).default(""),
+  targetAdvert: z.string().max(40000).default("").transform((s) => s.replace(/\r/g, "").trim().slice(0, 20000)),
+});
+export type Setup = z.infer<typeof SetupSchema>;
+
+/** Field-by-field messages from a failed check, for the form to show beside each field. */
+export function fieldErrors(error: z.ZodError): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const issue of error.issues) {
+    const key = String(issue.path[0] ?? "");
+    if (key && !out[key]) out[key] = issue.message;
+  }
+  return out;
+}
+
+export const newCvId = () => newId("cv_").slice(0, 19);
+
+/**
+ * A new, empty CV from the set-up answers. Nothing is filled in for the
+ * person: the sections are there, with nothing in them. UK CVs default to A4,
+ * US resumes to Letter; a student or graduate starts with education first.
+ */
+export function newCv(userId: string, setup: Setup, now: string): CvDoc {
+  const hasTarget = setup.targetTitle || setup.targetEmployer || setup.targetAdvert;
+  return {
+    id: newCvId(),
+    userId,
+    rev: 1,
+    name: setup.name,
+    kind: "base",
+    level: setup.level,
+    region: setup.region,
+    target: hasTarget ? { title: setup.targetTitle, employer: setup.targetEmployer, advert: setup.targetAdvert } : undefined,
+    contact: emptyContact(),
+    sections: coreSections(setup.level),
+    design: { template: setup.level === "student" ? "graduate" : "standard", pageSize: setup.region === "us" ? "letter" : "a4", density: 0 },
+    createdAt: now,
+    updatedAt: now,
+  };
 }
