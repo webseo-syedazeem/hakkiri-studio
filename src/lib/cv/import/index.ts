@@ -10,6 +10,8 @@ export { parseCv, whereKey, type ParsedCv, type ParsedFlag, type SourceLine } fr
 
 export const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 export const MAX_PASTE_CHARS = 60_000;
+/** The most lines of text a CV is read from. A long CV has a few hundred. */
+export const MAX_LINES = 1500;
 
 export type ImportSource = "pdf" | "docx" | "linkedin-pdf" | "text";
 
@@ -42,6 +44,7 @@ export async function readCvFile(bytes: Uint8Array): Promise<ReadCv> {
   if (kind === "old-word" || kind === "rtf") throw new ImportError("old-word", "Old Word and rich text files cannot be read.");
   if (kind === "unknown") throw new ImportError("not-supported", "The file is not a PDF or a Word document.");
   const file = kind === "pdf" ? await extractPdf(bytes, isOnlyDates) : await extractDocx(bytes);
+  if (file.lines.length > MAX_LINES) throw new ImportError("too-much", "The file has more lines of text than a CV.");
   const parsed = parseCv(file.lines);
   if (parsed.lines.reduce((n, l) => n + l.text.length, 0) < 40) throw new ImportError("empty", "The file has almost no text.");
   return { ...parsed, source: kind === "pdf" ? (parsed.linkedin ? "linkedin-pdf" : "pdf") : "docx", pages: file.pages };
@@ -51,5 +54,7 @@ export async function readCvFile(bytes: Uint8Array): Promise<ReadCv> {
 export function readCvText(text: string): ReadCv {
   const clipped = text.slice(0, MAX_PASTE_CHARS);
   if (clipped.replace(/\s/g, "").length < 40) throw new ImportError("empty", "There is almost no text.");
-  return { ...parseCv(linesFromText(clipped)), source: "text", pages: 0 };
+  const lines = linesFromText(clipped);
+  if (lines.length > MAX_LINES) throw new ImportError("too-much", "There are more lines of text than a CV has.");
+  return { ...parseCv(lines), source: "text", pages: 0 };
 }

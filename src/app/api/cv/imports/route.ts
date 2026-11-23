@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { SetupSchema, badInput, failure, fieldErrors, newCv, notFound, requireUserId } from "@/lib/cv/access";
+import { SetupSchema, badInput, failure, fieldErrors, makingTooFast, newCv, notFound, requireUserId } from "@/lib/cv/access";
 import { IMPORT_ERRORS } from "@/lib/cv/import";
 import { newImportId } from "@/lib/cv/import/record";
-import { readUpload, tooLarge } from "@/lib/cv/import/server";
+import { readForm, readUpload } from "@/lib/cv/import/server";
 import { cvIsEmpty } from "@/lib/cv/schema";
-import { getOwnCv, saveCv, saveImport } from "@/lib/cv/store";
+import { TOO_MANY_CVS, atCvLimit, deleteCv, deleteImport, getOwnCv, saveCv, saveImport } from "@/lib/cv/store";
 import { guard } from "@/lib/usage/limits";
 
 export const runtime = "nodejs";
@@ -20,8 +20,9 @@ export async function POST(req: Request) {
   if (limited) return limited;
   try {
     const userId = await requireUserId();
-    if (tooLarge(req)) return NextResponse.json({ error: "too_big", message: IMPORT_ERRORS["too-big"].message }, { status: 413 });
-    const form = await req.formData().catch(() => null);
+    // The bytes are counted as they arrive: a request that hides or misstates its size is still stopped at the limit.
+    const form = await readForm(req);
+    if (form === "too-big") return NextResponse.json({ error: "too_big", message: IMPORT_ERRORS["too-big"].message }, { status: 413 });
     if (!form) return badInput("Send the form again.");
     const file = form.get("file");
     const text = form.get("text");
@@ -32,6 +33,7 @@ export async function POST(req: Request) {
     const now = new Date().toISOString();
     const versionId = form.get("versionId");
     let cv;
+    let isNew = false;
     if (typeof versionId === "string" && versionId) {
       cv = await getOwnCv(versionId, userId);
       if (!cv) return notFound();
@@ -39,10 +41,25 @@ export async function POST(req: Request) {
     } else {
       const setup = SetupSchema.safeParse(Object.fromEntries(["name", "level", "region", "targetTitle", "targetEmployer", "targetAdvert"].map((k) => [k, form.get(k) ?? undefined])));
       if (!setup.success) return badInput("Check the highlighted answers.", fieldErrors(setup.error));
-      cv = await saveCv(newCv(userId, setup.data, now));
+      if (await atCvLimit(userId)) return badInput(TOO_MANY_CVS);
+      const fast = makingTooFast(userId);
+      if (fast) return fast;
+      // Made here, saved further down: a CV is only kept once there is an upload record to go with it.
+      cv = newCv(userId, setup.data, now);
+      isNew = true;
     }
 
-    const imp = await saveImport(await readUpload({ id: newImportId(), userId, versionId: cv.id, createdAt: now }, cv, { file: hasFile ? (file as File) : null, text: hasText ? (text as string) : null }, now));
+    // Reading never throws: a file that cannot be read gives a record that says why.
+    const imp = await readUpload({ id: newImportId(), userId, versionId: cv.id, createdAt: now }, cv, { file: hasFile ? (file as File) : null, text: hasText ? (text as string) : null }, now);
+    try {
+      if (isNew) await saveCv(cv);
+      await saveImport(imp);
+    } catch (err) {
+      // Neither half is left behind without the other.
+      if (isNew) await deleteCv(cv.id).catch(() => {});
+      await deleteImport(imp.id).catch(() => {});
+      throw err;
+    }
     return NextResponse.json({ importId: imp.id, versionId: cv.id, status: imp.status, error: imp.error }, { status: 201 });
   } catch (err) {
     return failure("api/cv/imports POST", err, "The file could not be uploaded.");

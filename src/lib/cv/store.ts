@@ -161,13 +161,19 @@ export const deleteImport = (id: string) => deleteDoc(CV_COLLECTIONS.IMPORTS, id
 export async function listCvSummaries(userId: string): Promise<CvSummary[]> {
   const [cvs, imports, checks] = await Promise.all([listOwnCvs(userId), listOwnImports(userId), listOwnFileChecks(userId)]);
   const pending = new Map<string, string>();
-  for (const i of imports) if (i.status !== "confirmed") pending.set(i.versionId, i.id);
+  const failed = new Set<string>();
+  for (const i of imports) {
+    if (i.status === "confirmed") continue;
+    pending.set(i.versionId, i.id);
+    if (i.status === "failed") failed.add(i.versionId);
+    else failed.delete(i.versionId);
+  }
   const checked = new Map(checks.map((c) => [c.id, c]));
   const now = new Date();
   return cvs
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
     .map((cv) => {
-      const row = summarise(cv, pending.get(cv.id));
+      const row = { ...summarise(cv, pending.get(cv.id)), importFailed: failed.has(cv.id) || undefined };
       if (row.empty) return row;
       // The same sums the score and tailoring screens do, from the same inputs, so the list never disagrees with them.
       return { ...row, ...numbersFor(cv, checked.get(cv.id) ?? null, now) };

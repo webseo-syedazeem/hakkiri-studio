@@ -7,6 +7,7 @@ export type ImportErrorCode =
   | "scanned" // a PDF of pictures: no text to read
   | "unreadable" // damaged, or not what its name says
   | "too-long" // far more pages than a CV
+  | "too-much" // far more text, or far more inside the file, than a CV holds
   | "empty"; // almost no text
 
 export class ImportError extends Error {
@@ -28,5 +29,6 @@ export const IMPORT_ERRORS: Record<ImportErrorCode, { message: string; offer: ("
   scanned: { message: "That PDF is a scan or a picture of a CV, so there is no text in it to read. Paste the text of your CV, or choose a different file.", offer: ["paste", "replace"] },
   unreadable: { message: "That file couldn’t be read. It may be damaged. Choose a different file, or paste the text of your CV.", offer: ["replace", "paste"] },
   "too-long": { message: "That file has more pages than a CV. Choose the file that holds just your CV, or paste the text.", offer: ["replace", "paste"] },
+  "too-much": { message: "There is far more in that file than a CV holds, so it wasn’t read. Choose the file that holds just your CV, or paste just its text.", offer: ["replace", "paste"] },
   empty: { message: "There was almost no text in that file. Paste the text of your CV, or choose a different file.", offer: ["paste", "replace"] },
 };

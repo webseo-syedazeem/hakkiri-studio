@@ -454,6 +454,8 @@ export interface CvSummary {
   targetEmployer: string;
   /** An upload for this CV is waiting to be checked: the import to reopen. */
   pendingImportId?: string;
+  /** That upload could not be read: there is nothing to check, only a reason and another way to try. */
+  importFailed?: boolean;
   /** A cover letter has been started for this version. */
   letter?: boolean;
   /** True when nothing has been entered yet. */

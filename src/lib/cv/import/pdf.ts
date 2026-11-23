@@ -9,6 +9,14 @@ import { type DocLine, cleanText, makeLine, splitBullet, splitNumbered } from ".
  */
 
 const MAX_PAGES = 12;
+/**
+ * The most pieces of text taken from one page, the most characters from one
+ * file, and how long reading one file may take. A CV has a few thousand
+ * pieces; a file made to waste time draws the same line a million times.
+ */
+const MAX_PAGE_ITEMS = 30_000;
+const MAX_FILE_CHARS = 400_000;
+const MAX_READ_MS = 20_000;
 /** A file this app wrote is read back whatever its length; this only stops a runaway. */
 const MAX_OWN_PAGES = 400;
 
@@ -298,6 +306,14 @@ export async function extractPdf(
     if (name === "PasswordException") throw new ImportError("password", "The PDF is password-protected.");
     throw new ImportError("unreadable", "The PDF could not be opened.");
   }
+  // An uploaded file gets a fixed time. When it runs out the reading is stopped where it is and the file is refused.
+  let outOfTime = false;
+  const clock = opts.raw
+    ? null
+    : setTimeout(() => {
+        outOfTime = true;
+        void task.destroy().catch(() => {});
+      }, MAX_READ_MS);
   try {
     if (doc.numPages > (opts.raw ? MAX_OWN_PAGES : MAX_PAGES)) throw new ImportError("too-long", `The PDF has ${doc.numPages} pages.`);
     const raw: Raw[][] = [[], []];
@@ -305,7 +321,19 @@ export async function extractPdf(
     for (let p = 1; p <= doc.numPages; p++) {
       const page = await doc.getPage(p);
       const view = page.getViewport({ scale: 1 });
-      const content = await page.getTextContent();
+      // The text is taken a batch at a time, so a page with far more on it than any CV is given up on part-way.
+      const content: { items: unknown[] } = { items: [] };
+      const batches = page.streamTextContent().getReader();
+      for (;;) {
+        const { done, value } = await batches.read();
+        if (done) break;
+        for (const it of value.items) content.items.push(it);
+        if (!opts.raw && content.items.length > MAX_PAGE_ITEMS) {
+          // The reader must be given a reason, or it refuses to stop.
+          await batches.cancel(new Error("more text than a CV")).catch(() => {});
+          throw new ImportError("too-much", "A page of the PDF has far more text on it than a CV.");
+        }
+      }
       // Font names say which text is bold; they are only loaded once the page has been walked.
       const fontBold = new Map<string, boolean>();
       try {
@@ -326,8 +354,8 @@ export async function extractPdf(
         return fontBold.get(font)!;
       };
       const items: Item[] = [];
-      for (const it of content.items) {
-        if (!("str" in it) || !it.str.trim()) continue;
+      for (const it of content.items as { str?: string; transform: number[]; height: number; width: number; fontName: string }[]) {
+        if (typeof it.str !== "string" || !it.str.trim()) continue;
         const [a, b, c, d, e, f] = it.transform as number[];
         // Text set at an angle (a rotated side label) is not part of the reading order.
         if (Math.abs(b) > 0.01 || Math.abs(c) > 0.01) continue;
@@ -335,6 +363,7 @@ export async function extractPdf(
         items.push({ str: it.str, x: e, y: f, w: it.width, size, bold: isBold(it.fontName) });
         chars += it.str.trim().length;
       }
+      if (!opts.raw && chars > MAX_FILE_CHARS) throw new ImportError("too-much", "The PDF has far more text in it than a CV.");
       const rows = toRows(items);
       const gutter = opts.raw ? null : findGutter(rows, isDates);
       const links = (await page.getAnnotations().catch(() => [])).filter((a: { url?: string; rect?: number[] }) => a.url && a.rect) as { url: string; rect: number[] }[];
@@ -384,7 +413,11 @@ export async function extractPdf(
     }
     const lines = joined.map((l) => makeLine(l.text, { bullet: l.bullet, bold: l.bold, size: l.size, indent: Math.max(0, Math.round(l.x - (left.get(`${l.page}:${l.col}`) ?? l.x))), links: l.links, page: l.page, col: l.col }));
     return { lines, pages: doc.numPages };
+  } catch (err) {
+    if (outOfTime && !(err instanceof ImportError)) throw new ImportError("too-much", "The PDF took too long to read.");
+    throw err;
   } finally {
+    if (clock) clearTimeout(clock);
     await task.destroy().catch(() => {});
   }
 }

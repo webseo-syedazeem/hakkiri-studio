@@ -11,7 +11,14 @@ import { type DocLine, cleanText, makeLine, splitBullet } from "./lines";
  * too. Nothing is recognised here; the lines go on to the CV reader.
  */
 
+/** The most one part of the file may unpack to, and the most all the parts read may unpack to together. */
 const MAX_XML = 12 * 1024 * 1024;
+const MAX_UNPACKED = 24 * 1024 * 1024;
+/** The most elements one part may hold, and how deeply they may nest. A long CV has a few thousand, a dozen deep. */
+const MAX_NODES = 400_000;
+const MAX_DEPTH = 200;
+/** Page headers read for the name and contact details. A CV has one or two. */
+const MAX_HEADERS = 8;
 
 /* ----------------------------------------------------------- a small XML reader */
 
@@ -32,36 +39,76 @@ const decode = (s: string) =>
     return ENTITIES[e] ?? m;
   });
 
-/** Parses the XML Word writes. It only needs elements, attributes and text; comments and declarations are skipped. */
+/** One element's tag, read from where it starts. */
+const TAG = /<(\/?)([A-Za-z_][\w:.-]*)((?:\s+[\w:.-]+\s*=\s*(?:"[^"]*"|'[^']*'))*)\s*(\/?)>/y;
+
+/**
+ * Parses the XML Word writes. It only needs elements, attributes and text;
+ * comments and declarations are skipped.
+ *
+ * The text is walked once, from each "<" to the next. A comment, a
+ * declaration or a CDATA block is found by looking for its end mark, so a
+ * file of thousands of comments that never close costs one look, not one look
+ * each. A file with more elements than any CV has, or nested deeper, is
+ * refused; so is one with a DOCTYPE, which Word never writes.
+ */
 export function parseXml(xml: string): Node {
   const root: Node = { name: "#root", attrs: {}, children: [], text: "" };
   const stack: Node[] = [root];
-  const tag = /<!--[\s\S]*?-->|<\?[\s\S]*?\?>|<!\[CDATA\[([\s\S]*?)\]\]>|<!DOCTYPE[^>]*>|<(\/?)([A-Za-z_][\w:.-]*)((?:\s+[\w:.-]+\s*=\s*(?:"[^"]*"|'[^']*'))*)\s*(\/?)>/g;
+  let nodes = 0;
   let last = 0;
-  for (let m = tag.exec(xml); m; m = tag.exec(xml)) {
-    const top = stack[stack.length - 1];
-    if (m.index > last) top.text += decode(xml.slice(last, m.index));
-    last = tag.lastIndex;
-    if (m[1] !== undefined) {
-      top.text += m[1];
+  let at = 0;
+  /** Text between the last tag and here belongs to the element that is open. */
+  const textUpTo = (to: number) => {
+    if (to > last) stack[stack.length - 1].text += decode(xml.slice(last, to));
+  };
+  for (;;) {
+    const lt = xml.indexOf("<", at);
+    if (lt === -1) break;
+    // Things that are skipped whole, each found by its end mark.
+    const skipped = xml.startsWith("<!--", lt) ? "-->" : xml.startsWith("<![CDATA[", lt) ? "]]>" : xml.startsWith("<?", lt) ? "?>" : "";
+    if (skipped) {
+      const end = xml.indexOf(skipped, lt + 2);
+      textUpTo(lt);
+      // One that never ends takes the rest of the file with it: there is nothing after it to read.
+      if (end === -1) {
+        last = xml.length;
+        break;
+      }
+      if (skipped === "]]>") stack[stack.length - 1].text += xml.slice(lt + 9, end);
+      last = at = end + skipped.length;
       continue;
     }
-    if (!m[3]) continue;
-    if (m[2]) {
+    if (xml.startsWith("<!DOCTYPE", lt)) throw new ImportError("unreadable", "The Word file is not written the way Word writes one.");
+    TAG.lastIndex = lt;
+    const m = TAG.exec(xml);
+    if (!m) {
+      // Not a tag: the "<" is part of the text.
+      at = lt + 1;
+      continue;
+    }
+    textUpTo(lt);
+    last = at = TAG.lastIndex;
+    if (m[1]) {
       // A closing tag: unwind to the element it closes.
       for (let i = stack.length - 1; i > 0; i--) {
-        if (stack[i].name === m[3]) {
+        if (stack[i].name === m[2]) {
           stack.length = i;
           break;
         }
       }
       continue;
     }
-    const node: Node = { name: m[3], attrs: {}, children: [], text: "" };
-    for (const a of m[4].matchAll(/([\w:.-]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g)) node.attrs[a[1]] = decode(a[2] ?? a[3] ?? "");
-    top.children.push(node);
-    if (!m[5]) stack.push(node);
+    if (++nodes > MAX_NODES) throw new ImportError("too-much", "The Word file has far more in it than a CV.");
+    const node: Node = { name: m[2], attrs: {}, children: [], text: "" };
+    if (m[3]) for (const a of m[3].matchAll(/([\w:.-]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g)) node.attrs[a[1]] = decode(a[2] ?? a[3] ?? "");
+    stack[stack.length - 1].children.push(node);
+    if (!m[4]) {
+      if (stack.length > MAX_DEPTH) throw new ImportError("unreadable", "The Word file is nested more deeply than Word writes.");
+      stack.push(node);
+    }
   }
+  textUpTo(xml.length);
   return root;
 }
 
@@ -282,12 +329,50 @@ function blocks(parent: Node, ctx: Ctx) {
 
 /* ------------------------------------------------------------------- the file */
 
-async function read(zip: JSZip, path: string): Promise<string | undefined> {
+interface Unpacking {
+  on(event: "data", cb: (chunk: Uint8Array) => void): Unpacking;
+  on(event: "error", cb: (err: Error) => void): Unpacking;
+  on(event: "end", cb: () => void): Unpacking;
+  resume(): Unpacking;
+  pause(): Unpacking;
+}
+
+/**
+ * Reads one part of the file as text. The size the file gives for a part is
+ * not trusted, because it can be made to lie: the bytes are counted as they
+ * are unpacked, and unpacking stops the moment a part, or all the parts
+ * together, grow past what a CV could need.
+ */
+async function read(zip: JSZip, path: string, budget: { left: number }): Promise<string | undefined> {
   const f = zip.file(path);
   if (!f) return undefined;
-  const size = (f as unknown as { _data?: { uncompressedSize?: number } })._data?.uncompressedSize ?? 0;
-  if (size > MAX_XML) throw new ImportError("unreadable", "The Word file is too large inside.");
-  return f.async("string");
+  const said = (f as unknown as { _data?: { uncompressedSize?: number } })._data?.uncompressedSize ?? 0;
+  const cap = Math.min(MAX_XML, budget.left);
+  if (said > cap) throw new ImportError("too-much", "The Word file is too large inside.");
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  await new Promise<void>((resolve, reject) => {
+    const stream = (f as unknown as { internalStream(type: "uint8array"): Unpacking }).internalStream("uint8array");
+    stream
+      .on("data", (chunk) => {
+        size += chunk.length;
+        if (size > cap) {
+          stream.pause();
+          reject(new ImportError("too-much", "The Word file is too large inside."));
+        } else chunks.push(chunk);
+      })
+      .on("error", () => reject(new ImportError("unreadable", "The Word file could not be unpacked.")))
+      .on("end", () => resolve())
+      .resume();
+  });
+  budget.left -= size;
+  const bytes = new Uint8Array(size);
+  let at = 0;
+  for (const c of chunks) {
+    bytes.set(c, at);
+    at += c.length;
+  }
+  return new TextDecoder("utf-8").decode(bytes);
 }
 
 function relationships(xml: string | undefined): Map<string, string> {
@@ -308,11 +393,12 @@ export async function extractDocx(bytes: Uint8Array, opts: { /** Read the text e
     throw new ImportError("unreadable", "The Word file could not be opened.");
   }
   if (Object.keys(zip.files).length > 3000) throw new ImportError("unreadable", "The Word file has too many parts.");
-  const documentXml = await read(zip, "word/document.xml");
+  const budget = { left: MAX_UNPACKED };
+  const documentXml = await read(zip, "word/document.xml", budget);
   if (!documentXml) throw new ImportError(zip.file("content.xml") || zip.file("index.xml") || zip.file("Index/Document.iwa") ? "old-word" : "unreadable", "The file is not a Word (.docx) document.");
 
-  const { styles, defaultSize } = readStyles(await read(zip, "word/styles.xml"));
-  const ctx: Ctx = { styles, defaultSize, links: relationships(await read(zip, "word/_rels/document.xml.rels")), out: [], col: 0, raw: opts.raw };
+  const { styles, defaultSize } = readStyles(await read(zip, "word/styles.xml", budget));
+  const ctx: Ctx = { styles, defaultSize, links: relationships(await read(zip, "word/_rels/document.xml.rels", budget)), out: [], col: 0, raw: opts.raw };
   const body = child(child(parseXml(documentXml), "w:document"), "w:body");
   if (!body) throw new ImportError("unreadable", "The Word file has no text in it.");
   blocks(body, ctx);
@@ -320,11 +406,11 @@ export async function extractDocx(bytes: Uint8Array, opts: { /** Read the text e
   // The page header often holds the name and contact details. Read it first, once.
   const header: DocLine[] = [];
   const seen = new Set(ctx.out.map((l) => l.text));
-  for (const path of Object.keys(zip.files).filter((p) => /^word\/header\d*\.xml$/.test(p)).sort()) {
-    const xml = await read(zip, path);
+  for (const path of Object.keys(zip.files).filter((p) => /^word\/header\d*\.xml$/.test(p)).sort().slice(0, MAX_HEADERS)) {
+    const xml = await read(zip, path, budget);
     const hdr = xml ? child(parseXml(xml), "w:hdr") : undefined;
     if (!hdr) continue;
-    const hctx: Ctx = { ...ctx, links: relationships(await read(zip, path.replace("word/", "word/_rels/") + ".rels")), out: [] };
+    const hctx: Ctx = { ...ctx, links: relationships(await read(zip, path.replace("word/", "word/_rels/") + ".rels", budget)), out: [] };
     blocks(hdr, hctx);
     for (const l of hctx.out) {
       if (seen.has(l.text) || /^(?:page\s*)?\d*$/i.test(l.text)) continue;
@@ -336,7 +422,7 @@ export async function extractDocx(bytes: Uint8Array, opts: { /** Read the text e
   if (!opts.raw && lines.reduce((n, l) => n + l.text.length, 0) < 40) throw new ImportError("empty", "The Word file has almost no text.");
 
   let pages = 0;
-  const app = await read(zip, "docProps/app.xml");
+  const app = await read(zip, "docProps/app.xml", budget);
   const m = app?.match(/<Pages>(\d+)<\/Pages>/);
   if (m) pages = Math.min(100, Number(m[1]));
   return { lines, pages };

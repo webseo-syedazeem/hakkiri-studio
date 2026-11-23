@@ -292,11 +292,11 @@ function Row({ cv, indent, onAction }: { cv: CvSummary; indent?: boolean; onActi
           {cv.name}
         </Link>
         <small style={{ display: "block", marginTop: 3 }}>
-          {indent ? "Tailored version" : `Base ${docWord(cv.region)}`} · {LEVEL_LABELS[cv.level]} · {cv.region.toUpperCase()}
+          {cv.kind === "tailored" ? (indent ? "Tailored version" : `Tailored version (its base ${docWord(cv.region)} was deleted)`) : `Base ${docWord(cv.region)}`} · {LEVEL_LABELS[cv.level]} · {cv.region.toUpperCase()}
           {target ? ` · ${target}` : ""} · Edited {when(cv.updatedAt)}
         </small>
       </div>
-      {cv.pendingImportId ? <span className="cv-chip cv-link" style={{ textDecoration: "none" }}>Upload to check</span> : cv.empty ? <span className="cv-chip">Empty</span> : null}
+      {cv.pendingImportId ? <span className="cv-chip cv-link" style={{ textDecoration: "none" }} data-testid="row-upload">{cv.importFailed ? "Upload not read" : "Upload to check"}</span> : cv.empty ? <span className="cv-chip">Empty</span> : null}
       {cv.score !== undefined && !cv.pendingImportId && <span className="cv-chip" data-testid="row-score">Score {cv.score}</span>}
       {cv.fit !== undefined && <span className="cv-chip" data-testid="row-fit">Job fit {cv.fit}</span>}
       <span className="cv-controls">
@@ -319,7 +319,7 @@ function Row({ cv, indent, onAction }: { cv: CvSummary; indent?: boolean; onActi
         <Btn kind="quiet" onClick={() => onAction("delete-version")} aria-label={`Delete ${cv.name}`}>
           Delete
         </Btn>
-        <BtnLink href={href}>{cv.pendingImportId ? "Check upload" : "Open"}</BtnLink>
+        <BtnLink href={href}>{cv.pendingImportId ? (cv.importFailed ? "Try again" : "Check upload") : "Open"}</BtnLink>
       </span>
     </div>
   );
