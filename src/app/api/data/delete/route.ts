@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { deleteAll } from "@/lib/data/account";
 import { requireUser } from "@/lib/auth/require";
+import { deleteCvData } from "@/lib/cv/store";
 
 export const runtime = "nodejs";
 
@@ -19,5 +20,7 @@ export async function POST(req: Request) {
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "bad-request", message: "Type delete to confirm." }, { status: 400 });
   deleteAll(user.id);
+  // CVs and uploads live in the CV section's own store.
+  if (user.id) await deleteCvData(user.id);
   return NextResponse.json({ ok: true });
 }

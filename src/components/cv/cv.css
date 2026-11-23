@@ -1,0 +1,150 @@
+/*
+ * The CV and cover letter section. Sizes, spacing and colours follow the design
+ * mock-ups (editor, tailoring, Software view). Every colour comes from a token,
+ * so the same screens work on the dark app surface and on the light one (.mk).
+ */
+.cv {
+  --cv-edge: rgb(255 255 255 / 0.14); /* panel and button edges */
+  --cv-input-edge: #76798c; /* inputs get a stronger, visible edge */
+  --cv-green: #8bc9ab; /* confirmed, fixed */
+  --cv-note-bg: #25283c; /* a suggestion or a thing to check */
+  --cv-note-ink: var(--color-blue-soft);
+  --cv-issue-bg: #302229; /* a concrete problem */
+  --cv-issue-edge: #84464e;
+  --cv-mark: rgb(123 136 255 / 0.22); /* the marked passage in a source */
+  --cv-selected: #292c43;
+  color: var(--color-ink);
+  font-size: 15px;
+  line-height: 1.45;
+}
+.mk .cv,
+.cv.mk {
+  --cv-edge: rgb(0 0 0 / 0.16);
+  --cv-input-edge: #7c7e8c;
+  --cv-green: #1c7a50;
+  --cv-note-bg: #eceefe;
+  --cv-note-ink: #2f3bb5;
+  --cv-issue-bg: #fdecec;
+  --cv-issue-edge: #d9a3a3;
+  --cv-mark: rgb(61 75 216 / 0.16);
+  --cv-selected: #e4e7fb;
+  --color-blue: #3d4bd8;
+  --color-red: #c1272d;
+  /* Small grey text sits on tinted fields here, so it is a shade darker than the public pages' grey (5.6:1). */
+  --color-muted: #595b68;
+  --color-dim: #595b68;
+}
+
+.cv h1 { font-size: 32px; letter-spacing: -1.3px; line-height: 1.13; font-weight: 700; margin: 3px 0; }
+.cv h2 { font-size: 18px; letter-spacing: -0.4px; font-weight: 650; margin: 0; }
+.cv h3 { font-size: 15px; font-weight: 650; margin: 0; }
+.cv p { margin: 0; }
+.cv small, .cv .cv-small { font-size: 12px; color: var(--color-muted); }
+.cv .cv-help { display: block; font-size: 12px; color: var(--color-muted); }
+.cv fieldset { border: 0; padding: 0; min-width: 0; margin-left: 0; margin-right: 0; margin-bottom: 0; }
+.cv .cv-muted { color: var(--color-muted); }
+.cv .cv-eyebrow { font-size: 11px; letter-spacing: 0.11em; font-weight: 650; text-transform: uppercase; color: var(--color-muted); }
+.cv .cv-link { color: var(--color-blue-soft); text-decoration: underline; text-underline-offset: 2px; }
+.cv .cv-good { color: var(--cv-green); }
+.cv .cv-warn { color: var(--color-red); }
+
+/* The 64px bar across the top of the working area. */
+.cv-bar { min-height: 64px; padding: 10px 24px; border-bottom: 1px solid var(--cv-edge); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.cv-crumb { font-size: 13px; color: var(--color-muted); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.cv-crumb b, .cv-crumb [aria-current] { color: var(--color-ink); font-weight: 550; }
+.cv-crumb a:hover { color: var(--color-ink); }
+.cv-area { padding: 24px; max-width: 1240px; }
+.cv-toolbar { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 18px; flex-wrap: wrap; }
+.cv-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.cv-push { margin-left: auto; }
+
+/* Buttons: a quiet default and one primary action per screen. */
+.cv-btn { font: inherit; color: var(--color-ink); background: var(--color-panel-2); border: 1px solid var(--cv-edge); border-radius: 6px; padding: 7px 12px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; white-space: nowrap; }
+.cv-btn:hover { border-color: var(--color-blue-hover); }
+.cv-btn:disabled, .cv-btn[aria-disabled="true"] { opacity: 0.55; cursor: default; }
+/* The label sits on the base fill (4.6:1); hovering changes the edge only, which keeps that contrast. */
+.cv-btn-primary { background: var(--color-blue-fill); color: #f1f1f4; font-weight: 600; border-color: transparent; }
+.cv-btn-primary:hover { border-color: #aeb6ff; }
+.cv-btn-quiet { background: transparent; border-color: transparent; color: var(--color-blue-soft); padding-left: 4px; padding-right: 4px; }
+.cv-btn-danger { color: var(--color-red); }
+.cv :is(button, a, input, textarea, select, [tabindex]):focus-visible { outline: 2px solid var(--color-blue-soft); outline-offset: 3px; }
+.cv-chip { font-size: 12px; padding: 3px 8px; white-space: nowrap; background: var(--color-panel-2); border: 1px solid var(--cv-edge); border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; }
+
+/* Panels. */
+.cv-panel { border: 1px solid var(--cv-edge); border-radius: 10px; background: var(--color-panel); overflow: hidden; }
+.cv-panelhead, .cv-panelfoot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 15px 20px; flex-wrap: wrap; }
+.cv-panelhead { border-bottom: 1px solid var(--color-line); }
+.cv-panelfoot { border-top: 1px solid var(--color-line); }
+.cv-pad { padding: 18px 20px; }
+.cv-stack > * + * { margin-top: 14px; }
+.cv-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.cv-layout { display: grid; gap: 24px; align-items: start; }
+
+/* Fields: the label, the rule under it, the input, then anything to check. */
+.cv-label { display: block; font-size: 13px; font-weight: 550; }
+.cv-rule { display: block; font-size: 12px; color: var(--color-muted); margin-top: 2px; font-weight: 400; }
+.cv-input { width: 100%; font: inherit; color: var(--color-ink); background: var(--color-panel-2); border: 1px solid var(--cv-input-edge); border-radius: 5px; padding: 7px 9px; margin-top: 4px; display: block; line-height: 1.4; }
+.cv-input::placeholder { color: var(--color-dim); opacity: 1; }
+textarea.cv-input { resize: vertical; }
+.cv-input[aria-invalid="true"] { border-color: var(--color-red); }
+.cv-input.cv-uncertain { border-color: var(--color-blue); box-shadow: inset 3px 0 var(--color-blue); }
+.cv-note { margin-top: 6px; padding: 9px 12px; color: var(--cv-note-ink); background: var(--cv-note-bg); border-left: 2px solid var(--color-blue); font-size: 13px; border-radius: 0 4px 4px 0; }
+.cv-note .cv-btn { font-size: 13px; padding: 4px 10px; }
+.cv-issue { display: flex; gap: 13px; align-items: center; flex-wrap: wrap; background: var(--cv-issue-bg); border: 1px solid var(--cv-issue-edge); border-radius: 8px; padding: 14px 18px; }
+.cv-issue strong { color: var(--color-red); }
+.cv-fixed { margin-top: 6px; font-size: 13px; color: var(--cv-green); display: flex; align-items: center; gap: 6px; }
+.cv-error-text { margin-top: 4px; font-size: 13px; color: var(--color-red); }
+
+/* Section navigation. */
+.cv-tabs { display: flex; align-items: center; gap: 23px; min-height: 42px; border-bottom: 1px solid var(--cv-edge); margin-bottom: 18px; overflow-x: auto; }
+.cv-tabs a, .cv-tabs button { padding: 9px 0; color: var(--color-muted); font-size: 14px; white-space: nowrap; background: none; border: 0; border-bottom: 2px solid transparent; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+.cv-tabs [aria-current="page"], .cv-tabs [aria-selected="true"] { color: var(--color-ink); border-bottom-color: var(--color-blue); font-weight: 650; }
+.cv-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--color-blue); display: inline-block; }
+
+/* Rows in a list (dashboard, review steps). */
+.cv-pick { display: flex; align-items: center; gap: 16px; border-bottom: 1px solid var(--color-line); padding: 13px 18px; min-height: 73px; flex-wrap: wrap; }
+.cv-pick:last-child { border-bottom: 0; }
+.cv-pick-active { background: var(--cv-selected); box-shadow: inset 3px 0 var(--color-blue); }
+.cv-subhead { padding: 8px 18px; background: var(--color-panel-2); font-size: 12px; font-weight: 650; }
+.cv-quote { margin: 9px 0 0; padding: 12px 14px; border-left: 2px solid var(--color-blue); background: var(--color-panel-2); line-height: 1.5; }
+
+/* The file's own text, shown beside the fields read from it. */
+.cv-source { font-size: 13px; line-height: 1.5; max-height: min(72vh, 900px); overflow-y: auto; }
+.cv-source-line { display: block; padding: 2px 20px 2px 17px; border-left: 3px solid transparent; white-space: pre-wrap; overflow-wrap: anywhere; }
+.cv-source-line[data-heading="true"] { font-weight: 650; margin-top: 10px; }
+.cv-source-line[data-bullet="true"]::before { content: "• "; color: var(--color-muted); }
+.cv-source-line[data-marked="true"] { background: var(--cv-mark); border-left-color: var(--color-blue); }
+.cv-source-page { padding: 6px 20px; font-size: 11px; letter-spacing: 0.11em; text-transform: uppercase; color: var(--color-muted); border-top: 1px solid var(--color-line); margin-top: 8px; }
+
+/* Choice cards (level, region, how to start). */
+.cv-choice { display: flex; gap: 10px; align-items: flex-start; padding: 11px 13px; border: 1px solid var(--cv-edge); border-radius: 8px; background: var(--color-panel-2); cursor: pointer; }
+.cv-choice:has(input:checked) { border-color: var(--color-blue); box-shadow: inset 0 0 0 1px var(--color-blue); background: var(--cv-selected); }
+.cv-choice:has(input:focus-visible) { outline: 2px solid var(--color-blue-soft); outline-offset: 3px; }
+.cv-choice input { margin-top: 3px; accent-color: var(--color-blue-fill); }
+
+.cv-skeleton { border-radius: 6px; background: linear-gradient(90deg, var(--color-panel-2), var(--color-panel), var(--color-panel-2)); background-size: 200% 100%; animation: cv-shimmer 1.4s linear infinite; }
+@keyframes cv-shimmer { to { background-position: -200% 0; } }
+
+/* Two working panes from 1200px; below that, one pane with a switch between them. */
+@media (min-width: 1200px) {
+  .cv .cv-narrow { display: none !important; }
+  .cv-sticky { position: sticky; top: 16px; }
+}
+@media (max-width: 1199px) {
+  .cv-layout { grid-template-columns: minmax(0, 1fr) !important; }
+  .cv .cv-wide { display: none !important; }
+}
+@media (min-width: 768px) {
+  .cv-pick { flex-wrap: nowrap; }
+}
+/* Phones: full-width fields, text no smaller than 16px in inputs, targets no smaller than 44px. */
+@media (max-width: 767px) {
+  .cv h1 { font-size: 26px; letter-spacing: -0.8px; }
+  .cv-bar { padding: 8px 16px; min-height: 52px; }
+  .cv-area { padding: 16px; }
+  .cv-pair { grid-template-columns: minmax(0, 1fr); }
+  .cv-input { font-size: 16px; min-height: 44px; }
+  .cv-btn { min-height: 44px; padding: 9px 14px; }
+  .cv-tabs a, .cv-tabs button { min-height: 44px; }
+  .cv-pad, .cv-panelhead, .cv-panelfoot { padding-left: 16px; padding-right: 16px; }
+}

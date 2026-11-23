@@ -365,6 +365,22 @@ describe("one person's upload is theirs alone", () => {
   });
 });
 
+describe("your data, from Settings", () => {
+  it("“Download my data” includes the CVs and uploads; “Delete all my data” removes them", async () => {
+    const JSZip = (await import("jszip")).default;
+    const { GET: exportRoute } = await import("@/app/api/data/export/route");
+    const { POST: deleteRoute } = await import("@/app/api/data/delete/route");
+    const made = await makeImport();
+    const zip = await JSZip.loadAsync(await (await exportRoute(get())).arrayBuffer());
+    const held = JSON.parse(await zip.file("cvs.json")!.async("string"));
+    expect(held.cvs.map((c: { id: string }) => c.id)).toEqual([made.versionId]);
+    expect(held.uploads[0]).toMatchObject({ id: made.importId, fileName: "maya-chen.chrome.pdf" });
+    expect(await zip.file("README.txt")!.async("string")).toContain("cvs.json");
+    expect((await deleteRoute(json({ confirm: "delete" }))).status).toBe(200);
+    expect(await store.exportCvData(alice.id)).toEqual({ cvs: [], uploads: [] });
+  });
+});
+
 describe("your data", () => {
   it("everything held for a person can be listed and deleted, without touching anyone else's", async () => {
     await makeImport();

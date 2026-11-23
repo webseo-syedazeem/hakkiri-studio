@@ -12,6 +12,7 @@ import { allUsage, anonymiseUsage } from "@/lib/usage/store";
 import { getSettings } from "@/lib/settings/store";
 import { removeDir } from "@/lib/storage/disk";
 import { clearFeedback } from "@/lib/feedback/store";
+import { exportCvData } from "@/lib/cv/store";
 
 /**
  * "Your data" in Settings: what Hakkiri holds about you, a copy of all of it,
@@ -57,6 +58,9 @@ data.json holds everything Hakkiri keeps about you:
 
 recordings/ holds the audio of your answers that is still kept
 (see "Keep recordings for" in Settings).
+
+cvs.json holds your CVs and, for each CV you uploaded, the text that was
+read from the file (the file itself is never kept).
 `;
 
 /** A zip of everything: data.json, a README, and the recordings (scoped to user if userId provided). */
@@ -81,6 +85,8 @@ export async function exportAll(userId?: string): Promise<Uint8Array> {
   };
   zip.file("data.json", JSON.stringify(data, null, 2));
   zip.file("README.txt", README);
+  // CVs and the text of uploaded CVs (the CV section keeps its records in its own store).
+  if (userId) zip.file("cvs.json", JSON.stringify(await exportCvData(userId), null, 2));
   const allowedAnswerIds = new Set(userAnswers.map((a) => a.id));
   for (const r of allRecordings()) {
     if (!userId || allowedAnswerIds.has(r.answerId)) {

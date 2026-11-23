@@ -9,6 +9,13 @@ const nextConfig: NextConfig = {
     // It must fit the largest recording: 25 MB for an answer, 50 MB for a presentation run.
     proxyClientMaxBodySize: "60mb",
   },
+  // The CV section moved from /apply/cvs to /cv. Old links still work.
+  async redirects() {
+    return [
+      { source: "/apply/cvs", destination: "/cv", permanent: false },
+      { source: "/apply/cvs/:id", destination: "/cv/v/:id", permanent: false },
+    ];
+  },
   // Microphone access is needed on the live practice screens.
   async headers() {
     return [

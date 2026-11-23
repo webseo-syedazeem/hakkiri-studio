@@ -71,7 +71,7 @@ export default function ApplyHomePage() {
               <span className="text-xs">→</span>
             </Link>
             <Link
-              href="/apply/cvs"
+              href="/cv"
               className="inline-flex items-center gap-2 rounded-2xl border border-line-strong bg-panel-2 px-4 py-3 text-xs font-bold text-ink hover:bg-line transition duration-200"
             >
               <span>Build Base CV</span>
@@ -130,7 +130,7 @@ export default function ApplyHomePage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
           <Link
-            href="/apply/cvs"
+            href="/cv"
             className="group relative rounded-3xl border border-line bg-panel p-5 hover:border-blue/50 hover:bg-panel-2 transition-all duration-300 space-y-3 shadow-lg hover:shadow-2xl hover:shadow-blue/5 hover:scale-[1.01]"
           >
             <div className="flex items-center justify-between">

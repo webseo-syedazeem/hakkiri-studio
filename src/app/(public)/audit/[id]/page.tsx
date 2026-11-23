@@ -93,7 +93,7 @@ export default function AuditReportPage({
         </Link>
         <div className="flex items-center gap-3">
           <Link
-            href="/apply/cvs"
+            href="/cv"
             className="rounded-lg bg-accent px-3.5 py-1.5 text-xs font-bold text-white hover:bg-accent-hover transition shadow"
           >
             Fix in CV Builder →
@@ -127,7 +127,7 @@ export default function AuditReportPage({
             {/* Quick Actions */}
             <div className="flex flex-col sm:flex-row gap-3">
               <Link
-                href="/apply/cvs"
+                href="/cv"
                 className="rounded-xl bg-accent px-5 py-3 text-center text-xs font-bold text-white shadow-lg shadow-accent/25 hover:bg-accent-hover transition"
               >
                 Open in CV Builder →
