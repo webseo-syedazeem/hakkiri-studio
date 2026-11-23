@@ -1,5 +1,5 @@
 import { type CvDoc, type Locator, type Requirement, isEntrySection, isListSection } from "../schema";
-import { figures, stem, terms } from "../write/facts";
+import { figures, negated, sentences, stem, terms } from "../write/facts";
 import { askedFor, contains, namedTerms } from "../write/skills";
 
 /**
@@ -18,6 +18,8 @@ export interface CvLine {
   at: Locator;
   /** A listed skill names a thing without showing it being used. */
   kind: "bullet" | "skill" | "profile" | "item";
+  /** Words the line stands for without saying: "BSc (Hons) Marine Biology" is a degree. Used for matching, never shown. */
+  also?: string;
 }
 
 export interface Assessed {
@@ -45,7 +47,7 @@ export interface JobFit {
 
 /** Words every advert uses that say nothing about what is being asked for. */
 const GENERIC = new Set(
-  "experience experienced ability able knowledge strong excellent proven good great solid demonstrable demonstrated skill skills work working worked year years understanding track record including relevant similar role team teams environment high level levels excellent essential desirable required preferred must have ideally proficient proficiency familiar familiarity comfortable confident competent competence background expertise new least plus etc candidate successful someone".split(" ").map(stem),
+  "experience experienced ability able knowledge strong excellent proven good great solid demonstrable demonstrated skill skills work working worked year years understanding track record including relevant similar role team teams environment high level levels excellent essential desirable required preferred must have ideally proficient proficiency familiar familiarity comfortable confident competent competence background expertise new least plus etc candidate successful someone related subject equivalent field discipline area full valid current".split(" ").map(stem),
 );
 
 type Printable = Pick<CvDoc, "sections" | "requirements" | "target">;
@@ -56,7 +58,8 @@ export function cvLines(cv: Pick<CvDoc, "sections">): CvLine[] {
   for (const s of cv.sections) {
     if (!s.visible) continue;
     if (s.kind === "summary") {
-      if (s.text.trim()) out.push({ text: s.text, at: { section: s.id, field: "text" }, kind: "profile" });
+      // Sentence by sentence: a profile that lists every word of the advert is not one line that shows everything.
+      for (const line of sentences(s.text)) out.push({ text: line, at: { section: s.id, field: "text" }, kind: "profile" });
     } else if (s.kind === "skills") {
       for (const g of s.groups) if (g.visible) for (const k of g.skills) if (k.visible && k.name.trim()) out.push({ text: k.name, at: { section: s.id, entry: g.id, field: k.id }, kind: "skill" });
     } else if (isListSection(s)) {
@@ -65,13 +68,18 @@ export function cvLines(cv: Pick<CvDoc, "sections">): CvLine[] {
       for (const e of s.entries) {
         if (!e.visible) continue;
         const head = [e.title, e.subject, e.grade].filter(Boolean).join(" ");
-        if (head.trim() && (s.kind === "education" || s.kind === "certificates" || s.kind === "courses")) out.push({ text: head, at: { section: s.id, entry: e.id, field: "title" }, kind: "item" });
+        if (head.trim() && (s.kind === "education" || s.kind === "certificates" || s.kind === "courses")) {
+          out.push({ text: head, at: { section: s.id, entry: e.id, field: "title" }, kind: "item", also: s.kind === "education" && DEGREE.test(e.title) ? "degree graduate qualification" : s.kind === "education" ? "qualification" : "certificate certification qualification" });
+        }
         for (const b of e.bullets) if (b.visible && b.text.trim()) out.push({ text: b.text, at: { section: s.id, entry: e.id, field: b.id }, kind: "bullet" });
       }
     }
   }
   return out;
 }
+
+/** A qualification that is a degree, by its name: "BSc (Hons)", "Master of Arts", "PhD". */
+const DEGREE = /\b(?:B\.?A|B\.?Sc|B\.?Eng|LL\.?B|M\.?A|M\.?Sc|M\.?Eng|M\.?B\.?A|M\.?Phil|Ph\.?D|D\.?Phil|Bachelor|Master|Doctor|Doctorate|Degree|Hons)\b/i;
 
 const same = (a: Locator, b: Locator) => a.section === b.section && (a.entry ?? "") === (b.entry ?? "") && (a.field ?? "") === (b.field ?? "");
 
@@ -83,9 +91,27 @@ export function keyTerms(text: string): { text: string; stem: string }[] {
   return out.filter((t) => !figures(t.text).length);
 }
 
+/**
+ * A requirement that offers a choice ("a degree in marine biology, ecology or
+ * a related subject", "Google Ads or Meta") is shown by any one of the
+ * choices. Returns the words every choice shares (the "degree") and the words
+ * of each choice; null when the requirement offers no choice.
+ */
+function choices(text: string): { head: string[]; any: string[][] } | null {
+  if (!/\sor\s/i.test(text)) return null;
+  const parts = text.split(/\s*,\s*(?:or\s+)?|\s+or\s+/i).map((p) => p.trim()).filter(Boolean);
+  if (parts.length < 2) return null;
+  // In the first part, what comes before "in", "of" or "with" is common to every choice.
+  const m = /^(.*?\s(?:in|of|with|as|using)\s)(.+)$/i.exec(parts[0]);
+  const head = m ? keyTerms(m[1]).map((k) => k.stem) : [];
+  const any = [m ? m[2] : parts[0], ...parts.slice(1)].map((part) => keyTerms(part).map((k) => k.stem)).filter((k) => k.length);
+  return any.length >= 1 ? { head, any } : null;
+}
+
 export function assess(cv: Printable): Assessed[] {
   const lines = cvLines(cv);
-  const stems = lines.map((l) => new Set(terms(l.text).map((t) => t.stem)));
+  // A line that says the person does NOT have something ("No experience of cataloguing…") shows nothing.
+  const stems = lines.map((l) => (negated(l.text) ? new Set<string>() : new Set(terms(`${l.text} ${l.also ?? ""}`).map((t) => t.stem))));
   return cv.requirements.map((r) => {
     const weight = r.priority === "required" ? 2 : 1;
     const row = (status: FitStatus, more: Partial<Assessed>): Assessed => ({ requirement: r, status, weight, earned: status === "met" ? weight : status === "partly" ? weight / 2 : 0, lines: [], covered: [], uncovered: [], note: "", ...more });
@@ -104,12 +130,17 @@ export function assess(cv: Printable): Assessed[] {
     const covered = keys.filter((k) => coveredStems.has(k.stem)).map((k) => k.text);
     const uncovered = keys.filter((k) => !coveredStems.has(k.stem)).map((k) => k.text);
     const support = [...linked.map((l) => ({ ...l, by: "you" as const })), ...hits.filter((h) => !linked.includes(h.l)).slice(0, 2).map((h) => ({ ...h.l, by: "match" as const }))].slice(0, 3);
-    // Met needs one line that shows the whole of it, where it was used: not a skill listed on its own, and not words scattered across lines.
-    const whole = hits.find((h) => h.n === keys.length && h.l.kind !== "skill");
+    // Met needs one line that shows the whole of it, where it was done: not a skill listed on its own, not a
+    // sentence of the profile (which says, and does not show), and not words scattered across lines.
+    const shows = (kind: CvLine["kind"]) => kind === "bullet" || kind === "item";
+    const choice = choices(r.text || r.quote);
+    const all = (i: number) => (choice ? choice.head.every((k) => stems[i].has(k)) && choice.any.some((alt) => alt.every((k) => stems[i].has(k))) : keys.every((k) => stems[i].has(k.stem)));
+    const wholly = lines.map((l, i) => ({ l, i })).filter((x) => all(x.i));
+    const whole = wholly.filter((x) => shows(x.l.kind));
     // For a met requirement, only the lines that show the whole of it are named as showing it.
-    if (whole) return row("met", { lines: [...linked.map((l) => ({ ...l, by: "you" as const })), ...hits.filter((h) => h.n === keys.length && h.l.kind !== "skill" && !linked.includes(h.l)).slice(0, 2).map((h) => ({ ...h.l, by: "match" as const }))], covered, uncovered: [] });
-    const listed = hits.find((h) => h.n === keys.length && h.l.kind === "skill");
-    if (listed) return row("partly", { lines: support, covered, uncovered: [], note: "Listed as a skill. No line shows where you used it." });
+    if (whole.length) return row("met", { lines: [...linked.map((l) => ({ ...l, by: "you" as const })), ...whole.filter((x) => !linked.includes(x.l)).slice(0, 2).map((x) => ({ ...x.l, by: "match" as const }))], covered, uncovered: [] });
+    const said = wholly.find((x) => !shows(x.l.kind));
+    if (said) return row("partly", { lines: [{ ...said.l, by: "match" as const }, ...support.filter((l) => l.text !== said.l.text)].slice(0, 3), covered, uncovered: [], note: said.l.kind === "skill" ? "Listed as a skill. No line shows where you used it." : "Said in your profile. No line shows where you did it." });
     if (covered.length * 2 >= keys.length) return row("partly", { lines: support, covered, uncovered, note: uncovered.length ? `Not covered: ${uncovered.join(", ")}` : "No single line shows all of this." });
     return row("missing", { lines: [], covered, uncovered, note: "No evidence in this version" });
   });
@@ -149,9 +180,18 @@ export function keywords(cv: Pick<CvDoc, "sections" | "target">): Keyword[] {
   const text = cvLines(cv).map((l) => l.text);
   const seen = new Set<string>();
   const out: Keyword[] = [];
-  for (const term of [...askedFor(advert), ...namedTerms(advert)]) {
+  // The employer's own name, the place and the words "CV" and "cover letter" are in every advert and on no CV.
+  const employer = (cv.target?.employer ?? "").toLowerCase();
+  const heading = advert.split("\n").find((l) => employer && l.toLowerCase().includes(employer)) ?? "";
+  const notASkill = (term: string) => {
+    const t = term.toLowerCase();
+    return /^(?:cv|resume|résumé|cover letter|covering letter)$/.test(t) || (!!employer && (employer.includes(t) || t.includes(employer))) || (!!heading && heading.length <= 120 && heading.toLowerCase().includes(t));
+  };
+  for (const found of [...askedFor(advert), ...namedTerms(advert)]) {
+    // "Strong Microsoft Excel" asks for Microsoft Excel.
+    const term = found.replace(/^(?:strong|excellent|good|proven|advanced|solid|sound|confident|proficient|working|fluent in)\s+/i, "");
     const k = term.toLowerCase();
-    if (seen.has(k) || term.split(/\s+/).length > 3) continue;
+    if (seen.has(k) || term.split(/\s+/).length > 3 || notASkill(term)) continue;
     seen.add(k);
     const count = text.filter((t) => contains(t, term)).length;
     out.push({ term, matched: count > 0, count });

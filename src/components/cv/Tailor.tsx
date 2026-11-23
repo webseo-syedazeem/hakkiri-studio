@@ -7,7 +7,7 @@ import { type Locator, type Requirement, newBullet, newId } from "@/lib/cv/schem
 import { docWord } from "@/lib/cv/sections";
 import { type Assessed, cvLines, fitMaths, jobFit, keywords } from "@/lib/cv/tailor/fit";
 import { bestRoleFor, mergeRequirements } from "@/lib/cv/tailor/propose";
-import { extractRequirements, manualRequirement } from "@/lib/cv/tailor/requirements";
+import { extractRequirements, manualRequirement, readingNote } from "@/lib/cv/tailor/requirements";
 import { asBullet } from "@/lib/cv/write/draft";
 import { api, messageOf } from "./client";
 import { Dialog, usePanel } from "./Dialog";
@@ -93,7 +93,8 @@ export function Tailor() {
   const word = docWord(cv.region);
   const base = `/cv/v/${cv.id}`;
   const advert = cv.target?.advert ?? "";
-  const roles = cv.sections.flatMap((s) => (s.visible && "entries" in s && (s.kind === "experience" || s.kind === "projects" || s.kind === "volunteering") ? s.entries.filter((e) => e.visible).map((e) => ({ e, s })) : []));
+  // Where a new line can go: a role, a project, volunteering or a qualification. Someone with no jobs yet has the last three.
+  const roles = cv.sections.flatMap((s) => (s.visible && "entries" in s && (s.kind === "experience" || s.kind === "projects" || s.kind === "volunteering" || s.kind === "education") ? s.entries.filter((e) => e.visible && (e.title.trim() || e.org.trim())).map((e) => ({ e, s })) : []));
   const setReq = (id: string, change: Partial<Requirement>) => update({ requirements: cv.requirements.map((r) => (r.id === id ? { ...r, ...change } : r)) });
   const pick = (r: Assessed) => {
     setSelected(r.requirement.id);
@@ -156,8 +157,9 @@ export function Tailor() {
     if (!req) return;
     const text = asBullet(line);
     if (text.split(" ").length < 3) return setProblem("Say what you did and where, in one line. “Yes” alone can’t go on a CV.");
-    const home = roles.find((r) => r.e.id === roleId);
-    if (!home) return setProblem("Choose the role this belongs under.");
+    // The list shows its first entry as chosen until another is picked: that is the one used.
+    const home = roles.find((r) => r.e.id === roleId) ?? roles[0];
+    if (!home) return setProblem("Add a role, a project or a qualification to your CV first, so this line has somewhere to go. What you typed is kept here until you close this.");
     const bullet = { ...newBullet(text), sources: [{ kind: "typed" as const, ref: "requirement", text: line.trim() }] };
     const out = addBullets(cv!.sections, home.s.id, home.e.id, [bullet]);
     update({
@@ -259,6 +261,11 @@ export function Tailor() {
                   </Btn>
                 }
               >
+                {readingNote(advert, fit.rows.length) && (
+                  <p className="cv-note" style={{ margin: "12px 18px 0" }} data-testid="reading-note">
+                    {readingNote(advert, fit.rows.length)}
+                  </p>
+                )}
                 {fit.rows.length === 0 && <p className="cv-pad cv-muted">Nothing found to check. Use “Add a requirement” with words from the advert.</p>}
                 <ul className="cv-plainlist">
                   {fit.rows.map((r) => {
@@ -379,7 +386,7 @@ export function Tailor() {
                   )}
                 </Panel>
               ) : (
-                <PaperView paper={paper} state={w.state} retry={w.retry} cv={cv} focus={row?.lines[0]?.at ?? null} word={word} highlight={term} />
+                <PaperView paper={paper} state={w.state} retry={w.retryPaper} cv={cv} focus={row?.lines[0]?.at ?? null} word={word} highlight={term} />
               )}
             </aside>
           </div>
@@ -521,7 +528,7 @@ export function Tailor() {
           </p>
           <Field label="What you did, in one line" rule="In your own words. This becomes a bullet on your CV, so say only what you could explain in an interview." multiline rows={2} maxLength={600} value={line} onChange={setLine} error={problem} />
           {roles.length === 0 ? (
-            <p className="cv-note">Add a role to Experience first, so this line has somewhere to go.</p>
+            <p className="cv-note">Add a role, a project or a qualification to your {word} first, so this line has somewhere to go.</p>
           ) : (
             <div>
               <label className="cv-label" htmlFor="cv-req-role">

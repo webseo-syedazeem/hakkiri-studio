@@ -19,7 +19,7 @@ const one = await import("@/app/api/cv/versions/[id]/route");
 const store = await import("@/lib/cv/store");
 const { saveProblem, sectionIdsDiffer, tooBig, EditableSchema } = await import("./access");
 const { LIMITS, newBullet, emptyEntry, newId } = await import("./schema");
-const { KEEPALIVE_MAX, isOwnSave, isRefusal } = await import("@/components/cv/useCv");
+const { KEEPALIVE_MAX, isOwnSave, isRefusal, sameButSpacing } = await import("@/components/cv/useCv");
 const { fernCv } = await import("./render/testing");
 type Section = import("./schema").Section;
 type EntrySection = import("./schema").EntrySection;
@@ -147,5 +147,27 @@ describe("the save hook's decisions", () => {
 
   it("the size above which a save is not sent as the page is left is under the browser's limit", () => {
     expect(KEEPALIVE_MAX).toBeLessThan(64 * 1024);
+  });
+
+  it("tidied spacing is not a difference worth telling the person about; lost text is", () => {
+    // The server trims and closes up runs of spaces: the screen need not say anything about that.
+    expect(sameButSpacing({ fullName: "Fern  Castellanos " }, { fullName: "Fern Castellanos" })).toBe(true);
+    expect(sameButSpacing("Two\n\nlines", "Two lines")).toBe(true);
+    // Text that was cut, or a character that was taken out, is a difference.
+    expect(sameButSpacing({ fullName: "Fern Castellanos-Okonkwo" }, { fullName: "Fern Castellanos" })).toBe(false);
+    expect(sameButSpacing("co\u00adoperate", "cooperate")).toBe(false);
+    expect(sameButSpacing(undefined, null)).toBe(true);
+  });
+
+  it("what the server stored is sent back, so the screen can show it where it differs", async () => {
+    const cv = await filled();
+    const sections = structuredClone(cv.sections) as Section[];
+    // A soft hyphen cannot be stored (it is invisible, and breaks the file checks): the answer carries the stored text.
+    experience(sections).entries[0].bullets[0].text = "Co\u00adordinated the  weekend rota";
+    const out = await patch(cv.id, { rev: cv.rev, sections });
+    expect(out.status).toBe(200);
+    const stored = experience(out.body.cv.sections).entries[0].bullets[0].text;
+    expect(stored).toBe("Coordinated the weekend rota");
+    expect(sameButSpacing("Co\u00adordinated the  weekend rota", stored)).toBe(false);
   });
 });

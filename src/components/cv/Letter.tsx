@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { type ReactNode, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { bulletAt } from "@/lib/cv/edit";
-import { type SentenceReview, acceptSources, letterIsEmpty, paragraphText, recordSources, reflow, reviewLetter } from "@/lib/cv/letter/check";
+import { PARAGRAPH_SENTENCES, SENTENCE_CHARS, type SentenceReview, acceptSources, letterIsEmpty, paragraphText, recordSources, reflow, reviewLetter, splitSentences } from "@/lib/cv/letter/check";
 import { blankParagraphs, defaultSignoff, greeting, insertEvidence, lineSentence, shortenings } from "@/lib/cv/letter/draft";
 import { isoDate, layoutLetter, letterFit, longDate } from "@/lib/cv/letter/flow";
 import { type PoolSource, evidenceLines, sameAt, strength } from "@/lib/cv/letter/sources";
@@ -58,24 +58,38 @@ function ParagraphBox({ id, value, onChange, onFocus, describedBy, invalid }: { 
     el.style.height = "auto";
     if (el.scrollHeight > 0) el.style.height = `${el.scrollHeight + 2}px`;
   }, [text]);
+  // A paragraph holds so many sentences, and a sentence so many characters. Past that, what is typed is not in the
+  // letter: that is said here, at once, and the box keeps the words so they can be moved to a new paragraph.
+  const parts = splitSentences(text);
+  const tooMany = parts.length > PARAGRAPH_SENTENCES;
+  const tooLong = parts.some((part) => part.length > SENTENCE_CHARS);
   return (
-    <textarea
-      ref={area}
-      id={id}
-      className="cv-input"
-      rows={3}
-      style={{ minHeight: "calc(3 * 1.4em + 16px)" }}
-      value={text}
-      aria-describedby={describedBy}
-      aria-invalid={invalid || undefined}
-      maxLength={4000}
-      onFocus={onFocus}
-      onBlur={() => setText(value)}
-      onChange={(e) => {
-        setText(e.target.value);
-        onChange(e.target.value);
-      }}
-    />
+    <>
+      <textarea
+        ref={area}
+        id={id}
+        className="cv-input"
+        rows={3}
+        style={{ minHeight: "calc(3 * 1.4em + 16px)" }}
+        value={text}
+        aria-describedby={[describedBy, tooMany || tooLong ? `${id}-limit` : ""].filter(Boolean).join(" ") || undefined}
+        aria-invalid={invalid || tooMany || tooLong || undefined}
+        maxLength={PARAGRAPH_SENTENCES * SENTENCE_CHARS}
+        onFocus={onFocus}
+        onBlur={() => !tooMany && !tooLong && setText(value)}
+        onChange={(e) => {
+          setText(e.target.value);
+          onChange(e.target.value);
+        }}
+      />
+      {(tooMany || tooLong) && (
+        <p className="cv-error-text" id={`${id}-limit`} role="alert" data-testid="para-limit">
+          {tooMany
+            ? `A paragraph holds ${PARAGRAPH_SENTENCES} sentences. What comes after the twelfth is not in the letter: move it to a new paragraph.`
+            : `A sentence can be ${SENTENCE_CHARS} characters. This one is longer, and what comes after that is not in the letter: break it into two.`}
+        </p>
+      )}
+    </>
   );
 }
 
@@ -659,7 +673,7 @@ export function LetterScreen() {
           <span className="cv-rule">Choose one or two lines of your {word}. Each becomes a paragraph that says the same thing, in the first person.</span>
           {lines.length === 0 && (
             <p className="cv-muted" style={{ marginTop: 6 }}>
-              Your {word} has no lines to use yet. Add what you did under a role in the builder first.
+              Your {word} has no lines to use yet. In the builder, add a line about something you did under a role, a project or a qualification.
             </p>
           )}
           <div className="cv-stack" style={{ gap: 8, marginTop: 8 }}>
@@ -965,10 +979,15 @@ export function LetterScreen() {
             </BtnLink>
           </div>
         )}
-        {(save === "device" || save === "failed") && (
-          <div className="cv-issue" role="alert" style={{ marginBottom: 18 }}>
-            <strong>{SAVE_WORDS[save]}</strong>
-            <span>{save === "device" ? "Your changes couldn’t reach us, so they are kept on this device. They will be saved when you’re back online." : (w.saveError ? `${w.saveError} What you typed is still here.` : "Your changes couldn’t be saved. Check you’re online and press Retry.")}</span>
+        {w.saveNote && (
+          <div className="cv-note" role="status" style={{ marginBottom: 18 }} data-testid="save-note">
+            {w.saveNote}
+          </div>
+        )}
+        {(save === "device" || save === "failed" || (save === "saving" && w.troubled)) && (
+          <div className="cv-issue" role="alert" style={{ marginBottom: 18 }} data-testid="save-trouble">
+            <strong>{save === "saving" ? "Trying again…" : SAVE_WORDS[save]}</strong>
+            <span>{save === "saving" ? "Sending your changes again." : save === "device" ? "Your changes couldn’t reach us, so they are kept on this device. They will be saved when you’re back online." : (w.saveError ? `${w.saveError} What you typed is still here.` : "Your changes couldn’t be saved. Check you’re online and press Retry.")}</span>
           </div>
         )}
 

@@ -45,6 +45,7 @@ const one = await import("@/app/api/cv/versions/[id]/route");
 const duplicate = await import("@/app/api/cv/versions/[id]/duplicate/route");
 const tailor = await import("@/app/api/cv/versions/[id]/tailor/route");
 const letterRoute = await import("@/app/api/cv/versions/[id]/letter/[tool]/route");
+const writeRoute = await import("@/app/api/cv/versions/[id]/write/[tool]/route");
 const cvExport = await import("@/app/api/cv/versions/[id]/export/route");
 const cvCheck = await import("@/app/api/cv/versions/[id]/check/route");
 const exportsRoute = await import("@/app/api/cv/versions/[id]/exports/route");
@@ -417,5 +418,56 @@ describe("achievements marked private stay out of what is sent", () => {
     expect((await cvExport.GET(get(`http://localhost/api/cv/versions/${again}/export?format=pdf`), ctx(again))).status).toBe(200);
     // The letter still rests on the line that was switched off: that is "Review source", not a privacy matter.
     expect((await (await file(again, "format=pdf")).json()).error).toBe("unsourced");
+  });
+
+  it("a letter sentence that repeats a private line is caught even when the browser sent no sources for it", async () => {
+    const id = await withPrivate(true);
+    const cv = (await store.getOwnCv(id, alice.id))!;
+    // As a browser could send it: the sentence, with nothing noted about where it came from.
+    cv.letter!.paragraphs = cv.letter!.paragraphs.map((p) => ({ ...p, sentences: p.sentences.map((s) => ({ ...s, sources: [] })) }));
+    await store.saveCv(cv);
+    const res = await file(id, "format=pdf");
+    expect(res.status).toBe(409);
+    expect((await res.json()).error).toBe("private");
+  });
+
+  it("“Remove or reword it” works: a reworded line is the person's own to send", async () => {
+    const id = await withPrivate(true);
+    const cv = (await store.getOwnCv(id, alice.id))!;
+    // The line keeps its link to the achievement it started from; its words are new.
+    experience(cv).entries[1].bullets[1].text = "Opened the reading room each morning";
+    cv.letter = undefined;
+    await store.saveCv(cv);
+    expect((await cvExport.GET(get(`http://localhost/api/cv/versions/${id}/export?format=pdf`), ctx(id))).status).toBe(200);
+    expect((await cvCheck.POST(json({}), ctx(id))).status).toBe(200);
+  });
+
+  it("a private line copied in by hand, with no link, is still held back", async () => {
+    const id = await withPrivate(true);
+    const cv = (await store.getOwnCv(id, alice.id))!;
+    delete experience(cv).entries[1].bullets[1].bankId;
+    cv.letter = undefined;
+    await store.saveCv(cv);
+    expect((await (await cvExport.GET(get(`http://localhost/api/cv/versions/${id}/export?format=pdf`), ctx(id))).json()).error).toBe("private");
+  });
+
+  it("drafting never works from a private line: not the profile, not the skills, not the letter", async () => {
+    const id = await withPrivate(true);
+    const profile = await (await writeRoute.POST(json({ skills: [] }), tool(id, "profile"))).json();
+    expect(JSON.stringify(profile)).not.toContain("six new starters");
+    const cv = (await store.getOwnCv(id, alice.id))!;
+    // The private line is the only evidence chosen: there is nothing to draft from.
+    cv.letter = { ...cv.letter!, paragraphs: [], evidence: [lineAt(cv, 1, 1)] };
+    await store.saveCv(cv);
+    const draft = await post(id, "draft");
+    expect(draft.status).toBe(400);
+    expect(draft.body.fields.evidence).toBe("Choose one or two lines of your CV for the letter to use.");
+    // With another line chosen as well, the draft is made from that one alone.
+    cv.letter = { ...cv.letter!, evidence: [lineAt(cv, 1, 1), lineAt(cv, 0, 1)] };
+    await store.saveCv(cv);
+    const made = await post(id, "draft");
+    expect(made.status).toBe(200);
+    expect(JSON.stringify(made.body.paragraphs)).not.toContain("six new starters");
+    expect(JSON.stringify(made.body.paragraphs)).toContain("handling guide");
   });
 });

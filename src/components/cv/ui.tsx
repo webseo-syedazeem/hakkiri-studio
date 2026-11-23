@@ -134,6 +134,10 @@ export function Field({ label, rule, error, uncertain, note, multiline, rows = 3
     el.style.height = "auto";
     if (el.scrollHeight > 0) el.style.height = `${el.scrollHeight + 2}px`;
   }, [value, multiline]);
+  // A field never holds more than is saved. As the limit comes near, the count is shown, so text is never cut unseen.
+  const limit = typeof rest.maxLength === "number" ? rest.maxLength : 0;
+  const near = limit >= 40 && value.length >= Math.floor(limit * 0.9);
+  const full = limit > 0 && value.length >= limit;
   const shared = { id, "data-cvf": fieldKey, "aria-describedby": describedBy, "aria-invalid": error ? true : undefined, className: clsx("cv-input", uncertain && "cv-uncertain") };
   return (
     <div className={className}>
@@ -149,6 +153,11 @@ export function Field({ label, rule, error, uncertain, note, multiline, rows = 3
         <textarea {...shared} ref={area} rows={rows} style={{ minHeight: `calc(${rows} * 1.4em + 16px)` }} value={value} onChange={(e) => onChange(e.target.value)} onFocus={rest.onFocus as never} onBlur={rest.onBlur as never} placeholder={rest.placeholder} maxLength={rest.maxLength} disabled={rest.disabled} />
       ) : (
         <input {...rest} {...shared} value={value} onChange={(e) => onChange(e.target.value)} />
+      )}
+      {near && (
+        <small className={full ? "cv-warn" : undefined} style={{ display: "block", marginTop: 4 }} role="status" data-testid="field-count">
+          {full ? `That is the most this field holds: ${limit} characters.` : `${[...value].length} of ${limit} characters.`}
+        </small>
       )}
       {error && (
         <p className="cv-error-text" id={`${id}-error`}>

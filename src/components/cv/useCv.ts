@@ -15,6 +15,9 @@ const IDLE_MS = 800;
 export const KEEPALIVE_MAX = 60_000;
 /** The server answered and said no for a reason that trying again will not change. */
 export const isRefusal = (status: number) => status === 400 || status === 413 || status === 422;
+/** True when two values differ only in spacing: what the server tidies without changing what is said. */
+const unspaced = (v: unknown) => JSON.stringify(v ?? null, (_k, x) => (typeof x === "string" ? x.replace(/\s+/g, "") : x));
+export const sameButSpacing = (a: unknown, b: unknown) => unspaced(a) === unspaced(b);
 /** True when the copy on the server was made by one of our own saves whose answer never arrived. */
 export const isOwnSave = (lastSaveId: string | undefined, unanswered: ReadonlySet<string>) => !!lastSaveId && unanswered.has(lastSaveId);
 const draftKey = (id: string) => `hakkiri.cv.unsaved.${id}`;
@@ -43,6 +46,10 @@ export function useCv(id: string) {
   const [steps, setSteps] = useState({ undo: 0, redo: 0 });
   /** Why the last save was refused, in the server's words. Empty when it was not. */
   const [saveError, setSaveError] = useState("");
+  /** Said once after a save that stored something other than what was typed. */
+  const [saveNote, setSaveNote] = useState("");
+  /** A save has failed and none has succeeded since: the warning stays up while the next try is on its way. */
+  const [troubled, setTroubled] = useState(false);
   /** The last change sent and its name: the same change sent again keeps the name, so the server applies it once. */
   const lastTry = useRef<{ id: string; body: string } | null>(null);
   /** Saves whose answer never arrived. One of them may have reached the server. */
@@ -110,12 +117,21 @@ export function useCv(id: string) {
       setSaveError("");
       // Take the new revision, and leave what is on screen exactly as it was typed. The server tidies what it
       // stores (it trims a trailing space, say); putting that back mid-sentence would eat the space under the cursor.
+      // But where what was stored differs from what was sent by more than spacing, the screen shows what was
+      // stored: "Saved" must never sit beside text that is not what was saved.
       const now = latest.current!;
       const merged = { ...saved } as CvDoc;
-      for (const k of KEYS) (merged as unknown as Record<string, unknown>)[k] = now[k];
+      let adjusted = false;
+      for (const k of KEYS) {
+        const untouched = now[k] === doc[k];
+        if (sending.includes(k) && untouched && !sameButSpacing(now[k], saved[k])) adjusted = true;
+        else (merged as unknown as Record<string, unknown>)[k] = now[k];
+      }
       latest.current = merged;
       setCv(merged);
+      setSaveNote(adjusted ? "Some of what you typed could not be kept exactly as typed. The page now shows what was saved." : "");
       saving.current = false;
+      setTroubled(false);
       if (dirty.current.size) schedule(IDLE_MS);
       else {
         localStorage.removeItem(draftKey(id));
@@ -139,6 +155,21 @@ export function useCv(id: string) {
         conflicted.current = true;
         setOther(theirs);
         setSave("conflict");
+        return;
+      }
+      setTroubled(true);
+      // Signed out (the session ended, or cookies were cleared). Saving again will not work until they sign in.
+      if (err instanceof ApiError && err.status === 401) {
+        try {
+          const now = latest.current!;
+          const kept: Record<string, unknown> = {};
+          for (const k of dirty.current) kept[k] = now[k];
+          localStorage.setItem(draftKey(id), JSON.stringify({ rev: now.rev, changes: kept }));
+        } catch {
+          /* the screen still holds it */
+        }
+        setSaveError("You’ve been signed out. Sign in again to save. What you typed is kept on this device and will be offered back.");
+        setSave("failed");
         return;
       }
       // The server read the change and refused it (too long, too many). Trying again will not help, so the person
@@ -281,20 +312,24 @@ export function useCv(id: string) {
     return false;
   }, [flush]);
 
-  // Save when the tab is hidden or the page is left, without waiting for the pause.
+  // Save when the tab is hidden or the page is left, without waiting for the pause. And as soon as the
+  // connection comes back, send what was kept on this device while it was away.
   useEffect(() => {
     const now = () => void flush({ leaving: true });
     const onVisibility = () => document.visibilityState === "hidden" && now();
+    const onOnline = () => void flush();
     document.addEventListener("visibilitychange", onVisibility);
     window.addEventListener("pagehide", now);
+    window.addEventListener("online", onOnline);
     return () => {
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("pagehide", now);
+      window.removeEventListener("online", onOnline);
       now();
     };
   }, [flush]);
 
-  return { cv, load, save, saveError, update, flush, settle, retry: () => schedule(0), undo, redo, canUndo: steps.undo > 0, canRedo: steps.redo > 0, other, keepMine, takeTheirs, saveSeparate };
+  return { cv, load, save, saveError, saveNote, troubled, update, flush, settle, retry: () => schedule(0), undo, redo, canUndo: steps.undo > 0, canRedo: steps.redo > 0, other, keepMine, takeTheirs, saveSeparate };
 }
 
 export const SAVE_WORDS: Record<SaveState, string> = {

@@ -5,7 +5,7 @@ import { draftLetter, shortenParagraph } from "@/lib/cv/letter/assist";
 import { letterIsEmpty, reviewLetter } from "@/lib/cv/letter/check";
 import { isoDate } from "@/lib/cv/letter/flow";
 import { evidenceLines, sameAt } from "@/lib/cv/letter/sources";
-import { type PrivateLine, privateInLetter, privateLines, privateMessage } from "@/lib/cv/privacy";
+import { type PrivateLine, privateInLetter, privateLines, privateMessage, withoutPrivate } from "@/lib/cv/privacy";
 import { type ExportFormat, exportLetter } from "@/lib/cv/render/server";
 import { type CvDoc, cvIsEmpty, newId } from "@/lib/cv/schema";
 import { getOwnCv, listOwnAchievements, saveExport } from "@/lib/cv/store";
@@ -30,7 +30,7 @@ function held(cv: CvDoc, withCv: boolean, now: Date, kept: PrivateLine[]): { sta
   if (letterIsEmpty(cv.letter)) return { status: 409, body: { error: "empty", message: "There is no letter to download yet." } };
   if (withCv && cvIsEmpty(cv)) return { status: 409, body: { error: "empty", message: "The CV has nothing in it yet, so it can’t go in the same file." } };
   // A line from an achievement marked private stays out of what is sent: in the letter, and in the CV when it goes in the same file.
-  const lines = withCv ? kept : privateInLetter(cv, kept);
+  const lines = withCv ? kept : privateInLetter(cv, kept, now);
   if (lines.length) return { status: 409, body: { error: "private", message: privateMessage(lines, withCv ? "letter and CV" : "letter"), lines } };
   const review = reviewLetter(cv, now);
   if (review.open.length) {
@@ -98,11 +98,12 @@ export async function POST(req: Request, { params }: Ctx) {
       const letter = cv.letter;
       const fields: Record<string, string> = {};
       if (!letter || letter.reason.split(/\s+/).filter(Boolean).length < 5) fields.reason = "Say why you want this role, in a sentence or two. The letter opens with it.";
-      const lines = evidenceLines(cv, now);
+      const lines = evidenceLines(withoutPrivate(cv, await listOwnAchievements(userId)), now);
       if (!letter?.evidence.some((at) => lines.some((l) => sameAt(l.at, at)))) fields.evidence = "Choose one or two lines of your CV for the letter to use.";
       if (!cv.target?.title.trim() && !cv.target?.employer.trim()) fields.job = "Say which job this letter is for.";
       if (Object.keys(fields).length) return badInput("A letter needs your reason and at least one line of your CV.", fields);
-      return NextResponse.json({ ...(await draftLetter(cv, now)), mode: writingMode() });
+      // A line from an achievement marked private is not something a letter may be drafted from.
+      return NextResponse.json({ ...(await draftLetter(withoutPrivate(cv, await listOwnAchievements(userId)), now)), mode: writingMode() });
     }
 
     const body = z.object({ paragraphId: z.string().max(40) }).strict().safeParse(await req.json().catch(() => null));

@@ -422,6 +422,10 @@ export function acceptSources(letter: Letter, sentenceId: string, cv: LetterCv, 
 
 /* ------------------------------------------------------- editing sentences */
 
+/** How much a paragraph of a letter holds. The letter screen says so the moment either is passed. */
+export const PARAGRAPH_SENTENCES = 12;
+export const SENTENCE_CHARS = 700;
+
 const ABBREVIATION = /(?:\b(?:e\.g|i\.e|etc|approx|vs|no|mr|mrs|ms|dr|prof|st|inc|ltd|co|dept)\.|\b[A-Z]\.)$/i;
 
 /** A paragraph's text as its sentences, each kept exactly as typed. */
@@ -445,11 +449,11 @@ export function splitSentences(text: string): string[] {
 export function reflow(old: LetterSentence[], text: string): LetterSentence[] {
   const left = [...old];
   return splitSentences(text)
-    .slice(0, 12)
+    .slice(0, PARAGRAPH_SENTENCES)
     .map((t) => {
       const at = left.findIndex((s) => s.text === t);
       if (at >= 0) return left.splice(at, 1)[0];
-      return { id: newId("ls_"), text: t.slice(0, 700), origin: "typed" as const, sources: [] };
+      return { id: newId("ls_"), text: [...t].slice(0, SENTENCE_CHARS).join(""), origin: "typed" as const, sources: [] };
     });
 }
 

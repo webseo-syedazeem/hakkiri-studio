@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { badInput, failure, notFound, requireUserId } from "@/lib/cv/access";
-import { getOwnCv } from "@/lib/cv/store";
+import { withoutPrivate } from "@/lib/cv/privacy";
+import { getOwnCv, listOwnAchievements } from "@/lib/cv/store";
 import { addNumber, draftBullets, draftProfiles, rewriteBullet, writingMode } from "@/lib/cv/write/assist";
 import { questionFor } from "@/lib/cv/write/draft";
 import { suggestSkills } from "@/lib/cv/write/skills";
@@ -62,7 +63,8 @@ export async function POST(req: Request, { params }: Ctx) {
     if (tool === "profile") {
       const body = Bodies.profile.safeParse(raw);
       if (!body.success) return badInput("Those choices could not be read.");
-      return NextResponse.json(await draftProfiles(cv, body.data, new Date()));
+      // A profile is written from what the CV may show: lines from achievements marked private are left out of it.
+      return NextResponse.json(await draftProfiles(withoutPrivate(cv, await listOwnAchievements(userId)), body.data, new Date()));
     }
     const body = Bodies.question.safeParse(raw);
     if (!body.success) return badInput("That line could not be read.");
@@ -79,7 +81,7 @@ export async function GET(_req: Request, { params }: Ctx) {
     const { id, tool } = await params;
     const cv = await getOwnCv(id, userId);
     if (!cv) return notFound();
-    if (tool === "skills") return NextResponse.json({ suggestions: suggestSkills(cv) });
+    if (tool === "skills") return NextResponse.json({ suggestions: suggestSkills(withoutPrivate(cv, await listOwnAchievements(userId))) });
     if (tool === "status") return NextResponse.json({ mode: writingMode() });
     return notFound("Tool");
   } catch (err) {
