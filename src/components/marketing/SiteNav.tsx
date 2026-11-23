@@ -14,6 +14,7 @@ export function SiteNav() {
   const links: [string, string, boolean][] = [
     ["/", "Interviews", path === "/" || path === "/landing"],
     ["/present", "Presentations", isPresent],
+    ["/cv-audit", "Free CV Audit", path.startsWith("/cv-audit")],
     ["/blog", "Blog", path.startsWith("/blog")],
     [`${base}#how`, "How it works", false],
     [`${base}#beta`, "Beta", false],

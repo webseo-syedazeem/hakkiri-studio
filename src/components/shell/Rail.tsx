@@ -23,6 +23,24 @@ const ITEMS: {
     match: (p) => p === "/dashboard" || p === "/" || p.startsWith("/welcome"),
   },
   {
+    label: "Apply Hub",
+    href: "/apply",
+    icon: "target",
+    match: (p) => p.startsWith("/apply") && !p.startsWith("/apply/applications") && !p.startsWith("/apply/cvs"),
+  },
+  {
+    label: "Applications",
+    href: "/apply/applications",
+    icon: "list",
+    match: (p) => p.startsWith("/apply/applications") || p.startsWith("/apply/matches"),
+  },
+  {
+    label: "CV Builder",
+    href: "/apply/cvs",
+    icon: "doc",
+    match: (p) => p.startsWith("/apply/cvs"),
+  },
+  {
     label: "Interviews",
     href: "/interviews",
     icon: "cal",
@@ -44,7 +62,7 @@ const ITEMS: {
     label: "Experience Library",
     href: "/interview-examples",
     icon: "layers",
-    match: (p) => p.startsWith("/interview-examples"),
+    match: (p) => p.startsWith("/interview-examples") || p.startsWith("/apply/evidence"),
   },
   {
     label: "Robot Tester",
@@ -56,7 +74,7 @@ const ITEMS: {
     label: "Profile",
     href: "/settings",
     icon: "user",
-    match: (p) => p.startsWith("/settings"),
+    match: (p) => p.startsWith("/settings") || p.startsWith("/apply/profile"),
   },
 ];
 

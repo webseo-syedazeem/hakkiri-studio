@@ -180,7 +180,7 @@ export function clientKey(req: Request): string {
   );
 }
 
-export type GuardKind = "build" | "plan" | "answer" | "ai" | "voice" | "read";
+export type GuardKind = "build" | "plan" | "answer" | "ai" | "voice" | "read" | "audit" | "generate" | "transcribe" | "apply";
 
 /** How many requests per window each kind of route allows from one person. */
 const RATE: Record<GuardKind, [number, number]> = {
@@ -190,6 +190,10 @@ const RATE: Record<GuardKind, [number, number]> = {
   ai: [20, 60_000],
   voice: [150, 60_000],
   read: [30, 60_000],
+  audit: [10, 60_000],
+  generate: [30, 60_000],
+  transcribe: [20, 60_000],
+  apply: [20, 60_000],
 };
 
 /**
