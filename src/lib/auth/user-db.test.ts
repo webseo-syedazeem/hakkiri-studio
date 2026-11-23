@@ -106,7 +106,8 @@ describe("no built-in administrator", () => {
     const { vi } = await import("vitest");
     vi.stubEnv("ADMIN_EMAILS", "boss@example.com");
     const taken = await createUser("Boss@Example.com", "secret12345", "Not The Boss");
-    expect(taken).toEqual({ ok: false, error: "This address can’t be registered here. Sign in with Google, or ask the team to add your account." });
+    // The same answer as for an address that already has an account, so the form doesn't say whose address is an administrator's.
+    expect(taken).toEqual({ ok: false, error: "We couldn’t create an account with that address. If you already have one, sign in instead, or use “Continue with Google”." });
     const other = await createUser(`someone_${Date.now()}@example.com`, "secret12345", "Someone");
     expect(other.ok).toBe(true);
     vi.unstubAllEnvs();

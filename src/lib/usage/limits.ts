@@ -202,6 +202,16 @@ export function rateLimited(
   return false;
 }
 
+/** How many times a key was counted in the window, without counting this look (see `noteHit`). */
+export function recentHits(key: string, windowMs: number, now = Date.now()): number {
+  return (hits.get(key) ?? []).filter((t) => now - t < windowMs).length;
+}
+
+/** Counts one against a key. With `recentHits`, for limits on something that failed rather than on every try. */
+export function noteHit(key: string, now = Date.now()): void {
+  hits.set(key, [...(hits.get(key) ?? []).filter((t) => now - t < 3_600_000), now]);
+}
+
 /**
  * Who's asking, for the per-minute limits. The forwarded address is only
  * believed behind a proxy you control (HAKKIRI_TRUST_PROXY=1), because any

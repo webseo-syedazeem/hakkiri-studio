@@ -59,6 +59,8 @@ export function proxy(req: NextRequest) {
   const sessionToken = req.cookies.get("hakkiri_session")?.value;
   if (!sessionToken) {
     const loginUrl = new URL("/login", req.url);
+    // After signing in the person is taken to the page they asked for (the sign-in form checks it is one of ours).
+    if (pathname !== "/dashboard") loginUrl.searchParams.set("next", `${pathname}${req.nextUrl.search}`);
     return NextResponse.redirect(loginUrl);
   }
 

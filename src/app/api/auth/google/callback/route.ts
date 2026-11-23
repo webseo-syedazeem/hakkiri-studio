@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { findOrCreateOAuthUser, findUserByEmail, createSession } from "@/lib/auth/user-db";
-import { isBeta } from "@/lib/launch";
+import { findOrCreateOAuthUser, createSession } from "@/lib/auth/user-db";
+import { sessionCookie } from "@/lib/auth/session-cookie";
 
 export const dynamic = "force-dynamic";
 
@@ -96,7 +96,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(new URL("/login?error=no_email_provided", origin));
     }
 
-    if (profile.email_verified === false) {
+    // Google has to say the address is confirmed: an account is handed over on its word.
+    if (profile.email_verified !== true) {
       return NextResponse.redirect(new URL("/login?error=google_email_unverified", origin));
     }
 
@@ -112,18 +113,10 @@ export async function GET(req: NextRequest) {
     });
 
     // 5. Create session and set cookie
-    const sessionToken = await createSession(user.id ?? profile.email, profile.email);
+    const sessionToken = await createSession(user.id as string, normEmail);
 
     const res = NextResponse.redirect(new URL("/dashboard", origin));
-    res.cookies.set({
-      name: "hakkiri_session",
-      value: sessionToken,
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: 30 * 24 * 60 * 60,
-    });
+    res.cookies.set(sessionCookie(sessionToken, req));
     res.cookies.delete("g_oauth_state");
 
     return res;
