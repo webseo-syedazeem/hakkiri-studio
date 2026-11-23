@@ -1,22 +1,14 @@
-// End-to-end: the new interview flow in mock mode (HAKKIRI_MOCK_AI=1, fake mic).
-// Set-up with settings → overview → interview with a skip → report → run it again →
-// drill → story → prep sheet → something's wrong → rebuild → three skips → edit → Home.
+// End-to-end: the whole interview in mock mode (HAKKIRI_MOCK_AI=1, fake mic), as a new signed-in user.
+// Set-up (four steps) → overview → interview with a skip → report → an answer → run it again →
+// focused practice on a topic → story → prep sheet → report an issue → rebuild → three skips → edit → lists → Home.
 const { chromium } = require("playwright");
-const BASE = process.env.BASE || "http://127.0.0.1:3100";
-const S = __dirname, OUT = `${__dirname}/out`; require("fs").mkdirSync(OUT, { recursive: true });
+const { BASE, OUT, FAKE_MIC, signIn, setUpInterview, closeSurvey } = require("./helpers.cjs");
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const log = (...a) => console.error("step", ...a);
 
 async function newPage(browser) {
-  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, permissions: ["microphone"] });
-  await ctx.addCookies([{ name: "hk_welcomed", value: "1", url: BASE }, { name: "hk_mic_ok", value: "1", url: BASE }]);
-  await ctx.addInitScript(() => {
-    try {
-      Object.defineProperty(window, "speechSynthesis", { value: undefined });
-    } catch {}
-  });
-  ctx.setDefaultTimeout(30000);
-  const page = await ctx.newPage();
+  const { context, page } = await signIn(browser, "flow");
+  context.setDefaultTimeout(30000);
   page.errors = [];
   page.on("console", (m) => m.type() === "error" && page.errors.push(m.text()));
   page.on("pageerror", (e) => page.errors.push(String(e)));
@@ -24,17 +16,19 @@ async function newPage(browser) {
 }
 
 /**
- * Answers whatever is asked until the URL matches `done`. `onQuestion(info)` may
- * return "skip:<reason label>" or "wrong" to act instead of answering.
+ * Answers whatever is asked until the URL matches `done`, or `until()` says so. `onQuestion(info)`
+ * may return "skip:<reason label>" to skip the question instead of answering it.
  */
-async function runUntil(page, done, { onQuestion, shots = {}, drill = false } = {}) {
+async function runUntil(page, done, { onQuestion, until, shots = {}, drill = false } = {}) {
   const seen = [];
   const t0 = Date.now();
   let n = 0;
   while (!done.test(page.url())) {
     if (++n > 200) throw new Error("runUntil: too many loops at " + page.url());
+    if (until && (await until())) return { seen, stopped: true };
     if (drill) {
-      const nextQ = page.getByRole("button", { name: /^(Next question|See your summary)$/ });
+      // Focused practice gives feedback after each answer, then "Next question →" or "See your summary".
+      const nextQ = page.getByRole("button", { name: /^(Next question|See your summary)/ });
       if (await nextQ.isVisible().catch(() => false)) {
         const h = await page.locator("main").innerText();
         seen.push(`feedback: ${h.replace(/\n+/g, " | ").slice(0, 220)}`);
@@ -57,17 +51,18 @@ async function runUntil(page, done, { onQuestion, shots = {}, drill = false } = 
       }
       continue;
     }
-    const progress = await page.locator('[aria-label^="Question "]').first().getAttribute("aria-label").catch(() => "");
-    const isFollowUp = await page.getByText(/^Follow-up \d of \d$/).isVisible();
+    const progress = await page.locator('[aria-label^="Question "]').first().getAttribute("aria-label", { timeout: 1000 }).catch(() => "");
+    const isFollowUp = await page.getByText(/^Follow-up \d of \d$/).first().isVisible();
     const h1 = await page.locator("h1").innerText();
-    const left = await page.getByText(/ left$/).first().innerText().catch(() => "");
+    const left = await page.getByText(/ left$/).first().innerText({ timeout: 1000 }).catch(() => "");
     const info = { progress, isFollowUp, h1, left };
     seen.push(`${((Date.now() - t0) / 1000).toFixed(0)}s ${progress} ${left} ${isFollowUp ? "follow-up" : "question"}: ${h1.slice(0, 70)}`);
     const key = `${progress}|${isFollowUp ? "f" : "q"}`;
     if (shots[key]) await page.screenshot({ path: `${OUT}/${shots[key]}.png` });
     const act = onQuestion ? await onQuestion(info) : null;
     if (act && act.startsWith("skip:")) {
-      await page.getByRole("button", { name: "Skip" }).click();
+      // "Skip" asks why and brings a replacement; "Skip question" next to it just moves on.
+      await page.getByRole("button", { name: "Skip", exact: true }).click();
       await sleep(200);
       if (shots.skipmenu) {
         await page.screenshot({ path: `${OUT}/${shots.skipmenu}.png` });
@@ -78,7 +73,6 @@ async function runUntil(page, done, { onQuestion, shots = {}, drill = false } = 
       await sleep(400);
       continue;
     }
-    if (act === "wrong" || act === "stop") return { seen, stopped: true };
     // The question may finish being read out before the click lands.
     await startAnswering.click({ timeout: 2500 }).catch(() => {});
     const finish = page.getByRole("button", { name: "Finish answer" });
@@ -90,43 +84,35 @@ async function runUntil(page, done, { onQuestion, shots = {}, drill = false } = 
 }
 
 (async () => {
-  const browser = await chromium.launch({ args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"] });
+  const browser = await chromium.launch({ args: FAKE_MIC });
   const p = await newPage(browser);
   const out = {};
 
   /* ---------------------------------------------------------------- set-up */
   log("set-up");
-  await p.goto(`${BASE}/interviews/new`, { waitUntil: "networkidle" });
-  await p.fill("#company", "Acme Payroll");
-  await p.fill("#job-title", "Data Analyst");
-  const jd =
-    "Acme Payroll runs payroll for 4,000 small businesses. As a Data Analyst you will own the SQL models behind our payroll accuracy dashboards, work with finance and operations stakeholders, and use Python to automate checks. You will present findings to leadership every month. We want someone who can explain data simply, spot errors early and care about getting pay right for every employee.";
-  await p.fill('input[aria-label="Job spec: a link or the job description"]', jd);
-  await p.getByText("Job description pasted").waitFor();
-  await p.setInputFiles("#cv", `${S}/fixtures/sam-okafor-cv.pdf`);
-  await p.getByText("sam-okafor-cv.pdf", { exact: true }).waitFor({ timeout: 20000 });
-  // Settings: Hard, 30 min, Skills-heavy, then Situational off and more Technical.
-  out.settingsRow = await p.getByText(/^About \d+ questions:/).first().innerText();
-  await p.getByRole("button", { name: "Customise" }).click();
-  await p.getByRole("radio", { name: "Hard" }).check({ force: true });
-  await p.getByRole("radio", { name: "30 min" }).check({ force: true });
-  await p.getByRole("radio", { name: "Skills-heavy" }).click();
-  await p.getByRole("switch", { name: "Situational questions" }).click();
-  await p.getByRole("button", { name: "More Technical" }).click();
-  await sleep(300);
-  out.mixAfterEdits = await p.locator('[aria-label$="%"]').evaluateAll((els) => els.map((e) => e.getAttribute("aria-label")));
-  await p.screenshot({ path: `${OUT}/01-setup.png`, fullPage: true });
-  await p.getByRole("button", { name: "Build my interview" }).click();
-  await p.waitForURL(/\/interviews\/[^/]+\?new=1/, { timeout: 60000 });
-  await sleep(800);
-  const id = p.url().split("/interviews/")[1].split("?")[0];
+  // Job details (company, title, pasted job description, CV), stages, practice set-up (Hard, 30 min), review.
+  const id = await setUpInterview(p, {
+    difficulty: "Hard",
+    minutes: 30,
+    onStep: async (name) => {
+      if (name === "practice setup") out.practiceSetup = (await p.locator("main").innerText()).replace(/\n+/g, " | ").slice(0, 900);
+      if (name === "review") out.review = (await p.locator("main").innerText()).replace(/\n+/g, " | ").slice(0, 900);
+      await p.screenshot({ path: `${OUT}/01-setup-${name.replace(/ /g, "-")}.png`, fullPage: true });
+    },
+  });
   out.id = id;
+  // Set-up ends on the list, with the new interview on it.
+  await p.locator(`a[href="/interviews/${id}"]`).first().click();
+  await p.waitForURL(new RegExp(`/interviews/${id}$`));
+  await p.getByRole("heading", { level: 1, name: "Data Analyst" }).waitFor();
+  await sleep(800);
   await p.screenshot({ path: `${OUT}/02-overview-new.png`, fullPage: true });
   out.overviewNew = (await p.locator("main").innerText()).slice(0, 1400);
+  if (!/Acme Payroll/.test(out.overviewNew) || !/Hard/.test(out.overviewNew)) throw new Error("The overview doesn't show the company and the difficulty chosen in set-up.");
 
   /* ------------------------------------------------------------- interview */
   log("interview");
-  await p.getByRole("button", { name: "Start interview" }).first().click();
+  await p.getByRole("button", { name: "Practise interview" }).click();
   await p.waitForURL(/\/mock\/.*session=/, { timeout: 60000 });
   await sleep(500);
   await p.screenshot({ path: `${OUT}/03-live-ready.png` });
@@ -142,7 +128,11 @@ async function runUntil(page, done, { onQuestion, shots = {}, drill = false } = 
     },
   });
   out.run1 = run1.seen;
+  if (!run1.seen.some((s) => /skipped \(Not relevant to the role\)/.test(s))) throw new Error("The third question wasn't skipped.");
+  if (!run1.seen.some((s) => / follow-up: /.test(s))) throw new Error("The interviewer never followed up.");
   await p.waitForLoadState("networkidle");
+  await closeSurvey(p);
+  await p.getByRole("heading", { level: 1, name: "Interview report" }).waitFor();
   await sleep(1200);
   await p.screenshot({ path: `${OUT}/07-report.png`, fullPage: true });
   out.report = (await p.locator("main").innerText()).slice(0, 2600);
@@ -151,8 +141,11 @@ async function runUntil(page, done, { onQuestion, shots = {}, drill = false } = 
   // An answer from the report, and back.
   await p.locator('a[href*="/answers/"]').first().click();
   await p.waitForURL(/\/answers\//);
-  out.answerBack = await p.getByRole("link", { name: "Back to report" }).isVisible();
-  await p.goto(reportUrl, { waitUntil: "networkidle" });
+  out.answer = (await p.locator("main").innerText()).replace(/\n+/g, " | ").slice(0, 500);
+  await p.getByTitle("Close and return to report").click();
+  await p.waitForURL((u) => u.href.split("?")[0] === reportUrl.split("?")[0]);
+  out.answerBack = true;
+  await closeSurvey(p);
 
   /* ---------------------------------------------------------- run it again */
   log("rerun");
@@ -165,30 +158,37 @@ async function runUntil(page, done, { onQuestion, shots = {}, drill = false } = 
   const run2 = await runUntil(p, /\/mocks\//);
   out.run2 = run2.seen;
   await p.waitForLoadState("networkidle");
+  await p.getByRole("heading", { level: 1, name: "Run it again: before and after" }).waitFor();
   await sleep(1000);
   await p.screenshot({ path: `${OUT}/09-rerun-report.png`, fullPage: true });
   out.rerunReport = (await p.locator("main").innerText()).slice(0, 1800);
 
-  /* ------------------------------------------------------------------ drill */
-  log("drill");
+  /* ------------------------------------------------------- focused practice */
+  log("focused practice");
   await p.goto(`${BASE}/interviews/${id}`, { waitUntil: "networkidle" });
   await sleep(600);
   await p.screenshot({ path: `${OUT}/10-overview-after.png`, fullPage: true });
   out.overviewAfter = (await p.locator("main").innerText()).slice(0, 2400);
-  const training = p.locator('section[aria-label="Your training"]');
-  const drillStart = training.getByRole("button", { name: /^(Start|Again)$/ }).first();
-  out.firstDrill = await training.locator(".font-semibold").nth(1).innerText().catch(() => "");
-  await drillStart.click();
-  await p.waitForURL(/session=/, { timeout: 30000 });
+  // "Focus by topic" on the overview: a few questions on one topic, with feedback after each.
+  const topic = p.getByRole("link", { name: /STAR framework workout/ });
+  out.firstDrill = (await topic.innerText()).replace(/\n+/g, " | ");
+  await topic.click();
+  await p.waitForURL(/\/mock\/.*topic=star/, { timeout: 30000 });
   await sleep(500);
   await p.screenshot({ path: `${OUT}/11-drill-ready.png` });
   out.drillReady = (await p.locator("main").innerText()).replace(/\n+/g, " | ");
-  await p.getByRole("button", { name: "Start drill" }).click();
+  await p.getByRole("button", { name: "Start practice" }).click();
   const run3 = await runUntil(p, /\/mocks\//, { drill: true, shots: { feedback: "12-drill-feedback" } });
   out.run3 = run3.seen;
+  if (!run3.seen.some((s) => s.startsWith("feedback: "))) throw new Error("Focused practice gave no feedback after an answer.");
+  await p.waitForLoadState("networkidle");
+  // Its summary: each answer, under the topic's name.
+  await p.getByRole("heading", { level: 1, name: "Focused practice: STAR framework workout" }).waitFor();
   await sleep(1000);
   await p.screenshot({ path: `${OUT}/13-drill-report.png`, fullPage: true });
   out.drillReport = (await p.locator("main").innerText()).slice(0, 1400);
+  const drillAnswers = await p.locator('section[aria-label="Each answer"] a[href*="/answers/"]').count();
+  if (!drillAnswers) throw new Error("The summary of the focused practice lists no answers.");
 
   /* ------------------------------------------------------------------ story */
   log("story");
@@ -208,20 +208,21 @@ async function runUntil(page, done, { onQuestion, shots = {}, drill = false } = 
   await p.goto(`${BASE}/interviews/${id}/prep`, { waitUntil: "networkidle" });
   await sleep(600);
   await p.screenshot({ path: `${OUT}/16-prep.png`, fullPage: true });
-  out.prep = (await p.locator('article[aria-label="Prep sheet"]').innerText()).slice(0, 2400);
+  out.prep = (await p.locator("main").innerText()).slice(0, 2400);
+  if (!/Acme Payroll/.test(out.prep)) throw new Error("The prep sheet isn't about this interview.");
   await p.emulateMedia({ media: "print" });
   await p.screenshot({ path: `${OUT}/17-prep-print.png`, fullPage: true });
   await p.pdf({ path: `${OUT}/prep.pdf`, format: "A4", printBackground: true });
   await p.emulateMedia({ media: "screen" });
 
-  /* ------------------------------------------------------ something's wrong */
-  log("something wrong");
-  await p.goto(`${BASE}/interviews/${id}#new-questions`, { waitUntil: "networkidle" });
-  await p.getByRole("button", { name: "Start with new questions" }).click();
+  /* ------------------------------------------------------- report an issue */
+  log("report an issue");
+  await p.goto(`${BASE}/interviews/${id}`, { waitUntil: "networkidle" });
+  await p.getByRole("button", { name: "Practise interview" }).click();
   await p.waitForURL(/session=/, { timeout: 60000 });
   await p.getByRole("button", { name: "Start interview" }).click();
   await p.getByRole("button", { name: "Start answering" }).waitFor();
-  await p.getByRole("button", { name: "Something’s wrong" }).click();
+  await p.getByRole("button", { name: "Report an issue" }).click();
   await p.getByRole("dialog", { name: "Something’s wrong" }).waitFor();
   await p.getByRole("button", { name: "Wrong kind of questions" }).click();
   await p.fill("#wrong-note", "It's an analyst job, I keep getting questions about managing a sales team.");
@@ -241,29 +242,27 @@ async function runUntil(page, done, { onQuestion, shots = {}, drill = false } = 
   log("three skips");
   await p.getByRole("button", { name: "Start interview" }).click();
   let skips = 0;
-  const run4 = await runUntil(p, /never/, {
+  const dialog = p.getByRole("dialog", { name: "Something’s wrong" });
+  const run4 = await runUntil(p, /\/mocks\//, {
+    // The third skip opens the panel by itself.
+    until: () => dialog.isVisible(),
     onQuestion: async (i) => {
       if (i.isFollowUp) return null;
-      // "Tell me about yourself" can't be skipped: there's no Skip button on it.
-      if (/^Tell me about yourself/.test(i.h1)) {
-        out.noSkipOnOpening = !(await p.getByRole("button", { name: "Skip" }).isVisible());
-        return null;
-      }
-      if (skips === 3) return "stop";
+      // The opening isn't replaced when skipped and doesn't count as a skip, so it's answered here.
+      if (/^Tell me about yourself/.test(i.h1)) return null;
       skips++;
-      return `skip:${["Not true about me", "Not relevant to the role", "Wrong level"][skips - 1]}`;
+      return `skip:${["Not true about me", "Not relevant to the role", "Wrong level"][skips - 1] ?? "Already asked"}`;
     },
-  }).catch(async (e) => ({ seen: [String(e)] }));
-  // The third skip opens the panel by itself.
-  const dialog = p.getByRole("dialog", { name: "Something’s wrong" });
-  await dialog.waitFor({ timeout: 10000 });
+  });
+  if (!run4.stopped || skips !== 3) throw new Error(`The panel should open by itself on the third skip (skipped ${skips}, ended at ${p.url()}).`);
   out.threeSkips = { seen: run4.seen, panel: (await dialog.innerText()).replace(/\n+/g, " | ") };
+  if (!/skipped three questions/.test(out.threeSkips.panel)) throw new Error("The panel doesn't say three questions were skipped.");
   await p.screenshot({ path: `${OUT}/20-three-skips.png` });
   await p.getByRole("button", { name: "Fix it and restart" }).click();
   await p.waitForURL(/\/rebuild\?from=/, { timeout: 30000 });
   await p.getByRole("button", { name: "Rebuild and start" }).waitFor({ timeout: 30000 });
   await sleep(400);
-  out.secondRebuildChecksDocs = await p.getByText("Still wrong after a rebuild?").isVisible();
+  out.secondRebuild = (await p.locator("main").innerText()).slice(0, 900);
   await p.screenshot({ path: `${OUT}/21-rebuild-second.png`, fullPage: true });
 
   /* ------------------------------------------------------------- edit */
@@ -280,11 +279,16 @@ async function runUntil(page, done, { onQuestion, shots = {}, drill = false } = 
   await p.goto(`${BASE}/interviews/${id}/mocks`, { waitUntil: "networkidle" });
   await p.screenshot({ path: `${OUT}/22-past.png`, fullPage: true });
   out.past = await p.locator("main").innerText();
-  await p.goto(`${BASE}/`, { waitUntil: "networkidle" });
+  for (const kind of ["Interview", "Run it again", "STAR framework workout", "Stopped: rebuilt"]) {
+    if (!out.past.includes(kind)) throw new Error(`Past interviews doesn't list "${kind}".`);
+  }
+  // Home for a signed-in user is the dashboard (the address "/" is the public landing page).
+  await p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
   await sleep(600);
   await p.screenshot({ path: `${OUT}/23-home.png`, fullPage: true });
   out.home = (await p.locator("main").innerText()).slice(0, 1600);
   await p.goto(`${BASE}/interviews`, { waitUntil: "networkidle" });
+  await p.locator(`a[href="/interviews/${id}"]`).first().waitFor();
   await p.screenshot({ path: `${OUT}/24-interviews.png`, fullPage: true });
 
   out.errors = p.errors;

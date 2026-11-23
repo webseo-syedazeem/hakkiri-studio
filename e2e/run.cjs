@@ -44,9 +44,11 @@ function run(script, extraEnv = {}) {
   let ok = true;
   try {
     await waitForServer();
-    // Order matters: stories and pitch expect only the demo data; flow adds an interview; audit clicks everything.
+    // Every script signs up its own account(s) and makes what it needs through the app, so none depends on
+    // another or on built-in demo content. audit and a11y-page come last: they look at every page.
     for (const s of ["stories", "pitch", "flow", "slots", "pay", "cv-cleanup", "cv-start", "cv-upload"]) ok = run(s) && ok;
-    ok = run("audit", { EXTRA: "/settings,/landing,/present,/privacy,/terms,/story-bank" }) && ok;
+    // EXTRA: an old address nothing links to any more, which should still lead somewhere.
+    ok = run("audit", { EXTRA: "/story-bank" }) && ok;
     ok = run("a11y-page", {}) && ok;
   } finally {
     server.kill();

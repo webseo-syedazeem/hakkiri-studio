@@ -1,21 +1,33 @@
 // Full check: every page, every link, every button. Mock mode, fake mic.
+// Twice over: the public pages as a visitor who isn't signed in, then the app as a signed-in user
+// (a new account with one interview of its own; without a session every app page is just the login page).
 // For each page: load it, list every enabled button/switch/radio, then for each one
 // reload the page and click it, recording what happened (navigated / opened / changed /
 // file chooser / nothing), plus console errors and failed requests. Also: dead links,
 // pages with no way out, and the destination of every navigation.
+// PAGES_ONLY=1 finds and loads the pages but skips the clicking. EXTRA=/a,/b adds pages for the signed-in user to start from.
 const { chromium } = require("playwright");
-const S = __dirname, OUT = `${__dirname}/out`; require("fs").mkdirSync(OUT, { recursive: true });
-const BASE = process.env.BASE || "http://127.0.0.1:3100";
+const { BASE, OUT, FIXTURES, FAKE_MIC, signIn, setUpInterview, closeSurvey } = require("./helpers.cjs");
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-const SKIP_CLICK = /^(Yes, delete)$/; // done once, on a throwaway interview, at the end
+// Done once each, at the end: deleting (on a throwaway presentation) and signing out, which would end the session mid-check.
+const SKIP_CLICK = /^(Yes, delete|Sign Out)$/;
+// How many tabs click at once.
+const TABS = Number(process.env.TABS || 4);
+// The pages anyone can open. A visitor who is asked to sign in on one of these has found a fault.
+const PUBLIC = ["/", "/present", "/about", "/blog", "/privacy", "/terms", "/login", "/signup"];
+// Not the app's fault: Vercel's analytics script only exists when the app runs on Vercel.
+const NOISE = /_vercel\/insights/;
+// Copy and share buttons write to the clipboard, which a browser only allows when asked.
+const PERMISSIONS = ["microphone", "clipboard-read", "clipboard-write"];
+// A full interview's report opens a feedback survey over itself a second after it loads.
+const isReport = (path) => /\/interviews\/[^/]+\/mocks\/[^/?]+/.test(path);
 
-async function setup(browser) {
-  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, permissions: ["microphone"] });
-  await ctx.addCookies([{ name: "hk_welcomed", value: "1", url: BASE }, { name: "hk_mic_ok", value: "1", url: BASE }]);
+/** What every page in the check gets: no browser voice, and "print" recorded instead of opening a dialog. */
+async function prepare(ctx) {
   await ctx.addInitScript(() => {
     try {
-      Object.defineProperty(window, "speechSynthesis", { value: undefined });
+      Object.defineProperty(window, "speechSynthesis", { value: undefined, configurable: true });
     } catch {}
     window.print = () => document.documentElement.setAttribute("data-printed", "1");
   });
@@ -54,14 +66,106 @@ async function clickables(page) {
   });
 }
 
-(async () => {
-  const browser = await chromium.launch({ args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"] });
-  const ctx = await setup(browser);
+/**
+ * One kind of page: ids and the values in the address are left out, so that one interview, one report,
+ * one blog post and so on stands for the rest when it comes to clicking.
+ */
+const kind = (p) => {
+  const [path, query = ""] = p.split("?");
+  const keys = new Set(query.split("&").filter(Boolean).map((kv) => kv.split("=")[0]));
+  const has = (...ks) => ks.some((k) => keys.has(k));
+  // What changes the screen: a planned session, one question or a topic on the live screen; edit or fix on rebuild; a run of some slides.
+  const mode = path.startsWith("/mock/")
+    ? has("session") ? "?session" : has("q", "practice", "next", "duration") ? "?question" : has("topic") ? "?topic" : ""
+    : has("edit") ? "?edit" : has("from") ? "?from" : "";
+  return (
+    path
+      .replace(/^\/(interviews|presentations)\/(?!new(\/|$))[^/]+/, "/$1/:id")
+      .replace(/^\/(mock|rehearse|qa|blog|audit)\/[^/]+/, "/$1/:id")
+      .replace(/^\/cv\/(v|import)\/[^/]+/, "/cv/$1/:id")
+      .replace(/\/(answers|mocks|runs|qa)\/[^/]+$/, "/$1/:id") + mode
+  );
+};
+
+/** Opens `path` in a tab of its own, clicks the i-th of `items` (the buttons found on it) and says what happened. */
+async function clickOne(ctx, { path, items, i }) {
+  const it = items[i];
+  const p = await ctx.newPage();
+  const errs = [];
+  const bad = [];
+  p.on("pageerror", (e) => errs.push(String(e).slice(0, 160)));
+  p.on("console", (m) => m.type() === "error" && !/Failed to load resource/.test(m.text()) && !NOISE.test(m.text()) && errs.push(m.text().slice(0, 160)));
+  p.on("response", (r) => r.url().startsWith(BASE) && r.status() >= 400 && !NOISE.test(r.url()) && bad.push(`${r.status()} ${norm(r.url())}`));
+  try {
+    await p.goto(BASE + path, { waitUntil: "networkidle" });
+    await sleep(300);
+    if (isReport(path)) await closeSurvey(p);
+    const now = await clickables(p);
+    // Same button by name and position among buttons with that name.
+    const sameName = items.slice(0, i).filter((x) => x.name === it.name && x.role === it.role).length;
+    const matches = now.map((x, k) => ({ ...x, k })).filter((x) => x.name === it.name && x.role === it.role);
+    const target = matches[sameName];
+    if (!target) return { path, name: it.name, result: "not found on reload" };
+    const handle = (await p.$$('button, [role="switch"], [role="radio"], label:has(> input[type="radio"])')).filter(Boolean);
+    // Re-resolve the visible, enabled list the same way clickables() does.
+    const visible = [];
+    for (const h of handle) {
+      const ok = await h.evaluate((el) => {
+        if (!el.matches("label") && el.closest('label:has(> input[type="radio"])')) return false;
+        const r = el.getBoundingClientRect();
+        const st = getComputedStyle(el);
+        return r.width > 0 && r.height > 0 && st.visibility !== "hidden" && st.display !== "none" && !el.disabled && el.getAttribute("aria-disabled") !== "true";
+      });
+      if (ok) visible.push(h);
+    }
+    const el = visible[target.k];
+    const before = await state(p);
+    const urlBefore = p.url();
+    const chooser = p.waitForEvent("filechooser", { timeout: 2500 }).then(() => "file chooser", () => null);
+    await el.click({ timeout: 3000 });
+    let result = null;
+    for (let t = 0; t < 12 && !result; t++) {
+      await sleep(250);
+      if (p.url() !== urlBefore) result = "navigated";
+      else {
+        const now = await state(p).catch(() => before);
+        if (now.printed) result = "print dialog";
+        else if (now.dialogs > before.dialogs) result = "opened";
+        else if (now.text !== before.text || now.flags !== before.flags || now.radios !== before.radios) result = "changed";
+      }
+    }
+    // A button that's busy ("Starting…", "Rebuilding…") is about to go somewhere: wait for it.
+    if (result === "changed" || result === "opened") {
+      const busy = await p.evaluate(() => [...document.querySelectorAll("button")].some((b) => b.disabled && /…$/.test(b.innerText.trim()))).catch(() => false);
+      if (busy) {
+        for (let t = 0; t < 60 && p.url() === urlBefore; t++) await sleep(250);
+        if (p.url() !== urlBefore) result = "navigated";
+        else result = "STUCK BUSY";
+      }
+    }
+    const fc = await Promise.race([chooser, sleep(50).then(() => null)]);
+    if (fc && (!result || result === "NOTHING")) result = fc;
+    if (!result) result = (await chooser) ?? "NOTHING";
+    let dest = null;
+    if (result === "navigated") {
+      await p.waitForLoadState("networkidle").catch(() => {});
+      dest = { url: norm(p.url()), h1: (await p.locator("h1").first().innerText().catch(() => "")).slice(0, 50) };
+      if (/doesn(’|')t exist|could(n’|n')t be found|not found/i.test(dest.h1)) result = "NAVIGATED TO NOT FOUND";
+    }
+    return { path, name: it.name, role: it.role, result, dest, errors: errs.length ? errs : undefined, failed: bad.length ? bad : undefined };
+  } catch (e) {
+    return { path, name: it.name, result: "CLICK FAILED", error: String(e).slice(0, 200) };
+  } finally {
+    await p.close();
+  }
+}
+
+/** The whole check for one person: `who` is "visitor" or "signed in", `seeds` are the pages they start from. */
+async function audit(ctx, who, seeds) {
   const page = await ctx.newPage();
-  const report = { pages: [], deadLinks: [], noWayOut: [], clicks: [], problems: [] };
+  const report = { who, pages: [], deadLinks: [], noWayOut: [], clicks: [] };
 
   /* 1. Discover pages by following every internal link. */
-  const seeds = ["/", "/welcome", "/interviews/new", "/presentations/new", "/mic-check", "/does-not-exist", ...(process.env.EXTRA || "").split(",").filter(Boolean)];
   const queue = [...seeds];
   const seen = new Set();
   const pageErrors = {};
@@ -71,7 +175,7 @@ async function clickables(page) {
     seen.add(path);
     const errs = [];
     const onErr = (e) => errs.push(String(e).slice(0, 160));
-    const onCon = (m) => m.type() === "error" && !/404 \(Not Found\)/.test(m.text()) && errs.push(m.text().slice(0, 160));
+    const onCon = (m) => m.type() === "error" && !/404 \(Not Found\)/.test(m.text()) && !NOISE.test(m.text()) && errs.push(m.text().slice(0, 160));
     page.on("pageerror", onErr);
     page.on("console", onCon);
     const res = await page.goto(BASE + path, { waitUntil: "networkidle" }).catch(() => null);
@@ -99,125 +203,38 @@ async function clickables(page) {
   }
   report.pageErrors = pageErrors;
   report.badStatus = report.pages.filter((p) => (p.status ?? 0) >= 400 && p.path !== "/does-not-exist");
+  // Pages that ask you to sign in. A visitor is sent there from every app page; a signed-in user never should be.
+  report.sentToLogin = report.pages.filter((p) => p.finalUrl.split("?")[0] === "/login" && p.path !== "/login").map((p) => p.path);
 
-  /* 2. Choose pages to click through: one of each kind (all report kinds kept). */
-  const kind = (p) =>
-    p
-      .replace(/\/answers\/[^?]+(\?.*)?$/, "/answers/:id$1".replace("$1", ""))
-      .replace(/\/runs\/[^/?]+/, "/runs/:id")
-      .replace(/\?from=\d+&to=\d+/, "?from=n")
-      .replace(/\/mocks\/[0-9a-f-]{36}/, (m) => m) // every session report is checked
-      .replace(/^\/welcome\/start\?.*/, "/welcome/start");
+  /* 2. Choose pages to click through: one of each kind, and only pages that opened as themselves. */
   const chosen = new Map();
   for (const pg of report.pages) {
     if ((pg.status ?? 0) >= 400 || pg.path.startsWith("/welcome/start")) continue;
-    const k = kind(pg.path);
+    if (report.sentToLogin.includes(pg.path)) continue;
+    // By where it ended up, so an address that only forwards (/landing, /mock/{id}) isn't clicked through twice.
+    const k = kind(pg.finalUrl);
     if (!chosen.has(k)) chosen.set(k, pg.path);
   }
   const toClick = [...chosen.values()];
-  console.error("pages found", report.pages.length, "clicking through", toClick.length);
+  console.error(who, "pages found", report.pages.length, "clicking through", toClick.length);
 
-  /* 3. Click every button on each page, from a fresh load each time. */
-  for (const path of toClick) {
+  /* 3. Click every button on each page, from a fresh load each time: a few tabs at a time. */
+  const jobs = [];
+  for (const path of process.env.PAGES_ONLY ? [] : toClick) {
     await page.goto(BASE + path, { waitUntil: "networkidle" });
     await sleep(300);
+    if (isReport(path)) await closeSurvey(page);
     const items = (await clickables(page)).slice(0, 30);
     console.error("page", path, items.length, "buttons");
-    for (let i = 0; i < items.length; i++) {
-      const it = items[i];
-      if (SKIP_CLICK.test(it.name)) continue;
-      const p = await ctx.newPage();
-      const errs = [];
-      const bad = [];
-      p.on("pageerror", (e) => errs.push(String(e).slice(0, 160)));
-      p.on("console", (m) => m.type() === "error" && !/Failed to load resource/.test(m.text()) && errs.push(m.text().slice(0, 160)));
-      p.on("response", (r) => r.url().startsWith(BASE) && r.status() >= 400 && bad.push(`${r.status()} ${norm(r.url())}`));
-      try {
-        await p.goto(BASE + path, { waitUntil: "networkidle" });
-        await sleep(300);
-        const now = await clickables(p);
-        // Same button by name and position among buttons with that name.
-        const sameName = items.slice(0, i).filter((x) => x.name === it.name && x.role === it.role).length;
-        const matches = now.map((x, k) => ({ ...x, k })).filter((x) => x.name === it.name && x.role === it.role);
-        const target = matches[sameName];
-        if (!target) {
-          report.clicks.push({ path, name: it.name, result: "not found on reload" });
-          await p.close();
-          continue;
-        }
-        const handle = (await p.$$('button, [role="switch"], [role="radio"], label:has(> input[type="radio"])')).filter(Boolean);
-        // Re-resolve the visible, enabled list the same way clickables() does.
-        const visible = [];
-        for (const h of handle) {
-          const ok = await h.evaluate((el) => {
-            if (!el.matches("label") && el.closest('label:has(> input[type="radio"])')) return false;
-            const r = el.getBoundingClientRect();
-            const st = getComputedStyle(el);
-            return r.width > 0 && r.height > 0 && st.visibility !== "hidden" && st.display !== "none" && !el.disabled && el.getAttribute("aria-disabled") !== "true";
-          });
-          if (ok) visible.push(h);
-        }
-        const el = visible[target.k];
-        const before = await state(p);
-        const urlBefore = p.url();
-        const chooser = p.waitForEvent("filechooser", { timeout: 2500 }).then(() => "file chooser", () => null);
-        await el.click({ timeout: 3000 });
-        let result = null;
-        for (let t = 0; t < 12 && !result; t++) {
-          await sleep(250);
-          if (p.url() !== urlBefore) result = "navigated";
-          else {
-            const now = await state(p).catch(() => before);
-            if (now.printed) result = "print dialog";
-            else if (now.dialogs > before.dialogs) result = "opened";
-            else if (now.text !== before.text || now.flags !== before.flags || now.radios !== before.radios) result = "changed";
-          }
-        }
-        // A button that's busy ("Starting…", "Rebuilding…") is about to go somewhere: wait for it.
-        if (result === "changed" || result === "opened") {
-          const busy = await p.evaluate(() => [...document.querySelectorAll("button")].some((b) => b.disabled && /…$/.test(b.innerText.trim()))).catch(() => false);
-          if (busy) {
-            for (let t = 0; t < 60 && p.url() === urlBefore; t++) await sleep(250);
-            if (p.url() !== urlBefore) result = "navigated";
-            else result = "STUCK BUSY";
-          }
-        }
-        const fc = await Promise.race([chooser, sleep(50).then(() => null)]);
-        if (fc && (!result || result === "NOTHING")) result = fc;
-        if (!result) result = (await chooser) ?? "NOTHING";
-        let dest = null;
-        if (result === "navigated") {
-          await p.waitForLoadState("networkidle").catch(() => {});
-          dest = { url: norm(p.url()), h1: (await p.locator("h1").first().innerText().catch(() => "")).slice(0, 50) };
-          if (/could(n’|n')t be found|not found/i.test(dest.h1)) result = "NAVIGATED TO NOT FOUND";
-        }
-        report.clicks.push({ path, name: it.name, role: it.role, result, dest, errors: errs.length ? errs : undefined, failed: bad.length ? bad : undefined });
-      } catch (e) {
-        report.clicks.push({ path, name: it.name, result: "CLICK FAILED", error: String(e).slice(0, 200) });
-      }
-      await p.close();
-    }
+    items.forEach((it, i) => SKIP_CLICK.test(it.name) || jobs.push({ path, items, i, order: jobs.length }));
   }
-
-  /* 4. Delete, on a throwaway interview made through set-up. */
-  const d = await ctx.newPage();
-  await d.goto(BASE + "/interviews/new", { waitUntil: "networkidle" });
-  await d.fill("#company", "Throwaway Ltd");
-  await d.fill("#job-title", "Account Executive");
-  await d.fill('input[aria-label="Job spec: a link or the job description"]', "Sell our software to small firms. Own your pipeline, run demos, handle objections and close deals. Report weekly numbers to the sales lead. Experience in B2B sales and a CRM is a plus. We value honesty, energy and great notes.");
-  await d.setInputFiles("#cv", `${S}/fixtures/sam-okafor-cv.pdf`);
-  await d.getByText("sam-okafor-cv.pdf", { exact: true }).waitFor({ timeout: 20000 });
-  await d.getByRole("button", { name: "Build my interview" }).click();
-  await d.waitForURL(/\?new=1/, { timeout: 60000 });
-  const throwaway = norm(d.url()).split("?")[0];
-  report.salesUnderstanding = (await d.locator('section[aria-label="What Hakkiri understood"]').innerText()).slice(0, 700);
-  await d.getByRole("button", { name: "Delete interview" }).click();
-  await d.getByRole("button", { name: "Yes, delete" }).click();
-  await d.waitForURL(/\/interviews$/, { timeout: 15000 }).catch(() => {});
-  const gone = await d.goto(BASE + throwaway);
-  report.delete = { throwaway, landedOn: "/interviews", afterStatus: gone.status() };
-
-  /* Summary */
+  const todo = [...jobs];
+  await Promise.all(
+    Array.from({ length: TABS }, async () => {
+      for (let job; (job = todo.shift()); ) report.clicks[job.order] = await clickOne(ctx, job);
+    }),
+  );
+  await page.close();
   report.summary = {
     pages: report.pages.length,
     pagesClicked: toClick.length,
@@ -225,8 +242,66 @@ async function clickables(page) {
     byResult: report.clicks.reduce((m, c) => ((m[c.result] = (m[c.result] || 0) + 1), m), {}),
     flagged: report.clicks.filter((c) => !["navigated", "opened", "changed", "file chooser", "print dialog"].includes(c.result) || c.errors || c.failed),
   };
-  require("fs").writeFileSync(`${OUT}/audit.json`, JSON.stringify(report, null, 1));
-  console.log(JSON.stringify({ summary: report.summary, deadLinks: report.deadLinks, noWayOut: report.noWayOut, badStatus: report.badStatus, pageErrors: report.pageErrors, delete: report.delete }, null, 1));
+  return report;
+}
+
+(async () => {
+  const browser = await chromium.launch({ args: FAKE_MIC });
+  const extra = (process.env.EXTRA || "").split(",").filter(Boolean);
+  const report = {};
+  // Written after each part, so what was found is kept even when a later part stops the check.
+  const save = () => require("fs").writeFileSync(`${OUT}/audit.json`, JSON.stringify(report, null, 1));
+
+  /* A visitor: the public pages, and where the app's own pages send someone who isn't signed in. */
+  const outside = await prepare(await browser.newContext({ viewport: { width: 1440, height: 900 }, permissions: PERMISSIONS }));
+  report.visitor = await audit(outside, "visitor", [...PUBLIC, "/does-not-exist"]);
+  await outside.close();
+  save();
+  const shut = report.visitor.sentToLogin.filter((p) => PUBLIC.includes(p));
+  if (shut.length) throw new Error(`These public pages ask a visitor to sign in: ${shut.join(", ")}`);
+
+  /* A signed-in user, with an interview of their own so its pages are part of the check. */
+  const { context: ctx, page: first } = await signIn(browser, "audit", { permissions: PERMISSIONS });
+  await prepare(ctx);
+  const interview = await setUpInterview(first);
+  await first.close();
+  report.signedIn = await audit(ctx, "signed in", [`/interviews/${interview}`, "/dashboard", "/welcome", "/interviews/new", "/presentations/new", "/mic-check", "/does-not-exist", ...extra]);
+  save();
+  if (report.signedIn.sentToLogin.length) throw new Error(`Signed in, these pages still asked to sign in, so they weren't checked: ${report.signedIn.sentToLogin.join(", ")}`);
+
+  /* Delete, on a throwaway presentation made through set-up (interviews have no delete button at the moment). */
+  const d = await ctx.newPage();
+  await d.goto(BASE + "/presentations/new", { waitUntil: "networkidle" });
+  const planned = d.waitForResponse((r) => r.url().endsWith("/api/presentations/plan"), { timeout: 60000 });
+  await d.setInputFiles("#slides-file-input", `${FIXTURES}/hiring-plan.pdf`);
+  await d.getByRole("button", { name: "Replace file" }).waitFor({ timeout: 30000 });
+  await planned;
+  await d.fill("#p-name", "Throwaway deck");
+  await d.getByPlaceholder("e.g. A proposal for the Q1 product roadmap").fill("A deck made only to be deleted");
+  await d.getByPlaceholder("e.g. Approve the roadmap and required resources").fill("Nothing: this one is deleted straight away");
+  await d.getByRole("button", { name: /^Start rehearsal/ }).click();
+  await d.waitForURL(/\/rehearse\//, { timeout: 20000 });
+  const throwaway = `/presentations/${d.url().split("/rehearse/")[1].split("?")[0]}`;
+  await d.goto(BASE + throwaway, { waitUntil: "networkidle" });
+  await d.getByRole("button", { name: "Delete presentation" }).click();
+  await d.getByRole("button", { name: "Yes, delete" }).click();
+  await d.waitForURL(/\/presentations$/, { timeout: 15000 });
+  const gone = await d.goto(BASE + throwaway);
+  report.delete = { throwaway, landedOn: "/presentations", afterStatus: gone.status() };
+  if (gone.status() !== 404) throw new Error(`The deleted presentation still opens (${gone.status()}).`);
+
+  /* Sign out, from Settings: back on the public home page, and the app asks to sign in again. */
+  await d.goto(BASE + "/settings", { waitUntil: "networkidle" });
+  await d.getByRole("button", { name: "Sign Out" }).last().click();
+  await d.waitForURL((u) => u.pathname === "/", { timeout: 15000 });
+  await d.goto(BASE + "/dashboard", { waitUntil: "networkidle" });
+  report.signOut = { landedOn: "/", thenDashboard: norm(d.url()) };
+  if (new URL(d.url()).pathname !== "/login") throw new Error(`After signing out, /dashboard opened ${d.url()} instead of the login page.`);
+
+  /* Summary */
+  save();
+  const brief = ({ summary, deadLinks, noWayOut, badStatus, pageErrors, sentToLogin }) => ({ summary, deadLinks, noWayOut, badStatus, pageErrors, sentToLogin });
+  console.log(JSON.stringify({ visitor: brief(report.visitor), signedIn: brief(report.signedIn), delete: report.delete, signOut: report.signOut }, null, 1));
   await browser.close();
 })().catch((e) => {
   console.error("FAILED", e);
