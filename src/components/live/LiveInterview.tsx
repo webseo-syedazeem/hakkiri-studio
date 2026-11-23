@@ -90,6 +90,8 @@ export interface LiveSession {
 export interface LiveInterviewProps {
   interviewId: string;
   heading: string;
+  /** The app is running on stand-in AI: scores and transcripts here are not worked out from what is said. */
+  testMode?: boolean;
   interviewer: { name: string; title: string; style: InterviewerStyle };
   /** single: one question, then its feedback. session: questions in a row, then the report. */
   run: { kind: "single" } | { kind: "session"; session: LiveSession };
@@ -807,6 +809,11 @@ export function LiveInterview(p: LiveInterviewProps) {
           <span className="text-[13px] text-muted">One question, feedback straight after</span>
         )}
         <div className="flex shrink-0 items-center gap-2.5">
+          {p.testMode && (
+            <span role="note" data-testid="test-mode-notice" title="The questions’ follow-ups, transcripts and scores are stand-ins made without AI. They are not a reading of what you say." className="inline-flex h-[34px] items-center rounded-full border border-amber-500/40 bg-amber-500/10 px-3.5 text-[13px] font-semibold text-amber-100">
+              Test mode: scores are stand-ins
+            </span>
+          )}
           {phase === "answering" && (
             <span className="inline-flex h-[34px] items-center gap-2 rounded-full bg-red/15 px-3.5 text-[13px] font-semibold text-red-soft">
               <span className="h-2 w-2 animate-rec rounded-full bg-red" />

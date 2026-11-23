@@ -343,5 +343,5 @@ export function interviewNextStep(interview: Interview, st: Standing): NextStep 
     return { label: drill.title, detail: `${drill.minutes} min`, href: `/interviews/${interview.id}/story?skill=${encodeURIComponent(drill.spec.skill ?? "")}&question=${encodeURIComponent(drill.spec.question ?? "")}` };
   }
   if (drill) return { label: drill.title, detail: `Focused practice, ${drill.minutes} min`, drill: drill.spec };
-  return { label: "New questions", detail: st.verdict === "ready" ? "Keep it fresh before the day" : "Leans towards your weakest category", href: `/interviews/${interview.id}#new-questions` };
+  return { label: "New questions", detail: st.verdict === "ready" ? "Keep it fresh before the day" : "Leans towards your weakest category", href: `/interviews/${interview.id}` };
 }

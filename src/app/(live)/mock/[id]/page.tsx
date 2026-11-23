@@ -16,6 +16,7 @@ import { getTopic, resolveInterviewQuestion, topicQuestions } from "@/lib/sessio
 import type { Question } from "@/lib/types";
 import { PAY_STAGE_LABEL, PAY_TIPS, payStage } from "@/lib/sessions/pay";
 import { requirePageUser } from "@/lib/auth/require";
+import { mockAiEnabled } from "@/lib/ai/mock";
 
 export const dynamic = "force-dynamic";
 
@@ -70,6 +71,7 @@ export default async function MockInterviewPage({
   const common = {
     interviewId: interview.id,
     heading: `${interview.company}, ${interview.role.split(",")[0]}`,
+    testMode: mockAiEnabled(),
   };
   const byId = (qid: string) => resolveInterviewQuestion(interview, qid);
 

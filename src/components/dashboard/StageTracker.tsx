@@ -31,36 +31,25 @@ export interface StageTrackerInterview {
   stages?: StageTrackerStage[];
 }
 
-const DEFAULT_STAGES: StageInfo[] = [
-  {
-    num: 1,
-    title: "Stage 1 · Recruiter screen",
-    defaultCompletedText: "Completed · 4 Nov",
-    upcomingText: "Completed · 4 Nov",
-    status: "completed",
-  },
-  {
-    num: 2,
-    title: "Stage 2 · Hiring manager",
-    defaultCompletedText: "Completed · 12 Nov",
-    upcomingText: "Upcoming · 12 Nov, 10:00",
-    status: "next",
-  },
-  {
-    num: 3,
-    title: "Stage 3 · Case interview",
-    defaultCompletedText: "Completed · 19 Nov",
-    upcomingText: "Upcoming · 19 Nov, 14:00",
-    status: "upcoming",
-  },
-  {
-    num: 4,
-    title: "Stage 4 · Final panel",
-    defaultCompletedText: "Completed · 26 Nov",
-    upcomingText: "Upcoming · 26 Nov, 11:00",
-    status: "upcoming",
-  },
-];
+/** The stage the person is on (1-based): the one marked "next", else the first that isn't completed, else the last. */
+export function currentStageOf(stages: StageTrackerStage[]): number {
+  if (!stages.length) return 0;
+  const next = stages.findIndex((s) => s.status === "next");
+  if (next >= 0) return next + 1;
+  const open = stages.findIndex((s) => s.status !== "completed");
+  return open >= 0 ? open + 1 : stages.length;
+}
+
+/** The stages after stage `current` (1-based) went well: it and those before it are completed, the one after is next. */
+export function advanceStages(stages: StageTrackerStage[], current: number): StageTrackerStage[] {
+  return stages.map((s, i) => ({ ...s, status: i < current ? "completed" : i === current ? "next" : "upcoming" }));
+}
+
+/** A stage as the interview update route accepts it: its own fields only, each within the route's limits. */
+function stageForSave(s: StageTrackerStage) {
+  const clip = (v: string | undefined, max: number) => (v ? v.slice(0, max) : undefined);
+  return { id: clip(s.id, 60), name: (s.name || "Stage").slice(0, 120), date: clip(s.date, 40), time: clip(s.time, 20), format: clip(s.format, 60), interviewer: clip(s.interviewer, 120), status: clip(s.status, 40) };
+}
 
 function formatStageDateText(dateStr?: string, timeStr?: string): string {
   if (!dateStr) return "";
@@ -78,6 +67,16 @@ function formatStageDateText(dateStr?: string, timeStr?: string): string {
   return dateStr;
 }
 
+/** What the tracker hands over when the person records that an application ended: all of it their own. */
+export interface ArchiveRequest {
+  interviewId: string;
+  role: string;
+  company: string;
+  stageReached: string;
+  /** The person's own note on the stage they reached, if they wrote one. */
+  notes: string;
+}
+
 export function StageTracker({
   interview,
   availableInterviews = [],
@@ -85,209 +84,129 @@ export function StageTracker({
 }: {
   interview?: StageTrackerInterview | null;
   availableInterviews?: StageTrackerInterview[];
-  onArchiveRole?: (reason: string) => void;
+  onArchiveRole?: (ended: ArchiveRequest) => void;
 }) {
-  const [interviewsList, setInterviewsList] = useState<StageTrackerInterview[]>(() => {
-    const fallbackList: StageTrackerInterview[] = [
-      {
-        id: "staff-nurse",
-        role: "Staff Nurse",
-        company: "Example NHS Trust",
-        companyInitial: "N",
-        stages: [
-          { id: "st-1", name: "Clinical interview", status: "next", date: "20 Nov", time: "09:30" },
-          { id: "st-2", name: "Ward scenario assessment", status: "upcoming" },
-        ],
-      },
-      {
-        id: "hmrc",
-        role: "Associate Product Manager",
-        company: "HMRC",
-        companyInitial: "H",
-        stages: [
-          { id: "stage-hmrc-1", name: "Competency, strength and presentation", status: "next", date: "21 Nov", time: "11:00" },
-          { id: "stage-hmrc-2", name: "Final panel", status: "upcoming" },
-        ],
-      },
-      {
-        id: "halden",
-        role: "Senior Product Manager, Payments",
-        company: "Halden",
-        companyInitial: "H",
-        stages: DEFAULT_STAGES.map((s, idx) => ({
-          id: `st-${idx + 1}`,
-          name: s.title.replace(/^Stage \d+ · /, ""),
-          status: s.status,
-          date: s.upcomingText.replace(/^Upcoming · /, ""),
-        })),
-      },
-    ];
-    if (availableInterviews && availableInterviews.length > 0) {
-      const merged = [...availableInterviews];
-      for (const fb of fallbackList) {
-        if (!merged.some((m) => m.id === fb.id)) {
-          merged.push(fb);
-        }
-      }
-      return merged;
-    }
-    return fallbackList;
-  });
-
-  const [activeInterview, setActiveInterview] = useState<StageTrackerInterview | null>(() => {
-    return interview ?? interviewsList[0] ?? null;
-  });
+  const [interviewsList, setInterviewsList] = useState<StageTrackerInterview[]>(availableInterviews);
+  const [activeInterview, setActiveInterview] = useState<StageTrackerInterview | null>(() => availableInterviews.find((i) => i.id === interview?.id) ?? availableInterviews[0] ?? null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  // Sync with client-side localStorage and passed interviews
+  // The interviews offered are the ones the server lists for this account. The browser only remembers which
+  // one was last looked at.
   useEffect(() => {
-    const syncInterviews = () => {
-      try {
-        let combined = [...(availableInterviews.length > 0 ? availableInterviews : interviewsList)];
-        const raw = localStorage.getItem("hk_custom_interviews");
-        if (raw) {
-          const list = JSON.parse(raw);
-          if (Array.isArray(list) && list.length > 0) {
-            for (const item of list) {
-              const existingIdx = combined.findIndex((it) => it.id === item.id);
-              if (existingIdx >= 0) {
-                if (Array.isArray(item.stages) && item.stages.length > 0) {
-                  combined[existingIdx] = {
-                    ...combined[existingIdx],
-                    stages: item.stages,
-                  };
-                }
-              }
-              // An interview that is only in this browser, and not in the account's own list from the server,
-              // is not this person's to see: it is left out.
-            }
-          }
-        }
-        setInterviewsList(combined);
-
-        const savedTrackerId = localStorage.getItem("hk_active_stage_tracker_id");
-        const currentActiveId = savedTrackerId || activeInterview?.id || interview?.id;
-        if (currentActiveId) {
-          const found = combined.find((i) => i.id === currentActiveId);
-          if (found) {
-            setActiveInterview(found);
-            return;
-          }
-        }
-        if (combined[0]) {
-          setActiveInterview(combined[0]);
-        }
-      } catch {}
-    };
-
-    syncInterviews();
-    window.addEventListener("hk_interviews_updated", syncInterviews);
-    return () => window.removeEventListener("hk_interviews_updated", syncInterviews);
+    setInterviewsList(availableInterviews);
+    let wanted: string | null = null;
+    try {
+      wanted = localStorage.getItem("hk_active_stage_tracker_id");
+    } catch {}
+    setActiveInterview((current) => availableInterviews.find((i) => i.id === (current?.id ?? wanted)) ?? availableInterviews.find((i) => i.id === wanted) ?? availableInterviews.find((i) => i.id === interview?.id) ?? availableInterviews[0] ?? null);
   }, [interview, availableInterviews]);
 
-  const displayRole = activeInterview?.role || "Senior Product Manager, Payments";
-  const displayCompany = activeInterview?.company || "Halden";
-  const displayCompanyInitial = activeInterview?.companyInitial || displayCompany[0] || "H";
-  const displayHref = activeInterview ? `/interviews/${activeInterview.id}` : "/interviews/halden";
+  const totalStages = activeInterview?.stages?.length ?? 0;
 
-  const displayStages: StageInfo[] =
-    activeInterview?.stages && activeInterview.stages.length > 0
-      ? activeInterview.stages.map((st, idx) => {
-          const num = idx + 1;
-          const name = st.name || `Stage ${num}`;
-          const dt = formatStageDateText(st.date, st.time);
-          return {
-            num,
-            title: `Stage ${num} · ${name}`,
-            defaultCompletedText: dt ? `Completed · ${dt}` : "Completed",
-            upcomingText: dt ? `Upcoming · ${dt}` : "Upcoming",
-            status: st.status,
-          };
-        })
-      : DEFAULT_STAGES;
-
-  const totalStages = displayStages.length;
-
-  // Determine initial active stage
-  const nextStageIdx = displayStages.findIndex((s) => s.status === "next");
-  const defaultCurrentStage = nextStageIdx >= 0 ? nextStageIdx + 1 : 1;
-
-  const [currentStage, setCurrentStage] = useState<number>(defaultCurrentStage);
-  const [stageFeedback, setStageFeedback] = useState<Record<number, string>>({
-    1: "Strong domain depth and clear metrics structure. Recommended for next round.",
+  // The stages are the interview's own, as the person entered them. An interview without any shows none:
+  // no stage, date or outcome is supplied for it.
+  const displayStages: StageInfo[] = (activeInterview?.stages ?? []).map((st, idx) => {
+    const num = idx + 1;
+    const name = st.name || `Stage ${num}`;
+    const dt = formatStageDateText(st.date, st.time);
+    return {
+      num,
+      title: `Stage ${num} · ${name}`,
+      defaultCompletedText: dt ? `Completed · ${dt}` : "Completed",
+      upcomingText: dt ? `Upcoming · ${dt}` : "No date set",
+      status: st.status,
+    };
   });
+
+  // Where the person has got to: the stage marked "next", or the first one that isn't completed.
+  const currentStage = currentStageOf(activeInterview?.stages ?? []);
+
+  const [stageFeedback, setStageFeedback] = useState<Record<number, string>>({});
   const [activeFeedbackStage, setActiveFeedbackStage] = useState<number>(1);
   const [showFeedbackModal, setShowFeedbackModal] = useState<boolean>(false);
   const [newFeedbackText, setNewFeedbackText] = useState<string>("");
   const [isSuccessfulNotice, setIsSuccessfulNotice] = useState<boolean>(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [confirmEnd, setConfirmEnd] = useState(false);
+  const notesKey = activeInterview ? `hk_stage_tracker_${activeInterview.id}_feedback` : null;
 
+  // The person's own notes on each stage of this interview, kept in this browser.
   useEffect(() => {
+    setStageFeedback({});
+    setSaveError(null);
+    setConfirmEnd(false);
+    if (!notesKey) return;
     try {
-      const savedStage = localStorage.getItem(`hk_stage_tracker_${activeInterview?.id || "default"}_current_stage`);
-      if (savedStage) {
-        const parsed = parseInt(savedStage, 10);
-        if (parsed >= 1 && parsed <= totalStages) {
-          setCurrentStage(parsed);
-        } else if (parsed > totalStages && totalStages > 0) {
-          setCurrentStage(totalStages);
-        }
-      } else {
-        setCurrentStage(defaultCurrentStage);
-      }
-      const savedFeedback = localStorage.getItem(`hk_stage_tracker_${activeInterview?.id || "default"}_feedback`);
-      if (savedFeedback) {
-        setStageFeedback(JSON.parse(savedFeedback));
-      }
+      const saved = localStorage.getItem(notesKey);
+      const parsed = saved ? (JSON.parse(saved) as unknown) : null;
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) setStageFeedback(parsed as Record<number, string>);
     } catch {}
-  }, [activeInterview?.id, totalStages, defaultCurrentStage]);
+  }, [notesKey]);
 
   const handleSelectInterview = (iv: StageTrackerInterview) => {
     setActiveInterview(iv);
     setIsDropdownOpen(false);
     try {
       localStorage.setItem("hk_active_stage_tracker_id", iv.id);
-      const savedStage = localStorage.getItem(`hk_stage_tracker_${iv.id}_current_stage`);
-      if (savedStage) {
-        const parsed = parseInt(savedStage, 10);
-        if (parsed >= 1) {
-          setCurrentStage(parsed);
-          return;
-        }
-      }
-      const nextIdx = iv.stages?.findIndex((s) => s.status === "next");
-      setCurrentStage(nextIdx != null && nextIdx >= 0 ? nextIdx + 1 : 1);
     } catch {}
   };
 
-  const handleMarkSuccessful = () => {
-    if (currentStage < totalStages) {
-      const nextStage = currentStage + 1;
-      setCurrentStage(nextStage);
-      try {
-        localStorage.setItem(`hk_stage_tracker_${activeInterview?.id || "default"}_current_stage`, String(nextStage));
-      } catch {}
+  /** Marks the current stage as completed and the one after it as next, and saves that to the interview. */
+  const handleMarkSuccessful = async () => {
+    if (!activeInterview?.stages || currentStage >= totalStages || saving) return;
+    const before = activeInterview;
+    const stages = advanceStages(activeInterview.stages, currentStage);
+    const updated = { ...activeInterview, stages };
+    setSaving(true);
+    setSaveError(null);
+    setActiveInterview(updated);
+    setInterviewsList((list) => list.map((it) => (it.id === updated.id ? updated : it)));
+    try {
+      const res = await fetch(`/api/interviews/${updated.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ stages: stages.map(stageForSave) }) });
+      if (!res.ok) throw new Error();
       setIsSuccessfulNotice(true);
       setTimeout(() => setIsSuccessfulNotice(false), 3000);
+    } catch {
+      // Not saved: the tracker goes back to how it was, and says so.
+      setActiveInterview(before);
+      setInterviewsList((list) => list.map((it) => (it.id === before.id ? before : it)));
+      setSaveError("That couldn’t be saved, so the stage hasn’t changed. Try again.");
+    } finally {
+      setSaving(false);
     }
   };
 
   const handleAddFeedback = (e: React.FormEvent) => {
     e.preventDefault();
-    if (newFeedbackText.trim()) {
-      setStageFeedback((prev) => {
-        const updated = {
-          ...prev,
-          [activeFeedbackStage]: (prev[activeFeedbackStage] ? prev[activeFeedbackStage] + " | " : "") + newFeedbackText.trim(),
-        };
-        try {
-          localStorage.setItem("hk_stage_tracker_feedback", JSON.stringify(updated));
-        } catch {}
-        return updated;
-      });
-      setNewFeedbackText("");
-      setShowFeedbackModal(false);
-    }
+    const text = newFeedbackText.trim();
+    if (!text || !notesKey) return;
+    const updated = { ...stageFeedback, [activeFeedbackStage]: stageFeedback[activeFeedbackStage] ? `${stageFeedback[activeFeedbackStage]} | ${text}` : text };
+    setStageFeedback(updated);
+    try {
+      localStorage.setItem(notesKey, JSON.stringify(updated));
+    } catch {}
+    setNewFeedbackText("");
+    setShowFeedbackModal(false);
   };
+
+  if (!activeInterview) {
+    return (
+      <div className="flex h-full flex-col gap-3" data-testid="tracker-empty">
+        <h2 className="text-[19px] font-bold tracking-[-0.01em] text-ink">Multi-stage interview tracker</h2>
+        <p className="text-[13px] text-muted">You haven’t set up an interview yet. When you do, its stages show here so you can follow where you’ve got to.</p>
+        <Link href="/interviews/new" className="mt-1 inline-flex w-fit items-center gap-2 rounded-xl bg-blue-fill px-4 py-2 text-xs font-semibold text-white hover:bg-blue-hover transition-colors">
+          Set up an interview
+        </Link>
+      </div>
+    );
+  }
+
+  const displayRole = activeInterview.role || "Role not given";
+  const displayCompany = activeInterview.company || "Company not given";
+  const displayCompanyInitial = activeInterview.companyInitial || (activeInterview.company ? activeInterview.company[0] : "?");
+  const displayHref = `/interviews/${activeInterview.id}`;
+
 
   return (
     <div className="flex h-full flex-col justify-between gap-5">
@@ -397,6 +316,16 @@ export function StageTracker({
           )}
         </div>
 
+        {totalStages === 0 ? (
+          <p className="mt-4 rounded-[14px] bg-panel-2 p-4 text-xs text-muted" data-testid="tracker-no-stages">
+            This interview has no stages yet. Add them from{" "}
+            <Link href={displayHref} className="font-semibold text-blue-soft hover:underline">
+              the interview’s workspace
+            </Link>{" "}
+            and they’ll show here.
+          </p>
+        ) : (
+          <>
         {/* Stage Progress Bar */}
         <div className="mt-4 flex items-center justify-between text-xs">
           <span className="font-semibold text-ink">Stage {currentStage} of {totalStages}</span>
@@ -508,37 +437,69 @@ export function StageTracker({
             );
           })}
         </div>
+          </>
+        )}
       </div>
 
-      {/* Bottom Action Bar: Add feedback | Mark successful | Mark unsuccessful */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line/80 pt-4 text-xs">
-        <button
-          type="button"
-          onClick={() => setShowFeedbackModal(true)}
-          className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-muted hover:bg-panel-2 hover:text-ink transition-colors cursor-pointer"
-        >
-          <Icon name="edit" size={13} />
-          <span>Add feedback</span>
-        </button>
+      {/* Add your own notes, move to the next stage, or record that it ended */}
+      {totalStages > 0 && (
+        <div className="border-t border-line/80 pt-4 text-xs">
+          {saveError && (
+            <p role="alert" className="mb-2 rounded-lg bg-red/10 px-3 py-2 text-red-soft">
+              {saveError}
+            </p>
+          )}
+          {confirmEnd ? (
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-ink">Move this application to your archive as unsuccessful?</span>
+              <span className="flex gap-2">
+                <button type="button" onClick={() => setConfirmEnd(false)} className="rounded-lg px-2.5 py-1.5 text-muted hover:bg-panel-2 hover:text-ink transition-colors cursor-pointer">
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setConfirmEnd(false);
+                    onArchiveRole?.({ interviewId: activeInterview.id, role: activeInterview.role, company: activeInterview.company, stageReached: displayStages[currentStage - 1]?.title ?? "", notes: stageFeedback[currentStage] ?? "" });
+                  }}
+                  className="rounded-lg bg-red/15 px-2.5 py-1.5 font-semibold text-red-soft hover:bg-red/25 transition-colors cursor-pointer"
+                >
+                  Yes, archive it
+                </button>
+              </span>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveFeedbackStage(currentStage);
+                  setShowFeedbackModal(true);
+                }}
+                className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-muted hover:bg-panel-2 hover:text-ink transition-colors cursor-pointer"
+              >
+                <Icon name="edit" size={13} />
+                <span>Add a note</span>
+              </button>
 
-        <button
-          type="button"
-          onClick={handleMarkSuccessful}
-          className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[#10b981] hover:bg-[#10b981]/15 transition-colors cursor-pointer"
-        >
-          <Icon name="check" size={13} strokeWidth={2.4} />
-          <span>Mark successful</span>
-        </button>
+              <button
+                type="button"
+                onClick={() => void handleMarkSuccessful()}
+                disabled={saving || currentStage >= totalStages}
+                className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[#34d399] hover:bg-[#10b981]/15 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Icon name="check" size={13} strokeWidth={2.4} />
+                <span>{saving ? "Saving…" : "Mark successful"}</span>
+              </button>
 
-        <button
-          type="button"
-          onClick={() => onArchiveRole?.("Unsuccessful after hiring manager review")}
-          className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-red-soft hover:bg-red-soft/15 transition-colors cursor-pointer"
-        >
-          <Icon name="x" size={13} strokeWidth={2.4} />
-          <span>Mark unsuccessful</span>
-        </button>
-      </div>
+              <button type="button" onClick={() => setConfirmEnd(true)} className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-red-soft hover:bg-red-soft/15 transition-colors cursor-pointer">
+                <Icon name="x" size={13} strokeWidth={2.4} />
+                <span>Mark unsuccessful</span>
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Interactive Feedback Modal */}
       {showFeedbackModal && (
@@ -572,7 +533,7 @@ export function StageTracker({
                   rows={3}
                   value={newFeedbackText}
                   onChange={(e) => setNewFeedbackText(e.target.value)}
-                  placeholder="e.g. Hiring manager liked checkout experience, asked for more depth on fraud metrics..."
+                  placeholder="e.g. What they asked about, what went well, what to prepare for next time"
                   className="w-full resize-y rounded-[10px] bg-panel-2 p-3 text-xs text-ink outline-none border border-line focus:border-blue-fill placeholder:text-dim"
                 />
                 <div className="flex justify-end gap-2 mt-1">

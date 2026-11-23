@@ -294,7 +294,7 @@ export default async function SessionReportPage({ params, searchParams }: { para
             <Panel className="animate-rise px-6 py-5 [animation-delay:0.14s]">
               <h2 className="text-[15px] font-semibold">Next</h2>
               <p className="mt-0.5 text-[13px] text-muted">Your verdict comes from interviews with new questions. Test what you’ve learned on ones you haven’t heard.</p>
-              <ButtonLink href={`/interviews/${interview.id}#new-questions`} variant="primary" className="mt-3 w-full">
+              <ButtonLink href={`/interviews/${interview.id}`} variant="primary" className="mt-3 w-full">
                 New questions
               </ButtonLink>
             </Panel>
@@ -458,11 +458,9 @@ export default async function SessionReportPage({ params, searchParams }: { para
   const replacedCount = skipped.filter((s) => s.reason !== "by-choice").length;
   const skippedByChoice = skipped.filter((s) => s.reason === "by-choice").length;
   const endedEarly = report.questionCount < mock.planned - replacedCount - skippedByChoice;
-  const isFullInterview =
-    (mock.kind === "interview" || mock.kind === "full") &&
-    mock.status === "done" &&
-    !endedEarly &&
-    report.questionCount >= 2;
+  // The same rule the survey route applies: the person's own full interview, planned by the server with its
+  // settings, finished, with at least two answers. The example's built-in session never qualifies.
+  const isFullInterview = mock.userId === user.id && mock.kind === "interview" && !!mock.settings && mock.status === "done" && !endedEarly && report.questionCount >= 2;
   const textOf = (qid: string) => interview.questions.find((q) => q.id === qid)?.text ?? "A question";
   const overallOf = (qid: string) => rows.find((r) => r.questionId === qid)?.overall ?? undefined;
 

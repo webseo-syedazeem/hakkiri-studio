@@ -1040,7 +1040,7 @@ export const DRILL_TOPICS: Record<TopicId, TopicSpec> = {
         group: "curveball",
         type: "situational",
         difficulty: "hard",
-        text: "Critique our pitch as if you were a sceptical competitor trying to win Halden’s best merchants away this quarter.",
+        text: "Critique our pitch as if you were a sceptical competitor trying to win our best customers away this quarter.",
         short: "Competitor tear-down",
         drillOnly: true,
       },

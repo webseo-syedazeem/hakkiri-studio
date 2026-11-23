@@ -3,9 +3,12 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Icon } from "@/components/ui";
+import { useDialogFocus } from "@/components/ui/useDialogFocus";
 
 export interface ArchivedItem {
   id: string;
+  /** The interview this entry was made from, when it came from the stage tracker. */
+  interviewId?: string;
   role: string;
   company: string;
   outcome: "Unsuccessful" | "Offer declined" | "Withdrawn";
@@ -26,10 +29,18 @@ export function ArchiveModal({
   onRestore?: (id: string) => void;
 }) {
   const [mounted, setMounted] = useState(false);
+  const box = useDialogFocus<HTMLDivElement>(isOpen && mounted);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [isOpen, onClose]);
 
   if (!isOpen || !mounted) return null;
 
@@ -39,6 +50,10 @@ export function ArchiveModal({
       onClick={onClose}
     >
       <div
+        ref={box}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="archive-title"
         className="relative my-auto flex w-full max-w-[620px] max-h-[88vh] flex-col rounded-[22px] border border-line bg-panel p-6 shadow-2xl animate-scale-in"
         onClick={(e) => e.stopPropagation()}
       >
@@ -49,13 +64,14 @@ export function ArchiveModal({
               <Icon name="archive" size={20} />
             </div>
             <div>
-              <h2 className="text-[18px] font-bold text-ink">Archive</h2>
-              <p className="text-xs text-muted">Past and unsuccessful interviews & outcomes.</p>
+              <h2 id="archive-title" className="text-[18px] font-bold text-ink">Archive</h2>
+              <p className="text-xs text-muted">Applications you marked as ended. Kept in this browser only.</p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
+            aria-label="Close the archive"
             className="rounded-lg p-2 text-muted hover:bg-panel-2 hover:text-ink transition-colors cursor-pointer"
           >
             <Icon name="x" size={18} />
@@ -66,7 +82,7 @@ export function ArchiveModal({
         <div className="mt-4 flex flex-col gap-3 overflow-y-auto pr-1">
           {archivedItems.length === 0 ? (
             <div className="py-12 text-center text-sm text-muted">
-              No archived interviews yet. Unsuccessful or completed interviews will be stored here.
+              Nothing archived yet. When you mark an application as unsuccessful in the stage tracker, it is listed here.
             </div>
           ) : (
             archivedItems.map((item) => (
@@ -77,15 +93,15 @@ export function ArchiveModal({
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <h3 className="text-sm font-semibold text-ink">{item.role}</h3>
-                    <p className="text-xs text-muted">{item.company} · Reached: {item.stageReached}</p>
+                    <p className="text-xs text-muted">{[item.company, item.stageReached ? `Reached: ${item.stageReached}` : ""].filter(Boolean).join(" · ")}</p>
                   </div>
                   <span className="rounded-full bg-red-soft/15 px-2.5 py-0.5 text-[11px] font-semibold text-red-soft">
                     {item.outcome}
                   </span>
                 </div>
                 <div className="rounded-lg bg-[#141620] p-2.5 text-xs text-muted border border-line/60">
-                  <span className="font-medium text-ink">Feedback & Notes: </span>
-                  {item.feedbackNotes}
+                  <span className="font-medium text-ink">Your notes: </span>
+                  {item.feedbackNotes || "None written."}
                 </div>
                 <div className="flex items-center justify-between pt-1 text-[11px] text-dim">
                   <span>Archived on {item.date}</span>
@@ -95,7 +111,7 @@ export function ArchiveModal({
                       onClick={() => onRestore(item.id)}
                       className="font-semibold text-blue-soft hover:underline cursor-pointer"
                     >
-                      Restore to active
+                      Take out of the archive
                     </button>
                   )}
                 </div>

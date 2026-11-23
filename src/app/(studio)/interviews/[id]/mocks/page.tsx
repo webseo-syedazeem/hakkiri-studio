@@ -30,7 +30,7 @@ export default async function PastSessionsPage({ params }: { params: Promise<{ i
           <h1 className="mt-2 text-[28px] font-semibold tracking-[-0.025em]">Past interviews</h1>
           <p className="mt-1 text-sm text-muted">Interviews, re-runs and drills. Only interviews with new questions count towards your verdict.</p>
         </div>
-        <ButtonLink href={`/interviews/${interview.id}#new-questions`} variant="primary">
+        <ButtonLink href={`/interviews/${interview.id}`} variant="primary">
           <Icon name="mic" size={16} strokeWidth={2} />
           {started ? "New questions" : "Start interview"}
         </ButtonLink>
