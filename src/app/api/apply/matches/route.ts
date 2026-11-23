@@ -7,9 +7,9 @@ import crypto from "node:crypto";
 export async function GET() {
   try {
     const user = await requireUser();
-    const userId = user.id || "usr_guest";
+    const userId = user.id;
     let matches = await listMatches(userId);
-    const jobs = await listJobs();
+    const jobs = await listJobs(userId);
     const jobsById = new Map(jobs.map((j) => [j.id, j]));
 
     if (matches.length === 0) {

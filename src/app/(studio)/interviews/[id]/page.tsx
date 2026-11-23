@@ -134,7 +134,7 @@ export default async function InterviewOverview({
 
   const mockSessions = (await listMocksAsync(interview.id, user.id)).filter((m) => m.status !== "planned");
   const recentSessions: OverviewPracticeItem[] = mockSessions.map((m) => {
-    const rows = rowsFor(m);
+    const rows = rowsFor(m, user.id);
     const score = mockScore(rows);
     return {
       id: m.id,

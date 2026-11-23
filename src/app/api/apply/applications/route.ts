@@ -5,9 +5,9 @@ import { listApplications, listJobs } from "@/lib/apply/db";
 export async function GET() {
   try {
     const user = await requireUser();
-    const userId = user.id || "usr_guest";
+    const userId = user.id;
     const apps = await listApplications(userId);
-    const jobs = await listJobs();
+    const jobs = await listJobs(userId);
     const jobsById = new Map(jobs.map((j) => [j.id, j]));
 
     const enriched = apps.map((app) => ({

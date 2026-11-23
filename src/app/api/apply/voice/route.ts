@@ -6,7 +6,7 @@ import type { Voice } from "@/lib/apply/schema";
 export async function GET() {
   try {
     const user = await requireUser();
-    const userId = user.id || "usr_guest";
+    const userId = user.id;
     let voice = await getVoice(userId);
 
     if (!voice) {
@@ -56,7 +56,7 @@ export async function GET() {
 export async function PATCH(req: Request) {
   try {
     const user = await requireUser();
-    const userId = user.id || "usr_guest";
+    const userId = user.id;
     const existing = await getVoice(userId);
     const body = await req.json();
 

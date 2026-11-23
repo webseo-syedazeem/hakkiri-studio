@@ -15,7 +15,7 @@ export async function POST(
   { params }: { params: Promise<{ draftId: string }> }
 ) {
   const user = await getCurrentUser();
-  if (!user) {
+  if (!user?.id) {
     return NextResponse.json({ error: "unauthorised", message: "Sign in required to edit responses." }, { status: 401 });
   }
 
@@ -46,7 +46,9 @@ export async function POST(
   const updated = {
     ...answer,
     words,
-    highlights: [{ kind: "good" as const, from: 0, to: Math.min(words.length, 12) }],
+    // The marks on the transcript were made for the words as first heard. They are not carried onto corrected
+    // words, and nothing is marked "good" that has not been judged.
+    highlights: [],
   };
 
   await saveAnswerAsync(updated, user.id);

@@ -6,7 +6,7 @@ import type { ApplySettings } from "@/lib/apply/schema";
 export async function GET() {
   try {
     const user = await requireUser();
-    const userId = user.id || "usr_guest";
+    const userId = user.id;
     const settings = await getApplySettings(userId);
     return NextResponse.json(settings);
   } catch (err: unknown) {
@@ -19,7 +19,7 @@ export async function GET() {
 export async function PUT(req: Request) {
   try {
     const user = await requireUser();
-    const userId = user.id || "usr_guest";
+    const userId = user.id;
     const existing = await getApplySettings(userId);
     const body = await req.json();
 

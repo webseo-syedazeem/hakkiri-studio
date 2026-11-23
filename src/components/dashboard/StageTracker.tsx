@@ -157,15 +157,9 @@ export function StageTracker({
                     stages: item.stages,
                   };
                 }
-              } else {
-                combined.push({
-                  id: item.id,
-                  role: item.role,
-                  company: item.company,
-                  companyInitial: item.companyInitial || item.company?.[0] || "C",
-                  stages: Array.isArray(item.stages) && item.stages.length > 0 ? item.stages : undefined,
-                });
               }
+              // An interview that is only in this browser, and not in the account's own list from the server,
+              // is not this person's to see: it is left out.
             }
           }
         }

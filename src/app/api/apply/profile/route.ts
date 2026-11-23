@@ -6,7 +6,7 @@ import type { Profile } from "@/lib/apply/schema";
 export async function GET() {
   try {
     const user = await requireUser();
-    const userId = user.id || "usr_guest";
+    const userId = user.id;
     const candidateName = [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email?.split("@")[0] || "Candidate";
     const userEmail = user.email || "candidate@example.com";
     let profile = await getProfile(userId);
@@ -96,7 +96,7 @@ export async function GET() {
 export async function PATCH(req: Request) {
   try {
     const user = await requireUser();
-    const userId = user.id || "usr_guest";
+    const userId = user.id;
     const candidateName = [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email?.split("@")[0] || "Candidate";
     const userEmail = user.email || "candidate@example.com";
     const existing = await getProfile(userId);

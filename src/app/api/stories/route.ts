@@ -24,15 +24,15 @@ export async function POST(req: Request) {
     return r as Response;
   }
 
-  const blocked = guard(req, "ai");
+  const blocked = guard(req, "ai", { userId: user.id });
   if (blocked) return blocked;
-  setUsageContext({ feature: "stories" });
+  setUsageContext({ userId: user.id, feature: "stories" });
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "bad-request", message: "Fill in at least one part." }, { status: 400 });
   const { key, parts } = parsed.data;
   if (!Object.values(parts).some((p) => p.length >= 5)) return NextResponse.json({ error: "bad-request", message: "Add a sentence to at least one part." }, { status: 400 });
   try {
-    const story = await completeStory(key, parts, londonToday());
+    const story = await completeStory(key, parts, londonToday(), user.id);
     if (!story) return NextResponse.json({ error: "not-found", message: "That story isn’t in your bank any more." }, { status: 404 });
     return NextResponse.json({ story });
   } catch (err) {

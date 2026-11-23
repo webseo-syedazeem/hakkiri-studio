@@ -8,7 +8,7 @@ import crypto from "node:crypto";
 export async function POST(req: Request) {
   try {
     const user = await requireUser();
-    const userId = user.id || "usr_guest";
+    const userId = user.id;
     const voice = await getVoice(userId);
     const body = await req.json();
     const { text, kind = "cover-letter" } = body;

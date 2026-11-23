@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { listInterviewsAsync } from "@/lib/interviews/store";
-import { londonToday } from "@/lib/dates";
+import { listEveryInterviewForAdmin } from "@/lib/interviews/store";
 import { adminDenied } from "@/lib/auth/admin";
 
 export const runtime = "nodejs";
@@ -18,7 +17,7 @@ export async function GET(req: Request) {
   if (denied) return denied;
 
   const { searchParams } = new URL(req.url);
-  const interviews = await listInterviewsAsync(londonToday());
+  const interviews = await listEveryInterviewForAdmin();
 
   const sanitized = interviews.map((i) => ({
     id: i.id,

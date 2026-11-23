@@ -9,14 +9,17 @@ import { recordUsage, usageFor } from "@/lib/usage/store";
 import { withUsageContext } from "@/lib/usage/store";
 import type { Answer } from "@/lib/types";
 
+/** The account these tests act as. Every record has an owner. */
+const U = "usr_test_owner";
+
 const audio = () => ({ data: new Uint8Array([1, 2, 3, 4]).buffer, type: "audio/webm" });
 
 function seed() {
-  const demo = getInterview(DEMO_INTERVIEW_ID)!;
-  saveInterview({ ...demo, id: "iv-data", company: "Acme" });
-  const base = findAnswer("a1") ?? findAnswer(demo.questions[1].id);
+  const demo = getInterview(DEMO_INTERVIEW_ID, U)!;
+  saveInterview({ ...demo, id: "iv-data", company: "Acme" }, U);
+  const base = findAnswer("a1", U) ?? findAnswer(demo.questions[1].id, U);
   const answer = { ...(base as Answer), id: "ans-data", interviewId: "iv-data" } as Answer;
-  saveAnswer(answer);
+  saveAnswer(answer, U);
   saveRecordings("ans-data", [audio()]);
   withUsageContext({ interviewId: "iv-data" }, () => recordUsage({ service: "deepgram", label: "speech-to-text", seconds: 60 }));
 }
@@ -38,10 +41,10 @@ describe("your data", () => {
     deleteAll();
     const after = dataCounts();
     expect(hasData(after)).toBe(false);
-    expect(getInterview("iv-data")).toBeUndefined();
+    expect(getInterview("iv-data", U)).toBeUndefined();
     expect(getRecording("ans-data", 0)).toBeNull();
     // The demo is still there, and usage stays but loses its link to you.
-    expect(getInterview(DEMO_INTERVIEW_ID)).toBeDefined();
+    expect(getInterview(DEMO_INTERVIEW_ID, U)).toBeDefined();
     expect(usageFor({ interviewId: "iv-data" })).toHaveLength(0);
   });
 
@@ -60,16 +63,16 @@ describe("deleting one presentation", () => {
   it("removes its runs, Q&A and recordings, and never the demo", async () => {
     const { deletePresentation, getPresentation, listPresentations, listRuns, savePresentation, saveRun, getRun } = await import("@/lib/pitch/store");
     const { demoPresentation, demoRuns } = await import("@/lib/pitch/demo");
-    savePresentation({ ...demoPresentation, id: "p-del", title: "Mine" });
-    saveRun({ ...demoRuns[0], id: "r-del", presentationId: "p-del" });
+    savePresentation({ ...demoPresentation, id: "p-del", title: "Mine" }, U);
+    saveRun({ ...demoRuns[0], id: "r-del", presentationId: "p-del" }, U);
     saveRecordings("run-r-del", [audio()]);
     expect(getRecording("run-r-del", 0)).not.toBeNull();
-    const removed = deletePresentation("p-del");
+    const removed = deletePresentation("p-del", U);
     expect(removed?.runIds).toEqual(["r-del"]);
-    expect(getPresentation("p-del")).toBeUndefined();
-    expect(getRun("r-del")).toBeUndefined();
-    expect(listRuns("p-del")).toEqual([]);
-    expect(listPresentations().some((p) => p.id === "p-del")).toBe(false);
-    expect(deletePresentation(demoPresentation.id)).toBeNull();
+    expect(getPresentation("p-del", U)).toBeUndefined();
+    expect(getRun("r-del", U)).toBeUndefined();
+    expect(listRuns("p-del", U)).toEqual([]);
+    expect(listPresentations(U).some((p) => p.id === "p-del")).toBe(false);
+    expect(deletePresentation(demoPresentation.id, U)).toBeNull();
   });
 });

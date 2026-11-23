@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import Link from "next/link";
 import clsx from "clsx";
 import { Chip, Panel } from "@/components/ui";
-import { loadClientInterviews, type ClientInterviewSummary } from "@/lib/interviews/client-store";
+import { pruneClientInterviews } from "@/lib/interviews/client-store";
 
 export interface SerializedInterview {
   id: string;
@@ -26,51 +26,12 @@ export function InterviewsGrid({
 }: {
   initialInterviews: SerializedInterview[];
 }) {
-  const [clientItems, setClientItems] = useState<ClientInterviewSummary[]>([]);
-
-  const sync = () => {
-    setClientItems(loadClientInterviews());
-  };
-
+  // The list is the server's: the interviews saved for the signed-in account, and nothing else. An interview
+  // that exists only in this browser (left by someone else, or deleted since) is not shown, and is cleared out.
   useEffect(() => {
-    sync();
-    const handleUpdate = () => sync();
-    window.addEventListener("hk_interviews_updated", handleUpdate);
-    return () => window.removeEventListener("hk_interviews_updated", handleUpdate);
-  }, []);
-
-  // Merge server items and client localStorage items, deduping by id
-  const merged: SerializedInterview[] = [...initialInterviews];
-
-  for (const c of clientItems) {
-    if (!merged.some((m) => m.id === c.id)) {
-      const diff = c.settings?.difficulty ? c.settings.difficulty.charAt(0).toUpperCase() + c.settings.difficulty.slice(1) : "Medium";
-      const mins = c.settings?.minutes ?? 30;
-      const preset = c.settings?.preset ? c.settings.preset.charAt(0).toUpperCase() + c.settings.preset.slice(1) : "Balanced";
-
-      const isPractice = c.date === "Just Practice";
-      const whenText = isPractice
-        ? "Just Practice · On-demand"
-        : c.date
-          ? `${c.date}${c.time ? `, ${c.time}` : ""}`
-          : "Upcoming interview";
-      const whenRel = isPractice ? "Ready" : "Active";
-
-      merged.unshift({
-        id: c.id,
-        company: c.company,
-        companyInitial: c.companyInitial || c.company.charAt(0).toUpperCase(),
-        role: c.role,
-        isDemo: false,
-        settingsLine: `${diff} · ${mins} min · ${preset}`,
-        whenText,
-        whenRel,
-        verdictLabel: "Not started",
-        verdictTone: "text-lilac",
-        freshCount: 0,
-      });
-    }
-  }
+    pruneClientInterviews(initialInterviews.map((i) => i.id));
+  }, [initialInterviews]);
+  const merged: SerializedInterview[] = initialInterviews;
 
   return (
     <div className="mt-6 grid grid-cols-[repeat(auto-fill,minmax(400px,1fr))] gap-5">

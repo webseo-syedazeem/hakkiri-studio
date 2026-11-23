@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import clsx from "clsx";
 import { Mark } from "@/components/brand/Mark";
+import { browserData } from "@/lib/browser/owner";
 
 const ADMIN_NAV = [
   {
@@ -71,6 +72,7 @@ export function AdminLayoutClient({ children, email }: { children: React.ReactNo
   // Leaving the console signs the administrator out of the app. There is no separate lock: access is the account's.
   const handleLock = async () => {
     await fetch("/api/auth/logout", { method: "POST" }).catch(() => undefined);
+    browserData.release();
     router.push("/login");
     router.refresh();
   };

@@ -55,6 +55,22 @@ export function saveClientInterview(interview: ClientInterviewSummary): void {
   } catch {}
 }
 
+/**
+ * Drops browser entries for interviews the server no longer lists for this
+ * account (deleted, or never saved). The server's list is the truth: the
+ * browser copy only adds detail to interviews that are in it.
+ */
+export function pruneClientInterviews(known: string[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    const current = loadClientInterviews();
+    const kept = current.filter((it) => known.includes(it.id));
+    if (kept.length === current.length) return;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(kept));
+    window.dispatchEvent(new Event("hk_interviews_updated"));
+  } catch {}
+}
+
 export function deleteClientInterview(id: string): void {
   if (typeof window === "undefined") return;
   try {

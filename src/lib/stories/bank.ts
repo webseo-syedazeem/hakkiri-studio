@@ -47,8 +47,8 @@ export interface StoryBank {
 export const storyKey = (title: string) => normText(title);
 
 /** Your interviews, or the demo while you haven't added one. */
-function sourceInterviews(today: string): { list: Interview[]; demo: boolean } {
-  const all = listInterviews(today);
+function sourceInterviews(today: string, userId: string): { list: Interview[]; demo: boolean } {
+  const all = listInterviews(today, userId);
   const mine = all.filter((i) => !isDemoInterview(i.id));
   return mine.length ? { list: mine, demo: false } : { list: all, demo: all.length > 0 };
 }
@@ -60,16 +60,17 @@ function practiseFor(interview: Interview, s: Story): BankStory["practise"] {
   return q ? { interviewId: interview.id, questionId: q.id, text: q.text } : null;
 }
 
-export function storyBank(today: string): StoryBank {
-  const { list, demo } = sourceInterviews(today);
+/** One person's stories, from their own interviews (or the demos while they have none). */
+export function storyBank(today: string, userId: string): StoryBank {
+  const { list, demo } = sourceInterviews(today, userId);
 
   // Every answer you've given in these interviews, for "which stories you reach for".
   const answerIds = new Set<string>();
   for (const i of list) {
-    for (const a of listAnswers(i.id)) answerIds.add(a.id);
-    for (const m of doneSessions(i.id)) for (const id of m.answerIds) answerIds.add(id);
+    for (const a of listAnswers(i.id, userId)) answerIds.add(a.id);
+    for (const m of doneSessions(i.id, userId)) for (const id of m.answerIds) answerIds.add(id);
   }
-  const answers = [...answerIds].flatMap((id) => findAnswer(id) ?? []);
+  const answers = [...answerIds].flatMap((id) => findAnswer(id, userId) ?? []);
 
   const byKey = new Map<string, BankStory>();
   for (const i of list) {
@@ -126,8 +127,8 @@ export function storyBank(today: string): StoryBank {
  * "Fill in the gaps": your words for each part of a story. The story is
  * redrafted from them (result first) and saved to every interview that has it.
  */
-export async function completeStory(key: string, parts: Record<Part, string>, today: string): Promise<BankStory | null> {
-  const { list } = sourceInterviews(today);
+export async function completeStory(key: string, parts: Record<Part, string>, today: string, userId: string): Promise<BankStory | null> {
+  const { list } = sourceInterviews(today, userId);
   const holders = list.filter((i) => (i.stories ?? []).some((s) => storyKey(s.title) === key));
   if (!holders.length) return null;
   const first = holders[0].stories!.find((s) => storyKey(s.title) === key)!;
@@ -154,7 +155,7 @@ export async function completeStory(key: string, parts: Record<Part, string>, to
             }
           : s,
       ),
-    }));
+    }), userId);
   }
-  return storyBank(today).stories.find((s) => s.key === key) ?? null;
+  return storyBank(today, userId).stories.find((s) => s.key === key) ?? null;
 }

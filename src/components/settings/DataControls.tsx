@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, buttonClass, CustomSelect } from "@/components/ui";
+import { announceBrowserData, browserData } from "@/lib/browser/owner";
 
 type Retention = 30 | 90 | 365 | 0;
 const OPTIONS: { value: Retention; label: string }[] = [
@@ -80,6 +81,9 @@ export function DataButtons({ hasData }: { hasData: boolean }) {
     try {
       const res = await fetch("/api/data/delete", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ confirm: "delete" }) });
       if (!res.ok) throw new Error();
+      // What this browser holds for the person (drafts, the examples library, tracker notes) is deleted too.
+      browserData.forget();
+      announceBrowserData();
       setState("done");
       setConfirming(false);
       setTyped("");

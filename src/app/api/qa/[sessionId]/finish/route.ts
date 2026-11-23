@@ -24,7 +24,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ session
   const limited = guard(req, "answer", { inSession: true });
   if (limited) return limited;
   const draft = (await getQaDraftAsync(sessionId)) ?? getQaDraft(sessionId);
-  if (!draft || (draft.userId && draft.userId !== user.id)) return NextResponse.json({ error: "not-found", message: "This Q&A has expired. Start it again." }, { status: 404 });
+  if (!draft || draft.userId !== user.id) return NextResponse.json({ error: "not-found", message: "This Q&A has expired. Start it again." }, { status: 404 });
   setUsageContext({ userId: user.id, sessionId, presentationId: draft.presentationId, feature: "q&a" });
   const p = getPresentation(draft.presentationId, user.id);
   if (!p) return NextResponse.json({ error: "not-found", message: "This Q&A has expired. Start it again." }, { status: 404 });

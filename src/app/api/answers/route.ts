@@ -82,7 +82,7 @@ export async function POST(req: Request) {
     const { followUp, correction } = await nextFollowUp(draft);
     if (correction && form.get("session")) return NextResponse.json({ correction: true });
     await saveDraftAsync(draft);
-    await recordAskedQuestionAsync(sessionId, question.id);
+    await recordAskedQuestionAsync(sessionId, question.id, user.id);
     return NextResponse.json({ draftId: draft.id, followUp });
   } catch (err) {
     return scoringError(err);

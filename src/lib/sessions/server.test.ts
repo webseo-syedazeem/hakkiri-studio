@@ -6,6 +6,9 @@ import { findMock, lastAskedMap, recordAskedQuestionAsync, saveMock, type MockRe
 import type { MockRow } from "@/lib/mocks/report";
 import { DEFAULT_SETTINGS } from "@/lib/interviews/settings";
 
+/** The account these tests act as. Every record has an owner. */
+const U = "usr_test_owner";
+
 const row = (number: number, questionId: string): MockRow => ({
   number,
   questionId,
@@ -40,29 +43,29 @@ const source = (id: string, extra: Partial<MockRecord> = {}): MockRecord => ({
 
 describe("run it again", () => {
   it("asks the questions you answered, in order, with the spare that replaced a skip", () => {
-    saveMock(source("src-1"));
-    const rerun = planRerun("halden", "src-1");
+    saveMock(source("src-1"), U);
+    const rerun = planRerun("halden", "src-1", U);
     expect(rerun.kind).toBe("rerun");
     expect(rerun.questionIds).toEqual(["open", "c1", "c5", "close"]);
     expect(rerun.rerunOf).toBe("src-1");
     // Planning it twice opens the same re-run rather than a second one.
-    expect(planRerun("halden", "src-1").id).toBe(rerun.id);
+    expect(planRerun("halden", "src-1", U).id).toBe(rerun.id);
   });
 
   it("only once, and only for an interview with new questions", () => {
-    saveMock(source("src-2"));
-    const rerun = planRerun("halden", "src-2");
-    saveMock({ ...findMock(rerun.id)!, status: "done" });
-    expect(() => planRerun("halden", "src-2")).toThrow(PlanError);
-    saveMock(source("src-3", { kind: "drill" }));
-    expect(() => planRerun("halden", "src-3")).toThrow(/can’t be run again/);
+    saveMock(source("src-2"), U);
+    const rerun = planRerun("halden", "src-2", U);
+    saveMock({ ...findMock(rerun.id, U)!, status: "done" }, U);
+    expect(() => planRerun("halden", "src-2", U)).toThrow(PlanError);
+    saveMock(source("src-3", { kind: "drill" }), U);
+    expect(() => planRerun("halden", "src-3", U)).toThrow(/can’t be run again/);
   });
 });
 
 describe("skipped questions", () => {
   it("never come back, even when older questions are allowed again", () => {
-    retireSkipped("halden", [{ questionId: "c2", reason: "not-relevant" }, { questionId: "open", reason: "not-relevant" }, { questionId: "c3", reason: "by-choice" }]);
-    const halden = getInterview("halden")!;
+    retireSkipped("halden", [{ questionId: "c2", reason: "not-relevant" }, { questionId: "open", reason: "not-relevant" }, { questionId: "c3", reason: "by-choice" }], U);
+    const halden = getInterview("halden", U)!;
     expect(halden.questions.find((q) => q.id === "c2")?.retired).toBe(true);
     // "Tell me about yourself" can't be set aside.
     expect(halden.questions.find((q) => q.id === "open")?.retired).toBeUndefined();
@@ -76,24 +79,24 @@ describe("skipped questions", () => {
 
 describe("no-repeat persistence across difficulty levels", () => {
   it("tracks asked questions in incomplete sessions and keeps Easy separate from Hard", async () => {
-    const easyRun1 = await planInterview("halden", { ...DEFAULT_SETTINGS, minutes: 20, difficulty: "easy" });
+    const easyRun1 = await planInterview("halden", { ...DEFAULT_SETTINGS, minutes: 20, difficulty: "easy" }, U);
     const firstNonSlot = (easyRun1.questionIds ?? []).filter((id) => id !== "open" && id !== "close");
     expect(firstNonSlot.length).toBeGreaterThan(0);
 
     // Simulate user answering questions mid-session and leaving before full mock completion
     for (const qid of firstNonSlot) {
-      await recordAskedQuestionAsync(easyRun1.id, qid);
+      await recordAskedQuestionAsync(easyRun1.id, qid, U);
     }
-    expect(lastAskedMap("halden").has(firstNonSlot[0])).toBe(true);
+    expect(lastAskedMap("halden", U).has(firstNonSlot[0])).toBe(true);
 
-    const easyRun2 = await planInterview("halden", { ...DEFAULT_SETTINGS, minutes: 20, difficulty: "easy" });
+    const easyRun2 = await planInterview("halden", { ...DEFAULT_SETTINGS, minutes: 20, difficulty: "easy" }, U);
     const secondNonSlot = (easyRun2.questionIds ?? []).filter((id) => id !== "open" && id !== "close");
     expect(secondNonSlot.some((id) => firstNonSlot.includes(id))).toBe(false);
 
-    const hardRun = await planInterview("halden", { ...DEFAULT_SETTINGS, minutes: 20, difficulty: "hard" });
+    const hardRun = await planInterview("halden", { ...DEFAULT_SETTINGS, minutes: 20, difficulty: "hard" }, U);
     const hardNonSlot = (hardRun.questionIds ?? []).filter((id) => id !== "open" && id !== "close");
     expect(hardNonSlot.some((id) => firstNonSlot.includes(id) || secondNonSlot.includes(id))).toBe(false);
-    const bank = getInterview("halden")!.questions;
+    const bank = getInterview("halden", U)!.questions;
     for (const id of hardNonSlot) {
       expect(bank.find((q) => q.id === id)?.difficulty).toBe("hard");
     }

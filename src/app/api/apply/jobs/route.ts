@@ -74,8 +74,8 @@ function parseJobAdvertInCode(text: string): {
 
 export async function GET() {
   try {
-    await requireUser();
-    const jobs = await listJobs();
+    const user = await requireUser();
+    const jobs = await listJobs(user.id);
     return NextResponse.json(jobs);
   } catch (err: unknown) {
     if (err instanceof Response) return err;
@@ -87,7 +87,7 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const user = await requireUser();
-    const userId = user.id || "usr_guest";
+    const userId = user.id;
     const body = await req.json();
     const { text, source = "paste", url } = body;
 
@@ -105,6 +105,7 @@ export async function POST(req: Request) {
 
     const newJob: Job = {
       id: jobId,
+      userId,
       source,
       url,
       title: parsed.title,

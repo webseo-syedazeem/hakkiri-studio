@@ -69,7 +69,7 @@ export default async function HomePage() {
     ? (await listMocksAsync(primaryInterview.id, user.id)).filter((m) => m.status !== "planned")
     : [];
   const recentPractices = mocks.map((m) => {
-    const rows = rowsFor(m);
+    const rows = rowsFor(m, user.id);
     const score = mockScore(rows);
     return {
       id: m.id,

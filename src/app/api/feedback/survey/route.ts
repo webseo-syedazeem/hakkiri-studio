@@ -99,22 +99,18 @@ export async function POST(req: Request) {
   }
 
   // 2. Validate that the session is a real full completed interview belonging to this user
-  const mock = (await findMockAsync(parsed.data.mockId)) ?? findMock(parsed.data.mockId);
-  if (!mock) {
+  // The session must be this person's own. Someone else's, or one that does not exist, is "not found".
+  const mock = user.id ? ((await findMockAsync(parsed.data.mockId, user.id)) ?? findMock(parsed.data.mockId, user.id)) : undefined;
+  if (!mock || mock.userId !== user.id) {
     return NextResponse.json(
       { error: "mock-not-found", message: "Interview session not found." },
       { status: 404 }
     );
   }
 
-  if (mock.userId && mock.userId !== user.id) {
-    return NextResponse.json(
-      { error: "forbidden", message: "This session belongs to another tester." },
-      { status: 403 }
-    );
-  }
-
-  const isInterview = mock.kind === "interview" || mock.kind === "full";
+  // A full interview is one the server planned ("interview"), with its settings. A session the browser
+  // reported by itself, from answers recorded one at a time, does not count towards the voucher.
+  const isInterview = mock.kind === "interview" && !!mock.settings;
   const isDone = mock.status === "done";
   const skippedByChoice = (mock.skipped ?? []).filter((s) => s.reason === "by-choice").length;
   const replaced = (mock.skipped ?? []).filter((s) => s.reason !== "by-choice").length;

@@ -11,9 +11,9 @@ export async function POST(
   try {
     const user = await requireUser();
     const { id, questionId } = await params;
-    const application = await getApplication(id);
+    const application = await getApplication(id, user.id);
 
-    if (!application || application.userId !== user.id) {
+    if (!application) {
       return NextResponse.json({ error: "not_found", message: "Application not found." }, { status: 404 });
     }
 

@@ -309,23 +309,50 @@ export async function saveCv(cv: Cv): Promise<Cv> {
 }
 
 export async function listApplications(userId: string): Promise<Application[]> {
-  return queryDocs<Application>(APPLY_COLLECTIONS.APPLICATIONS, (a) => a.userId === userId);
+  if (!userId) return [];
+  return queryDocsByUser<Application>(APPLY_COLLECTIONS.APPLICATIONS, userId);
 }
 
-export async function getApplication(id: string): Promise<Application | null> {
-  return getDoc<Application>(APPLY_COLLECTIONS.APPLICATIONS, id);
+/** The person's own application. Someone else's, or one that doesn't exist, is null. */
+export async function getApplication(id: string, userId: string): Promise<Application | null> {
+  if (!userId) return null;
+  const app = await getDoc<Application>(APPLY_COLLECTIONS.APPLICATIONS, id);
+  return app && app.userId === userId ? app : null;
 }
 
 export async function saveApplication(app: Application): Promise<Application> {
   return saveDoc<Application>(APPLY_COLLECTIONS.APPLICATIONS, app.id, app);
 }
 
-export async function listJobs(): Promise<Job[]> {
-  return queryDocs<Job>(APPLY_COLLECTIONS.JOBS, () => true);
+/** The jobs this person saved: nobody else's. */
+export async function listJobs(userId: string): Promise<Job[]> {
+  if (!userId) return [];
+  const jobs = await queryDocsByUser<Job>(APPLY_COLLECTIONS.JOBS, userId);
+  // A job saved before jobs carried an owner is found through the person's own application for it.
+  const have = new Set(jobs.map((j) => j.id));
+  for (const app of await listApplications(userId)) {
+    if (have.has(app.jobId)) continue;
+    const job = await getJob(app.jobId, userId);
+    if (job) jobs.push(job);
+    have.add(app.jobId);
+  }
+  return jobs;
 }
 
-export async function getJob(id: string): Promise<Job | null> {
-  return getDoc<Job>(APPLY_COLLECTIONS.JOBS, id);
+/**
+ * A job the person saved. Someone else's, or one that doesn't exist, is null.
+ * A job saved before jobs carried an owner belongs to the person whose
+ * application was made for it (the server made one with every job), and is
+ * marked as theirs the first time they open it.
+ */
+export async function getJob(id: string, userId: string): Promise<Job | null> {
+  if (!userId) return null;
+  const job = await getDoc<Job>(APPLY_COLLECTIONS.JOBS, id);
+  if (!job) return null;
+  if (job.userId) return job.userId === userId ? job : null;
+  const apps = await queryDocsByUser<Application>(APPLY_COLLECTIONS.APPLICATIONS, userId);
+  if (!apps.some((a) => a.jobId === id)) return null;
+  return saveJob({ ...job, userId });
 }
 
 export async function saveJob(job: Job): Promise<Job> {
@@ -364,16 +391,18 @@ export async function saveApplySettings(settings: ApplySettings): Promise<ApplyS
   return saveDoc<ApplySettings>(APPLY_COLLECTIONS.SETTINGS, settings.userId, settings);
 }
 
-export async function listOutputs(applicationId: string): Promise<Output[]> {
-  return queryDocs<Output>(APPLY_COLLECTIONS.OUTPUTS, (o) => o.applicationId === applicationId);
+export async function listOutputs(applicationId: string, userId: string): Promise<Output[]> {
+  if (!userId) return [];
+  return (await queryDocsByUser<Output>(APPLY_COLLECTIONS.OUTPUTS, userId)).filter((o) => o.applicationId === applicationId);
 }
 
 export async function saveOutput(output: Output): Promise<Output> {
   return saveDoc<Output>(APPLY_COLLECTIONS.OUTPUTS, output.id, output);
 }
 
-export async function listSendLogs(applicationId: string): Promise<SendLog[]> {
-  return queryDocs<SendLog>(APPLY_COLLECTIONS.SENDS, (s) => s.applicationId === applicationId);
+export async function listSendLogs(applicationId: string, userId: string): Promise<SendLog[]> {
+  if (!userId) return [];
+  return (await queryDocsByUser<SendLog>(APPLY_COLLECTIONS.SENDS, userId)).filter((s) => s.applicationId === applicationId);
 }
 
 export async function saveSendLog(sendLog: SendLog): Promise<SendLog> {

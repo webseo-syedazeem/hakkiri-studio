@@ -8,17 +8,17 @@ export async function GET(
 ) {
   try {
     const user = await requireUser();
-    const userId = user.id || "usr_guest";
+    const userId = user.id;
     const { id } = await params;
-    const application = await getApplication(id);
+    const application = await getApplication(id, userId);
 
-    if (!application || application.userId !== userId) {
+    if (!application) {
       return NextResponse.json({ error: "not_found", message: "Application not found." }, { status: 404 });
     }
 
-    const job = await getJob(application.jobId);
+    const job = await getJob(application.jobId, userId);
     const profile = await getProfile(userId);
-    const outputs = await listOutputs(application.id);
+    const outputs = await listOutputs(application.id, userId);
     const evidence = await listEvidence(userId);
 
     const letterOutput = outputs.find((o) => o.kind === "letter");

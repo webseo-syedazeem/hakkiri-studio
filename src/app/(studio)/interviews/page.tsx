@@ -18,7 +18,7 @@ export default async function InterviewsPage() {
   const user = await requirePageUser();
   const all = await listInterviewsAsync(londonToday(), user.id);
   const serialized = all.map((iv) => {
-    const st = standing(iv);
+    const st = standing(iv, user.id);
     const when = interviewWhen(iv.date, londonToday());
     return {
       id: iv.id,

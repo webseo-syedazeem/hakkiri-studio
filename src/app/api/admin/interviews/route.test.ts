@@ -1,17 +1,23 @@
 import { describe, expect, it, beforeAll } from "vitest";
 import { GET } from "./route";
+import { DEMO_INTERVIEW_ID, getInterview, saveInterview } from "@/lib/interviews/store";
 
 describe("admin interviews API (/api/admin/interviews)", () => {
   const adminSecret = "test-admin-secret-key-12345";
 
   beforeAll(() => {
     process.env.ADMIN_SECRET_KEY = adminSecret;
+    // The list is of interviews people have set up, not the built-in demos: one is saved for the tests below.
+    const demo = getInterview(DEMO_INTERVIEW_ID, "usr_admin_list_test")!;
+    saveInterview({ ...demo, id: "iv-admin-list", company: "Acme Payroll" }, "usr_admin_list_test");
   });
 
   it("rejects unauthorized access without valid admin secret or admin session", async () => {
     const req = new Request("http://localhost:3000/api/admin/interviews");
+    // A visitor with no session and no secret is told to sign in; a signed-in person who is not an
+    // administrator gets 403 (covered in lib/auth/admin.test.ts).
     const res = await GET(req);
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(401);
     const data = await res.json();
     expect(data.error).toBe("unauthorised");
   });

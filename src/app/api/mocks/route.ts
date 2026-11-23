@@ -54,6 +54,9 @@ export async function POST(req: Request) {
     return r as Response;
   }
 
+  // Saving a session starts question writing in the background, so it is limited like the other session routes.
+  const blocked = guard(req, "plan", { userId: user.id });
+  if (blocked) return blocked;
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "bad-request", message: "That interview couldn’t be saved." }, { status: 400 });
   const body = parsed.data;
@@ -76,6 +79,11 @@ export async function POST(req: Request) {
   const realAnswers = answers.filter((a): a is Answer => Boolean(a && a.interviewId === interview.id));
   const effectiveAnswerIds = realAnswers.map((a) => a.id);
   const finishedAt = new Date().toISOString();
+  // A session is a set of answers the person really gave in this interview. With none, there is nothing to save:
+  // no report is made from ids that are not theirs.
+  if (!effectiveAnswerIds.length) {
+    return NextResponse.json({ error: "no-answers", message: "There are no saved answers for that session, so there is no report to make." }, { status: 400 });
+  }
 
   if (body.sessionId) {
     const found = (await findMockAsync(body.sessionId, user.id)) ?? findMock(body.sessionId, user.id);
@@ -118,10 +126,10 @@ export async function POST(req: Request) {
       const updatedInt = updateInterview(interview.id, (i) => ({ ...i, rules: mergeRules(i.rules, rules) }), user.id);
       if (updatedInt) await saveInterviewAsync(updatedInt, user.id);
     }
-    retireSkipped(interview.id, skipped);
+    retireSkipped(interview.id, skipped, user.id);
     const refreshed = getInterview(interview.id, user.id);
     if (refreshed && skipped.length) await saveInterviewAsync(refreshed, user.id);
-    after(() => withUsageContext({ userId: user.id, interviewId: interview.id, feature: "questions" }, () => topUp(interview.id)).catch((err) => console.warn("[sessions] top-up failed:", err)));
+    after(() => withUsageContext({ userId: user.id, interviewId: interview.id, feature: "questions" }, () => topUp(interview.id, user.id)).catch((err) => console.warn("[sessions] top-up failed:", err)));
     await flushStorage();
     return NextResponse.json({ id: session.id });
   }

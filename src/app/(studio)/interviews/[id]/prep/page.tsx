@@ -44,7 +44,7 @@ export default async function PrepSheetPage({
         if (a) byId.set(aid, a);
       }
   const latest = fresh[0];
-  const latestRows = latest ? rowsFor(latest) : [];
+  const latestRows = latest ? rowsFor(latest, user.id) : [];
   const fixes = latest ? buildReport(latestRows, interview.interviewer.name).fixes : [];
   const sheet = buildPrepSheet(interview, {
     answers: [...byId.values()],

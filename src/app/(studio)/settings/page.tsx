@@ -29,7 +29,7 @@ import { getSettings } from "@/lib/settings/store";
 import { pruneRecordings } from "@/lib/answers/audio";
 import { alertsConfigured, recentProblems } from "@/lib/alerts/store";
 import { recentSurveys } from "@/lib/feedback/survey-store";
-import { listInterviewsAsync } from "@/lib/interviews/store";
+import { listEveryInterviewForAdmin } from "@/lib/interviews/store";
 import { AdminInterviewsList } from "@/components/settings/AdminInterviewsList";
 import { TestAlert } from "@/components/settings/TestAlert";
 import { requirePageUser } from "@/lib/auth/require";
@@ -153,7 +153,7 @@ export default async function SettingsPage() {
   const problems = launch || !isAdmin ? [] : recentProblems(8);
   const alerts = alertsConfigured();
   const surveys = isAdmin ? recentSurveys(50) : [];
-  const interviewsRaw = isAdmin ? await listInterviewsAsync(today) : [];
+  const interviewsRaw = isAdmin ? await listEveryInterviewForAdmin() : [];
   const adminInterviews = interviewsRaw.map((i) => ({
     id: i.id,
     company: i.company,

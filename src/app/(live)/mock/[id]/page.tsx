@@ -109,7 +109,7 @@ export default async function MockInterviewPage({
     }
     if (mode === "rerun" && m.rerunOf) {
       const source = findMock(m.rerunOf, user.id);
-      const rows = source ? rowsFor(source) : [];
+      const rows = source ? rowsFor(source, user.id) : [];
       const report = buildReport(rows, interview.interviewer.name);
       live.focus = report.fixes.map((f) => f.title);
       live.before = Object.fromEntries(rows.filter((r) => r.overall != null).map((r) => [r.questionId, r.overall!]));

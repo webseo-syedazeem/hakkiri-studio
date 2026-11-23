@@ -24,7 +24,7 @@ function extractNumbersAndSkills(text: string): { numbers: string[]; skillTags: 
 export async function GET() {
   try {
     const user = await requireUser();
-    const userId = user.id as string;
+    const userId = user.id;
     // Clear out the three invented entries an earlier build put into every account.
     await removeSeededEvidence(userId);
     return NextResponse.json(await listEvidence(userId));
@@ -38,7 +38,7 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const user = await requireUser();
-    const userId = user.id || "usr_guest";
+    const userId = user.id;
     const body = await req.json();
     const { text, sourceKind = "typed-note", sourceRef, transcript } = body;
 

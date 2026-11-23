@@ -27,19 +27,28 @@ function db() {
   });
 }
 
+/**
+ * A rehearsal run or a Q&A round is a person's when it carries their id, or
+ * when it belongs to a presentation that is theirs (records saved before runs
+ * carried an owner). With no account named, nothing is anyone's.
+ */
+function owns(record: { userId?: string; presentationId: string }, userId: string): boolean {
+  if (!userId) return false;
+  return record.userId === userId || (!record.userId && db().presentations.get(record.presentationId)?.userId === userId);
+}
+
 // ------------------------------------------------------------ presentations
 
 export const isDemoPresentation = (id: string) => id === demoPresentation.id && !db().presentations.has(id);
 
-export function getPresentation(id: string, userId?: string): Presentation | undefined {
+/** One person's presentation, or nothing: with no account named, or for one that is someone else's or has no owner, nothing is returned. The built-in demo can be read by anyone. */
+export function getPresentation(id: string, userId: string): Presentation | undefined {
   if (id === demoPresentation.id && demoOn()) return demoPresentation;
   const p = db().presentations.get(id);
-  if (!p) return undefined;
-  if (userId && p.userId !== userId) return undefined;
-  return p;
+  return p && !!userId && p.userId === userId ? p : undefined;
 }
 
-export async function getPresentationAsync(id: string, userId?: string): Promise<Presentation | undefined> {
+export async function getPresentationAsync(id: string, userId: string): Promise<Presentation | undefined> {
   const p = getPresentation(id, userId);
   if (p && p.id !== demoPresentation.id) return p;
 
@@ -62,10 +71,8 @@ export async function getPresentationAsync(id: string, userId?: string): Promise
 }
 
 /** Every presentation, soonest first; ones in the past go last. */
-export function listPresentations(userId?: string): Presentation[] {
-  const userPres = userId
-    ? [...db().presentations.values()].filter((p) => p.userId === userId)
-    : [...db().presentations.values()];
+export function listPresentations(userId: string): Presentation[] {
+  const userPres = userId ? [...db().presentations.values()].filter((p) => p.userId === userId) : [];
   const all = new Map<string, Presentation>([
     ...(demoOn() ? ([[demoPresentation.id, demoPresentation]] as const) : []),
     ...userPres.map((p) => [p.id, p] as const),
@@ -81,21 +88,23 @@ export function listPresentations(userId?: string): Presentation[] {
 }
 
 /** The presentation Home is about: your soonest upcoming one, or the demo until you add your own. */
-export function featuredPresentation(userId?: string): Presentation | undefined {
+export function featuredPresentation(userId: string): Presentation | undefined {
   const all = listPresentations(userId);
   const mine = all.filter((p) => p.id !== demoPresentation.id || db().presentations.has(p.id));
   const upcoming = (p: Presentation) => (p.date ? Date.parse(p.date) >= Date.now() - 12 * 3600_000 : false);
   return mine.find(upcoming) ?? all.find(upcoming) ?? all[0];
 }
 
-export function savePresentation(p: Presentation, userId?: string) {
-  const item = { ...p, userId: userId || p.userId };
+export function savePresentation(p: Presentation, userId: string) {
+  if (!userId) return;
+  const item = { ...p, userId };
   db().presentations.set(item.id, item);
   saveJson("presentations.json", [...db().presentations.values()]);
 }
 
-export async function savePresentationAsync(p: Presentation, userId?: string): Promise<void> {
-  const item = { ...p, userId: userId || p.userId };
+export async function savePresentationAsync(p: Presentation, userId: string): Promise<void> {
+  if (!userId) return;
+  const item = { ...p, userId };
   db().presentations.set(item.id, item);
   await saveJsonAsync("presentations.json", [...db().presentations.values()]);
 }
@@ -127,24 +136,20 @@ function memoryImages() {
 // --------------------------------------------------------------------- runs
 
 /** Runs of a presentation, oldest first. */
-export function listRuns(presentationId: string, userId?: string): Run[] {
+export function listRuns(presentationId: string, userId: string): Run[] {
   const demo = presentationId === demoPresentation.id && demoOn() ? demoRuns : [];
-  const stored = [...db().runs.values()].filter(
-    (r) => r.presentationId === presentationId && (!userId || r.userId === userId || db().presentations.get(presentationId)?.userId === userId)
-  );
+  const stored = userId ? [...db().runs.values()].filter((r) => r.presentationId === presentationId && owns(r, userId)) : [];
   return [...demo, ...stored].sort((a, b) => a.number - b.number);
 }
 
-export function getRun(id: string, userId?: string): Run | undefined {
+export function getRun(id: string, userId: string): Run | undefined {
   const isDemo = demoOn() && (demoRuns.some((r) => r.id === id) || id === demoRun4.id);
   if (isDemo) return demoRuns.find((r) => r.id === id) ?? (id === demoRun4.id ? demoRun4 : undefined);
   const r = db().runs.get(id);
-  if (!r) return undefined;
-  if (userId && r.userId && r.userId !== userId) return undefined;
-  return r;
+  return r && owns(r, userId) ? r : undefined;
 }
 
-export async function getRunAsync(id: string, userId?: string): Promise<Run | undefined> {
+export async function getRunAsync(id: string, userId: string): Promise<Run | undefined> {
   const r = getRun(id, userId);
   if (r) return r;
 
@@ -166,48 +171,46 @@ export async function getRunAsync(id: string, userId?: string): Promise<Run | un
   return getRun(id, userId);
 }
 
-export function saveRun(run: Run, userId?: string) {
-  const item = { ...run, userId: userId || run.userId };
+export function saveRun(run: Run, userId: string) {
+  if (!userId) return;
+  const item = { ...run, userId };
   db().runs.set(item.id, item);
   saveJson("runs.json", [...db().runs.values()]);
 }
 
-export async function saveRunAsync(run: Run, userId?: string): Promise<void> {
-  const item = { ...run, userId: userId || run.userId };
+export async function saveRunAsync(run: Run, userId: string): Promise<void> {
+  if (!userId) return;
+  const item = { ...run, userId };
   db().runs.set(item.id, item);
   await saveJsonAsync("runs.json", [...db().runs.values()]);
 }
 
-export function nextRunNumber(presentationId: string, userId?: string): number {
+export function nextRunNumber(presentationId: string, userId: string): number {
   return listRuns(presentationId, userId).reduce((n, r) => Math.max(n, r.number), 0) + 1;
 }
 
 /** The latest full run that reached the last slide. */
-export function latestFullRun(presentationId: string, userId?: string): Run | undefined {
+export function latestFullRun(presentationId: string, userId: string): Run | undefined {
   const p = getPresentation(presentationId, userId);
   return p ? completeRuns(listRuns(presentationId, userId), p.timeLimitSec).pop() : undefined;
 }
 
 // ---------------------------------------------------------------------- Q&A
 
-export function listQa(presentationId: string, userId?: string): QaSession[] {
+export function listQa(presentationId: string, userId: string): QaSession[] {
   const demo = presentationId === demoQaSession.presentationId && demoOn() ? [demoQaSession] : [];
-  const stored = [...db().qa.values()].filter(
-    (s) => s.presentationId === presentationId && (!userId || s.userId === userId || db().presentations.get(presentationId)?.userId === userId)
-  );
+  const stored = userId ? [...db().qa.values()].filter((s) => s.presentationId === presentationId && owns(s, userId)) : [];
   return [...demo, ...stored].sort((a, b) => a.finishedAt.localeCompare(b.finishedAt));
 }
 
-export function getQa(id: string, userId?: string): QaSession | undefined {
+export function getQa(id: string, userId: string): QaSession | undefined {
   const isDemo = demoOn() && id === demoQaSession.id;
   if (isDemo) return demoQaSession;
   const s = db().qa.get(id);
-  if (!s) return undefined;
-  if (userId && s.userId && s.userId !== userId) return undefined;
-  return s;
+  return s && owns(s, userId) ? s : undefined;
 }
 
-export async function getQaAsync(id: string, userId?: string): Promise<QaSession | undefined> {
+export async function getQaAsync(id: string, userId: string): Promise<QaSession | undefined> {
   const s = getQa(id, userId);
   if (s) return s;
 
@@ -229,14 +232,16 @@ export async function getQaAsync(id: string, userId?: string): Promise<QaSession
   return getQa(id, userId);
 }
 
-export function saveQa(s: QaSession, userId?: string) {
-  const item = { ...s, userId: userId || s.userId };
+export function saveQa(s: QaSession, userId: string) {
+  if (!userId) return;
+  const item = { ...s, userId };
   db().qa.set(item.id, item);
   saveJson("qa.json", [...db().qa.values()]);
 }
 
-export async function saveQaAsync(s: QaSession, userId?: string): Promise<void> {
-  const item = { ...s, userId: userId || s.userId };
+export async function saveQaAsync(s: QaSession, userId: string): Promise<void> {
+  if (!userId) return;
+  const item = { ...s, userId };
   db().qa.set(item.id, item);
   await saveJsonAsync("qa.json", [...db().qa.values()]);
 }
@@ -260,11 +265,10 @@ export function allPitchData(userId?: string): { presentations: Presentation[]; 
 }
 
 /** Deletes one presentation with its slide pictures, runs and Q&A rounds. Returns the ids of its answers, so their recordings can go too. */
-export function deletePresentation(id: string, userId?: string): { runIds: string[]; answerIds: string[] } | null {
+export function deletePresentation(id: string, userId: string): { runIds: string[]; answerIds: string[] } | null {
   const d = db();
   const existing = d.presentations.get(id);
-  if (!existing) return null;
-  if (userId && existing.userId && existing.userId !== userId) return null;
+  if (!existing || !userId || existing.userId !== userId) return null;
   const runIds = [...d.runs.values()].filter((r) => r.presentationId === id).map((r) => r.id);
   const answerIds = [...d.qa.values()].filter((s) => s.presentationId === id).flatMap((s) => s.answers.map((a) => a.id));
   for (const r of runIds) d.runs.delete(r);

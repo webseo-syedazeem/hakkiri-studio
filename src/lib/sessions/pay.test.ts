@@ -7,6 +7,9 @@ import { getInterview, updateInterview } from "@/lib/interviews/store";
 import { wordsFromScript } from "@/lib/demo-words";
 import { DEFAULT_SETTINGS } from "@/lib/interviews/settings";
 
+/** The account these tests act as. Every record has an owner. */
+const U = "usr_test_owner";
+
 const words = (s: string) => wordsFromScript([{ start: 0, end: 20, text: s }]);
 const ok = (checks: { ok: boolean | null }[]) => checks.map((c) => c.ok);
 
@@ -44,19 +47,19 @@ describe("talking about pay", () => {
   });
 
   it("adds four pay questions once, never asks them in an interview, and plans the drill", async () => {
-    const interview = ensurePayQuestions("halden")!;
+    const interview = ensurePayQuestions("halden", U)!;
     const pay = interview.questions.filter((q) => q.pay);
     expect(pay.map((q) => q.id)).toEqual(["pay1", "pay2", "pay3", "pay4"]);
     expect(interview.questions.at(-1)?.slot).toBe("closing");
-    expect(ensurePayQuestions("halden")!.questions.filter((q) => q.pay)).toHaveLength(4);
+    expect(ensurePayQuestions("halden", U)!.questions.filter((q) => q.pay)).toHaveLength(4);
     const picked = pickQuestions(interview.questions, { ...DEFAULT_SETTINGS, minutes: 60 }, new Map(), { allowRepeats: true });
     expect(picked.questionIds.some((id) => id.startsWith("pay"))).toBe(false);
     expect(drillQuestions({ kind: "pay" }, interview.questions, new Map(), [])).toEqual(["pay1", "pay2", "pay3", "pay4"]);
-    const session = await planDrill("halden", { kind: "pay" });
+    const session = await planDrill("halden", { kind: "pay" }, U);
     expect(session.questionIds).toEqual(["pay1", "pay2", "pay3", "pay4"]);
     // A different round rewrites the last question for it.
-    updateInterview("halden", (i) => ({ ...i, round: "screening" }));
-    expect(ensurePayQuestions("halden")!.questions.find((q) => q.id === "pay4")?.text).toMatch(/pay or the package/);
-    expect(getInterview("halden")!.groupCounts.motivation).toBe(interview.groupCounts.motivation);
+    updateInterview("halden", (i) => ({ ...i, round: "screening" }), U);
+    expect(ensurePayQuestions("halden", U)!.questions.find((q) => q.id === "pay4")?.text).toMatch(/pay or the package/);
+    expect(getInterview("halden", U)!.groupCounts.motivation).toBe(interview.groupCounts.motivation);
   });
 });

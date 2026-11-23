@@ -15,8 +15,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   }
 
   const { id, file } = await params;
-  const p = getPresentation(id);
-  if (!p || (p.userId && p.userId !== user.id)) {
+  // The signed-in person's own presentation (or the built-in demo). Anyone else's is "not found".
+  const p = getPresentation(id, user.id);
+  if (!p) {
     return new Response("Not found", { status: 404 });
   }
 

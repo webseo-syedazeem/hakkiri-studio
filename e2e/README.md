@@ -13,6 +13,7 @@ That starts the app on port 3179 with a fresh, throwaway data folder, runs every
 | `stories.cjs` | Experience Library (it replaced the story bank; `/story-bank` leads to it): adding an example and the form's checks, the list, favourites, search and tags, editing, deleting |
 | `pitch.cjs` | Presentations: set up from a PDF and a PowerPoint, the timing plan, rehearse, run report, audience Q&A, a run of one slide, pasted notes |
 | `flow.cjs` | The whole interview: the four set-up steps from a CV and job, overview, live interview with follow-ups and a skip, report, an answer, run it again, focused practice on a topic, story, prep sheet, report an issue and rebuild, three skips, editing the understanding |
+| `accounts.cjs` | Two accounts: one can't see, change or write into the other's interview, story, question, session or demo copy, by page or by API, and its data download holds none of it. One shared browser: what the app keeps on the device for one account is not shown to the next. The admin area as an ordinary account and as a visitor |
 | `slots.cjs` | Skipping the opening and the closing question: one tap, no replacement, neither in the report |
 | `pay.cjs` | Talking about pay: the four questions with feedback after each, the report and its checks, doing it again |
 | `cv-cleanup.cjs` | The old CV screens are gone: no sample content or unsupported claims, old addresses lead to `/cv`, a new account's Evidence Bank is empty |

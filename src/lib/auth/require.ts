@@ -6,16 +6,19 @@ import type { User } from "@/lib/types";
 
 export type { User };
 
+/** A signed-in account. Its id is always there: everything a person owns is found by it. */
+export type SignedIn = User & { id: string };
+
 /**
  * Ensures a valid user session for Server Components / Pages.
  * Redirects immediately to /login if unauthenticated, preventing parallel RSC streaming leaks.
  */
-export async function requirePageUser(): Promise<User> {
+export async function requirePageUser(): Promise<SignedIn> {
   const user = await getCurrentUser();
   if (!user || !user.id) {
     redirect("/login");
   }
-  return user;
+  return user as SignedIn;
 }
 
 /**
@@ -39,7 +42,7 @@ export async function getCurrentUser(): Promise<User | null> {
 /**
  * Ensures a valid session exists. Throws a 401 response if unauthenticated.
  */
-export async function requireUser(): Promise<User> {
+export async function requireUser(): Promise<SignedIn> {
   const user = await getCurrentUser();
   if (!user || !user.id) {
     throw new Response(
@@ -53,5 +56,5 @@ export async function requireUser(): Promise<User> {
       }
     );
   }
-  return user;
+  return user as SignedIn;
 }
