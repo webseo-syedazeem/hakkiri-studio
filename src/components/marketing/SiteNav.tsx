@@ -15,6 +15,7 @@ export function SiteNav() {
     ["/", "Interviews", path === "/" || path === "/landing"],
     ["/present", "Presentations", isPresent],
     ["/cv-audit", "Free CV Audit", path.startsWith("/cv-audit")],
+    ["/about", "About", path === "/about"],
     ["/blog", "Blog", path.startsWith("/blog")],
     [`${base}#how`, "How it works", false],
     [`${base}#beta`, "Beta", false],

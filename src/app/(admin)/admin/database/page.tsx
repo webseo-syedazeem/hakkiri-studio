@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { isMongoConfigured, testMongoConnection, getMongoDb } from "@/lib/storage/mongodb";
 import { getBlogPostsAsync } from "@/lib/blog/store";
+import { BackupDownloader } from "@/components/admin/BackupDownloader";
 
 export const metadata: Metadata = {
   title: "Database & Cloud Infrastructure | Hakkiri Admin",
@@ -69,6 +70,9 @@ export default async function AdminDatabasePage() {
           <p className="text-xs text-slate-500">MongoDB Atlas + Resilient Disk Cache</p>
         </div>
       </div>
+
+      {/* 1-Click Site Backup & Disaster Recovery */}
+      <BackupDownloader />
 
       {/* Collections Overview */}
       <div className="rounded-2xl border border-white/10 bg-[#141520] p-6 space-y-4">

@@ -53,6 +53,9 @@ export function generateMetadata(): Metadata {
       description: "Practise interviews and presentations with AI feedback that never judges your accent.",
       images: ["/opengraph-image.png"],
     },
+    verification: {
+      google: process.env.NEXT_PUBLIC_GSC_VERIFICATION || "XiNOBpixzNRt0PdX_ByqjV0fKCLDyejeIcFXB-TqRwY",
+    },
     other: {
       "hk-natural-voice": hasVoice ? "on" : "off",
     },
@@ -71,12 +74,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en-GB" className="overflow-x-clip">
       <head>
-        {process.env.NEXT_PUBLIC_GSC_VERIFICATION && (
-          <meta
-            name="google-site-verification"
-            content={process.env.NEXT_PUBLIC_GSC_VERIFICATION}
-          />
-        )}
+        <meta
+          name="google-site-verification"
+          content={process.env.NEXT_PUBLIC_GSC_VERIFICATION || "XiNOBpixzNRt0PdX_ByqjV0fKCLDyejeIcFXB-TqRwY"}
+        />
       </head>
       <body className="min-h-screen bg-booth text-ink antialiased overflow-x-clip w-full max-w-full">
         <AuthProvider>{children}</AuthProvider>
