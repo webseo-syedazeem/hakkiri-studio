@@ -3,7 +3,7 @@
 import { useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
-import { Button, Icon, type IconName } from "@/components/ui";
+import { Button, Icon, CustomSelect, type IconName } from "@/components/ui";
 import { SlideView } from "./SlideView";
 import { parseNotes, parsePdf, parsePptx, suggestTitle, type ParsedSlide } from "./parse-slides";
 import { fitToLimit, stepFor } from "@/lib/pitch/timing";
@@ -480,20 +480,12 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
                 <label className="block text-xs font-semibold text-muted mb-2">
                   Audience size (optional)
                 </label>
-                <div className="relative">
-                  <select
-                    value={audienceSize}
-                    onChange={(e) => setAudienceSize(e.target.value)}
-                    className="w-full h-10 rounded-xl bg-[#141326] border border-white/10 hover:border-white/20 pl-3.5 pr-8 text-xs text-white appearance-none cursor-pointer [color-scheme:dark] focus:border-blue focus:outline-none transition-all"
-                  >
-                    {AUDIENCE_SIZES.map((sz) => (
-                      <option key={sz} value={sz}>
-                        {sz}
-                      </option>
-                    ))}
-                  </select>
-                  <Icon name="chevronDown" size={13} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
-                </div>
+                <CustomSelect
+                  value={audienceSize}
+                  onChange={setAudienceSize}
+                  options={AUDIENCE_SIZES.map((sz) => ({ value: sz, label: sz }))}
+                  size="sm"
+                />
               </div>
             </div>
 
@@ -548,21 +540,12 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
               <label className="block text-xs font-semibold text-muted mb-2">
                 Presentation length *
               </label>
-              <div className="relative">
-                <select
-                  value={limitMin}
-                  onChange={(e) => setLimitMin(Number(e.target.value))}
-                  className="w-full h-11 rounded-xl bg-[#141326] border border-white/10 hover:border-white/20 pl-9 pr-9 text-sm text-white appearance-none cursor-pointer [color-scheme:dark] focus:border-blue focus:outline-none transition-all"
-                >
-                  {LIMITS.map((m) => (
-                    <option key={m} value={m}>
-                      {m} minutes
-                    </option>
-                  ))}
-                </select>
-                <Icon name="clock" size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
-                <Icon name="chevronDown" size={14} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
-              </div>
+              <CustomSelect
+                value={String(limitMin)}
+                onChange={(val) => setLimitMin(Number(val))}
+                options={LIMITS.map((m) => ({ value: String(m), label: `${m} minutes` }))}
+                icon="clock"
+              />
             </div>
 
             {/* Q&A style */}
@@ -571,20 +554,17 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
                 Q&A style *
                 <Icon name="info" size={13} className="text-muted hover:text-white cursor-pointer" />
               </label>
-              <div className="relative">
-                <select
-                  value={qa}
-                  onChange={(e) => setQa(e.target.value as QaStyle | "none")}
-                  className="w-full h-11 rounded-xl bg-[#141326] border border-white/10 hover:border-white/20 pl-9 pr-9 text-sm text-white appearance-none cursor-pointer [color-scheme:dark] focus:border-blue focus:outline-none transition-all"
-                >
-                  <option value="sceptical">Challenging</option>
-                  <option value="probing">Realistic</option>
-                  <option value="supportive">Friendly</option>
-                  <option value="none">None</option>
-                </select>
-                <Icon name="chart" size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
-                <Icon name="chevronDown" size={14} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
-              </div>
+              <CustomSelect
+                value={qa}
+                onChange={(val) => setQa(val as QaStyle | "none")}
+                options={[
+                  { value: "sceptical", label: "Challenging", dotColor: "bg-rose-400" },
+                  { value: "probing", label: "Realistic", dotColor: "bg-amber-400" },
+                  { value: "supportive", label: "Friendly", dotColor: "bg-emerald-400" },
+                  { value: "none", label: "None", dotColor: "bg-zinc-400" },
+                ]}
+                icon="chart"
+              />
             </div>
 
             {/* Specific questions */}

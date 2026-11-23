@@ -2,13 +2,15 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import clsx from "clsx";
-import { Icon, type IconName } from "@/components/ui";
+import { Icon, type IconName } from "./index";
 
 export interface CustomSelectOption {
   value: string;
   label: string;
   icon?: IconName;
   badge?: string;
+  dotColor?: string;
+  description?: string;
 }
 
 export interface CustomSelectProps {
@@ -20,9 +22,13 @@ export interface CustomSelectProps {
   label?: string;
   tooltip?: string;
   required?: boolean;
+  disabled?: boolean;
   className?: string;
+  triggerClassName?: string;
   menuClassName?: string;
   size?: "sm" | "md";
+  align?: "left" | "right";
+  autoWidth?: boolean;
 }
 
 export function CustomSelect({
@@ -34,9 +40,13 @@ export function CustomSelect({
   label,
   tooltip,
   required,
+  disabled = false,
   className,
+  triggerClassName,
   menuClassName,
   size = "md",
+  align = "left",
+  autoWidth = false,
 }: CustomSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState(-1);
@@ -64,6 +74,8 @@ export function CustomSelect({
 
   // Handle keyboard events (Escape, Arrow Up/Down, Enter)
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (disabled) return;
+
     if (!isOpen) {
       if (e.key === "Enter" || e.key === " " || e.key === "ArrowDown") {
         e.preventDefault();
@@ -102,7 +114,14 @@ export function CustomSelect({
   }, [focusedIndex, isOpen]);
 
   return (
-    <div className={clsx("relative w-full space-y-1.5", className)} ref={containerRef}>
+    <div
+      className={clsx(
+        "relative space-y-1.5",
+        autoWidth ? "inline-block w-auto" : "w-full",
+        className
+      )}
+      ref={containerRef}
+    >
       {label && (
         <label className="flex items-center gap-1 text-xs font-semibold text-white">
           <span>{label}</span>
@@ -118,33 +137,47 @@ export function CustomSelect({
       {/* Trigger Button */}
       <button
         type="button"
-        onClick={() => setIsOpen((prev) => !prev)}
+        disabled={disabled}
+        onClick={() => {
+          if (!disabled) setIsOpen((prev) => !prev);
+        }}
         onKeyDown={handleKeyDown}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         className={clsx(
-          "group relative flex w-full items-center justify-between rounded-[12px] bg-panel-2 text-xs transition-all duration-200 cursor-pointer outline-none border",
-          size === "sm" ? "px-3 py-1.5 min-h-[34px]" : "px-3.5 py-2.5 min-h-[42px]",
-          isOpen
-            ? "border-indigo-500 bg-[#252838] shadow-[0_0_0_2px_rgba(99,102,241,0.25),0_8px_20px_rgba(0,0,0,0.4)] text-white"
-            : "border-line text-ink hover:border-line-strong hover:bg-panel-2/90"
+          "group relative flex items-center justify-between gap-2.5 rounded-2xl bg-panel-2 text-xs transition-all duration-200 outline-none border",
+          autoWidth ? "w-auto" : "w-full",
+          size === "sm" ? "px-3 py-1.5 min-h-[34px]" : "px-3.5 py-2.5 min-h-[40px]",
+          disabled
+            ? "opacity-50 cursor-not-allowed border-line text-muted"
+            : isOpen
+            ? "border-blue-500/80 bg-panel shadow-[0_0_0_2px_rgba(59,130,246,0.25),0_8px_24px_rgba(0,0,0,0.5)] text-ink"
+            : "border-line text-ink hover:border-line-strong hover:bg-panel cursor-pointer shadow-sm",
+          triggerClassName
         )}
       >
-        <div className="flex items-center gap-2.5 min-w-0 pr-2">
-          {icon && (
+        <div className="flex items-center gap-2 min-w-0 pr-1">
+          {selectedOption?.dotColor ? (
+            <span
+              className={clsx(
+                "h-2 w-2 rounded-full shrink-0 shadow-sm",
+                selectedOption.dotColor
+              )}
+            />
+          ) : icon ? (
             <span
               className={clsx(
                 "shrink-0 transition-colors duration-200",
-                isOpen || selectedOption ? "text-indigo-400" : "text-muted group-hover:text-ink"
+                isOpen || selectedOption ? "text-blue" : "text-muted group-hover:text-ink"
               )}
             >
               <Icon name={icon} size={14} />
             </span>
-          )}
+          ) : null}
 
           <span
             className={clsx(
-              "truncate font-medium",
+              "truncate font-bold tracking-tight text-xs",
               selectedOption ? "text-ink" : "text-muted"
             )}
           >
@@ -156,7 +189,7 @@ export function CustomSelect({
         <div
           className={clsx(
             "shrink-0 text-muted transition-transform duration-200 ease-out",
-            isOpen && "rotate-180 text-indigo-400"
+            isOpen && "rotate-180 text-blue"
           )}
         >
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -171,14 +204,15 @@ export function CustomSelect({
         </div>
       </button>
 
-      {/* Animated Dropdown Menu */}
+      {/* Animated Glassmorphic Dropdown Menu */}
       {isOpen && (
         <div
           ref={listRef}
           role="listbox"
           tabIndex={-1}
           className={clsx(
-            "absolute left-0 top-[calc(100%+6px)] z-50 w-full min-w-[200px] max-h-64 overflow-y-auto rounded-[14px] bg-[#161826]/95 backdrop-blur-xl border border-white/12 p-1.5 shadow-[0_16px_36px_rgba(0,0,0,0.65),0_2px_10px_rgba(0,0,0,0.45)] origin-top animate-scale-in",
+            "absolute top-[calc(100%+6px)] z-50 min-w-[210px] max-h-64 overflow-y-auto rounded-2xl bg-panel/95 backdrop-blur-2xl border border-line-strong p-1.5 shadow-[0_20px_50px_rgba(0,0,0,0.7),0_0_0_1px_rgba(255,255,255,0.08)] origin-top animate-fadeIn",
+            align === "right" ? "right-0 left-auto" : "left-0",
             menuClassName
           )}
           style={{
@@ -202,33 +236,48 @@ export function CustomSelect({
                 }}
                 onMouseEnter={() => setFocusedIndex(idx)}
                 className={clsx(
-                  "flex items-center justify-between w-full px-3 py-2 rounded-[9px] text-xs font-medium transition-all duration-150 cursor-pointer select-none",
+                  "flex items-center justify-between w-full px-3 py-2 rounded-xl text-xs transition-all duration-150 cursor-pointer select-none",
                   isSelected
-                    ? "bg-indigo-600/20 text-indigo-200 font-semibold shadow-[inset_0_0_0_1px_rgba(99,102,241,0.35)]"
+                    ? "bg-blue/15 text-blue font-bold border border-blue/30 shadow-sm"
                     : isFocused
                     ? "bg-white/[0.08] text-white"
-                    : "text-muted hover:text-white hover:bg-white/[0.05]"
+                    : "text-muted hover:text-ink hover:bg-white/[0.05]"
                 )}
               >
-                <div className="flex items-center gap-2 truncate">
+                <div className="flex items-center gap-2.5 truncate">
+                  {opt.dotColor && (
+                    <span
+                      className={clsx(
+                        "h-2 w-2 rounded-full shrink-0 shadow-sm",
+                        opt.dotColor
+                      )}
+                    />
+                  )}
                   {opt.icon && (
                     <Icon
                       name={opt.icon}
                       size={13}
-                      className={clsx(isSelected ? "text-indigo-400" : "text-muted")}
+                      className={clsx(isSelected ? "text-blue" : "text-muted")}
                     />
                   )}
-                  <span className="truncate">{opt.label}</span>
+                  <div className="truncate">
+                    <span className="truncate block font-semibold">{opt.label}</span>
+                    {opt.description && (
+                      <span className="text-[10px] text-muted block truncate font-normal">
+                        {opt.description}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-2 shrink-0 ml-2">
                   {opt.badge && (
-                    <span className="rounded-md bg-white/[0.08] px-1.5 py-0.5 text-[10px] text-muted">
+                    <span className="rounded-md bg-white/[0.08] px-1.5 py-0.5 text-[10px] text-muted font-mono">
                       {opt.badge}
                     </span>
                   )}
                   {isSelected && (
-                    <span className="text-indigo-400 font-bold text-xs animate-fade-in">
+                    <span className="text-blue font-black text-xs animate-fadeIn">
                       ✓
                     </span>
                   )}

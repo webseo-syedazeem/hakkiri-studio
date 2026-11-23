@@ -2,7 +2,16 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { CustomSelect, type CustomSelectOption } from "@/components/ui";
 import type { Voice } from "@/lib/apply/schema";
+
+const SAMPLE_KIND_OPTIONS: CustomSelectOption[] = [
+  { value: "cover-letter", label: "Cover Letter / Intro Note", dotColor: "bg-blue" },
+  { value: "email", label: "Professional Email", dotColor: "bg-emerald-400" },
+  { value: "slack", label: "Slack / Team Update", dotColor: "bg-purple-400" },
+  { value: "blog", label: "Technical Article / Blog", dotColor: "bg-amber-400" },
+  { value: "other", label: "Other Prose", dotColor: "bg-zinc-400" },
+];
 
 export default function VoicePersonaPage() {
   const [voice, setVoice] = useState<Voice | null>(null);
@@ -248,18 +257,15 @@ export default function VoicePersonaPage() {
 
             <form onSubmit={handleAddSample} className="space-y-4">
               <div className="flex items-center gap-3">
-                <label className="text-xs font-bold text-muted">Sample Kind:</label>
-                <select
-                  value={sampleKind}
-                  onChange={(e) => setSampleKind(e.target.value as any)}
-                  className="rounded-xl border border-line bg-panel-2 px-3 py-1.5 text-xs text-ink focus:border-blue focus:outline-none"
-                >
-                  <option value="cover-letter">Cover Letter / Intro Note</option>
-                  <option value="email">Professional Email</option>
-                  <option value="slack">Slack / Team Update</option>
-                  <option value="blog">Technical Article / Blog</option>
-                  <option value="other">Other Prose</option>
-                </select>
+                <label className="text-xs font-bold text-muted whitespace-nowrap">Sample Kind:</label>
+                <div className="w-64">
+                  <CustomSelect
+                    value={sampleKind}
+                    onChange={(val) => setSampleKind(val as any)}
+                    options={SAMPLE_KIND_OPTIONS}
+                    size="sm"
+                  />
+                </div>
               </div>
 
               <textarea

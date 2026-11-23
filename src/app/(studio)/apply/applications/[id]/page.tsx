@@ -2,7 +2,18 @@
 
 import { useEffect, useState, use } from "react";
 import Link from "next/link";
+import { CustomSelect, type CustomSelectOption } from "@/components/ui";
 import type { Application, Job, Evidence, Voice, Output } from "@/lib/apply/schema";
+
+const APPLICATION_STATUS_OPTIONS: CustomSelectOption[] = [
+  { value: "draft", label: "Draft", dotColor: "bg-zinc-400", description: "Not yet dispatched" },
+  { value: "ready", label: "Ready to Send", dotColor: "bg-amber-400", description: "Approved & grounded" },
+  { value: "queued", label: "Queued", dotColor: "bg-blue-400", description: "In dispatch pipeline" },
+  { value: "sent", label: "Sent", dotColor: "bg-emerald-400", description: "Submitted to employer" },
+  { value: "interview", label: "Interview Scheduled", dotColor: "bg-purple-400", description: "Ready for mock practice" },
+  { value: "offer", label: "Offer Received", dotColor: "bg-emerald-300", description: "Decision reached" },
+  { value: "rejected", label: "Rejected", dotColor: "bg-rose-400", description: "Closed application" },
+];
 
 export default function ApplicationWorkspacePage({
   params,
@@ -176,20 +187,16 @@ export default function ApplicationWorkspacePage({
             <div className="text-base font-black text-emerald-400">{app.fit}%</div>
           </div>
 
-          <select
-            value={app.status}
-            onChange={(e) => handleStatusChange(e.target.value)}
-            disabled={updatingStatus}
-            className="rounded-2xl border border-line bg-panel-2 px-3.5 py-2.5 text-xs font-bold text-ink focus:outline-none"
-          >
-            <option value="draft">Draft</option>
-            <option value="ready">Ready to Send</option>
-            <option value="queued">Queued</option>
-            <option value="sent">Sent</option>
-            <option value="interview">Interview Scheduled</option>
-            <option value="offer">Offer Received</option>
-            <option value="rejected">Rejected</option>
-          </select>
+          <div className="w-52">
+            <CustomSelect
+              value={app.status}
+              onChange={(newVal) => handleStatusChange(newVal)}
+              options={APPLICATION_STATUS_OPTIONS}
+              disabled={updatingStatus}
+              align="right"
+              size="sm"
+            />
+          </div>
 
           {app.status === "sent" || app.status === "interview" ? (
             <Link

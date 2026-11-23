@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import clsx from "clsx";
-import { Button, Icon, type IconName } from "@/components/ui";
+import { Button, Icon, CustomSelect, type IconName } from "@/components/ui";
 import { StartButton } from "@/components/interview/StartSession";
 import { BetaInterviewFeedbackModal } from "@/components/feedback/BetaInterviewFeedbackModal";
 import type { MockReport, MockRow } from "@/lib/mocks/report";
@@ -543,44 +543,41 @@ export function InterviewReportView(p: InterviewReportViewProps) {
           </div>
 
           {/* Filter dropdown */}
-          <div className="relative">
-            <select
+          <div className="w-48">
+            <CustomSelect
               value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="h-8.5 rounded-xl bg-[#141326] border border-white/10 hover:border-white/20 pl-3 pr-8 text-xs font-medium text-white appearance-none cursor-pointer [color-scheme:dark] focus:border-blue focus:outline-none transition-all shadow-sm"
-            >
-              <option value="all">All categories</option>
-              {Array.from(new Set(rows.map((r) => r.group).filter(Boolean))).map((rawCat) => {
-                const cat = rawCat as string;
-                const label =
-                  cat === "competency"
-                    ? "Competency & Skills"
-                    : cat === "strengths"
-                    ? "Strengths"
-                    : cat === "presentation"
-                    ? "Presentation"
-                    : cat === "technical"
-                    ? "Technical"
-                    : cat === "cv"
-                    ? "Experience"
-                    : cat === "motivation"
-                    ? "Motivation"
-                    : cat;
-                return (
-                  <option key={cat} value={cat}>
-                    {label}
-                  </option>
-                );
-              })}
-              {rows.length === 0 && (
-                <>
-                  <option value="competency">Skills</option>
-                  <option value="technical">Technical</option>
-                  <option value="cv">Experience</option>
-                </>
-              )}
-            </select>
-            <Icon name="chevronDown" size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
+              onChange={setCategoryFilter}
+              options={[
+                { value: "all", label: "All categories" },
+                ...Array.from(new Set(rows.map((r) => r.group).filter(Boolean))).map((rawCat) => {
+                  const cat = rawCat as string;
+                  const label =
+                    cat === "competency"
+                      ? "Competency & Skills"
+                      : cat === "strengths"
+                      ? "Strengths"
+                      : cat === "presentation"
+                      ? "Presentation"
+                      : cat === "technical"
+                      ? "Technical"
+                      : cat === "cv"
+                      ? "Experience"
+                      : cat === "motivation"
+                      ? "Motivation"
+                      : cat;
+                  return { value: cat, label };
+                }),
+                ...(rows.length === 0
+                  ? [
+                      { value: "competency", label: "Skills" },
+                      { value: "technical", label: "Technical" },
+                      { value: "cv", label: "Experience" },
+                    ]
+                  : []),
+              ]}
+              size="sm"
+              align="right"
+            />
           </div>
         </div>
 

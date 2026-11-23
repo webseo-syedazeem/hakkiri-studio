@@ -1,7 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { CustomSelect, type CustomSelectOption } from "@/components/ui";
 import type { Evidence, EvidenceSourceKind } from "@/lib/apply/schema";
+
+const EVIDENCE_SOURCE_OPTIONS: CustomSelectOption[] = [
+  { value: "typed-note", label: "Typed Note", dotColor: "bg-blue", description: "Directly typed metric or outcome" },
+  { value: "cv-bullet", label: "Existing CV Bullet", dotColor: "bg-emerald-400", description: "Extracted from prior resume" },
+  { value: "story", label: "Career Story", dotColor: "bg-purple-400", description: "Structured STAR narrative" },
+  { value: "spoken-note", label: "Spoken / Audio Note", dotColor: "bg-amber-400", description: "Dictated audio transcript" },
+  { value: "practice-answer", label: "Practice Answer", dotColor: "bg-cyan-400", description: "From mock interview session" },
+];
 
 export default function EvidenceBankPage() {
   const [evidenceList, setEvidenceList] = useState<Evidence[]>([]);
@@ -273,17 +282,11 @@ export default function EvidenceBankPage() {
             <form onSubmit={handleAddEvidence} className="space-y-4">
               <div>
                 <label className="text-xs font-bold text-muted block mb-1.5">Source Kind</label>
-                <select
+                <CustomSelect
                   value={newSourceKind}
-                  onChange={(e) => setNewSourceKind(e.target.value as EvidenceSourceKind)}
-                  className="w-full rounded-2xl border border-line bg-panel-2 p-3 text-xs text-ink focus:border-blue focus:outline-none"
-                >
-                  <option value="typed-note">Typed Note</option>
-                  <option value="cv-bullet">Existing CV Bullet</option>
-                  <option value="story">Career Story</option>
-                  <option value="spoken-note">Spoken / Audio Note</option>
-                  <option value="practice-answer">Practice Answer</option>
-                </select>
+                  onChange={(val) => setNewSourceKind(val as EvidenceSourceKind)}
+                  options={EVIDENCE_SOURCE_OPTIONS}
+                />
               </div>
 
               <div>

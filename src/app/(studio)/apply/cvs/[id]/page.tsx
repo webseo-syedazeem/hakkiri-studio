@@ -2,6 +2,7 @@
 
 import { useEffect, useState, use } from "react";
 import Link from "next/link";
+import { CustomSelect } from "@/components/ui";
 import type { Cv, Profile } from "@/lib/apply/schema";
 
 const DEFAULT_EDITOR_CV: Cv = {
@@ -371,17 +372,15 @@ export default function CvBuilderEditorPage({
             <form onSubmit={handleGenerateBullet} className="space-y-4">
               <div>
                 <label className="text-xs font-bold text-muted block mb-1.5">Select Role</label>
-                <select
+                <CustomSelect
                   value={bulletRole}
-                  onChange={(e) => setBulletRole(e.target.value)}
-                  className="w-full rounded-2xl border border-line bg-panel-2 p-3 text-xs text-ink focus:border-blue focus:outline-none"
-                >
-                  {displayRoles.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.title} @ {r.employer}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(val) => setBulletRole(val)}
+                  options={displayRoles.map((r) => ({
+                    value: r.id,
+                    label: `${r.title} @ ${r.employer}`,
+                    dotColor: "bg-blue",
+                  }))}
+                />
               </div>
 
               <div>

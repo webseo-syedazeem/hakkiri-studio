@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button, buttonClass } from "@/components/ui";
+import { Button, buttonClass, CustomSelect } from "@/components/ui";
 
 type Retention = 30 | 90 | 365 | 0;
 const OPTIONS: { value: Retention; label: string }[] = [
@@ -42,19 +42,19 @@ export function RetentionSetting({ initial }: { initial: Retention }) {
         Keep recordings of your answers for
       </label>
       <div className="mt-2 flex items-center gap-3">
-        <select
-          id="retention"
-          value={value}
-          disabled={busy}
-          onChange={(e) => void change(Number(e.target.value) as Retention)}
-          className="h-[38px] rounded-[9px] bg-panel-2 px-3 text-sm text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)]"
-        >
-          {OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </select>
+        <div className="w-56">
+          <CustomSelect
+            value={String(value)}
+            disabled={busy}
+            onChange={(val) => void change(Number(val) as Retention)}
+            options={OPTIONS.map((o) => ({
+              value: String(o.value),
+              label: o.label,
+              dotColor: "bg-blue",
+            }))}
+            size="sm"
+          />
+        </div>
         <span role="status" className="text-[13px] text-muted">
           {note}
         </span>

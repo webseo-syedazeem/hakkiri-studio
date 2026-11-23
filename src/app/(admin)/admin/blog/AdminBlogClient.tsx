@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import clsx from "clsx";
+import { CustomSelect } from "@/components/ui";
 import type { BlogPost, BlogSeoData } from "@/lib/blog/types";
 import { analyzeBlogSeo, slugify, calculateReadingTimeMinutes } from "@/lib/blog/seo";
 import { markdownToHtml } from "@/lib/blog/markdown";
@@ -468,18 +469,20 @@ export function AdminBlogClient({
                 ))}
               </div>
 
-              <select
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value)}
-                className="h-9 rounded-xl border border-white/10 bg-[#1c1d27] px-3 text-xs text-slate-200 focus:border-purple-500 focus:outline-none"
-              >
-                <option value="all">All Categories</option>
-                {Array.from(new Set([...initialCategories, ...PRESET_CATEGORIES])).map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
+              <div className="w-48">
+                <CustomSelect
+                  value={categoryFilter}
+                  onChange={setCategoryFilter}
+                  options={[
+                    { value: "all", label: "All Categories" },
+                    ...Array.from(new Set([...initialCategories, ...PRESET_CATEGORIES])).map((c) => ({
+                      value: c,
+                      label: c,
+                    })),
+                  ]}
+                  size="sm"
+                />
+              </div>
             </div>
           </div>
 
@@ -663,28 +666,16 @@ export function AdminBlogClient({
 
             <div className="flex items-center gap-2.5 flex-wrap">
               {/* Status pill selector */}
-              <div className="relative">
-                <select
+              <div className="w-44">
+                <CustomSelect
                   value={editingPost.published ? "published" : "draft"}
-                  onChange={(e) => setEditingPost({ ...editingPost, published: e.target.value === "published" })}
-                  className={clsx(
-                    "h-9 rounded-xl border px-3 text-xs font-medium focus:outline-none transition-all pr-8 appearance-none bg-[#1c1d27]",
-                    editingPost.published
-                      ? "border-emerald-500/40 text-emerald-300 bg-emerald-500/10"
-                      : "border-amber-500/40 text-amber-300 bg-amber-500/10"
-                  )}
-                >
-                  <option value="draft" className="bg-[#1c1d27] text-amber-300">Draft Status</option>
-                  <option value="published" className="bg-[#1c1d27] text-emerald-300">Published Status</option>
-                </select>
-                <div className="pointer-events-none absolute right-2.5 top-2.5">
-                  <span
-                    className={clsx(
-                      "inline-block h-2 w-2 rounded-full",
-                      editingPost.published ? "bg-emerald-400 animate-pulse" : "bg-amber-400"
-                    )}
-                  />
-                </div>
+                  onChange={(val) => setEditingPost({ ...editingPost, published: val === "published" })}
+                  options={[
+                    { value: "draft", label: "Draft Status", dotColor: "bg-amber-400" },
+                    { value: "published", label: "Published Status", dotColor: "bg-emerald-400" },
+                  ]}
+                  size="sm"
+                />
               </div>
 
               {editingPost.slug && (
@@ -784,17 +775,12 @@ export function AdminBlogClient({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-medium text-slate-300 mb-1">Category</label>
-                    <select
+                    <CustomSelect
                       value={editingPost.category}
-                      onChange={(e) => setEditingPost({ ...editingPost, category: e.target.value })}
-                      className="w-full rounded-xl border border-white/10 bg-[#1c1d27] px-3 py-2 text-xs text-white focus:border-purple-500 focus:outline-none"
-                    >
-                      {PRESET_CATEGORIES.map((c) => (
-                        <option key={c} value={c}>
-                          {c}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(val) => setEditingPost({ ...editingPost, category: val })}
+                      options={PRESET_CATEGORIES.map((c) => ({ value: c, label: c }))}
+                      size="sm"
+                    />
                   </div>
 
                   <div>
