@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { type CvDoc, type CvSummary, LEVEL_LABELS } from "@/lib/cv/schema";
 import { docWord } from "@/lib/cv/sections";
-import { api, messageOf } from "./client";
+import { ApiError, api, messageOf } from "./client";
 import { Dialog, usePanel } from "./Dialog";
 import { Announce, Bar, Btn, BtnLink, CvScreen, Field, Panel, Skeleton, Toolbar } from "./ui";
 
@@ -23,6 +24,9 @@ export function Dashboard() {
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState("");
   const [said, setSaid] = useState("");
+  const router = useRouter();
+  const [job, setJob] = useState({ title: "", employer: "", advert: "" });
+  const [fields, setFields] = useState<Record<string, string>>({});
 
   const load = useCallback(() => {
     setError("");
@@ -39,6 +43,8 @@ export function Dashboard() {
   // The rename box starts with the current name each time it opens.
   useEffect(() => {
     if (panel === "rename" && chosen) setName(chosen.name);
+    if (panel === "tailor") setJob({ title: "", employer: "", advert: "" });
+    setFields({});
     setProblem("");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [panel, item, chosen?.name]);
@@ -78,6 +84,21 @@ export function Dashboard() {
       await api(`/api/cv/versions/${item}`, { method: "DELETE" });
       return `${chosen?.name ?? "CV"} deleted.`;
     });
+
+  /** A tailored version: a copy for one job, opened straight on its tailoring screen. */
+  async function tailor() {
+    setBusy(true);
+    setProblem("");
+    setFields({});
+    try {
+      const made = await api<{ id: string }>(`/api/cv/versions/${item}/tailor`, { method: "POST", json: job });
+      router.push(`/cv/v/${made.id}/tailor`);
+    } catch (e) {
+      if (e instanceof ApiError) setFields(e.fields);
+      setProblem(messageOf(e));
+      setBusy(false);
+    }
+  }
 
   const bases = (cvs ?? []).filter((c) => c.kind === "base" || !cvs?.some((p) => p.id === c.parentId));
   const tailored = (id: string) => (cvs ?? []).filter((c) => c.kind === "tailored" && c.parentId === id);
@@ -223,7 +244,36 @@ export function Dashboard() {
           )}
         </Dialog>
       )}
-      {panel && ["rename", "duplicate", "delete-version"].includes(panel) && cvs && !chosen && (
+      {panel === "tailor" && chosen && (
+        <Dialog
+          title="Tailor to a job"
+          onClose={close}
+          wide
+          actions={
+            <>
+              <Btn onClick={close}>Cancel</Btn>
+              <Btn kind="primary" busy={busy} onClick={() => void tailor()}>
+                Make tailored version
+              </Btn>
+            </>
+          }
+        >
+          <p>
+            This makes a copy of <b>{chosen.name}</b> for one job. You tailor the copy; your base {docWord(chosen.region)} keeps everything.
+          </p>
+          <div className="cv-pair">
+            <Field label="Job title" value={job.title} onChange={(title) => setJob({ ...job, title })} maxLength={160} error={fields.title} />
+            <Field label="Employer" value={job.employer} onChange={(employer) => setJob({ ...job, employer })} maxLength={160} />
+          </div>
+          <Field label="The advert" rule="Paste all of it. It is kept word for word, and what it asks for is read from it." multiline rows={8} maxLength={20000} value={job.advert} onChange={(advert) => setJob({ ...job, advert })} error={fields.advert} />
+          {problem && !fields.title && !fields.advert && (
+            <p className="cv-error-text" role="alert">
+              {problem}
+            </p>
+          )}
+        </Dialog>
+      )}
+      {panel && ["rename", "duplicate", "delete-version", "tailor"].includes(panel) && cvs && !chosen && (
         <Dialog title="CV not found" onClose={close}>
           <p>That CV is no longer in your list.</p>
         </Dialog>
@@ -232,8 +282,8 @@ export function Dashboard() {
   );
 }
 
-function Row({ cv, indent, onAction }: { cv: CvSummary; indent?: boolean; onAction: (what: "rename" | "duplicate" | "delete-version") => void }) {
-  const href = cv.pendingImportId ? `/cv/import/${cv.pendingImportId}` : `/cv/v/${cv.id}/edit/contact`;
+function Row({ cv, indent, onAction }: { cv: CvSummary; indent?: boolean; onAction: (what: "rename" | "duplicate" | "delete-version" | "tailor") => void }) {
+  const href = cv.pendingImportId ? `/cv/import/${cv.pendingImportId}` : indent && cv.fit !== undefined ? `/cv/v/${cv.id}/tailor` : `/cv/v/${cv.id}/edit/contact`;
   const target = [cv.targetTitle, cv.targetEmployer].filter(Boolean).join(" · ");
   return (
     <div className="cv-pick" style={indent ? { paddingLeft: 44 } : undefined}>
@@ -247,7 +297,14 @@ function Row({ cv, indent, onAction }: { cv: CvSummary; indent?: boolean; onActi
         </small>
       </div>
       {cv.pendingImportId ? <span className="cv-chip cv-link" style={{ textDecoration: "none" }}>Upload to check</span> : cv.empty ? <span className="cv-chip">Empty</span> : null}
+      {cv.score !== undefined && !cv.pendingImportId && <span className="cv-chip" data-testid="row-score">Score {cv.score}</span>}
+      {cv.fit !== undefined && <span className="cv-chip" data-testid="row-fit">Job fit {cv.fit}</span>}
       <span className="cv-controls">
+        {!indent && !cv.empty && !cv.pendingImportId && (
+          <Btn onClick={() => onAction("tailor")} aria-label={`Tailor ${cv.name} to a job`}>
+            Tailor to a job
+          </Btn>
+        )}
         <Btn kind="quiet" onClick={() => onAction("rename")} aria-label={`Rename ${cv.name}`}>
           Rename
         </Btn>

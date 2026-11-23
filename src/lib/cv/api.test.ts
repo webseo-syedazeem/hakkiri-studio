@@ -648,6 +648,93 @@ describe("the Software view and the record of each download", () => {
   });
 });
 
+describe("a tailored version for one job", () => {
+  const tailorRoute = () => import("@/app/api/cv/versions/[id]/tailor/route");
+  const ADVERT = "Paid Media Lead at Example Travel.\n\nEssential\n- Experience running Google Ads campaigns\n- Experience managing budgets\n\nDesirable\n- Knowledge of SQL\n\nWe offer 28 days holiday.";
+  async function base() {
+    const made = await makeImport();
+    await importConfirm.POST(json({}), ctx(made.importId));
+    return made.versionId;
+  }
+
+  it("is a copy linked to its base, with the advert kept word for word and its requirements read from it", async () => {
+    const id = await base();
+    const res = await (await tailorRoute()).POST(json({ title: "Paid media lead", employer: "Example Travel", advert: ADVERT }), ctx(id));
+    expect(res.status).toBe(201);
+    const made = await res.json();
+    const parent = (await store.getOwnCv(id, alice.id))!;
+    const copy = (await store.getOwnCv(made.id, alice.id))!;
+    expect(copy).toMatchObject({ kind: "tailored", parentId: id, parentRev: parent.rev, rev: 1, name: `${SETUP.name.replace(/ – .*$/, "")} – Example Travel` });
+    expect(copy.target).toEqual({ title: "Paid media lead", employer: "Example Travel", advert: ADVERT });
+    expect(copy.requirements.map((r) => [r.quote, r.priority])).toEqual([["Experience running Google Ads campaigns", "required"], ["Experience managing budgets", "required"], ["Knowledge of SQL", "preferred"]]);
+    expect(cvStrings(copy)).toEqual(cvStrings(parent));
+    // The base knows nothing of the job, and is not changed by it.
+    expect(parent.kind).toBe("base");
+    expect(parent.requirements).toEqual([]);
+  });
+
+  it("changing the tailored version never changes the base", async () => {
+    const id = await base();
+    const made = await (await (await tailorRoute()).POST(json({ title: "Paid media lead", employer: "", advert: ADVERT }), ctx(id))).json();
+    const copy = (await store.getOwnCv(made.id, alice.id))!;
+    const before = JSON.stringify((await store.getOwnCv(id, alice.id))!.sections);
+    const sections = copy.sections.map((s) => (isEntrySection(s) ? { ...s, entries: s.entries.map((e) => ({ ...e, visible: false })) } : s));
+    expect((await version.PATCH(json({ rev: 1, sections }, "PATCH"), ctx(made.id))).status).toBe(200);
+    expect(JSON.stringify((await store.getOwnCv(id, alice.id))!.sections)).toBe(before);
+  });
+
+  it("needs a job and an advert", async () => {
+    const id = await base();
+    const none = await (await tailorRoute()).POST(json({ title: "", employer: "", advert: "" }), ctx(id));
+    expect(none.status).toBe(400);
+    expect(Object.keys((await none.json()).fields)).toEqual(["title", "advert"]);
+    expect(await store.listOwnCvs(alice.id)).toHaveLength(1);
+  });
+
+  it("a version made from a version still hangs off the original base", async () => {
+    const id = await base();
+    const first = await (await (await tailorRoute()).POST(json({ title: "A", employer: "", advert: ADVERT }), ctx(id))).json();
+    const second = await (await (await tailorRoute()).POST(json({ title: "B", employer: "", advert: ADVERT }), ctx(first.id))).json();
+    expect((await store.getOwnCv(second.id, alice.id))!.parentId).toBe(id);
+  });
+
+  it("another account cannot tailor someone else's CV", async () => {
+    const id = await base();
+    signedIn = bob;
+    expect((await (await tailorRoute()).POST(json({ title: "A", employer: "", advert: ADVERT }), ctx(id))).status).toBe(404);
+  });
+
+  it("the list shows each CV's score, and job fit where there is an advert", async () => {
+    const id = await base();
+    const made = await (await (await tailorRoute()).POST(json({ title: "Paid media lead", employer: "Example Travel", advert: ADVERT }), ctx(id))).json();
+    const rows = (await (await versions.GET()).json()).cvs as { id: string; kind: string; parentId?: string; score?: number; fit?: number }[];
+    const tailored = rows.find((r) => r.id === made.id)!;
+    const parent = rows.find((r) => r.id === id)!;
+    expect(tailored).toMatchObject({ kind: "tailored", parentId: id });
+    expect(tailored.fit).toBeGreaterThan(0);
+    expect(tailored.fit).toBeLessThanOrEqual(100);
+    expect(parent.fit).toBeUndefined();
+    expect(parent.score).toBeGreaterThan(40);
+    // An empty CV has neither.
+    const emptyId = await makeCv();
+    const empty = ((await (await versions.GET()).json()).cvs as { id: string; score?: number; fit?: number }[]).find((r) => r.id === emptyId)!;
+    expect([empty.score, empty.fit]).toEqual([undefined, undefined]);
+  });
+
+  it("requirements and change records are saved with the version, and only in the shape allowed", async () => {
+    const id = await base();
+    const made = await (await (await tailorRoute()).POST(json({ title: "Paid media lead", employer: "", advert: ADVERT }), ctx(id))).json();
+    const copy = (await store.getOwnCv(made.id, alice.id))!;
+    const requirements = copy.requirements.map((r, i) => (i === 0 ? { ...r, gap: true } : r));
+    const changes = [{ id: "c_0000000000000001", at: new Date().toISOString(), kind: "off", where: "A role", before: "A line", after: "", reason: "Shows nothing this advert asks for." }];
+    expect((await version.PATCH(json({ rev: 1, requirements, changes }, "PATCH"), ctx(made.id))).status).toBe(200);
+    const saved = (await store.getOwnCv(made.id, alice.id))!;
+    expect(saved.requirements[0].gap).toBe(true);
+    expect(saved.changes).toHaveLength(1);
+    expect((await version.PATCH(json({ rev: 2, requirements: [{ ...requirements[0], priority: "vital" }] }, "PATCH"), ctx(made.id))).status).toBe(400);
+  });
+});
+
 describe("your data, from Settings", () => {
   it("“Download my data” includes the CVs and uploads; “Delete all my data” removes them", async () => {
     const JSZip = (await import("jszip")).default;

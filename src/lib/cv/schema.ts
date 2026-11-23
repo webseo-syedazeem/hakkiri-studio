@@ -247,6 +247,46 @@ export const LocatorSchema = z.object({
 });
 export type Locator = z.infer<typeof LocatorSchema>;
 
+/* ------------------------------------------------------------- tailoring */
+
+/**
+ * One thing a job advert asks for. `quote` is the advert's own wording, kept
+ * exactly; `text` is how the person reads it. Whether it is met is worked out
+ * from the CV each time, from the lines linked here and the lines that match:
+ * it is never stored, so it cannot go stale.
+ */
+export const RequirementSchema = z.object({
+  id,
+  quote: prose(600),
+  text: line(300),
+  /** Required weighs 2 in job fit. Preferred, or not stated, weighs 1. */
+  priority: z.enum(["required", "preferred"]).default("required"),
+  /** Lines of the CV the person has said show this. */
+  evidence: z.array(LocatorSchema).max(8).default([]),
+  /** The person's own judgement of the lines they linked. */
+  judged: z.enum(["met", "partly"]).optional(),
+  /** For "partly": the part of the requirement their evidence does not cover. */
+  uncovered: line(300),
+  /** "No, I don't have this." It stays in the total and earns nothing. */
+  gap: z.boolean().default(false),
+});
+export type Requirement = z.infer<typeof RequirementSchema>;
+
+/** One change made while tailoring, with why. Together these are the report of what changed. */
+export const ChangeRecordSchema = z.object({
+  id,
+  at: z.string(),
+  kind: z.enum(["included", "off", "moved", "reworded"]),
+  /** The role or section it happened in, by name. */
+  where: line(200),
+  before: prose(700),
+  after: prose(700),
+  reason: line(300),
+  /** The requirement it was made for, if any. */
+  requirementId: z.string().max(40).optional(),
+});
+export type ChangeRecord = z.infer<typeof ChangeRecordSchema>;
+
 /* -------------------------------------------------------------- the CV doc */
 
 export const CvDocSchema = z.object({
@@ -271,6 +311,10 @@ export const CvDocSchema = z.object({
   importId: z.string().optional(),
   /** Words the person has told the checks to leave alone: a name, a specialist term, an acronym they chose not to spell out. */
   accepted: z.array(line(60)).max(200).default([]),
+  /** What the target advert asks for, as the person has confirmed it. */
+  requirements: z.array(RequirementSchema).max(40).default([]),
+  /** What was changed while tailoring this version, and why. */
+  changes: z.array(ChangeRecordSchema).max(200).default([]),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -290,6 +334,10 @@ export interface CvSummary {
   pendingImportId?: string;
   /** True when nothing has been entered yet. */
   empty: boolean;
+  /** The CV score, from what can be judged without making its files. Absent for an empty CV. */
+  score?: number;
+  /** Job fit, where the CV has an advert with something to assess. */
+  fit?: number;
   roles: number;
   updatedAt: string;
 }

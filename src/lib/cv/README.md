@@ -138,6 +138,27 @@ How the points work, as built:
 - `cv.accepted` holds words the person told the checks to leave alone (a name spelt the other region's way, an acronym).
 - A finding on a line that is then switched off is "Excluded from this version", not "Fixed" (`edit.ts: stateAt`).
 
+## Step 5: tailoring to a job, and job fit
+
+| Where | What |
+| --- | --- |
+| `tailor/requirements.ts` | Reads what an advert asks for, by rule, in the advert's own words (`quote`). Headings decide required or preferred; duties under "The role" are kept at the lighter weight; benefits, "about us" and how to apply are left out. |
+| `tailor/fit.ts` | `assess` gives each requirement Met, Partly met or Missing from the CV as it is now, with the lines that show it and the words not covered. `jobFit`: required weighs 2, preferred or unstated 1; met earns the weight, partly met half, missing nothing; the score is earned over total. No requirements, no score. No floor. `keywords`: the advert's own terms, on the CV or not. |
+| `tailor/propose.ts` | Assembling before rewording: move lines that show a requirement to the top of their role, offer (not select) switching off lines that show none, offer saved achievements that show something missing. `applyProposals` records each change with its reason; `effectOf` says what a set of changes does to fit and flags any requirement left worse off. |
+| `src/app/api/cv/versions/[id]/tailor` | Makes a tailored version: a copy linked to its base (`kind: "tailored"`, `parentId`, `parentRev`) with the advert kept word for word and its requirements read. The base is never changed by the copy. |
+| `src/components/cv/Tailor.tsx` | The tailoring screen (`/cv/v/[id]/tailor`, 720 / 448): job fit with its arithmetic, one row per requirement, "Do you have this?", Link evidence, the advert with the chosen requirement marked, the advert's terms marked on the paper. |
+| `src/components/cv/Changes.tsx` | Proposed changes (`/cv/v/[id]/changes/proposed`) and the report of what changed and why (`/changes/report`). |
+
+Things worth knowing:
+
+- **Nothing about fit is stored.** `cv.requirements` holds the advert's words, the person's reading, priority, the lines they linked and any gap they recorded. Whether each is met is worked out from the CV every time, so it cannot go stale: switch off the only line that showed something and the fit drops at once.
+- **Met needs one line that shows the whole of it.** Words scattered across lines are Partly met. A skill listed on its own is Partly met ("no line shows where you used it").
+- **"Do you have this?"** Yes asks for one line on what was done and where, previews it, and adds it under a role the person picks (one is suggested). A bare "Yes" adds nothing. No records a gap, which stays in the total.
+- **Evidence in other words** is the person's to link ("Link evidence"), as all of it or part of it; part of it must name what is not covered.
+- **Highlights are screen overlays.** Terms marked on the paper never reach a file, and nothing from the advert is put into the CV.
+- `cv.changes` is the report: each change made while tailoring, with before, after, the reason and the requirement it was for.
+- The list of CVs shows each CV's score and, where it has an advert, its job fit (`store.listCvSummaries`).
+
 ## Tests
 
 - `npx vitest run src/lib/cv`: every reading rule (`dates`, `lines`, `reader`), every sample file
@@ -157,7 +178,9 @@ How the points work, as built:
   stand-in that replies with good drafts, bad drafts and nothing at all.
 - `score/*.test.ts`: every check, the sums (weights, hand-on, pending, no floor), gaps in work, and the
   public check. The Software view, the ATS-ready label and download records are in `api.test.ts`.
-- Browser tests: `e2e/cv-cleanup.cjs`, `e2e/cv-start.cjs`, `e2e/cv-upload.cjs`, `e2e/cv-editor.cjs`, `e2e/cv-writing.cjs`, `e2e/cv-score.cjs`
+- `tailor/*.test.ts`: reading an advert, each status, the fit arithmetic (including the worked example
+  from the design: 5 of 8, shown as 63), no floor, proposals and their records, side effects.
+- Browser tests: `e2e/cv-cleanup.cjs`, `e2e/cv-start.cjs`, `e2e/cv-upload.cjs`, `e2e/cv-editor.cjs`, `e2e/cv-writing.cjs`, `e2e/cv-score.cjs`, `e2e/cv-tailor.cjs`
   (see `e2e/README.md`). `cv-editor.cjs` downloads every file it makes into `e2e/out/cv-downloads/`,
   opens each one and compares its text with the saved CV (`e2e/cv-files.cjs`).
 
@@ -175,6 +198,13 @@ How the points work, as built:
 - **The public check's page** (`/cv-audit`) is the existing one; only its engine changed. Its stored
   audits now carry the new finding ids. The old `auditCvText` rubric in `src/lib/apply/checks/` is no
   longer used by it (the robot tester still imports that file).
+- **Reading the advert is by rule.** It works from headings and phrases ("experience with", "you must
+  have"). An unusual advert will need the person to add or correct requirements, which the screen
+  allows. A model could read adverts better; if added, keep the rule that every requirement is a
+  passage of the advert word for word.
+- **Matching is by the words used.** A CV line in different words from the advert's is not matched
+  automatically; the person links it. Rewording a line to fit the advert is left to the writing help.
+- **Deleting a base CV** leaves its tailored versions, which are then listed on their own.
 - **Spelling.** The score checks UK against US spellings from a word list, with "Accept". A full
   dictionary check is left to the browser's own spell-check in the fields.
 - **Judgement checks are patterns.** "Likely passive", "weak verb" and "big claim" are word patterns,

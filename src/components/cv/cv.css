@@ -302,3 +302,22 @@ textarea.cv-input { resize: vertical; field-sizing: content; }
   .cv-fields tr { display: block; padding: 8px 0; border-bottom: 1px solid var(--color-line); }
   .cv-fields th, .cv-fields td { display: block; border: 0; padding: 2px 16px; text-align: left !important; }
 }
+
+/* Tailoring: one row per thing the advert asks for, with where the CV shows it. */
+.cv .cv-plainlist li.cv-req { padding: 14px 20px 14px 17px; border-bottom: 1px solid var(--color-line); border-left: 3px solid var(--cv-input-edge); }
+.cv .cv-plainlist li.cv-req[data-status="met"] { border-left-color: var(--cv-green); }
+.cv .cv-plainlist li.cv-req[data-status="partly"] { border-left-color: var(--color-blue); }
+.cv .cv-plainlist li.cv-req[data-status="missing"] { border-left-color: var(--color-red); }
+.cv .cv-plainlist li.cv-req[data-selected] { background: var(--cv-selected); }
+.cv-status[data-status="met"] { color: var(--cv-green); }
+.cv-status[data-status="missing"] { color: var(--color-red); }
+.cv-status[data-status="partly"] { color: var(--cv-note-ink); }
+.cv-req-quote { display: block; margin-top: 8px; font-size: 15px; font-weight: 550; }
+.cv-req-line { margin-top: 6px; font-size: 13px; }
+.cv-mini { font: inherit; font-size: 12px; color: var(--color-ink); background: var(--color-panel-2); border: 1px solid var(--cv-input-edge); border-radius: 5px; padding: 2px 6px; }
+.cv-linklist { max-height: 300px; overflow: auto; margin-top: 8px; display: grid; gap: 8px; font-size: 14px; }
+.cv .cv-plainlist li.cv-change { padding: 14px 20px; border-bottom: 1px solid var(--color-line); }
+.cv-termmark { pointer-events: none; }
+@media (max-width: 767px) {
+  .cv-mini { min-height: 44px; font-size: 16px; }
+}

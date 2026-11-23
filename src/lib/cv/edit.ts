@@ -204,10 +204,10 @@ export function stateAt(sections: Section[], at: Locator): "on" | "off" | "gone"
 /* --------------------------------------------------------------------- undo */
 
 /** Everything a person can change about a CV. One of these is what Undo goes back to. */
-export type Snapshot = Pick<CvDoc, "name" | "level" | "region" | "target" | "contact" | "sections" | "design" | "accepted">;
-export const SNAPSHOT_KEYS = ["name", "level", "region", "target", "contact", "sections", "design", "accepted"] as const;
+export type Snapshot = Pick<CvDoc, "name" | "level" | "region" | "target" | "contact" | "sections" | "design" | "accepted" | "requirements" | "changes">;
+export const SNAPSHOT_KEYS = ["name", "level", "region", "target", "contact", "sections", "design", "accepted", "requirements", "changes"] as const;
 
-export const snapshotOf = (cv: Snapshot): Snapshot => ({ name: cv.name, level: cv.level, region: cv.region, target: cv.target, contact: cv.contact, sections: cv.sections, design: cv.design, accepted: cv.accepted });
+export const snapshotOf = (cv: Snapshot): Snapshot => ({ name: cv.name, level: cv.level, region: cv.region, target: cv.target, contact: cv.contact, sections: cv.sections, design: cv.design, accepted: cv.accepted, requirements: cv.requirements, changes: cv.changes });
 
 export interface History {
   past: Snapshot[];

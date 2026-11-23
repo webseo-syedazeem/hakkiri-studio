@@ -17,6 +17,8 @@ import { Finish } from "./Finish";
 import { PaperView } from "./Paper";
 import { ContactForm, type FieldHooks, SectionForm } from "./SectionForms";
 import { ACCEPT, STAGE_WORDS, type UploadStage, sendUpload } from "./upload";
+import { jobFit } from "@/lib/cv/tailor/fit";
+import { fitLabel } from "./Tailor";
 import { Announce, Bar, Btn, BtnLink, CvScreen, Field, Fixed, Note, Panel, Skeleton, Toolbar } from "./ui";
 import { SAVE_WORDS } from "./useCv";
 import { useWorkspace } from "./Workspace";
@@ -259,6 +261,9 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
         <span className="cv-chip">{cv.kind === "base" ? `Base ${word}` : cv.target?.employer || "Tailored version"}</span>
         <BtnLink href={`/cv/v/${cv.id}/findings`} onClick={() => void flush()} data-testid="score-button">
           {scoreLabel(w.score, word)}
+        </BtnLink>
+        <BtnLink href={`/cv/v/${cv.id}/tailor`} onClick={() => void flush()} data-testid="fit-button">
+          {fitLabel(cv.requirements.length ? jobFit(cv).score : null)}
         </BtnLink>
         <small role="status" data-testid="save-state">
           {SAVE_WORDS[save]}

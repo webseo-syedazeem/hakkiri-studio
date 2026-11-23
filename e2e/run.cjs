@@ -45,7 +45,7 @@ function run(script, extraEnv = {}) {
   try {
     await waitForServer();
     // Order matters: stories and pitch expect only the demo data; flow adds an interview; audit clicks everything.
-    for (const s of ["stories", "pitch", "flow", "slots", "pay", "cv-cleanup", "cv-start", "cv-upload", "cv-editor", "cv-writing", "cv-score"]) ok = run(s) && ok;
+    for (const s of ["stories", "pitch", "flow", "slots", "pay", "cv-cleanup", "cv-start", "cv-upload", "cv-editor", "cv-writing", "cv-score", "cv-tailor"]) ok = run(s) && ok;
     ok = run("audit", { EXTRA: "/settings,/landing,/present,/privacy,/terms,/story-bank" }) && ok;
     ok = run("a11y-page", {}) && ok;
   } finally {

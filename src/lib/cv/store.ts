@@ -1,6 +1,8 @@
 import "server-only";
 import { deleteDoc, getDoc, queryDocsByUser, saveDoc } from "@/lib/apply/db";
 import { type CvImport, CvImportSchema } from "./import/record";
+import { scoreCv } from "./score/score";
+import { jobFit } from "./tailor/fit";
 import { type Achievement, AchievementSchema, type CvDoc, type CvSummary, CvDocSchema, type ExportRecord, ExportRecordSchema, isEntrySection, summarise } from "./schema";
 
 /**
@@ -65,7 +67,15 @@ export async function listCvSummaries(userId: string): Promise<CvSummary[]> {
   const [cvs, imports] = await Promise.all([listOwnCvs(userId), listOwnImports(userId)]);
   const pending = new Map<string, string>();
   for (const i of imports) if (i.status !== "confirmed") pending.set(i.versionId, i.id);
-  return cvs.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).map((cv) => summarise(cv, pending.get(cv.id)));
+  const now = new Date();
+  return cvs
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+    .map((cv) => {
+      const row = summarise(cv, pending.get(cv.id));
+      if (row.empty) return row;
+      // The same sums the score and tailoring screens do, so the list never disagrees with them.
+      return { ...row, score: scoreCv({ cv, now }).shown, fit: jobFit(cv).score ?? undefined };
+    });
 }
 
 /* ------------------------------------------------------------ achievements */

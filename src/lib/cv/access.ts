@@ -2,7 +2,7 @@ import "server-only";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth/require";
-import { type CvDoc, CV_LEVELS, CV_REGIONS, ContactSchema, DesignSchema, ExcerptSchema, SectionSchema, TargetSchema, coreSections, emptyContact, newId } from "./schema";
+import { type CvDoc, CV_LEVELS, CV_REGIONS, ChangeRecordSchema, ContactSchema, DesignSchema, ExcerptSchema, RequirementSchema, SectionSchema, TargetSchema, coreSections, emptyContact, newId } from "./schema";
 
 /** The signed-in person's id. Throws the same 401 response as requireUser when signed out. */
 export async function requireUserId(): Promise<string> {
@@ -59,6 +59,8 @@ export const EditableSchema = z
     sections: z.array(SectionSchema).max(24).optional(),
     design: DesignSchema.optional(),
     accepted: z.array(oneLine(60)).max(200).optional(),
+    requirements: z.array(RequirementSchema).max(40).optional(),
+    changes: z.array(ChangeRecordSchema).max(200).optional(),
   })
   .strict();
 
@@ -99,6 +101,8 @@ export function newCv(userId: string, setup: Setup, now: string): CvDoc {
     contact: emptyContact(),
     sections: coreSections(setup.level),
     accepted: [],
+    requirements: [],
+    changes: [],
     // One page for students, graduates and early career; up to two for experienced and senior.
     design: { template: setup.level === "student" ? "graduate" : "standard", pageSize: setup.region === "us" ? "letter" : "a4", density: "default", pageTarget: setup.level === "student" || setup.level === "early" ? 1 : 2 },
     createdAt: now,
