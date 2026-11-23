@@ -125,7 +125,7 @@ export default function ApplyHomePage() {
           <h2 className="text-base sm:text-lg font-black text-ink uppercase tracking-wide">
             Section 1 · CV, Cover Letter, Prep & Application Answers
           </h2>
-          <span className="text-xs text-muted">Executive ATS Builder & Evidence Grounding</span>
+          <span className="text-xs text-muted">Built from your own words</span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
@@ -138,14 +138,14 @@ export default function ApplyHomePage() {
                 📄
               </div>
               <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20 font-bold">
-                ATS Career Flow
+                CV builder
               </span>
             </div>
             <h3 className="text-base font-black text-ink group-hover:text-blue-soft transition">
               CV & Resume Builder
             </h3>
             <p className="text-xs text-muted leading-relaxed">
-              Section-by-section ATS architect, live 0–100 speedometer score gauge, AI keyword targeting, and grounded bullet writer.
+              Build a CV section by section from your own words, then download it as PDF or Word.
             </p>
             <div className="pt-2 text-xs font-bold text-blue flex items-center gap-1 group-hover:translate-x-1 transition duration-200">
               Open Builder <span>→</span>
@@ -214,7 +214,7 @@ export default function ApplyHomePage() {
               Free CV & Letter Audit
             </h3>
             <p className="text-xs text-muted leading-relaxed">
-              Weighted scoring benchmarked to enterprise Ashby, Greenhouse & Workday standards. Flags critical ATS blockers and tells you when to apply.
+              A score from written rules, the lines to fix first, and a clear line for when it is good enough to send.
             </p>
             <div className="pt-2 text-xs font-bold text-blue flex items-center gap-1 group-hover:translate-x-1 transition duration-200">
               Run Audit <span>→</span>

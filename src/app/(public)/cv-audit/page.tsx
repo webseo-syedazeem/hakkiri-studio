@@ -162,35 +162,21 @@ export default function CvAuditPage() {
             {/* Hero / Intro */}
             <div className="text-center space-y-3">
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue/15 border border-blue/30 text-blue-300 text-xs font-mono font-bold tracking-wide uppercase">
-                <span>✦</span> Executive ATS Resume Checker · Deep Diagnostic
+                <span>✦</span> Free CV check
               </div>
               <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white">
                 Free AI Resume & CV Score Audit
               </h1>
               <p className="text-sm sm:text-base text-slate-300 max-w-2xl mx-auto leading-relaxed">
-                Know exactly where you stand before you apply. Scanned against <b>Ashby, Greenhouse, Workday, BambooHR, and Lever</b> parser specifications.
+                Know where your CV stands before you apply: a score, the lines to fix first, and the questions an interviewer is likely to ask.
               </p>
             </div>
 
-            {/* ATS Compatibility Badges */}
-            <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 py-3 border-y border-white/10 text-xs font-mono text-slate-400">
-              <span className="text-[11px] uppercase tracking-wider text-slate-500 font-bold">Tested Parsers:</span>
-              <span className="flex items-center gap-1.5 text-indigo-300 font-bold">
-                <span className="h-1.5 w-1.5 rounded-full bg-indigo-400" /> Ashby
-              </span>
-              <span className="flex items-center gap-1.5 text-emerald-300 font-bold">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /> Greenhouse
-              </span>
-              <span className="flex items-center gap-1.5 text-amber-300 font-bold">
-                <span className="h-1.5 w-1.5 rounded-full bg-amber-400" /> Workday
-              </span>
-              <span className="flex items-center gap-1.5 text-lime-300 font-bold">
-                <span className="h-1.5 w-1.5 rounded-full bg-lime-400" /> BambooHR
-              </span>
-              <span className="flex items-center gap-1.5 text-teal-300 font-bold">
-                <span className="h-1.5 w-1.5 rounded-full bg-teal-400" /> Lever
-              </span>
-            </div>
+            {/* What the check is, honestly */}
+            <p className="text-center text-xs text-slate-400 max-w-2xl mx-auto py-3 border-y border-white/10">
+              Hakkiri checks your CV against written rules in code: evidence, clarity, structure and how easily software can read the text.
+              It is not a test against any named applicant-tracking system, and no employer sees this score.
+            </p>
 
             {/* Audit Form Container */}
             <div className="rounded-3xl border border-white/15 bg-[#10111f] p-6 sm:p-8 shadow-2xl space-y-6">
@@ -248,9 +234,9 @@ export default function CvAuditPage() {
                         type="button"
                         onClick={handleLoadSample}
                         className="text-xs font-bold text-blue-400 hover:text-blue-300 flex items-center gap-1 transition cursor-pointer"
-                        title="Load high-scoring tech lead CV sample"
+                        title="Fill the box with an example CV that is not yours, to see how the check works"
                       >
-                        <span>✦</span> Load Sample Tech Lead CV
+                        <span>✦</span> Try an example CV (not yours)
                       </button>
                       {text.length > 0 && (
                         <button
@@ -330,7 +316,7 @@ export default function CvAuditPage() {
                   ) : (
                     <>
                       <span>✦</span>
-                      <span>Run Instant Free ATS Audit →</span>
+                      <span>Check my CV →</span>
                     </>
                   )}
                 </button>
@@ -345,7 +331,7 @@ export default function CvAuditPage() {
             {/* Top Score Banner with ATS Speedometer Gauge */}
             <div className="rounded-3xl border border-white/15 bg-gradient-to-b from-[#141528] to-[#0d0e19] p-6 sm:p-10 text-center shadow-2xl relative overflow-hidden space-y-6">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-slate-300 text-xs font-mono font-bold">
-                <span>✦</span> Verified ATS Score Preview
+                <span>✦</span> Your CV score
               </div>
 
               {/* Speedometer Gauge Visual */}
@@ -400,7 +386,7 @@ export default function CvAuditPage() {
 
               <p className="text-sm text-slate-300 max-w-xl mx-auto leading-relaxed">
                 {result.score >= 85
-                  ? "🌟 Strong CV: Surpasses the 85+ stop-polishing line. Your document is ready for enterprise ATS submission."
+                  ? "🌟 Strong CV: Surpasses the 85+ stop-polishing line. Stop polishing and start applying."
                   : result.score >= 70
                   ? "👍 Good with gaps: High clarity, but adding quantified impact metrics will dramatically boost interview callback rates."
                   : "⚠️ Needs Optimization: High-severity duty phrasing and missing metrics detected. Follow the diagnostic findings below."}
@@ -427,7 +413,7 @@ export default function CvAuditPage() {
                   </div>
                 </div>
                 <div className="rounded-2xl bg-[#18192c] p-4 border border-white/10">
-                  <div className="text-[11px] text-slate-400 font-mono">ATS Software Read (10%)</div>
+                  <div className="text-[11px] text-slate-400 font-mono">Readable by software (10%)</div>
                   <div className="text-2xl font-black text-teal-300 font-mono mt-1">
                     {result.subscores.software}%
                   </div>
@@ -484,7 +470,7 @@ export default function CvAuditPage() {
                   Unlock Full Report & Challenger Interview Questions
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                  Access the complete diagnostic breakdown ({result.totalFindingsCount} findings), full ATS parser syntax log, and the {result.interviewerQuestionsCount} challenger questions hiring managers will ask based on this CV.
+                  Access the complete diagnostic breakdown ({result.totalFindingsCount} findings), and the {result.interviewerQuestionsCount} challenger questions hiring managers will ask based on this CV.
                 </p>
 
                 <form onSubmit={handleUnlock} className="space-y-4 pt-3 text-left">

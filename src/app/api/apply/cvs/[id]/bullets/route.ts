@@ -1,40 +1,39 @@
 import { NextResponse } from "next/server";
-import { requireUser } from "@/lib/auth/require";
-import { getCv, saveCv, saveEvidence } from "@/lib/apply/db";
-import { checkGrounding } from "@/lib/apply/checks/grounding";
+import { saveCv, saveEvidence } from "@/lib/apply/db";
+import { loadOwnCv, cvNotFound, requireUserId } from "@/lib/cv/access";
 import crypto from "node:crypto";
 
-export async function POST(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
+/**
+ * Adds a bullet from what the person typed. Their words are kept as they are
+ * (only trimmed, with a capital first letter and no trailing full stop): no
+ * verb is prefixed, no number or second bullet is made up. The notes are also
+ * saved as evidence so later writing help can trace every fact back to them.
+ */
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const user = await requireUser();
+    const userId = await requireUserId();
     const { id } = await params;
-    const cv = await getCv(id);
+    const cv = await loadOwnCv(id, userId);
+    if (!cv) return cvNotFound();
 
-    if (!cv || cv.userId !== user.id) {
-      return NextResponse.json({ error: "not_found", message: "CV not found." }, { status: 404 });
+    const body = await req.json().catch(() => ({}));
+    const notes = typeof body.notes === "string" ? body.notes.replace(/\s+/g, " ").trim() : "";
+    const roleId = typeof body.roleId === "string" && body.roleId ? body.roleId : "role-1";
+
+    if (notes.length < 10) {
+      return NextResponse.json({ error: "too_short", message: "Please say a little more about what you did." }, { status: 400 });
+    }
+    if (notes.length > 600) {
+      return NextResponse.json({ error: "too_long", message: "Please keep one bullet under 600 characters." }, { status: 400 });
     }
 
-    const body = await req.json();
-    const { notes, roleId = "role-1", action } = body;
-
-    if (!notes || typeof notes !== "string" || notes.trim().length < 10) {
-      return NextResponse.json(
-        { error: "too_short", message: "Please provide more details on what you achieved." },
-        { status: 400 },
-      );
-    }
-
-    // Save notes as confirmed evidence item first ("nothing invented")
     const now = new Date().toISOString();
     const evId = `ev_${crypto.randomBytes(6).toString("hex")}`;
     await saveEvidence({
       id: evId,
-      userId: user.id,
-      text: notes.trim(),
-      numbers: notes.match(/\d+(?:%|k|m|£|\$)?/gi) || [],
+      userId: userId,
+      text: notes,
+      numbers: notes.match(/[£$€]?\d[\d,.]*\s*(?:%|k|m|bn)?/gi) || [],
       skillTags: [],
       sourceKind: "typed-note",
       confirmed: true,
@@ -42,63 +41,16 @@ export async function POST(
       updatedAt: now,
     });
 
-    // Generate grounded bullets based strictly on notes
-    // Formats into: action verb + context + quantified outcome
-    const cleanNotes = notes.trim();
-    let bullet1Text = cleanNotes;
-    let bullet2Text = "";
-
-    // Action verb enhancement while respecting grounding
-    if (!/^(?:led|architected|built|developed|delivered|managed|reduced|increased)\b/i.test(cleanNotes)) {
-      bullet1Text = `Delivered ${cleanNotes.charAt(0).toLowerCase() + cleanNotes.slice(1)}`;
-    }
-
-    if (action === "shorter") {
-      bullet1Text = bullet1Text.split(".")[0];
-    } else if (action === "add_number" && !/\d/.test(bullet1Text)) {
-      bullet1Text = `${bullet1Text} (achieving measurable turnaround improvement)`;
-    }
-
-    const bullets = [
-      {
-        id: `b_${crypto.randomBytes(6).toString("hex")}`,
-        roleId,
-        text: bullet1Text,
-        evidenceIds: [evId],
-        origin: "ai" as const,
-        visible: true,
-      },
-    ];
-
-    if (cleanNotes.length > 80) {
-      bullet2Text = `Streamlined cross-team execution and automated validation workflows related to ${cleanNotes.slice(0, 50)}...`;
-      bullets.push({
-        id: `b_${crypto.randomBytes(6).toString("hex")}`,
-        roleId,
-        text: bullet2Text,
-        evidenceIds: [evId],
-        origin: "ai" as const,
-        visible: true,
-      });
-    }
-
-    // Grounding verification
-    const grounding = checkGrounding(bullet1Text, [notes]);
-
-    // Append to CV
-    cv.bullets = [...cv.bullets, ...bullets];
+    const text = (notes.charAt(0).toUpperCase() + notes.slice(1)).replace(/\.$/, "");
+    const bullet = { id: `b_${crypto.randomBytes(6).toString("hex")}`, roleId, text, evidenceIds: [evId], origin: "person" as const, visible: true };
+    cv.bullets = [...cv.bullets, bullet];
     cv.updatedAt = now;
     await saveCv(cv);
 
-    return NextResponse.json({
-      success: true,
-      newBullets: bullets,
-      grounding,
-      cv,
-    });
+    return NextResponse.json({ success: true, newBullets: [bullet], cv });
   } catch (err: unknown) {
     if (err instanceof Response) return err;
     console.error("[api/apply/cvs/[id]/bullets] Error:", err);
-    return NextResponse.json({ error: "server_error", message: "Failed to generate bullets." }, { status: 500 });
+    return NextResponse.json({ error: "server_error", message: "Failed to add the bullet." }, { status: 500 });
   }
 }
