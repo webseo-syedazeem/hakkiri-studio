@@ -1,90 +1,25 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { requireUser } from "@/lib/auth/require";
+import { readJson } from "@/lib/http/body";
 import { getProfile, saveProfile } from "@/lib/apply/db";
-import type { Profile } from "@/lib/apply/schema";
+import { emptyProfile, profileCompleteness, withoutSeededProfile } from "@/lib/apply/own-data";
+import { ProfileEducationSchema, ProfileExtraSchema, ProfileRoleSchema, ProfileSkillSchema, type Profile } from "@/lib/apply/schema";
 
+/**
+ * The person's own career profile. A new account's profile is empty apart
+ * from the account's name and email: no headline, role, degree, skill, phone
+ * number or salary is written in for them. The sample profile an earlier
+ * build saved into every account is removed here, part by part, wherever it
+ * is still exactly as it was written.
+ */
 export async function GET() {
   try {
     const user = await requireUser();
-    const userId = user.id;
-    const candidateName = [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email?.split("@")[0] || "Candidate";
-    const userEmail = user.email || "candidate@example.com";
-    let profile = await getProfile(userId);
-
-    if (!profile) {
-      const now = new Date().toISOString();
-      const defaultProfile: Profile = {
-        userId,
-        region: "uk",
-        contact: {
-          name: candidateName,
-          email: userEmail,
-          phone: "+44 7700 900123",
-          location: "London, UK",
-          links: ["https://linkedin.com"],
-        },
-        headline: "Senior Software Engineer & Tech Lead",
-        summary: "Results-driven engineering leader with 8+ years building scalable distributed cloud systems.",
-        roles: [
-          {
-            id: "role-1",
-            title: "Senior Full Stack Engineer",
-            employer: "FinTech Scaleup",
-            location: "London, UK",
-            start: "2023",
-            end: "Present",
-            current: true,
-            bullets: [
-              {
-                id: "b-1",
-                text: "Architected real-time payment reconciliation engine processing £14M+ daily transactions with 99.99% uptime.",
-                evidenceIds: [],
-              },
-              {
-                id: "b-2",
-                text: "Mentored 5 junior engineers and introduced TypeScript/Next.js best practices across 3 cross-functional teams.",
-                evidenceIds: [],
-              },
-            ],
-          },
-        ],
-        education: [
-          {
-            id: "edu-1",
-            institution: "University of Manchester",
-            qualification: "BSc Computer Science",
-            grade: "First Class Honours",
-            start: "2016",
-            end: "2019",
-          },
-        ],
-        skills: [
-          { name: "TypeScript", group: "Languages", evidenceIds: [] },
-          { name: "Next.js", group: "Frameworks", evidenceIds: [] },
-          { name: "MongoDB", group: "Databases", evidenceIds: [] },
-          { name: "Cloud Architecture", group: "Engineering", evidenceIds: [] },
-        ],
-        extras: [
-          { kind: "certificate", title: "AWS Certified Solutions Architect", detail: "Amazon Web Services" },
-        ],
-        screening: {
-          rightToWork: "Yes (UK Citizen)",
-          noticePeriod: "1 month",
-          salaryMin: 85000,
-          salaryCurrency: "GBP",
-          relocate: false,
-          remote: "hybrid",
-          visaNeeded: false,
-          custom: [],
-        },
-        completeness: 85,
-        createdAt: now,
-        updatedAt: now,
-      };
-      await saveProfile(defaultProfile);
-      profile = defaultProfile;
-    }
-
+    const stored = await getProfile(user.id);
+    if (!stored) return NextResponse.json(emptyProfile(user, new Date().toISOString()));
+    const { profile, changed } = withoutSeededProfile(stored);
+    if (changed) await saveProfile({ ...profile, updatedAt: new Date().toISOString() });
     return NextResponse.json(profile);
   } catch (err: unknown) {
     if (err instanceof Response) return err;
@@ -93,45 +28,43 @@ export async function GET() {
   }
 }
 
+const text = (max: number) => z.string().max(max);
+/** What a person can change in their profile. Each part is checked; anything else that is sent is ignored. */
+const Patch = z
+  .object({
+    region: z.enum(["uk", "us"]),
+    contact: z.object({ name: text(120), email: text(200), phone: text(40), location: text(120), links: z.array(text(300)).max(10) }),
+    headline: text(200),
+    summary: text(4000),
+    roles: z.array(ProfileRoleSchema).max(40),
+    education: z.array(ProfileEducationSchema).max(20),
+    skills: z.array(ProfileSkillSchema).max(100),
+    extras: z.array(ProfileExtraSchema).max(40),
+    screening: z.object({
+      rightToWork: text(120),
+      noticePeriod: text(60),
+      salaryMin: z.number().min(0).max(10_000_000),
+      salaryCurrency: text(8),
+      relocate: z.boolean(),
+      remote: z.enum(["any", "remote", "hybrid", "onsite"]),
+      visaNeeded: z.boolean(),
+      custom: z.array(z.object({ question: text(300), answer: text(1000) })).max(30),
+    }),
+    sourceCvText: text(40_000),
+  })
+  .partial();
+
 export async function PATCH(req: Request) {
   try {
     const user = await requireUser();
-    const userId = user.id;
-    const candidateName = [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email?.split("@")[0] || "Candidate";
-    const userEmail = user.email || "candidate@example.com";
-    const existing = await getProfile(userId);
-    const body = await req.json();
+    const read = await readJson(req, Patch, { max: 300_000, message: "Your profile couldn’t be saved. Check what you entered and try again." });
+    if (!read.ok) return read.response;
 
     const now = new Date().toISOString();
-    const updated: Profile = {
-      ...(existing || {
-        userId,
-        region: "uk",
-        contact: { name: candidateName, email: userEmail, phone: "", location: "", links: [] },
-        headline: "",
-        summary: "",
-        roles: [],
-        education: [],
-        skills: [],
-        extras: [],
-        screening: {
-          rightToWork: "Yes",
-          noticePeriod: "1 month",
-          salaryMin: 50000,
-          salaryCurrency: "GBP",
-          relocate: false,
-          remote: "hybrid",
-          visaNeeded: false,
-          custom: [],
-        },
-        completeness: 70,
-        createdAt: now,
-        updatedAt: now,
-      }),
-      ...body,
-      userId, // Immutable
-      updatedAt: now,
-    };
+    const stored = await getProfile(user.id);
+    const base = stored ? withoutSeededProfile(stored).profile : emptyProfile(user, now);
+    const merged: Profile = { ...base, ...read.data, userId: user.id, updatedAt: now };
+    const updated: Profile = { ...merged, completeness: profileCompleteness(merged) };
 
     await saveProfile(updated);
     return NextResponse.json(updated);

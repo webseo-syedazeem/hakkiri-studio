@@ -7,6 +7,8 @@ import type { Profile } from "@/lib/apply/schema";
 export default function ProfilePage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [savedMsg, setSavedMsg] = useState(false);
 
@@ -18,70 +20,11 @@ export default function ProfilePage() {
         if (res.ok && data && data.contact) {
           setProfile(data);
         } else {
-          setProfile({
-            userId: "usr_guest",
-            region: "uk",
-            contact: {
-              name: "Alex Morgan",
-              email: "alex.morgan@domain.com",
-              phone: "+44 7700 900123",
-              location: "London, UK",
-              links: ["https://linkedin.com/in/alexmorgan"],
-            },
-            headline: "Senior Software Engineer & Tech Lead",
-            summary: "Results-driven engineering leader with 8+ years building scalable distributed cloud systems.",
-            roles: [
-              {
-                id: "role-1",
-                title: "Senior Full Stack Engineer & Tech Lead",
-                employer: "FinTech Scaleup",
-                location: "London, UK",
-                start: "2023",
-                end: "Present",
-                current: true,
-                bullets: [
-                  {
-                    id: "b-1",
-                    text: "Architected real-time payment reconciliation engine processing £14M+ daily transactions with 99.99% uptime.",
-                    evidenceIds: [],
-                  },
-                ],
-              },
-            ],
-            education: [
-              {
-                id: "edu-1",
-                institution: "University of Manchester",
-                qualification: "BSc Computer Science",
-                grade: "First Class Honours",
-                start: "2016",
-                end: "2019",
-              },
-            ],
-            skills: [
-              { name: "TypeScript", group: "Languages", evidenceIds: [] },
-              { name: "Next.js", group: "Frameworks", evidenceIds: [] },
-              { name: "MongoDB", group: "Databases", evidenceIds: [] },
-              { name: "Cloud Architecture", group: "Engineering", evidenceIds: [] },
-            ],
-            extras: [],
-            screening: {
-              rightToWork: "Yes (UK Citizen)",
-              noticePeriod: "1 month",
-              salaryMin: 85000,
-              salaryCurrency: "GBP",
-              relocate: false,
-              remote: "hybrid",
-              visaNeeded: false,
-              custom: [],
-            },
-            completeness: 85,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          });
+          // It couldn't be loaded. The person is told: nothing is shown in its place.
+          setLoadError("Your profile couldn’t be loaded. Refresh the page to try again.");
         }
-      } catch (err) {
-        console.warn("Using default profile state:", err);
+      } catch {
+        setLoadError("Your profile couldn’t be loaded because the app couldn’t be reached. Check your connection and refresh.");
       } finally {
         setLoading(false);
       }
@@ -100,11 +43,16 @@ export default function ProfilePage() {
         body: JSON.stringify(profile),
       });
       if (res.ok) {
+        setProfile(await res.json());
+        setSaveError(null);
         setSavedMsg(true);
         setTimeout(() => setSavedMsg(false), 3000);
+      } else {
+        const body = (await res.json().catch(() => ({}))) as { message?: string };
+        setSaveError(body.message ?? "Your profile couldn’t be saved. Try again.");
       }
-    } catch (err) {
-      console.error("Error saving profile:", err);
+    } catch {
+      setSaveError("Your profile couldn’t be saved because the app couldn’t be reached. Try again.");
     } finally {
       setSaving(false);
     }
@@ -112,8 +60,14 @@ export default function ProfilePage() {
 
   if (loading || !profile) {
     return (
-      <div className="flex h-64 items-center justify-center text-muted">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue border-t-transparent" />
+      <div className="flex h-64 items-center justify-center text-muted" data-testid="apply-loading">
+        {loadError ? (
+          <p role="alert" className="max-w-md rounded-xl border border-red/30 bg-red/10 px-4 py-3 text-center text-xs text-red-soft">
+            {loadError}
+          </p>
+        ) : (
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue border-t-transparent" />
+        )}
       </div>
     );
   }
@@ -131,11 +85,16 @@ export default function ProfilePage() {
             Candidate Career Profile
           </h1>
           <p className="text-xs text-muted max-w-2xl">
-            The single structured source of truth for all your tailored CVs, cover letters, and auto-applied forms.
+            Your own career details, kept in one place for your applications. Only what you enter is here.
           </p>
         </div>
 
         <div className="flex items-center gap-3">
+          {saveError && (
+            <span role="alert" className="text-xs font-bold text-red-soft bg-red/10 px-3.5 py-1.5 rounded-xl border border-red/30">
+              {saveError}
+            </span>
+          )}
           {savedMsg && (
             <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-3.5 py-1.5 rounded-xl border border-emerald-500/20 animate-fadeIn">
               ✓ Saved to Cloud
@@ -344,7 +303,7 @@ export default function ProfilePage() {
             <div className="space-y-2">
               <div className="flex justify-between text-xs font-bold">
                 <span className="text-muted">Completion Status</span>
-                <span className="text-emerald-400">{profile.completeness}% Ready</span>
+                <span className="text-emerald-400">{profile.completeness}% filled in</span>
               </div>
               <div className="h-2.5 w-full rounded-full bg-panel-2 overflow-hidden border border-line">
                 <div

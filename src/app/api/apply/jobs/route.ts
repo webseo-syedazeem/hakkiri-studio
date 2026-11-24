@@ -1,76 +1,11 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { requireUser } from "@/lib/auth/require";
+import { readJson } from "@/lib/http/body";
 import { saveJob, listJobs, saveApplication, listEvidence } from "@/lib/apply/db";
-import type { Job, JobRequirement, Application } from "@/lib/apply/schema";
+import { gapAndFit, readJobAdvert } from "@/lib/apply/own-data";
+import type { Job, Application } from "@/lib/apply/schema";
 import crypto from "node:crypto";
-
-function parseJobAdvertInCode(text: string): {
-  title: string;
-  employer: string;
-  location: string;
-  remote: boolean;
-  requirements: JobRequirement[];
-  keywords: string[];
-  tone: "formal" | "neutral" | "informal";
-} {
-  const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
-  const firstLine = lines[0] || "Senior Engineer";
-  const title = firstLine.length < 70 ? firstLine : "Senior Engineering Specialist";
-
-  let employer = "Innovative Tech Group";
-  const atMatch = text.match(/\bat\s+([A-Z][A-Za-z0-9&.\s]{2,25})\b/);
-  if (atMatch && atMatch[1]) employer = atMatch[1].trim();
-
-  const isRemote = /remote|hybrid|work from home|wfh/i.test(text);
-  const location = isRemote ? "Remote / Hybrid (UK)" : "London, UK";
-
-  // Detect requirements from bullet lines or key phrases
-  const reqLines = lines.filter((l) =>
-    /experience with|proficiency in|knowledge of|ability to|responsible for|must have|track record|degree|bachelor|master/i.test(l)
-  );
-
-  const activeReqLines = reqLines.length > 0 ? reqLines.slice(0, 10) : [
-    "5+ years commercial experience building scalable TypeScript and Next.js applications.",
-    "Strong proficiency in cloud architecture (AWS or GCP) and serverless pipelines.",
-    "Experience with relational or document databases (MongoDB / PostgreSQL) and query optimization.",
-    "Proven track record mentoring engineers and conducting technical design reviews.",
-    "Excellent communication skills and cross-functional stakeholder collaboration.",
-  ];
-
-  const requirements: JobRequirement[] = activeReqLines.map((line, idx) => {
-    const isMust = idx < 3 || /must|essential|required|minimum/i.test(line);
-    let group: "skill" | "experience" | "qualification" | "trait" = "skill";
-    if (/degree|bachelor|certified/i.test(line)) group = "qualification";
-    else if (/year|track record/i.test(line)) group = "experience";
-    else if (/communication|leadership|collaboration/i.test(line)) group = "trait";
-
-    return {
-      id: `req-${idx + 1}`,
-      text: line.replace(/^[-•*]\s*/, ""),
-      kind: isMust ? "must" : "nice",
-      group,
-      sourceQuote: line.slice(0, 100),
-    };
-  });
-
-  const KEYWORDS_POOL = [
-    "TypeScript", "React", "Next.js", "AWS", "MongoDB", "PostgreSQL", "Docker",
-    "Kubernetes", "CI/CD", "GraphQL", "Microservices", "REST API", "Tailwind", "System Design"
-  ];
-  const keywords = KEYWORDS_POOL.filter((kw) =>
-    new RegExp(`\\b${kw}\\b`, "i").test(text)
-  );
-
-  return {
-    title,
-    employer,
-    location,
-    remote: isRemote,
-    requirements,
-    keywords: keywords.length > 0 ? keywords : ["TypeScript", "Next.js", "AWS", "Architecture"],
-    tone: /dear|kindly|herein|shall/i.test(text) ? "formal" : "neutral",
-  };
-}
 
 export async function GET() {
   try {
@@ -84,24 +19,37 @@ export async function GET() {
   }
 }
 
+const Body = z.object({
+  text: z.string().max(60_000),
+  source: z.enum(["paste", "link", "extension", "feed"]).optional(),
+  url: z.string().max(2000).optional(),
+});
+
+/**
+ * Saves a job from the text of its advert, and starts the person's
+ * application for it. The job holds what the advert says: a title, employer
+ * or location that can't be read from it is left empty, and no requirement
+ * or keyword is supplied that isn't in it. The fit is the figure the
+ * advert's requirements and the person's own evidence give, and is null when
+ * no requirement could be read.
+ */
 export async function POST(req: Request) {
   try {
     const user = await requireUser();
     const userId = user.id;
-    const body = await req.json();
-    const { text, source = "paste", url } = body;
+    const read = await readJson(req, Body, { max: 200_000, message: "That advert couldn’t be read. Paste its text and try again." });
+    if (!read.ok) return read.response;
+    const { source = "paste", url } = read.data;
+    const text = read.data.text.trim();
 
-    if (!text || typeof text !== "string" || text.trim().length < 30) {
-      return NextResponse.json(
-        { error: "too_short", message: "Please provide the job advert text or link." },
-        { status: 400 },
-      );
+    if (text.length < 30) {
+      return NextResponse.json({ error: "too_short", message: "Paste the text of the job advert (at least 30 characters)." }, { status: 400 });
     }
 
-    const parsed = parseJobAdvertInCode(text);
+    const parsed = readJobAdvert(text);
     const now = new Date().toISOString();
     const jobId = `job_${crypto.randomBytes(6).toString("hex")}`;
-    const dedupeKey = `${parsed.employer.toLowerCase()}_${parsed.title.toLowerCase()}`.replace(/[^a-z0-9]/g, "_");
+    const dedupeKey = `${parsed.employer.toLowerCase()}_${parsed.title.toLowerCase()}`.replace(/[^a-z0-9]/g, "_").replace(/^_+$/, "") || jobId;
 
     const newJob: Job = {
       id: jobId,
@@ -113,7 +61,8 @@ export async function POST(req: Request) {
       location: parsed.location,
       remote: parsed.remote,
       text: text.slice(0, 20000),
-      applyRoute: "open-form",
+      // How to apply isn't known from the advert's text.
+      applyRoute: "unknown",
       requirements: parsed.requirements,
       keywords: parsed.keywords,
       questions: [],
@@ -125,54 +74,20 @@ export async function POST(req: Request) {
 
     await saveJob(newJob);
 
-    // Automatically create application with initial Gap Map
-    const userEvidence = await listEvidence(userId);
-    let weightedPoints = 0;
-    let maxPoints = 0;
-
-    const gapMap = newJob.requirements.map((req) => {
-      const weight = req.kind === "must" ? 3 : 1;
-      maxPoints += weight;
-
-      // Find matching evidence by keyword or skill tag
-      const matchedEv = userEvidence.filter((e) =>
-        e.skillTags.some((tag) => req.text.toLowerCase().includes(tag.toLowerCase())) ||
-        e.text.toLowerCase().includes(req.text.toLowerCase().slice(0, 15))
-      );
-
-      let strength: "strong" | "partial" | "none" = "none";
-      if (matchedEv.length >= 2 || (matchedEv.length > 0 && matchedEv.some((e) => e.numbers.length > 0))) {
-        strength = "strong";
-        weightedPoints += weight * 1.0;
-      } else if (matchedEv.length === 1) {
-        strength = "partial";
-        weightedPoints += weight * 0.5;
-      } else {
-        strength = "none";
-        weightedPoints += 0;
-      }
-
-      return {
-        requirementId: req.id,
-        strength,
-        evidenceIds: matchedEv.map((e) => e.id),
-      };
-    });
-
-    const fit = Math.min(100, Math.round((weightedPoints / Math.max(maxPoints, 1)) * 100));
-
-    const appId = `app_${crypto.randomBytes(6).toString("hex")}`;
+    const { gapMap, fit } = gapAndFit(newJob.requirements, await listEvidence(userId));
     const application: Application = {
-      id: appId,
+      id: `app_${crypto.randomBytes(6).toString("hex")}`,
       userId,
       jobId: newJob.id,
       status: "draft",
       gapMap,
-      fit: Math.max(50, fit),
+      // Stored as a number; with no requirements to measure against it is 0 and the response says it is unknown.
+      fit: fit ?? 0,
       answerOutputIds: [],
       mode: "approved",
-      stages: [{ name: "Applied", date: now.slice(0, 10) }],
-      notes: "Job imported and Gap Map calculated against evidence bank.",
+      // Nothing has happened to this application yet, and the notes are the person's to write.
+      stages: [],
+      notes: "",
       createdAt: now,
       updatedAt: now,
     };
@@ -183,7 +98,9 @@ export async function POST(req: Request) {
       success: true,
       job: newJob,
       applicationId: application.id,
-      fit: application.fit,
+      fit,
+      fitKnown: fit != null,
+      notFound: [!parsed.title && "title", !parsed.employer && "employer", !parsed.location && "location", !parsed.requirements.length && "requirements"].filter(Boolean),
     });
   } catch (err: unknown) {
     if (err instanceof Response) return err;

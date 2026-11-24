@@ -57,57 +57,23 @@ const COLUMNS: { id: ApplicationStatus; title: string; color: string; badge: str
 ];
 
 interface EnrichedApp extends Application {
+  /** The job as it was read from its advert. A field the advert didn't give is empty. */
   job: {
     title: string;
     employer: string;
     location: string;
+    missing?: boolean;
   };
+  /** False when the advert had no requirements to measure the person's evidence against. */
+  fitKnown?: boolean;
 }
 
-const STARTER_APPLICATIONS: EnrichedApp[] = [
-  {
-    id: "app_starter_1",
-    userId: "usr_guest",
-    jobId: "job_1",
-    status: "ready",
-    gapMap: [],
-    fit: 92,
-    mode: "approved",
-    stages: [{ name: "Review Ready", date: new Date().toISOString().slice(0, 10) }],
-    notes: "High match on TypeScript, Next.js architecture, and serverless infrastructure.",
-    answerOutputIds: [],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    job: {
-      title: "Senior Full Stack Engineer & Tech Lead",
-      employer: "FinTech Scaleup",
-      location: "London, UK (Hybrid)",
-    },
-  },
-  {
-    id: "app_starter_2",
-    userId: "usr_guest",
-    jobId: "job_2",
-    status: "queued",
-    gapMap: [],
-    fit: 85,
-    mode: "approved",
-    stages: [{ name: "Matched", date: new Date().toISOString().slice(0, 10) }],
-    notes: "Matched against Evidence Bank. Ready for cover letter generation.",
-    answerOutputIds: [],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    job: {
-      title: "Staff Cloud Systems Architect",
-      employer: "Cloud Infrastructure Labs",
-      location: "Remote / London",
-    },
-  },
-];
+const fitLabel = (app: EnrichedApp) => (app.fitKnown === false ? "Fit not known" : `${app.fit}% Fit`);
 
 export default function ApplicationsTrackerPage() {
   const [applications, setApplications] = useState<EnrichedApp[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"board" | "list">("board");
   const [draggedAppId, setDraggedAppId] = useState<string | null>(null);
   const [dragOverColId, setDragOverColId] = useState<ApplicationStatus | null>(null);
@@ -116,15 +82,13 @@ export default function ApplicationsTrackerPage() {
     async function load() {
       try {
         const res = await fetch("/api/apply/applications");
-        const data = res.ok ? await res.json() : [];
-        if (Array.isArray(data) && data.length > 0) {
-          setApplications(data);
-        } else {
-          setApplications(STARTER_APPLICATIONS);
-        }
-      } catch (err) {
-        console.warn("Using starter applications fallback:", err);
-        setApplications(STARTER_APPLICATIONS);
+        // The list is the person's own applications. With none it is empty: no sample is shown in their place.
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        setApplications(Array.isArray(data) ? data : []);
+      } catch {
+        setApplications([]);
+        setLoadError("Your applications couldn’t be loaded. Refresh the page to try again.");
       } finally {
         setLoading(false);
       }
@@ -216,6 +180,18 @@ export default function ApplicationsTrackerPage() {
         <div className="flex h-64 items-center justify-center text-muted">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue border-t-transparent" />
         </div>
+      ) : loadError ? (
+        <p role="alert" className="rounded-2xl border border-red/30 bg-red/10 px-5 py-4 text-xs text-red-soft">
+          {loadError}
+        </p>
+      ) : applications.length === 0 ? (
+        <div className="rounded-3xl border border-line bg-panel p-10 text-center" data-testid="applications-empty">
+          <p className="text-sm font-bold text-ink">You have no applications yet</p>
+          <p className="mt-1 text-xs text-muted">Paste a job advert and an application is started for it, with your evidence checked against what the advert asks for.</p>
+          <Link href="/apply/jobs/new" className="mt-4 inline-flex rounded-2xl bg-blue-fill px-5 py-2.5 text-xs font-bold text-white">
+            Add a job
+          </Link>
+        </div>
       ) : viewMode === "board" ? (
         /* Kanban Columns: Full Viewport Stretch with HTML5 Drag & Drop */
         <div className="flex gap-5 overflow-x-auto pb-6 pt-1 items-stretch w-full [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.18)_transparent] [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-white/15 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-white/30">
@@ -305,11 +281,11 @@ export default function ApplicationsTrackerPage() {
                           <div className="space-y-1">
                             <div className="flex items-start justify-between gap-2">
                               <h4 className="text-xs font-black text-ink line-clamp-1 group-hover:text-blue-soft transition">
-                                {app.job?.title || "Role Application"}
+                                {app.job?.missing ? "Job no longer saved" : app.job?.title || "Title not found in the advert"}
                               </h4>
                               <div className="flex items-center gap-1.5 flex-shrink-0">
                                 <span className="text-[10px] font-black rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5">
-                                  {app.fit}% Fit
+                                  {fitLabel(app)}
                                 </span>
                                 <span
                                   className="text-muted/40 group-hover:text-muted text-xs cursor-grab select-none"
@@ -320,10 +296,10 @@ export default function ApplicationsTrackerPage() {
                               </div>
                             </div>
                             <div className="text-[11px] font-bold text-muted">
-                              {app.job?.employer || "Company"}
+                              {app.job?.employer || "Employer not found"}
                             </div>
                             <div className="text-[10px] text-muted font-mono">
-                              {app.job?.location || "Remote"}
+                              {app.job?.location || "Location not found"}
                             </div>
                           </div>
 
@@ -390,13 +366,13 @@ export default function ApplicationsTrackerPage() {
               >
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-extrabold text-ink">{app.job?.title}</span>
+                    <span className="text-sm font-extrabold text-ink">{app.job?.missing ? "Job no longer saved" : app.job?.title || "Title not found in the advert"}</span>
                     <span className="text-[10px] font-extrabold rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5">
-                      {app.fit}% Fit
+                      {fitLabel(app)}
                     </span>
                   </div>
                   <div className="text-xs text-muted">
-                    {app.job?.employer} · {app.job?.location}
+                    {app.job?.employer || "Employer not found"} · {app.job?.location || "Location not found"}
                   </div>
                 </div>
 

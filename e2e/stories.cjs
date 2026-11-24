@@ -1,8 +1,8 @@
 // The Experience Library (/interview-examples): your own bank of example answers. It replaced the story
 // bank, and the old /story-bank address now leads here. As a new, signed-in user: add an example and see
 // the form's checks, find it in the list, open it, favourite it, narrow the list by search and by tag,
-// edit it, and delete it. Everything checked is an example this test added itself: the library also shows
-// built-in examples, and nothing here depends on them.
+// edit it, and delete it. A new account's library is empty, so everything checked is an example this test
+// added itself.
 const { chromium } = require("playwright");
 const { BASE, OUT, signIn } = require("./helpers.cjs");
 
@@ -54,6 +54,10 @@ const must = (ok, what) => {
       out.header = (await p.locator("h1").innerText()).trim();
       const before = await total();
       must(!(await heading.count()), "A new account already has this test's example");
+      // A new account's library is empty: nothing is put in it for the person, and the page says where it is kept.
+      must(before === 0, `A new account's library should be empty, not hold ${before} examples`);
+      await p.getByText("Your library is empty").waitFor();
+      await p.getByText(/Kept in this browser only/).waitFor();
 
       // Add an example. Nothing is saved without a question and an answer.
       await p.getByRole("link", { name: "+ Add example" }).click();
@@ -137,7 +141,7 @@ const must = (ok, what) => {
       }
       await p.screenshot({ path: `${OUT}/53-bank-search.png`, fullPage: true });
       await search.fill("zzqx no such example");
-      await p.getByText("No examples found").waitFor();
+      await p.getByText("No examples match").waitFor();
       await shows(0, "A search that matches nothing should list nothing");
       await search.fill("");
       await shows(before + 1, "An empty search should bring the whole list back");
@@ -162,7 +166,7 @@ const must = (ok, what) => {
       await card.getByPlaceholder("e.g. Associate Product Manager").fill("Senior Data Analyst");
       await p.screenshot({ path: `${OUT}/54-bank-edit.png`, fullPage: true });
       await p.getByRole("button", { name: "Save response" }).click();
-      await p.getByText("Example response updated! ✓").first().waitFor();
+      await p.getByText("Example updated.").first().waitFor();
       await card.getByText(EDITED, { exact: true }).waitFor();
       await p.reload({ waitUntil: "networkidle" });
       await card.getByRole("button", { name: "★" }).waitFor();
@@ -171,13 +175,8 @@ const must = (ok, what) => {
       out.edited = (await card.innerText()).replace(/\n+/g, " | ").slice(0, 700);
       must(out.edited.includes("Role: Senior Data Analyst"), `The edited role should show: ${out.edited}`);
 
-      // Import from CV opens and closes without adding anything. (What it would add isn't read from a
-      // CV, so nothing is imported here.)
-      await p.getByRole("button", { name: "Import from CV" }).click();
-      await p.getByRole("heading", { name: "Import STAR examples from CV" }).waitFor();
-      await p.getByRole("button", { name: "Cancel" }).click();
-      await p.getByRole("heading", { name: "Import STAR examples from CV" }).waitFor({ state: "detached" });
-      must((await total()) === before + 1, "Closing Import from CV shouldn't change the list");
+      // "Import from CV" made no request and offered invented examples. It has been removed.
+      must(!(await p.getByRole("button", { name: "Import from CV" }).count()), "The made-up “Import from CV” should be gone");
 
       // Delete it: gone from the list, and still gone after a reload.
       await p.getByRole("button", { name: "Delete" }).click();
@@ -190,7 +189,7 @@ const must = (ok, what) => {
       out.count = `${before} → ${before + 1} → ${await total()}`;
 
       // On to practice.
-      await p.getByRole("link", { name: /Practise with your examples/ }).click();
+      await p.getByRole("link", { name: /Practice Hub/ }).last().click();
       await p.waitForURL(/\/practice$/);
       out.practise = (await p.locator("h1").innerText()).slice(0, 80);
     }

@@ -24,21 +24,22 @@ export async function GET(
     const letterOutput = outputs.find((o) => o.kind === "letter");
     const letterText = letterOutput?.versions?.[0]?.text || "";
 
-    const candidateName = profile?.contact.name || [user.firstName, user.lastName].filter(Boolean).join(" ") || "Candidate";
+    // The pack holds the person's own details. One they haven't given is empty: none is filled in for them.
+    const candidateName = profile?.contact.name || [user.firstName, user.lastName].filter(Boolean).join(" ");
 
     const pack = {
       applicationId: application.id,
       job: {
-        title: job?.title || "Role",
-        employer: job?.employer || "Employer",
-        location: job?.location || "Remote",
+        title: job?.title ?? "",
+        employer: job?.employer ?? "",
+        location: job?.location ?? "",
         applyUrl: job?.applyUrl || job?.url || "",
       },
       candidate: {
         name: candidateName,
         email: profile?.contact.email || user.email || "",
-        phone: profile?.contact.phone || "+44 7700 900123",
-        location: profile?.contact.location || "London, UK",
+        phone: profile?.contact.phone ?? "",
+        location: profile?.contact.location ?? "",
         screening: profile?.screening || {},
       },
       coverLetter: letterText,
@@ -47,7 +48,7 @@ export async function GET(
         .map((o) => ({
           questionId: o.questionId,
           text: o.versions?.[0]?.text || "",
-          wordCount: o.versions?.[0]?.text.split(/\s+/).length || 0,
+          wordCount: (o.versions?.[0]?.text ?? "").split(/\s+/).filter(Boolean).length,
         })),
       verifiedEvidenceSnippets: evidence.slice(0, 5).map((e) => e.text),
       exportedAt: new Date().toISOString(),

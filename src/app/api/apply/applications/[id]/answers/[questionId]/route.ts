@@ -1,13 +1,28 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { requireUser } from "@/lib/auth/require";
-import { getApplication, saveOutput } from "@/lib/apply/db";
+import { readJson } from "@/lib/http/body";
+import { getApplication, getVoice, saveOutput } from "@/lib/apply/db";
+import { shapeAnswer } from "@/lib/apply/own-data";
+import { measureVoice } from "@/lib/apply/checks/voice";
+import { findBannedPhrases } from "@/lib/apply/checks/banned";
 import type { Output } from "@/lib/apply/schema";
 import crypto from "node:crypto";
 
-export async function POST(
-  req: Request,
-  { params }: { params: Promise<{ id: string; questionId: string }> },
-) {
+const Body = z.object({
+  question: z.string().max(2000).optional(),
+  notes: z.string().max(20_000),
+  limit: z.number().int().min(10).max(5000).optional(),
+  unit: z.enum(["words", "chars"]).optional(),
+});
+
+/**
+ * An answer to an application question, made from the person's own notes
+ * and nothing else: the spacing is tidied and it is cut to the limit. No
+ * sentence is written for them. (Rewriting notes into a finished answer
+ * needs live AI, which this route does not use.)
+ */
+export async function POST(req: Request, { params }: { params: Promise<{ id: string; questionId: string }> }) {
   try {
     const user = await requireUser();
     const { id, questionId } = await params;
@@ -17,43 +32,17 @@ export async function POST(
       return NextResponse.json({ error: "not_found", message: "Application not found." }, { status: 404 });
     }
 
-    const body = await req.json();
-    const { question, notes, limit = 150, unit = "words" } = body;
+    const read = await readJson(req, Body, { max: 100_000, message: "Those notes couldn’t be read. Send plain text, up to 20,000 characters." });
+    if (!read.ok) return read.response;
+    const { limit = 150, unit = "words" } = read.data;
+    const notes = read.data.notes.trim();
 
-    if (!notes || typeof notes !== "string" || notes.trim().length < 10) {
-      return NextResponse.json(
-        { error: "too_short", message: "Please provide rough notes or speech to shape the answer." },
-        { status: 400 },
-      );
+    if (notes.length < 10) {
+      return NextResponse.json({ error: "too_short", message: "Please provide rough notes or speech to shape the answer." }, { status: 400 });
     }
 
-    const cleanNotes = notes.trim();
-
-    // Shape answer according to spec:
-    // 1. Situation in one sentence
-    // 2. What they did in most of the answer
-    // 3. The result
-    // 4. One line on what they would do again / differently
-    // The words "situation", "task", "action", "result" never appear.
-    const s1 = `In my previous contract, we encountered an evolving scope challenge regarding ${cleanNotes.slice(0, 45)}.`;
-    const s2 = `To address this, I established a weekly alignment cadence, documented technical trade-offs transparently, and drove cross-team consensus on delivery milestones.`;
-    const s3 = `This approach successfully unblocked delivery, securing executive sign-off and achieving our targeted performance benchmarks on schedule.`;
-    const s4 = `Reflecting on this initiative, maintaining early stakeholder transparency is a practice I continue to champion across all complex engagements.`;
-
-    let draft = `${s1} ${s2} ${s3} ${s4}`;
-
-    // Respect limit
-    if (unit === "words") {
-      const words = draft.split(/\s+/);
-      if (words.length > limit) {
-        draft = words.slice(0, limit).join(" ") + ".";
-      }
-    } else if (unit === "chars") {
-      if (draft.length > limit) {
-        draft = draft.slice(0, limit - 3) + "...";
-      }
-    }
-
+    const shaped = shapeAnswer(notes, limit, unit);
+    const voice = await getVoice(user.id);
     const now = new Date().toISOString();
     const outputId = `ans_${crypto.randomBytes(6).toString("hex")}`;
     const versionId = `v_${crypto.randomBytes(4).toString("hex")}`;
@@ -68,17 +57,13 @@ export async function POST(
       versions: [
         {
           id: versionId,
-          text: draft,
-          notes: cleanNotes,
-          sentences: [
-            { text: s1, evidenceIds: [], isConnective: true },
-            { text: s2, evidenceIds: [], isConnective: false },
-            { text: s3, evidenceIds: [], isConnective: false },
-            { text: s4, evidenceIds: [], isConnective: true },
-          ],
+          text: shaped.text,
+          notes,
+          // Every sentence is the person's own, so none needs evidence found for it and none is a link added by the app.
+          sentences: shaped.sentences.map((text) => ({ text, evidenceIds: [], isConnective: false })),
           unsupported: [],
-          voiceScore: 90,
-          banned: [],
+          voiceScore: measureVoice(shaped.text, voice ?? undefined).score,
+          banned: findBannedPhrases(shaped.text, voice?.never ?? []),
           createdAt: now,
         },
       ],
@@ -90,11 +75,12 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-      draft,
-      whatWeKept: cleanNotes,
-      whatWeAdded: "Connecting transitions and professional sentence structure.",
-      wordCount: draft.split(/\s+/).length,
-      charCount: draft.length,
+      draft: shaped.text,
+      whatWeKept: shaped.text,
+      whatWeAdded: "Nothing. This is your own notes, tidied and cut to the limit.",
+      cut: shaped.cut,
+      wordCount: shaped.text.split(/\s+/).filter(Boolean).length,
+      charCount: shaped.text.length,
       outputId,
     });
   } catch (err: unknown) {

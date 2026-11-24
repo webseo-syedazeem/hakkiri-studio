@@ -1,367 +1,102 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import { Icon, type IconName } from "@/components/ui";
 import { AnsweringGuides } from "@/components/practice/AnsweringGuides";
-import type { Interview, QuestionGroup } from "@/lib/types";
+import type { PracticeStats, PracticeType } from "@/lib/sessions/practice-stats";
 
-export type PracticeQuestionType =
-  | "strengths"
-  | "competency"
-  | "technical"
-  | "situational"
-  | "motivation"
-  | "experience";
+export type PracticeQuestionType = PracticeType;
 
-export interface PracticeHubClientProps {
-  interviews: Interview[];
-  initialInterviewId?: string;
-  initialType?: PracticeQuestionType;
+/** One of the person's interviews, with what the hub shows about it. All of it is worked out on the server. */
+export interface HubInterview {
+  id: string;
+  role: string;
+  company: string;
+  companyInitial: string;
+  /** A built-in example interview, not one the person set up. */
+  isDemo: boolean;
+  /** The interview's own next stage. Null when it has no stages. */
+  stage: string | null;
+  /** When the real interview is, from the date the person gave. */
+  when: { text: string; rel: string | null };
+  /** From the person's own finished sessions on this interview. */
+  stats: PracticeStats;
+  /** Their lowest-scoring category. Null until a session has been scored. */
+  focus: { name: string; score: number } | null;
+  /** The practice topics the app matches to this job. */
+  topics: { id: string; title: string; focusLabel: string; subtitle: string; minutes: number; type: PracticeType }[];
 }
 
-export function PracticeHubClient({
-  interviews,
-  initialInterviewId,
-  initialType = "strengths",
-}: PracticeHubClientProps) {
-  // 1. Selected Interview State (Defaults to Staff Nurse to match design mockup)
-  const defaultSelectedId = useMemo(() => {
-    if (initialInterviewId && interviews.some((i) => i.id === initialInterviewId)) {
-      return initialInterviewId;
-    }
-    const nurse = interviews.find((i) => i.id === "staff-nurse");
-    if (nurse) return nurse.id;
-    return interviews[0]?.id || "staff-nurse";
-  }, [initialInterviewId, interviews]);
+export interface PracticeHubClientProps {
+  interviews: HubInterview[];
+  initialInterviewId?: string;
+  initialType?: PracticeType;
+  /** One of the person's own presentations, when they have added one. */
+  presentation: { id: string; title: string } | null;
+}
 
-  const [selectedId, setSelectedId] = useState<string>(defaultSelectedId);
+const TYPES: { id: PracticeType; label: string; icon: IconName; color: string }[] = [
+  { id: "strengths", label: "Strengths", icon: "star", color: "from-amber-500/20 to-orange-500/20 text-amber-300 border-amber-500/30" },
+  { id: "competency", label: "Competency", icon: "layers", color: "from-indigo-500/20 to-violet-500/20 text-indigo-300 border-indigo-500/30" },
+  { id: "technical", label: "Technical", icon: "code", color: "from-blue-500/20 to-cyan-500/20 text-blue-300 border-blue-500/30" },
+  { id: "situational", label: "Situational", icon: "brain", color: "from-emerald-500/20 to-teal-500/20 text-emerald-300 border-emerald-500/30" },
+  { id: "motivation", label: "Motivational", icon: "target", color: "from-purple-500/20 to-pink-500/20 text-purple-300 border-purple-500/30" },
+  { id: "experience", label: "Experience", icon: "cal", color: "from-cyan-500/20 to-blue-500/20 text-cyan-300 border-cyan-500/30" },
+];
+const typeOf = (id: PracticeType) => TYPES.find((t) => t.id === id) ?? TYPES[1];
+
+export function PracticeHubClient({ interviews, initialInterviewId, initialType, presentation }: PracticeHubClientProps) {
+  const router = useRouter();
+  const [selectedId, setSelectedId] = useState<string | undefined>(initialInterviewId ?? interviews[0]?.id);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-
-  // 2. Selected Practice Question Type
-  const [selectedType, setSelectedType] = useState<PracticeQuestionType>(initialType);
-
-  // 3. Practice Settings (Difficulty & Mode)
+  const [selectedType, setSelectedType] = useState<PracticeType | null>(initialType ?? null);
   const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">("medium");
-  const [duration, setDuration] = useState<"1-question" | "3-mins" | "5-mins">("1-question");
 
-  // Active interview record
-  const currentInterview = useMemo(() => {
+  const current = interviews.find((i) => i.id === selectedId) ?? interviews[0];
+
+  /** The choice is kept in the address, so a refresh, the back button or a shared tab opens the same interview. */
+  const remember = (id: string | undefined, type: PracticeType | null) => {
+    if (!id) return;
+    const query = new URLSearchParams({ interview: id });
+    if (type) query.set("type", type);
+    router.replace(`/practice?${query.toString()}`, { scroll: false });
+  };
+  const chooseInterview = (id: string) => {
+    setSelectedId(id);
+    setIsDropdownOpen(false);
+    remember(id, selectedType);
+  };
+  const chooseType = (type: PracticeType) => {
+    const next = selectedType === type ? null : type;
+    setSelectedType(next);
+    remember(current?.id, next);
+  };
+
+  if (!current) {
     return (
-      interviews.find((i) => i.id === selectedId) ||
-      interviews.find((i) => i.id === "staff-nurse") ||
-      interviews[0]
+      <div className="flex grow flex-col w-full pb-20 animate-rise text-white">
+        <header className="border-b border-white/[0.08] pb-6">
+          <h1 className="text-3xl font-bold tracking-tight text-white">Practice Hub</h1>
+          <p className="mt-1.5 text-sm text-[#a1a2b3] max-w-2xl leading-relaxed">Focused practice on the questions written for your interviews.</p>
+        </header>
+        <div className="mt-8 rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-8 text-center" data-testid="hub-empty">
+          <p className="text-sm font-semibold text-white">You haven’t set up an interview yet</p>
+          <p className="mt-1 text-xs text-muted">Practice is built from a job and your CV. Set up an interview and it will appear here.</p>
+          <Link href="/interviews/new" className="mt-4 inline-flex rounded-xl bg-indigo-600 hover:bg-indigo-500 px-4 py-2 text-xs font-semibold text-white">
+            Set up an interview
+          </Link>
+        </div>
+      </div>
     );
-  }, [interviews, selectedId]);
+  }
 
-  // Role detection
-  const roleText = `${currentInterview?.role ?? ""} ${currentInterview?.company ?? ""} ${currentInterview?.jobSummary ?? ""}`.toLowerCase();
-  const isNursing = /\b(nurse|nursing|nhs|clinical|healthcare|hospital|ward|patient|medical)\b/i.test(roleText);
-  const isCivilService = /\b(civil service|hmrc|gov|government|ministry|public sector|dwp|policy|behaviours?)\b/i.test(roleText);
-  const isPM = /\b(product manager|associate product manager|pm|payments|fintech|checkout)\b/i.test(roleText);
-
-  // Upcoming stage info
-  const stageInfo = useMemo(() => {
-    if (isNursing) return { label: "Clinical interview", timing: "Interview in 3 days" };
-    if (isCivilService) return { label: "Competency, strength and presentation", timing: "Interview in 4 days" };
-    if (currentInterview?.stages && currentInterview.stages.length > 0) {
-      const next = currentInterview.stages.find((s) => s.status === "next") || currentInterview.stages[0];
-      return {
-        label: next.name || "Interview stage 1",
-        timing: next.date ? (next.date.includes("in") ? next.date : `Interview in 3 days`) : "Interview in 3 days",
-      };
-    }
-    return { label: "Final round interview", timing: "Interview in 5 days" };
-  }, [currentInterview, isNursing, isCivilService]);
-
-  // Focus area stat
-  const focusAreaStat = useMemo(() => {
-    if (isNursing) {
-      return {
-        title: "Clinical judgement",
-        subtitle: "Improve scenario-based responses",
-      };
-    }
-    if (isCivilService) {
-      return {
-        title: "Success Profiles",
-        subtitle: "STAR behaviour structure & strengths",
-      };
-    }
-    return {
-      title: "Commercial judgement",
-      subtitle: "Trade-offs on risk vs conversion",
-    };
-  }, [isNursing, isCivilService]);
-
-  // Question Type Options (Exact Match to Design Mockup Row: 6 items)
-  const questionTypes: {
-    id: PracticeQuestionType;
-    label: string;
-    icon: IconName;
-    badgeLabel?: string;
-  }[] = [
-    { id: "strengths", label: "Strengths", icon: "star" },
-    { id: "competency", label: "Competency", icon: "layers" },
-    { id: "technical", label: "Technical", icon: isNursing ? "stethoscope" : "code" },
-    { id: "situational", label: "Situational", icon: "brain" },
-    { id: "motivation", label: "Motivational", icon: "target" },
-    { id: "experience", label: "Experience", icon: "cal" },
-  ];
-
-  // Dynamic cards tailored to the role & domain
-  const practiceCards = useMemo(() => {
-    if (isNursing) {
-      return [
-        {
-          id: "nursing-strengths",
-          topicId: "civil-service-strengths",
-          type: "strengths" as PracticeQuestionType,
-          title: "Strengths Questions",
-          category: "Clinical Motivation & Energy",
-          badge: "RECOMMENDED",
-          duration: "3–5 mins",
-          difficulty: "Realistic",
-          icon: "star" as IconName,
-          color: "from-amber-500/20 to-orange-500/20 text-amber-300 border-amber-500/30",
-          description: "Explore what motivates you, what you enjoy and how you work in a clinical team.",
-        },
-        {
-          id: "nursing-competency",
-          topicId: "nursing-competency",
-          type: "competency" as PracticeQuestionType,
-          title: "Competency & Behavioural",
-          category: "Healthcare Setting (STAR)",
-          duration: "4–6 mins",
-          difficulty: "Medium",
-          icon: "layers" as IconName,
-          color: "from-indigo-500/20 to-violet-500/20 text-indigo-300 border-indigo-500/30",
-          description: "Use real examples to show your skills, actions and impact in a healthcare setting.",
-        },
-        {
-          id: "nursing-clinical",
-          topicId: "clinical-judgement",
-          type: "technical" as PracticeQuestionType,
-          title: "Technical & Clinical Judgement",
-          category: "Patient Safety & NEWS2",
-          duration: "5 mins",
-          difficulty: "Challenging",
-          icon: "stethoscope" as IconName,
-          color: "from-blue-500/20 to-cyan-500/20 text-blue-300 border-blue-500/30",
-          description: "Practise role-specific questions, such as patient safety, escalation and decisions.",
-        },
-        {
-          id: "nursing-situational",
-          topicId: "curveball",
-          type: "situational" as PracticeQuestionType,
-          title: "Situational Questions",
-          category: "Ward Scenarios & Triage",
-          duration: "3–5 mins",
-          difficulty: "Realistic",
-          icon: "brain" as IconName,
-          color: "from-emerald-500/20 to-teal-500/20 text-emerald-300 border-emerald-500/30",
-          description: "Respond to realistic scenarios, for example managing competing clinical priorities.",
-        },
-        {
-          id: "nursing-motivation",
-          topicId: "motivation",
-          type: "motivation" as PracticeQuestionType,
-          title: "Nursing Vocation & NHS Values",
-          category: "Why Nursing & NHS Trust",
-          badge: "RECOMMENDED",
-          duration: "3–5 mins",
-          difficulty: "Friendly",
-          icon: "target" as IconName,
-          color: "from-purple-500/20 to-pink-500/20 text-purple-300 border-purple-500/30",
-          description: "Articulate your clinical vocation, commitment to compassionate care and alignment with NHS values.",
-        },
-        {
-          id: "nursing-experience",
-          topicId: "experience",
-          type: "experience" as PracticeQuestionType,
-          title: "Clinical Background & Ward Rotations",
-          category: "Placements & Practical Care",
-          badge: "RECOMMENDED",
-          duration: "4–6 mins",
-          difficulty: "Realistic",
-          icon: "cal" as IconName,
-          color: "from-cyan-500/20 to-blue-500/20 text-cyan-300 border-cyan-500/30",
-          description: "Walk through key clinical placements, patient care milestones and lessons from challenging ward shifts.",
-        },
-      ];
-    }
-
-    if (isCivilService) {
-      return [
-        {
-          id: "cs-strengths",
-          topicId: "civil-service-strengths",
-          type: "strengths" as PracticeQuestionType,
-          title: "Civil Service Strengths",
-          category: "Success Profiles",
-          badge: "RECOMMENDED",
-          duration: "3–4 mins",
-          difficulty: "Realistic",
-          icon: "star" as IconName,
-          color: "from-amber-500/20 to-orange-500/20 text-amber-300 border-amber-500/30",
-          description: "Spontaneous reflections assessing genuine motivations, natural engagement and public service priorities.",
-        },
-        {
-          id: "cs-competencies",
-          topicId: "civil-service-competencies",
-          type: "competency" as PracticeQuestionType,
-          title: "Competency & Behavioural",
-          category: "STAR Behaviours",
-          duration: "4–6 mins",
-          difficulty: "Medium",
-          icon: "list" as IconName,
-          color: "from-indigo-500/20 to-violet-500/20 text-indigo-300 border-indigo-500/30",
-          description: "Delivering at pace, Communicating and influencing, and Making effective decisions using STAR examples.",
-        },
-        {
-          id: "cs-standards",
-          topicId: "technical",
-          type: "technical" as PracticeQuestionType,
-          title: "Government Standards & GDS",
-          category: "Digital Standards & WCAG",
-          duration: "5 mins",
-          difficulty: "Challenging",
-          icon: "code" as IconName,
-          color: "from-blue-500/20 to-cyan-500/20 text-blue-300 border-blue-500/30",
-          description: "Apply GDS service patterns, WCAG 2.2 accessibility, citizen privacy and statutory public governance.",
-        },
-        {
-          id: "cs-situational",
-          topicId: "curveball",
-          type: "situational" as PracticeQuestionType,
-          title: "Situational & Policy Scenarios",
-          category: "Stakeholder Trade-offs",
-          duration: "3–5 mins",
-          difficulty: "Realistic",
-          icon: "compass" as IconName,
-          color: "from-emerald-500/20 to-teal-500/20 text-emerald-300 border-emerald-500/30",
-          description: "Navigate shifting ministerial directives, competing department priorities and citizen impact.",
-        },
-        {
-          id: "cs-motivation",
-          topicId: "motivation",
-          type: "motivation" as PracticeQuestionType,
-          title: "Public Service Mission & HMRC",
-          category: "Why HMRC & Citizen Value",
-          badge: "RECOMMENDED",
-          duration: "3–5 mins",
-          difficulty: "Friendly",
-          icon: "target" as IconName,
-          color: "from-purple-500/20 to-pink-500/20 text-purple-300 border-purple-500/30",
-          description: "Articulate why you want to deliver public value, your civil service motivations and HMRC mission alignment.",
-        },
-        {
-          id: "cs-experience",
-          topicId: "experience",
-          type: "experience" as PracticeQuestionType,
-          title: "Career Journey & Public Delivery",
-          category: "CV & Impact Narrative",
-          badge: "RECOMMENDED",
-          duration: "4–6 mins",
-          difficulty: "Realistic",
-          icon: "cal" as IconName,
-          color: "from-cyan-500/20 to-blue-500/20 text-cyan-300 border-cyan-500/30",
-          description: "Walk through key programme milestones, data-informed decisions and public impact from your CV.",
-        },
-      ];
-    }
-
-    // Default / PM / Tech / Halden roles
-    return [
-      {
-        id: "pm-star",
-        topicId: "star",
-        type: "competency" as PracticeQuestionType,
-        title: "STAR Framework Workout",
-        category: "Competency & Leadership",
-        badge: "MOST RECOMMENDED",
-        duration: "3–5 mins",
-        difficulty: "Realistic",
-        icon: "star" as IconName,
-        color: "from-amber-500/20 to-orange-500/20 text-amber-300 border-amber-500/30",
-        description: "Structure complex experience and behavioural stories with crisp Situation, Task, Action, and measurable Result.",
-      },
-      {
-        id: "pm-commercial",
-        topicId: "commercial-judgement",
-        type: "situational" as PracticeQuestionType,
-        title: "Commercial Judgement & Risk",
-        category: "Senior PM Decisions",
-        badge: "PRIORITY AREA",
-        duration: "4–6 mins",
-        difficulty: "Challenging",
-        icon: "target" as IconName,
-        color: "from-blue-500/20 to-indigo-500/20 text-blue-300 border-blue-500/30",
-        description: "Balance user conversion, payment fraud loss limits, and business growth trade-offs under probing follow-ups.",
-      },
-      {
-        id: "pm-technical",
-        topicId: "technical",
-        type: "technical" as PracticeQuestionType,
-        title: "Technical Depth & Architecture",
-        category: "Engineering Trade-offs",
-        duration: "5 mins",
-        difficulty: "Challenging",
-        icon: "code" as IconName,
-        color: "from-purple-500/20 to-pink-500/20 text-purple-300 border-purple-500/30",
-        description: "Explain technical architecture choices, idempotency, latency constraints, and handling disagreements with senior engineers.",
-      },
-      {
-        id: "pm-curveball",
-        topicId: "civil-service-strengths",
-        type: "strengths" as PracticeQuestionType,
-        title: "Product Strengths & Working Style",
-        category: "Energy & Problem Solving",
-        badge: "RECOMMENDED",
-        duration: "3–4 mins",
-        difficulty: "Realistic",
-        icon: "star" as IconName,
-        color: "from-emerald-500/20 to-teal-500/20 text-emerald-300 border-emerald-500/30",
-        description: "Explore what energises you in product management, handling unfamiliar challenges and collaborative style.",
-      },
-      {
-        id: "pm-motivation",
-        topicId: "motivation",
-        type: "motivation" as PracticeQuestionType,
-        title: "Why Halden & Product Vision",
-        category: "Why Role & Company",
-        badge: "RECOMMENDED",
-        duration: "3–5 mins",
-        difficulty: "Friendly",
-        icon: "target" as IconName,
-        color: "from-purple-500/20 to-pink-500/20 text-purple-300 border-purple-500/30",
-        description: "Articulate why Halden, why fintech payments now, and your long-term product vision for small businesses.",
-      },
-      {
-        id: "pm-experience",
-        topicId: "experience",
-        type: "experience" as PracticeQuestionType,
-        title: "Career Narrative & Product Track Record",
-        category: "CV & Launch History",
-        badge: "RECOMMENDED",
-        duration: "4–6 mins",
-        difficulty: "Realistic",
-        icon: "cal" as IconName,
-        color: "from-cyan-500/20 to-blue-500/20 text-cyan-300 border-cyan-500/30",
-        description: "Connect your track record, past product launches, and career transitions into a compelling story.",
-      },
-    ];
-  }, [isNursing, isCivilService]);
-
-  // Sort practice cards so the active selected type is placed first and clearly highlighted
-  const displayedPracticeCards = useMemo(() => {
-    return [...practiceCards].sort((a, b) => {
-      if (a.type === selectedType && b.type !== selectedType) return -1;
-      if (b.type === selectedType && a.type !== selectedType) return 1;
-      return 0;
-    });
-  }, [practiceCards, selectedType]);
+  const { stats, focus } = current;
+  // The chosen kind of practice comes first; the rest keep the order the app matched them in.
+  const cards = selectedType ? [...current.topics].sort((a, b) => Number(b.type === selectedType) - Number(a.type === selectedType)) : current.topics;
+  const available = new Set(current.topics.map((t) => t.type));
 
   return (
     <div className="flex grow flex-col w-full pb-20 animate-rise text-white">
@@ -373,203 +108,180 @@ export function PracticeHubClient({
             <span>Targeted Practice</span>
           </div>
           <h1 className="text-3xl font-bold tracking-tight text-white">Practice Hub</h1>
-          <p className="mt-1.5 text-sm text-[#a1a2b3] max-w-2xl leading-relaxed">
-            Focused interview practice tailored to your role, stage and goals.
-          </p>
+          <p className="mt-1.5 text-sm text-[#a1a2b3] max-w-2xl leading-relaxed">Focused practice on the questions written for your interviews.</p>
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
-          <Link
-            href={`/interviews/${currentInterview?.id ?? "staff-nurse"}/prep`}
-            className="px-4 py-2.5 rounded-xl bg-[#141326] border border-white/10 hover:border-white/20 text-xs font-semibold text-white transition-all hover:-translate-y-0.5"
-          >
-            {currentInterview?.company || "Interview"} prep sheet
+          <Link href={`/interviews/${current.id}/prep`} className="px-4 py-2.5 rounded-xl bg-[#141326] border border-white/10 hover:border-white/20 text-xs font-semibold text-white transition-all hover:-translate-y-0.5">
+            {current.company} prep sheet
           </Link>
           <Link
-            href={`/mock/${currentInterview?.id ?? "staff-nurse"}`}
-            className="pro-btn-glow flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#4f52f8] via-[#5c5ffc] to-[#6d5eff] text-xs font-semibold text-white shadow-lg shadow-indigo-500/25 transition-all hover:-translate-y-0.5"
+            href={`/interviews/${current.id}`}
+            className="pro-btn-glow flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#4f52f8] via-[#5c5ffc] to-[#6d5eff] text-xs font-semibold text-white shadow-lg shadow-indigo-500/25 hover:brightness-110 transition-all"
           >
             <Icon name="play" size={13} />
-            <span>Start mock interview</span>
+            <span>Start a full interview</span>
           </Link>
         </div>
       </header>
 
-      {/* 2. TOP METRICS / QUICK STATS */}
-      <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-5">
+      {/* 2. FIGURES FROM THE PERSON'S OWN SESSIONS ON THIS INTERVIEW */}
+      <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-5" data-testid="hub-stats">
         <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-5 shadow-xl flex items-center gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-indigo-500/15 text-indigo-400 border border-indigo-500/25">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-indigo-500/15 text-indigo-300 border border-indigo-500/25">
             <Icon name="clock" size={22} />
           </div>
           <div>
             <div className="text-xs text-muted font-medium">Practice this week</div>
-            <div className="mt-0.5 num text-2xl font-bold text-white tracking-tight">45 mins</div>
-            <div className="text-[11px] text-emerald-400 mt-0.5">3 sessions completed</div>
+            <div className="mt-0.5 num text-2xl font-bold text-white tracking-tight">{stats.sessionsThisWeek === 0 ? "None yet" : `${stats.minutesThisWeek} min`}</div>
+            <div className="text-[11px] text-muted mt-0.5">{stats.sessionsThisWeek === 0 ? "No sessions in the last 7 days" : `${stats.sessionsThisWeek} session${stats.sessionsThisWeek === 1 ? "" : "s"} in the last 7 days`}</div>
           </div>
         </div>
 
         <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-5 shadow-xl flex items-center gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-300 border border-emerald-500/25">
             <Icon name="target" size={22} />
           </div>
           <div>
             <div className="text-xs text-muted font-medium">Average score</div>
-            <div className="mt-0.5 num text-2xl font-bold text-white tracking-tight">3.6 / 5.0</div>
-            <div className="text-[11px] text-emerald-400 mt-0.5">+0.6 from last week</div>
+            <div className="mt-0.5 num text-2xl font-bold text-white tracking-tight">{stats.averageScore != null ? `${stats.averageScore.toFixed(1)} / 5` : "No scores yet"}</div>
+            <div className="text-[11px] text-muted mt-0.5">
+              {stats.averageScore == null
+                ? "Appears after your first scored session"
+                : `Across ${stats.scoredSessions} scored session${stats.scoredSessions === 1 ? "" : "s"}${stats.changeOnLastWeek != null && stats.changeOnLastWeek !== 0 ? `, ${stats.changeOnLastWeek > 0 ? "up" : "down"} ${Math.abs(stats.changeOnLastWeek).toFixed(1)} on last week` : ""}`}
+            </div>
           </div>
         </div>
 
         <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-5 shadow-xl flex items-center gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-amber-400 border border-amber-500/25">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-amber-300 border border-amber-500/25">
             <Icon name="chart" size={22} />
           </div>
           <div>
             <div className="text-xs text-muted font-medium">Focus area</div>
-            <div className="mt-0.5 text-base font-bold text-white tracking-tight">{focusAreaStat.title}</div>
-            <div className="text-[11px] text-amber-300 mt-0.5">{focusAreaStat.subtitle}</div>
+            <div className="mt-0.5 text-base font-bold text-white tracking-tight">{focus ? focus.name : "Not known yet"}</div>
+            <div className="text-[11px] text-muted mt-0.5">{focus ? `Your lowest category so far: ${focus.score.toFixed(1)} out of 5` : "Your lowest category shows here once an interview is scored"}</div>
           </div>
         </div>
       </div>
 
-      {/* 3. STEP 1 & STEP 2 SELECTOR CONTAINER (Exact Match to Design Image) */}
+      {/* 3. CHOOSE THE INTERVIEW AND THE KIND OF PRACTICE */}
       <div className="mt-8 rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-6 shadow-2xl relative">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* STEP 1: SELECT INTERVIEW */}
           <div className="lg:col-span-5 space-y-3">
             <div className="flex items-center gap-2.5">
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white shadow-sm">
+              <span aria-hidden className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white shadow-sm">
                 1
               </span>
-              <h2 className="text-base font-bold text-white tracking-tight">
-                Which interview are you preparing for?
-              </h2>
+              <h2 className="text-base font-bold text-white tracking-tight">Which interview are you preparing for?</h2>
             </div>
-            <p className="text-xs text-muted pl-8.5">
-              Select an upcoming interview to get tailored questions.
-            </p>
+            <p className="text-xs text-muted pl-8.5">Your choice is kept in this page’s address.</p>
 
-            {/* Custom Interactive Dropdown */}
             <div className="relative pt-1 pl-8.5">
               <button
                 type="button"
+                aria-haspopup="listbox"
+                aria-expanded={isDropdownOpen}
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                 className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-[#141326] border border-white/15 hover:border-indigo-500/50 text-left transition-all group"
+                data-testid="hub-interview"
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-500/20 text-indigo-300">
                     <Icon name="cal" size={16} />
                   </div>
-                  <div className="truncate">
-                    <div className="text-sm font-semibold text-white group-hover:text-indigo-200 transition-colors truncate">
-                      {currentInterview?.role} — {currentInterview?.company}
-                    </div>
+                  <div className="truncate text-sm font-semibold text-white group-hover:text-indigo-200 transition-colors">
+                    {current.role} — {current.company}
+                    {current.isDemo ? <span className="ml-1.5 text-xs font-medium text-muted">(example)</span> : null}
                   </div>
                 </div>
-                <Icon
-                  name="chevronDown"
-                  size={16}
-                  className={clsx("text-muted transition-transform duration-200 shrink-0", isDropdownOpen && "rotate-180")}
-                />
+                <Icon name="chevronDown" size={16} className={clsx("text-muted transition-transform duration-200 shrink-0", isDropdownOpen && "rotate-180")} />
               </button>
 
-              {/* Dropdown Menu */}
               {isDropdownOpen && (
-                <div className="absolute top-full left-8.5 right-0 mt-2 z-30 rounded-xl bg-[#121124] border border-white/15 shadow-2xl overflow-hidden py-1.5 animate-fade-in backdrop-blur-xl">
+                <div role="listbox" aria-label="Your interviews" className="absolute top-full left-8.5 right-0 mt-2 z-30 rounded-xl bg-[#121124] border border-white/15 shadow-2xl overflow-hidden py-1.5 animate-fade-in backdrop-blur-xl">
                   {interviews.map((iv) => {
-                    const isSelected = iv.id === selectedId;
+                    const isSelected = iv.id === current.id;
                     return (
                       <button
                         key={iv.id}
                         type="button"
-                        onClick={() => {
-                          setSelectedId(iv.id);
-                          setIsDropdownOpen(false);
-                        }}
-                        className={clsx(
-                          "w-full flex items-center justify-between px-4 py-3 text-left transition-colors text-xs",
-                          isSelected
-                            ? "bg-indigo-600/20 text-white font-semibold"
-                            : "hover:bg-white/[0.06] text-[#c9cad4]"
-                        )}
+                        role="option"
+                        aria-selected={isSelected}
+                        onClick={() => chooseInterview(iv.id)}
+                        className={clsx("w-full flex items-center justify-between px-4 py-3 text-left transition-colors text-xs", isSelected ? "bg-indigo-600/20 text-white font-semibold" : "hover:bg-white/[0.06] text-[#c9cad4]")}
                       >
                         <div className="flex items-center gap-3 min-w-0">
-                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/10 text-[11px] font-bold text-white">
-                            {iv.companyInitial || iv.company[0]}
+                          <span aria-hidden className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/10 text-[11px] font-bold text-white">
+                            {iv.companyInitial}
                           </span>
                           <div className="truncate">
                             <span className="font-semibold text-white">{iv.role}</span>
-                            <span className="text-muted ml-1.5">({iv.company})</span>
+                            <span className="text-muted ml-1.5">
+                              ({iv.company}
+                              {iv.isDemo ? ", example" : ""})
+                            </span>
                           </div>
                         </div>
-                        {isSelected && <Icon name="check" size={14} className="text-indigo-400 shrink-0 ml-2" />}
+                        {isSelected && <Icon name="check" size={14} className="text-indigo-300 shrink-0 ml-2" />}
                       </button>
                     );
                   })}
                 </div>
               )}
 
-              {/* Metadata Badges below Dropdown */}
-              <div className="flex flex-wrap items-center gap-2 pt-3">
+              <div className="flex flex-wrap items-center gap-2 pt-3" data-testid="hub-when">
+                {current.stage ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-xl bg-[#16152a] border border-white/10 px-3 py-1.5 text-xs font-medium text-[#d1d2dc]">
+                    <Icon name="list" size={13} className="text-blue-300" />
+                    <span>{current.stage}</span>
+                  </span>
+                ) : null}
                 <span className="inline-flex items-center gap-1.5 rounded-xl bg-[#16152a] border border-white/10 px-3 py-1.5 text-xs font-medium text-[#d1d2dc]">
-                  <Icon name={isNursing ? "stethoscope" : isCivilService ? "bank" : "list"} size={13} className="text-blue-400" />
-                  <span>{stageInfo.label}</span>
-                </span>
-                <span className="inline-flex items-center gap-1.5 rounded-xl bg-[#16152a] border border-white/10 px-3 py-1.5 text-xs font-medium text-[#d1d2dc]">
-                  <Icon name="cal" size={13} className="text-indigo-400" />
-                  <span>{stageInfo.timing}</span>
+                  <Icon name="cal" size={13} className="text-indigo-300" />
+                  <span>
+                    {current.when.text}
+                    {current.when.rel && current.when.rel !== "done" ? ` (${current.when.rel})` : ""}
+                  </span>
                 </span>
               </div>
             </div>
           </div>
 
-          {/* STEP 2: CHOOSE PRACTICE TYPE */}
           <div className="lg:col-span-7 space-y-3">
             <div className="flex items-center gap-2.5">
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#7c3aed] text-xs font-bold text-white shadow-sm">
+              <span aria-hidden className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#7c3aed] text-xs font-bold text-white shadow-sm">
                 2
               </span>
-              <h2 className="text-base font-bold text-white tracking-tight">
-                What would you like to practise?
-              </h2>
+              <h2 className="text-base font-bold text-white tracking-tight">What would you like to practise?</h2>
             </div>
-            <p className="text-xs text-muted pl-8.5">
-              Choose a question type based on the interview focus.
-            </p>
+            <p className="text-xs text-muted pl-8.5">Pick a kind of question to bring its practice to the top.</p>
 
-            {/* 6 Interactive Question Type Cards in 1 Row (Exact Match to Design Mockup) */}
             <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-2.5 pt-1 pl-0 sm:pl-8.5">
-              {questionTypes.map((t) => {
+              {TYPES.map((t) => {
                 const isActive = selectedType === t.id;
+                const has = available.has(t.id);
                 return (
                   <button
                     key={t.id}
                     type="button"
-                    onClick={() => setSelectedType(t.id)}
+                    aria-pressed={isActive}
+                    disabled={!has}
+                    title={has ? undefined : "No practice of this kind is matched to this job"}
+                    onClick={() => chooseType(t.id)}
                     className={clsx(
-                      "relative flex flex-col items-center justify-center py-3.5 px-2 rounded-2xl border transition-all cursor-pointer min-h-[78px] group",
-                      isActive
-                        ? "bg-gradient-to-b from-[#241e4b] to-[#1c173d] border-2 border-[#7c3aed] text-white shadow-[0_0_20px_rgba(124,58,237,0.35)] ring-1 ring-[#7c3aed]/50"
-                        : "bg-[#141326] border-white/10 text-[#a5a7b8] hover:border-white/20 hover:text-white"
+                      "relative flex flex-col items-center justify-center py-3.5 px-2 rounded-2xl border transition-all min-h-[78px] group",
+                      !has
+                        ? "bg-[#141326] border-white/5 text-[#6f7186] cursor-not-allowed"
+                        : isActive
+                          ? "bg-gradient-to-b from-[#241e4b] to-[#1c173d] border-2 border-[#7c3aed] text-white shadow-[0_0_20px_rgba(124,58,237,0.35)] ring-1 ring-[#7c3aed]/50 cursor-pointer"
+                          : "bg-[#141326] border-white/10 text-[#a5a7b8] hover:border-white/20 hover:text-white cursor-pointer",
                     )}
                   >
-                    <Icon
-                      name={t.icon}
-                      size={22}
-                      className={clsx(
-                        "transition-transform group-hover:scale-110 shrink-0",
-                        isActive ? "text-white" : "text-[#a5a7b8] group-hover:text-white"
-                      )}
-                    />
-                    <span
-                      className={clsx(
-                        "text-xs font-semibold mt-1.5 tracking-tight truncate w-full text-center",
-                        isActive ? "text-white" : "text-[#a5a7b8] group-hover:text-white"
-                      )}
-                    >
-                      {t.label}
-                    </span>
+                    <Icon name={t.icon} size={22} className="shrink-0" />
+                    <span className="text-xs font-semibold mt-1.5 tracking-tight truncate w-full text-center">{t.label}</span>
                     {isActive && (
-                      <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#7c3aed] text-white shadow-md ring-2 ring-[#0d0c1c]">
+                      <span aria-hidden className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#7c3aed] text-white shadow-md ring-2 ring-[#0d0c1c]">
                         <Icon name="check" size={11} strokeWidth={3} />
                       </span>
                     )}
@@ -580,210 +292,151 @@ export function PracticeHubClient({
           </div>
         </div>
 
-        {/* Practice Settings Toolbar */}
         <div className="mt-6 pt-5 border-t border-white/[0.08] flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <span className="text-xs text-muted font-medium">Difficulty:</span>
-            <div className="flex items-center rounded-lg bg-[#141326] border border-white/10 p-0.5">
+            <span className="text-xs text-muted font-medium" id="hub-difficulty">
+              Difficulty:
+            </span>
+            <div role="group" aria-labelledby="hub-difficulty" className="flex items-center rounded-lg bg-[#141326] border border-white/10 p-0.5">
               {(["easy", "medium", "hard"] as const).map((d) => (
-                <button
-                  key={d}
-                  type="button"
-                  onClick={() => setDifficulty(d)}
-                  className={clsx(
-                    "px-3 py-1 rounded-md text-xs font-semibold capitalize transition-all",
-                    difficulty === d
-                      ? "bg-indigo-600 text-white shadow-sm"
-                      : "text-muted hover:text-white"
-                  )}
-                >
+                <button key={d} type="button" aria-pressed={difficulty === d} onClick={() => setDifficulty(d)} className={clsx("px-3 py-1 rounded-md text-xs font-semibold capitalize transition-all", difficulty === d ? "bg-indigo-600 text-white shadow-sm" : "text-[#a9abc0] hover:text-white")}>
                   {d}
                 </button>
               ))}
             </div>
           </div>
 
-          <div className="flex items-center gap-2 text-xs text-indigo-300 bg-indigo-500/10 border border-indigo-500/25 px-3 py-1.5 rounded-lg">
+          <div className="flex items-center gap-2 text-xs text-indigo-200 bg-indigo-500/10 border border-indigo-500/25 px-3 py-1.5 rounded-lg">
             <Icon name="sparkle" size={14} />
-            <span>Practice mode: <b>1 question at a time</b> with instant scoring & STAR coaching</span>
+            <span>
+              Practice mode: <b>one question at a time</b>, scored after you answer
+            </span>
           </div>
         </div>
       </div>
 
-      {/* 4. SECTION 1: FOCUSED PRACTICE FOR YOUR ROLE */}
+      {/* 4. THE PRACTICE MATCHED TO THIS JOB */}
       <div className="mt-10">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-lg font-bold text-white tracking-tight">Focused Practice for Your Role</h2>
-            <p className="text-xs text-muted">
-              {isNursing
-                ? "Short, targeted workouts with questions relevant to nursing and clinical roles."
-                : isCivilService
-                ? "Short, targeted workouts with questions relevant to Civil Service and public sector roles."
-                : `Short, targeted workouts with questions relevant to ${currentInterview?.role} at ${currentInterview?.company}.`}
-            </p>
-          </div>
+        <div className="mb-4">
+          <h2 className="text-lg font-bold text-white tracking-tight">Focused practice for this interview</h2>
+          <p className="text-xs text-muted">
+            Practice topics matched to {current.role} at {current.company} from its title and job description.
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {displayedPracticeCards.map((card) => {
-            const isCardHighlighted = card.type === selectedType;
-            const practiceHref = `/mock/${currentInterview?.id ?? "staff-nurse"}?practice=1&topic=${card.topicId}&type=${card.type}&difficulty=${difficulty}&duration=${duration}`;
-
-            return (
-              <div
-                key={card.id}
-                className={clsx(
-                  "rounded-2xl border p-6 shadow-xl flex flex-col justify-between transition-all group relative",
-                  isCardHighlighted
-                    ? "border-[#7c3aed] bg-gradient-to-b from-[#1c163d] to-[#120f26] ring-2 ring-[#7c3aed]/50 shadow-[0_0_25px_rgba(124,58,237,0.35)]"
-                    : "bg-[#0d0c1c] border-white/[0.08] hover:border-white/20"
-                )}
-              >
-                <div>
-                  <div className="flex items-start justify-between gap-3 mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className={clsx("flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border bg-gradient-to-br", card.color)}>
-                        <Icon name={card.icon} size={18} />
+        {cards.length === 0 ? (
+          <p className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-6 text-xs text-muted">No practice topics are matched to this job.</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5" data-testid="hub-cards">
+            {cards.map((card) => {
+              const kind = typeOf(card.type);
+              const highlighted = card.type === selectedType;
+              const href = `/mock/${current.id}?practice=1&topic=${encodeURIComponent(card.id)}&type=${card.type}&difficulty=${difficulty}&duration=1-question`;
+              return (
+                <div
+                  key={card.id}
+                  className={clsx(
+                    "rounded-2xl border p-6 shadow-xl flex flex-col justify-between transition-all group relative",
+                    highlighted ? "border-[#7c3aed] bg-gradient-to-b from-[#1c163d] to-[#120f26] ring-2 ring-[#7c3aed]/50 shadow-[0_0_25px_rgba(124,58,237,0.35)]" : "bg-[#0d0c1c] border-white/[0.08] hover:border-white/20",
+                  )}
+                >
+                  <div>
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className={clsx("flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border bg-gradient-to-br", kind.color)}>
+                          <Icon name={kind.icon} size={18} />
+                        </div>
+                        <div>
+                          <h3 className="text-base font-bold text-white">{card.title}</h3>
+                          <div className="text-xs text-muted">
+                            {kind.label} · {card.focusLabel}
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="text-base font-bold text-white group-hover:text-blue-soft transition-colors">
-                          {card.title}
-                        </h3>
-                        <div className="text-xs text-muted">{card.category}</div>
-                      </div>
+                      {highlighted ? <span className="rounded-full bg-[#7c3aed]/25 border border-[#7c3aed]/50 px-2.5 py-0.5 text-[10px] font-bold text-purple-200 uppercase tracking-wider">Selected</span> : null}
                     </div>
-                    {isCardHighlighted ? (
-                      <span className="rounded-full bg-[#7c3aed]/25 border border-[#7c3aed]/50 px-2.5 py-0.5 text-[10px] font-bold text-purple-200 uppercase tracking-wider flex items-center gap-1 shadow-sm">
-                        <Icon name="check" size={10} strokeWidth={3} className="text-[#a5a1ff]" />
-                        <span>SELECTED FOCUS</span>
-                      </span>
-                    ) : card.badge ? (
-                      <span className="rounded-full bg-amber-500/15 border border-amber-500/30 px-2.5 py-0.5 text-[10px] font-bold text-amber-300 uppercase tracking-wider">
-                        {card.badge}
-                      </span>
-                    ) : null}
+                    <p className="text-xs text-[#a5a7b8] leading-relaxed mt-2 mb-4">{card.subtitle}</p>
                   </div>
 
-                  <p className="text-xs text-[#a5a7b8] leading-relaxed mt-2 mb-4">
-                    {card.description}
-                  </p>
+                  <div className="flex items-center justify-between pt-4 border-t border-white/[0.06]">
+                    <div className="flex items-center gap-3 text-xs text-muted">
+                      <span className="flex items-center gap-1">
+                        <Icon name="clock" size={13} /> {card.minutes} min
+                      </span>
+                      <span aria-hidden>·</span>
+                      <span className="capitalize">{difficulty}</span>
+                      <span aria-hidden>·</span>
+                      <span className="text-indigo-200">1 question</span>
+                    </div>
+                    <Link
+                      href={href}
+                      aria-label={`Start practice: ${card.title}`}
+                      className={clsx(
+                        "flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-white transition-all",
+                        highlighted ? "bg-gradient-to-r from-[#6366f1] to-[#7c3aed] hover:from-[#7073ff] hover:to-[#8b4bf0] shadow-md shadow-indigo-500/30" : "pro-btn-glow bg-[#141326] border border-white/10 hover:border-indigo-500/50 hover:bg-[#1a1932]",
+                      )}
+                    >
+                      <span>Start practice</span>
+                      <Icon name="chevronRight" size={13} />
+                    </Link>
+                  </div>
                 </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
-                <div className="flex items-center justify-between pt-4 border-t border-white/[0.06]">
-                  <div className="flex items-center gap-3 text-xs text-muted">
-                    <span className="flex items-center gap-1">
-                      <Icon name="clock" size={13} /> {card.duration}
-                    </span>
-                    <span>·</span>
-                    <span className="capitalize">{difficulty}</span>
-                    <span>·</span>
-                    <span className="text-indigo-300">1 question</span>
+      {/* 5. PRESENTATIONS: THE PERSON'S OWN, WHEN THEY HAVE ONE */}
+      <div className="mt-10" data-testid="hub-presentation">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-lg font-bold text-white tracking-tight">Presentation rehearsals</h2>
+            <p className="text-xs text-muted">{presentation ? `Rehearse “${presentation.title}”.` : "Rehearse a presentation’s opening, a slide or the questions after it."}</p>
+          </div>
+          {presentation ? (
+            <Link href={`/presentations/${presentation.id}`} className="text-xs font-semibold text-blue-soft hover:underline">
+              Open the presentation →
+            </Link>
+          ) : null}
+        </div>
+
+        {presentation ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {(
+              [
+                { icon: "present", tone: "bg-purple-500/15 text-purple-300", title: "Rehearse it", text: "Run through your presentation and get feedback on each part.", href: `/rehearse/${presentation.id}`, action: "Start rehearsal" },
+                { icon: "chat", tone: "bg-emerald-500/15 text-emerald-300", title: "Practise the Q&A", text: "Answer the questions an audience is likely to ask afterwards.", href: `/qa/${presentation.id}`, action: "Start Q&A" },
+              ] as const
+            ).map((c) => (
+              <div key={c.title} className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-5 shadow-xl flex flex-col justify-between hover:border-white/20 transition-all">
+                <div>
+                  <div className="flex items-center gap-2.5 mb-2">
+                    <div className={clsx("flex h-8 w-8 items-center justify-center rounded-lg", c.tone)}>
+                      <Icon name={c.icon} size={15} />
+                    </div>
+                    <h3 className="text-sm font-bold text-white">{c.title}</h3>
                   </div>
-                  <Link
-                    href={practiceHref}
-                    className={clsx(
-                      "flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-white transition-all",
-                      isCardHighlighted
-                        ? "bg-gradient-to-r from-[#6366f1] to-[#7c3aed] hover:from-[#7073ff] hover:to-[#8b4bf0] shadow-md shadow-indigo-500/30"
-                        : "pro-btn-glow bg-[#141326] border border-white/10 hover:border-indigo-500/50 hover:bg-[#1a1932]"
-                    )}
-                  >
-                    <span>Start practice</span>
-                    <Icon name="chevronRight" size={13} />
+                  <p className="text-xs text-muted leading-relaxed mt-1 mb-4">{c.text}</p>
+                </div>
+                <div className="flex justify-end pt-3 border-t border-white/[0.06]">
+                  <Link href={c.href} className="px-3.5 py-1.5 rounded-lg bg-[#141326] border border-white/10 hover:border-white/25 text-xs font-semibold text-white">
+                    {c.action}
                   </Link>
                 </div>
               </div>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-6 text-xs text-muted">
+            <p>You haven’t added a presentation yet.</p>
+            <Link href="/presentations" className="mt-2 inline-block font-semibold text-blue-soft hover:underline">
+              Add a presentation →
+            </Link>
+          </div>
+        )}
       </div>
 
-      {/* 5. SECTION 2: PRESENTATION & EXECUTIVE REHEARSALS */}
-      <div className="mt-10">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-lg font-bold text-white tracking-tight">Presentation & Executive Rehearsals</h2>
-            <p className="text-xs text-muted">Practise delivering clear, confident and structured presentations.</p>
-          </div>
-          <Link href="/presentations/q1-roadmap" className="text-xs font-semibold text-blue-soft hover:underline">
-            View presentation overview →
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-5 shadow-xl flex flex-col justify-between hover:border-white/20 transition-all">
-            <div>
-              <div className="flex items-center gap-2.5 mb-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/15 text-blue-400">
-                  <Icon name="flag" size={15} />
-                </div>
-                <h3 className="text-sm font-bold text-white">Practise Your Opening</h3>
-              </div>
-              <p className="text-xs text-muted leading-relaxed mt-1 mb-4">
-                A clear and confident 60-second introduction.
-              </p>
-            </div>
-            <div className="flex items-center justify-between pt-3 border-t border-white/[0.06]">
-              <span className="text-xs text-muted">1 min</span>
-              <Link
-                href="/rehearse/q1-roadmap"
-                className="px-3.5 py-1.5 rounded-lg bg-[#141326] border border-white/10 hover:border-white/25 text-xs font-semibold text-white"
-              >
-                Start opening
-              </Link>
-            </div>
-          </div>
-
-          <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-5 shadow-xl flex flex-col justify-between hover:border-white/20 transition-all">
-            <div>
-              <div className="flex items-center gap-2.5 mb-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-500/15 text-purple-400">
-                  <Icon name="present" size={15} />
-                </div>
-                <h3 className="text-sm font-bold text-white">Practise a Specific Slide</h3>
-              </div>
-              <p className="text-xs text-muted leading-relaxed mt-1 mb-4">
-                Improve the delivery of a key slide from your deck.
-              </p>
-            </div>
-            <div className="flex items-center justify-between pt-3 border-t border-white/[0.06]">
-              <span className="text-xs text-muted">3–5 mins</span>
-              <Link
-                href="/rehearse/q1-roadmap"
-                className="px-3.5 py-1.5 rounded-lg bg-[#141326] border border-white/10 hover:border-white/25 text-xs font-semibold text-white"
-              >
-                Pick slide
-              </Link>
-            </div>
-          </div>
-
-          <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-5 shadow-xl flex flex-col justify-between hover:border-white/20 transition-all">
-            <div>
-              <div className="flex items-center gap-2.5 mb-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-400">
-                  <Icon name="chat" size={15} />
-                </div>
-                <h3 className="text-sm font-bold text-white">Practise Q&A</h3>
-              </div>
-              <p className="text-xs text-muted leading-relaxed mt-1 mb-4">
-                Handle follow-up questions with clarity and confidence.
-              </p>
-            </div>
-            <div className="flex items-center justify-between pt-3 border-t border-white/[0.06]">
-              <span className="text-xs text-muted">5 mins</span>
-              <Link
-                href="/qa/q1-roadmap"
-                className="px-3.5 py-1.5 rounded-lg bg-[#141326] border border-white/10 hover:border-white/25 text-xs font-semibold text-white"
-              >
-                Start Q&A
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 5. ANSWERING GUIDES (EXACT MATCH TO CLIENT DESIGN MOCKUP) */}
       <div className="mt-12 pt-8 border-t border-white/[0.08]">
         <AnsweringGuides />
       </div>

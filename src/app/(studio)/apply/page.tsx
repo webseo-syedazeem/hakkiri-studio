@@ -295,10 +295,10 @@ export default function ApplyHomePage() {
               </span>
             </div>
             <h3 className="text-base font-black text-ink group-hover:text-blue-soft transition">
-              Auto-Apply Approval Gate
+              Job preferences and limits
             </h3>
             <p className="text-xs text-muted leading-relaxed">
-              Provable emergency pause, daily send caps, salary floor filters, and explicit candidate approval before anything leaves.
+              The job titles, places, salary and employers you set. Hakkiri doesn’t send applications for you: you send each one yourself.
             </p>
             <div className="pt-2 text-xs font-bold text-blue flex items-center gap-1 group-hover:translate-x-1 transition duration-200">
               Configure Safeguards <span>→</span>

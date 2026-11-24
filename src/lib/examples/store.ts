@@ -1,211 +1,183 @@
 "use client";
 
+/**
+ * The Experience Library: examples the person wrote or saved themselves.
+ * It is kept in this browser only (it is not part of the account, the data
+ * download or "Delete all my data" on the server). A new library is empty:
+ * nothing is put into it that the person did not write.
+ */
+
 export interface InterviewExample {
   id: string;
   title: string;
   question: string;
   answer: string;
+  /** Empty when the person didn't choose one. */
   competency: string;
   role: string;
   interviewType: string;
   tags: string[];
   isFavorite: boolean;
+  /** Worked out from the answer's own text (see `looksLikeStar`), never assumed. */
   isStarStructure: boolean;
   createdAt: string;
 }
 
 const STORAGE_KEY = "hk_interview_examples";
 
-export const DEFAULT_EXAMPLES: InterviewExample[] = [
-  {
-    id: "ex-1",
-    title: "Led a cross-functional project to launch a digital service",
-    question: "Tell me about a time you led a complex project from conception through delivery.",
-    answer: "Situation: Our department faced delays in public-facing submissions. Task: I was tasked with leading a cross-functional team of 12 across policy, tech, and operations to deliver a digital workflow. Action: I established daily standups, aligned roadmaps with senior stakeholders, and resolved inter-team bottlenecks. Result: We launched 3 weeks ahead of schedule, reducing processing time by 42%.",
-    competency: "Leadership",
-    role: "Senior Adviser / Product Lead",
-    interviewType: "Competency",
-    tags: ["Leadership", "Stakeholder management", "Delivery"],
-    isFavorite: false,
-    isStarStructure: true,
-    createdAt: "2026-11-01T10:00:00.000Z",
-  },
-  {
-    id: "ex-2",
-    title: "Resolved a high-risk issue under time pressure",
-    question: "Describe an urgent, high-stakes situation where you had to act with incomplete data.",
-    answer: "Situation: A critical compliance discrepancy emerged 48 hours before a ministerial briefing. Task: I had to isolate root causes and formulate mitigation options without delaying the announcement. Action: I formed a rapid response team, conducted triage on data feeds, and established risk guardrails. Result: Delivered verified briefings on time, avoiding public misstatements and establishing a permanent automated validation check.",
-    competency: "Problem-solving",
-    role: "Strategy & Policy Adviser",
-    interviewType: "Situational",
-    tags: ["Problem-solving", "Risk management", "Decision-making"],
-    isFavorite: false,
-    isStarStructure: true,
-    createdAt: "2026-11-03T14:30:00.000Z",
-  },
-  {
-    id: "ex-3",
-    title: "Influenced stakeholders to agree a change in approach",
-    question: "Give an example of persuading sceptical senior stakeholders to alter course.",
-    answer: "Situation: Senior leadership preferred an outdated manual consultation model with high recurring costs. Task: I needed to build consensus around an iterative digital consultative model. Action: Prepared an evidence dossier comparing pilot outcomes, ran an interactive workshop addressing risk concerns, and negotiated staged milestones. Result: Secured unanimous approval from 5 executive directors, saving £340k annually.",
-    competency: "Influencing",
-    role: "Senior Adviser, Policy & Strategy",
-    interviewType: "Competency",
-    tags: ["Influencing", "Communication", "Collaboration"],
-    isFavorite: true,
-    isStarStructure: true,
-    createdAt: "2026-11-05T09:15:00.000Z",
-  },
-  {
-    id: "ex-4",
-    title: "Improved a customer process and reduced costs",
-    question: "Tell me about an initiative where you drove efficiency and measurable bottom-line impact.",
-    answer: "Situation: The user onboarding journey had a 28% drop-off rate at the verification stage. Task: Streamline identity verification without compromising risk guardrails. Action: Analyzed step-by-step telemetry, removed redundant form fields, and integrated instant document verification. Result: Drop-off decreased to 11%, operational support tickets dropped by 35%, delivering £180k in annual productivity savings.",
-    competency: "Impact & Results",
-    role: "Product Manager",
-    interviewType: "Technical & Operational",
-    tags: ["Continuous improvement", "Data-driven", "Impact"],
-    isFavorite: false,
-    isStarStructure: true,
-    createdAt: "2026-11-06T16:00:00.000Z",
-  },
-  {
-    id: "ex-5",
-    title: "Delivered key policy recommendations for senior leadership review",
-    question: "Describe a time you synthesised dense, conflicting evidence into a strategic recommendation.",
-    answer: "Situation: Differing academic, industry, and departmental forecasts created deadlock on a major infrastructure policy. Task: Synthesise conflicting data into actionable options for the Secretary of State. Action: Created a clear trade-off matrix weighing economic return vs delivery risk, with stress-tested sensitivity models. Result: Selected option was adopted as central policy white paper baseline with cross-party backing.",
-    competency: "Strategic thinking",
-    role: "Senior Adviser, Policy & Strategy",
-    interviewType: "Panel",
-    tags: ["Strategic thinking", "Policy", "Stakeholder management"],
-    isFavorite: true,
-    isStarStructure: true,
-    createdAt: "2026-11-08T11:20:00.000Z",
-  },
-  {
-    id: "ex-6",
-    title: "Managed competing deadlines across three parallel workstreams",
-    question: "How do you maintain quality when multiple urgent priorities land simultaneously?",
-    answer: "Situation: Three statutory consultation deadlines overlapped within a 10-day window during a team reorganisation. Task: Prioritise resources to ensure no legal breaches occurred. Action: Reallocated capacity based on regulatory risk, automated response collation, and set up transparent blocker escalations. Result: All three reports delivered on time with zero compliance infractions.",
-    competency: "Prioritisation",
-    role: "Programme Lead",
-    interviewType: "Hiring manager",
-    tags: ["Prioritisation", "Organisation", "Delivery"],
-    isFavorite: false,
-    isStarStructure: true,
-    createdAt: "2026-11-09T13:45:00.000Z",
-  },
-  {
-    id: "ex-7",
-    title: "Built consensus across conflicting departmental incentives",
-    question: "Tell me about a time you worked with a difficult partner team to deliver a shared goal.",
-    answer: "Situation: Finance and Delivery teams had diametrically opposed priorities regarding vendor contracts. Task: Formulate a compromise agreement satisfying both cost controls and delivery SLAs. Action: Hosted structured alignment sessions to define shared non-negotiables, establishing joint governance. Result: Final contract signed within 2 weeks, reducing delivery risk by 30% and locking in a 15% volume discount.",
-    competency: "Collaboration",
-    role: "Strategy Adviser",
-    interviewType: "Competency",
-    tags: ["Negotiation", "Cross-functional", "Collaboration"],
-    isFavorite: false,
-    isStarStructure: true,
-    createdAt: "2026-11-10T15:10:00.000Z",
-  },
-  {
-    id: "ex-8",
-    title: "Overcame data gaps to forecast critical quarterly metrics",
-    question: "Walk me through how you solve an analytical problem when baseline data is missing.",
-    answer: "Situation: A new policy programme lacked historic user engagement data for forecasting. Task: Produce a 12-month adoption and budget forecast for the Treasury. Action: Synthesized proxy benchmarks from 4 comparable public sector deployments and built conservative monte-carlo confidence intervals. Result: Budget was approved in full; actual 6-month adoption landed within 4% of my projected midpoint.",
-    competency: "Analytical thinking",
-    role: "Analytics & Strategy",
-    interviewType: "Technical round",
-    tags: ["Analytical thinking", "Data-driven", "Problem-solving"],
-    isFavorite: false,
-    isStarStructure: true,
-    createdAt: "2026-11-11T17:00:00.000Z",
-  },
-];
+const hash = (s: string) => {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0;
+  return h.toString(36);
+};
 
-export function loadExamples(): InterviewExample[] {
-  if (typeof window === "undefined") return DEFAULT_EXAMPLES;
+/**
+ * Fingerprints of the eight sample examples an earlier build wrote into every
+ * browser as if they were the person's own. They are removed on load. A sample
+ * the person changed no longer matches, so their own text is never removed.
+ */
+const SEEDED = new Set(["10dsbbe", "ox0v35", "837eru", "1rvdnb2", "k45fuz", "168mz81", "v9gks0", "1jv7o6p"]);
+export const isSeededExample = (e: Pick<InterviewExample, "id" | "title" | "question" | "answer">) => SEEDED.has(hash(`${e.id}|${e.title}|${e.question}|${e.answer}`));
+
+const text = (v: unknown) => (typeof v === "string" ? v : "");
+
+/** What is stored, read safely: only well-formed examples, without the old samples. An unreadable store is empty. */
+export function readExamples(raw: string | null): InterviewExample[] {
+  if (!raw) return [];
+  let parsed: unknown;
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_EXAMPLES));
-      return DEFAULT_EXAMPLES;
-    }
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : DEFAULT_EXAMPLES;
+    parsed = JSON.parse(raw);
   } catch {
-    return DEFAULT_EXAMPLES;
+    return [];
+  }
+  if (!Array.isArray(parsed)) return [];
+  const out: InterviewExample[] = [];
+  for (const item of parsed) {
+    if (!item || typeof item !== "object") continue;
+    const e = item as Record<string, unknown>;
+    if (!text(e.id) || !text(e.question).trim() || !text(e.answer).trim()) continue;
+    const example: InterviewExample = {
+      id: text(e.id),
+      title: text(e.title),
+      question: text(e.question),
+      answer: text(e.answer),
+      competency: text(e.competency),
+      role: text(e.role),
+      interviewType: text(e.interviewType),
+      tags: Array.isArray(e.tags) ? e.tags.filter((t): t is string => typeof t === "string" && !!t.trim()) : [],
+      isFavorite: e.isFavorite === true,
+      isStarStructure: e.isStarStructure === true,
+      createdAt: text(e.createdAt),
+    };
+    if (!isSeededExample(example)) out.push(example);
+  }
+  return out;
+}
+
+/**
+ * Whether an answer is written as Situation, Task, Action, Result: at least
+ * three of the four are there as labelled parts ("Situation: …").
+ */
+export function looksLikeStar(answer: string): boolean {
+  const found = new Set<string>();
+  for (const m of answer.matchAll(/(?:^|[\s(])(situation|task|action|result)s?\s*[:–—-]/gi)) found.add(m[1].toLowerCase());
+  return found.size >= 3;
+}
+
+/** The heading for an example: the first sentence of the answer without its "Situation:" label, or the question. */
+export function exampleTitle(question: string, answer: string): string {
+  let title = answer
+    .split(/[.\n]/)[0]
+    ?.replace(/^(situation|task|action|result)\s*[:,–—-]\s*/i, "")
+    ?.trim();
+  if (!title || title.length < 8) title = question.trim();
+  return title.length > 70 ? `${title.slice(0, 70)}...` : title;
+}
+
+export type NewExample = {
+  question: string;
+  answer: string;
+  competency?: string;
+  role?: string;
+  interviewType?: string;
+  tags?: string[];
+  title?: string;
+  isFavorite?: boolean;
+  /** Not used: the mark is worked out from the answer's own text. */
+  isStarStructure?: boolean;
+};
+
+/**
+ * An example ready to keep, holding only what the person gave: no competency,
+ * role, interview type or tag is filled in for them. Null when there is no
+ * question or no answer.
+ */
+export function newExample(input: NewExample, now: Date, id = `ex-${now.getTime()}`): InterviewExample | null {
+  const question = input.question.trim();
+  const answer = input.answer.trim();
+  if (!question || !answer) return null;
+  const tags = [...new Set((input.tags ?? []).map((t) => t.trim()).filter(Boolean))];
+  return {
+    id,
+    title: input.title?.trim() || exampleTitle(question, answer),
+    question,
+    answer,
+    competency: (input.competency ?? "").trim(),
+    role: (input.role ?? "").trim(),
+    interviewType: (input.interviewType ?? "").trim(),
+    tags,
+    isFavorite: input.isFavorite === true,
+    isStarStructure: looksLikeStar(answer),
+    createdAt: now.toISOString(),
+  };
+}
+
+function write(list: InterviewExample[]) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+    window.dispatchEvent(new Event("hk_examples_updated"));
+  } catch {
+    /* storage is off or full: nothing more to do here */
   }
 }
 
-export function saveExample(example: Omit<InterviewExample, "id" | "createdAt">): InterviewExample {
-  const current = loadExamples();
-  const newEx: InterviewExample = {
-    ...example,
-    id: `ex-${Date.now()}`,
-    createdAt: new Date().toISOString(),
-  };
-  const updated = [newEx, ...current];
+export function loadExamples(): InterviewExample[] {
+  if (typeof window === "undefined") return [];
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-    window.dispatchEvent(new Event("hk_examples_updated"));
-  } catch {}
-  return newEx;
+    const raw = localStorage.getItem(STORAGE_KEY);
+    const list = readExamples(raw);
+    // Tidy the store once if it held the old samples or anything unreadable.
+    if (raw && JSON.stringify(list) !== raw) localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+    return list;
+  } catch {
+    return [];
+  }
 }
 
-export function saveExamplesBatch(
-  newExamples: Omit<InterviewExample, "id" | "createdAt">[]
-): InterviewExample[] {
-  const current = loadExamples();
-  const created: InterviewExample[] = newExamples.map((ex, i) => ({
-    ...ex,
-    id: `ex-cv-${Date.now()}-${i}`,
-    createdAt: new Date().toISOString(),
-  }));
-  const updated = [...created, ...current];
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-    window.dispatchEvent(new Event("hk_examples_updated"));
-  } catch {}
+/** Keeps a new example. Returns it, or null when it has no question or no answer. */
+export function saveExample(example: NewExample): InterviewExample | null {
+  const created = newExample(example, new Date());
+  if (!created) return null;
+  write([created, ...loadExamples()]);
   return created;
 }
 
 export function toggleExampleFavorite(id: string): void {
-  const current = loadExamples();
-  const updated = current.map((ex) => (ex.id === id ? { ...ex, isFavorite: !ex.isFavorite } : ex));
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-    window.dispatchEvent(new Event("hk_examples_updated"));
-  } catch {}
+  write(loadExamples().map((ex) => (ex.id === id ? { ...ex, isFavorite: !ex.isFavorite } : ex)));
 }
 
-export function updateExample(
-  id: string,
-  patch: Partial<Omit<InterviewExample, "id" | "createdAt">>
-): InterviewExample | null {
-  const current = loadExamples();
-  let updatedEx: InterviewExample | null = null;
-  const updated = current.map((ex) => {
-    if (ex.id === id) {
-      updatedEx = { ...ex, ...patch };
-      return updatedEx;
-    }
-    return ex;
+export function updateExample(id: string, patch: Partial<Pick<InterviewExample, "question" | "answer" | "competency" | "role" | "interviewType" | "tags">>): InterviewExample | null {
+  let updated: InterviewExample | null = null;
+  const list = loadExamples().map((ex) => {
+    if (ex.id !== id) return ex;
+    const next = { ...ex, ...patch };
+    updated = { ...next, isStarStructure: looksLikeStar(next.answer) };
+    return updated;
   });
-  if (updatedEx) {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      window.dispatchEvent(new Event("hk_examples_updated"));
-    } catch {}
-  }
-  return updatedEx;
+  if (updated) write(list);
+  return updated;
 }
 
 export function deleteExample(id: string): void {
-  const current = loadExamples();
-  const updated = current.filter((ex) => ex.id !== id);
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-    window.dispatchEvent(new Event("hk_examples_updated"));
-  } catch {}
+  write(loadExamples().filter((ex) => ex.id !== id));
 }

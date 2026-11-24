@@ -16,6 +16,7 @@ const SAMPLE_KIND_OPTIONS: CustomSelectOption[] = [
 export default function VoicePersonaPage() {
   const [voice, setVoice] = useState<Voice | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [savedMsg, setSavedMsg] = useState(false);
 
@@ -36,32 +37,11 @@ export default function VoicePersonaPage() {
         if (res.ok && data && data.measured) {
           setVoice(data);
         } else {
-          setVoice({
-            userId: "usr_guest",
-            samples: [],
-            measured: {
-              sentenceMean: 14.2,
-              sentenceSpread: 4.8,
-              formality: 3,
-              contractions: true,
-              firstPerson: true,
-              spelling: "uk",
-              opens: ["Direct", "Context-first"],
-              closes: ["Action-oriented", "Impact-led"],
-            },
-            signature: [
-              "driven by customer impact",
-              "high-velocity delivery",
-              "rigorous architectural trade-offs",
-            ],
-            never: ["passionate", "synergy", "spearheaded", "utilize", "rockstar", "delve"],
-            learnedFromEdits: [],
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          });
+          // It couldn't be loaded. The person is told: nothing is shown in its place.
+          setLoadError("Your voice settings couldn’t be loaded. Refresh the page to try again.");
         }
-      } catch (err) {
-        console.warn("Using default voice profile:", err);
+      } catch {
+        setLoadError("Your voice settings couldn’t be loaded because the app couldn’t be reached. Check your connection and refresh.");
       } finally {
         setLoading(false);
       }
@@ -151,8 +131,14 @@ export default function VoicePersonaPage() {
 
   if (loading || !voice) {
     return (
-      <div className="flex h-64 items-center justify-center text-muted">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue border-t-transparent" />
+      <div className="flex h-64 items-center justify-center text-muted" data-testid="apply-loading">
+        {loadError ? (
+          <p role="alert" className="max-w-md rounded-xl border border-red/30 bg-red/10 px-4 py-3 text-center text-xs text-red-soft">
+            {loadError}
+          </p>
+        ) : (
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue border-t-transparent" />
+        )}
       </div>
     );
   }
@@ -202,42 +188,49 @@ export default function VoicePersonaPage() {
               </span>
               <span className="text-[10px] font-mono text-muted">Active Model Persona</span>
             </div>
-            <div className="text-xs sm:text-sm font-medium text-ink space-y-2 leading-relaxed">
-              <p>• You write in crisp, direct sentences (averaging <span className="font-bold text-blue">{voice.measured.sentenceMean}</span> words per sentence).</p>
-              <p>• {voice.measured.contractions ? "You naturally use friendly contractions (I'll, we've, don't) for approachable authenticity." : "You avoid informal contractions for executive formality."}</p>
-              <p>• You lead with business impact and engineering outcomes in the very first sentence.</p>
-              <p>• You strictly forbid AI clichés ({voice.never.slice(0, 3).join(", ")}, etc.).</p>
+            <div className="text-xs sm:text-sm font-medium text-ink space-y-2 leading-relaxed" data-testid="voice-summary">
+              {voice.samples.length === 0 ? (
+                <p>Nothing has been measured yet. Add a sample of your own writing below and your sentence length and style are worked out from it.</p>
+              ) : (
+                <>
+                  <p>
+                    • Your sentences average <span className="font-bold text-blue">{voice.measured.sentenceMean}</span> words, measured from {voice.samples.length} sample{voice.samples.length === 1 ? "" : "s"} of your writing.
+                  </p>
+                  <p>• {voice.measured.contractions ? "Your samples use contractions (I’ll, we’ve, don’t)." : "Your samples don’t use contractions."}</p>
+                  {voice.never.length > 0 && <p>• Words you’ve said you never use: {voice.never.slice(0, 3).join(", ")}{voice.never.length > 3 ? " and more" : ""}.</p>}
+                </>
+              )}
             </div>
           </div>
 
           {/* Measured Metrics Grid */}
           <div className="rounded-3xl border border-line bg-panel p-6 space-y-4 shadow-xl">
             <h2 className="text-xs font-black uppercase tracking-wider text-ink border-b border-line pb-3">
-              Style Metrics (Computed From Writing Samples)
+              Style measured from your writing samples
             </h2>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
               <div className="rounded-2xl bg-panel-2 p-4 border border-line">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-muted block">Sentence Mean</span>
-                <span className="text-xl font-black text-ink mt-1 block">{voice.measured.sentenceMean} words</span>
-                <span className="text-[10px] text-muted block mt-0.5">Spread: ±{voice.measured.sentenceSpread}</span>
+                <span className="text-xl font-black text-ink mt-1 block">{voice.samples.length ? `${voice.measured.sentenceMean} words` : "Not measured"}</span>
+                <span className="text-[10px] text-muted block mt-0.5">{voice.samples.length ? `Spread: ±${voice.measured.sentenceSpread}` : "Add a sample"}</span>
               </div>
               <div className="rounded-2xl bg-panel-2 p-4 border border-line">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-muted block">Formality</span>
-                <span className="text-xl font-black text-ink mt-1 block">{voice.measured.formality} / 5</span>
-                <span className="text-[10px] text-muted block mt-0.5">Professional & Direct</span>
+                <span className="text-xl font-black text-ink mt-1 block">{voice.samples.length ? `${voice.measured.formality} / 5` : "Not measured"}</span>
+                <span className="text-[10px] text-muted block mt-0.5">From your sentence length</span>
               </div>
               <div className="rounded-2xl bg-panel-2 p-4 border border-line">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-muted block">Contractions</span>
                 <span className="text-xl font-black text-emerald-400 mt-1 block">
-                  {voice.measured.contractions ? "Active" : "Disabled"}
+                  {voice.samples.length ? (voice.measured.contractions ? "Used" : "Not used") : "Not measured"}
                 </span>
-                <span className="text-[10px] text-muted block mt-0.5">Natural voice flow</span>
+                <span className="text-[10px] text-muted block mt-0.5">In your samples</span>
               </div>
               <div className="rounded-2xl bg-panel-2 p-4 border border-line">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-muted block">Spelling</span>
                 <span className="text-xl font-black text-ink mt-1 block uppercase">{voice.measured.spelling} English</span>
-                <span className="text-[10px] text-muted block mt-0.5">Regional grammar</span>
+                <span className="text-[10px] text-muted block mt-0.5">Your choice</span>
               </div>
             </div>
           </div>
