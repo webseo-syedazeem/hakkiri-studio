@@ -15,7 +15,7 @@ import { readJsonValue } from "@/lib/http/body";
 export const runtime = "nodejs";
 export const maxDuration = 30;
 
-const Body = z.object({ text: z.string().trim().min(1).max(700), voice: z.enum(["easy", "medium", "hard"]) });
+const Body = z.object({ text: z.string().trim().min(1).max(1500), voice: z.enum(["easy", "medium", "hard"]) });
 
 const memVoiceCache = new Map<string, ArrayBuffer>();
 

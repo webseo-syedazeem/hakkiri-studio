@@ -75,7 +75,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const gaId = process.env.NEXT_PUBLIC_GA_ID || process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 
   return (
-    <html lang="en-GB" className="overflow-x-clip">
+    <html lang="en" className="overflow-x-clip">
       <head>
         <link rel="canonical" href="https://www.hakkiri.studio/" />
         <meta

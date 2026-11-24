@@ -1,5 +1,7 @@
 "use client";
 
+import { humaniseSpeechText } from "./speech-humaniser";
+
 /**
  * The interviewer's voice. speak(text) resolves when the voice finishes;
  * cancel() stops it and resolves straight away, so "Start answering" can cut
@@ -27,13 +29,14 @@ const audioBlobCache = new Map<string, string>();
 /** Prefetches voice synthesis in the background so it plays instantly when the question begins. */
 export function prefetchVoice(text: string, voice: VoiceName = "medium") {
   if (typeof window === "undefined" || !text.trim() || natural === "off") return;
-  const key = `${voice}|${text.trim()}`;
+  const spokenText = humaniseSpeechText(text).trim();
+  const key = `${voice}|${spokenText}`;
   if (audioBlobCache.has(key)) return;
 
   fetch("/api/voice", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ text: text.trim(), voice }),
+    body: JSON.stringify({ text: spokenText, voice }),
   })
     .then((res) => {
       if (res.ok) return res.blob();
@@ -146,9 +149,9 @@ function browserSpeak(text: string, opts: SpeakOptions, finish: () => void, setC
     u.lang = "en-GB";
   }
 
-  // Interviewers speak deliberately and calmly (0.93 - 0.96 prevents rushed robotic speech)
-  u.rate = opts.rate ?? (opts.voice === "hard" ? 0.96 : 0.93);
-  u.pitch = opts.voice === "hard" ? 0.96 : opts.voice === "easy" ? 1.02 : 1.0;
+  // Interviewers speak deliberately and calmly with natural conversational inflection
+  u.rate = opts.rate ?? (opts.voice === "hard" ? 0.95 : opts.voice === "easy" ? 0.93 : 0.94);
+  u.pitch = opts.voice === "hard" ? 0.97 : opts.voice === "easy" ? 1.02 : 1.01;
   u.onstart = () => opts.onStart?.();
   u.onend = () => finish();
   u.onerror = () => finish();
@@ -163,6 +166,7 @@ function browserSpeak(text: string, opts: SpeakOptions, finish: () => void, setC
 }
 
 export function speak(text: string, opts: SpeakOptions = {}): Speech {
+  const spoken = humaniseSpeechText(text).trim();
   let finished = false;
   let resolve: () => void = () => {};
   const done = new Promise<void>((r) => (resolve = r));
@@ -175,11 +179,11 @@ export function speak(text: string, opts: SpeakOptions = {}): Speech {
   const setCancel = (c: () => void) => (cancel = c);
 
   if (!wantsNatural()) {
-    browserSpeak(text, opts, finish, setCancel);
+    browserSpeak(spoken, opts, finish, setCancel);
     return { done, cancel: () => cancel() };
   }
 
-  const voiceKey = `${opts.voice ?? "medium"}|${text.trim()}`;
+  const voiceKey = `${opts.voice ?? "medium"}|${spoken}`;
   const preloadedUrl = audioBlobCache.get(voiceKey);
   if (preloadedUrl) {
     const audio = sharedPlayer();
@@ -202,7 +206,7 @@ export function speak(text: string, opts: SpeakOptions = {}): Speech {
       end();
     });
     void audio.play().catch(() => {
-      browserSpeak(text, opts, finish, setCancel);
+      browserSpeak(spoken, opts, finish, setCancel);
     });
     return { done, cancel: () => cancel() };
   }
@@ -217,7 +221,7 @@ export function speak(text: string, opts: SpeakOptions = {}): Speech {
   const slow = setTimeout(() => controller.abort(), NATURAL_WAIT_MS);
   void (async () => {
     try {
-      const res = await fetch("/api/voice", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ text, voice: opts.voice ?? "medium" }), signal: controller.signal });
+      const res = await fetch("/api/voice", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ text: spoken, voice: opts.voice ?? "medium" }), signal: controller.signal });
       if (res.status === 501) natural = "off";
       if (!res.ok) throw new Error(`voice ${res.status}`);
       const blob = await res.blob();
@@ -253,7 +257,7 @@ export function speak(text: string, opts: SpeakOptions = {}): Speech {
       if (cancelled) return;
       // No natural voice, too slow, or it failed: the browser speaks instead.
       if (natural !== "off" && ++failures >= 2) natural = "off";
-      if (!finished) browserSpeak(text, opts, finish, setCancel);
+      if (!finished) browserSpeak(spoken, opts, finish, setCancel);
     }
   })();
   return { done, cancel: () => cancel() };

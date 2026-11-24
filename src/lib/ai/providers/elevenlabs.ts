@@ -19,11 +19,11 @@ export const VOICES: Record<VoiceName, { id: string; name: string }> = {
   hard: { id: process.env.ELEVENLABS_VOICE_HARD || "onwK4e9ZLuTAKqWW03F9", name: "Daniel" },
 };
 
-/** Calmer for Easy, crisper for Hard. */
+/** Conversational settings with natural inflection, dynamic prosody, and micro-pause sensitivity. */
 const SETTINGS: Record<VoiceName, { stability: number; similarity_boost: number; style: number }> = {
-  easy: { stability: 0.55, similarity_boost: 0.75, style: 0.15 },
-  medium: { stability: 0.5, similarity_boost: 0.75, style: 0.1 },
-  hard: { stability: 0.65, similarity_boost: 0.8, style: 0.05 },
+  easy: { stability: 0.45, similarity_boost: 0.78, style: 0.2 },
+  medium: { stability: 0.45, similarity_boost: 0.75, style: 0.18 },
+  hard: { stability: 0.55, similarity_boost: 0.8, style: 0.12 },
 };
 
 export const elevenLabsKey = () => process.env.ELEVENLABS_API_KEY ?? "";
