@@ -54,13 +54,24 @@ describe("what the feedback screen says about an answer", () => {
 
   it("is empty where the answer holds nothing: no stand-in is ever supplied", () => {
     const f = answerFeedback(answer({ words: [], highlights: [], notes: [], strength: "", oneFix: "  ", strongerVersion: [] }));
-    expect(f).toEqual({ transcript: "", extract: [], extractCut: false, strengths: [], fixes: [], stronger: "" });
+    expect(f).toEqual({ transcript: "", corrected: false, extract: [], extractCut: false, strengths: [], fixes: [], stronger: "" });
     // An older answer saved without some fields is read the same way.
     const old = answerFeedback({ ...answer(), notes: undefined, highlights: undefined, strongerVersion: undefined, strength: undefined, oneFix: undefined } as unknown as Answer);
     expect(old.strengths).toEqual([]);
     expect(old.fixes).toEqual([]);
     expect(old.stronger).toBe("");
     expect(old.extract).toEqual([{ text: old.transcript, kind: null }]);
+  });
+
+  it("shows the person's correction in place of what was heard, without the marks made on the original words", () => {
+    const f = answerFeedback(answer({ correctedText: "We were losing clients to late payroll runs. I rebuilt the checks in SQL and cut errors by 31%." }));
+    expect(f.corrected).toBe(true);
+    expect(f.transcript).toBe("We were losing clients to late payroll runs. I rebuilt the checks in SQL and cut errors by 31%.");
+    expect(f.extract).toEqual([{ text: f.transcript, kind: null }]);
+    // The strengths, fixes and stronger version are still those written for the answer as it was heard.
+    expect(f.strengths[0]).toEqual({ body: "You gave a measured result." });
+    expect(answerFeedback(answer({ correctedText: "   " })).corrected).toBe(false);
+    expect(answerFeedback(answer({ correctedText: "one two three four five six" }), 3)).toMatchObject({ extract: [{ text: "one two three", kind: null }], extractCut: true });
   });
 
   it("doesn't list the same point twice when a note repeats the lead line", () => {

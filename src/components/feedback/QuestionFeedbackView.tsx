@@ -292,7 +292,9 @@ export function QuestionFeedbackView({
           {/* Your answer */}
           <div className="rounded-2xl bg-[#0f111d] border border-white/[0.08] p-5 sm:p-6 shadow-xl space-y-4">
             <div className="flex items-center justify-between gap-4">
-              <h3 className="text-xs font-bold text-white tracking-wide">Your answer</h3>
+              <h3 className="text-xs font-bold text-white tracking-wide">
+                Your answer{feedback.corrected ? <span className="ml-2 font-medium text-muted">corrected by you</span> : null}
+              </h3>
               {feedback.transcript && (
                 <button type="button" onClick={startEditing} className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-500/40 bg-indigo-500/10 hover:bg-indigo-500/20 px-2.5 py-1 text-xs font-semibold text-indigo-200 transition-colors cursor-pointer">
                   <Icon name="edit" size={11} />
@@ -502,6 +504,17 @@ export function QuestionFeedbackView({
                     </button>
                   </div>
                 </div>
+              </div>
+            ) : feedback.corrected ? (
+              <div className="space-y-4" data-testid="answer-transcript">
+                <p className="whitespace-pre-wrap rounded-xl bg-[#141624] p-5 text-xs sm:text-[13px] leading-relaxed text-[#d6d7e2] border border-white/[0.06]">{feedback.transcript}</p>
+                <p className="text-[11px] text-muted">This is your corrected version. The scores, timings and marks are those of the answer as it was first heard, shown below.</p>
+                <details className="rounded-xl border border-white/[0.06] bg-[#0b0c16] p-4">
+                  <summary className="cursor-pointer text-xs font-semibold text-white">As it was first heard</summary>
+                  <div className="mt-4 min-h-[220px]">
+                    <Transcript words={answer.words} highlights={answer.highlights ?? []} notes={answer.notes ?? []} stronger={answer.strongerVersion ?? []} strongerLengthSec={answer.strongerLengthSec ?? 0} followUps={followUps} interviewerName={interviewerName} />
+                  </div>
+                </details>
               </div>
             ) : feedback.transcript ? (
               <div className="min-h-[220px]" data-testid="answer-transcript">
