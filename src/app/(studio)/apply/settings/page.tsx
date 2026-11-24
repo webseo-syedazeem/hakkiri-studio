@@ -7,6 +7,7 @@ import type { ApplySettings } from "@/lib/apply/schema";
 export default function ApplySettingsPage() {
   const [settings, setSettings] = useState<ApplySettings | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [savedMsg, setSavedMsg] = useState(false);
   const [newTitle, setNewTitle] = useState("");
@@ -20,23 +21,11 @@ export default function ApplySettingsPage() {
         if (res.ok && data && data.dailyCap) {
           setSettings(data);
         } else {
-          setSettings({
-            userId: "usr_guest",
-            titles: ["Product Manager", "Lead Developer", "Full Stack Engineer"],
-            locations: ["London", "UK Remote"],
-            remote: true,
-            salaryMin: 80000,
-            excludeEmployers: ["Scam Recruitment Ltd", "Unverified Staffing"],
-            minFit: 75,
-            dailyCap: 5,
-            perEmployerCap: 2,
-            handsOff: false,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          });
+          // It couldn't be loaded. The person is told: nothing is shown in its place.
+          setLoadError("Your job preferences couldn’t be loaded. Refresh the page to try again.");
         }
-      } catch (err) {
-        console.warn("Using default apply settings:", err);
+      } catch {
+        setLoadError("Your job preferences couldn’t be loaded because the app couldn’t be reached. Check your connection and refresh.");
       } finally {
         setLoading(false);
       }
@@ -115,8 +104,14 @@ export default function ApplySettingsPage() {
 
   if (loading || !settings) {
     return (
-      <div className="flex h-64 items-center justify-center text-muted">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue border-t-transparent" />
+      <div className="flex h-64 items-center justify-center text-muted" data-testid="apply-loading">
+        {loadError ? (
+          <p role="alert" className="max-w-md rounded-xl border border-red/30 bg-red/10 px-4 py-3 text-center text-xs text-red-soft">
+            {loadError}
+          </p>
+        ) : (
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue border-t-transparent" />
+        )}
       </div>
     );
   }

@@ -4,51 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-const SAMPLE_JOB_PRESETS = [
-  {
-    title: "Senior Full Stack Engineer & Tech Lead",
-    employer: "FinTech Scaleup (London)",
-    text: `Job Title: Senior Full Stack Engineer & Tech Lead
-Employer: FinTech Scaleup
-Location: London, UK (Hybrid)
-Salary: £95,000 - £120,000 + Equity
-
-About the Role:
-We are looking for a Senior Full Stack Engineer & Tech Lead to architect and scale our real-time payments infrastructure. You will lead a high-performing squad, collaborate with product managers, and ensure high availability across our core services.
-
-Requirements:
-- 5+ years commercial experience with TypeScript, Next.js, and Node.js
-- Proven track record architecting and scaling cloud systems with 99.99% uptime
-- Strong understanding of distributed databases, Kafka/RabbitMQ, and microservices
-- Experience mentoring junior and mid-level engineers
-- High attention to security standards and SOC2/PCI-DSS compliance`,
-  },
-  {
-    title: "Staff Cloud Systems Architect",
-    employer: "Cloud Infrastructure Labs",
-    text: `Job Title: Staff Cloud Systems Architect
-Employer: Cloud Infrastructure Labs
-Location: Remote (UK/Europe)
-Salary: £115,000 - £140,000
-
-About the Role:
-We are seeking a Staff Cloud Systems Architect to design fault-tolerant multi-region Kubernetes platforms. You will evaluate new cloud-native technologies, set architectural guardrails, and drive infrastructure cost optimization.
-
-Requirements:
-- 8+ years experience in systems engineering, Kubernetes, and Terraform
-- Expertise in AWS or GCP cloud architecture, multi-region failover, and IAM security
-- Hands-on background reducing cloud infrastructure latency and AWS spend
-- Superb technical writing and architectural RFC leadership`,
-  },
-];
-
 export default function NewJobIntakePage() {
   const router = useRouter();
   const [source, setSource] = useState<"paste" | "link">("paste");
   const [text, setText] = useState("");
   const [url, setUrl] = useState("");
   const [analyzing, setAnalyzing] = useState(false);
-  const [analyzingStep, setAnalyzingStep] = useState("Extracting requirements...");
+  const [analyzingStep, setAnalyzingStep] = useState("Reading the advert…");
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -64,35 +26,30 @@ export default function NewJobIntakePage() {
 
     setError(null);
     setAnalyzing(true);
-    setAnalyzingStep("Extracting core requirements & screening criteria...");
-
-    const t1 = setTimeout(() => {
-      setAnalyzingStep("Cross-referencing verified facts in Evidence Bank...");
-    }, 900);
-
-    const t2 = setTimeout(() => {
-      setAnalyzingStep("Synthesizing Gap Map and weighted Fit score...");
-    }, 1800);
 
     try {
+      // A link is read first. If it can't be read the person is told, and asked to paste the advert:
+      // no advert is ever written for them.
+      let advert = text;
+      if (source === "link") {
+        setAnalyzingStep("Reading the advert from the link…");
+        const linkRes = await fetch("/api/interviews/read-link", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url: url.trim(), kind: "job" }) });
+        const link = (await linkRes.json().catch(() => ({}))) as { ok?: boolean; text?: string; message?: string };
+        if (!linkRes.ok || !link.ok || !link.text || link.text.trim().length < 30) {
+          throw new Error(link.message || "That link couldn’t be read. Open the advert, copy its text and paste it here instead.");
+        }
+        advert = link.text;
+      }
+
+      setAnalyzingStep("Reading the advert and checking it against your evidence…");
       const res = await fetch("/api/apply/jobs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          source,
-          text:
-            source === "paste"
-              ? text
-              : `Job Posting from ${url}\n\nSenior Software Engineer & Tech Lead role. Responsible for distributed cloud systems, TypeScript, and microservices architecture.`,
-          url: source === "link" ? url : undefined,
-        }),
+        body: JSON.stringify({ source, text: advert, url: source === "link" ? url.trim() : undefined }),
       });
 
-      const data = await res.json();
-      clearTimeout(t1);
-      clearTimeout(t2);
-
-      if (!res.ok) throw new Error(data.message || "Failed to analyze job advert");
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || "The advert couldn’t be saved. Try again.");
 
       if (data.applicationId) {
         router.push(`/apply/applications/${data.applicationId}`);
@@ -100,17 +57,9 @@ export default function NewJobIntakePage() {
         router.push("/apply/applications");
       }
     } catch (err) {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      setError(err instanceof Error ? err.message : "Error analyzing job advert.");
+      setError(err instanceof Error ? err.message : "The advert couldn’t be saved. Try again.");
       setAnalyzing(false);
     }
-  };
-
-  const handleApplyPreset = (presetText: string) => {
-    setSource("paste");
-    setText(presetText);
-    setError(null);
   };
 
   return (
@@ -135,8 +84,8 @@ export default function NewJobIntakePage() {
             Add New Job & Generate Gap Map
           </h1>
           <p className="text-xs sm:text-sm text-muted max-w-3xl leading-relaxed">
-            Paste a vacancy advert or careers link. The system extracts requirements, aligns your verified
-            Evidence Bank, and calculates a stable fit score before writing starts.
+            Paste a job advert, or give its link. The requirements are read from the advert as it is written and checked against
+            the evidence you have saved. Anything the advert doesn’t say is left empty.
           </p>
         </div>
 
@@ -182,21 +131,6 @@ export default function NewJobIntakePage() {
                 </button>
               </div>
 
-              {source === "paste" && (
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] text-muted font-bold">Quick Sample:</span>
-                  {SAMPLE_JOB_PRESETS.map((preset, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => handleApplyPreset(preset.text)}
-                      className="text-[10px] font-bold px-2.5 py-1 rounded-xl bg-panel-2 border border-line hover:border-blue text-ink hover:text-blue transition"
-                    >
-                      {preset.employer.split(" ")[0]}
-                    </button>
-                  ))}
-                </div>
-              )}
             </div>
 
             {error && (

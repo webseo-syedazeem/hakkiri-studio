@@ -18,6 +18,7 @@ import { isSeededEvidence } from "./seeded";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
+import { emptySettings, withoutSeededSettings } from "./own-data";
 
 /* --------------------------------------------------------------------------
    COLLECTION NAMES
@@ -367,24 +368,16 @@ export async function saveMatch(match: Match): Promise<Match> {
   return saveDoc<Match>(APPLY_COLLECTIONS.MATCHES, match.id, match);
 }
 
+/**
+ * The person's job preferences. A new account has none: what to look for is
+ * theirs to say, and nothing is saved until they do. The titles, places and
+ * salary an earlier build wrote into every account are removed when read.
+ */
 export async function getApplySettings(userId: string): Promise<ApplySettings> {
   const existing = await getDoc<ApplySettings>(APPLY_COLLECTIONS.SETTINGS, userId);
-  if (existing) return existing;
-  const def: ApplySettings = {
-    userId,
-    titles: ["Product Manager", "Lead Developer", "Operations Specialist"],
-    locations: ["London", "UK Remote"],
-    remote: true,
-    salaryMin: 60000,
-    excludeEmployers: [],
-    minFit: 75,
-    dailyCap: 3,
-    perEmployerCap: 2,
-    handsOff: false,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-  return saveDoc<ApplySettings>(APPLY_COLLECTIONS.SETTINGS, userId, def);
+  if (!existing) return emptySettings(userId, new Date().toISOString());
+  const { settings, changed } = withoutSeededSettings(existing);
+  return changed ? saveDoc<ApplySettings>(APPLY_COLLECTIONS.SETTINGS, userId, settings) : settings;
 }
 
 export async function saveApplySettings(settings: ApplySettings): Promise<ApplySettings> {

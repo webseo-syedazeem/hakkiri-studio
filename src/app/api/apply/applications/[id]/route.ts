@@ -11,6 +11,7 @@ import {
   listOutputs,
   listSendLogs,
 } from "@/lib/apply/db";
+import { fitFromGapMap } from "@/lib/apply/own-data";
 import { ApplicationStatus, type Application } from "@/lib/apply/schema";
 
 export async function GET(
@@ -29,13 +30,15 @@ export async function GET(
     }
 
     const job = await getJob(application.jobId, user.id);
+    // The fit shown is worked out from the saved gap map, so a figure that was once raised to a minimum is not shown.
+    const fit = job ? fitFromGapMap(job.requirements, application.gapMap) : null;
     const evidenceList = await listEvidence(user.id);
     const voice = await getVoice(user.id);
     const outputs = await listOutputs(application.id, user.id);
     const sendLogs = await listSendLogs(application.id, user.id);
 
     return NextResponse.json({
-      application,
+      application: { ...application, fit: fit ?? 0, fitKnown: fit != null },
       job,
       evidenceList,
       voice,
