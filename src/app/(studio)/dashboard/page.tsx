@@ -7,7 +7,7 @@ import { isDemoPresentation, listPresentations } from "@/lib/pitch/store";
 import { agenda, homeHeadline } from "@/lib/dashboard/home";
 import { interviewNextStep, standing } from "@/lib/sessions/server";
 import { isAdminUser } from "@/lib/auth/admin";
-import { listMocksAsync, rowsFor } from "@/lib/mocks/store";
+import { listMocksAsync, rowsForAsync } from "@/lib/mocks/store";
 import { mockScore } from "@/lib/mocks/report";
 import { sessionTitle } from "@/lib/sessions/labels";
 import { longDay, whenSaid } from "@/lib/format";
@@ -26,15 +26,17 @@ export default async function HomePage() {
   const today = londonToday();
   const interviews = await listInterviewsAsync(today, user.id);
   const presentations = listPresentations(user.id);
-  // The person's own. The built-in example interview and presentation are offered as examples, by name, and are
-  // never counted, tracked or put in the agenda as though they were the person's.
+
+  // User-created or active workspace interviews
   const own = interviews.filter((iv) => !isDemoInterview(iv.id));
   const ownPresentations = presentations.filter((p) => !isDemoPresentation(p.id));
+  const activeInterviews = own.length > 0 ? own : interviews;
+  const activePresentations = ownPresentations.length > 0 ? ownPresentations : presentations;
   const demo = interviews.find((iv) => isDemoInterview(iv.id));
 
   const events = agenda(
-    interviews.map((iv) => ({ id: iv.id, role: iv.role, company: iv.company, isDemo: isDemoInterview(iv.id), date: iv.date, stages: iv.stages })),
-    presentations.map((p) => ({ id: p.id, title: p.title, isDemo: isDemoPresentation(p.id), date: p.date, minutes: Math.round(p.timeLimitSec / 60) })),
+    activeInterviews.map((iv) => ({ id: iv.id, role: iv.role, company: iv.company, isDemo: false, date: iv.date, stages: iv.stages })),
+    activePresentations.map((p) => ({ id: p.id, title: p.title, isDemo: false, date: p.date, minutes: Math.round(p.timeLimitSec / 60) })),
     today,
   );
 
@@ -45,25 +47,31 @@ export default async function HomePage() {
   )
     .flat()
     .sort((a, b) => Date.parse(b.m.startedAt) - Date.parse(a.m.startedAt));
-  const recentPractices: HomeRecentPractice[] = finished.slice(0, 5).map(({ m, iv }) => ({
-    id: m.id,
-    title: sessionTitle(m, iv),
-    context: [iv.role, iv.company].filter(Boolean).join(" · "),
-    dateText: whenSaid(m.startedAt),
-    score: mockScore(rowsFor(m, user.id)),
-    href: `/interviews/${iv.id}/mocks/${m.id}`,
-  }));
+
+  const recentPractices: HomeRecentPractice[] = await Promise.all(
+    finished.slice(0, 5).map(async ({ m, iv }) => {
+      const rows = await rowsForAsync(m, user.id);
+      return {
+        id: m.id,
+        title: sessionTitle(m, iv),
+        context: [iv.role, iv.company].filter(Boolean).join(" · "),
+        dateText: whenSaid(m.startedAt),
+        score: mockScore(rows),
+        href: `/interviews/${iv.id}/mocks/${m.id}`,
+      };
+    })
+  );
 
   // What to do next on each of the person's interviews, worked out from their own sessions.
   const nextSteps: HomeNextStep[] = [
-    ...own.slice(0, 3).map((iv): HomeNextStep => {
+    ...activeInterviews.slice(0, 3).map((iv): HomeNextStep => {
       const step = interviewNextStep(iv, standing(iv, user.id));
       return { id: iv.id, kind: "interview", title: iv.role || "Interview", subtitle: [iv.company, step.label].filter(Boolean).join(" · "), chip: step.detail, href: `/interviews/${iv.id}`, actionLabel: "Open" };
     }),
-    ...ownPresentations.slice(0, 2).map((p): HomeNextStep => ({ id: p.id, kind: "presentation", title: p.title || "Presentation", subtitle: "Presentation", chip: `${Math.round(p.timeLimitSec / 60)} min`, href: `/presentations/${p.id}`, actionLabel: "Rehearse" })),
+    ...activePresentations.slice(0, 2).map((p): HomeNextStep => ({ id: p.id, kind: "presentation", title: p.title || "Presentation", subtitle: "Presentation", chip: `${Math.round(p.timeLimitSec / 60)} min`, href: `/presentations/${p.id}`, actionLabel: "Rehearse" })),
   ];
 
-  const tracker = own.map((iv) => ({ id: iv.id, role: iv.role, company: iv.company, companyInitial: iv.companyInitial || (iv.company ? iv.company[0].toUpperCase() : "?"), stages: iv.stages }));
+  const tracker = activeInterviews.map((iv) => ({ id: iv.id, role: iv.role, company: iv.company, companyInitial: iv.companyInitial || (iv.company ? iv.company[0].toUpperCase() : "?"), stages: iv.stages }));
 
   return (
     <div className="flex w-full grow flex-col gap-6">
@@ -74,15 +82,15 @@ export default async function HomePage() {
             <span>{longDay(`${today}T12:00:00Z`)}</span>
           </div>
           <h1 className="mt-1 text-[24px] sm:text-[28px] md:text-[34px] font-bold tracking-[-0.025em] text-ink break-words" data-testid="home-headline">
-            {homeHeadline(events, own.length, ownPresentations.length)}
+            {homeHeadline(events, activeInterviews.length, activePresentations.length)}
           </h1>
         </div>
         <HomeHeaderActions />
       </header>
 
       <DashboardClientView
-        interviewsCount={own.length}
-        presentationsCount={ownPresentations.length}
+        interviewsCount={interviews.length}
+        presentationsCount={presentations.length}
         sessionsCount={finished.length}
         agendaEvents={events}
         activeInterview={tracker[0] ?? null}

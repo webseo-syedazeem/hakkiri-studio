@@ -180,9 +180,6 @@ export default async function MockInterviewPage({
     let targetQuestion: Question | undefined;
     if (q) {
       targetQuestion = byId(q);
-    } else if (next === "1") {
-      const idx = Math.floor(Math.random() * interview.questions.length);
-      targetQuestion = interview.questions[idx] ?? interview.questions[0];
     } else if (type || topic) {
       const topicSpec = topic ? getTopic(topic) : undefined;
       const topicDifficulty = difficultyParam ?? interview.settings?.difficulty ?? difficultyFor(interview.style);
@@ -194,27 +191,38 @@ export default async function MockInterviewPage({
 
       if (type) {
         const typeCandidates = (candidates.length ? candidates : interview.questions).filter((item) => {
-          if (type === "strengths") return item.type === "strengths" || /strength/i.test(`${item.text} ${item.short}`);
+          if (item.slot) return false;
+          if (type === "strengths") return item.type === "strengths" || /strength/i.test(`${item.text} ${item.short}`) || item.group === "curveball";
           if (type === "competency") return item.type === "competency" || item.group === "competency";
           if (type === "technical") return item.type === "technical" || item.group === "technical";
           if (type === "situational") return item.type === "situational" || (item.group === "curveball" && item.type !== "strengths");
-          if (type === "motivation") return item.type === "why-us" || item.type === "tell-me-about-yourself" || item.group === "motivation";
+          if (type === "motivation") return (item.type === "why-us" || item.group === "motivation") && !item.slot;
           if (type === "experience") return item.group === "cv";
           return true;
         });
         if (typeCandidates.length > 0) {
-          const matchingDiff = typeCandidates.find((x) => x.difficulty === topicDifficulty);
-          targetQuestion = matchingDiff ?? typeCandidates[0];
+          const unasked = typeCandidates.filter((x) => !lastAsked.has(x.id));
+          const pool = unasked.length > 0 ? unasked : typeCandidates;
+          const matchingDiff = pool.find((x) => x.difficulty === topicDifficulty);
+          targetQuestion = matchingDiff ?? pool[Math.floor(Math.random() * pool.length)];
         }
       }
 
       if (!targetQuestion && candidates.length > 0) {
         targetQuestion = candidates[0];
       }
+    } else if (next === "1") {
+      const nonSlot = interview.questions.filter((item) => !item.slot);
+      const pool = nonSlot.length > 0 ? nonSlot : interview.questions;
+      targetQuestion = pool[Math.floor(Math.random() * pool.length)] ?? interview.questions[0];
     }
 
     if (!targetQuestion) {
-      targetQuestion = interview.questions[0];
+      if (type === "strengths") {
+        targetQuestion = interview.questions.find((q) => q.type === "strengths" || (q.group === "curveball" && !q.slot)) ?? getTopic("civil-service-strengths")?.questions[0];
+      } else {
+        targetQuestion = interview.questions[0];
+      }
     }
 
     if (targetQuestion) {

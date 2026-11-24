@@ -56,6 +56,39 @@ export function whenSaid(iso: string, nowIso: string = new Date().toISOString())
   return `${day} at ${clock(iso)}`;
 }
 
+/**
+ * Formats a stage date/time cleanly without raw ISO strings or microseconds.
+ * "2026-11-28T11:00:00.000Z" → "Saturday 28 November, 11:00"
+ * "2026-11-28" → "Saturday 28 November"
+ */
+export function formatStageDate(date?: string, time?: string): string {
+  if (!date) return "";
+  const trimmed = date.trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(trimmed)) {
+    try {
+      const d = new Date(trimmed);
+      if (!Number.isNaN(d.getTime())) {
+        const dayStr = d.toLocaleDateString("en-GB", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          timeZone: "Europe/London",
+        });
+        let timeStr = (time ?? "").trim();
+        if (!timeStr && trimmed.includes("T")) {
+          timeStr = d.toLocaleTimeString("en-GB", {
+            hour: "2-digit",
+            minute: "2-digit",
+            timeZone: "Europe/London",
+          });
+        }
+        return timeStr ? `${dayStr}, ${timeStr}` : dayStr;
+      }
+    } catch {}
+  }
+  return time ? `${trimmed}, ${time}` : trimmed;
+}
+
 /** 1430 seconds → "24 minutes"; under a minute → "under a minute". */
 export function minutesLong(seconds: number): string {
   const m = Math.round(seconds / 60);

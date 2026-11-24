@@ -253,6 +253,52 @@ export const hmrc: Interview = {
   },
   sources: { cv: "Product_Manager_CV.pdf", job: "civilservicejobs.service.gov.uk/associate-product-manager", company: "gov.uk/hmrc" },
   planBy: "demo",
+  documents: {
+    job: `Associate Product Manager — HM Revenue and Customs (HMRC Digital)
+Location: Manchester, London, Newcastle, or Telford (Hybrid)
+Salary: £41,500 – £46,800 + Civil Service Alpha Pension
+
+Overview of Role:
+As an Associate Product Manager at HMRC Digital, you will work within a multidisciplinary agile team delivering user-centred digital public services that process over £800 billion annually. You will bridge policy, operational, and user needs while ensuring compliance with statutory standards and the Government Digital Service (GDS) Service Standard.
+
+Key Responsibilities:
+• Work with the Lead Product Manager to define and execute the digital roadmap for citizen and business taxation services.
+• Engage with diverse operational, legal, and policy stakeholders to translate complex statutory requirements into clear user stories and sprint backlogs.
+• Uphold GDS Service Standards and ensure public accessibility (WCAG 2.2 AA compliance) across all touchpoints.
+• Facilitate agile ceremonies, manage backlog prioritisation trade-offs, and conduct iterative user research and usability testing.
+• Monitor quantitative service telemetry (drop-off rates, conversion, assisted digital requests) and qualitative citizen feedback.
+
+Assessment Criteria (Civil Service Success Profiles):
+1. Behaviours: Delivering at Pace, Making Effective Decisions, Communicating & Influencing, Seeing the Big Picture.
+2. Strengths: Spontaneous responses evaluating engagement, adaptability, and public service ethos.
+3. Technical / Role Knowledge: GDS Standards, public sector governance, accessibility, and user-centred service delivery.`,
+    cv: `SUMMARY:
+Results-driven Product Manager with 4+ years of experience leading cross-functional agile teams in high-scale digital platforms. Proven track record in user research, backlog prioritisation, regulatory alignment, and digital service transformations.
+
+EXPERIENCE:
+Product Manager — Fernway Technologies (2022 – Present)
+• Led agile squad of 6 engineers and 2 UX designers delivering customer onboarding and payment gateway solutions.
+• Identified critical user drop-off in transaction flows, orchestrated a 6-week payment remediation sprint, and increased payment completion from 41% to 58%.
+• Managed cross-functional trade-offs between speed-to-market, security audit compliance, and user accessibility.
+
+Associate Product Analyst — BrightPay UK (2020 – 2022)
+• Collaborated with engineering to revamp self-service dashboard, improving mobile conversion by 17%.
+• Conducted over 40 usability interviews and synthesised user journeys into backlog tickets and roadmaps.
+
+EDUCATION & CERTIFICATIONS:
+• BSc (Hons) Computer Science & Management, University of Leeds
+• Certified Scrum Product Owner (CSPO) & Agile Certified Practitioner`,
+    coverLetter: `Dear HMRC Digital Hiring Panel,
+
+I am writing to express my strong interest in the Associate Product Manager position at HM Revenue & Customs. Having followed HMRC’s digital transformation journey and the implementation of GDS service standards, I am eager to apply my experience in user-centred digital delivery to public services that impact millions of citizens daily.
+
+In my recent role at Fernway Technologies, I managed cross-functional squads balancing user experience with rigorous data privacy and operational constraints. Navigating complex regulatory requirements while prioritising accessible citizen journeys has been central to my work.
+
+I look forward to discussing how my experience in stakeholder alignment, agile backlog management, and user-centred design can contribute to HMRC’s mission.
+
+Yours faithfully,
+Applicant`,
+  },
   understanding: {
     role: "Associate Product Manager",
     level: "Grade 7",

@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import clsx from "clsx";
 import { Icon, Panel } from "@/components/ui";
 import { Segmented } from "@/components/ui/Segmented";
+import { formatStageDate } from "@/lib/format";
 import {
   DIFFICULTY_HINT,
   DIFFICULTY_LABEL,
@@ -296,6 +297,7 @@ export function InterviewOverviewClient({
               const preset: SessionSettings["preset"] = isPresetScreen ? "screening" : isPresetTech ? "technical" : isPresetFinal ? "final" : "balanced";
               const isNext = st.status === "next" || (idx === 0 && !match.stages.some((x: any) => x.status === "next"));
               const isCompleted = st.status === "completed";
+              const formattedDate = formatStageDate(st.date, st.time);
               return {
                 id,
                 label,
@@ -303,7 +305,7 @@ export function InterviewOverviewClient({
                 titlePhrase: label.toLowerCase(),
                 description: `Focus on ${label.toLowerCase()} questions, tailored to ${roleTitle} at ${companyName}.`,
                 status: isCompleted ? "completed" : isNext ? "next" : "upcoming",
-                subtitle: st.date ? `${st.date}${st.time ? `, ${st.time}` : ""}` : isCompleted ? "Completed" : "Upcoming",
+                subtitle: formattedDate || (isCompleted ? "Completed" : "Upcoming"),
                 preset,
                 mix: PRESETS[preset].mix,
               };
@@ -757,7 +759,7 @@ export function InterviewOverviewClient({
                             </span>
                           )}
                         </div>
-                        <p className={clsx("text-[11px]", selected ? "text-muted" : "text-dim")}>{st.subtitle}</p>
+                        <p className={clsx("text-[11px]", selected ? "text-muted" : "text-dim")}>{formatStageDate(st.subtitle) || st.subtitle}</p>
                       </div>
                     </div>
 

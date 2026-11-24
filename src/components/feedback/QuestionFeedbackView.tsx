@@ -442,7 +442,13 @@ export function QuestionFeedbackView({
             </div>
             <div className="flex items-center gap-2.5">
               <Link
-                href={nextAnswerId ? answerHref(nextAnswerId) : nextQuestionId ? `/mock/${interviewId}?q=${nextQuestionId}&practice=1` : `/mock/${interviewId}?practice=1&next=1`}
+                href={
+                  nextAnswerId
+                    ? answerHref(nextAnswerId)
+                    : nextQuestionId
+                      ? `/mock/${interviewId}?q=${nextQuestionId}&practice=1`
+                      : `/mock/${interviewId}?practice=1&next=1&type=${question.group === "curveball" || question.type === "strengths" ? "strengths" : question.group}`
+                }
                 className="inline-flex items-center gap-2 rounded-xl bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/35 px-4 py-2.5 text-xs font-semibold text-indigo-100 transition-colors cursor-pointer"
               >
                 <span>Next question</span>

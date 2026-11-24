@@ -13,7 +13,10 @@ export function generateMetadata(): Metadata {
   const hasVoice = Boolean(elevenLabsKey() || aiConfig.deepgramKey) && !mockAiEnabled();
 
   return {
-    metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://hakkiri.studio"),
+    metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://www.hakkiri.studio"),
+    alternates: {
+      canonical: "https://www.hakkiri.studio/",
+    },
     title: {
       default: "Hakkiri · Practise for the interview you actually have",
       template: "%s",
@@ -74,6 +77,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en-GB" className="overflow-x-clip">
       <head>
+        <link rel="canonical" href="https://www.hakkiri.studio/" />
         <meta
           name="google-site-verification"
           content={process.env.NEXT_PUBLIC_GSC_VERIFICATION || "XiNOBpixzNRt0PdX_ByqjV0fKCLDyejeIcFXB-TqRwY"}

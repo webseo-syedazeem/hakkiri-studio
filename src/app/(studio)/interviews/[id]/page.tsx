@@ -6,10 +6,10 @@ import { understandingOf } from "@/lib/interviews/build";
 import { PRESETS, settingsOr } from "@/lib/interviews/settings";
 import { interviewWhen, sessionTitle } from "@/lib/sessions/labels";
 import { DRILL_TOPICS, getTopicsForInterview } from "@/lib/sessions/topics";
-import { isFresh, listMocksAsync, rowsFor } from "@/lib/mocks/store";
+import { isFresh, listMocksAsync, rowsForAsync } from "@/lib/mocks/store";
 import { categoryScores, mockScore } from "@/lib/mocks/report";
 import { overviewCategories } from "@/lib/sessions/overview";
-import { whenSaid } from "@/lib/format";
+import { formatStageDate, whenSaid } from "@/lib/format";
 import { requirePageUser } from "@/lib/auth/require";
 import {
   InterviewOverviewClient,
@@ -60,7 +60,8 @@ export default async function InterviewOverview({
         const isNext = st.status === "next" || (!hasExplicitNext && idx === 0);
         const isCompleted = st.status === "completed";
         const status = isCompleted ? "completed" : isNext ? "next" : "upcoming";
-        const subtitle = st.date ? `${st.date}${st.time ? `, ${st.time}` : ""}` : isCompleted ? "Completed" : "Upcoming";
+        const formattedDate = formatStageDate(st.date, st.time);
+        const subtitle = formattedDate || (isCompleted ? "Completed" : "Upcoming");
 
         return {
           id,
@@ -101,21 +102,24 @@ export default async function InterviewOverview({
   const initialStageId = initialStage.id;
 
   const mockSessions = (await listMocksAsync(interview.id, user.id)).filter((m) => m.status !== "planned");
-  const recentSessions: OverviewPracticeItem[] = mockSessions.map((m) => {
-    const rows = rowsFor(m, user.id);
-    const score = mockScore(rows);
-    return {
-      id: m.id,
-      title: sessionTitle(m, interview),
-      dateText: whenSaid(m.startedAt),
-      score: score != null ? Number(score.toFixed(1)) : null,
-      href: `/interviews/${interview.id}/mocks/${m.id}`,
-    };
-  });
+  const recentSessions: OverviewPracticeItem[] = await Promise.all(
+    mockSessions.map(async (m) => {
+      const rows = await rowsForAsync(m, user.id);
+      const score = mockScore(rows);
+      return {
+        id: m.id,
+        title: sessionTitle(m, interview),
+        dateText: whenSaid(m.startedAt),
+        score: score != null ? Number(score.toFixed(1)) : null,
+        href: `/interviews/${interview.id}/mocks/${m.id}`,
+      };
+    })
+  );
 
   // Category scores from this person's own interviews with new questions, newest first. Empty until one is scored.
   const fresh = mockSessions.filter((m) => m.status === "done" && isFresh(m)).sort((a, b) => Date.parse(b.startedAt) - Date.parse(a.startedAt));
-  const scoreCategories: OverviewScoreCategory[] = overviewCategories(fresh.map((m) => categoryScores(rowsFor(m, user.id))), u.technicalLabel).map((c) => ({ name: c.name, score: c.score, delta: c.delta }));
+  const freshCategoryScores = await Promise.all(fresh.map(async (m) => categoryScores(await rowsForAsync(m, user.id))));
+  const scoreCategories: OverviewScoreCategory[] = overviewCategories(freshCategoryScores, u.technicalLabel).map((c) => ({ name: c.name, score: c.score, delta: c.delta }));
 
   const roleSummary = `${u.role}, ${u.level.toLowerCase()}: ${u.field}`;
   const inputsSummary =

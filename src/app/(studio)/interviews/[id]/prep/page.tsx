@@ -6,6 +6,7 @@ import { InterviewTabs } from "@/components/interview/InterviewTabs";
 import { PrintButton } from "@/components/interview/PrintButton";
 import { StartButton } from "@/components/interview/StartSession";
 import { PrepChecklist } from "@/components/interview/PrepChecklist";
+import { PrepDocumentsViewer } from "@/components/interview/PrepDocumentsViewer";
 import { getInterview } from "@/lib/interviews/store";
 import { buildPrepSheet } from "@/lib/interviews/prep";
 import { likelyQuestions, prepPriorities, prepStage } from "@/lib/interviews/prep-view";
@@ -134,7 +135,21 @@ export default async function PrepSheetPage({ params }: { params: Promise<{ id: 
         </p>
       </div>
 
-      <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-5 animate-rise [animation-delay:0.05s]">
+      {/* One-Stop Shop: Application Documents Hub */}
+      <div className="mt-5 animate-rise [animation-delay:0.03s]">
+        <PrepDocumentsViewer
+          role={interview.role}
+          company={interview.company}
+          jobText={interview.documents?.job || interview.jobSummary}
+          jobUrl={interview.sources?.job || interview.companyUrl}
+          cvText={interview.documents?.cv}
+          cvFileName={interview.sources?.cv}
+          coverLetterText={interview.documents?.coverLetter}
+          coverLetterFileName={interview.sources?.coverLetter}
+        />
+      </div>
+
+      <div className="mt-5 grid grid-cols-1 lg:grid-cols-2 gap-5 animate-rise [animation-delay:0.05s]">
         {/* ===================== LEFT COLUMN ===================== */}
         <div className="space-y-5">
           <Card testid="prep-company" icon="brief" tone="bg-blue-fill/15 text-blue-soft border-blue-fill/25" title="The company and the role">

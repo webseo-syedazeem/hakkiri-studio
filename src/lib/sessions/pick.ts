@@ -46,8 +46,13 @@ export function pickQuestions(
   const sparesShort = zero();
   const main: string[] = [];
   const spares: string[] = [];
-  const order: QuestionGroup[] =
-    settings.preset === "technical" ? ["technical", ...ASK_ORDER.filter((g) => g !== "technical")] : ASK_ORDER;
+  const isStrengths = (settings.mix.curveball ?? 0) >= 30;
+  const isTechnical = settings.preset === "technical";
+  const order: QuestionGroup[] = isStrengths
+    ? ["curveball", "competency", ...ASK_ORDER.filter((g) => g !== "curveball" && g !== "competency")]
+    : isTechnical
+      ? ["technical", ...ASK_ORDER.filter((g) => g !== "technical")]
+      : ASK_ORDER;
   for (const g of order) {
     if (alloc[g] === 0) continue;
     const pool = bank.filter(
@@ -66,8 +71,9 @@ export function pickQuestions(
     main.push(...chosen.map((q) => q.id));
     spares.push(...spare.map((q) => q.id));
   }
-  // Technical round starts straight with technical questions rather than "Tell me about yourself".
-  const opening = settings.preset === "technical" ? undefined : bank.find((q) => q.slot === "opening");
+  // Technical or short strengths-focused practice starts straight with core questions rather than "Tell me about yourself".
+  const skipOpening = isTechnical || (isStrengths && settings.minutes <= 10);
+  const opening = skipOpening ? undefined : bank.find((q) => q.slot === "opening");
   const closing = hasClosing(settings.minutes) ? bank.find((q) => q.slot === "closing") : undefined;
   return { questionIds: [...(opening ? [opening.id] : []), ...main, ...(closing ? [closing.id] : [])], spareIds: spares, short, sparesShort };
 }
