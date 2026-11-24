@@ -4,12 +4,32 @@ import type { ScoreResult } from "./score-answer";
 import type { FollowUpScores } from "./score-follow-ups";
 import { followUpWords, roadmapAnswer } from "@/lib/mock-data";
 
+let warned = false;
+
 /**
  * Offline stand-ins for Deepgram and Claude, switched on with HAKKIRI_MOCK_AI=1.
  * They let the whole record → follow-up → score → feedback flow run without
  * keys or credit, which is useful for working on screens and for automated tests.
+ *
+ * The stand-ins return the same sample transcript and scores whatever was
+ * said, so they must never reach real people. Test mode is therefore:
+ *   - always off once launched or in the beta;
+ *   - off in a production build (`next build` + `next start`, or any host)
+ *     unless HAKKIRI_MOCK_AI_IN_PRODUCTION=1 is set as well. One variable left
+ *     over from testing is not enough to make a deployed app invent results;
+ *     it takes a second, deliberate one. The end-to-end tests set both.
  */
-export const mockAiEnabled = () => process.env.HAKKIRI_MOCK_AI === "1" && !isLaunch();
+export function mockAiEnabled(): boolean {
+  if (process.env.HAKKIRI_MOCK_AI !== "1" || isLaunch()) return false;
+  if (process.env.NODE_ENV === "production" && process.env.HAKKIRI_MOCK_AI_IN_PRODUCTION !== "1") {
+    if (!warned) {
+      warned = true;
+      console.warn("[test mode] HAKKIRI_MOCK_AI=1 is ignored in a production build. To run a production build with sample results (for the end-to-end tests), also set HAKKIRI_MOCK_AI_IN_PRODUCTION=1.");
+    }
+    return false;
+  }
+  return true;
+}
 
 /** Words as Deepgram returns them: one word at a time, fillers kept but not marked. */
 function asDeepgram(words: Word[]): Word[] {

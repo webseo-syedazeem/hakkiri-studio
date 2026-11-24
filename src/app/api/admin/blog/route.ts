@@ -4,6 +4,8 @@ import { getBlogPostsAsync, saveBlogPostAsync } from "@/lib/blog/store";
 import { getCurrentUser } from "@/lib/auth/require";
 import type { BlogPost } from "@/lib/blog/types";
 import { slugify } from "@/lib/blog/seo";
+import { readJson } from "@/lib/http/body";
+import { POST_MAX_BYTES, PostBody } from "./schema";
 
 export const runtime = "nodejs";
 
@@ -41,9 +43,11 @@ export async function POST(req: Request) {
   if (denied) return denied;
 
   try {
-    const body = await req.json();
+    const read = await readJson(req, PostBody, { max: POST_MAX_BYTES, message: "That post couldn’t be saved. Check each field and try again." });
+    if (!read.ok) return read.response;
+    const body = read.data;
 
-    if (!body.title || typeof body.title !== "string") {
+    if (!body.title || !body.title.trim()) {
       return NextResponse.json({ error: "Title is required" }, { status: 400 });
     }
 

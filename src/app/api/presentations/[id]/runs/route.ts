@@ -7,6 +7,8 @@ import { flushStorage } from "@/lib/storage/disk";
 import { guard } from "@/lib/usage/limits";
 import { setUsageContext } from "@/lib/usage/store";
 import { requireUser } from "@/lib/auth/require";
+import { readForm } from "@/lib/http/body";
+import { sniffAudio } from "@/lib/http/sniff";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -43,11 +45,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const p = getPresentation(id, user.id);
   if (!p) return NextResponse.json({ error: "not-found", message: "That presentation doesn’t exist." }, { status: 404 });
 
-  const form = await req.formData().catch(() => null);
-  const audio = form?.get("audio");
+  const read = await readForm(req, MAX_AUDIO_BYTES * 2 + 256_000, "Missing the recording or the slide timings.");
+  if (!read.ok) return read.response;
+  const form = read.data;
+  const audio = form.get("audio");
   let meta: z.infer<typeof Meta> | null = null;
   try {
-    const m = Meta.safeParse(JSON.parse(String(form?.get("meta") ?? "")));
+    const m = Meta.safeParse(JSON.parse(String(form.get("meta") ?? "")));
     meta = m.success ? m.data : null;
   } catch {
     meta = null;
@@ -56,6 +60,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ error: "bad-request", message: "Missing the recording or the slide timings." }, { status: 400 });
   }
   if (audio.size > MAX_AUDIO_BYTES * 2) return NextResponse.json({ error: "too-large", message: "That recording is too long to score in one go." }, { status: 413 });
+  if (!(await sniffAudio(audio))) return NextResponse.json({ error: "bad-request", message: "That recording couldn’t be read as audio. Record it again." }, { status: 400 });
 
   try {
     const run = await recordRun({ presentation: p, userId: user.id, ...meta, audio, transcribe });

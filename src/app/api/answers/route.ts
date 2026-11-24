@@ -10,6 +10,8 @@ import { soundsLikeCorrection } from "@/lib/ai/follow-up";
 import { setUsageContext } from "@/lib/usage/store";
 import { guard } from "@/lib/usage/limits";
 import { requireUser } from "@/lib/auth/require";
+import { readForm } from "@/lib/http/body";
+import { sniffAudio } from "@/lib/http/sniff";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -35,8 +37,10 @@ export async function POST(req: Request) {
   const blocked = notConfigured();
   if (blocked) return blocked;
   // A body that isn't a form (a wrong client, or a probe) is a 400, not a crash.
-  const form = await req.formData().catch(() => null);
-  if (!form) return NextResponse.json({ error: "bad-request", message: "Missing the recording or the question." }, { status: 400 });
+  // The whole upload is counted as it arrives and dropped if it goes over: a huge file is never read in to be measured.
+  const read = await readForm(req, MAX_AUDIO_BYTES + 64_000, "Missing the recording or the question.");
+  if (!read.ok) return read.response;
+  const form = read.data;
   const limited = guard(req, "answer", { userId: user.id, ...(form.get("session") ? { inSession: true } : { practice: true }) });
   if (limited) return limited;
 
@@ -53,6 +57,8 @@ export async function POST(req: Request) {
   if (audio.size > MAX_AUDIO_BYTES) {
     return NextResponse.json({ error: "too-large", message: "That recording is too long to score in one go." }, { status: 413 });
   }
+  // What the file is, is read from the file: a recording is stored and played back, so it has to be audio.
+  if (!(await sniffAudio(audio))) return NextResponse.json({ error: "bad-request", message: "That recording couldn’t be read as audio. Record it again." }, { status: 400 });
 
   const sessionId = String(form.get("session") ?? "") || undefined;
   setUsageContext({ userId: user.id, interviewId: interview.id, sessionId, feature: sessionId ? "interview" : "single question" });

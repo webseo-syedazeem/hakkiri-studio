@@ -55,7 +55,7 @@ export function AdminAnalyticsClient({
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
               </span>
-              <span>MongoDB Atlas Live Data Feed (analytics_events)</span>
+              <span>{summary.dbConnected ? "Page views recorded in the database (analytics_events)" : "No database set up: page views are counted on this server only"}</span>
             </span>
 
             <span className="rounded-full bg-purple-500/20 text-purple-300 text-[10px] font-bold px-2.5 py-0.5 border border-purple-500/30">
@@ -121,9 +121,9 @@ export function AdminAnalyticsClient({
         {/* Card 1: Real Total Pageviews */}
         <div className="rounded-2xl border border-white/10 bg-[#141520] p-4 relative overflow-hidden shadow-lg">
           <div className="flex items-center justify-between text-xs text-slate-400">
-            <span>Total Real Pageviews</span>
+            <span>Total page views</span>
             <span className="rounded bg-emerald-500/20 text-emerald-400 text-[10px] font-bold px-1.5 py-0.5 border border-emerald-500/30">
-              Atlas Live
+              {summary.dbConnected ? "Database" : "This server"}
             </span>
           </div>
           <div className="text-2xl font-black text-white mt-1.5 font-mono">
@@ -173,9 +173,11 @@ export function AdminAnalyticsClient({
             </span>
           </div>
           <div className="text-2xl font-black text-white mt-1.5 font-mono">
-            {Math.floor(summary.avgDurationSeconds / 60)}m {summary.avgDurationSeconds % 60}s
+            {summary.avgDurationSeconds === null ? "Not measured" : `${Math.floor(summary.avgDurationSeconds / 60)}m ${summary.avgDurationSeconds % 60}s`}
           </div>
-          <div className="text-[11px] text-slate-500 mt-1">Candidate read & practice time</div>
+          <div className="text-[11px] text-slate-500 mt-1">
+            {summary.avgDurationSeconds === null ? "Only page views are recorded. Use Google Analytics for time on page." : "Time on page"}
+          </div>
         </div>
 
         {/* Card 5: Real-time Live Visitors (15 mins window) */}

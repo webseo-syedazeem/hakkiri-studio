@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { addFeedback } from "@/lib/feedback/store";
-import { clientKey, rateLimited } from "@/lib/usage/limits";
-import { getCurrentUser } from "@/lib/auth/require";
+import { rateLimited } from "@/lib/usage/limits";
+import { requireUser } from "@/lib/auth/require";
+import { readJsonValue } from "@/lib/http/body";
 
 export const runtime = "nodejs";
 
@@ -14,15 +15,26 @@ const Body = z.object({
   lead: z.string().max(200).optional(),
 });
 
-/** POST /api/feedback: a note from the Feedback button. */
+/**
+ * POST /api/feedback: a note from the Feedback button. The button is only in
+ * the app, so a note comes from a signed-in person: it is kept with their
+ * account (they can download and delete it), and counted against them, ten a
+ * minute. It used to be open to anyone, which let anybody fill the team's
+ * alert channel.
+ */
 export async function POST(req: Request) {
-  if (rateLimited(`feedback:${clientKey(req)}`, 10, 60_000))
-    return NextResponse.json({ error: "slow-down" }, { status: 429 });
-  const parsed = Body.safeParse(await req.json().catch(() => null));
-  if (!parsed.success)
-    return NextResponse.json({ error: "bad-request" }, { status: 400 });
+  let user;
+  try {
+    user = await requireUser();
+  } catch (r) {
+    return r as Response;
+  }
+  if (rateLimited(`feedback:user:${user.id}`, 10, 60_000)) return NextResponse.json({ error: "slow-down" }, { status: 429 });
+  const sent = await readJsonValue(req, 8_000);
+  if (!sent.ok) return sent.response;
+  const parsed = Body.safeParse(sent.json);
+  if (!parsed.success) return NextResponse.json({ error: "bad-request" }, { status: 400 });
 
-  const user = await getCurrentUser();
-  const f = await addFeedback({ ...parsed.data, userId: user?.id });
+  const f = await addFeedback({ ...parsed.data, userId: user.id });
   return NextResponse.json({ id: f.id });
 }

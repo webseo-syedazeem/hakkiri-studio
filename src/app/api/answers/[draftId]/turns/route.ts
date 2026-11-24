@@ -5,6 +5,8 @@ import { MAX_AUDIO_BYTES, nextFollowUp, notConfigured, scoringError, transcribe 
 import { guard } from "@/lib/usage/limits";
 import { setUsageContext } from "@/lib/usage/store";
 import { requireUser } from "@/lib/auth/require";
+import { readForm } from "@/lib/http/body";
+import { sniffAudio } from "@/lib/http/sniff";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -33,10 +35,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ draftId
   setUsageContext({ userId: user.id, interviewId: draft.interviewId, sessionId: draft.sessionId, feature: draft.sessionId ? "interview" : "single question" });
   if (!draft.pending) return NextResponse.json({ error: "no-follow-up", message: "There’s no follow-up waiting for a reply." }, { status: 409 });
 
-  const form = await req.formData().catch(() => null);
-  const audio = form?.get("audio");
+  const read = await readForm(req, MAX_AUDIO_BYTES + 64_000, "Missing the recording.");
+  if (!read.ok) return read.response;
+  const audio = read.data.get("audio");
   if (!(audio instanceof Blob)) return NextResponse.json({ error: "bad-request", message: "Missing the recording." }, { status: 400 });
   if (audio.size > MAX_AUDIO_BYTES) return NextResponse.json({ error: "too-large", message: "That recording is too long." }, { status: 413 });
+  if (!(await sniffAudio(audio))) return NextResponse.json({ error: "bad-request", message: "That recording couldn’t be read as audio. Record it again." }, { status: 400 });
 
   try {
     const words = await transcribe(audio, mockFollowUpTranscript);

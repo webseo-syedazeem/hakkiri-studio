@@ -1,6 +1,7 @@
 import { adminDenied } from "@/lib/auth/admin";
 import { NextResponse } from "next/server";
 import { saveUploadedFileAsync, listUploadedMediaAsync } from "@/lib/storage/upload";
+import { readForm } from "@/lib/http/body";
 
 export const runtime = "nodejs";
 
@@ -35,8 +36,9 @@ export async function POST(req: Request) {
   if (denied) return denied;
 
   try {
-    const formData = await req.formData();
-    const file = formData.get("file");
+    const read = await readForm(req, 10 * 1024 * 1024 + 64_000, "No file provided");
+    if (!read.ok) return read.response;
+    const file = read.data.get("file");
 
     if (!file || typeof file === "string") {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });

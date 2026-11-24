@@ -9,8 +9,13 @@ export async function GET(req: Request) {
     const category = searchParams.get("category") || undefined;
     const tag = searchParams.get("tag") || undefined;
     const search = searchParams.get("search") || undefined;
-    const limit = searchParams.get("limit") ? parseInt(searchParams.get("limit")!, 10) : 50;
-    const offset = searchParams.get("offset") ? parseInt(searchParams.get("offset")!, 10) : 0;
+    // Whole numbers within bounds: "limit=1e9" or "offset=-5" is not passed on as it comes.
+    const whole = (v: string | null, fallback: number, max: number) => {
+      const n = v ? parseInt(v, 10) : fallback;
+      return Number.isFinite(n) && n >= 0 ? Math.min(n, max) : fallback;
+    };
+    const limit = whole(searchParams.get("limit"), 50, 100);
+    const offset = whole(searchParams.get("offset"), 0, 10_000);
 
     const result = await getBlogPostsAsync({
       publishedOnly: true,
@@ -25,7 +30,7 @@ export async function GET(req: Request) {
   } catch (err) {
     console.error("[api/blog] GET error:", err);
     return NextResponse.json(
-      { error: "Internal Server Error", message: err instanceof Error ? err.message : "Failed to load posts" },
+      { error: "Internal Server Error", message: "Failed to load posts" },
       { status: 500 }
     );
   }

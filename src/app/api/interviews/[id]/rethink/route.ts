@@ -4,6 +4,7 @@ import { PlanError, rethinkFrom } from "@/lib/sessions/server";
 import { guard } from "@/lib/usage/limits";
 import { setUsageContext } from "@/lib/usage/store";
 import { requireUser } from "@/lib/auth/require";
+import { readJsonValue } from "@/lib/http/body";
 
 export const runtime = "nodejs";
 export const maxDuration = 90;
@@ -27,7 +28,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const blocked = guard(req, "ai", { userId: user.id });
   if (blocked) return blocked;
   setUsageContext({ userId: user.id, interviewId: id, feature: "questions" });
-  const parsed = Body.safeParse(await req.json().catch(() => null));
+  const sent = await readJsonValue(req, 2_000);
+  if (!sent.ok) return sent.response;
+  const parsed = Body.safeParse(sent.json);
   if (!parsed.success) return NextResponse.json({ error: "bad-request", message: "There’s nothing to rebuild from." }, { status: 400 });
   try {
     return NextResponse.json(await rethinkFrom(id, parsed.data.sessionId, user.id));

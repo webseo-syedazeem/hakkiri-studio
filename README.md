@@ -27,7 +27,7 @@ npm run typecheck
 
 `.env.example` lists every other setting: the voice per difficulty, the spending and practice limits, price overrides and the launch switch.
 
-No keys? The app still runs; finished answers open the demo feedback with a note. Set `HAKKIRI_MOCK_AI=1` to run the whole record → score → feedback flow offline with sample results.
+No keys? The app still runs; finished answers open the demo feedback with a note. Set `HAKKIRI_MOCK_AI=1` to run the whole record → score → feedback flow offline with sample results. That works with `npm run dev`. A production build (`next build` then `next start`) ignores it unless `HAKKIRI_MOCK_AI_IN_PRODUCTION=1` is set as well, so a deployed app can't be left showing sample results by one stray variable; the end-to-end tests set both.
 
 ## Try it
 

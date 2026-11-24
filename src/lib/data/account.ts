@@ -44,6 +44,11 @@ function recordingIdsOf(userId: string): Set<string> {
   return new Set([...allAnswers(userId).map((a) => a.id), ...pitch.runs.map((r) => `run-${r.id}`), ...pitch.qa.flatMap((q) => q.answers.map((a) => a.id))]);
 }
 
+/** Whether a recording (by the id it is kept under) is this person's own. */
+export function ownsRecording(userId: string, recordingId: string): boolean {
+  return !!userId && recordingIdsOf(userId).has(recordingId);
+}
+
 /** Whose each recording is, across every account: for applying each person's own "keep recordings for" choice. */
 function recordingOwners(): Map<string, string> {
   const owners = new Map<string, string>();

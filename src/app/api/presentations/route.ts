@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { presentationFromForm } from "@/lib/pitch/payload";
 import { savePresentation } from "@/lib/pitch/store";
 import { requireUser } from "@/lib/auth/require";
+import { readForm } from "@/lib/http/body";
 
 export const runtime = "nodejs";
 
@@ -15,8 +16,10 @@ export async function POST(req: Request) {
     return r as Response;
   }
 
-  const form = await req.formData().catch(() => null);
-  if (!form) return NextResponse.json({ error: "bad-request", message: "That presentation couldn’t be read. Try again." }, { status: 400 });
+  // A deck's text and its slide pictures: 64 MB in all is far more than a real deck, and nothing larger is read in.
+  const read = await readForm(req, 64 * 1024 * 1024, "That presentation couldn’t be read. Try again.");
+  if (!read.ok) return read.response;
+  const form = read.data;
   const id = randomUUID().slice(0, 12);
   const p = await presentationFromForm(form, id);
   if ("message" in p) return NextResponse.json({ error: "bad-request", message: p.message }, { status: 400 });

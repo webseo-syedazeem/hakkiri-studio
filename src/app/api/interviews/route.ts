@@ -7,6 +7,7 @@ import { guard } from "@/lib/usage/limits";
 import { setUsageContext } from "@/lib/usage/store";
 import { flushStorage } from "@/lib/storage/disk";
 import { requireUser } from "@/lib/auth/require";
+import { readJsonValue } from "@/lib/http/body";
 
 export const runtime = "nodejs";
 export const maxDuration = 180;
@@ -51,7 +52,12 @@ export async function POST(req: Request) {
   if (blocked) return blocked;
   setUsageContext({ userId: user.id, feature: "set-up" });
   
-  const rawBody = (await req.json().catch(() => null)) as Record<string, any> | null;
+  // A CV, a job spec, a cover letter and the company's site text, each up to 25,000 characters: 160 KB covers it.
+  const sent = await readJsonValue(req, 160_000);
+  if (!sent.ok) return sent.response;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rawBody = (sent.json && typeof sent.json === "object" && !Array.isArray(sent.json) ? sent.json : null) as Record<string, any> | null;
+  if (rawBody?.settings && (typeof rawBody.settings !== "object" || Array.isArray(rawBody.settings))) rawBody.settings = undefined;
   if (rawBody?.settings && !rawBody.settings.mix) {
     rawBody.settings.mix = DEFAULT_SETTINGS.mix;
   }

@@ -5,6 +5,7 @@ import { PlanError, rebuildAndPlan } from "@/lib/sessions/server";
 import { guard } from "@/lib/usage/limits";
 import { setUsageContext } from "@/lib/usage/store";
 import { requireUser } from "@/lib/auth/require";
+import { readJsonValue } from "@/lib/http/body";
 
 export const runtime = "nodejs";
 export const maxDuration = 240;
@@ -44,7 +45,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const blocked = guard(req, "ai", { practice: true, userId: user.id });
   if (blocked) return blocked;
   setUsageContext({ userId: user.id, interviewId: id, feature: "questions" });
-  const parsed = Body.safeParse(await req.json().catch(() => null));
+  const sent = await readJsonValue(req, 120_000);
+  if (!sent.ok) return sent.response;
+  const parsed = Body.safeParse(sent.json);
   if (!parsed.success) return NextResponse.json({ error: "bad-request", message: "Check what Hakkiri understood: every field needs a few words." }, { status: 400 });
   const b = parsed.data;
   try {

@@ -5,6 +5,7 @@ import { londonToday } from "@/lib/dates";
 import { guard } from "@/lib/usage/limits";
 import { setUsageContext } from "@/lib/usage/store";
 import { requireUser } from "@/lib/auth/require";
+import { readJsonValue } from "@/lib/http/body";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -27,7 +28,9 @@ export async function POST(req: Request) {
   const blocked = guard(req, "ai", { userId: user.id });
   if (blocked) return blocked;
   setUsageContext({ userId: user.id, feature: "stories" });
-  const parsed = Body.safeParse(await req.json().catch(() => null));
+  const sent = await readJsonValue(req, 40_000);
+  if (!sent.ok) return sent.response;
+  const parsed = Body.safeParse(sent.json);
   if (!parsed.success) return NextResponse.json({ error: "bad-request", message: "Fill in at least one part." }, { status: 400 });
   const { key, parts } = parsed.data;
   if (!Object.values(parts).some((p) => p.length >= 5)) return NextResponse.json({ error: "bad-request", message: "Add a sentence to at least one part." }, { status: 400 });

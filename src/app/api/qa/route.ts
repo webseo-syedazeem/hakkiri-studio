@@ -5,6 +5,7 @@ import { startQa } from "@/lib/pitch/server";
 import { guard } from "@/lib/usage/limits";
 import { setUsageContext } from "@/lib/usage/store";
 import { requireUser } from "@/lib/auth/require";
+import { readJsonValue } from "@/lib/http/body";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -26,7 +27,9 @@ export async function POST(req: Request) {
   const blocked = guard(req, "plan", { practice: true, userId: user.id });
   if (blocked) return blocked;
   setUsageContext({ userId: user.id, feature: "q&a" });
-  const parsed = Body.safeParse(await req.json().catch(() => null));
+  const sent = await readJsonValue(req, 4_000);
+  if (!sent.ok) return sent.response;
+  const parsed = Body.safeParse(sent.json);
   const p = parsed.success ? getPresentation(parsed.data.presentationId, user.id) : undefined;
   if (!parsed.success || !p) return NextResponse.json({ error: "not-found", message: "That presentation doesn’t exist." }, { status: 404 });
   const draft = await startQa(p, parsed.data.style, user.id);
