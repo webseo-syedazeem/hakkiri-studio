@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import clsx from "clsx";
 import { Icon } from "@/components/ui";
+import { useDialogFocus } from "@/components/ui/useDialogFocus";
 
 interface StageInfo {
   num: number;
@@ -130,6 +131,7 @@ export function StageTracker({
   const [saveError, setSaveError] = useState<string | null>(null);
   const [confirmEnd, setConfirmEnd] = useState(false);
   const notesKey = activeInterview ? `hk_stage_tracker_${activeInterview.id}_feedback` : null;
+  const notesBox = useDialogFocus<HTMLDivElement>(showFeedbackModal);
 
   // The person's own notes on each stage of this interview, kept in this browser.
   useEffect(() => {
@@ -235,7 +237,18 @@ export function StageTracker({
         {/* Target Role Card with Interactive Dropdown */}
         <div className="relative mt-4">
           <div
+            role="button"
+            tabIndex={0}
+            aria-haspopup="true"
+            aria-expanded={isDropdownOpen}
+            aria-label={`Interview being tracked: ${displayRole}, ${displayCompany}. Choose another`}
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setIsDropdownOpen(!isDropdownOpen);
+              } else if (e.key === "Escape") setIsDropdownOpen(false);
+            }}
             className="flex items-center justify-between rounded-[14px] bg-panel-2 p-3.5 shadow-[inset_0_0_0_1px_var(--color-line)] transition-all hover:shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-[#1a1f33] cursor-pointer group select-none"
           >
             <div className="flex items-center gap-3.5 min-w-0">
@@ -255,17 +268,9 @@ export function StageTracker({
                 </div>
               </div>
             </div>
-            <button
-              type="button"
-              className="p-1 rounded-lg text-muted group-hover:text-ink transition-colors"
-              aria-label="Switch interview"
-            >
-              <Icon
-                name="chevronDown"
-                size={16}
-                className={clsx("transition-transform duration-200", isDropdownOpen && "rotate-180")}
-              />
-            </button>
+            <span aria-hidden className="p-1 rounded-lg text-muted group-hover:text-ink transition-colors">
+              <Icon name="chevronDown" size={16} className={clsx("transition-transform duration-200", isDropdownOpen && "rotate-180")} />
+            </span>
           </div>
 
           {/* Floating Dropdown Menu */}
@@ -282,7 +287,7 @@ export function StageTracker({
                 <div className="max-h-60 overflow-y-auto py-1">
                   {interviewsList.map((iv) => {
                     const isSelected = iv.id === activeInterview?.id;
-                    const stageCount = iv.stages?.length ?? 4;
+                    const stageCount = iv.stages?.length ?? 0;
                     return (
                       <button
                         key={iv.id}
@@ -503,16 +508,25 @@ export function StageTracker({
 
       {/* Interactive Feedback Modal */}
       {showFeedbackModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-fade-in">
-          <div className="relative flex w-full max-w-[500px] flex-col rounded-[20px] border border-line bg-panel p-6 shadow-2xl animate-scale-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-fade-in" onClick={() => setShowFeedbackModal(false)}>
+          <div
+            ref={notesBox}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="stage-notes-title"
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.key === "Escape" && setShowFeedbackModal(false)}
+            className="relative flex w-full max-w-[500px] flex-col rounded-[20px] border border-line bg-panel p-6 shadow-2xl animate-scale-in"
+          >
             <div className="flex items-center justify-between border-b border-line pb-3.5">
               <div className="flex items-center gap-2.5">
                 <Icon name="chat" size={18} className="text-blue-soft" />
-                <h3 className="text-sm font-bold text-ink">Interview Feedback & Notes</h3>
+                <h3 id="stage-notes-title" className="text-sm font-bold text-ink">Your notes on this stage</h3>
               </div>
               <button
                 type="button"
                 onClick={() => setShowFeedbackModal(false)}
+                aria-label="Close your notes"
                 className="text-muted hover:text-ink cursor-pointer"
               >
                 <Icon name="x" size={16} />
@@ -522,14 +536,19 @@ export function StageTracker({
             <div className="mt-4 flex flex-col gap-3 text-xs">
               <div className="rounded-[12px] bg-panel-2 p-3 text-muted border border-line">
                 <span className="font-semibold text-ink block mb-1">
-                  Stage {activeFeedbackStage} Feedback & Notes:
+                  Stage {activeFeedbackStage}, your notes so far:
                 </span>
-                {stageFeedback[activeFeedbackStage] || "No feedback recorded yet for this stage."}
+                {stageFeedback[activeFeedbackStage] || "None yet. Notes are kept in this browser only."}
               </div>
 
               <form onSubmit={handleAddFeedback} className="mt-2 flex flex-col gap-2.5">
-                <label className="font-semibold text-ink">Add new interviewer feedback / notes:</label>
+                <label htmlFor="stage-note" className="font-semibold text-ink">
+                  Add a note: what they asked, what they said, what to prepare next
+                </label>
                 <textarea
+                  id="stage-note"
+                  data-autofocus
+                  maxLength={2000}
                   rows={3}
                   value={newFeedbackText}
                   onChange={(e) => setNewFeedbackText(e.target.value)}

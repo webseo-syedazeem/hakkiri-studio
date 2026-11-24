@@ -19,9 +19,18 @@ const g = globalThis as unknown as {
   __hakkiriPitch?: { presentations: Map<string, Presentation>; runs: Map<string, Run>; qa: Map<string, QaSession> };
 };
 
+/**
+ * Where a presentation is kept. The built-in example is each person's own
+ * copy once they change it, so it is kept under their id: one person's edit
+ * is never another's, and never replaces the example for everyone.
+ */
+const keyOf = (id: string, userId: string) => (id === demoPresentation.id ? `${id}::${userId}` : id);
+/** Saved presentations, each under its key. A copy of the example with no owner is nobody's, and is dropped. */
+const keyed = (list: Presentation[]) => list.filter((p) => p && p.id && !(p.id === demoPresentation.id && !p.userId)).map((p) => [keyOf(p.id, p.userId ?? ""), p] as const);
+
 function db() {
   return (g.__hakkiriPitch ??= {
-    presentations: new Map(loadJson<Presentation[]>("presentations.json", []).map((p) => [p.id, p])),
+    presentations: new Map(keyed(loadJson<Presentation[]>("presentations.json", []))),
     runs: new Map(loadJson<Run[]>("runs.json", []).map((r) => [r.id, r])),
     qa: new Map(loadJson<QaSession[]>("qa.json", []).map((s) => [s.id, s])),
   });
@@ -34,16 +43,22 @@ function db() {
  */
 function owns(record: { userId?: string; presentationId: string }, userId: string): boolean {
   if (!userId) return false;
-  return record.userId === userId || (!record.userId && db().presentations.get(record.presentationId)?.userId === userId);
+  // A record with no owner goes with its presentation, except on the example, which many people practise on.
+  return record.userId === userId || (!record.userId && record.presentationId !== demoPresentation.id && db().presentations.get(record.presentationId)?.userId === userId);
 }
 
 // ------------------------------------------------------------ presentations
 
-export const isDemoPresentation = (id: string) => id === demoPresentation.id && !db().presentations.has(id);
+/** The built-in example. It stays the example for a person who has changed their copy of it. */
+export const isDemoPresentation = (id: string) => id === demoPresentation.id;
 
 /** One person's presentation, or nothing: with no account named, or for one that is someone else's or has no owner, nothing is returned. The built-in demo can be read by anyone. */
 export function getPresentation(id: string, userId: string): Presentation | undefined {
-  if (id === demoPresentation.id && demoOn()) return demoPresentation;
+  if (id === demoPresentation.id) {
+    // The person's own copy if they have changed it, else the example as built.
+    const mine = userId ? db().presentations.get(keyOf(id, userId)) : undefined;
+    return mine && mine.userId === userId ? mine : demoOn() ? demoPresentation : undefined;
+  }
   const p = db().presentations.get(id);
   return p && !!userId && p.userId === userId ? p : undefined;
 }
@@ -56,9 +71,7 @@ export async function getPresentationAsync(id: string, userId: string): Promise<
     try {
       const fromDb = await loadJsonAsync<Presentation[]>("presentations.json", []);
       if (Array.isArray(fromDb)) {
-        for (const item of fromDb) {
-          db().presentations.set(item.id, item);
-        }
+        for (const [key, item] of keyed(fromDb)) db().presentations.set(key, item);
         const found = getPresentation(id, userId);
         if (found) return found;
       }
@@ -90,7 +103,7 @@ export function listPresentations(userId: string): Presentation[] {
 /** The presentation Home is about: your soonest upcoming one, or the demo until you add your own. */
 export function featuredPresentation(userId: string): Presentation | undefined {
   const all = listPresentations(userId);
-  const mine = all.filter((p) => p.id !== demoPresentation.id || db().presentations.has(p.id));
+  const mine = all.filter((p) => p.id !== demoPresentation.id && p.userId === userId);
   const upcoming = (p: Presentation) => (p.date ? Date.parse(p.date) >= Date.now() - 12 * 3600_000 : false);
   return mine.find(upcoming) ?? all.find(upcoming) ?? all[0];
 }
@@ -98,14 +111,14 @@ export function featuredPresentation(userId: string): Presentation | undefined {
 export function savePresentation(p: Presentation, userId: string) {
   if (!userId) return;
   const item = { ...p, userId };
-  db().presentations.set(item.id, item);
+  db().presentations.set(keyOf(item.id, userId), item);
   saveJson("presentations.json", [...db().presentations.values()]);
 }
 
 export async function savePresentationAsync(p: Presentation, userId: string): Promise<void> {
   if (!userId) return;
   const item = { ...p, userId };
-  db().presentations.set(item.id, item);
+  db().presentations.set(keyOf(item.id, userId), item);
   await saveJsonAsync("presentations.json", [...db().presentations.values()]);
 }
 
@@ -258,37 +271,56 @@ export function allPitchData(userId?: string): { presentations: Presentation[]; 
     };
   }
   const presentations = [...db().presentations.values()].filter((p) => p.userId === userId);
-  const userPresIds = new Set(presentations.map((p) => p.id));
-  const runs = [...db().runs.values()].filter((r) => r.userId === userId || userPresIds.has(r.presentationId));
-  const qa = [...db().qa.values()].filter((s) => s.userId === userId || userPresIds.has(s.presentationId));
+  // The person's own rehearsals and Q&A. Other people's practice on the example is theirs, not this person's.
+  const runs = [...db().runs.values()].filter((r) => owns(r, userId));
+  const qa = [...db().qa.values()].filter((s) => owns(s, userId));
   return { presentations, runs, qa };
 }
 
-/** Deletes one presentation with its slide pictures, runs and Q&A rounds. Returns the ids of its answers, so their recordings can go too. */
+/**
+ * Deletes one of the person's presentations with its slide pictures, and
+ * their runs and Q&A rounds on it. Returns the ids of its answers, so their
+ * recordings can go too. On the example, only the person's own copy and their
+ * own practice go: the example itself and other people's practice on it stay.
+ */
 export function deletePresentation(id: string, userId: string): { runIds: string[]; answerIds: string[] } | null {
   const d = db();
-  const existing = d.presentations.get(id);
-  if (!existing || !userId || existing.userId !== userId) return null;
-  const runIds = [...d.runs.values()].filter((r) => r.presentationId === id).map((r) => r.id);
-  const answerIds = [...d.qa.values()].filter((s) => s.presentationId === id).flatMap((s) => s.answers.map((a) => a.id));
-  for (const r of runIds) d.runs.delete(r);
-  for (const s of [...d.qa.values()]) if (s.presentationId === id) d.qa.delete(s.id);
-  d.presentations.delete(id);
-  for (const k of [...memoryImages().keys()]) if (k.startsWith(`${id}/`)) memoryImages().delete(k);
+  if (!userId) return null;
+  const example = id === demoPresentation.id;
+  const key = keyOf(id, userId);
+  const existing = d.presentations.get(key);
+  const mine = (r: { userId?: string; presentationId: string }) => r.presentationId === id && owns(r, userId);
+  const runs = [...d.runs.values()].filter(mine);
+  const rounds = [...d.qa.values()].filter(mine);
+  if (example ? !existing && !runs.length && !rounds.length : !existing || existing.userId !== userId) return null;
+  const answerIds = rounds.flatMap((s) => s.answers.map((a) => a.id));
+  for (const r of runs) d.runs.delete(r.id);
+  for (const s of rounds) d.qa.delete(s.id);
+  if (existing) d.presentations.delete(key);
+  if (!example) {
+    for (const k of [...memoryImages().keys()]) if (k.startsWith(`${id}/`)) memoryImages().delete(k);
+    removeDir(`pitch/${id}`);
+  }
   saveJson("presentations.json", [...d.presentations.values()]);
   saveJson("runs.json", [...d.runs.values()]);
   saveJson("qa.json", [...d.qa.values()]);
-  removeDir(`pitch/${id}`);
-  return { runIds, answerIds };
+  return { runIds: runs.map((r) => r.id), answerIds };
 }
 
-/** "Delete all my data": presentations, slide pictures, runs and Q&A. */
+/** "Delete all my data": the person's presentations, slide pictures, runs and Q&A, the example included. */
 export function clearPitch(userId?: string) {
   if (userId) {
     const d = db();
-    const toDeletePres = [...d.presentations.values()].filter((p) => p.userId === userId);
-    for (const p of toDeletePres) {
-      deletePresentation(p.id, userId);
+    const ids = new Set([...d.presentations.values()].filter((p) => p.userId === userId).map((p) => p.id));
+    // Practice on the example, and on anything else, that carries this person's id.
+    for (const r of [...d.runs.values(), ...d.qa.values()]) if (r.userId === userId) ids.add(r.presentationId);
+    for (const id of ids) deletePresentation(id, userId);
+    let left = false;
+    for (const r of [...d.runs.values()]) if (r.userId === userId) left = d.runs.delete(r.id) || left;
+    for (const q of [...d.qa.values()]) if (q.userId === userId) left = d.qa.delete(q.id) || left;
+    if (left) {
+      saveJson("runs.json", [...d.runs.values()]);
+      saveJson("qa.json", [...d.qa.values()]);
     }
   } else {
     db().presentations.clear();

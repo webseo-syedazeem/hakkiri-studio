@@ -149,6 +149,7 @@ export function LiveInterview(p: LiveInterviewProps) {
   const [phase, setPhase] = useState<Phase>("ready");
   const [turn, setTurn] = useState<Turn>({ kind: "main" });
   const [problem, setProblem] = useState<{ message: string; stage: Stage } | null>(null);
+  const [confirmingEnd, setConfirmingEnd] = useState(false);
   const [mainSec, setMainSec] = useState(0);
   const [followUpsOn, setFollowUpsOn] = useState(q.followUps);
   const [style, setStyle] = useState<InterviewerStyle>(p.interviewer.style);
@@ -834,9 +835,29 @@ export function LiveInterview(p: LiveInterviewProps) {
             </Button>
           )}
           {isRun && phase !== "ready" && phase !== "finishing" ? (
-            <Button size="sm" onClick={() => void endEarly()}>
-              {session?.mode === "drill" ? "End practice" : "End interview"}
-            </Button>
+            confirmingEnd ? (
+              // Ending is asked about first: it can't be undone, and an answer in progress isn't kept.
+              <span role="alertdialog" aria-label="End now?" className="inline-flex items-center gap-2 rounded-full bg-panel-2 py-1 pl-3.5 pr-1 text-[13px] text-ink">
+                <span>{scoredCount > 0 ? `End now? Your report will cover the ${scoredCount} ${scoredCount === 1 ? "answer" : "answers"} scored so far.` : "End now? Nothing has been scored yet, so there will be no report."}</span>
+                <Button size="sm" onClick={() => setConfirmingEnd(false)}>
+                  Keep going
+                </Button>
+                <Button
+                  size="sm"
+                  variant="primary"
+                  onClick={() => {
+                    setConfirmingEnd(false);
+                    void endEarly();
+                  }}
+                >
+                  End now
+                </Button>
+              </span>
+            ) : (
+              <Button size="sm" onClick={() => setConfirmingEnd(true)}>
+                {session?.mode === "drill" ? "End practice" : "End interview"}
+              </Button>
+            )
           ) : (
             phase !== "finishing" && (
               <Link href={`/interviews/${p.interviewId}`} className={buttonClass("secondary", "sm")}>
