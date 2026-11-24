@@ -9,6 +9,15 @@ import { NextResponse, type NextRequest } from "next/server";
 export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
+  // 0. Redirect www.hakkiri.studio to hakkiri.studio (301 Permanent)
+  const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "";
+  if (host.startsWith("www.hakkiri.studio")) {
+    const targetUrl = new URL(req.url);
+    targetUrl.protocol = "https:";
+    targetUrl.host = "hakkiri.studio";
+    return NextResponse.redirect(targetUrl, 301);
+  }
+
   // 1. API routes: protect against cross-site CSRF on mutating requests
   if (pathname.startsWith("/api/")) {
     if (req.method === "GET" || req.method === "HEAD" || req.method === "OPTIONS") {

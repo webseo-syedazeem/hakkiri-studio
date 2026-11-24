@@ -46,7 +46,7 @@ export async function generateMetadata(): Promise<Metadata> {
       images: ["https://www.hakkiri.studio/opengraph-image.png"],
     },
     alternates: {
-      canonical: "https://www.hakkiri.studio/",
+      canonical: "https://hakkiri.studio/",
     },
   };
 }

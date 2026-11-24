@@ -16,6 +16,17 @@ const nextConfig: NextConfig = {
   // The CV section moved from /apply/cvs to /cv. Old links still work.
   async redirects() {
     return [
+      {
+        source: "/:path*",
+        has: [
+          {
+            type: "host",
+            value: "www.hakkiri.studio",
+          },
+        ],
+        destination: "https://hakkiri.studio/:path*",
+        permanent: true,
+      },
       { source: "/apply/cvs", destination: "/cv", permanent: false },
       { source: "/apply/cvs/:id", destination: "/cv/v/:id", permanent: false },
     ];

@@ -379,11 +379,11 @@ export function InterviewReportView(p: InterviewReportViewProps) {
             <div className="space-y-2">
               <button
                 type="button"
-                onClick={() => setActivePlaybookId("star")}
-                className="w-full text-left group flex items-center justify-between gap-3 p-2.5 rounded-xl bg-[#141326] border border-white/10 hover:border-white/20 transition-all"
+                onClick={() => setSelectedFramework("star")}
+                className="w-full text-left group flex items-center justify-between gap-3 p-2.5 rounded-xl bg-[#141326] border border-white/10 hover:border-indigo-500/40 hover:bg-[#1a1832] transition-all cursor-pointer active:scale-[0.99]"
               >
                 <div className="flex items-center gap-2.5 truncate">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/[0.06] text-amber-400">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/[0.06] text-amber-400 group-hover:bg-amber-400/10 transition-colors">
                     <Icon name="star" size={15} />
                   </div>
                   <div className="truncate">
@@ -391,16 +391,16 @@ export function InterviewReportView(p: InterviewReportViewProps) {
                     <div className="text-[11px] text-muted truncate">Best for experience and situational questions.</div>
                   </div>
                 </div>
-                <Icon name="chevronRight" size={14} className="text-muted group-hover:text-white transition-colors shrink-0" />
+                <Icon name="chevronRight" size={14} className="text-muted group-hover:text-white group-hover:translate-x-0.5 transition-all shrink-0" />
               </button>
 
               <button
                 type="button"
-                onClick={() => setActivePlaybookId("tell-me-about-yourself")}
-                className="w-full text-left group flex items-center justify-between gap-3 p-2.5 rounded-xl bg-[#141326] border border-white/10 hover:border-white/20 transition-all"
+                onClick={() => setSelectedFramework("prep")}
+                className="w-full text-left group flex items-center justify-between gap-3 p-2.5 rounded-xl bg-[#141326] border border-white/10 hover:border-indigo-500/40 hover:bg-[#1a1832] transition-all cursor-pointer active:scale-[0.99]"
               >
                 <div className="flex items-center gap-2.5 truncate">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/[0.06] text-blue-soft">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/[0.06] text-blue-soft group-hover:bg-blue/10 transition-colors">
                     <Icon name="list" size={15} />
                   </div>
                   <div className="truncate">
@@ -408,16 +408,16 @@ export function InterviewReportView(p: InterviewReportViewProps) {
                     <div className="text-[11px] text-muted truncate">A simple structure for structured responses.</div>
                   </div>
                 </div>
-                <Icon name="chevronRight" size={14} className="text-muted group-hover:text-white transition-colors shrink-0" />
+                <Icon name="chevronRight" size={14} className="text-muted group-hover:text-white group-hover:translate-x-0.5 transition-all shrink-0" />
               </button>
 
               <button
                 type="button"
-                onClick={() => setActivePlaybookId("prioritisation")}
-                className="w-full text-left group flex items-center justify-between gap-3 p-2.5 rounded-xl bg-[#141326] border border-white/10 hover:border-white/20 transition-all"
+                onClick={() => setSelectedFramework("other")}
+                className="w-full text-left group flex items-center justify-between gap-3 p-2.5 rounded-xl bg-[#141326] border border-white/10 hover:border-indigo-500/40 hover:bg-[#1a1832] transition-all cursor-pointer active:scale-[0.99]"
               >
                 <div className="flex items-center gap-2.5 truncate">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/[0.06] text-purple-400">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/[0.06] text-purple-400 group-hover:bg-purple-400/10 transition-colors">
                     <Icon name="layers" size={15} />
                   </div>
                   <div className="truncate">
@@ -425,8 +425,18 @@ export function InterviewReportView(p: InterviewReportViewProps) {
                     <div className="text-[11px] text-muted truncate">For technical, product and strategy questions.</div>
                   </div>
                 </div>
-                <Icon name="chevronRight" size={14} className="text-muted group-hover:text-white transition-colors shrink-0" />
+                <Icon name="chevronRight" size={14} className="text-muted group-hover:text-white group-hover:translate-x-0.5 transition-all shrink-0" />
               </button>
+            </div>
+
+            <div className="mt-3 pt-3 border-t border-white/[0.07]">
+              <Link
+                href="/practice#hub-playbooks"
+                className="text-xs font-semibold text-blue-soft hover:text-white flex items-center justify-between gap-2 transition-colors group"
+              >
+                <span>Question Playbooks moved to Practice Hub</span>
+                <span className="text-[11px] text-indigo-400 group-hover:translate-x-0.5 transition-transform">Explore →</span>
+              </Link>
             </div>
           </div>
         </div>
