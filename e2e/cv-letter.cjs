@@ -101,7 +101,7 @@ run("CV cover letter", async (browser) => {
   await bothThemes(page, "letter-start");
 
   await page.getByRole("button", { name: "Draft letter" }).click();
-  await page.getByText("Say why you want this role, in a sentence or two. The letter opens with it.").waitFor();
+  await page.getByText("Say why you want this role in at least five words: a sentence or two is best. The letter opens with it.").waitFor();
   check(await page.getByText("Choose one or two lines of your CV for the letter to use.").isVisible(), "it will not draft without the person's reason and a line of their CV");
   check((await getCv(page, id)).letter === undefined || (await getCv(page, id)).letter.paragraphs.length === 0, "and nothing was drafted");
 

@@ -235,7 +235,10 @@ run("CV score", async (browser) => {
   await patch(page, id, (cv) => ({ sections: cv.sections.map((s) => (s.kind === "experience" ? { ...s, title: "" } : s)), contact: { ...cv.contact, fullName: "Fern 陈 Example" } }));
   await page.goto(`${BASE}/cv/v/${id}/software/pdf`);
   await page.locator('[data-testid="file-status"]', { hasText: "Loss found" }).waitFor({ timeout: 30000 });
-  check(/empty boxes: 陈/.test(await page.getByTestId("ats-why").innerText()), "a character the fonts cannot draw is a loss, named");
+  const whyNot = await page.getByTestId("ats-why").innerText();
+  check(/The fonts can’t draw these characters: 陈\./.test(whyNot), "a character the fonts cannot draw is a loss, named", whyNot);
+  // No font here has Chinese, so another pairing is not offered as a way out: Latin letters or the Word file are.
+  check(/None of our fonts can draw these/.test(whyNot) && /use the Word file/.test(whyNot) && !/font pairing/.test(whyNot), "the advice given is one that can work: Latin letters, or the Word file", whyNot);
   const loss = await page.getByTestId("first-loss").innerText();
   check(/^The PDF reads name as “Fern Example”\. Your CV says “Fern 陈 Example”\./.test(loss), "the first difference is said in words: what the file reads, and what the CV says", loss);
   await bothThemes(page, "score-software-loss");

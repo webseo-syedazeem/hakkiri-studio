@@ -4,7 +4,7 @@ import { extractRequirements } from "../tailor/requirements";
 import { checkSentence, clausesOf, reviewLetter } from "./check";
 import { letterByRule } from "./draft";
 import { poolOf } from "./sources";
-import { NOW, letterCv } from "./testing";
+import { NOW, experience, letterCv } from "./testing";
 
 /**
  * The letter's source check, attacked. Two lists: sentences that are invented
@@ -224,5 +224,55 @@ describe("the letter assembled by rule still passes its own review", () => {
     expect(all).toContain("I have not managed a budget before.");
     expect(all).toContain("At Hall Lane Archive, I catalogued 1,200 objects in the collections database.");
     expect(reviewLetter({ ...cv, letter: { ...cv.letter!, paragraphs } }, NOW).open).toEqual([]);
+  });
+});
+
+describe("“we” in the advert is the employer, not the person's team", () => {
+  // An advert that speaks as "we" ("We are a travel company") once made the letter's own first sentence fail:
+  // "I’m applying for the … role at Example Travel" shares the word "travel" with it, and was said to have
+  // "dropped “we”". Nobody's share of any work is dropped by naming the employer.
+  const ADVERT = "Paid Media Lead\nExample Travel, Leeds\n\nAbout us\nWe are a travel company. We offer 28 days holiday and a pension.\n\nThe role\nYou will run Google Ads and Meta campaigns for our travel brands.\n\nEssential\n- Experience managing junior executives\n- Experience with budget pacing";
+  const cv = letterCv({ reason: "I've planned travel campaigns for years, and I want to lead a team that paces its budgets properly." });
+  cv.target = { title: "Paid media lead", employer: "Example Travel", advert: ADVERT };
+  cv.requirements = extractRequirements(ADVERT);
+  const pool = poolOf(cv, NOW);
+
+  it("the opening sentence and the wish to join them pass", () => {
+    for (const s of ["I’m applying for the Paid media lead role at Example Travel.", "I am applying for the Paid media lead role at Example Travel.", "I would welcome the chance to work on your travel brands.", "I’d welcome the chance to talk about how I could contribute to Example Travel."]) {
+      expect(checkSentence(s, pool).problems.map((p) => p.say), s).toEqual([]);
+    }
+  });
+
+  it("the letter assembled by rule for that advert passes its own review, sentence by sentence", () => {
+    const draft = letterByRule(cv, NOW);
+    const review = reviewLetter({ ...cv, letter: { ...cv.letter!, paragraphs: draft.paragraphs, started: true } }, NOW);
+    expect(review.sentences.filter((x) => x.status === "unsupported").map((x) => x.text)).toEqual([]);
+  });
+
+  it("“we” in the person's own line is still theirs to keep", () => {
+    const own = letterCv();
+    experience(own).entries[1].bullets[1].text = "We trained six new starters on the café till";
+    const p = poolOf(own, NOW);
+    expect(checkSentence("At Folio House, I trained six new starters on the café till.", p).problems.map((x) => x.kind)).toContain("ownership");
+    expect(checkSentence("At Folio House, we trained six new starters on the café till.", p).problems).toEqual([]);
+  });
+});
+
+describe("a length of time, however it is phrased", () => {
+  // "I have five years’ experience with Tableau", backed by a note that says "… in Tableau for five years", was
+  // refused: the figure was read as counting "years’ experience" in one and "years" in the other.
+  const cv = letterCv({ notes: [{ id: "ln_0000000000000001", text: "I built the weekly client dashboards in Tableau for five years at Northlight Agency." }] });
+  const pool = poolOf(cv, NOW);
+
+  it("is backed by the same length of time in the person's own words", () => {
+    for (const s of ["I have five years’ experience with Tableau.", "I have five years' experience with Tableau.", "I have five years of experience with Tableau.", "I built dashboards in Tableau for five years."]) {
+      expect(checkSentence(s, pool).problems.map((p) => p.say), s).toEqual([]);
+    }
+  });
+
+  it("but not by five of something else, and not by a different length", () => {
+    expect(checkSentence("I have five months’ experience with Tableau.", pool).status).toBe("unsupported");
+    expect(checkSentence("I have ten years’ experience with Tableau.", pool).status).toBe("unsupported");
+    expect(checkSentence("I built five dashboards in Tableau.", pool).status).toBe("unsupported");
   });
 });

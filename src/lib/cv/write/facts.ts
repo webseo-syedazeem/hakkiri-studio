@@ -290,6 +290,9 @@ const BREAK = /[,.;:()\[\]–—·|\n]|\s-\s/;
 const WORD = /[\p{L}\p{N}'’+#&/-]+/gu;
 const bare = (w: string) => w.toLowerCase().replace(/['’]s?$/, "");
 
+/** Units of time, as stems: what a figure counts when it gives how long something lasted. */
+const TIME_UNITS = new Set(["year", "month", "week", "day", "hour", "minute", "term", "season", "quarter"].map((w) => stem(w)));
+
 export interface Counted {
   /** The noun phrase straight after the figure: "new starters" in "six new starters on the till". Stems. */
   after: string[];
@@ -350,6 +353,9 @@ export function countsTheSame(draft: string, f: Figure, source: string, g: Figur
     const theirs = [...s.before, ...s.after];
     return !mine.length || !theirs.length || mine.some((x) => theirs.includes(x));
   }
+  // A length of time is the same length of time whatever is said after it: "five years’ experience" and "for five
+  // years at Northlight" both count years. It is not backed by five of anything else.
+  if (d.after.length && TIME_UNITS.has(d.after[0]) && s.after.length) return s.after[0] === d.after[0];
   if (d.after.length) {
     if (s.after.length) return d.after.every((x) => s.after.includes(x));
     return !s.before.length || d.after.some((x) => s.before.includes(x));

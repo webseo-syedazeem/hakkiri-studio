@@ -44,6 +44,11 @@ interface GroundOptions {
   sameClaim?: boolean;
   /** An exact figure may be said less exactly ("about 1,200" for 1,200). Never the other way round. */
   mayHedge?: boolean;
+  /**
+   * The sources that are the person's own words, when not all of them are. Only in these does "we" mean the
+   * person and their team: an employer's "We are a travel company" is not work the person shared in.
+   */
+  own?: string[];
 }
 
 
@@ -84,7 +89,8 @@ export function checkGrounded(draft: string, sources: string[], opts: GroundOpti
   const draftSupport = family(supportWords(draft));
   const draftStems = new Set(terms(draft).map((t) => t.stem));
   const droppedSupport: string[] = [];
-  for (const sentence of sources.flatMap(sentences)) {
+  const mine = opts.own ?? sources;
+  for (const sentence of mine.flatMap(sentences)) {
     // "We" is kept as "we", or as any wording that says the work was shared ("as part of the team").
     const support = supportWords(sentence).filter((w) => !draftSupport.has(stem(w.split(" ")[0])) && !(TEAM.includes(w) && draftSupport.size > 0));
     if (!support.length) continue;
@@ -100,7 +106,7 @@ export function checkGrounded(draft: string, sources: string[], opts: GroundOpti
   const known = new Set(sources.flatMap(terms).map((t) => t.stem));
   for (const w of opts.allow ?? []) known.add(stem(w));
   // "As part of the team" is how "we" is said on a CV: where the person said "we", those words add nothing.
-  if (sources.some((src) => supportWords(src).some((w) => TEAM.includes(w)))) for (const w of ["part", "team"]) known.add(stem(w));
+  if (mine.some((src) => supportWords(src).some((w) => TEAM.includes(w)))) for (const w of ["part", "team"]) known.add(stem(w));
   const flagged = new Set<string>(problems.flatMap((p) => [p.proposed ?? "", p.original ?? ""]).flatMap((p) => p.toLowerCase().split(" ")));
   const added = terms(draft).filter((t) => !known.has(t.stem) && !flagged.has(t.text.toLowerCase()));
   for (const t of dedupe(added)) problems.push({ kind: "added-word", proposed: t.text, say: `It added ${q(t.text)}, which isn’t in ${whose}.` });

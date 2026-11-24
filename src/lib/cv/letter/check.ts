@@ -254,7 +254,10 @@ export function checkSentence(sentence: string, pool: Pool): Checked {
 
     // When the person can start is theirs to say: a date or "four weeks" there is not a claim about their work.
     // A sentence that says the person did something rests only on what their lines affirm, not on what they deny.
-    const verdict = checkGrounded(words, near.map((a) => (affirms ? whatItAffirms(a.source.text) : a.source.text)), { allow: available ? [...ALLOWED, ...WHEN] : ALLOWED, allowFigures: available ? keys : [], whose, mayHedge: true });
+    const read = (a: Indexed) => (affirms ? whatItAffirms(a.source.text) : a.source.text);
+    // "We" in the person's own lines is them and their team. "We" in the advert is the employer speaking: a sentence
+    // that names the employer has not dropped anybody's share of the work.
+    const verdict = checkGrounded(words, near.map(read), { allow: available ? [...ALLOWED, ...WHEN] : ALLOWED, allowFigures: available ? keys : [], whose, mayHedge: true, own: near.filter((a) => personal.includes(a)).map(read) });
     const other = clause.about === "employer" ? personal : employer;
     for (const p of verdict.problems) {
       const word = p.proposed ?? "";
