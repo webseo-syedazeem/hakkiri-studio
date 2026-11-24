@@ -109,7 +109,35 @@ export async function addSurveySubmission(
   return s;
 }
 
-export function clearSurveys() {
-  surveys.length = 0;
+/** Whose survey answers these are: by account, by the address the voucher was asked for, or by the session it was about. */
+export interface SurveyOwner {
+  userId: string;
+  email?: string;
+  sessionIds?: string[];
+}
+const belongsTo = (s: SurveySubmission, who: SurveyOwner) =>
+  (!!s.userId && s.userId === who.userId) || (!!who.email && s.email === who.email.trim().toLowerCase()) || (!!s.mockId && !!who.sessionIds?.includes(s.mockId));
+
+/** One person's survey answers, for "Download my data". */
+export function surveysOf(who: SurveyOwner): SurveySubmission[] {
+  return who.userId ? surveys.filter((s) => belongsTo(s, who)) : [];
+}
+
+/**
+ * "Delete all my data": the person's survey answers and the address they gave
+ * for the voucher are removed, here and in the database's copy. Nothing about
+ * the claim is kept in this store afterwards (the account itself remembers
+ * that it has claimed: see user-db). With nobody named: everything (tests).
+ * Returns how many went.
+ */
+export async function clearSurveys(who?: SurveyOwner): Promise<number> {
+  const before = surveys.length;
+  if (who) {
+    for (let i = surveys.length - 1; i >= 0; i--) if (belongsTo(surveys[i], who)) surveys.splice(i, 1);
+  } else {
+    surveys.length = 0;
+  }
   saveJson(FILE, surveys);
+  if (isMongoConfigured()) await saveToMongo("storage", FILE, surveys);
+  return before - surveys.length;
 }

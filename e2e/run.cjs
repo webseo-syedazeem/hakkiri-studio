@@ -16,7 +16,8 @@ fs.mkdirSync(out, { recursive: true });
 const server = spawn(process.platform === "win32" ? "npx.cmd" : "npx", ["next", "start", "-p", PORT, "-H", "127.0.0.1"], {
   cwd: root,
   // HAKKIRI_TRUST_PROXY lets each test account sign up from its own address, so the sign-up limit isn't hit.
-  env: { ...process.env, HAKKIRI_DATA_DIR: data, HAKKIRI_MOCK_AI: "1", HAKKIRI_TRUST_PROXY: "1", HAKKIRI_SAVE: undefined },
+  // The tests run a production build with sample results, which takes both test-mode variables (see src/lib/ai/mock.ts).
+  env: { ...process.env, HAKKIRI_DATA_DIR: data, HAKKIRI_MOCK_AI: "1", HAKKIRI_MOCK_AI_IN_PRODUCTION: "1", HAKKIRI_TRUST_PROXY: "1", HAKKIRI_SAVE: undefined },
   stdio: ["ignore", "ignore", "inherit"],
 });
 

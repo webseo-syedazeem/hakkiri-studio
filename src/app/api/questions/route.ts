@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getInterview } from "@/lib/interviews/store";
 import { addQuestion, removeQuestion } from "@/lib/questions/store";
 import { requireUser } from "@/lib/auth/require";
+import { readJsonValue } from "@/lib/http/body";
 
 export const runtime = "nodejs";
 
@@ -21,7 +22,9 @@ export async function POST(req: Request) {
     return r as Response;
   }
 
-  const parsed = Add.safeParse(await req.json().catch(() => null));
+  const sent = await readJsonValue(req, 4_000);
+  if (!sent.ok) return sent.response;
+  const parsed = Add.safeParse(sent.json);
   if (!parsed.success) return NextResponse.json({ error: "bad-request", message: parsed.error.issues[0]?.message ?? "That question couldn’t be added." }, { status: 400 });
   const interview = getInterview(parsed.data.interviewId, user.id);
   if (!interview) return NextResponse.json({ error: "not-found", message: "That interview doesn’t exist." }, { status: 404 });

@@ -21,8 +21,9 @@ export interface AnalyticsSummary {
   activeNow: number;
   todayPageviews: number;
   todayVisitors: number;
-  avgDurationSeconds: number;
-  bounceRatePercent: number;
+  /** Not measured: null. (They used to be fixed numbers.) */
+  avgDurationSeconds: number | null;
+  bounceRatePercent: number | null;
   dailyStats: { date: string; visitors: number; pageviews: number; organic: number }[];
   topPages: { path: string; views: number; uniqueVisitors: number }[];
   devices: { device: string; count: number; percentage: number }[];
@@ -99,7 +100,8 @@ export async function recordPageView(params: {
   userAgent?: string;
   visitorId?: string;
 }): Promise<void> {
-  const rawPath = (params.path || "/").split("?")[0];
+  const rawPath = String(params.path || "/").split("?")[0].slice(0, 300);
+  if (!rawPath.startsWith("/")) return;
   // Ignore static assets, internal next endpoints, and health checks
   if (
     rawPath.startsWith("/_next") ||
@@ -118,14 +120,15 @@ export async function recordPageView(params: {
   const dateStr = now.toISOString().split("T")[0]; // YYYY-MM-DD
   const device = parseDevice(params.userAgent);
   const channel = parseChannel(params.referrer);
-  const visitorId = params.visitorId || `v_${Math.random().toString(36).substring(2, 10)}`;
+  // A visitor id is the random one the page made for itself; anything else sent in its place is not kept.
+  const visitorId = typeof params.visitorId === "string" && /^[A-Za-z0-9_-]{6,64}$/.test(params.visitorId) ? params.visitorId : `v_${Math.random().toString(36).substring(2, 10)}`;
 
   const event: AnalyticsEvent = {
     id: `ev_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
     path: rawPath,
-    referrer: params.referrer || "",
+    referrer: String(params.referrer || "").slice(0, 500),
     channel,
-    userAgent: params.userAgent || "",
+    userAgent: String(params.userAgent || "").slice(0, 300),
     device,
     visitorId,
     timestamp: now,
@@ -152,71 +155,30 @@ export async function recordPageView(params: {
 }
 
 /**
- * Seed historical baseline into MongoDB Atlas if the collection is empty.
- * This ensures the client starts with realistic historical foundation,
- * and every real visit immediately increments from here!
+ * An earlier build wrote about 2,000 made-up page views into the database the
+ * first time the dashboard was opened ("a realistic historical foundation"),
+ * so every figure on it was partly invented. Nothing is made up any more, and
+ * those rows (their ids start with "seed_") are removed the next time the
+ * dashboard is opened. Returns how many went.
  */
-async function ensureBaselineSeeded(): Promise<void> {
-  if (!isMongoConfigured()) return;
-  try {
-    const db = await getMongoDb();
-    if (!db) return;
-    const col = db.collection("analytics_events");
-    const count = await col.countDocuments();
-    if (count > 0) return; // Already has events
-
-    // Generate realistic historical seed for the past 7 days
-    const events: AnalyticsEvent[] = [];
-    const now = new Date();
-    const paths = [
-      "/",
-      "/blog",
-      "/blog/ace-nhs-nursing-band-5-interview-questions-star",
-      "/blog/executive-star-technique-competency-questions-guide",
-      "/blog/overcoming-presentation-anxiety-boardroom-pitch-strategies",
-      "/blog/civil-service-success-profiles-behaviours-level-7",
-      "/present",
-    ];
-
-    for (let i = 6; i >= 0; i--) {
-      const dayDate = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
-      const dateStr = dayDate.toISOString().split("T")[0];
-      const hitsForDay = 150 + (6 - i) * 60; // growing curve
-
-      for (let j = 0; j < hitsForDay; j++) {
-        const p = paths[Math.floor(Math.random() * paths.length)];
-        const isMobile = Math.random() < 0.58;
-        const channelRoll = Math.random();
-        const ch =
-          channelRoll < 0.54
-            ? "Google Organic Search"
-            : channelRoll < 0.76
-            ? "Direct Navigation"
-            : channelRoll < 0.9
-            ? "LinkedIn"
-            : "Reddit & Forums";
-
-        events.push({
-          id: `seed_${i}_${j}`,
-          path: p,
-          referrer: ch === "Google Organic Search" ? "https://www.google.co.uk/" : "",
-          channel: ch,
-          userAgent: isMobile ? "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0) Mobile" : "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-          device: isMobile ? "mobile" : "desktop",
-          visitorId: `seed_vis_${i}_${Math.floor(j / 3)}`,
-          timestamp: new Date(dayDate.getTime() + Math.random() * 86400000),
-          date: dateStr,
-        });
-      }
+const isSeeded = (e: { id?: unknown }) => typeof e.id === "string" && e.id.startsWith("seed_");
+export async function removeSeededEvents(): Promise<number> {
+  let removed = 0;
+  if (isMongoConfigured()) {
+    try {
+      const db = await getMongoDb();
+      if (db) removed += (await db.collection("analytics_events").deleteMany({ id: { $regex: "^seed_" } })).deletedCount ?? 0;
+    } catch (err) {
+      console.warn("[analytics] couldn't remove the invented events:", err);
     }
-
-    if (events.length > 0) {
-      await col.insertMany(events);
-      console.log(`[analytics] Seeded ${events.length} initial baseline events into MongoDB Atlas.`);
-    }
-  } catch (err) {
-    console.warn("[analytics] baseline seed error:", err);
   }
+  const local = loadLocalEvents();
+  const real = local.filter((e) => !isSeeded(e));
+  if (real.length !== local.length) {
+    saveLocalEvents(real);
+    removed += local.length - real.length;
+  }
+  return removed;
 }
 
 /**
@@ -224,9 +186,7 @@ async function ensureBaselineSeeded(): Promise<void> {
  */
 export async function getLiveAnalyticsSummary(): Promise<AnalyticsSummary> {
   const dbConnected = isMongoConfigured();
-  if (dbConnected) {
-    await ensureBaselineSeeded();
-  }
+  await removeSeededEvents();
 
   let events: AnalyticsEvent[] = [];
 
@@ -245,6 +205,7 @@ export async function getLiveAnalyticsSummary(): Promise<AnalyticsSummary> {
   if (events.length === 0) {
     events = loadLocalEvents();
   }
+  events = events.filter((e) => !isSeeded(e));
 
   const totalPageviews = events.length;
   const uniqueVisitorIds = new Set(events.map((e) => e.visitorId));
@@ -253,7 +214,8 @@ export async function getLiveAnalyticsSummary(): Promise<AnalyticsSummary> {
   // Active in the last 15 minutes
   const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000);
   const activeEvents = events.filter((e) => new Date(e.timestamp) >= fifteenMinsAgo);
-  const activeNow = Math.max(1, new Set(activeEvents.map((e) => e.visitorId)).size);
+  // The real count: nobody browsing is 0, not "1 active".
+  const activeNow = new Set(activeEvents.map((e) => e.visitorId)).size;
 
   // Today
   const todayStr = new Date().toISOString().split("T")[0];
@@ -366,13 +328,14 @@ export async function getLiveAnalyticsSummary(): Promise<AnalyticsSummary> {
     activeNow,
     todayPageviews,
     todayVisitors,
-    avgDurationSeconds: 198, // ~3m 18s
-    bounceRatePercent: 31.4,
+    // Neither is measured (only page views are recorded), so neither is given a number.
+    avgDurationSeconds: null,
+    bounceRatePercent: null,
     dailyStats,
     topPages,
     devices,
     channels,
-    isLive: true,
+    isLive: totalPageviews > 0,
     dbConnected,
     lastUpdated: new Date().toLocaleTimeString("en-GB"),
   };

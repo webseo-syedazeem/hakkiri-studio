@@ -46,3 +46,51 @@ export async function readJson<S extends z.ZodType>(req: Request, schema: S, opt
   if (!parsed.success) return { ok: false, response: NextResponse.json({ error: "bad-request", message: opts.message ?? "That couldn’t be saved. Check what you entered and try again." }, { status: 400 }) };
   return { ok: true, data: parsed.data };
 }
+
+const tooLarge = () => NextResponse.json({ error: "too-large", message: "That is too large to send." }, { status: 413 });
+
+/**
+ * The JSON of a body of at most `max` bytes, for a route that checks the
+ * shape itself and has its own words for "that isn't right". `json` is null
+ * when the body isn't JSON, which no schema accepts. Too large is the 413 to
+ * send back.
+ */
+export async function readJsonValue(req: Request, max = 64_000): Promise<{ ok: true; json: unknown } | { ok: false; response: Response }> {
+  const raw = await readCapped(req, max).catch(() => "");
+  if (raw === null) return { ok: false, response: tooLarge() };
+  try {
+    return { ok: true, json: JSON.parse(raw) };
+  } catch {
+    return { ok: true, json: null };
+  }
+}
+
+/**
+ * A form (with its uploaded files) of at most `max` bytes in all. The size is
+ * counted as the upload arrives and the upload is dropped the moment it goes
+ * over, so a huge file is never held in memory to be measured afterwards.
+ * `{ok: false}` carries the response: 413 when too large, 400 when it isn't
+ * a form at all.
+ */
+export async function readForm(req: Request, max: number, message = "That couldn’t be read. Try again."): Promise<Read<FormData>> {
+  const bad = () => ({ ok: false as const, response: NextResponse.json({ error: "bad-request", message }, { status: 400 }) });
+  const declared = Number(req.headers.get("content-length") ?? "");
+  if (Number.isFinite(declared) && declared > max) return { ok: false, response: tooLarge() };
+  if (!req.body) return bad();
+  let size = 0;
+  const counted = req.body.pipeThrough(
+    new TransformStream<Uint8Array, Uint8Array>({
+      transform(chunk, controller) {
+        size += chunk.byteLength;
+        if (size > max) controller.error(new Error("too large"));
+        else controller.enqueue(chunk);
+      },
+    }),
+  );
+  try {
+    const form = await new Response(counted, { headers: { "content-type": req.headers.get("content-type") ?? "" } }).formData();
+    return { ok: true, data: form };
+  } catch {
+    return size > max ? { ok: false, response: tooLarge() } : bad();
+  }
+}

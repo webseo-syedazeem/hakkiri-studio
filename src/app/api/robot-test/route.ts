@@ -1,22 +1,22 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { runAuditLogic } from "@/lib/robot-test/tester";
 import { adminDenied } from "@/lib/auth/admin";
+import { readJsonValue } from "@/lib/http/body";
 
 export const dynamic = "force-dynamic";
 
+const Body = z.object({ runIteration: z.number().int().min(1).max(100_000).optional() });
+
+/**
+ * GET and POST /api/robot-test: the robot tester's report, for administrators.
+ * No automated check is run (see lib/robot-test/tester.ts), so the report says
+ * so and carries no results. It used to return scores written into the code.
+ */
 export async function GET() {
   const denied = await adminDenied();
   if (denied) return denied;
-
-  try {
-    const report = runAuditLogic();
-    return NextResponse.json(report);
-  } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to generate robot test audit" },
-      { status: 500 }
-    );
-  }
+  return NextResponse.json(runAuditLogic());
 }
 
 export async function POST(req: Request) {
@@ -24,19 +24,9 @@ export async function POST(req: Request) {
   const denied = await adminDenied();
   if (denied) return denied;
 
-  let runIteration = 1;
-  try {
-    const body = await req.json();
-    runIteration = Number(body?.runIteration) || 1;
-  } catch {}
-
-  try {
-    const report = runAuditLogic(runIteration);
-    return NextResponse.json({ ok: true, report });
-  } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to run robot test audit" },
-      { status: 500 }
-    );
-  }
+  const sent = await readJsonValue(req, 1_000);
+  if (!sent.ok) return sent.response;
+  const parsed = Body.safeParse(sent.json ?? {});
+  const report = runAuditLogic(parsed.success ? (parsed.data.runIteration ?? 1) : 1);
+  return NextResponse.json({ ok: true, ran: false, report });
 }

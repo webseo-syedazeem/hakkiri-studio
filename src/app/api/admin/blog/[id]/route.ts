@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import { getBlogPostByIdAsync, saveBlogPostAsync, deleteBlogPostAsync } from "@/lib/blog/store";
 import type { BlogPost } from "@/lib/blog/types";
 import { slugify } from "@/lib/blog/seo";
+import { readJson } from "@/lib/http/body";
+import { POST_MAX_BYTES, PostBody } from "../schema";
 
 export const runtime = "nodejs";
 
@@ -44,13 +46,17 @@ export async function PUT(
       return NextResponse.json({ error: "Post not found" }, { status: 404 });
     }
 
-    const body = await req.json();
+    const read = await readJson(req, PostBody, { max: POST_MAX_BYTES, message: "That post couldn’t be saved. Check each field and try again." });
+    if (!read.ok) return read.response;
+    // The post keeps its own id: one sent in the request is not taken.
+    const { id: _sentId, author, ...body } = read.data;
     const title = (body.title || existing.title).trim();
     const slug = body.slug ? slugify(body.slug) : existing.slug;
 
     const updated: BlogPost = {
       ...existing,
       ...body,
+      author: { ...existing.author, ...(author ?? {}) },
       id,
       title,
       slug,

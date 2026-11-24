@@ -12,6 +12,7 @@ import { flushStorage } from "@/lib/storage/disk";
 import { guard } from "@/lib/usage/limits";
 import { withUsageContext } from "@/lib/usage/store";
 import { requireUser } from "@/lib/auth/require";
+import { readJsonValue } from "@/lib/http/body";
 
 export const runtime = "nodejs";
 
@@ -57,7 +58,9 @@ export async function POST(req: Request) {
   // Saving a session starts question writing in the background, so it is limited like the other session routes.
   const blocked = guard(req, "plan", { userId: user.id });
   if (blocked) return blocked;
-  const parsed = Body.safeParse(await req.json().catch(() => null));
+  const sent = await readJsonValue(req, 24_000);
+  if (!sent.ok) return sent.response;
+  const parsed = Body.safeParse(sent.json);
   if (!parsed.success) return NextResponse.json({ error: "bad-request", message: "That interview couldn’t be saved." }, { status: 400 });
   const body = parsed.data;
   let interview = (await getInterviewAsync(body.interviewId, user.id)) ?? getInterview(body.interviewId, user.id);

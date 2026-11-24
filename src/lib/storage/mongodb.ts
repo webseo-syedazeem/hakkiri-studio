@@ -12,10 +12,15 @@ declare global {
   var _mongoClientPromise: Promise<MongoClient> | undefined;
 }
 
-let clientPromise: Promise<MongoClient> | null = null;
+/**
+ * Unit tests stand an in-memory database in here (src/test/fake-mongo.ts), so
+ * the code paths that only run with a database can be tested without one.
+ * It is only ever read while tests are running.
+ */
+const testDb = (): Db | undefined => (process.env.VITEST ? (globalThis as unknown as { __hakkiriTestDb?: Db }).__hakkiriTestDb : undefined);
 
 export function isMongoConfigured(): boolean {
-  return !!process.env.MONGODB_URI;
+  return !!process.env.MONGODB_URI || !!testDb();
 }
 
 export async function getMongoClient(): Promise<MongoClient | null> {
@@ -37,6 +42,8 @@ export async function getMongoClient(): Promise<MongoClient | null> {
 }
 
 export async function getMongoDb(dbName = "hakkiri_studio"): Promise<Db | null> {
+  const fake = testDb();
+  if (fake) return fake;
   const client = await getMongoClient();
   if (!client) return null;
   return client.db(dbName);
@@ -97,6 +104,23 @@ export async function deleteFromMongo(collectionName: string, docId: string): Pr
     await col.deleteOne({ _id: docId as any });
   } catch (err) {
     console.warn(`[mongodb] delete error for ${collectionName}/${docId}:`, err instanceof Error ? err.message : err);
+  }
+}
+
+/**
+ * Deletes every document in a collection that matches a filter (one person's
+ * rows, or the files under one folder). Returns how many went.
+ */
+export async function deleteManyFromMongo(collectionName: string, filter: Record<string, unknown>): Promise<number> {
+  if (!isMongoConfigured()) return 0;
+  try {
+    const db = await getMongoDb();
+    if (!db) return 0;
+    const res = await db.collection(collectionName).deleteMany(filter);
+    return res.deletedCount ?? 0;
+  } catch (err) {
+    console.warn(`[mongodb] delete-many error for ${collectionName}:`, err instanceof Error ? err.message : err);
+    return 0;
   }
 }
 

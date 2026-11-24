@@ -1,10 +1,25 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Mark } from "@/components/brand/Mark";
 import { useAuth } from "@/lib/auth/AuthContext";
+import { safeNext } from "@/lib/auth/next";
+import { PASSWORD_MAX, PASSWORD_MIN, PASSWORD_RULE } from "@/lib/auth/password-rule";
+
+/** What went wrong with "Continue with Google", in words (the callback sends a code in the address). */
+const GOOGLE_ERRORS: Record<string, string> = {
+  google_not_configured: "Signing in with Google isn’t set up here yet. Use your email and password.",
+  invalid_state: "That sign-in had expired. Try again.",
+  google_cancelled: "Signing in with Google was cancelled.",
+  google_token_failed: "Signing in with Google didn’t work. Try again, or use your email and password.",
+  google_profile_failed: "Signing in with Google didn’t work. Try again, or use your email and password.",
+  google_failed: "Signing in with Google didn’t work. Try again, or use your email and password.",
+  no_email_provided: "Google didn’t give us an email address for that account.",
+  signup_closed: "Sign-up is by invitation at the moment. If you’ve been invited, use the email address your invitation was sent to.",
+  google_email_unverified: "Google hasn’t confirmed the email address on that account, so it can’t be used to sign in.",
+};
 
 export function AuthCard({ initialMode = "signin" }: { initialMode?: "signin" | "signup" }) {
   const router = useRouter();
@@ -16,6 +31,15 @@ export function AuthCard({ initialMode = "signin" }: { initialMode?: "signin" | 
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  /** Where the person was heading before they were asked to sign in: they are taken there, not to the public home page. */
+  const [next, setNext] = useState("/dashboard");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setNext(safeNext(params.get("next")));
+    const code = params.get("error");
+    if (code) setError(GOOGLE_ERRORS[code] ?? "Signing in didn’t work. Try again.");
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,7 +50,7 @@ export function AuthCard({ initialMode = "signin" }: { initialMode?: "signin" | 
       if (mode === "signin") {
         const res = await login(email, password);
         if (res.ok) {
-          router.push("/");
+          router.push(next);
           router.refresh();
         } else {
           setError(res.error ?? "Failed to sign in. Please verify your email and password.");
@@ -34,7 +58,7 @@ export function AuthCard({ initialMode = "signin" }: { initialMode?: "signin" | 
       } else {
         const res = await signup(email, password, name);
         if (res.ok) {
-          router.push("/");
+          router.push(next);
           router.refresh();
         } else {
           setError(res.error ?? "Failed to create account. Please try again.");
@@ -103,7 +127,7 @@ export function AuthCard({ initialMode = "signin" }: { initialMode?: "signin" | 
 
       {/* Error alert */}
       {error && (
-        <div className="mt-4 rounded-xl border border-red/20 bg-red/10 px-3.5 py-2.5 text-[13px] text-red-soft animate-fade-in">
+        <div role="alert" className="mt-4 rounded-xl border border-red/20 bg-red/10 px-3.5 py-2.5 text-[13px] text-red-soft animate-fade-in">
           {error}
         </div>
       )}
@@ -120,6 +144,8 @@ export function AuthCard({ initialMode = "signin" }: { initialMode?: "signin" | 
               type="text"
               required
               placeholder="e.g. Alex Morgan"
+              autoComplete="name"
+              maxLength={80}
               value={name}
               onChange={(e) => setName(e.target.value)}
               className={inputStyle}
@@ -155,8 +181,16 @@ export function AuthCard({ initialMode = "signin" }: { initialMode?: "signin" | 
             placeholder="••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            minLength={mode === "signup" ? PASSWORD_MIN : undefined}
+            maxLength={PASSWORD_MAX}
+            aria-describedby={mode === "signup" ? "auth-password-rule" : undefined}
             className={inputStyle}
           />
+          {mode === "signup" && (
+            <p id="auth-password-rule" className="mt-1.5 text-[12.5px] text-muted">
+              {PASSWORD_RULE}
+            </p>
+          )}
         </div>
 
         <button
@@ -211,13 +245,13 @@ export function AuthCard({ initialMode = "signin" }: { initialMode?: "signin" | 
         Continue with Google
       </button>
 
-      {/* Guest / Direct access link */}
+      {/* There is no guest access: every screen in the Studio needs an account. */}
       <div className="mt-6 text-center">
         <Link
           href="/"
-          className="inline-flex items-center gap-1 text-[13px] text-muted hover:text-blue-soft transition-all duration-200 hover:translate-x-0.5 underline-offset-4 hover:underline"
+          className="inline-flex items-center gap-1 text-[13px] text-muted hover:text-blue-soft transition-all duration-200 underline-offset-4 hover:underline"
         >
-          Skip for now · Continue to Studio as Guest →
+          ← Back to the home page
         </Link>
       </div>
     </div>

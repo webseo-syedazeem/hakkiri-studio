@@ -417,3 +417,92 @@ export async function getLead(email: string): Promise<Lead | null> {
 export async function saveLead(lead: Lead): Promise<Lead> {
   return saveDoc<Lead>(APPLY_COLLECTIONS.LEADS, lead.id, lead);
 }
+
+/* --------------------------------------------------------------------------
+   ONE PERSON'S DATA ("Download my data" and "Delete all my data")
+-------------------------------------------------------------------------- */
+
+/** Collections whose rows carry the owner's id. */
+const OWNED_COLLECTIONS = [
+  APPLY_COLLECTIONS.EVIDENCE,
+  APPLY_COLLECTIONS.CVS,
+  APPLY_COLLECTIONS.OUTPUTS,
+  APPLY_COLLECTIONS.JOBS,
+  APPLY_COLLECTIONS.MATCHES,
+  APPLY_COLLECTIONS.APPLICATIONS,
+  APPLY_COLLECTIONS.SENDS,
+] as const;
+/** Collections with one document per person, kept under their id. */
+const KEYED_COLLECTIONS = [APPLY_COLLECTIONS.PROFILES, APPLY_COLLECTIONS.VOICES, APPLY_COLLECTIONS.SETTINGS] as const;
+
+/** Removes every document that matches, from the database and from the local store. Returns how many went. */
+async function deleteWhere<T>(collectionName: string, mongoFilter: Record<string, unknown>, matches: (doc: T) => boolean): Promise<number> {
+  let gone = 0;
+  if (isMongoConfigured()) {
+    try {
+      const db = await getMongoDb();
+      if (db) gone += (await db.collection(collectionName).deleteMany(mongoFilter)).deletedCount ?? 0;
+    } catch (err) {
+      console.warn(`[apply_db] Mongo delete-many fallback for ${collectionName}:`, err);
+    }
+  }
+  const store = readFallback<T>(collectionName);
+  const keep: Record<string, T> = {};
+  let local = 0;
+  for (const [key, doc] of Object.entries(store)) {
+    if (matches(doc)) local++;
+    else keep[key] = doc;
+  }
+  if (local) writeFallback(collectionName, keep);
+  return gone + local;
+}
+
+/** The free-check records tied to a person: by their account, or by the address they unlocked a report with. */
+async function leadsAndAudits(userId: string, email?: string): Promise<{ leads: Lead[]; audits: Audit[] }> {
+  const address = email?.trim().toLowerCase();
+  const leads = await queryDocs<Lead>(APPLY_COLLECTIONS.LEADS, (l) => l.userId === userId || (!!address && l.email?.toLowerCase() === address));
+  const leadIds = new Set(leads.map((l) => l.id));
+  const audits = await queryDocs<Audit>(APPLY_COLLECTIONS.AUDITS, (a) => a.userId === userId || (!!a.unlockedBy && leadIds.has(a.unlockedBy)));
+  return { leads, audits };
+}
+
+/**
+ * Everything the Apply area and the free CV check hold for one person, by
+ * collection. Nothing is created by asking (a person with no settings saved
+ * gets no settings row).
+ */
+export async function exportApplyData(userId: string, email?: string): Promise<Record<string, unknown[]>> {
+  if (!userId) return {};
+  const out: Record<string, unknown[]> = {};
+  // A job saved before jobs carried an owner is found through the person's own applications.
+  out.jobs = await listJobs(userId);
+  for (const name of OWNED_COLLECTIONS) {
+    if (name === APPLY_COLLECTIONS.JOBS) continue;
+    // Evidence an earlier build invented and put into every account is not the person's: it is left out (and deleted with the rest).
+    out[name.replace(/^apply_/, "")] = name === APPLY_COLLECTIONS.EVIDENCE ? await listEvidence(userId) : await queryDocsByUser<{ userId?: string }>(name, userId);
+  }
+  for (const name of KEYED_COLLECTIONS) {
+    const doc = await getDoc<unknown>(name, userId);
+    out[name.replace(/^apply_/, "")] = doc ? [doc] : [];
+  }
+  const { leads, audits } = await leadsAndAudits(userId, email);
+  out.leads = leads.map(({ magicTokenHash: _hash, ...rest }) => rest);
+  out.audits = audits;
+  // The same download twice gives the same file: rows are listed by id, not in whatever order they were stored.
+  for (const rows of Object.values(out)) rows.sort((a, b) => String((a as { id?: string }).id ?? "").localeCompare(String((b as { id?: string }).id ?? "")));
+  return out;
+}
+
+/** Deletes all of that, from the database and from the local store. Returns how many documents went. */
+export async function deleteApplyData(userId: string, email?: string): Promise<number> {
+  if (!userId) return 0;
+  // Before anything goes: jobs with no owner yet are marked as this person's, so they are deleted with the rest.
+  await listJobs(userId);
+  const { leads, audits } = await leadsAndAudits(userId, email);
+  let gone = 0;
+  for (const name of OWNED_COLLECTIONS) gone += await deleteWhere<{ userId?: string }>(name, { userId }, (d) => d?.userId === userId);
+  for (const name of KEYED_COLLECTIONS) gone += (await getDoc(name, userId)) ? ((await deleteDoc(name, userId)) ? 1 : 0) : 0;
+  for (const a of audits) gone += (await deleteDoc(APPLY_COLLECTIONS.AUDITS, a.id)) ? 1 : 0;
+  for (const l of leads) gone += (await deleteDoc(APPLY_COLLECTIONS.LEADS, l.id)) ? 1 : 0;
+  return gone;
+}

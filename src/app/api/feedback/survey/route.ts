@@ -5,6 +5,8 @@ import { addSurveySubmission, recentSurveysAsync } from "@/lib/feedback/survey-s
 import { findMock, findMockAsync } from "@/lib/mocks/store";
 import { clientKey, rateLimited } from "@/lib/usage/limits";
 import { getCurrentUser } from "@/lib/auth/require";
+import { accountOf, noteVoucherClaim } from "@/lib/auth/user-db";
+import { readCapped } from "@/lib/http/body";
 
 export const runtime = "nodejs";
 
@@ -82,14 +84,24 @@ export async function POST(req: Request) {
 
   // 1. Enforce user authentication
   const user = await getCurrentUser();
-  if (!user) {
+  if (!user?.id) {
     return NextResponse.json(
       { error: "unauthorised", message: "Sign in required to claim the £15 beta voucher reward." },
       { status: 401 }
     );
   }
+  if (rateLimited(`survey:user:${user.id}`, 10, 60_000)) {
+    return NextResponse.json({ error: "slow-down" }, { status: 429 });
+  }
 
-  const json = await req.json().catch(() => null);
+  const raw = await readCapped(req, 64_000).catch(() => "");
+  if (raw === null) return NextResponse.json({ error: "too-large", message: "That is too long to send. Shorten your answers and try again." }, { status: 413 });
+  let json: unknown = null;
+  try {
+    json = JSON.parse(raw);
+  } catch {
+    /* not JSON: fails the check below */
+  }
   const parsed = Body.safeParse(json);
   if (!parsed.success) {
     return NextResponse.json(
@@ -130,12 +142,18 @@ export async function POST(req: Request) {
   // 3. Prevent duplicate submissions per session or email address
   const existingSurveys = await recentSurveysAsync(1000);
   const normalizedEmail = parsed.data.email.toLowerCase().trim();
-  const alreadyClaimed = existingSurveys.some(
-    (s) =>
-      s.mockId === parsed.data.mockId ||
-      s.email.toLowerCase().trim() === normalizedEmail ||
-      (user.email && s.email.toLowerCase().trim() === user.email.toLowerCase().trim())
-  );
+  // The account remembers that it has claimed, so deleting your data (which removes the survey answers
+  // and the address you gave) doesn't open a second claim.
+  const account = await accountOf(user.id);
+  const alreadyClaimed =
+    !!account?.voucherClaimedAt ||
+    existingSurveys.some(
+      (s) =>
+        s.userId === user.id ||
+        s.mockId === parsed.data.mockId ||
+        s.email.toLowerCase().trim() === normalizedEmail ||
+        (user.email && s.email.toLowerCase().trim() === user.email.toLowerCase().trim())
+    );
 
   if (alreadyClaimed) {
     return NextResponse.json(
@@ -147,7 +165,8 @@ export async function POST(req: Request) {
     );
   }
 
-  const submission = await addSurveySubmission(parsed.data);
+  const submission = await addSurveySubmission({ ...parsed.data, userId: user.id });
+  await noteVoucherClaim(user.id);
   return NextResponse.json({ ok: true, id: submission.id });
 }
 

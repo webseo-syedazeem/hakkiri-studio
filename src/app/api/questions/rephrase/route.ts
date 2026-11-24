@@ -4,13 +4,17 @@ import { aiConfig } from "@/lib/ai/config";
 import { callClaude, extractJson } from "@/lib/ai/providers/claude";
 import { callGemini } from "@/lib/ai/providers/gemini";
 import { mockAiEnabled } from "@/lib/ai/mock";
+import { requireUser } from "@/lib/auth/require";
+import { readJson } from "@/lib/http/body";
+import { guard } from "@/lib/usage/limits";
+import { setUsageContext } from "@/lib/usage/store";
 
 export const runtime = "nodejs";
 
 const Body = z.object({
   question: z.string().trim().min(3).max(400),
-  group: z.string().optional(),
-  hint: z.string().optional(),
+  group: z.string().max(40).optional(),
+  hint: z.string().max(400).optional(),
 });
 
 function fallbackRephrase(q: string): string {
@@ -150,15 +154,25 @@ function fallbackRephrase(q: string): string {
   return "Put simply: walk the interviewer through your personal thinking and decision-making on this topic, using a real-world example.";
 }
 
-/** POST /api/questions/rephrase: rephrases an interview question clearly and concisely */
+/**
+ * POST /api/questions/rephrase: rephrases an interview question clearly and concisely.
+ * It calls an AI service, so it is for signed-in people only, counted against
+ * their own allowance like every other AI route.
+ */
 export async function POST(req: Request) {
-  const json = await req.json().catch(() => null);
-  const parsed = Body.safeParse(json);
-  if (!parsed.success) {
-    return NextResponse.json({ error: "bad-request", message: "Question text is required." }, { status: 400 });
+  let user;
+  try {
+    user = await requireUser();
+  } catch (r) {
+    return r as Response;
   }
+  const blocked = guard(req, "ai", { inSession: true, userId: user.id });
+  if (blocked) return blocked;
+  setUsageContext({ userId: user.id, feature: "interview" });
 
-  const { question } = parsed.data;
+  const read = await readJson(req, Body, { max: 4_000, message: "Question text is required." });
+  if (!read.ok) return read.response;
+  const { question } = read.data;
 
   // If AI is disabled or keys not configured, return smart rule-based rephrase
   if (mockAiEnabled() || (!aiConfig.anthropicKey && !aiConfig.geminiKey)) {

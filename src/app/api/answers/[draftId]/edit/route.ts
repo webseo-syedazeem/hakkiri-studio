@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth/require";
 import { findAnswer, findAnswerAsync, saveAnswerAsync } from "@/lib/answers/store";
 import type { Word } from "@/lib/types";
+import { readJsonValue } from "@/lib/http/body";
 
 const Body = z.object({
   text: z.string().trim().min(1, "Answer text cannot be empty").max(10000),
@@ -25,8 +26,9 @@ export async function POST(
     return NextResponse.json({ error: "not-found", message: "Answer not found." }, { status: 404 });
   }
 
-  const json = await req.json().catch(() => null);
-  const parsed = Body.safeParse(json);
+  const sent = await readJsonValue(req, 40_000);
+  if (!sent.ok) return sent.response;
+  const parsed = Body.safeParse(sent.json);
   if (!parsed.success) {
     return NextResponse.json({ error: "bad-request", details: parsed.error.issues }, { status: 400 });
   }

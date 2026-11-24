@@ -5,6 +5,7 @@ import { getInterview, saveInterviewAsync } from "@/lib/interviews/store";
 import { PlanError, stopSession } from "@/lib/sessions/server";
 import { flushStorage } from "@/lib/storage/disk";
 import { requireUser } from "@/lib/auth/require";
+import { readJsonValue } from "@/lib/http/body";
 
 export const runtime = "nodejs";
 
@@ -28,7 +29,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ session
   }
 
   const { sessionId } = await params;
-  const parsed = Body.safeParse(await req.json().catch(() => null));
+  const sent = await readJsonValue(req, 16_000);
+  if (!sent.ok) return sent.response;
+  const parsed = Body.safeParse(sent.json);
   if (!parsed.success) return NextResponse.json({ error: "bad-request", message: "Your feedback couldn’t be saved. Try again." }, { status: 400 });
   try {
     await findMockAsync(sessionId, user.id);

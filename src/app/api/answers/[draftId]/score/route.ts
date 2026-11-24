@@ -40,7 +40,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ draftI
   if (blocked) return blocked;
 
   const { draftId } = await params;
-  const limited = guard(_req, "answer", { inSession: true });
+  const limited = guard(_req, "answer", { inSession: true, userId: user.id });
   if (limited) return limited;
   const draft = (await getDraftAsync(draftId)) ?? getDraft(draftId);
   if (draft && draft.userId !== user.id) {
@@ -99,7 +99,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ draftI
     });
     await saveAnswerAsync(answer, user.id);
     await recordAskedQuestionAsync(draft.sessionId, answer.questionId, user.id);
-    saveRecordings(answer.id, draft.audio ?? []);
+    saveRecordings(answer.id, draft.audio ?? [], user.id);
     await deleteDraftAsync(draft.id);
     await flushStorage();
     // The measured row comes back too, so a drill can show feedback straight away.

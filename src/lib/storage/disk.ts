@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { isMongoConfigured, saveToMongo, loadFromMongo, hydrateFromMongo } from "./mongodb";
+import { isMongoConfigured, saveToMongo, loadFromMongo, hydrateFromMongo, deleteFromMongo, deleteManyFromMongo } from "./mongodb";
 
 /**
  * Local saving for the prototype: JSON files and recordings in a
@@ -10,9 +10,10 @@ import { isMongoConfigured, saveToMongo, loadFromMongo, hydrateFromMongo } from 
  * "Data, privacy and security"); every store keeps the same functions, so
  * swapping this out won't touch the screens.
  *
- * Off in unit tests. Set HAKKIRI_DATA_DIR to keep the data somewhere else.
+ * Off in unit tests (a test that is about saving turns it on with
+ * HAKKIRI_SAVE=on). Set HAKKIRI_DATA_DIR to keep the data somewhere else.
  */
-const enabled = !process.env.VITEST && process.env.HAKKIRI_SAVE !== "off";
+const enabled = process.env.HAKKIRI_SAVE === "on" || (!process.env.VITEST && process.env.HAKKIRI_SAVE !== "off");
 /** True when files are being saved to disk (false in unit tests and with HAKKIRI_SAVE=off). */
 export const savingToDisk = enabled;
 
@@ -73,8 +74,32 @@ export async function loadJsonAsync<T>(name: string, fallback: T): Promise<T> {
   return loadJson<T>(name, fallback);
 }
 
-/** Writes to a temporary file first, so a crash mid-write never leaves a broken file. Also mirrors to MongoDB Atlas when configured. */
-export function saveJson(name: string, value: unknown) {
+/** A background write to the database that `flushStorage` waits for. */
+function track(p: Promise<unknown>) {
+  const tracked = p.catch(() => undefined).finally(() => pendingSaves.delete(tracked));
+  pendingSaves.add(tracked);
+}
+
+/** The name a file is kept under in the database's "files" collection. */
+const fileKey = (rel: string) => rel.replace(/[\/\\]/g, "_");
+
+/**
+ * Writes to a temporary file first, so a crash mid-write never leaves a broken file. Also mirrors to MongoDB Atlas when configured.
+ * `private`: readable by the server's own user only (accounts and sign-in sessions), and kept out of the database mirror.
+ */
+export function saveJson(name: string, value: unknown, opts: { private?: boolean } = {}) {
+  if (opts.private) {
+    if (!enabled) return;
+    try {
+      ensureDir(DIR);
+      const file = path.join(/*turbopackIgnore: true*/ DIR, name);
+      fs.writeFileSync(/*turbopackIgnore: true*/ `${file}.tmp`, JSON.stringify(value), { mode: 0o600 });
+      fs.renameSync(`${file}.tmp`, file);
+    } catch (err) {
+      console.warn(`[storage] couldn't save ${name}:`, err instanceof Error ? err.message : err);
+    }
+    return;
+  }
   if (isMongoConfigured()) {
     const p = saveToMongo("storage", name, value)
       .catch((err) => console.warn(`[storage] mongo save error for ${name}:`, err))
@@ -109,7 +134,7 @@ export function saveFile(rel: string, data: ArrayBuffer) {
   if (isMongoConfigured()) {
     try {
       const base64 = Buffer.from(data).toString("base64");
-      const p = saveToMongo("files", rel.replace(/[\/\\]/g, "_"), { rel, base64, at: new Date().toISOString() })
+      const p = saveToMongo("files", fileKey(rel), { rel, base64, at: new Date().toISOString() })
         .catch((err) => console.warn(`[storage] mongo saveFile error for ${rel}:`, err))
         .finally(() => pendingSaves.delete(p));
       pendingSaves.add(p);
@@ -151,7 +176,7 @@ export async function loadFileAsync(rel: string): Promise<ArrayBuffer | null> {
   if (local) return local;
   if (isMongoConfigured()) {
     try {
-      const doc = await loadFromMongo<{ rel: string; base64: string }>("files", rel.replace(/[\/\\]/g, "_"));
+      const doc = await loadFromMongo<{ rel: string; base64: string }>("files", fileKey(rel));
       if (doc?.base64) {
         const buf = Buffer.from(doc.base64, "base64");
         saveFile(rel, buf.buffer);
@@ -165,6 +190,8 @@ export async function loadFileAsync(rel: string): Promise<ArrayBuffer | null> {
 }
 
 export function removeFile(rel: string) {
+  // The database keeps a copy of each saved file: that goes too, or "deleted" audio would still be there.
+  if (isMongoConfigured()) track(deleteFromMongo("files", fileKey(rel)));
   if (!enabled) return;
   try {
     const resolvedDir = path.resolve(/*turbopackIgnore: true*/ DIR);
@@ -189,8 +216,13 @@ export function fileTime(rel: string): Date | null {
   }
 }
 
-/** Deletes a folder in the data folder and everything in it ("Delete all my data"). */
+/** Deletes a folder in the data folder and everything in it ("Delete all my data"), on disk and in the database's copy. */
 export function removeDir(rel: string) {
+  const clean = rel.replace(/[\/\\]+$/, "");
+  if (isMongoConfigured() && clean && !clean.includes("..")) {
+    const prefix = `${clean}/`.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    track(deleteManyFromMongo("files", { "data.rel": { $regex: `^${prefix}` } }));
+  }
   if (!enabled) return;
   try {
     fs.rmSync(/*turbopackIgnore: true*/ path.join(/*turbopackIgnore: true*/ DIR, rel), { recursive: true, force: true });

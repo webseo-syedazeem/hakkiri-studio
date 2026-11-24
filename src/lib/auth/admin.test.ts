@@ -191,7 +191,8 @@ describe("the request gate", () => {
     for (const path of ["/admin", "/admin/database", "/admin/blog"]) {
       const res = visit(path);
       expect(res.status, path).toBe(307);
-      expect(res.headers.get("location")).toBe("http://localhost/login");
+      // To sign in, and then on to the page that was asked for.
+      expect(res.headers.get("location")).toBe(`http://localhost/login?next=${encodeURIComponent(path)}`);
     }
   });
 
