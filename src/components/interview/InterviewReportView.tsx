@@ -663,10 +663,50 @@ export function InterviewReportView(p: InterviewReportViewProps) {
               <button
                 type="button"
                 onClick={() => setSelectedFramework(null)}
-                className="rounded-lg p-1.5 text-muted hover:text-white hover:bg-white/[0.08] transition-colors"
+                className="rounded-lg p-1.5 text-muted hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer"
                 aria-label="Close"
               >
                 ✕
+              </button>
+            </div>
+
+            {/* Framework Switcher Tabs inside Modal */}
+            <div className="flex flex-wrap items-center gap-2 border-b border-white/[0.08] pb-3">
+              <button
+                type="button"
+                onClick={() => setSelectedFramework("star")}
+                className={clsx(
+                  "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer",
+                  selectedFramework === "star"
+                    ? "bg-blue text-white shadow-[0_0_12px_rgba(79,82,248,0.4)] font-bold"
+                    : "bg-white/[0.05] text-muted hover:text-white hover:bg-white/[0.1]"
+                )}
+              >
+                ⭐ STAR Method
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedFramework("prep")}
+                className={clsx(
+                  "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer",
+                  selectedFramework === "prep"
+                    ? "bg-blue text-white shadow-[0_0_12px_rgba(79,82,248,0.4)] font-bold"
+                    : "bg-white/[0.05] text-muted hover:text-white hover:bg-white/[0.1]"
+                )}
+              >
+                📝 PREP Framework
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedFramework("other")}
+                className={clsx(
+                  "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer",
+                  selectedFramework === "other"
+                    ? "bg-blue text-white shadow-[0_0_12px_rgba(79,82,248,0.4)] font-bold"
+                    : "bg-white/[0.05] text-muted hover:text-white hover:bg-white/[0.1]"
+                )}
+              >
+                🎯 Alternative Models (CARL, SOAR, CIRCLES)
               </button>
             </div>
 

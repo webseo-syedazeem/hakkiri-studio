@@ -14,7 +14,7 @@ export default function robots(): MetadataRoute.Robots {
           "/interviews/",
           "/interview-examples/",
           "/presentations/",
-          "/practice",
+          "/practice/",
           "/rehearse/",
           "/mock/",
           "/qa/",
