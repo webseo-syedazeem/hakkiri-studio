@@ -9,6 +9,7 @@ import { pastedDocument, readDocument, type ReadDoc } from "./read-docs";
 import { CalendarPopup, TimePickerPopup } from "./DatePicker";
 import { DraftStorageModal } from "./DraftStorageModal";
 import { buildRequest, focusMix, hasDraftContent, mixLine, roundsSelected as existingRounds, setupProblems, type SetupForm } from "@/lib/interviews/setup-form";
+import { formatStageDate } from "@/lib/format";
 
 /* ------------------------------------------------------------------ DocField (exported for RebuildFlow) */
 export function DocField({
@@ -1389,7 +1390,7 @@ export function InterviewSetup() {
                                   <span className="text-[10px] text-dim font-medium uppercase tracking-wider">Date</span>
                                   <Icon name="cal" size={13} className={stg.date ? "text-blue-soft shrink-0" : "text-muted/60 shrink-0"} />
                                   <span className={clsx("text-xs whitespace-nowrap", stg.date ? "font-semibold text-ink" : "text-muted/70 font-normal")}>
-                                    {stg.date || "Date (optional)"}
+                                    {stg.date ? formatStageDate(stg.date) : "Date (optional)"}
                                   </span>
                                 </button>
 
@@ -2145,7 +2146,7 @@ export function InterviewSetup() {
                           )}
                           {stg.status === "next" && (
                             <span className="text-muted font-medium">
-                              {stg.date}{stg.time ? `, ${stg.time}` : ""}
+                              {formatStageDate(stg.date, stg.time) || "Scheduled"}
                             </span>
                           )}
                           {stg.status === "not_scheduled" && (

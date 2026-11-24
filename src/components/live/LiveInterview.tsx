@@ -202,6 +202,7 @@ export function LiveInterview(p: LiveInterviewProps) {
   const toggleChecklist = (key: string) => setChecklist((prev) => ({ ...prev, [key]: !prev[key] }));
   const [introInfo, setIntroInfo] = useState<FullInterviewIntroResult | null>(null);
   const [speakingIntro, setSpeakingIntro] = useState(false);
+  const [isStarting, setIsStarting] = useState(false);
   const [, tick] = useState(0);
   const voice = useRef<{ cancel: () => void } | null>(null);
   /** Bumped to abandon a question that's still being asked (e.g. the interview ended). */
@@ -575,6 +576,7 @@ export function LiveInterview(p: LiveInterviewProps) {
   }, [mic, skip, turn.kind, moveOn]);
 
   const finish = useCallback(async () => {
+    if (phase === "thinking" || phase === "scoring" || phase === "finishing") return;
     voice.current?.cancel();
     const seconds = mic.elapsed;
     const audio = await mic.stop();
@@ -734,8 +736,13 @@ export function LiveInterview(p: LiveInterviewProps) {
   }, [ask, asked]);
 
   const start = useCallback(async () => {
+    if (isStarting) return;
+    setIsStarting(true);
     // Ask for the microphone first, so the permission prompt doesn't cut into the question.
-    if (!(await mic.prime())) return fail(MIC_BLOCKED, "mic");
+    if (!(await mic.prime())) {
+      setIsStarting(false);
+      return fail(MIC_BLOCKED, "mic");
+    }
     setProblem(null);
     if (!begun.current) {
       begun.current = true;
@@ -759,7 +766,8 @@ export function LiveInterview(p: LiveInterviewProps) {
     } else {
       askMain(q);
     }
-  }, [mic, fail, isRun, session?.mode, session?.minutes, qIndex, name, p.interviewer.title, p.heading, style, askMain, q]);
+    setIsStarting(false);
+  }, [isStarting, mic, fail, isRun, session?.mode, session?.minutes, qIndex, name, p.interviewer.title, p.heading, style, askMain, q]);
 
   /** Drill: on to the next question after its feedback. */
   const afterFeedback = useCallback(() => {
@@ -1228,11 +1236,19 @@ export function LiveInterview(p: LiveInterviewProps) {
               <div className="flex items-center gap-3">
                 <button
                   type="button"
+                  disabled={isStarting}
                   onClick={() => void start()}
-                  className="group flex items-center gap-2.5 rounded-xl bg-gradient-to-r from-[#4f52f8] via-[#5c5ffc] to-[#6d5eff] hover:from-[#5b5efd] hover:to-[#7b6dff] px-7 py-3 text-sm font-semibold text-white border border-white/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.3),0_6px_25px_-2px_rgba(79,82,248,0.55)] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_8px_32px_-2px_rgba(79,82,248,0.75)] transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] cursor-pointer"
+                  className={clsx(
+                    "group flex items-center gap-2.5 rounded-xl bg-gradient-to-r from-[#4f52f8] via-[#5c5ffc] to-[#6d5eff] hover:from-[#5b5efd] hover:to-[#7b6dff] px-7 py-3 text-sm font-semibold text-white border border-white/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.3),0_6px_25px_-2px_rgba(79,82,248,0.55)] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_8px_32px_-2px_rgba(79,82,248,0.75)] transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] cursor-pointer",
+                    isStarting && "opacity-80 pointer-events-none cursor-wait"
+                  )}
                 >
-                  <Icon name="mic" size={17} strokeWidth={2.2} className="group-hover:scale-110 transition-transform duration-200" />
-                  <span>{begun.current ? "Carry on" : queue.length === 1 || session?.mode === "drill" || !isRun ? "Start practice" : "Start interview"}</span>
+                  {isStarting ? (
+                    <span className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin shrink-0" />
+                  ) : (
+                    <Icon name="mic" size={17} strokeWidth={2.2} className="group-hover:scale-110 transition-transform duration-200" />
+                  )}
+                  <span>{isStarting ? "Starting..." : begun.current ? "Carry on" : queue.length === 1 || session?.mode === "drill" || !isRun ? "Start practice" : "Start interview"}</span>
                 </button>
               </div>
             </div>
@@ -1607,10 +1623,14 @@ export function LiveInterview(p: LiveInterviewProps) {
                     {feedback?.last ? "See your summary" : "Next question →"}
                   </Button>
                 ) : phase === "thinking" || phase === "scoring" || phase === "finishing" ? (
-                  <Button variant="primary" className="px-6 rounded-xl font-semibold text-xs" disabled>
-                    <Icon name="repeat" size={14} className="animate-spin" />
-                    <span>{phase === "thinking" ? "One moment…" : phase === "finishing" ? "Writing your report…" : "Scoring answers…"}</span>
-                  </Button>
+                  <button
+                    type="button"
+                    disabled
+                    className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#4f52f8] via-[#5c5ffc] to-[#6d5eff] opacity-80 pointer-events-none px-6 py-2.5 text-xs font-semibold text-white border border-white/20 shadow-[0_4px_20px_rgba(79,82,248,0.45)] cursor-wait"
+                  >
+                    <span className="h-3.5 w-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin shrink-0" />
+                    <span>{phase === "thinking" ? "Analyzing answer..." : phase === "finishing" ? "Writing your report…" : "Scoring answers…"}</span>
+                  </button>
                 ) : phase === "error" ? (
                   problem?.stage === "mic" ? (
                     <>
@@ -1698,7 +1718,7 @@ export function LiveInterview(p: LiveInterviewProps) {
                     <button
                       type="button"
                       onClick={() => void finish()}
-                      className="group flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#4f52f8] via-[#5c5ffc] to-[#6d5eff] hover:from-[#5b5efd] hover:to-[#7b6dff] px-6 py-2.5 text-xs font-semibold text-white border border-white/20 shadow-[0_4px_20px_rgba(79,82,248,0.45)] hover:shadow-[0_6px_26px_rgba(79,82,248,0.7)] transition-all cursor-pointer"
+                      className="group flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#4f52f8] via-[#5c5ffc] to-[#6d5eff] hover:from-[#5b5efd] hover:to-[#7b6dff] px-6 py-2.5 text-xs font-semibold text-white border border-white/20 shadow-[0_4px_20px_rgba(79,82,248,0.45)] hover:shadow-[0_6px_26px_rgba(79,82,248,0.7)] transition-all cursor-pointer active:scale-[0.98]"
                     >
                       <Icon name="check" size={15} strokeWidth={2.4} className="group-hover:scale-110 transition-transform" />
                       <span>Finish answer</span>

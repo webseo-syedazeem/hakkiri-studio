@@ -80,7 +80,7 @@ export function Rail({
 
   const isUserAdmin = !!authUser?.isAdmin;
   const visibleItems = ITEMS.filter(
-    (it) => it.href !== "/robot-test" || isUserAdmin
+    (it) => (it.href !== "/robot-test" && it.href !== "/cv") || isUserAdmin
   );
 
   return (

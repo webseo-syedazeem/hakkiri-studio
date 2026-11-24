@@ -7,7 +7,7 @@ import { PRESETS, settingsOr } from "@/lib/interviews/settings";
 import { interviewWhen, sessionTitle } from "@/lib/sessions/labels";
 import { DRILL_TOPICS, getTopicsForInterview } from "@/lib/sessions/topics";
 import { isFresh, listMocksAsync, rowsForAsync } from "@/lib/mocks/store";
-import { categoryScores, mockScore } from "@/lib/mocks/report";
+import { categoryScores, mockScore, type MockRow } from "@/lib/mocks/report";
 import { overviewCategories } from "@/lib/sessions/overview";
 import { formatStageDate, whenSaid } from "@/lib/format";
 import { requirePageUser } from "@/lib/auth/require";
@@ -102,23 +102,29 @@ export default async function InterviewOverview({
   const initialStageId = initialStage.id;
 
   const mockSessions = (await listMocksAsync(interview.id, user.id)).filter((m) => m.status !== "planned");
-  const recentSessions: OverviewPracticeItem[] = await Promise.all(
+  const sessionRowsMap = new Map<string, MockRow[]>();
+  await Promise.all(
     mockSessions.map(async (m) => {
       const rows = await rowsForAsync(m, user.id);
-      const score = mockScore(rows);
-      return {
-        id: m.id,
-        title: sessionTitle(m, interview),
-        dateText: whenSaid(m.startedAt),
-        score: score != null ? Number(score.toFixed(1)) : null,
-        href: `/interviews/${interview.id}/mocks/${m.id}`,
-      };
+      sessionRowsMap.set(m.id, rows);
     })
   );
 
+  const recentSessions: OverviewPracticeItem[] = mockSessions.map((m) => {
+    const rows = sessionRowsMap.get(m.id) ?? [];
+    const score = mockScore(rows);
+    return {
+      id: m.id,
+      title: sessionTitle(m, interview),
+      dateText: whenSaid(m.startedAt),
+      score: score != null ? Number(score.toFixed(1)) : null,
+      href: `/interviews/${interview.id}/mocks/${m.id}`,
+    };
+  });
+
   // Category scores from this person's own interviews with new questions, newest first. Empty until one is scored.
   const fresh = mockSessions.filter((m) => m.status === "done" && isFresh(m)).sort((a, b) => Date.parse(b.startedAt) - Date.parse(a.startedAt));
-  const freshCategoryScores = await Promise.all(fresh.map(async (m) => categoryScores(await rowsForAsync(m, user.id))));
+  const freshCategoryScores = fresh.map((m) => categoryScores(sessionRowsMap.get(m.id) ?? []));
   const scoreCategories: OverviewScoreCategory[] = overviewCategories(freshCategoryScores, u.technicalLabel).map((c) => ({ name: c.name, score: c.score, delta: c.delta }));
 
   const roleSummary = `${u.role}, ${u.level.toLowerCase()}: ${u.field}`;

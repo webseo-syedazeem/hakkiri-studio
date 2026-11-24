@@ -254,6 +254,9 @@ export function rowsFor(m: MockRecord, userId: string): MockRow[] {
 }
 
 export async function rowsForAsync(m: MockRecord, userId: string): Promise<MockRow[]> {
+  if (m.rows && m.rows.length > 0 && (!m.answerIds || m.answerIds.length === 0 || m.rows.length >= m.answerIds.length)) {
+    return m.rows.map((r, k) => ({ ...r, number: k + 1 }));
+  }
   const interview = (await getInterviewAsync(m.interviewId, userId)) ?? getInterview(m.interviewId, userId);
   const fromAnswers = (
     await Promise.all(

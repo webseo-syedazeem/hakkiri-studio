@@ -17,19 +17,29 @@ function usePlan(interviewId: string, micOk: boolean) {
   const [busy, setBusy] = useState(false);
   const [slow, setSlow] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Pre-warm the target routes for instant navigation
+  useEffect(() => {
+    router.prefetch(`/mock/${interviewId}`);
+    router.prefetch("/mic-check");
+  }, [router, interviewId]);
+
   useEffect(() => {
     if (!busy) return setSlow(false);
     const t = setTimeout(() => setSlow(true), 1500);
     return () => clearTimeout(t);
   }, [busy]);
+
   async function plan(body: PlanBody) {
+    if (busy) return;
     setBusy(true);
     setError(null);
     try {
       const res = await fetch(`/api/interviews/${interviewId}/sessions`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
       const json = (await res.json().catch(() => ({}))) as { href?: string; message?: string };
       if (!res.ok || !json.href) throw new Error(json.message ?? "That couldn’t be started. Try again.");
-      router.push(micOk ? json.href : `/mic-check?next=${encodeURIComponent(json.href)}`);
+      const dest = micOk ? json.href : `/mic-check?next=${encodeURIComponent(json.href)}`;
+      router.push(dest);
     } catch (err) {
       setError(err instanceof Error ? err.message : "That couldn’t be started. Try again.");
       setBusy(false);
@@ -65,10 +75,24 @@ export function StartButton({
         variant={variant}
         size={size}
         disabled={busy}
-        onClick={() => void plan(body)}
-        className={clsx("w-full cursor-pointer", buttonClassName)}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (busy) return;
+          void plan(body);
+        }}
+        className={clsx(
+          "w-full cursor-pointer select-none transition-all duration-150 active:scale-[0.98]",
+          busy && "opacity-80 pointer-events-none cursor-wait",
+          buttonClassName,
+        )}
       >
-        {busy ? (slow && body.kind !== "rerun" ? "Writing your questions…" : "Starting…") : children}
+        {busy ? (
+          <span className="inline-flex items-center gap-2">
+            <span className="h-3 w-3 rounded-full border-2 border-white/30 border-t-white animate-spin shrink-0" />
+            <span>{slow && body.kind !== "rerun" ? "Writing your questions…" : "Starting…"}</span>
+          </span>
+        ) : children}
       </Button>
       {error && (
         <span role="alert" className="max-w-[320px] text-right text-xs text-red-soft">
