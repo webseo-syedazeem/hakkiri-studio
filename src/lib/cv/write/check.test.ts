@@ -125,6 +125,13 @@ describe("a draft adds nothing to the person's words", () => {
     expect(same("cut lead costs 18%", "Cut average cost per lead by 18%")).toBe(true);
     expect(same("in 2021", "Aug 2021 – Aug 2023")).toBe(true);
     expect(same("12 engineers", "12 contractors")).toBe(false);
+    // A figure that counts nothing does not back one that does: the "2" of a degree's "2:1" is not two of anything.
+    const at = (a: string, b: string, key: string) => countsTheSame(a, figures(a)[0], b, figures(b).find((g) => g.key === key)!);
+    expect(at("I manage two junior executives", "BA (Hons) · History · Example University · 2018 – 2021 · 2:1", "2")).toBe(false);
+    expect(at("12 volunteers", "Page 12", "12")).toBe(false);
+    // A bare figure in a line that is about the same thing still backs it.
+    expect(at("12 volunteers", "Volunteers recruited and trained · 12", "12")).toBe(true);
+    expect(at("two junior executives", "Junior executives line-managed: 2", "2")).toBe(true);
   });
 
   it("refuses a figure they never gave", () => {

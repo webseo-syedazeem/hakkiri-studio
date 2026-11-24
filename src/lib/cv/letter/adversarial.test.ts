@@ -84,6 +84,18 @@ describe("invented sentences are refused", () => {
     expect(status("I trained volunteers for 4 years.")).toBe("unsupported");
   });
 
+  it("a count is not backed by a figure that counts nothing, such as the “2” of a degree's “2:1”", () => {
+    // Found by the browser walk: with "2:1" on the CV, "I manage two junior executives" passed against a line that
+    // says three, so "It still holds" was offered when the line changed.
+    const cv = cvWith(["Manage three junior executives and review their weekly reports"], "I want this role because I like museums.");
+    const edu = cv.sections.find((s) => s.kind === "education");
+    if (edu?.kind === "education") edu.entries[0] = { ...edu.entries[0], grade: "2:1" } as typeof edu.entries[0];
+    const withGrade = poolOf(cv, NOW);
+    expect(status("I manage two junior executives.", withGrade)).toBe("unsupported");
+    expect(status("I manage 2 junior executives.", withGrade)).toBe("unsupported");
+    expect(status("I manage three junior executives.", withGrade)).toBe("sourced");
+  });
+
   it.each([
     // What the advert asks for, said as the person's own.
     "I am a confident user of collections management systems.",

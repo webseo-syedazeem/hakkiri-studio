@@ -342,7 +342,10 @@ export function countedPhrase(text: string, f: Figure): string {
  * Whether a figure in a draft counts the same thing as the same figure in a
  * source. "1,200 volunteers" is not backed by "1,200 objects", and "12
  * engineers" is not backed by "5 engineers and 12 contractors". A year, and a
- * figure with nothing said about what it counts, cannot disagree.
+ * figure with nothing said about what it counts, cannot disagree. But a draft
+ * that says what its figure counts is not backed by a bare figure that counts
+ * nothing ("2" in a degree's "2:1", a page number): only by a line that holds
+ * what it counts.
  */
 export function countsTheSame(draft: string, f: Figure, source: string, g: Figure): boolean {
   if (isYear(f)) return true;
@@ -358,7 +361,11 @@ export function countsTheSame(draft: string, f: Figure, source: string, g: Figur
   if (d.after.length && TIME_UNITS.has(d.after[0]) && s.after.length) return s.after[0] === d.after[0];
   if (d.after.length) {
     if (s.after.length) return d.after.every((x) => s.after.includes(x));
-    return !s.before.length || d.after.some((x) => s.before.includes(x));
+    if (s.before.length) return d.after.some((x) => s.before.includes(x));
+    // The source's figure stands on its own ("2:1", "Level 2"). It backs "two junior executives" only if the line
+    // itself is about junior executives.
+    const holds = new Set(terms(source).map((t) => t.stem));
+    return d.after.every((x) => holds.has(x));
   }
   if (!d.before.length) return true;
   const theirs = [...s.after, ...s.before];
