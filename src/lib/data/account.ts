@@ -59,8 +59,8 @@ data.json holds everything Hakkiri keeps about you:
 recordings/ holds the audio of your answers that is still kept
 (see "Keep recordings for" in Settings).
 
-cvs.json holds your CVs and, for each CV you uploaded, the text that was
-read from the file (the file itself is never kept).
+cvs.json holds your CVs, your saved achievements and, for each CV you
+uploaded, the text that was read from the file (the file itself is never kept).
 `;
 
 /** A zip of everything: data.json, a README, and the recordings (scoped to user if userId provided). */

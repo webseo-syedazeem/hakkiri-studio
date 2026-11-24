@@ -2,7 +2,7 @@ import "server-only";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth/require";
-import { type CvDoc, CV_LEVELS, CV_REGIONS, ContactSchema, DesignSchema, SectionSchema, TargetSchema, coreSections, emptyContact, newId } from "./schema";
+import { type CvDoc, CV_LEVELS, CV_REGIONS, ContactSchema, DesignSchema, ExcerptSchema, SectionSchema, TargetSchema, coreSections, emptyContact, newId } from "./schema";
 
 /** The signed-in person's id. Throws the same 401 response as requireUser when signed out. */
 export async function requireUserId(): Promise<string> {
@@ -63,6 +63,19 @@ export const EditableSchema = z
 
 /** Every section id in a change must be different. */
 export const sectionIdsDiffer = (sections: { id: string }[] = []) => new Set(sections.map((s) => s.id)).size === sections.length;
+
+/** What the browser may set on a saved achievement. The owner, the id and the dates are never taken from it. */
+export const AchievementInput = z
+  .object({
+    text: oneLine(600),
+    original: z.string().max(8000).default(""),
+    sources: z.array(ExcerptSchema).max(8).default([]),
+    role: oneLine(160).default(""),
+    org: oneLine(160).default(""),
+    skills: z.array(oneLine(80)).max(12).default([]),
+    private: z.boolean().default(false),
+  })
+  .strict();
 
 export const newCvId = () => newId("cv_").slice(0, 19);
 

@@ -5,9 +5,10 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { diffParts, fieldFor, formTabs, itemCount, snapshotOf, switchOff, tabFor } from "@/lib/cv/edit";
 import { fitToPages } from "@/lib/cv/render/layout";
-import { type CvSummary, type Locator, type Section, type SectionKind, cvIsEmpty, emptySection } from "@/lib/cv/schema";
+import { type CvSummary, type Locator, type Section, type SectionKind, cvIsEmpty, emptySection, isEntrySection } from "@/lib/cv/schema";
 import { OPTIONAL_KINDS, SECTION_DEFS, docWord, sectionHeading } from "@/lib/cv/sections";
 import { Switch } from "./Arrange";
+import { BulletHelp } from "./Assist";
 import { api, messageOf } from "./client";
 import { Dialog, usePanel } from "./Dialog";
 import { Finish } from "./Finish";
@@ -17,6 +18,7 @@ import { ACCEPT, STAGE_WORDS, type UploadStage, sendUpload } from "./upload";
 import { Announce, Bar, Btn, BtnLink, CvScreen, Field, Panel, Skeleton, Toolbar } from "./ui";
 import { SAVE_WORDS } from "./useCv";
 import { useWorkspace } from "./Workspace";
+import { ChooseAchievement, ProfileChooser, SkillSuggestions } from "./Writing";
 
 /**
  * The builder: the form on the left, the paper on the right. One section at a
@@ -27,7 +29,7 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
   const router = useRouter();
   const w = useWorkspace();
   const { cv, load, save, update, flush, retry, undo, redo, canUndo, canRedo, paper, focus, setFocus, openEntry, setOpenEntry, view, setView, wanted } = w;
-  const { panel, open: openPanel, close: closePanel } = usePanel();
+  const { panel, item, open: openPanel, close: closePanel } = usePanel();
   const [pending, setPending] = useState("");
   const [stage, setStage] = useState<UploadStage | "">("");
   const [problem, setProblem] = useState("");
@@ -177,7 +179,23 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
     }
   }
 
-  const hooks = (sectionId: string): FieldHooks => ({ onFocus: (entry, field) => setFocus({ section: sectionId, entry: entry || undefined, field }) });
+  const hooks = (sectionId: string): FieldHooks => ({
+    onFocus: (entry, field) => setFocus({ section: sectionId, entry: entry || undefined, field }),
+    // The writing help for one bullet opens in place of the paper.
+    onHelp: (entry, bullet) => {
+      w.setInspect({ section: sectionId, entry, field: bullet });
+      setView("paper");
+    },
+    entryTools: (entry) => (
+      <div className="cv-row" style={{ gap: 8 }}>
+        <BtnLink href={`/cv/v/${cv.id}/capture/${entry.id}`} onClick={() => void flush()}>
+          Tell me what you did
+        </BtnLink>
+        <Btn onClick={() => openPanel("choose-achievement", { item: entry.id })}>Use a saved achievement</Btn>
+      </div>
+    ),
+  });
+  const chosenEntry = panel === "choose-achievement" ? cv.sections.flatMap((s) => (isEntrySection(s) ? s.entries.map((e) => ({ entry: e, sectionId: s.id })) : [])).find((x) => x.entry.id === item) : undefined;
   const fit = panel === "page-overflow" && paper ? fitToPages(cv, paper.fonts, cv.design.pageTarget) : null;
   const diff = panel === "save-conflict" && w.other ? diffParts(snapshotOf(cv), snapshotOf(w.other)) : [];
 
@@ -321,8 +339,19 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
                   </div>
                 )}
                 <SectionForm key={tab.section.id} section={tab.section} onChange={setSection} region={region} hooks={hooks(tab.section.id)} arrange openId={openEntry[tab.section.id]} onOpen={(id) => setOpenEntry(tab.section!.id, id)} />
+                {tab.section.kind === "experience" && (
+                  <div className="cv-panelfoot" style={{ justifyContent: "flex-start" }}>
+                    <BtnLink href={`/cv/v/${cv.id}/capture/new`} onClick={() => void flush()}>
+                      Start a role from notes
+                    </BtnLink>
+                    <small>Answer three questions in your own words, typed or spoken, and choose which lines to keep.</small>
+                  </div>
+                )}
+                {tab.section.kind === "summary" && <ProfileChooser section={tab.section} say={say} />}
               </Panel>
             ) : null}
+
+            {tab.section?.kind === "skills" && <SkillSuggestions section={tab.section} onShow={pick} />}
 
             {removed && (
               <p className="cv-note cv-row" role="status" style={{ marginTop: 12 }}>
@@ -341,7 +370,22 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
           </div>
 
           <aside className={view === "paper" ? "cv-sticky min-w-0" : "cv-sticky min-w-0 cv-wide"} aria-label="Paper">
+            {w.inspect && !isFinish ? (
+              <BulletHelp
+                say={say}
+                onEdit={() => {
+                  const at = w.inspect!;
+                  w.setInspect(null);
+                  pick(at);
+                }}
+              />
+            ) : (
             <PaperView paper={paper} state={w.state} retry={w.retry} cv={cv} focus={isFinish ? null : focus} onPick={pick} word={word}>
+              {w.previewProfile !== null && (
+                <div className="cv-note" style={{ marginBottom: 10 }} data-testid="profile-preview">
+                  Preview of your profile. It isn’t in your {word} yet.
+                </div>
+              )}
               {over && (
                 <div className="cv-note cv-row" style={{ marginBottom: 10 }} data-testid="over-target">
                   <span>
@@ -353,6 +397,7 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
                 </div>
               )}
             </PaperView>
+            )}
           </aside>
         </div>
         <Announce>{said || (save === "failed" || save === "device" || save === "conflict" ? SAVE_WORDS[save] : "")}</Announce>
@@ -370,6 +415,8 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
           </div>
         </Dialog>
       )}
+
+      {panel === "choose-achievement" && chosenEntry && <ChooseAchievement entry={chosenEntry.entry} sectionId={chosenEntry.sectionId} onClose={closePanel} say={say} />}
 
       {panel === "page-overflow" && (
         <Dialog title={`Fit to ${cv.design.pageTarget === 1 ? "one page" : "two pages"}`} onClose={closePanel} wide>

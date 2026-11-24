@@ -87,6 +87,7 @@ export function Dashboard() {
       <Bar crumbs={[{ label: "CVs and letters" }]} />
       <div className="cv-area">
         <Toolbar title="CVs and letters" subtitle="Build a CV from your own words, check it, and tailor a version for each job.">
+          <BtnLink href="/cv/bank">Achievements</BtnLink>
           <BtnLink kind="primary" href="/cv/new">
             New CV
           </BtnLink>
