@@ -330,7 +330,7 @@ export function Tailor() {
                       <h3>On your {word}</h3>
                       <div className="cv-row" style={{ gap: 6, marginTop: 6 }}>
                         {terms.filter((t) => t.matched).map((t) => (
-                          <button key={t.term} type="button" className="cv-chip cv-skillchip" aria-pressed={term === t.term} onClick={() => (setTerm(term === t.term ? "" : t.term), setPane("paper"))}>
+                          <button key={t.term} type="button" className="cv-chip cv-termchip" aria-pressed={term === t.term} onClick={() => (setTerm(term === t.term ? "" : t.term), setPane("paper"))}>
                             ✓ {t.term}
                           </button>
                         ))}

@@ -1,4 +1,5 @@
 import { fileBaseName } from "../render/filename";
+import { cannotDrawAdvice } from "../render/fonts";
 import { type Bullet, type CvDoc, type Entry, type Locator, type Section, cvIsEmpty, isEntrySection, isListSection, sectionIsEmpty } from "../schema";
 import { SECTION_DEFS, sectionHeading } from "../sections";
 import { figures, oneLine, stem, terms } from "../write/facts";
@@ -370,7 +371,37 @@ export function scoreCv(input: ScoreInput): Score {
   const base = fileBaseName({ contact: c, target: cv.target, region, design: cv.design });
   out["file-name"] = !ours ? unknown("The file’s name") : whole(!!c.fullName.trim() && base.length <= 80, { severity: "suggestion", at: { section: "finish" }, excerpt: base, reason: c.fullName.trim() ? "The file name is very long." : "With no name on it, the file would be called just “CV”.", action: c.fullName.trim() ? "Shorten it on the Finish tab." : "Add your name.", fix: "finish" });
   const boxes = input.missingGlyphs ?? [];
-  out["real-text"] = !ours ? unknown("Whether the text is real text") : whole(boxes.length === 0, { severity: "issue", at: { section: "finish" }, excerpt: boxes.join(" "), reason: `${boxes.length === 1 ? "This character" : "These characters"} can’t be drawn by the fonts and would print as empty boxes: ${boxes.join(" ")}`, action: "Replace them, or choose a different font pairing.", fix: "finish" });
+  if (!ours) out["real-text"] = unknown("Whether the text is real text");
+  else if (!boxes.length) out["real-text"] = whole(true, null);
+  else {
+    // Said on the field that holds them, so it is seen as they are typed, and not only at the moment of download.
+    const held = (t: string) => boxes.filter((b) => t.includes(b));
+    const places: { at: Locator; chars: string[] }[] = [];
+    const look = (at: Locator, t: string) => {
+      const chars = held(t ?? "");
+      if (chars.length) places.push({ at, chars });
+    };
+    look({ section: "contact", field: "fullName" }, c.fullName);
+    look({ section: "contact", field: "email" }, c.email);
+    look({ section: "contact", field: "phone" }, c.phone);
+    look({ section: "contact", field: "location" }, c.location);
+    look({ section: "contact", field: "links" }, c.links.join(" "));
+    if (summary && summary.kind === "summary" && summaryAt) look(summaryAt, summary.text);
+    for (const s of visibleSections) {
+      if (!isEntrySection(s)) continue;
+      for (const e of s.entries) {
+        if (!e.visible) continue;
+        look({ section: s.id, entry: e.id, field: "title" }, e.title);
+        look({ section: s.id, entry: e.id, field: "org" }, e.org);
+        for (const b of e.bullets) if (b.visible) look({ section: s.id, entry: e.id, field: b.id }, b.text);
+      }
+    }
+    const say = (chars: string[]) => `${chars.length === 1 ? "This character" : "These characters"} can’t be drawn by the fonts, so the PDF can’t be made with ${chars.length === 1 ? "it" : "them"}: ${chars.join(" ")}`;
+    const findings = places.length
+      ? places.slice(0, 6).map((p) => ({ severity: "issue" as const, at: p.at, excerpt: p.chars.join(" "), reason: say(p.chars), action: cannotDrawAdvice(p.chars) }))
+      : [{ severity: "issue" as const, at: { section: "finish" }, excerpt: boxes.join(" "), reason: say(boxes), action: cannotDrawAdvice(boxes), fix: "finish" as const }];
+    out["real-text"] = { state: "scored", passed: 0, total: 1, unit: "", findings };
+  }
   for (const [id, format, label] of [["pdf-readback", "pdf", "PDF"], ["docx-readback", "docx", "Word file"]] as const) {
     const state = input.files?.[format];
     out[id] =

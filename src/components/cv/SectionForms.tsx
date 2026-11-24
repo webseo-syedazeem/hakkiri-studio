@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { findDates } from "@/lib/cv/import/dates";
 import { type Bullet, type Contact, type CvRegion, type Entry, type EntrySection, type ListSection, type Section, type SkillGroup, type SkillsSection, type SummarySection, LIMITS, emptyEntry, newBullet, newId } from "@/lib/cv/schema";
 import { type FieldDef, SECTION_DEFS, fieldLabel, formatDate, formatDates } from "@/lib/cv/sections";
@@ -119,6 +119,36 @@ export function SummaryForm({ value, onChange, region, hooks }: { value: Summary
 /* --------------------------------------------------------------------- dates */
 
 /**
+ * After "+ Add bullet" (or a role, a qualification, a group of skills, a
+ * language) the cursor belongs in the new item, not on the button. Left on
+ * the button, the next words typed went nowhere and every Space pressed added
+ * another empty item.
+ *
+ * Call the function this returns with the new item's id as it is added. Once
+ * the item has been drawn, its first field is given the cursor.
+ */
+function useFocusNew(): (id: string) => void {
+  const wanted = useRef<{ id: string; at: number } | null>(null);
+  useEffect(() => {
+    const w = wanted.current;
+    if (!w) return;
+    // Asked for long ago and never drawn (the change was refused): forgotten, so it cannot take the cursor later.
+    if (Date.now() - w.at > 2000) {
+      wanted.current = null;
+      return;
+    }
+    // A role, a group or a list item is marked with data-entry; a bullet, which sits inside a role, with data-item.
+    const field = document.querySelector<HTMLElement>([`[data-entry="${w.id}"]`, `[data-item="${w.id}"]`].flatMap((box) => [`${box} textarea`, `${box} input:not([type="checkbox"]):not([type="hidden"])`]).join(", "));
+    if (!field) return;
+    wanted.current = null;
+    field.focus();
+  });
+  return (id: string) => {
+    wanted.current = { id, at: Date.now() };
+  };
+}
+
+/**
  * A month and year, typed the way people write them: "Mar 2021", "03/2021" or
  * just "2021". A year alone stays a year until the person gives the month.
  */
@@ -149,12 +179,13 @@ function DateField({ label, value, onChange, yearOnly, disabled, ...rest }: { la
 
 function BulletsEditor({ bullets, onChange, label, rule, hooks, entryId, arrange }: { bullets: Bullet[]; onChange: (b: Bullet[]) => void; label: string; rule: string; hooks?: FieldHooks; entryId: string; arrange?: boolean }) {
   const drag = useDragOrder(bullets, onChange);
+  const focusNew = useFocusNew();
   return (
     <div>
       <h3>{label}</h3>
       <small>{rule}</small>
       {bullets.map((b, i) => (
-        <div key={b.id} className="cv-item" data-off={!b.visible || undefined} {...(arrange ? drag.row(b.id) : {})}>
+        <div key={b.id} className="cv-item" data-item={b.id} data-off={!b.visible || undefined} {...(arrange ? drag.row(b.id) : {})}>
           {arrange && <Grip {...drag.grip(b.id)} />}
           <Field
             className="cv-item-main [&>label]:sr-only"
@@ -184,7 +215,15 @@ function BulletsEditor({ bullets, onChange, label, rule, hooks, entryId, arrange
           )}
         </div>
       ))}
-      <Btn style={{ marginTop: 10 }} disabled={bullets.length >= LIMITS.bullets} onClick={() => onChange([...bullets, newBullet("")])}>
+      <Btn
+        style={{ marginTop: 10 }}
+        disabled={bullets.length >= LIMITS.bullets}
+        onClick={() => {
+          const b = newBullet("");
+          focusNew(b.id);
+          onChange([...bullets, b]);
+        }}
+      >
         + Add bullet
       </Btn>
       {bullets.length >= LIMITS.bullets && <Full>A role holds {LIMITS.bullets} bullets. Remove one to add another: a reader takes in far fewer.</Full>}
@@ -283,8 +322,10 @@ export function EntriesForm({ value, onChange, region, hooks, expandAll, entryNo
     onOpen?.(id);
   };
   const drag = useDragOrder(value.entries, (entries) => onChange({ ...value, entries }));
+  const focusNew = useFocusNew();
   const add = () => {
     const e = emptyEntry();
+    focusNew(e.id);
     onChange({ ...value, entries: [...value.entries, e] });
     setOpen(e.id);
   };
@@ -429,7 +470,12 @@ function SkillGroupFields({ group, onChange, onRemove, hooks, controls, arrange 
 
 export function SkillsForm({ value, onChange, region, hooks, arrange }: { value: SkillsSection; onChange: (s: SkillsSection) => void; region: CvRegion; hooks?: FieldHooks; arrange?: boolean }) {
   const groups = value.groups;
-  const add = () => onChange({ ...value, groups: [...value.groups, { id: newId("g_"), name: "", visible: true, skills: [] }] });
+  const focusNew = useFocusNew();
+  const add = () => {
+    const g = { id: newId("g_"), name: "", visible: true, skills: [] };
+    focusNew(g.id);
+    onChange({ ...value, groups: [...value.groups, g] });
+  };
   const drag = useDragOrder(groups, (next) => onChange({ ...value, groups: next }));
   const set = (next: SkillGroup) => onChange({ ...value, groups: value.groups.map((x) => (x.id === next.id ? next : x)) });
   const remove = (id: string) => onChange({ ...value, groups: value.groups.filter((x) => x.id !== id) });
@@ -468,6 +514,7 @@ export function ListForm({ value, onChange, region, hooks, arrange }: { value: L
   const drag = useDragOrder(value.items, (items) => onChange({ ...value, items }));
   const set = (id: string, changes: Partial<ListSection["items"][number]>) => onChange({ ...value, items: value.items.map((x) => (x.id === id ? { ...x, ...changes } : x)) });
   const remove = (id: string) => onChange({ ...value, items: value.items.filter((x) => x.id !== id) });
+  const focusNew = useFocusNew();
   return (
     <div className="cv-pad cv-stack">
       <small>{SECTION_DEFS[value.kind].rule[region]}</small>
@@ -486,7 +533,14 @@ export function ListForm({ value, onChange, region, hooks, arrange }: { value: L
           )}
         </div>
       ))}
-      <Btn disabled={value.items.length >= LIMITS.items} onClick={() => onChange({ ...value, items: [...value.items, { id: newId("i_"), name: "", level: "", visible: true }] })}>
+      <Btn
+        disabled={value.items.length >= LIMITS.items}
+        onClick={() => {
+          const item = { id: newId("i_"), name: "", level: "", visible: true };
+          focusNew(item.id);
+          onChange({ ...value, items: [...value.items, item] });
+        }}
+      >
         + Add {noun}
       </Btn>
       {value.items.length >= LIMITS.items && <Full>This list holds {LIMITS.items}. Remove one to add another.</Full>}

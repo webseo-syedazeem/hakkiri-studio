@@ -149,6 +149,15 @@ export function yearsOfExperience(cv: Pick<CvDoc, "sections">, now: Date): numbe
   return years >= 1 ? years : undefined;
 }
 
+/** The role the dates show to be the latest: the current one, or the one that ended last. Roles with no dates cannot be placed. */
+export function latestRole<T extends { id: string; start: string; end: string; current: boolean }>(roles: T[]): T | undefined {
+  const month = (d: string) => Number(d.slice(0, 4)) * 12 + (d.length > 4 ? Number(d.slice(5, 7)) - 1 : 0);
+  const dated = roles.filter((e) => /^\d{4}/.test(e.start) || /^\d{4}/.test(e.end));
+  const ended = (e: T) => (e.current ? Infinity : month(/^\d{4}/.test(e.end) ? e.end : e.start));
+  const began = (e: T) => (/^\d{4}/.test(e.start) ? month(e.start) : month(e.end));
+  return [...dated].sort((a, b) => (ended(b) === ended(a) ? began(b) - began(a) : ended(b) > ended(a) ? 1 : -1))[0];
+}
+
 /** Everything on the CV that is switched on, as plain strings: what a profile may draw on. */
 export function visibleText(cv: Pick<CvDoc, "sections">): string[] {
   const out: string[] = [];
@@ -180,7 +189,10 @@ export function profilesByRule(cv: Printable, pick: { entryId?: string; skills: 
   const roles = visibleRoles(cv);
   const role = roles.find((e) => e.id === pick.entryId) ?? roles[0];
   if (!role || !role.title.trim()) return { versions: [] };
-  const years = yearsOfExperience(cv, now);
+  // The years, and the words "most recently", are said only of the role the dates show to be the latest. Of a role
+  // with no dates, or an earlier one, neither is known to be true: "7 years' experience, most recently at X" would
+  // then be a claim the CV does not make.
+  const years = latestRole(roles)?.id === role.id ? yearsOfExperience(cv, now) : undefined;
   const title = cap(role.title.trim());
   const org = role.org.trim();
   const skills = pick.skills.map((s) => s.trim()).filter(Boolean).slice(0, 4);

@@ -255,7 +255,7 @@ run("CV score", async (browser) => {
   await page.getByTestId("downloads").getByRole("link", { name: "Fern Example - CV.pdf" }).click();
   await page.waitForURL(/\/exports\/exp_/);
   await page.getByTestId("export-record").waitFor();
-  check(/has been changed since\. This page shows what you sent/.test(await page.getByTestId("record-changed").innerText()), "the record says the CV has changed since");
+  check(/has been changed since\. This page shows what you downloaded/.test(await page.getByTestId("record-changed").innerText()), "the record says the CV has changed since");
   await page.locator("svg.cv-paper text", { hasText: "Fern Example" }).first().waitFor({ timeout: 20000 });
   check((await page.locator("svg.cv-paper text", { hasText: "Fern A. Example" }).count()) === 0, "and shows the CV exactly as it was sent, not as it is now");
   const again = await download(page, "Download this file again", "again.pdf");

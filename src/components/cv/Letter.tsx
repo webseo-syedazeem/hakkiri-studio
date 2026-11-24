@@ -8,6 +8,7 @@ import { blankParagraphs, defaultSignoff, greeting, insertEvidence, lineSentence
 import { isoDate, layoutLetter, letterFit, longDate } from "@/lib/cv/letter/flow";
 import { type PoolSource, evidenceLines, sameAt, strength } from "@/lib/cv/letter/sources";
 import { fileName } from "@/lib/cv/render/filename";
+import { cannotDrawAdvice } from "@/lib/cv/render/fonts";
 import { textWidth } from "@/lib/cv/render/layout";
 import { type Achievement, type Letter, type LetterParagraph, type LetterSentence, type LetterSource, type Locator, cvIsEmpty, emptyLetter, newId } from "@/lib/cv/schema";
 import { docWord } from "@/lib/cv/sections";
@@ -19,7 +20,7 @@ import { ApiError, api, messageOf } from "./client";
 import { Dialog, usePanel } from "./Dialog";
 import { PaperView } from "./Paper";
 import { Downloads } from "./Software";
-import { Announce, Bar, Btn, BtnLink, CvScreen, Field, Panel, Skeleton, Toolbar } from "./ui";
+import { Announce, Bar, Btn, BtnLink, CvScreen, Field, Panel, Skeleton, Toolbar, focusHeading } from "./ui";
 import { SAVE_WORDS } from "./useCv";
 import { useDictation } from "./useDictation";
 import { useLetterPaper } from "./usePaper";
@@ -352,7 +353,7 @@ export function LetterScreen() {
     setDraftNotes([]);
     const missing: Record<string, string> = {};
     if (!hasJob) missing.job = "Say which job this letter is for.";
-    if (letter.reason.split(/\s+/).filter(Boolean).length < 5) missing.reason = "Say why you want this role, in a sentence or two. The letter opens with it.";
+    if (letter.reason.split(/\s+/).filter(Boolean).length < 5) missing.reason = "Say why you want this role in at least five words: a sentence or two is best. The letter opens with it.";
     if (!chosen.length) missing.evidence = "Choose one or two lines of your CV for the letter to use.";
     if (Object.keys(missing).length) {
       setFields(missing);
@@ -368,10 +369,13 @@ export function LetterScreen() {
       const next = recordSources({ ...letter, paragraphs: out.paragraphs, signoff: letter.signoff || out.signoff, started: true }, { ...cv!, letter: { ...letter, paragraphs: out.paragraphs } }, now);
       const checked = reviewLetter({ ...cv!, letter: next }, now);
       update({ letter: next });
-      setDraftNotes([out.by === "ai" ? "Drafted with AI from your reason and the lines you chose, then checked sentence by sentence." : "Assembled from your own words: your reason, and the lines you chose.", ...out.notes]);
+      setDraftNotes([out.by === "ai" ? "Drafted with AI from your reason and the lines you chose, then checked sentence by sentence." : "Assembled from your own words: your reason, and the lines you chose. The sentence that opens the letter and the ones that close it are standard wording we add: change or remove them as you like.", ...out.notes]);
       setTab("letter");
       setSelected("");
       say(`Draft ready. ${checked.sentences.length} sentences, ${checked.open.length ? `${checked.open.length} to review` : "each checked against its source"}.`);
+      // The button that was pressed has gone with the set-up form: the cursor goes to the first paragraph of the draft.
+      const first = next.paragraphs[0]?.id;
+      setTimeout(() => (first && document.getElementById(`letter-p-${first}`) ? document.getElementById(`letter-p-${first}`)!.focus() : focusHeading()), 80);
     } catch (err) {
       if (err instanceof ApiError && Object.keys(err.fields).length) setFields(err.fields);
       setProblem(messageOf(err));
@@ -397,10 +401,13 @@ export function LetterScreen() {
   }
 
   function removeSentence(id: string) {
+    const home = letter.paragraphs.find((p) => p.sentences.some((s) => s.id === id))?.id;
     setParagraphs(letter.paragraphs.map((p) => ({ ...p, sentences: p.sentences.filter((s) => s.id !== id) })));
     setSelected("");
     close();
     say("Sentence removed. Undo brings it back.");
+    // The sentence that opened the dialog is gone: the cursor goes to the paragraph it was in.
+    setTimeout(() => (home ? document.getElementById(`letter-p-${home}`) : null)?.focus(), 80);
   }
 
   function useLine() {
@@ -641,7 +648,7 @@ export function LetterScreen() {
           <Field
             id="letter-reason"
             label="Why do you want this role?"
-            rule="In your own words: two or three sentences. The letter opens with them, as you wrote them."
+            rule="In your own words: two or three sentences, and at least five words. The letter opens with them, as you wrote them. If you write more, the first three sentences are used."
             multiline
             rows={4}
             maxLength={3000}
@@ -908,7 +915,7 @@ export function LetterScreen() {
               <strong>The {FORMAT_NAME[f]} file doesn’t match</strong>
               <span>
                 {checks?.[f]?.missing?.length ? `Missing or out of place: ${checks[f]!.missing!.slice(0, 3).join(" · ")}. ` : ""}
-                {checks?.[f]?.unsupported?.length ? `Characters the fonts can’t draw: ${checks[f]!.unsupported!.join(" ")}. ` : ""}
+                {checks?.[f]?.unsupported?.length ? `Characters the fonts can’t draw: ${checks[f]!.unsupported!.join(" ")}. ${cannotDrawAdvice(checks[f]!.unsupported!)} ` : ""}
                 Nothing was downloaded.
               </span>
             </div>

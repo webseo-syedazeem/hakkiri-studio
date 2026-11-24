@@ -3,7 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { type ReactNode, useCallback, useEffect } from "react";
 import { useDialogFocus } from "@/components/ui/useDialogFocus";
-import { Btn } from "./ui";
+import { Btn, focusHeading } from "./ui";
 
 /**
  * Dialogs live in the address (?panel=name), on the screen that owns them.
@@ -35,6 +35,16 @@ export function usePanel() {
 
 export function Dialog({ title, onClose, children, actions, wide, readable }: { title: string; onClose: () => void; children: ReactNode; actions?: ReactNode; wide?: boolean; /** A long dialog with nothing in it to tab to: its body can then be focused, so it can be scrolled from the keyboard. */ readable?: boolean }) {
   const ref = useDialogFocus<HTMLDivElement>(true);
+  // When a dialog closes, the cursor goes back to what opened it. If that is gone (the sentence was removed, the
+  // button was redrawn) the cursor would be left on nothing, at the top of the page: it goes to the screen's heading.
+  useEffect(
+    () => () => {
+      setTimeout(() => {
+        if (!document.activeElement || document.activeElement === document.body) focusHeading();
+      }, 0);
+    },
+    [],
+  );
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     document.addEventListener("keydown", onKey);

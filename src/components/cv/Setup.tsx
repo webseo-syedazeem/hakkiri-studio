@@ -210,6 +210,13 @@ export function Setup() {
                     aria-label="CV file"
                     onChange={(e) => {
                       const f = e.target.files?.[0] ?? null;
+                      // A file with nothing in it is not kept as the chosen file: it is said at once, by name.
+                      if (f && f.size === 0) {
+                        setFile(null);
+                        setErrors((x) => ({ ...x, file: `“${f.name}” is empty: there is nothing in it to read. Choose another file, or paste the text of your CV.` }));
+                        e.target.value = "";
+                        return;
+                      }
                       setFile(f);
                       setErrors((x) => ({ ...x, file: "" }));
                       if (f) {

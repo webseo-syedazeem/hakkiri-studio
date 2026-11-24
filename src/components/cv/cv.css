@@ -203,6 +203,9 @@ textarea.cv-input { resize: vertical; field-sizing: content; }
 .cv-skillchip { font: inherit; font-size: 13px; color: var(--color-ink); cursor: pointer; }
 .cv-skillchip[aria-pressed="true"] { border-color: var(--color-blue); }
 .cv-skillchip[aria-pressed="false"] { color: var(--color-muted); text-decoration: line-through; border-style: dashed; }
+/* A term from the advert that is on the CV: pressed shows where. Not pressed is not "off", so nothing is struck through. */
+.cv-termchip { font: inherit; font-size: 13px; color: var(--color-ink); cursor: pointer; }
+.cv-termchip[aria-pressed="true"] { border-color: var(--color-blue); }
 
 /* The paper pane: tools, then the page. The page itself is always light: it is the printed sheet. */
 .cv-paperpane { min-width: 0; }

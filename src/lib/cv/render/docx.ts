@@ -110,8 +110,10 @@ export async function writeDocx(flow: Flow, style: PaperStyle, info: DocxInfo): 
   const app = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>Hakkiri</Application></Properties>`;
 
   const zip = new JSZip();
-  // Fixed dates inside the zip, so the same CV always gives the same file.
-  const opts = { date: info.created };
+  // Fixed dates inside the zip, so the same CV always gives the same file. No separate entries are made for the
+  // folders: the zip library stamps those with the time on the clock, which made two files written either side of a
+  // tick of it differ by a few bytes.
+  const opts = { date: info.created, createFolders: false };
   zip.file("[Content_Types].xml", types, opts);
   zip.file("_rels/.rels", top, opts);
   zip.file("word/document.xml", document, opts);

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { fileBaseName, fileName } from "@/lib/cv/render/filename";
+import { cannotDrawAdvice } from "@/lib/cv/render/fonts";
 import { paperOrder } from "@/lib/cv/render/flow";
 import { FAMILIES } from "@/lib/cv/render/fonts";
 import { fitToPages } from "@/lib/cv/render/layout";
@@ -394,7 +395,9 @@ export function Finish({ onOverflow, say }: { onOverflow: () => void; say: (text
               {!!lost.unsupported?.length && (
                 <div className="cv-issue" style={{ display: "block" }}>
                   <strong>Characters these fonts can’t draw:</strong> <span data-testid="unsupported">{lost.unsupported.join(" ")}</span>
-                  <p style={{ marginTop: 6 }}>They would print as empty boxes. Replace them, or choose a different font pairing.</p>
+                  <p style={{ marginTop: 6 }} data-testid="unsupported-advice">
+                    {cannotDrawAdvice(lost.unsupported)}
+                  </p>
                 </div>
               )}
               {!!lost.missing?.length && (

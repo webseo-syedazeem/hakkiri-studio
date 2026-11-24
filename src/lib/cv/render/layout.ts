@@ -116,8 +116,12 @@ class Measurer {
     let count = 0;
     for (const ch of text) {
       const g = f.glyph(ch.codePointAt(0)!);
-      if (g === 0 && ch.trim()) this.missing.add(ch);
-      units += f.advance(g);
+      const lacking = g === 0 && !!ch.trim();
+      if (lacking) this.missing.add(ch);
+      // A character the font lacks is drawn on screen by whatever font the browser falls back to. It is given the
+      // room such a character takes (a full square for Chinese, Japanese, Korean and emoji), so that in the preview
+      // the characters of a name sit side by side and not on top of each other.
+      units += lacking ? Math.max(f.advance(g), (ch.codePointAt(0)! >= 0x2e80 ? 1 : 0.6) * f.unitsPerEm) : f.advance(g);
       count++;
     }
     return (units / f.unitsPerEm) * size + tracking * count;
@@ -131,7 +135,16 @@ function wrap(pieces: Piece[], max: number, m: Measurer): Omit<Run, "x">[][] {
   let carried = false;
   pieces.forEach((p, pi) => {
     if (p.whole || p.separator) {
-      atoms.push({ text: p.text, piece: pi, width: m.width(p.text, p.font, p.size, p.tracking), spaced: false, separator: p.separator });
+      let rest = p.text;
+      // An item kept whole (a contact detail) that is wider than the line itself, such as a very long web address,
+      // is broken where it has to be. Left whole it ran off the edge of the page and the end of it was lost.
+      while (!p.separator && m.width(rest, p.font, p.size, p.tracking) > max && rest.length > 1) {
+        let cut = rest.length - 1;
+        while (cut > 1 && m.width(rest.slice(0, cut), p.font, p.size, p.tracking) > max) cut--;
+        atoms.push({ text: rest.slice(0, cut), piece: pi, width: m.width(rest.slice(0, cut), p.font, p.size, p.tracking), spaced: false });
+        rest = rest.slice(cut);
+      }
+      atoms.push({ text: rest, piece: pi, width: m.width(rest, p.font, p.size, p.tracking), spaced: false, separator: p.separator });
       carried = false;
       return;
     }

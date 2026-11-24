@@ -161,7 +161,7 @@ export function Software({ format }: { format: Format }) {
         {view && first && !stale && (
           <div className="cv-issue" style={{ marginBottom: 18 }} data-testid="first-loss">
             <span className="min-w-0 grow">
-              {first.read ? `The ${NAME[format]} reads ${first.label.toLowerCase()} as “${first.read.split("\n")[0]}”. Your ${word} says “${first.expected.split("\n")[0]}”.` : `The ${NAME[format]} lost ${first.label.toLowerCase()}. Your ${word} contains “${first.expected.split("\n")[0]}”. Nothing was read for it.`}
+              {first.read ? `The ${NAME[format]} reads ${first.label.toLowerCase()} as “${first.read.split("\n")[0]}”. Your ${word} says “${first.expected.split("\n")[0]}”.` : `A parser reading the ${NAME[format]} did not find ${/^[aeiou]/i.test(first.label) ? "an" : "a"} ${first.label.toLowerCase()}. Your ${word} says “${first.expected.split("\n")[0]}”. The words may still be in the file: compare the two.`}
             </span>
             <Btn onClick={() => (setTab("fields"), document.getElementById(`field-${wrong.indexOf(first)}`)?.scrollIntoView({ block: "center" }))}>Compare entry</Btn>
             <Btn onClick={() => void check()}>Rebuild {format === "pdf" ? "PDF" : "Word file"}</Btn>
@@ -281,7 +281,7 @@ export function ExportRecordView({ exportId }: { exportId: string }) {
   const letterPaper = useLetterPaper(hasLetter ? record.cv : null, record?.at.slice(0, 10) ?? "");
   const back = hasLetter ? `/cv/v/${w.versionId}/letter` : `/cv/v/${w.versionId}/edit/finish#files`;
   const backWord = hasLetter ? "Back to the letter" : "Back to Finish";
-  const crumbs = [{ label: "CVs and letters", href: "/cv" }, { label: w.cv?.name ?? record?.cv.name ?? "CV", href: back }, { label: "What you sent" }];
+  const crumbs = [{ label: "CVs and letters", href: "/cv" }, { label: w.cv?.name ?? record?.cv.name ?? "CV", href: back }, { label: "What you downloaded" }];
 
   if (missing)
     return (
@@ -339,7 +339,7 @@ export function ExportRecordView({ exportId }: { exportId: string }) {
                 {record.cv.target?.title && <li>For: {[record.cv.target.title, record.cv.target.employer].filter(Boolean).join(" · ")}</li>}
               </ul>
               <p className="cv-note" data-testid="record-changed">
-                {changed ? `Your ${word}${hasLetter ? " or letter" : ""} has been changed since. This page shows what you sent, not what it says now.` : `Your ${word}${hasLetter ? " and letter have" : " has"} not changed since this download.`}
+                {changed ? `Your ${word}${hasLetter ? " or letter" : ""} has been changed since. This page shows what you downloaded, not what it says now.` : `Your ${word}${hasLetter ? " and letter have" : " has"} not changed since this download.`}
               </p>
               {problem && (
                 <p className="cv-error-text" role="alert">
@@ -408,7 +408,7 @@ export function Downloads({ versionId, refresh }: { versionId: string; refresh: 
           </li>
         ))}
       </ul>
-      <small style={{ display: "block", marginTop: 6 }}>Each one opens exactly what you sent, even after your CV changes.</small>
+      <small style={{ display: "block", marginTop: 6 }}>Each one opens exactly what you downloaded, even after your CV changes.</small>
     </div>
   );
 }

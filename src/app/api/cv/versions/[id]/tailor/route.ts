@@ -4,6 +4,13 @@ import { badInput, failure, makingTooFast, newCvId, notFound, requireUserId } fr
 import { TOO_MANY_CVS, atCvLimit, getOwnCv, saveCv } from "@/lib/cv/store";
 import { extractRequirements } from "@/lib/cv/tailor/requirements";
 
+/** "Base name – Employer", within 120 characters. A long base name is the part that gives way, so the job is always named. */
+function tailoredName(base: string, job: string): string {
+  const tail = ` – ${[...job].slice(0, 60).join("")}`;
+  const head = [...base.replace(/ – .*$/, "")].slice(0, 120 - [...tail].length).join("").trimEnd();
+  return `${head}${tail}`;
+}
+
 const text = (max: number) => z.string().max(max * 2).transform((s) => s.replace(/\s+/g, " ").trim().slice(0, max));
 const Body = z.object({ title: text(160).default(""), employer: text(160).default(""), advert: z.string().max(40000).transform((s) => s.replace(/\r/g, "").trim().slice(0, 20000)) }).strict();
 
@@ -41,7 +48,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       kind: "tailored",
       parentId: base,
       parentRev: cv.rev,
-      name: `${cv.name.replace(/ – .*$/, "")} – ${employer || title}`.slice(0, 120),
+      name: tailoredName(cv.name, employer || title),
       target: { title, employer, advert },
       requirements: extractRequirements(advert),
       changes: [],

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { fernCv } from "../render/testing";
 import type { CvDoc, EntrySection } from "../schema";
 import { checkGrounded, checkMerge, checkProfile, checkRewrite } from "./check";
-import { asBullet, bulletsByRule, mergeDetail, profilesByRule, questionFor, tidyByRule, visibleText, yearsOfExperience } from "./draft";
+import { asBullet, bulletsByRule, latestRole, mergeDetail, profilesByRule, questionFor, tidyByRule, visibleText, yearsOfExperience } from "./draft";
 
 const NOW = new Date("2026-11-23T12:00:00Z");
 
@@ -187,6 +187,31 @@ describe("two profiles from the CV, by rule", () => {
     const c = structuredClone(cv);
     (c.sections.find((s) => s.kind === "experience") as EntrySection).entries = [];
     expect(profilesByRule(c, { skills: [] }, NOW).versions).toEqual([]);
+  });
+
+  it("says the years and “most recently” only of the role the dates show to be the latest", () => {
+    // A role with no dates (made from notes, which ask for none) beside a current role of seven years elsewhere.
+    const c = structuredClone(cv);
+    const e = (c.sections.find((s) => s.kind === "experience") as EntrySection).entries;
+    e[0] = { ...e[0], title: "Transport planner", org: "Clyde Freight", start: "2019-06", end: "", current: true };
+    e[1] = { ...e[1], title: "Night shift lead", org: "Example Depot", start: "", end: "", current: false };
+    const undated = profilesByRule(c, { entryId: e[1].id, skills: [] }, NOW);
+    expect(undated.years).toBeUndefined();
+    expect(undated.versions[0].text).toMatch(/^Night shift lead at Example Depot\./);
+    for (const v of undated.versions) expect(v.text).not.toMatch(/years|most recently/);
+    // The current role is the latest: of it, both are true.
+    const latest = profilesByRule(c, { entryId: e[0].id, skills: [] }, NOW);
+    expect(latest.years).toBe(7);
+    expect(latest.versions[0].text).toMatch(/^Transport planner with 7 years’ experience, most recently at Clyde Freight\./);
+    // An earlier, dated role is not "most recently" either.
+    e[1] = { ...e[1], start: "2015-01", end: "2019-05" };
+    const earlier = profilesByRule(c, { entryId: e[1].id, skills: [] }, NOW);
+    expect(earlier.years).toBeUndefined();
+    for (const v of earlier.versions) expect(v.text).not.toMatch(/years|most recently/);
+    // Two roles held now: the one that began later is the latest.
+    e[1] = { ...e[1], start: "2022-01", end: "", current: true };
+    expect(latestRole(e)!.id).toBe(e[1].id);
+    expect(latestRole([{ id: "x", start: "", end: "", current: false }])).toBeUndefined();
   });
 
   it("leaves the years out when the dates cannot give them", () => {

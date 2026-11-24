@@ -7,6 +7,12 @@ import { poolOf } from "./sources";
 import { NOW, REASON, experience, letterCv, lineAt } from "./testing";
 
 const text = (cv: CvDoc) => letterByRule(cv, NOW).paragraphs.map((p) => p.sentences.map((s) => s.text));
+/** The sample letter CV for a region, with the first line of its second role changed. */
+function letterCvWith(region: "uk" | "us", line: string): CvDoc {
+  const c = letterCv({}, region);
+  experience(c).entries[1].bullets[0].text = line;
+  return c;
+}
 
 describe("how the person writes", () => {
   it("notices contractions, and uses them only if they do", () => {
@@ -67,16 +73,54 @@ describe("a line of the CV as a sentence", () => {
     const at = (i: number) => ({ section: experience(c).id, entry: e.id, field: e.bullets[i].id });
     expect(lineSentence(c, at(2))).toBe("At Folio House, I was responsible for the weekend rota.");
     expect(lineSentence(c, at(3))).toBe("At Folio House, my work included managing the returns desk on Saturdays.");
-    // Not something done: quoted as it stands rather than turned into "I …".
-    expect(lineSentence(c, at(4))).toBe("At Folio House: Volunteer of the Year 2022.");
-    expect(lineSentence(c, at(5))).toBe("At Folio House: Experienced in handling fragile items.");
+    // Not something done: given as what the CV says, in a whole sentence, rather than turned into "I …" or left as a fragment.
+    expect(lineSentence(c, at(4))).toBe("At Folio House, my CV says: “Volunteer of the Year 2022”.");
+    expect(lineSentence(c, at(5))).toBe("At Folio House, my CV says: “Experienced in handling fragile items”.");
+    expect(lineSentence(c, at(4), true)).toBe("My CV also says: “Volunteer of the Year 2022”.");
+    const us = letterCvWith("us", "Volunteer of the Year 2022");
+    expect(lineSentence(us, lineAt(us, 1, 0))).toBe("At Folio House, my resume says: “Volunteer of the Year 2022”.");
+  });
+
+  it("a present-tense line of a role that has not ended gets its “I”: no bare fragments", () => {
+    const c = letterCv();
+    const role = experience(c).entries[0];
+    expect(role.current).toBe(true);
+    const say = (line: string) => {
+      role.bullets[0].text = line;
+      return lineSentence(c, lineAt(c, 0, 0));
+    };
+    expect(say("Schedule 40 drivers a day across three depots")).toBe("At Paper Kite Archive, I schedule 40 drivers a day across three depots.");
+    expect(say("Lead a team of five dispatchers")).toBe("At Paper Kite Archive, I lead a team of five dispatchers.");
+    expect(say("Plan and schedule daily routes for 60 drivers")).toBe("At Paper Kite Archive, I plan and schedule daily routes for 60 drivers.");
+    expect(say("Process supplier invoices each week")).toBe("At Paper Kite Archive, I process supplier invoices each week.");
+    expect(say("Report on-time performance to the depot manager weekly")).toBe("At Paper Kite Archive, I report on-time performance to the depot manager weekly.");
+    expect(say("Was promoted twice in three years")).toBe("At Paper Kite Archive, I was promoted twice in three years.");
+    expect(say("Have managed budgets of £2m")).toBe("At Paper Kite Archive, I have managed budgets of £2m.");
+    // The same words as a noun are not something done: they are given as what the CV says.
+    expect(say("Schedule of works for the new depot")).toBe("At Paper Kite Archive, my CV says: “Schedule of works for the new depot”.");
+    expect(say("Support for three regional teams")).toBe("At Paper Kite Archive, my CV says: “Support for three regional teams”.");
+    expect(say("Design lead for the routing app")).toBe("At Paper Kite Archive, my CV says: “Design lead for the routing app”.");
+    // Every one of these is a whole sentence that passes the letter's own check against the CV.
+    for (const line of ["Schedule 40 drivers a day across three depots", "Lead a team of five dispatchers", "Was promoted twice in three years", "Schedule of works for the new depot"]) {
+      const text = say(line)!;
+      expect(checkSentence(text, poolOf(c, NOW)).status, text).not.toBe("unsupported");
+      expect(text).toMatch(/^At Paper Kite Archive, (?:I|my CV says:) /);
+    }
+  });
+
+  it("in a role that has ended, a present-tense line is not given a tense it may not have", () => {
+    const c = letterCv();
+    const role = experience(c).entries[1];
+    expect(role.current || !role.end).toBe(false);
+    role.bullets[0].text = "Schedule 40 drivers a day across three depots";
+    expect(lineSentence(c, lineAt(c, 1, 0))).toBe("At Folio House, my CV says: “Schedule 40 drivers a day across three depots”.");
   });
 
   it("reads a present-tense line of a current role as something done, but not a job-title noun", () => {
     const c = letterCv();
     expect(lineSentence(c, lineAt(c, 0, 0))).toBe("At Paper Kite Archive, I catalogue incoming paper maps and record their condition.");
     experience(c).entries[0].bullets[0].text = "Lead developer on the map viewer";
-    expect(lineSentence(c, lineAt(c, 0, 0))).toBe("At Paper Kite Archive: Lead developer on the map viewer.");
+    expect(lineSentence(c, lineAt(c, 0, 0))).toBe("At Paper Kite Archive, my CV says: “Lead developer on the map viewer”.");
   });
 
   it("keeps a supporting word: “helped” stays “helped”", () => {
@@ -95,6 +139,18 @@ describe("a line of the CV as a sentence", () => {
   it("makes a sentence of any text without changing its words", () => {
     expect(asSentence("i want this job")).toBe("I want this job.");
     expect(asSentence("Is it open?")).toBe("Is it open?");
+  });
+});
+
+describe("a reason longer than an opening paragraph", () => {
+  it("is used from the start, and the letter says how much of it was left out", () => {
+    const long = Array.from({ length: 6 }, (_, i) => `I have spent ${i + 2} years working with paper maps and want to do more of it.`).join(" ");
+    const draft = letterByRule(letterCv({ reason: long }), NOW);
+    // The opening: the sentence saying which job, then the first three of the person's own.
+    expect(draft.paragraphs[0].sentences).toHaveLength(4);
+    expect(draft.notes).toContain("Your reason is longer than an opening paragraph holds, so only the start of it was used: the last 3 sentences were left out. All of it is still under “Why do you want this role?”.");
+    // A reason that fits says nothing of the kind.
+    expect(letterByRule(letterCv(), NOW).notes.join(" ")).not.toMatch(/longer than an opening paragraph/);
   });
 });
 

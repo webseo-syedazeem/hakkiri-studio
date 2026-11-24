@@ -197,3 +197,29 @@ describe("how many CVs, and how fast", () => {
     expect((await versions.POST(json({ name: "Bob's", level: "experienced", region: "uk" }))).status).toBe(201);
   });
 });
+
+describe("small promises kept", () => {
+  it("a tailored version's name always says which job it is for, however long the base name", async () => {
+    const cv = await filled("N".repeat(120));
+    const made = await (await tailor.POST(json({ title: "Collections Assistant", employer: "Harbour Museum", advert: ADVERT }), ctx(cv.id))).json();
+    expect(made.name).toHaveLength(120);
+    expect(made.name.endsWith(" – Harbour Museum")).toBe(true);
+    expect(made.name).not.toBe(cv.name);
+  });
+
+  it("“ATS-ready” is not said of a CV with almost nothing on it, though its file reads back perfectly", async () => {
+    const id = (await (await versions.POST(json({ name: "Thin", level: "experienced", region: "uk" }))).json()).id as string;
+    const cv = (await store.getOwnCv(id, alice.id))!;
+    const fern = fernCv();
+    const sections = cv.sections.map((s) => (s.kind === "experience" && "entries" in s ? { ...s, entries: [{ ...(fern.sections.find((x) => x.kind === "experience") as typeof s).entries[0], bullets: [(fern.sections.find((x) => x.kind === "experience") as typeof s).entries[0].bullets[0]] }] } : s));
+    await store.saveCv({ ...cv, contact: fern.contact, sections });
+    const thin = await (await software.GET(get("?format=pdf"), ctx(id))).json();
+    expect(thin.status).toBe("checked");
+    expect(thin.atsReady).toBe(false);
+    expect(thin.why.join(" ")).toMatch(/too little on the CV to call it ready\. It still needs: 6 different lines saying what you did \(it has 1\); a qualification, certificate or course\./);
+    // A CV with what a CV needs is not held back by this.
+    const full = await filled();
+    const view = await (await software.GET(get("?format=pdf"), ctx(full.id))).json();
+    expect(view.why.join(" ")).not.toMatch(/too little/);
+  });
+});

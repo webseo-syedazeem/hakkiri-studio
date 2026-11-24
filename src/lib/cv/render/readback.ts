@@ -38,6 +38,22 @@ export function wordsOf(text: string): string[] {
     .filter(Boolean);
 }
 
+/**
+ * How many of the file's words, starting at `from`, join up to make `word`
+ * exactly: 0 when they do not. Only for a word long enough that a page could
+ * not hold it on one line; two ordinary words run together are a difference.
+ */
+function piecesOf(word: string, got: string[], from: number): number {
+  if (word.length < 30 || !word.startsWith(got[from]) || got[from].length >= word.length) return 0;
+  let joined = got[from];
+  let n = 1;
+  while (joined.length < word.length && from + n < got.length && word.startsWith(joined + got[from + n])) {
+    joined += got[from + n];
+    n++;
+  }
+  return joined === word ? n : 0;
+}
+
 /** Compares what the CV should say with what a file's text says. */
 export function compareText(flow: Flow, fileText: string, pages = 0): ReadBack {
   const pieces = flowText(flow);
@@ -58,6 +74,14 @@ export function compareText(flow: Flow, fileText: string, pages = 0): ReadBack {
     if (want[i] === got[j]) {
       i++;
       j++;
+      continue;
+    }
+    // A word too long for one line of the page (a web address) is drawn on two lines or more, and is read back in
+    // pieces. Pieces that, put together in order, are exactly the word are that word: nothing is lost or added.
+    const pieces = piecesOf(want[i], got, j);
+    if (pieces) {
+      i++;
+      j += pieces;
       continue;
     }
     let skipWant = -1;
@@ -81,6 +105,8 @@ export function compareText(flow: Flow, fileText: string, pages = 0): ReadBack {
   }
   for (; i < want.length; i++) missing.add(owner[i]);
   unexpected.push(...got.slice(j));
+  // Every difference turned out to be a word drawn in pieces: the file says what the CV says.
+  if (!missing.size && !unexpected.length) return { status: "checked", missing: [], unexpected: [], words: want.length, pages };
   return { status: "loss", missing: [...missing].sort((a, b) => a - b).map((p) => pieces[p]), unexpected, words: want.length, pages };
 }
 

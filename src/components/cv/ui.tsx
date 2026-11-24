@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import clsx from "clsx";
-import { type ComponentProps, type ReactNode, useId, useLayoutEffect, useRef } from "react";
+import { type ComponentProps, type ReactNode, useEffect, useId, useLayoutEffect, useRef } from "react";
 
 /**
  * The small pieces every CV screen is built from: the bar across the top, a
@@ -10,8 +11,42 @@ import { type ComponentProps, type ReactNode, useId, useLayoutEffect, useRef } f
  * the screens stay consistent and can be restyled together.
  */
 
+/**
+ * Puts the cursor on the screen's heading. That is where someone using a
+ * keyboard or a screen reader should find themselves after the screen has
+ * changed: not back at the top of the page, with the whole menu to tab
+ * through again. Returns false when the heading has not been drawn yet.
+ */
+export function focusHeading(): boolean {
+  const h = document.querySelector<HTMLElement>(".cv h1");
+  if (!h) return false;
+  if (!h.hasAttribute("tabindex")) h.setAttribute("tabindex", "-1");
+  h.focus();
+  return document.activeElement === h;
+}
+
+/** The address of the CV screen last shown, so a change of screen can be told from a first visit. */
+let lastScreen: string | null = null;
+
 /** Wraps a CV screen and cancels the app shell's own padding, so the bar can run edge to edge. */
 export function CvScreen({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  // Moving from one CV screen to another ("Continue to Experience", tailoring to the letter) leaves the button that
+  // was pressed behind, and the cursor with it. It is put on the new screen's heading, unless a field has asked for
+  // it (the line a finding points at) or a dialog is open.
+  useEffect(() => {
+    const from = lastScreen;
+    lastScreen = pathname;
+    if (from === null || from === pathname) return;
+    let tries = 0;
+    const timer = setInterval(() => {
+      const at = document.activeElement as HTMLElement | null;
+      const taken = !!at && at !== document.body && (/^(?:INPUT|TEXTAREA|SELECT)$/.test(at.tagName) || !!at.closest('[role="dialog"]'));
+      // The heading is not there while the screen is still loading: it is looked for again, for a couple of seconds.
+      if (taken || focusHeading() || ++tries > 25) clearInterval(timer);
+    }, 80);
+    return () => clearInterval(timer);
+  }, [pathname]);
   return <div className="cv -mx-4 -my-4 sm:-mx-6 sm:-my-6 md:-mx-9 md:-my-7 min-w-0 grow">{children}</div>;
 }
 

@@ -373,6 +373,24 @@ describe("readable by software", () => {
     expect(c.findings[0].excerpt).toBe("陈");
   });
 
+  it("characters the fonts lack are said on the field that holds them, with advice that can work", () => {
+    const cv = base();
+    cv.contact.fullName = "王小明 Wang Xiaoming";
+    exp(cv).entries[0].bullets[0].text = "Ran the 茶 society for two years";
+    const c = check(run(cv, { missingGlyphs: ["王", "小", "明", "茶"] }), "real-text");
+    expect(c.earned).toBe(0);
+    expect(c.findings.map((f) => [f.at.section === "contact" ? f.at.field : "bullet", f.excerpt])).toEqual([["fullName", "王 小 明"], ["bullet", "茶"]]);
+    expect(c.findings[0].reason).toBe("These characters can’t be drawn by the fonts, so the PDF can’t be made with them: 王 小 明");
+    expect(c.findings[0].action).toBe("None of our fonts can draw these, so they can’t go in the PDF. Write them in Latin letters, or use the Word file, which is drawn with the fonts on the computer that opens it.");
+    expect(c.findings[1].at.field).toBe(exp(cv).entries[0].bullets[0].id);
+    // Nothing is advised that cannot help: another pairing has no Chinese either.
+    for (const f of c.findings) expect(f.action).not.toMatch(/pairing/);
+    // When the place cannot be found (a heading, say), it is still said, on the Finish tab.
+    const elsewhere = check(run(base(), { missingGlyphs: ["☃"] }), "real-text");
+    expect(elsewhere.findings).toHaveLength(1);
+    expect(elsewhere.findings[0]).toMatchObject({ at: { section: "finish" }, fix: "finish" });
+  });
+
   it("with no name, the file name is not usable", () => {
     const cv = base();
     cv.contact.fullName = "";

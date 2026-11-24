@@ -70,11 +70,30 @@ const PRESENT = new RegExp(
   "u",
 );
 
+/**
+ * Words that open a line as a verb ("Schedule 40 drivers a day") and are just
+ * as often a noun in a job title or a heading ("Lead developer", "Schedule of
+ * works", "Support for three teams"). They are read as something done only in
+ * a role that has not ended, and only when what follows is not what follows a
+ * noun.
+ */
+const EITHER = new Set("Schedule Lead Plan Process Report Support Design Research Review Audit Chair Budget Document Track Test Record Control Direct Guide Forecast Source Stock Ship Pilot Present Supply Survey Tutor Check Order Pack Brief Work Help".split(" "));
+/** After one of those words, these make it a noun: "Schedule of works", "Lead developer", "Work experience". */
+const AFTER_A_NOUN = /^(?:of|for|at|in|on|from|with|by|is|was|are|were|developer|engineer|manager|lead|leader|assistant|officer|analyst|designer|coordinator|co-ordinator|consultant|specialist|worker|administrator|executive|nurse|teacher|planner|controller|supervisor|driver|clerk|technician|adviser|advisor|partner|director|architect|scientist|researcher|team|desk|role|function|department|unit|committee|board|member|contact|experience|placement|package|stream|chef|teacher|tutor|coach)$/i;
+function presentInOpenRole(body: string): boolean {
+  const m = /^(\p{Lu}[\p{L}-]*)\s+([\p{L}\p{N}£$€'’-]+)/u.exec(body);
+  return !!m && EITHER.has(m[1]) && !AFTER_A_NOUN.test(m[2]);
+}
+/** A line that already has its verb, short of its "I": "Was promoted twice", "Have managed budgets of £2m". */
+const NEEDS_I = /^(?:Was|Am|Have|Had)\s/;
+
 interface Line {
   text: string;
   title: string;
   org: string;
   entryId: string;
+  /** The role has not ended: it is marked as current, or has no end date. */
+  open: boolean;
 }
 
 function lineAt(cv: LetterCv, at: Locator): Line | null {
@@ -82,7 +101,7 @@ function lineAt(cv: LetterCv, at: Locator): Line | null {
     if (s.id !== at.section || !s.visible || !isEntrySection(s)) continue;
     const e = s.entries.find((x) => x.id === at.entry && x.visible);
     const b = e?.bullets.find((x) => x.id === at.field && x.visible && x.text.trim());
-    if (e && b) return { text: b.text, title: e.title.trim(), org: e.org.trim(), entryId: e.id };
+    if (e && b) return { text: b.text, title: e.title.trim(), org: e.org.trim(), entryId: e.id, open: e.current || !e.end };
   }
   return null;
 }
@@ -101,10 +120,13 @@ export function lineSentence(cv: LetterCv, at: Locator, also = false): string | 
   const and = also ? "also " : "";
   let text: string;
   if (/^Responsible for\b/i.test(body)) text = `${intro}I was ${and}${lowerFirst(body)}`;
-  else if ((PAST.test(body) && !DESCRIBING.test(body)) || PRESENT.test(body)) text = `${intro}I ${and}${lowerFirst(body)}`;
+  else if (NEEDS_I.test(body)) text = `${intro}I ${and}${lowerFirst(body)}`;
+  else if ((PAST.test(body) && !DESCRIBING.test(body)) || PRESENT.test(body) || (line.open && presentInOpenRole(body))) text = `${intro}I ${and}${lowerFirst(body)}`;
   else if (GERUND.test(body)) text = `${intro}${intro ? "my" : "My"} work ${and}included ${lowerFirst(body)}`;
-  // Not something that can be turned into "I …" safely: it is quoted as it stands.
-  else text = where && !also ? `${where}: ${body}` : body;
+  // Not something that can be turned into "I …" safely ("Volunteer of the Year 2022", "Lead developer on the map
+  // viewer"). It is never left as a bare fragment in the middle of a letter: it is given as what the CV says, in the
+  // person's exact words, inside a whole sentence.
+  else text = `${intro}${intro ? "my" : "My"} ${cv.region === "us" ? "resume" : "CV"} ${and}says: “${body}”`;
   return asSentence(text);
 }
 
@@ -152,10 +174,16 @@ export function letterByRule(cv: LetterCv, now: Date): RuleDraft {
   const opening = [made(applying, pool)];
   let words = 0;
   let left = 0;
-  for (const s of sentences(letter?.reason ?? "")) {
+  let unused = 0;
+  const reasons = sentences(letter?.reason ?? "");
+  for (const [i, s] of reasons.entries()) {
     const text = asSentence(s);
     const n = text.split(/\s+/).length;
-    if (opening.length >= 4 || words + n > 90) break;
+    if (opening.length >= 4 || words + n > 90) {
+      // An opening paragraph holds so much. What is left of the reason is not used, and that is said.
+      unused = reasons.length - i;
+      break;
+    }
     if (!ok(text)) {
       left++;
       continue;
@@ -164,6 +192,7 @@ export function letterByRule(cv: LetterCv, now: Date): RuleDraft {
     words += n;
   }
   if (left) notes.push(`${left === 1 ? "One sentence" : `${left} sentences`} of your reason ${left === 1 ? "was" : "were"} left out: ${left === 1 ? "it says" : "they say"} something about the employer that isn’t in the advert.`);
+  if (unused) notes.push(`Your reason is longer than an opening paragraph holds, so only the start of it was used: ${unused === 1 ? "the last sentence was" : `the last ${unused} sentences were`} left out. All of it is still under “Why do you want this role?”.`);
 
   // Evidence: one paragraph for each role the chosen lines come from.
   const groups: { entryId: string; lines: Locator[] }[] = [];
