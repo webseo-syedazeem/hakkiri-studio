@@ -11,6 +11,7 @@ import { Segmented } from "@/components/ui/Segmented";
 import { useMicrophone } from "@/components/audio/useMicrophone";
 import { TargetRail } from "@/components/audio/TargetRail";
 import { prefetchVoice, speak, voiceFor, type VoiceName } from "@/components/audio/speak";
+import { getConversationalBridge, getFullInterviewIntro, humaniseFollowUp, type FullInterviewIntroResult } from "@/components/audio/speech-humaniser";
 import { capitalise, inWords, mmss } from "@/lib/format";
 import { followUpProfile } from "@/lib/scoring/profiles";
 import { followUpLimit } from "@/lib/followups";
@@ -199,6 +200,8 @@ export function LiveInterview(p: LiveInterviewProps) {
   const [wrongError, setWrongError] = useState<string | null>(null);
   const [checklist, setChecklist] = useState<Record<string, boolean>>({});
   const toggleChecklist = (key: string) => setChecklist((prev) => ({ ...prev, [key]: !prev[key] }));
+  const [introInfo, setIntroInfo] = useState<FullInterviewIntroResult | null>(null);
+  const [speakingIntro, setSpeakingIntro] = useState(false);
   const [, tick] = useState(0);
   const voice = useRef<{ cancel: () => void } | null>(null);
   /** Bumped to abandon a question that's still being asked (e.g. the interview ended). */
@@ -242,11 +245,23 @@ export function LiveInterview(p: LiveInterviewProps) {
   // Warm voice cache for initial questions so the interviewer speaks with < 3s latency
   useEffect(() => {
     if (p.questions && p.questions.length > 0) {
+      const isFullInterview = isRun && session?.mode === "interview";
+      if (isFullInterview && p.questions[0]) {
+        const fullIntro = getFullInterviewIntro({
+          interviewerName: name,
+          interviewerTitle: p.interviewer.title,
+          heading: p.heading,
+          minutes: session?.minutes,
+          style,
+          firstQuestionText: p.questions[0].text,
+        });
+        prefetchVoice(fullIntro.spoken, voiceName.current);
+      }
       p.questions.slice(0, 3).forEach((q: LiveQuestion) => {
         prefetchVoice(q.text, voiceName.current);
       });
     }
-  }, [p.questions]);
+  }, [p.questions, isRun, session?.mode, session?.minutes, name, p.interviewer.title, p.heading, style]);
 
   /** The interviewer says `text`, then the mic opens (or resumes, after a repeat). */
   const ask = useCallback(
@@ -257,6 +272,7 @@ export function LiveInterview(p: LiveInterviewProps) {
       voice.current = v;
       await v.done;
       voice.current = null;
+      setSpeakingIntro(false);
       if (askToken.current !== token) return; // the interview moved on while the question was being asked
       if (mic_ === "start") {
         if (!(await mic.start())) {
@@ -373,26 +389,32 @@ export function LiveInterview(p: LiveInterviewProps) {
 
   /** The next question, or the end. With little time left, the interviewer goes to the closing question. */
   const advance = useCallback(
-    (lead = "Thanks. ") => {
+    (customLead?: string) => {
+      setIntroInfo(null);
+      setSpeakingIntro(false);
       let next = qIndex + 1;
       const closing = queue.findIndex((x, k) => k > qIndex && x.slot === "closing");
       let wrap = "";
       if (remainingSec != null && queue[next] && queue[next].slot !== "closing" && remainingSec < WRAP_UP_SEC) {
         if (closing > qIndex) {
           next = closing;
-          wrap = "We’re nearly out of time, so a last one from me. ";
+          wrap = "We’re nearly out of time, so a last one from me... ";
         } else next = queue.length;
       }
       const nextQ = queue[next];
       if (!nextQ) {
-        const v = speak("Thank you. That’s the end of the interview.", { voice: voiceName.current });
+        const signOff = style === "friendly"
+          ? "Right, that brings us to the end of our session today! Thank you so much for your time and thoughtful answers — it was an absolute pleasure speaking with you."
+          : "Right, that brings us to the end of our interview today. Thank you so much for your time and your answers — it was great speaking with you.";
+        const v = speak(signOff, { voice: voiceName.current });
         voice.current = v;
         return void finishRun();
       }
+      const bridge = customLead !== undefined ? customLead : getConversationalBridge(next, style, nextQ.slot);
       setQIndex(next);
-      askMain(nextQ, wrap ? `${lead}${wrap}` : lead);
+      askMain(nextQ, wrap ? `${bridge}${wrap}` : bridge);
     },
-    [qIndex, queue, remainingSec, finishRun, askMain],
+    [qIndex, queue, remainingSec, finishRun, askMain, style],
   );
 
   /** The interviewer is done with this question. */
@@ -423,10 +445,11 @@ export function LiveInterview(p: LiveInterviewProps) {
   const next = useCallback(
     (followUp: ApiFollowUp) => {
       if (!followUp) return void moveOn();
+      const spokenFollowUp = humaniseFollowUp(followUp.question, followUp.number, style);
       setTurn({ kind: "follow-up", followUpKind: followUp.kind, question: followUp.question, number: followUp.number, of: followUp.of });
-      void ask(followUp.question, "start");
+      void ask(spokenFollowUp, "start");
     },
-    [ask, moveOn],
+    [ask, moveOn, style],
   );
 
   /** "Something's wrong": pause everything while you say what's off. */
@@ -712,8 +735,24 @@ export function LiveInterview(p: LiveInterviewProps) {
       startedAt.current = new Date().toISOString();
       clock.current = { start: Date.now(), paused: 0, pausedAt: null };
     }
-    askMain(q);
-  }, [mic, fail, askMain, q]);
+
+    const isFullInterview = isRun && session?.mode === "interview" && qIndex === 0;
+    if (isFullInterview) {
+      const fullIntro = getFullInterviewIntro({
+        interviewerName: name,
+        interviewerTitle: p.interviewer.title,
+        heading: p.heading,
+        minutes: session?.minutes,
+        style,
+        firstQuestionText: q.text,
+      });
+      setIntroInfo(fullIntro);
+      setSpeakingIntro(true);
+      askMain(q, `${fullIntro.greeting} ... ${fullIntro.agenda} ... ${fullIntro.bridge}`);
+    } else {
+      askMain(q);
+    }
+  }, [mic, fail, isRun, session?.mode, session?.minutes, qIndex, name, p.interviewer.title, p.heading, style, askMain, q]);
 
   /** Drill: on to the next question after its feedback. */
   const afterFeedback = useCallback(() => {
@@ -1271,6 +1310,32 @@ export function LiveInterview(p: LiveInterviewProps) {
                         </span>
                       </div>
                     </div>
+
+                      {/* Full interview introduction & session overview banner */}
+                      {introInfo && qIndex === 0 && (speakingIntro || phase === "asking") && (
+                        <div className="mt-4 rounded-xl bg-gradient-to-r from-blue/20 via-indigo-500/15 to-purple-500/15 border border-blue/30 p-4.5 animate-fade-in shadow-lg">
+                          <div className="flex items-start gap-3">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue/25 text-blue-soft border border-blue/40 mt-0.5">
+                              <Icon name="sparkle" size={17} />
+                            </div>
+                            <div className="min-w-0 flex-1 space-y-1">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className="text-xs font-bold text-white tracking-tight">👋 Welcome to your mock interview</span>
+                                <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-blue/30 text-blue-soft">Full Interview</span>
+                                {speakingIntro && (
+                                  <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-400">
+                                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                                    {name} is introducing the session
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-xs text-white/85 leading-relaxed">
+                                <span className="font-semibold text-white">{introInfo.greeting}</span> {introInfo.agenda}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
 
                       {/* Question text */}
                       {turn.kind === "follow-up" ? (
