@@ -32,6 +32,9 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
             <Link href="/" className="hover:text-mk-ink transition-colors font-medium">
               Interview practice
             </Link>
+            <Link href="/interview-questions" className="hover:text-mk-ink transition-colors font-medium">
+              Interview questions
+            </Link>
             <Link href="/present" className="hover:text-mk-ink transition-colors font-medium">
               For presenters
             </Link>

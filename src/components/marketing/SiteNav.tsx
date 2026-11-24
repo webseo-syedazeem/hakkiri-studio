@@ -5,21 +5,27 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import { useAuth } from "@/lib/auth/AuthContext";
+import { IconChevronDown } from "@/components/interview-questions/Icons";
 
 /** The public site's top links matching the modern executive navigation. */
 export function SiteNav() {
   const path = usePathname();
   const { user, logout } = useAuth();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [questionsMenuOpen, setQuestionsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const questionsRef = useRef<HTMLDivElement>(null);
 
   const isPresent = path === "/present";
   const base = isPresent ? "/present" : "";
 
-  // Core navigation links matching the executive navigation (without CV references)
-  const primaryLinks: [string, string, boolean][] = [
+  // Core navigation links matching the executive navigation
+  const interviewLinks: [string, string, boolean][] = [
     ["/", "Interviews", path === "/" || path === "/landing"],
     ["/present", "Presentations", isPresent],
+  ];
+
+  const secondaryLinks: [string, string, boolean][] = [
     ["/about", "About", path === "/about"],
     ["/blog", "Blog", path.startsWith("/blog")],
     [`${base}#how`, "How it works", false],
@@ -28,26 +34,101 @@ export function SiteNav() {
   ];
 
   const isUserAdmin = !!user?.isAdmin;
+  const isQuestionsActive = path.startsWith("/interview-questions");
 
-  // Close dropdown when clicking outside
+  // Close dropdowns when clicking outside
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setUserMenuOpen(false);
       }
+      if (questionsRef.current && !questionsRef.current.contains(e.target as Node)) {
+        setQuestionsMenuOpen(false);
+      }
     }
-    if (userMenuOpen) {
+    if (userMenuOpen || questionsMenuOpen) {
       document.addEventListener("mousedown", handleClickOutside);
     }
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [userMenuOpen]);
+  }, [userMenuOpen, questionsMenuOpen]);
 
   return (
     <nav aria-label="Main" className="flex items-center gap-1.5 text-[13px] sm:gap-2.5">
       {/* Primary Navigation Links */}
-      {primaryLinks.map(([href, label, current]) => (
+      {interviewLinks.map(([href, label, current]) => (
+        <Link
+          key={label}
+          href={href}
+          aria-current={current ? "page" : undefined}
+          className={clsx(
+            "hidden rounded-full px-3 py-1.5 transition-all duration-200 md:inline font-medium text-[13px]",
+            current
+              ? "text-mk-ink font-semibold bg-black/[0.05] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.04)]"
+              : "text-mk-ink/70 hover:text-mk-ink hover:bg-black/[0.03]"
+          )}
+        >
+          {label}
+        </Link>
+      ))}
+
+      {/* Interview Questions Dropdown */}
+      <div
+        className="relative hidden md:inline-block"
+        ref={questionsRef}
+        onMouseEnter={() => setQuestionsMenuOpen(true)}
+        onMouseLeave={() => setQuestionsMenuOpen(false)}
+      >
+        <button
+          type="button"
+          onClick={() => setQuestionsMenuOpen((prev) => !prev)}
+          className={clsx(
+            "inline-flex items-center gap-1 rounded-full px-3 py-1.5 transition-all duration-200 font-medium text-[13px] cursor-pointer",
+            isQuestionsActive
+              ? "text-mk-ink font-semibold bg-black/[0.05] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.04)]"
+              : "text-mk-ink/70 hover:text-mk-ink hover:bg-black/[0.03]"
+          )}
+          aria-expanded={questionsMenuOpen}
+        >
+          <span>Interview Questions</span>
+          <IconChevronDown className={clsx("h-3 w-3 text-slate-400 transition-transform duration-200", questionsMenuOpen && "rotate-180")} />
+        </button>
+
+        {questionsMenuOpen && (
+          <div className="absolute left-0 top-[calc(100%+6px)] z-50 w-72 rounded-2xl border border-black/10 bg-white/95 p-2 shadow-xl backdrop-blur-xl animate-dropdown">
+            <Link
+              href="/interview-questions"
+              onClick={() => setQuestionsMenuOpen(false)}
+              className="flex flex-col gap-0.5 rounded-xl p-2.5 transition-colors hover:bg-slate-100/80"
+            >
+              <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                <span className="text-blue-600 font-bold">●</span>
+                20 Most Common Questions
+              </span>
+              <span className="text-[11px] text-slate-500 pl-3.5">
+                The 20 most asked questions and sample answers
+              </span>
+            </Link>
+
+            <Link
+              href="/interview-questions/tell-me-about-yourself"
+              onClick={() => setQuestionsMenuOpen(false)}
+              className="flex flex-col gap-0.5 rounded-xl p-2.5 transition-colors hover:bg-slate-100/80"
+            >
+              <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                <span className="text-indigo-600 font-bold">●</span>
+                Tell Me About Yourself Guide
+              </span>
+              <span className="text-[11px] text-slate-500 pl-3.5">
+                The 60-second formula & 9 role sample answers
+              </span>
+            </Link>
+          </div>
+        )}
+      </div>
+
+      {secondaryLinks.map(([href, label, current]) => (
         <Link
           key={label}
           href={href}
