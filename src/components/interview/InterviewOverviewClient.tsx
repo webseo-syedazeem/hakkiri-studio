@@ -477,7 +477,7 @@ export function InterviewOverviewClient({
               }}
               variant="primary"
               size="md"
-              buttonClassName="px-4 py-2 rounded-xl text-xs flex items-center gap-2 group shadow-[0_4px_20px_rgba(79,82,248,0.35)] hover:shadow-[0_6px_26px_rgba(79,82,248,0.6)]"
+              buttonClassName="px-4 py-2 rounded-xl text-xs flex items-center justify-center min-w-[155px] whitespace-nowrap gap-2 group shadow-[0_4px_20px_rgba(79,82,248,0.35)] hover:shadow-[0_6px_26px_rgba(79,82,248,0.6)]"
             >
               <Icon name="play" size={13} className="group-hover:translate-x-0.5 transition-transform duration-200" />
               <span>Practise interview</span>
@@ -561,7 +561,7 @@ export function InterviewOverviewClient({
                   }}
                   variant="primary"
                   size="md"
-                  buttonClassName="px-5 py-2.5 rounded-xl font-semibold text-sm flex items-center gap-2 group shadow-[0_4px_22px_rgba(79,82,248,0.45)] hover:shadow-[0_6px_28px_rgba(79,82,248,0.7)] transition-all duration-200"
+                  buttonClassName="px-5 py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center min-w-[165px] whitespace-nowrap gap-2 group shadow-[0_4px_22px_rgba(79,82,248,0.45)] hover:shadow-[0_6px_28px_rgba(79,82,248,0.7)] transition-all duration-200"
                 >
                   <Icon name="play" size={14} className="group-hover:translate-x-0.5 transition-transform duration-200" />
                   <span>Start practising</span>
@@ -613,9 +613,11 @@ export function InterviewOverviewClient({
                           <div
                             className={clsx(
                               "h-full rounded-full transition-all duration-500",
-                              cat.score < 3
+                              cat.score < 2
                                 ? "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]"
-                                : "bg-indigo-400 shadow-[0_0_8px_rgba(129,140,248,0.5)]",
+                                : cat.score < 3.5
+                                  ? "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]"
+                                  : "bg-indigo-400 shadow-[0_0_8px_rgba(129,140,248,0.5)]",
                             )}
                             style={{ width: `${pct}%` }}
                           />

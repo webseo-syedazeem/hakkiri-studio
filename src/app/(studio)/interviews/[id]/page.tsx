@@ -101,14 +101,15 @@ export default async function InterviewOverview({
   const initialStage = stages.find((s) => s.status === "next") ?? stages[0];
   const initialStageId = initialStage.id;
 
-  const mockSessions = (await listMocksAsync(interview.id, user.id)).filter((m) => m.status !== "planned");
+  const allMocksList = await listMocksAsync(interview.id, user.id);
   const sessionRowsMap = new Map<string, MockRow[]>();
   await Promise.all(
-    mockSessions.map(async (m) => {
+    allMocksList.map(async (m) => {
       const rows = await rowsForAsync(m, user.id);
       sessionRowsMap.set(m.id, rows);
     })
   );
+  const mockSessions = allMocksList.filter((m) => m.status !== "planned" || (sessionRowsMap.get(m.id)?.length ?? 0) > 0);
 
   const recentSessions: OverviewPracticeItem[] = mockSessions.map((m) => {
     const rows = sessionRowsMap.get(m.id) ?? [];
@@ -123,7 +124,9 @@ export default async function InterviewOverview({
   });
 
   // Category scores from this person's own interviews with new questions, newest first. Empty until one is scored.
-  const fresh = mockSessions.filter((m) => m.status === "done" && isFresh(m)).sort((a, b) => Date.parse(b.startedAt) - Date.parse(a.startedAt));
+  const fresh = mockSessions
+    .filter((m) => (m.status === "done" || (sessionRowsMap.get(m.id)?.length ?? 0) > 0))
+    .sort((a, b) => Date.parse(b.startedAt) - Date.parse(a.startedAt));
   const freshCategoryScores = fresh.map((m) => categoryScores(sessionRowsMap.get(m.id) ?? []));
   const scoreCategories: OverviewScoreCategory[] = overviewCategories(freshCategoryScores, u.technicalLabel).map((c) => ({ name: c.name, score: c.score, delta: c.delta }));
 

@@ -46,7 +46,7 @@ export function pickQuestions(
   const sparesShort = zero();
   const main: string[] = [];
   const spares: string[] = [];
-  const isStrengths = (settings.mix.curveball ?? 0) >= 30;
+  const isStrengths = (settings.mix.curveball ?? 0) >= 40;
   const isTechnical = settings.preset === "technical";
   const order: QuestionGroup[] = isStrengths
     ? ["curveball", "competency", ...ASK_ORDER.filter((g) => g !== "curveball" && g !== "competency")]
@@ -55,9 +55,14 @@ export function pickQuestions(
       : ASK_ORDER;
   for (const g of order) {
     if (alloc[g] === 0) continue;
-    const pool = bank.filter(
+    let pool = bank.filter(
       (q) => q.group === g && !q.slot && !q.retired && !q.pay && !q.drillOnly && matchesDifficulty(q, settings.difficulty),
     );
+    if (g === "curveball" && isStrengths) {
+      const strengthsQ = pool.filter((q) => q.type === "strengths" || /\bstrengths?\b/i.test(`${q.text} ${q.short}`));
+      const nonStrengthsQ = pool.filter((q) => q.type !== "strengths" && !/\bstrengths?\b/i.test(`${q.text} ${q.short}`));
+      if (strengthsQ.length > 0) pool = [...strengthsQ, ...nonStrengthsQ];
+    }
     const unheard = [...pool.filter((q) => q.custom && !lastAsked.has(q.id)), ...pool.filter((q) => !q.custom && !lastAsked.has(q.id))];
     const chosen = unheard.slice(0, alloc[g]);
     if (chosen.length < alloc[g] && opts.allowRepeats) {
@@ -71,8 +76,8 @@ export function pickQuestions(
     main.push(...chosen.map((q) => q.id));
     spares.push(...spare.map((q) => q.id));
   }
-  // Technical or short strengths-focused practice starts straight with core questions rather than "Tell me about yourself".
-  const skipOpening = isTechnical || (isStrengths && settings.minutes <= 10);
+  // Technical stage interviews start straight with technical questions rather than "Tell me about yourself".
+  const skipOpening = isTechnical;
   const opening = skipOpening ? undefined : bank.find((q) => q.slot === "opening");
   const closing = hasClosing(settings.minutes) ? bank.find((q) => q.slot === "closing") : undefined;
   return { questionIds: [...(opening ? [opening.id] : []), ...main, ...(closing ? [closing.id] : [])], spareIds: spares, short, sparesShort };

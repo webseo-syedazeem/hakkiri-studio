@@ -204,6 +204,7 @@ export interface Answer {
   id: string;
   userId?: string;
   interviewId: string;
+  sessionId?: string;
   questionId: string;
   questionNumber: number;
   questionsInMock: number;

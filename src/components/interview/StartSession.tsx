@@ -88,9 +88,9 @@ export function StartButton({
         )}
       >
         {busy ? (
-          <span className="inline-flex items-center gap-2">
+          <span className="inline-flex items-center justify-center gap-2 whitespace-nowrap">
             <span className="h-3 w-3 rounded-full border-2 border-white/30 border-t-white animate-spin shrink-0" />
-            <span>{slow && body.kind !== "rerun" ? "Writing your questions…" : "Starting…"}</span>
+            <span>{slow && body.kind !== "rerun" ? "Preparing questions…" : "Starting…"}</span>
           </span>
         ) : children}
       </Button>

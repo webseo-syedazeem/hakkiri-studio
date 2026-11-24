@@ -192,7 +192,7 @@ export default async function MockInterviewPage({
       if (type) {
         const typeCandidates = (candidates.length ? candidates : interview.questions).filter((item) => {
           if (item.slot) return false;
-          if (type === "strengths") return item.type === "strengths" || /strength/i.test(`${item.text} ${item.short}`) || item.group === "curveball";
+          if (type === "strengths") return item.type === "strengths" || /\bstrengths?\b/i.test(`${item.text} ${item.short}`);
           if (type === "competency") return item.type === "competency" || item.group === "competency";
           if (type === "technical") return item.type === "technical" || item.group === "technical";
           if (type === "situational") return item.type === "situational" || (item.group === "curveball" && item.type !== "strengths");

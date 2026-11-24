@@ -10,7 +10,7 @@ import { getInterview, getInterviewAsync } from "@/lib/interviews/store";
 import { understandingOf } from "@/lib/interviews/build";
 import { categoryLabel, settingsLine } from "@/lib/interviews/settings";
 import { findAnswer } from "@/lib/answers/store";
-import { doneSessions, findMock, findMockAsync, isFresh, previousScore, rerunOf, rowsFor, rowsForAsync, SKIP_REASON_LABEL, type MockRecord } from "@/lib/mocks/store";
+import { doneSessions, findMock, findMockAsync, isFresh, previousScore, rerunOf, rowsFor, rowsForAsync, saveMockAsync, SKIP_REASON_LABEL, type MockRecord } from "@/lib/mocks/store";
 import { buildReport, countsLine, VERDICT_LABEL, type MockRow } from "@/lib/mocks/report";
 import { compareRuns } from "@/lib/sessions/compare";
 import { HABIT_FOR_FIX, HABIT_LABEL, habitLine, rowHabit, suggestDrills } from "@/lib/sessions/drills";
@@ -35,7 +35,7 @@ function Score({ value, className }: { value: number | null; className?: string 
   if (value == null) return <span className={clsx("text-dim", className)}>Not scored</span>;
   return (
     <span className={className}>
-      <span className={clsx("num font-semibold", value < 3 ? "text-red-soft" : "text-ink")}>{value.toFixed(1)}</span> <span className="text-muted">{scoreLabel(value)}</span>
+      <span className={clsx("num font-semibold", value < 2 ? "text-red-soft" : value < 3.5 ? "text-amber-400" : "text-ink")}>{value.toFixed(1)}</span> <span className="text-muted">{scoreLabel(value)}</span>
     </span>
   );
 }
@@ -127,6 +127,12 @@ export default async function SessionReportPage({ params, searchParams }: { para
   const u = understandingOf(interview);
   const label = (g: MockRow["group"]) => categoryLabel(g, u.technicalLabel);
   const rows = (await rowsForAsync(mock, user.id)) ?? rowsFor(mock, user.id);
+  if (mock.status === "planned" && rows.length > 0) {
+    mock.status = "done";
+    mock.answerIds = rows.map((r) => r.answerId).filter(Boolean) as string[];
+    mock.finishedAt = new Date().toISOString();
+    await saveMockAsync(mock, user.id);
+  }
   const report = buildReport(rows, interview.interviewer.name);
   const lengthSec = Math.max(0, (Date.parse(mock.finishedAt) - Date.parse(mock.startedAt)) / 1000);
   const title = sessionTitle(mock, interview);

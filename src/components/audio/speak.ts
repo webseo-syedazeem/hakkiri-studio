@@ -17,11 +17,11 @@ export type VoiceName = "easy" | "medium" | "hard";
 export type SpeakOptions = { rate?: number; voice?: VoiceName; onStart?: () => void };
 type Speech = { done: Promise<void>; cancel: () => void };
 
-/** Once the server says there's no natural voice (or it fails twice running), stop asking for this page's life. */
+/** Once the server says there's no natural voice, stop asking for this page's life. */
 let natural: "unknown" | "on" | "off" = "unknown";
 let failures = 0;
-/** Kept under 3 seconds so the candidate never waits more than 2.5–3s for the interviewer to speak. */
-const NATURAL_WAIT_MS = 2500;
+/** Generous wait time so cloud voice synthesis completes reliably without prematurely aborting. */
+const NATURAL_WAIT_MS = 9000;
 
 /** In-memory object URL cache for prefetched question audio. */
 const audioBlobCache = new Map<string, string>();
@@ -255,8 +255,8 @@ export function speak(text: string, opts: SpeakOptions = {}): Speech {
     } catch {
       clearTimeout(slow);
       if (cancelled) return;
-      // No natural voice, too slow, or it failed: the browser speaks instead.
-      if (natural !== "off" && ++failures >= 2) natural = "off";
+      // If natural voice was delayed or failed for this single line, smoothly fallback to browser voice for this line
+      // without permanently muting the natural interviewer for the entire session.
       if (!finished) browserSpeak(spoken, opts, finish, setCancel);
     }
   })();

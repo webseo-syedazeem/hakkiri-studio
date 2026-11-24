@@ -311,7 +311,7 @@ export function InterviewReportView(p: InterviewReportViewProps) {
                       <span className="num font-semibold text-white">{cat.score.toFixed(1)} / 5</span>
                     </div>
                     <div className="h-2 w-full rounded-full bg-white/[0.08] overflow-hidden" aria-hidden>
-                      <div className={clsx("h-full rounded-full transition-all duration-700", cat.score < 3 ? "bg-gradient-to-r from-rose-500 to-red-400" : "bg-gradient-to-r from-indigo-500 to-purple-400")} style={{ width: `${Math.min(100, (cat.score / 5) * 100)}%` }} />
+                      <div className={clsx("h-full rounded-full transition-all duration-700", cat.score < 2 ? "bg-gradient-to-r from-rose-500 to-red-400" : cat.score < 3.5 ? "bg-gradient-to-r from-amber-500 to-orange-400" : "bg-gradient-to-r from-indigo-500 to-purple-400")} style={{ width: `${Math.min(100, (cat.score / 5) * 100)}%` }} />
                     </div>
                   </div>
                 ))}

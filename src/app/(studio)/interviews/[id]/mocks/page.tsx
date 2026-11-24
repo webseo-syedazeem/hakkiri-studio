@@ -62,7 +62,7 @@ export default async function PastSessionsPage({ params }: { params: Promise<{ i
                   <span className="text-dim">Not scored</span>
                 ) : score != null ? (
                   <>
-                    <b className={clsx("num font-semibold", score < 3 && "text-red-soft")}>{score.toFixed(1)}</b> <span className="text-muted">{scoreLabel(score)}</span>
+                    <b className={clsx("num font-semibold", score < 2 ? "text-red-soft" : score < 3.5 ? "text-amber-400" : "text-ink")}>{score.toFixed(1)}</b> <span className="text-muted">{scoreLabel(score)}</span>
                   </>
                 ) : (
                   <span className="text-dim">Not scored</span>

@@ -68,10 +68,10 @@ export async function POST(req: Request) {
     const synthPromise = elevenKey
       ? synthesise(text, voice, elevenKey)
       : synthesiseDeepgram(text, voice, deepgramKey);
-    // Timeout in 2400ms so the user never waits more than 2.5s for audio
+    // Generous timeout so cloud voice synthesis completes reliably and caches
     const audio = await Promise.race([
       synthPromise,
-      new Promise<ArrayBuffer>((_, reject) => setTimeout(() => reject(new Error("Voice synthesis timed out")), 2400)),
+      new Promise<ArrayBuffer>((_, reject) => setTimeout(() => reject(new Error("Voice synthesis timed out")), 9000)),
     ]);
     memVoiceCache.set(hash, audio);
     saveFile(file, audio);

@@ -27,7 +27,7 @@ function Score({ value }: { value: number | null }) {
   if (value == null) return <span className="text-dim">Not scored</span>;
   return (
     <span>
-      <span className={clsx("num font-semibold", value < 3 ? "text-red-soft" : "text-ink")}>{value.toFixed(1)}</span> <span className="text-muted">{scoreLabel(value)}</span>
+      <span className={clsx("num font-semibold", value < 2 ? "text-red-soft" : value < 3.5 ? "text-amber-400" : "text-ink")}>{value.toFixed(1)}</span> <span className="text-muted">{scoreLabel(value)}</span>
     </span>
   );
 }

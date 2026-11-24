@@ -244,7 +244,17 @@ export function rerunOf(sessionId: string, userId: string): MockRecord | undefin
 /** The report rows for a session, in the order the questions were asked, as its owner (`userId`) sees them. */
 export function rowsFor(m: MockRecord, userId: string): MockRow[] {
   const interview = getInterview(m.interviewId, userId);
-  const fromAnswers = m.answerIds.flatMap((id) => {
+  let answerIds = m.answerIds ?? [];
+  if (answerIds.length === 0) {
+    const sessionAnswers = listAnswers(m.interviewId, userId).filter((a) => a.sessionId === m.id);
+    if (sessionAnswers.length > 0) {
+      answerIds = sessionAnswers.map((a) => a.id);
+      m.answerIds = answerIds;
+      if (m.status === "planned") m.status = "done";
+      saveMock(m, userId);
+    }
+  }
+  const fromAnswers = answerIds.flatMap((id) => {
     const a = findAnswer(id, userId);
     const q = a ? resolveInterviewQuestion(interview, a.questionId) : undefined;
     return a && q ? [rowFromAnswer(a, q, a.questionNumber)] : [];
@@ -258,9 +268,20 @@ export async function rowsForAsync(m: MockRecord, userId: string): Promise<MockR
     return m.rows.map((r, k) => ({ ...r, number: k + 1 }));
   }
   const interview = (await getInterviewAsync(m.interviewId, userId)) ?? getInterview(m.interviewId, userId);
+  let answerIds = m.answerIds ?? [];
+  if (answerIds.length === 0) {
+    const allAnswers = (await listAnswersAsync(m.interviewId, userId)) ?? listAnswers(m.interviewId, userId);
+    const sessionAnswers = allAnswers.filter((a) => a.sessionId === m.id);
+    if (sessionAnswers.length > 0) {
+      answerIds = sessionAnswers.map((a) => a.id);
+      m.answerIds = answerIds;
+      if (m.status === "planned") m.status = "done";
+      await saveMockAsync(m, userId);
+    }
+  }
   const fromAnswers = (
     await Promise.all(
-      m.answerIds.map(async (id) => {
+      answerIds.map(async (id) => {
         const a = (await findAnswerAsync(id, userId)) ?? findAnswer(id, userId);
         const q = a ? resolveInterviewQuestion(interview, a.questionId) : undefined;
         return a && q ? [rowFromAnswer(a, q, a.questionNumber)] : [];
