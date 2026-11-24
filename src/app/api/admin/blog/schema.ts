@@ -36,5 +36,5 @@ export const PostBody = z.object({
   seo: Seo.optional(),
 });
 
-/** A post body is at most this many bytes (a long article with its markup is well under it). */
-export const POST_MAX_BYTES = 1_000_000;
+/** A post body is at most this many bytes: room for the longest article the schema allows, in any language. */
+export const POST_MAX_BYTES = 2_500_000;

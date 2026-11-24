@@ -29,7 +29,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ session
   }
 
   const { sessionId } = await params;
-  const sent = await readJsonValue(req, 8_000);
+  const sent = await readJsonValue(req, 16_000);
   if (!sent.ok) return sent.response;
   const parsed = Body.safeParse(sent.json);
   if (!parsed.success) return NextResponse.json({ error: "bad-request", message: "Your feedback couldn’t be saved. Try again." }, { status: 400 });

@@ -45,7 +45,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const blocked = guard(req, "ai", { practice: true, userId: user.id });
   if (blocked) return blocked;
   setUsageContext({ userId: user.id, interviewId: id, feature: "questions" });
-  const sent = await readJsonValue(req, 120_000);
+  const sent = await readJsonValue(req, 300_000);
   if (!sent.ok) return sent.response;
   const parsed = Body.safeParse(sent.json);
   if (!parsed.success) return NextResponse.json({ error: "bad-request", message: "Check what Hakkiri understood: every field needs a few words." }, { status: 400 });

@@ -30,7 +30,7 @@ export async function POST(req: Request) {
     return r as Response;
   }
   if (rateLimited(`feedback:user:${user.id}`, 10, 60_000)) return NextResponse.json({ error: "slow-down" }, { status: 429 });
-  const sent = await readJsonValue(req, 8_000);
+  const sent = await readJsonValue(req, 16_000);
   if (!sent.ok) return sent.response;
   const parsed = Body.safeParse(sent.json);
   if (!parsed.success) return NextResponse.json({ error: "bad-request" }, { status: 400 });

@@ -52,8 +52,9 @@ export async function POST(req: Request) {
   if (blocked) return blocked;
   setUsageContext({ userId: user.id, feature: "set-up" });
   
-  // A CV, a job spec, a cover letter and the company's site text, each up to 25,000 characters: 160 KB covers it.
-  const sent = await readJsonValue(req, 160_000);
+  // A CV, a job spec, a cover letter and the company's site text, each up to 25,000 characters. The limit is in
+  // bytes and a character can be up to four, so it leaves room for all four in any language.
+  const sent = await readJsonValue(req, 450_000);
   if (!sent.ok) return sent.response;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const rawBody = (sent.json && typeof sent.json === "object" && !Array.isArray(sent.json) ? sent.json : null) as Record<string, any> | null;

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "node:crypto";
+import { cookieIsSecure } from "@/lib/auth/session-cookie";
 
 export const dynamic = "force-dynamic";
 
@@ -35,7 +36,7 @@ export async function GET(req: NextRequest) {
       name: "g_oauth_state",
       value: JSON.stringify({ state, codeVerifier }),
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: cookieIsSecure(req),
       sameSite: "lax",
       path: "/",
       maxAge: 10 * 60, // 10 minutes

@@ -10,7 +10,7 @@ export async function POST(req: Request) {
   if (g) return g;
 
   try {
-    const sent = await readJsonValue(req, 80_000);
+    const sent = await readJsonValue(req, 250_000);
     if (!sent.ok) return sent.response;
     const body = (sent.json && typeof sent.json === "object" && !Array.isArray(sent.json) ? sent.json : {}) as Record<string, unknown>;
     const text = body.text;

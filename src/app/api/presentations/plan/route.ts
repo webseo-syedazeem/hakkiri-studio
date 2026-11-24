@@ -37,7 +37,7 @@ export async function POST(req: Request) {
   const blocked = guard(req, "ai", { userId: user.id });
   if (blocked) return blocked;
   setUsageContext({ userId: user.id, feature: "presentation" });
-  const sent = await readJsonValue(req, 120_000);
+  const sent = await readJsonValue(req, 2_000_000);
   if (!sent.ok) return sent.response;
   const parsed = Body.safeParse(sent.json);
   if (!parsed.success) return NextResponse.json({ error: "bad-request", message: "Those slides couldn’t be read." }, { status: 400 });

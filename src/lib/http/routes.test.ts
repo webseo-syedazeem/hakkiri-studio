@@ -148,7 +148,9 @@ describe("a feedback note", () => {
     expect((await feedback.POST(json(note))).status).toBe(200);
     expect(recentFeedback()[0]).toMatchObject({ userId: alice.id, text: "Useful report", page: "/dashboard" });
     for (const bad of [{ ...note, mood: "great" }, { ...note, text: "" }, { ...note, text: "x".repeat(2001) }, []]) expect((await feedback.POST(json(bad))).status).toBe(400);
-    expect((await feedback.POST(json({ ...note, text: "x".repeat(9000) }))).status).toBe(413);
+    expect((await feedback.POST(json({ ...note, text: "x".repeat(17_000) }))).status).toBe(413);
+    // A note in a script that takes three bytes a character still fits.
+    expect((await feedback.POST(json({ ...note, text: "語".repeat(2000) }))).status).toBe(200);
     rate()?.clear();
     for (let i = 0; i < 10; i++) await feedback.POST(json(note));
     expect((await feedback.POST(json(note))).status).toBe(429);
@@ -262,7 +264,9 @@ describe("writing a blog post (administrators)", () => {
       expect((await blog.POST(json(bad))).status, JSON.stringify(bad).slice(0, 50)).toBe(400);
     }
     expect((await blog.POST(json({ content: "No title." }))).status).toBe(400);
-    expect((await blog.POST(json({ title: "T", content: "x".repeat(1_100_000) }))).status).toBe(413);
+    expect((await blog.POST(json({ title: "T", content: "x".repeat(2_600_000) }))).status).toBe(413);
+    // Too long for a post, though within what can be sent: refused by the schema instead.
+    expect((await blog.POST(json({ title: "T", content: "x".repeat(700_000) }))).status).toBe(400);
 
     const changed = await blogPost.PUT(json({ id: "another-id", title: "Changed", role: "admin", author: { name: "New Name" } }, "PUT"), ctx(post.id));
     expect(changed.status).toBe(200);
@@ -290,7 +294,8 @@ describe("the free CV check", () => {
     const made = await publicAudit.POST(json({ text: cv, region: "mars", docType: { $ne: 1 } }, "POST", from(1)));
     expect(made.status).toBe(200);
     for (const bad of [{ text: 5 }, { text: "too short" }, "not json", []]) expect((await publicAudit.POST(json(bad, "POST", from(1)))).status).toBe(400);
-    expect((await publicAudit.POST(json({ text: "x".repeat(90_000) }, "POST", from(1)))).status).toBe(413);
+    expect((await publicAudit.POST(json({ text: "x".repeat(260_000) }, "POST", from(1)))).status).toBe(413);
+    expect((await publicAudit.POST(json({ text: "x ".repeat(20_000) }, "POST", from(1)))).status).toBe(400); // over the 25,000 characters a CV may be
   });
 
   it("unlocking a report needs a real email address, and only so many tries a minute", async () => {

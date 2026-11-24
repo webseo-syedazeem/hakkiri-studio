@@ -94,7 +94,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "slow-down" }, { status: 429 });
   }
 
-  const raw = await readCapped(req, 32_000).catch(() => "");
+  const raw = await readCapped(req, 64_000).catch(() => "");
   if (raw === null) return NextResponse.json({ error: "too-large", message: "That is too long to send. Shorten your answers and try again." }, { status: 413 });
   let json: unknown = null;
   try {

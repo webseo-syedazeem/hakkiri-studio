@@ -70,8 +70,13 @@ const DANGER_OUTLINE =
   "inline-flex h-[42px] items-center rounded-[10px] px-[18px] text-sm font-semibold text-red-soft shadow-[inset_0_0_0_1px_rgb(255_92_97/0.45)] hover:bg-red/10 disabled:pointer-events-none disabled:opacity-50";
 const DANGER = "inline-flex h-[38px] items-center rounded-[9px] bg-red px-4 text-sm font-semibold text-booth hover:bg-red-soft disabled:pointer-events-none disabled:opacity-50";
 
-/** Download a copy of everything, or delete everything (typed confirmation). */
-export function DataButtons({ hasData }: { hasData: boolean }) {
+/**
+ * Download a copy of everything, or delete everything (typed confirmation).
+ * Deleting is always offered: the six counts above are not everything that can
+ * be held (CVs, the Apply pages, settings, notes sent, and what this browser
+ * keeps), so "nothing counted" never means "nothing to delete".
+ */
+export function DataButtons({ hasData: _hasData }: { hasData: boolean }) {
   const [confirming, setConfirming] = useState(false);
   const [typed, setTyped] = useState("");
   const [state, setState] = useState<"idle" | "deleting" | "done" | "failed">("idle");
@@ -101,7 +106,7 @@ export function DataButtons({ hasData }: { hasData: boolean }) {
           Download my data
         </a>
         {!confirming && (
-          <button type="button" onClick={() => setConfirming(true)} disabled={!hasData} className={DANGER_OUTLINE}>
+          <button type="button" onClick={() => setConfirming(true)} className={DANGER_OUTLINE}>
             Delete all my data
           </button>
         )}
