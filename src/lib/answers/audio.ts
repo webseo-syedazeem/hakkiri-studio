@@ -1,4 +1,4 @@
-import { fileTime, loadFile, loadFileAsync, loadJson, removeDir, removeFile, saveFile, saveJson, savingToDisk } from "@/lib/storage/disk";
+import { fileTime, loadFile, loadFileAsync, loadJson, loadJsonAsync, removeDir, removeFile, saveFile, saveJson, saveJsonAsync, savingToDisk } from "@/lib/storage/disk";
 
 /**
  * Recordings, kept so you can hear your answer on the feedback screen.
@@ -26,9 +26,8 @@ const own = (id: string): Saved[] | undefined => (Object.prototype.hasOwnPropert
 
 export function saveRecordings(answerId: string, recordings: (Recording | null)[], userId?: string) {
   if (!safeId(answerId)) return;
-  // Kept in memory only when there's no disk (tests); otherwise read back from the file on demand,
-  // so a long-running server doesn't hold every recording ever made.
-  if (!savingToDisk) memory.set(answerId, recordings);
+  // Always keep in memory so same-instance playback is immediate
+  memory.set(answerId, recordings);
   const at = new Date().toISOString();
   index[answerId] = recordings.map((r, turn) => {
     if (!r) return null;
@@ -37,6 +36,19 @@ export function saveRecordings(answerId: string, recordings: (Recording | null)[
     return { file, type: r.type, at, ...(userId ? { userId } : {}) };
   });
   saveJson(INDEX, index);
+}
+
+export async function saveRecordingsAsync(answerId: string, recordings: (Recording | null)[], userId?: string): Promise<void> {
+  if (!safeId(answerId)) return;
+  memory.set(answerId, recordings);
+  const at = new Date().toISOString();
+  index[answerId] = recordings.map((r, turn) => {
+    if (!r) return null;
+    const file = `recordings/${answerId}-${turn}.${ext(r.type)}`;
+    saveFile(file, r.data);
+    return { file, type: r.type, at, ...(userId ? { userId } : {}) };
+  });
+  await saveJsonAsync(INDEX, index);
 }
 
 export function getRecording(answerId: string, turn: number): Recording | null {
@@ -50,14 +62,47 @@ export function getRecording(answerId: string, turn: number): Recording | null {
 export async function getRecordingAsync(answerId: string, turn: number): Promise<Recording | null> {
   const inMemory = memory.get(answerId)?.[turn];
   if (inMemory) return inMemory;
-  const saved = own(answerId)?.[turn];
-  if (!saved) return null;
-  const data = (await loadFileAsync(saved.file)) ?? loadFile(saved.file);
-  return data ? { data, type: saved.type } : null;
+  let saved = own(answerId)?.[turn];
+  if (!saved) {
+    try {
+      const fromDb = await loadJsonAsync<Record<string, Saved[]>>(INDEX, {});
+      if (fromDb && fromDb[answerId]?.[turn]) {
+        index[answerId] = fromDb[answerId];
+        saved = fromDb[answerId]?.[turn];
+      }
+    } catch {
+      // ignore
+    }
+  }
+  if (saved) {
+    const data = (await loadFileAsync(saved.file)) ?? loadFile(saved.file);
+    if (data) {
+      const rec = { data, type: saved.type };
+      const existing = memory.get(answerId) ?? [];
+      existing[turn] = rec;
+      memory.set(answerId, existing);
+      return rec;
+    }
+  }
+  return null;
 }
 
 export function hasRecording(answerId: string, turn = 0): boolean {
   return memory.get(answerId)?.[turn] != null || own(answerId)?.[turn] != null;
+}
+
+export async function hasRecordingAsync(answerId: string, turn = 0): Promise<boolean> {
+  if (hasRecording(answerId, turn)) return true;
+  try {
+    const fromDb = await loadJsonAsync<Record<string, Saved[]>>(INDEX, {});
+    if (fromDb && fromDb[answerId]?.[turn]) {
+      index[answerId] = fromDb[answerId];
+      return true;
+    }
+  } catch {
+    // ignore
+  }
+  return false;
 }
 
 /** Deletes the recordings of these answers (when you delete an interview): the files, on disk and in the database's copy, and their entries. */

@@ -4,7 +4,7 @@ import { scoreAnswer } from "@/lib/ai/score";
 import { buildAnswer, buildFollowUp } from "@/lib/answers/build-answer";
 import { deleteDraft, deleteDraftAsync, getDraft, getDraftAsync } from "@/lib/answers/drafts";
 import { saveAnswer, saveAnswerAsync } from "@/lib/answers/store";
-import { saveRecordings } from "@/lib/answers/audio";
+import { saveRecordings, saveRecordingsAsync } from "@/lib/answers/audio";
 import { flushStorage } from "@/lib/storage/disk";
 import { notConfigured, scoringError } from "@/lib/answers/pipeline";
 import { getInterview, getInterviewAsync } from "@/lib/interviews/store";
@@ -66,6 +66,13 @@ export async function POST(_req: Request, { params }: { params: Promise<{ draftI
     recordUsage({ service: "claude", label: "score-answer", model: aiConfig.mainModel, inputTokens: 1000 + 350 * followTurns.length, cachedTokens: 2300, outputTokens: 1200 + 400 * followTurns.length, simulated: true });
   }
   try {
+    const groupMeaning = interview.understanding?.meanings?.[question.group];
+    const roleCriteria = [
+      groupMeaning ? `Category Focus (${question.group}): ${groupMeaning}` : "",
+      question.short ? `Question topic / behaviour: ${question.short}` : "",
+      interview.skills?.length ? `Key skills: ${interview.skills.join(", ")}` : "",
+    ].filter(Boolean).join("\n");
+
     const { result, followUps: followScores } = mock
       ? { result: mockScore(), followUps: followTurns.length ? mockFollowUpScores(followTurns.length) : null }
       : await scoreAnswer(
@@ -75,6 +82,11 @@ export async function POST(_req: Request, { params }: { params: Promise<{ draftI
             role: interview.role,
             seniority: interview.seniority ?? "Not stated",
             jobSummary: interview.jobSummary,
+            jobDescription: interview.documents?.job?.slice(0, 2500),
+            questionGroup: question.group,
+            questionShort: question.short,
+            assessedCriteria: roleCriteria,
+            company: interview.company,
             words: main.words,
             examples: [], // the calibration set goes here once it's rated
             // Your CV, so the stronger version uses your facts, not generic ones.
@@ -99,7 +111,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ draftI
     });
     await saveAnswerAsync(answer, user.id);
     await recordAskedQuestionAsync(draft.sessionId, answer.questionId, user.id);
-    saveRecordings(answer.id, draft.audio ?? [], user.id);
+    await saveRecordingsAsync(answer.id, draft.audio ?? [], user.id);
     await deleteDraftAsync(draft.id);
     await flushStorage();
     // The measured row comes back too, so a drill can show feedback straight away.

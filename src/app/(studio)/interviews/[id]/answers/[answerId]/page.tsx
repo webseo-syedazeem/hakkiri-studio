@@ -4,7 +4,7 @@ import { findAnswer, findAnswerAsync } from "@/lib/answers/store";
 import { resolveInterviewQuestion } from "@/lib/sessions/topics";
 import { scoreAnswerView } from "@/lib/answers/view";
 import { findMock, findMockAsync } from "@/lib/mocks/store";
-import { hasRecording } from "@/lib/answers/audio";
+import { hasRecording, hasRecordingAsync } from "@/lib/answers/audio";
 import { requirePageUser } from "@/lib/auth/require";
 import { mockAiEnabled } from "@/lib/ai/mock";
 import { QuestionFeedbackView } from "@/components/feedback/QuestionFeedbackView";
@@ -76,8 +76,14 @@ export default async function AnswerFeedbackPage({
       ? "Motivation"
       : "Situational";
 
-  const audioSrc = hasRecording(answer.id) ? `/api/answers/${answer.id}/audio/0` : null;
-  const followUps = scored.followUps.map((f, i) => ({ ...f, audioSrc: hasRecording(answer.id, i + 1) ? `/api/answers/${answer.id}/audio/${i + 1}` : null }));
+  const hasMain = (await hasRecordingAsync(answer.id, 0)) || hasRecording(answer.id, 0);
+  const audioSrc = hasMain ? `/api/answers/${answer.id}/audio/0` : null;
+  const followUps = await Promise.all(
+    scored.followUps.map(async (f, i) => {
+      const hasFollow = (await hasRecordingAsync(answer.id, i + 1)) || hasRecording(answer.id, i + 1);
+      return { ...f, audioSrc: hasFollow ? `/api/answers/${answer.id}/audio/${i + 1}` : null };
+    }),
+  );
 
   return (
     <QuestionFeedbackView

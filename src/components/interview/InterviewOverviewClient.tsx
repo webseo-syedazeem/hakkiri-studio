@@ -34,7 +34,7 @@ export const FOCUS_PRESETS: Record<
   "strengths-competency": {
     label: "Strengths & Competency (STAR)",
     description: "STAR behavioural competencies + spontaneous strengths questions",
-    mix: { curveball: 50, competency: 50, cv: 0, technical: 0, motivation: 0 },
+    mix: { competency: 40, technical: 20, curveball: 20, motivation: 20, cv: 0 },
   },
   balanced: {
     label: "Balanced (All areas)",

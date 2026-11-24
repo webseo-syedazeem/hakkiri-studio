@@ -58,7 +58,7 @@ export function pickQuestions(
     let pool = bank.filter(
       (q) => q.group === g && !q.slot && !q.retired && !q.pay && !q.drillOnly && matchesDifficulty(q, settings.difficulty),
     );
-    if (g === "curveball" && isStrengths) {
+    if (g === "curveball") {
       const strengthsQ = pool.filter((q) => q.type === "strengths" || /\bstrengths?\b/i.test(`${q.text} ${q.short}`));
       const nonStrengthsQ = pool.filter((q) => q.type !== "strengths" && !/\bstrengths?\b/i.test(`${q.text} ${q.short}`));
       if (strengthsQ.length > 0) pool = [...strengthsQ, ...nonStrengthsQ];

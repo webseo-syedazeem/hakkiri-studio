@@ -98,13 +98,15 @@ export function getConversationalBridge(
     "Thanks for walking through that. Next up — ",
     "Right, lovely... looking at the next question here — ",
     "Understood, thank you. Moving forward to our next scenario — ",
+    "Thanks for that thorough answer. Turning now to — ",
   ];
 
   const friendlyBridges = [
     "Brilliant, thank you! That was really insightful. Let's move on to our next question — ",
     "Great, thanks for walking me through that! Now, looking at another part of the role — ",
-    "Lovely, that makes total sense. Moving on — ",
+    "Lovely, thank you. Let's move on to the next question — ",
     "Right, thanks so much for sharing that! Let's touch on our next topic — ",
+    "Understood, thank you. Exploring our next area now — ",
   ];
 
   const toughBridges = [
@@ -112,6 +114,7 @@ export function getConversationalBridge(
     "Okay. Let's move on to the next challenge — ",
     "Understood. Turning now to the next question — ",
     "Right. Let's look at another area — ",
+    "Moving along to our next evaluation point — ",
   ];
 
   const pool = style === "friendly" ? friendlyBridges : style === "tough" ? toughBridges : realisticBridges;
@@ -129,7 +132,7 @@ export function humaniseFollowUp(
 ): string {
   const cleanQ = questionText.trim();
   // Don't double-prepend if already started conversationally
-  if (/^(Right|Okay|Hmm|Got it|Understood|Interesting)/i.test(cleanQ)) {
+  if (/^(Right|Okay|Hmm|Got it|Understood|Interesting|Thanks)/i.test(cleanQ)) {
     return cleanQ;
   }
 
@@ -138,18 +141,24 @@ export function humaniseFollowUp(
     "Hmm, so looking at that — ",
     "Got it. Digging into that a little deeper — ",
     "Understood. Just following up on that — ",
+    "Thanks for that context. To explore that further — ",
+    "Interesting point. Could you say a bit more about that — ",
   ];
 
   const openersFriendly = [
-    "Right, that makes sense! Following up on that — ",
+    "Right, thank you! Following up on that — ",
     "Interesting! Could you expand on that — ",
     "Got it. Digging into that a little bit more — ",
+    "Thanks for walking me through that. Let's dig slightly deeper — ",
+    "Understood, that's really helpful. Looking further into that — ",
   ];
 
   const openersTough = [
     "Understood. Probing a bit further on that — ",
     "Right. To be clear on that — ",
     "Looking closely at that decision — ",
+    "Digging into the specific trade-offs there — ",
+    "Right. And what was the direct outcome of that — ",
   ];
 
   const pool = style === "friendly" ? openersFriendly : style === "tough" ? openersTough : openersRealistic;
