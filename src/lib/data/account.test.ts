@@ -163,7 +163,7 @@ describe("“Delete all my data”", () => {
     expect(all).not.toContain(alice.email);
     expect(hasData(dataCounts(alice.id))).toBe(false);
     for (const id of ["ans-ALICEMARK", "run-r-ALICEMARK", "qa-ALICEMARK-a0"]) expect(getRecording(id, 0), id).toBeNull();
-    expect(await exportCvData(alice.id)).toEqual({ cvs: [], uploads: [] });
+    expect(await exportCvData(alice.id)).toEqual({ cvs: [], uploads: [], achievements: [] });
     expect(Object.values(await exportApplyData(alice.id, alice.email)).flat()).toEqual([]);
     // Her copy of the demo is the built-in one again.
     expect(JSON.stringify(getInterview(DEMO_INTERVIEW_ID, alice.id))).not.toContain("ALICEMARK");

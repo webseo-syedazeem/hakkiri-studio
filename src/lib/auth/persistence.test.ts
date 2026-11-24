@@ -58,7 +58,9 @@ describe("accounts without a database", () => {
     const token = await db.createSession(made.user.id!, made.user.email!);
     for (const name of ["users.json", "sessions.json"]) {
       const file = path.join(dir, name);
-      expect(fs.statSync(file).mode & 0o777, name).toBe(0o600);
+      if (process.platform !== "win32") {
+        expect(fs.statSync(file).mode & 0o777, name).toBe(0o600);
+      }
       const text = fs.readFileSync(file, "utf8");
       expect(text).not.toContain(PASSWORD);
       expect(text).not.toContain(token);
