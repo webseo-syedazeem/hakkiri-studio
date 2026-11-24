@@ -131,6 +131,7 @@ export function InterviewReportView(p: InterviewReportViewProps) {
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [expandedAll, setExpandedAll] = useState(false);
   const [activePlaybookId, setActivePlaybookId] = useState("tell-me-about-yourself");
+  const [selectedFramework, setSelectedFramework] = useState<"star" | "prep" | "other" | null>(null);
 
   // Every figure below is this session's own. With nothing scored, the gauge is empty and says "Not scored".
   const scorePercent = report.score != null ? Math.min(100, Math.round((report.score / 5) * 100)) : 0;
@@ -618,72 +619,136 @@ export function InterviewReportView(p: InterviewReportViewProps) {
         )}
       </div>
 
-      {/* 5. ROW 4: QUESTION PLAYBOOKS */}
-      <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-6 shadow-xl">
-        <div className="flex items-center gap-2.5 pb-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue/15 text-blue-soft">
-            <Icon name="book" size={16} />
-          </div>
-          <div>
-            <h3 className="text-base font-semibold text-white tracking-tight">Question playbooks</h3>
-            <p className="text-xs text-muted">Guidance, example structures and key things to cover for common interview questions.</p>
-          </div>
-        </div>
+      {/* Framework Modal Dialog */}
+      {selectedFramework && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in"
+          onClick={() => setSelectedFramework(null)}
+        >
+          <div
+            className="relative w-full max-w-xl rounded-2xl bg-[#0f1122] border border-white/15 p-6 sm:p-7 shadow-2xl animate-rise space-y-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4 border-b border-white/[0.08] pb-4">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-400">Answering Framework Guide</span>
+                <h3 className="text-lg font-bold text-white mt-0.5">
+                  {selectedFramework === "star"
+                    ? "The STAR Method"
+                    : selectedFramework === "prep"
+                      ? "The PREP Framework"
+                      : "Alternative Answering Frameworks"}
+                </h3>
+                <p className="text-xs text-muted mt-1">
+                  {selectedFramework === "star"
+                    ? "Situation, Task, Action, Result — The gold standard for competency and Civil Service Success Profile answers."
+                    : selectedFramework === "prep"
+                      ? "Point, Reason, Example, Point — Best for direct, concise answers to motivation and strengths questions."
+                      : "Specialized structures for technical trade-offs, project setbacks, and product decisions."}
+                </p>
+              </div>
 
-        {/* Playbook Tabs */}
-        <div className="mt-5 flex flex-wrap gap-2 border-b border-white/[0.07] pb-4">
-          {playbooks.map((pb) => {
-            const active = pb.id === activePlaybookId;
-            return (
               <button
-                key={pb.id}
                 type="button"
-                onClick={() => setActivePlaybookId(pb.id)}
-                className={clsx(
-                  "px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all border",
-                  active
-                    ? "bg-blue-fill border-blue-soft text-white shadow-[0_0_14px_rgba(79,70,229,0.4)]"
-                    : "bg-[#141326] border-white/10 text-muted hover:text-white hover:border-white/20"
-                )}
+                onClick={() => setSelectedFramework(null)}
+                className="rounded-lg p-1.5 text-muted hover:text-white hover:bg-white/[0.08] transition-colors"
+                aria-label="Close"
               >
-                {pb.label}
+                ✕
               </button>
-            );
-          })}
-        </div>
+            </div>
 
-        {/* Active Playbook Breakdown */}
-        <div className="mt-5 grid grid-cols-1 md:grid-cols-[1fr_1.3fr_1.3fr] gap-6 items-start">
-          {/* Column 1: Summary */}
-          <div>
-            <h4 className="text-sm font-semibold text-white">{activePlaybook.title}</h4>
-            <p className="mt-2 text-xs text-muted leading-relaxed">{activePlaybook.summary}</p>
-          </div>
-
-          {/* Column 2: Structure */}
-          <div className="space-y-2.5">
-            <h5 className="text-xs font-semibold text-white tracking-wide uppercase">A simple structure (~ 1–2 minutes)</h5>
-            <div className="space-y-2">
-              {activePlaybook.structure.map((item) => (
-                <div key={item.step} className="flex items-start gap-2.5 text-xs text-[#c9cad3]">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-fill text-[10px] font-bold text-white mt-0.5">
-                    {item.step}
-                  </span>
-                  <div>
-                    <strong className="text-white font-medium">{item.name}</strong> — {item.detail}
+            {selectedFramework === "star" && (
+              <div className="space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div className="rounded-xl bg-[#14162a] p-3.5 border border-white/[0.08] space-y-1">
+                    <div className="font-bold text-amber-300">1. Situation (~15–20s)</div>
+                    <p className="text-muted leading-relaxed">Set the scene and scope. Where were you, who was involved, and what was the problem?</p>
+                  </div>
+                  <div className="rounded-xl bg-[#14162a] p-3.5 border border-white/[0.08] space-y-1">
+                    <div className="font-bold text-blue-300">2. Task (~10–15s)</div>
+                    <p className="text-muted leading-relaxed">What was your specific personal remit? Keep it strictly focused on &ldquo;I&rdquo;, not &ldquo;we&rdquo;.</p>
+                  </div>
+                  <div className="rounded-xl bg-[#14162a] p-3.5 border border-white/[0.08] space-y-1">
+                    <div className="font-bold text-indigo-300">3. Action (~45–60s)</div>
+                    <p className="text-muted leading-relaxed">The heart of your answer: decisions made, trade-offs, and concrete actions you took.</p>
+                  </div>
+                  <div className="rounded-xl bg-[#14162a] p-3.5 border border-white/[0.08] space-y-1">
+                    <div className="font-bold text-emerald-300">4. Result (~20–30s)</div>
+                    <p className="text-muted leading-relaxed">Quantifiable impact, metrics delivered, and key takeaways for this role.</p>
                   </div>
                 </div>
-              ))}
+                <p className="text-[11px] text-muted rounded-lg bg-white/[0.03] p-2.5 border border-white/[0.06]">
+                  <b className="font-semibold text-white">Pro Tip: </b> Spend at least 60% of your time on Action and Result. Interviewers score what you did and the outcomes you created.
+                </p>
+              </div>
+            )}
+
+            {selectedFramework === "prep" && (
+              <div className="space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div className="rounded-xl bg-[#14162a] p-3.5 border border-white/[0.08] space-y-1">
+                    <div className="font-bold text-blue-300">1. Point</div>
+                    <p className="text-muted leading-relaxed">State your answer or thesis directly in your very first sentence.</p>
+                  </div>
+                  <div className="rounded-xl bg-[#14162a] p-3.5 border border-white/[0.08] space-y-1">
+                    <div className="font-bold text-amber-300">2. Reason</div>
+                    <p className="text-muted leading-relaxed">Give the underlying logic or motivation backing up your position.</p>
+                  </div>
+                  <div className="rounded-xl bg-[#14162a] p-3.5 border border-white/[0.08] space-y-1">
+                    <div className="font-bold text-indigo-300">3. Example</div>
+                    <p className="text-muted leading-relaxed">Ground it with a concrete anecdote or data point from your career.</p>
+                  </div>
+                  <div className="rounded-xl bg-[#14162a] p-3.5 border border-white/[0.08] space-y-1">
+                    <div className="font-bold text-emerald-300">4. Point</div>
+                    <p className="text-muted leading-relaxed">Restate your conclusion and connect it back to this organisation.</p>
+                  </div>
+                </div>
+                <p className="text-[11px] text-muted rounded-lg bg-white/[0.03] p-2.5 border border-white/[0.06]">
+                  <b className="font-semibold text-white">Pro Tip: </b> Ideal for 45–75 second answers to motivation, why this role, and spontaneous strengths questions.
+                </p>
+              </div>
+            )}
+
+            {selectedFramework === "other" && (
+              <div className="space-y-3">
+                <div className="space-y-2.5 text-xs">
+                  <div className="rounded-xl bg-[#14162a] p-3.5 border border-white/[0.08] space-y-1">
+                    <div className="font-bold text-purple-300">CARL (Context, Action, Result, Learning)</div>
+                    <p className="text-muted leading-relaxed">The best model for questions about project setbacks or when things didn&rsquo;t go to plan. Emphasises self-awareness and growth.</p>
+                  </div>
+                  <div className="rounded-xl bg-[#14162a] p-3.5 border border-white/[0.08] space-y-1">
+                    <div className="font-bold text-cyan-300">SOAR (Situation, Obstacle, Action, Result)</div>
+                    <p className="text-muted leading-relaxed">Highlights how you navigated severe obstacles or conflicting stakeholder demands under tight timelines.</p>
+                  </div>
+                  <div className="rounded-xl bg-[#14162a] p-3.5 border border-white/[0.08] space-y-1">
+                    <div className="font-bold text-emerald-300">CIRCLES Method</div>
+                    <p className="text-muted leading-relaxed">Industry standard for product and technical strategy: Comprehend, Identify users, Report customer needs, Cut through solutions, List trade-offs, Evaluate metrics, Summarise.</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between pt-2 border-t border-white/[0.08]">
+              <Link
+                href="/practice"
+                className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 hover:underline"
+              >
+                Go to Practice Hub for interactive workouts →
+              </Link>
+              <button
+                type="button"
+                onClick={() => setSelectedFramework(null)}
+                className="rounded-xl bg-white/[0.08] hover:bg-white/[0.14] px-4 py-2 text-xs font-semibold text-white transition-colors"
+              >
+                Done
+              </button>
             </div>
           </div>
-
-          {/* Column 3: Example Flow */}
-          <div className="p-4 rounded-xl bg-[#141326] border border-white/10">
-            <h5 className="text-xs font-semibold text-white tracking-wide uppercase mb-2">Example flow</h5>
-            <p className="text-xs text-[#c9cad3] italic leading-relaxed">{activePlaybook.example}</p>
-          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

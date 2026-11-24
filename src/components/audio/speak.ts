@@ -18,8 +18,34 @@ type Speech = { done: Promise<void>; cancel: () => void };
 /** Once the server says there's no natural voice (or it fails twice running), stop asking for this page's life. */
 let natural: "unknown" | "on" | "off" = "unknown";
 let failures = 0;
-/** If the natural voice hasn't arrived by then, the browser speaks instead: a question must never hang. */
-const NATURAL_WAIT_MS = 8000;
+/** Kept under 3 seconds so the candidate never waits more than 2.5–3s for the interviewer to speak. */
+const NATURAL_WAIT_MS = 2500;
+
+/** In-memory object URL cache for prefetched question audio. */
+const audioBlobCache = new Map<string, string>();
+
+/** Prefetches voice synthesis in the background so it plays instantly when the question begins. */
+export function prefetchVoice(text: string, voice: VoiceName = "medium") {
+  if (typeof window === "undefined" || !text.trim() || natural === "off") return;
+  const key = `${voice}|${text.trim()}`;
+  if (audioBlobCache.has(key)) return;
+
+  fetch("/api/voice", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ text: text.trim(), voice }),
+  })
+    .then((res) => {
+      if (res.ok) return res.blob();
+      return null;
+    })
+    .then((blob) => {
+      if (blob) {
+        audioBlobCache.set(key, URL.createObjectURL(blob));
+      }
+    })
+    .catch(() => {});
+}
 
 /**
  * Safari only lets a page play sound from an element that has already played
@@ -150,6 +176,34 @@ export function speak(text: string, opts: SpeakOptions = {}): Speech {
 
   if (!wantsNatural()) {
     browserSpeak(text, opts, finish, setCancel);
+    return { done, cancel: () => cancel() };
+  }
+
+  const voiceKey = `${opts.voice ?? "medium"}|${text.trim()}`;
+  const preloadedUrl = audioBlobCache.get(voiceKey);
+  if (preloadedUrl) {
+    const audio = sharedPlayer();
+    audio.pause();
+    audio.src = preloadedUrl;
+    audio.playbackRate = opts.rate ?? 1;
+    let stuck: ReturnType<typeof setTimeout> | undefined;
+    const end = () => {
+      clearTimeout(stuck);
+      finish();
+    };
+    audio.onplay = () => opts.onStart?.();
+    audio.onended = end;
+    audio.onerror = end;
+    audio.onloadedmetadata = () => {
+      if (Number.isFinite(audio.duration)) stuck = setTimeout(end, (audio.duration / audio.playbackRate) * 1000 + 3000);
+    };
+    setCancel(() => {
+      audio.pause();
+      end();
+    });
+    void audio.play().catch(() => {
+      browserSpeak(text, opts, finish, setCancel);
+    });
     return { done, cancel: () => cancel() };
   }
 
