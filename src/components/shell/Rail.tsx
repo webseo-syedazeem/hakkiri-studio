@@ -76,11 +76,19 @@ export function Rail({
   const { user: authUser, logout } = useAuth();
   const [showMenu, setShowMenu] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [lightTheme, setLightTheme] = useState(false);
   const displayInitials = authUser?.initials || initials || "SA";
+
+  const toggleTheme = () => {
+    const next = !document.documentElement.classList.contains("mk");
+    document.documentElement.classList.toggle("mk", next);
+    document.documentElement.dataset.theme = next ? "light" : "dark";
+    setLightTheme(next);
+  };
 
   const isUserAdmin = !!authUser?.isAdmin;
   const visibleItems = ITEMS.filter(
-    (it) => (it.href !== "/robot-test" && it.href !== "/cv") || isUserAdmin
+    (it) => it.href !== "/robot-test" || isUserAdmin
   );
 
   return (
@@ -218,6 +226,7 @@ export function Rail({
                   className={clsx("shrink-0 transition-colors", on ? "text-blue-soft" : "text-muted")}
                 />
                 <span className="truncate">{it.label}</span>
+                {on && <span className="ml-auto h-4 w-[3px] shrink-0 rounded-full bg-[#AAB8FF]" aria-hidden="true" />}
               </Link>
             );
           })}
@@ -226,16 +235,21 @@ export function Rail({
         <div className="grow" />
         {beta && <FeedbackButton />}
 
-        {/* Bottom Profile and Settings */}
-        <div className="mt-4 flex flex-col gap-3 border-t border-line/80 pt-4 px-2">
-          <Link
-            href="/settings"
-            aria-label="Settings"
-            title="Settings"
-            className="flex h-9 w-9 items-center justify-center rounded-xl text-muted hover:bg-panel-2 hover:text-ink transition-colors"
+        {/* Bottom Appearance Toggle, Profile and Settings */}
+        <div className="mt-4 flex flex-col gap-2.5 border-t border-line/80 pt-4 px-2">
+          <button
+            type="button"
+            onClick={toggleTheme}
+            aria-label="Change theme"
+            title={lightTheme ? "Switch to dark theme" : "Switch to light theme"}
+            className="flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-[13px] font-medium text-muted hover:bg-panel-2 hover:text-ink transition-colors cursor-pointer"
           >
-            <Icon name="gear" size={19} />
-          </Link>
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+              <circle cx="12" cy="12" r="4" />
+              <path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l2 2m10 10 2 2M19 5l-2 2M7 17l-2 2" />
+            </svg>
+            <span className="truncate">Appearance</span>
+          </button>
 
           <div className="relative">
             {authUser ? (

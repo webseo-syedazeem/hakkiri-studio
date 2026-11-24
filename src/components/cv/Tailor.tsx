@@ -248,6 +248,12 @@ export function Tailor() {
                       <p data-testid="fit-words">
                         This {word} evidences {fit.counts.met} {fit.counts.met === 1 ? "requirement" : "requirements"} fully and {fit.counts.partly} partly. {fit.counts.missing} {fit.counts.missing === 1 ? "has" : "have"} no supporting {word} line.
                       </p>
+                      <div className="cv-row" style={{ gap: 8 }} aria-hidden="true">
+                        <span className="cv-chip">✓ {fit.counts.met} met</span>
+                        <span className="cv-chip">{fit.counts.partly} partly met</span>
+                        <span className="cv-chip">{fit.counts.missing} missing</span>
+                      </div>
+                      <hr style={{ border: 0, borderTop: "1px solid var(--color-line)", margin: "12px 0" }} aria-hidden="true" />
                       <small style={{ display: "block" }} data-testid="fit-maths">
                         {fitMaths(fit)}. Required counts 2, preferred 1; met earns it all, partly met half. There is no minimum, and a low fit never stops a download.
                       </small>

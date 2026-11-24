@@ -110,6 +110,11 @@ export function Bank() {
         {all?.length === 0 && (
           <Panel>
             <div className="cv-pad cv-stack" style={{ padding: "36px 24px", textAlign: "center" }}>
+              <div className="cv-empty-symbol" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+                </svg>
+              </div>
               <h2>You have no saved achievements yet</h2>
               <p className="cv-muted" style={{ maxWidth: "56ch", margin: "8px auto 0" }}>
                 Add one here, or save a bullet from “Help” in the builder. Bullets you keep from “Tell me what you did” are saved here too.
@@ -154,7 +159,7 @@ export function Bank() {
                   </div>
                   <Field label="Skills it shows" rule="Separate with commas." value={edit.skills} onChange={(skills) => setEdit({ ...edit, skills })} />
                   <div className="cv-row">
-                    <Switch checked={edit.private} onChange={(v) => setEdit({ ...edit, private: v })} label="Keep this achievement private" />
+                    <Switch checked={edit.private} onChange={(v) => setEdit({ ...edit, private: v })} label="Keep this achievement private" showWord={false} />
                     <span className="min-w-0 grow">
                       <span className="cv-label">Private</span>
                       <span className="cv-rule">Kept for your own reference. Not offered when you build a CV.</span>

@@ -315,41 +315,49 @@ function Row({ cv, indent, onAction }: { cv: CvSummary; indent?: boolean; onActi
   const href = cv.pendingImportId ? `/cv/import/${cv.pendingImportId}` : indent && cv.fit !== undefined ? `/cv/v/${cv.id}/tailor` : `/cv/v/${cv.id}/edit/contact`;
   const target = [cv.targetTitle, cv.targetEmployer].filter(Boolean).join(" · ");
   return (
-    <div className="cv-pick" data-child={indent || undefined} style={indent ? { paddingLeft: 44 } : undefined}>
-      <div className="min-w-0 grow">
-        <Link href={href} className="font-semibold hover:underline" style={{ overflowWrap: "anywhere" }}>
-          {cv.name}
-        </Link>
-        <small style={{ display: "block", marginTop: 3 }}>
-          {cv.kind === "tailored" ? (indent ? "Tailored version" : `Tailored version (its base ${docWord(cv.region)} was deleted)`) : `Base ${docWord(cv.region)}`} · {LEVEL_LABELS[cv.level]} · {cv.region.toUpperCase()}
-          {target ? ` · ${target}` : ""} · Edited {when(cv.updatedAt)}
-        </small>
+    <div className="cv-pick cv-dashboard-row" data-child={indent || undefined} style={indent ? { paddingLeft: 44 } : undefined}>
+      <div className="cv-dashboard-top">
+        <div className="min-w-0 grow">
+          <Link href={href} className="cv-dashboard-title hover:underline" style={{ overflowWrap: "anywhere" }}>
+            {cv.name}
+          </Link>
+          <small style={{ display: "block", marginTop: 3 }}>
+            {cv.kind === "tailored" ? (indent ? "Tailored version" : `Tailored version (its base ${docWord(cv.region)} was deleted)`) : `Base ${docWord(cv.region)}`} · {LEVEL_LABELS[cv.level]} · {cv.region.toUpperCase()}
+            {target ? ` · ${target}` : ""} · Edited {when(cv.updatedAt)}
+          </small>
+        </div>
+        <div className="cv-row" style={{ gap: 8 }}>
+          {cv.pendingImportId ? <span className="cv-chip cv-link" style={{ textDecoration: "none" }} data-testid="row-upload">{cv.importFailed ? "Upload not read" : "Upload to check"}</span> : cv.empty ? <span className="cv-chip">Empty</span> : null}
+          {cv.score !== undefined && !cv.pendingImportId && <span className="cv-chip cv-chip-score" data-testid="row-score">Score {cv.score}</span>}
+          {cv.fit !== undefined && <span className="cv-chip" data-testid="row-fit">Job fit {cv.fit}</span>}
+        </div>
       </div>
-      {cv.pendingImportId ? <span className="cv-chip cv-link" style={{ textDecoration: "none" }} data-testid="row-upload">{cv.importFailed ? "Upload not read" : "Upload to check"}</span> : cv.empty ? <span className="cv-chip">Empty</span> : null}
-      {cv.score !== undefined && !cv.pendingImportId && <span className="cv-chip" data-testid="row-score">Score {cv.score}</span>}
-      {cv.fit !== undefined && <span className="cv-chip" data-testid="row-fit">Job fit {cv.fit}</span>}
-      <span className="cv-controls">
-        {!indent && !cv.empty && !cv.pendingImportId && (
-          <Btn onClick={() => onAction("tailor")} aria-label={`Tailor ${cv.name} to a job`}>
-            Tailor to a job
+      <div className="cv-dashboard-actions">
+        <span className="cv-controls" style={{ marginLeft: 0, justifyContent: "flex-start" }}>
+          {!indent && !cv.empty && !cv.pendingImportId && (
+            <Btn onClick={() => onAction("tailor")} aria-label={`Tailor ${cv.name} to a job`}>
+              Tailor to a job
+            </Btn>
+          )}
+          {!cv.empty && !cv.pendingImportId && (
+            <BtnLink kind="quiet" href={`/cv/v/${cv.id}/letter`} aria-label={`${cv.letter ? "Open the cover letter for" : "Write a cover letter for"} ${cv.name}`} data-testid="row-letter">
+              {cv.letter ? "Letter" : "Write letter"}
+            </BtnLink>
+          )}
+          <Btn kind="quiet" onClick={() => onAction("rename")} aria-label={`Rename ${cv.name}`}>
+            Rename
           </Btn>
-        )}
-        {!cv.empty && !cv.pendingImportId && (
-          <BtnLink kind="quiet" href={`/cv/v/${cv.id}/letter`} aria-label={`${cv.letter ? "Open the cover letter for" : "Write a cover letter for"} ${cv.name}`} data-testid="row-letter">
-            {cv.letter ? "Letter" : "Write letter"}
-          </BtnLink>
-        )}
-        <Btn kind="quiet" onClick={() => onAction("rename")} aria-label={`Rename ${cv.name}`}>
-          Rename
-        </Btn>
-        <Btn kind="quiet" onClick={() => onAction("duplicate")} aria-label={`Duplicate ${cv.name}`}>
-          Duplicate
-        </Btn>
-        <Btn kind="quiet" onClick={() => onAction("delete-version")} aria-label={`Delete ${cv.name}`}>
-          Delete
-        </Btn>
-        <BtnLink href={href}>{cv.pendingImportId ? (cv.importFailed ? "Try again" : "Check upload") : "Open"}</BtnLink>
-      </span>
+          <Btn kind="quiet" onClick={() => onAction("duplicate")} aria-label={`Duplicate ${cv.name}`}>
+            Duplicate
+          </Btn>
+          <Btn kind="quiet" className="cv-btn-danger" onClick={() => onAction("delete-version")} aria-label={`Delete ${cv.name}`}>
+            Delete
+          </Btn>
+        </span>
+        <BtnLink href={href} className="cv-push">
+          {cv.pendingImportId ? (cv.importFailed ? "Try again" : "Check upload") : "Open"}
+        </BtnLink>
+      </div>
     </div>
   );
 }

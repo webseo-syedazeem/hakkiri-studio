@@ -952,7 +952,7 @@ export function LetterScreen() {
         <BtnLink href={`${base}/edit/contact`} onClick={() => void flush()}>
           Back to the builder
         </BtnLink>
-        <small role="status" data-testid="save-state">
+        <small role="status" data-testid="save-state" data-save={save}>
           {SAVE_WORDS[save]}
         </small>
         {(save === "failed" || save === "device") && <Btn onClick={retry}>Retry</Btn>}

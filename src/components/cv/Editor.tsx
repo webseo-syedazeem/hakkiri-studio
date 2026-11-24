@@ -268,7 +268,7 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
         <BtnLink href={`/cv/v/${cv.id}/letter`} onClick={() => void flush()} data-testid="letter-button">
           Cover letter
         </BtnLink>
-        <small role="status" data-testid="save-state">
+        <small role="status" data-testid="save-state" data-save={save}>
           {SAVE_WORDS[save]}
         </small>
         {(save === "failed" || save === "device") && <Btn onClick={retry}>Retry</Btn>}

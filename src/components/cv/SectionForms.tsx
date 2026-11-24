@@ -4,7 +4,7 @@ import { type ReactNode, useEffect, useRef, useState } from "react";
 import { findDates } from "@/lib/cv/import/dates";
 import { type Bullet, type Contact, type CvRegion, type Entry, type EntrySection, type ListSection, type Section, type SkillGroup, type SkillsSection, type SummarySection, LIMITS, emptyEntry, newBullet, newId } from "@/lib/cv/schema";
 import { type FieldDef, SECTION_DEFS, fieldLabel, formatDate, formatDates } from "@/lib/cv/sections";
-import { Grip, ItemControls, useDragOrder } from "./Arrange";
+import { Grip, ItemControls, MoveMenu, OffChip, Switch, useDragOrder } from "./Arrange";
 import { Btn, Field } from "./ui";
 
 /**
@@ -184,37 +184,69 @@ function BulletsEditor({ bullets, onChange, label, rule, hooks, entryId, arrange
     <div>
       <h3>{label}</h3>
       <small>{rule}</small>
-      {bullets.map((b, i) => (
-        <div key={b.id} className="cv-item" data-item={b.id} data-off={!b.visible || undefined} {...(arrange ? drag.row(b.id) : {})}>
-          {arrange && <Grip {...drag.grip(b.id)} />}
-          <Field
-            className="cv-item-main [&>label]:sr-only"
-            label={`Bullet ${i + 1}`}
-            multiline
-            rows={2}
-            maxLength={600}
-            value={b.text}
-            onChange={(text) => {
-              hooks?.onEdit?.(entryId, b.id);
-              onChange(bullets.map((x) => (x.id === b.id ? { ...x, text } : x)));
-            }}
-            {...hook(hooks, entryId, b.id)}
-          />
-          {arrange ? (
-            <ItemControls name={`bullet ${i + 1}`} index={i} count={bullets.length} visible={b.visible} onVisible={(visible) => onChange(bullets.map((x) => (x.id === b.id ? { ...x, visible } : x)))} onMove={(to) => drag.move(b.id, to)} onRemove={() => onChange(bullets.filter((x) => x.id !== b.id))}>
-              {hooks?.onHelp && (
-                <Btn kind="quiet" aria-label={`Help with bullet ${i + 1}`} onClick={() => hooks.onHelp!(entryId, b.id)}>
-                  Help
+      {bullets.map((b, i) =>
+        arrange ? (
+          <div key={b.id} className="cv-item cv-bullet-card" data-item={b.id} data-off={!b.visible || undefined} {...drag.row(b.id)}>
+            <div className="cv-bullet-head">
+              <div className="cv-row" style={{ gap: 6 }}>
+                <Grip {...drag.grip(b.id)} />
+                <span className="cv-small" aria-hidden="true">
+                  Bullet {i + 1}
+                </span>
+              </div>
+              <div className="cv-row" style={{ gap: 6 }}>
+                {!b.visible && <OffChip />}
+                <Switch checked={b.visible} onChange={(visible) => onChange(bullets.map((x) => (x.id === b.id ? { ...x, visible } : x)))} label={`Include bullet ${i + 1} in this version`} />
+              </div>
+            </div>
+            <Field
+              className="cv-item-main [&>label]:sr-only"
+              label={`Bullet ${i + 1}`}
+              multiline
+              rows={2}
+              maxLength={600}
+              value={b.text}
+              onChange={(text) => {
+                hooks?.onEdit?.(entryId, b.id);
+                onChange(bullets.map((x) => (x.id === b.id ? { ...x, text } : x)));
+              }}
+              {...hook(hooks, entryId, b.id)}
+            />
+            <div className="cv-bullet-foot">
+              <span className="cv-controls">
+                <MoveMenu index={i} count={bullets.length} name={`bullet ${i + 1}`} onMove={(to) => drag.move(b.id, to)} />
+                {hooks?.onHelp && (
+                  <Btn kind="quiet" aria-label={`Help with bullet ${i + 1}`} onClick={() => hooks.onHelp!(entryId, b.id)}>
+                    Help
+                  </Btn>
+                )}
+                <Btn kind="quiet" onClick={() => onChange(bullets.filter((x) => x.id !== b.id))} aria-label={`Remove bullet ${i + 1}`}>
+                  Remove
                 </Btn>
-              )}
-            </ItemControls>
-          ) : (
+              </span>
+            </div>
+          </div>
+        ) : (
+          <div key={b.id} className="cv-item" data-item={b.id} data-off={!b.visible || undefined}>
+            <Field
+              className="cv-item-main [&>label]:sr-only"
+              label={`Bullet ${i + 1}`}
+              multiline
+              rows={2}
+              maxLength={600}
+              value={b.text}
+              onChange={(text) => {
+                hooks?.onEdit?.(entryId, b.id);
+                onChange(bullets.map((x) => (x.id === b.id ? { ...x, text } : x)));
+              }}
+              {...hook(hooks, entryId, b.id)}
+            />
             <Btn kind="quiet" style={{ marginTop: 4 }} onClick={() => onChange(bullets.filter((x) => x.id !== b.id))} aria-label={`Remove bullet ${i + 1}`}>
               Remove
             </Btn>
-          )}
-        </div>
-      ))}
+          </div>
+        ),
+      )}
       <Btn
         style={{ marginTop: 10 }}
         disabled={bullets.length >= LIMITS.bullets}
@@ -456,9 +488,16 @@ function SkillGroupFields({ group, onChange, onRemove, hooks, controls, arrange 
           </small>
           <div className="cv-row" style={{ gap: 6 }}>
             {group.skills.map((k) => (
-              <button key={k.id} type="button" className="cv-chip cv-skillchip" aria-pressed={k.visible} onClick={() => onChange({ ...group, skills: group.skills.map((x) => (x.id === k.id ? { ...x, visible: !x.visible } : x)) })}>
+              <button
+                key={k.id}
+                type="button"
+                className="cv-chip cv-skillchip"
+                aria-pressed={k.visible}
+                aria-label={`${k.name}, ${k.visible ? "in this version" : "off in this version"}`}
+                onClick={() => onChange({ ...group, skills: group.skills.map((x) => (x.id === k.id ? { ...x, visible: !x.visible } : x)) })}
+              >
+                {k.visible && <span aria-hidden="true">✓ </span>}
                 {k.name}
-                <span className="sr-only">{k.visible ? ", in this version" : ", off in this version"}</span>
               </button>
             ))}
           </div>

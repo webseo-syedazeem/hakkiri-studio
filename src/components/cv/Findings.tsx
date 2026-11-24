@@ -120,9 +120,15 @@ export function Findings() {
         <BtnLink href={`${base}/edit/contact`}>Back to the builder</BtnLink>
       </Bar>
       <div className="cv-area">
-        <h1 className="sr-only">
-          {word === "CV" ? "CV" : "Resume"} score: {cv.name}
-        </h1>
+        <div className="cv-toolbar" style={{ marginBottom: 18 }}>
+          <h1>
+            Score and findings
+            <span className="sr-only">
+              {" "}
+              ({word === "CV" ? "CV" : "Resume"} score: {cv.name})
+            </span>
+          </h1>
+        </div>
         <div className="cv-layout" style={{ gridTemplateColumns: "minmax(0, 320fr) minmax(0, 848fr)" }}>
           <div className="cv-stack cv-sticky">
             <Panel>
@@ -199,7 +205,7 @@ export function Findings() {
                           </div>
                         )}
                         {next && (
-                          <Btn kind="primary" onClick={() => go(next)}>
+                          <Btn kind="primary" style={{ width: "100%" }} onClick={() => go(next)}>
                             Fix next {next.severity === "issue" ? "issue" : "suggestion"}
                           </Btn>
                         )}
@@ -213,7 +219,9 @@ export function Findings() {
                         </div>
                       </div>
                     )}
-                    <Btn onClick={() => open("score-method")}>How this is scored</Btn>
+                    <Btn style={{ width: "100%" }} onClick={() => open("score-method")}>
+                      How this is scored
+                    </Btn>
                     <small style={{ display: "block" }}>Worked out in code from your {word} as it is now. {GOOD_ENOUGH} is good enough to apply; nothing here stops you downloading.</small>
                   </>
                 )}

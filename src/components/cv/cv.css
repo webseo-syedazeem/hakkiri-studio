@@ -75,6 +75,7 @@
   --color-booth: var(--background);
   --color-panel: var(--surface);
   --color-panel-2: var(--surface-raised);
+  --cv-input-bg: #10141C;
   --color-line: var(--border);
   --cv-edge: var(--border);
   --cv-input-edge: var(--border-control);
@@ -132,6 +133,7 @@
   --color-booth: var(--background);
   --color-panel: var(--surface);
   --color-panel-2: var(--surface-raised);
+  --cv-input-bg: #FFFFFF;
   --color-line: var(--border);
   --cv-edge: var(--border);
   --cv-input-edge: var(--border-control);
@@ -170,6 +172,21 @@
 .cv-crumb { font-size: 13px; color: var(--color-muted); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .cv-crumb b, .cv-crumb [aria-current] { color: var(--color-ink); font-weight: 600; }
 .cv-crumb a:hover { color: var(--color-ink); }
+.cv [data-testid="save-state"][data-save="saved"] {
+  color: var(--cv-green);
+  font-weight: 550;
+  padding-left: 16px;
+  background-repeat: no-repeat;
+  background-position: left center;
+  background-size: 13px 13px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2383D5B4' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
+}
+.mk .cv [data-testid="save-state"][data-save="saved"],
+.cv.mk [data-testid="save-state"][data-save="saved"],
+[data-theme="light"] .cv [data-testid="save-state"][data-save="saved"],
+.cv[data-theme="light"] [data-testid="save-state"][data-save="saved"] {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23196448' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
+}
 .cv-area { padding: 24px; max-width: 1240px; }
 .cv-toolbar { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 18px; flex-wrap: wrap; }
 .cv-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
@@ -186,7 +203,8 @@
 .cv-btn-quiet:hover:not(:disabled):not([aria-disabled="true"]) { background: var(--surface-hover); border-color: transparent; }
 .cv-btn-danger { color: var(--color-red); }
 .cv :is(button, a, input, textarea, select, [tabindex]):focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
-.cv-chip { font-size: 12px; padding: 3px 8px; white-space: nowrap; background: var(--color-panel-2); border: 1px solid var(--cv-edge); border-radius: var(--radius-chip); display: inline-flex; align-items: center; gap: 6px; }
+.cv-chip { font-size: 12px; padding: 3px 9px; white-space: nowrap; background: var(--color-panel-2); border: 1px solid var(--cv-edge); border-radius: 999px; display: inline-flex; align-items: center; gap: 6px; font-weight: 500; }
+.cv-chip-score { background: var(--surface-selected); color: var(--cv-note-ink); border-color: transparent; font-weight: 600; }
 
 /* Panels. */
 .cv-panel { border: 1px solid var(--cv-edge); border-radius: var(--radius-panel); background: var(--color-panel); box-shadow: var(--shadow-panel); overflow: hidden; }
@@ -198,13 +216,14 @@
 .cv-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .cv-layout { display: grid; gap: 24px; align-items: start; }
 
-/* Empty state badge (J01). */
+/* Empty state badge (J01, J08) & upload step badge (J04). */
 .cv-empty-symbol { width: 48px; height: 48px; border-radius: var(--radius-panel); background: var(--color-panel-2); border: 1px solid var(--cv-edge); color: var(--accent); display: inline-flex; align-items: center; justify-content: center; margin: 0 auto 4px; }
+.cv-step-badge { width: 28px; height: 28px; border-radius: 50%; background: var(--color-panel-2); border: 1px solid var(--cv-edge); color: var(--color-ink); font-size: 13px; font-weight: 650; display: inline-flex; align-items: center; justify-content: center; flex: none; }
 
 /* Fields: the label, the rule under it, the input, then anything to check. */
 .cv-label { display: block; font-size: 13px; font-weight: 550; }
 .cv-rule { display: block; font-size: 12px; color: var(--color-muted); margin-top: 2px; font-weight: 400; }
-.cv-input { width: 100%; font: inherit; color: var(--color-ink); background: var(--color-panel-2); border: 1px solid var(--cv-input-edge); border-radius: var(--radius-control); padding: 7px 10px; margin-top: 4px; display: block; line-height: 1.4; }
+.cv-input { width: 100%; font: inherit; color: var(--color-ink); background: var(--cv-input-bg); border: 1px solid var(--cv-input-edge); border-radius: var(--radius-control); padding: 8px 11px; min-height: 40px; margin-top: 5px; display: block; line-height: 1.4; }
 .cv-input::placeholder { color: var(--color-dim); opacity: 1; }
 textarea.cv-input { resize: vertical; field-sizing: content; }
 .cv-input[aria-invalid="true"] { border-color: var(--color-red); }
@@ -224,10 +243,14 @@ textarea.cv-input { resize: vertical; field-sizing: content; }
 .cv-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--color-blue); display: inline-block; }
 
 /* Rows in a list (dashboard, review steps). */
-.cv-pick { position: relative; display: flex; align-items: center; gap: 16px; border-bottom: 1px solid var(--color-line); padding: 13px 18px; min-height: 73px; flex-wrap: wrap; }
+.cv-pick { position: relative; display: flex; align-items: center; gap: 16px; border-bottom: 1px solid var(--color-line); padding: 14px 20px; min-height: 73px; flex-wrap: wrap; }
 .cv-pick:last-child { border-bottom: 0; }
 .cv-pick-active { background: var(--cv-selected); box-shadow: inset 3px 0 var(--color-blue); }
-.cv-pick[data-child]::before { content: ""; position: absolute; left: 24px; top: 14px; bottom: 14px; width: 2px; background: var(--cv-edge); border-radius: 1px; }
+.cv-dashboard-row { flex-direction: column; align-items: stretch; gap: 12px; padding: 18px 20px; }
+.cv-dashboard-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.cv-dashboard-title { font-size: 17px; font-weight: 650; color: var(--color-ink); text-decoration: none; }
+.cv-dashboard-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.cv-pick[data-child]::before { content: ""; position: absolute; left: 20px; top: 18px; width: 12px; height: 18px; border-left: 2px solid var(--cv-edge); border-bottom: 2px solid var(--cv-edge); border-radius: 0 0 0 3px; }
 .cv-subhead { padding: 8px 18px; background: var(--color-panel-2); font-size: 12px; font-weight: 650; }
 .cv-quote { margin: 9px 0 0; padding: 12px 14px; border-left: 3px solid var(--color-blue); background: var(--color-panel-2); line-height: 1.5; border-radius: 0 var(--radius-chip) var(--radius-chip) 0; }
 
@@ -240,7 +263,7 @@ textarea.cv-input { resize: vertical; field-sizing: content; }
 .cv-source-page { padding: 6px 20px; font-size: 11px; letter-spacing: 0.11em; text-transform: uppercase; color: var(--color-muted); border-top: 1px solid var(--color-line); margin-top: 8px; }
 
 /* Choice cards (level, region, how to start). */
-.cv-choice { display: flex; gap: 10px; align-items: flex-start; padding: 11px 13px; border: 1px solid var(--cv-edge); border-radius: var(--radius-control); background: var(--color-panel-2); cursor: pointer; }
+.cv-choice { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border: 1px solid var(--cv-edge); border-radius: var(--radius-control); background: var(--cv-input-bg); cursor: pointer; }
 .cv-choice:has(input:checked) { border-color: var(--color-blue); box-shadow: inset 0 0 0 1px var(--color-blue); background: var(--cv-selected); }
 .cv-choice:has(input:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
 .cv-choice input { margin-top: 3px; accent-color: var(--accent); }
@@ -258,7 +281,7 @@ textarea.cv-input { resize: vertical; field-sizing: content; }
   .cv .cv-wide { display: none !important; }
 }
 @media (min-width: 768px) {
-  .cv-pick { flex-wrap: nowrap; }
+  .cv-pick:not(.cv-dashboard-row) { flex-wrap: nowrap; }
 }
 /* Phones: full-width fields, text no smaller than 16px in inputs, targets no smaller than 44px. */
 @media (max-width: 767px) {
@@ -280,14 +303,16 @@ textarea.cv-input { resize: vertical; field-sizing: content; }
 .cv-tabs a[data-off="true"] { font-style: italic; opacity: 0.75; }
 
 /* A two- or three-way choice: Edit / Paper, A4 / US Letter, Tighter / Default / Looser. */
-.cv-seg { display: inline-flex; border: 1px solid var(--cv-input-edge); border-radius: var(--radius-control); overflow: hidden; background: var(--color-panel-2); }
-.cv-seg > button, .cv-seg > label > span { display: block; font: inherit; font-size: 13px; color: var(--color-ink); background: none; border: 0; padding: 6px 12px; cursor: pointer; white-space: nowrap; }
-.cv-seg > * + * { border-left: 1px solid var(--cv-edge); }
-.cv-seg > button[aria-pressed="true"], .cv-seg > label:has(input:checked) > span { background: var(--cv-selected); box-shadow: inset 0 -2px var(--color-blue); font-weight: 650; }
+.cv-seg { display: inline-flex; align-items: center; gap: 2px; padding: 3px; border: 1px solid var(--cv-edge); border-radius: 10px; overflow: hidden; background: var(--color-panel); }
+.cv-seg > button, .cv-seg > label > span { display: block; font: inherit; font-size: 13px; color: var(--color-muted); background: none; border: 0; border-radius: var(--radius-chip); padding: 6px 12px; cursor: pointer; white-space: nowrap; transition: background-color 0.14s ease, color 0.14s ease; }
+.cv-seg > button:hover, .cv-seg > label > span:hover { color: var(--color-ink); }
+.cv-seg > button[aria-pressed="true"], .cv-seg > label:has(input:checked) > span { background: var(--accent); color: var(--on-accent); font-weight: 650; }
 .cv-seg > label:has(input:focus-visible) { outline: 2px solid var(--focus); outline-offset: -2px; }
 .cv-seg.cv-narrow { margin-bottom: 14px; }
 
 /* The inclusion switch. On: in this version. Off: kept, but left off the page. The button is the touch area; the track is drawn inside it. */
+.cv-switch-wrap { display: inline-flex; align-items: center; gap: 6px; }
+.cv-switch-word { font-size: 12px; color: var(--color-muted); user-select: none; }
 .cv-switch { position: relative; width: 36px; height: 20px; flex: none; padding: 0; border: 0; background: none; cursor: pointer; border-radius: 10px; }
 .cv-switch::before { content: ""; position: absolute; left: 50%; top: 50%; width: 36px; height: 20px; transform: translate(-50%, -50%); box-sizing: border-box; border-radius: 10px; border: 1px solid var(--cv-input-edge); background: var(--color-panel-2); }
 .cv-switch > span { position: absolute; left: 50%; top: 50%; width: 14px; height: 14px; margin: -7px 0 0 -15px; border-radius: 50%; background: var(--color-muted); transition: transform 0.12s; }
@@ -321,21 +346,27 @@ textarea.cv-input { resize: vertical; field-sizing: content; }
 .cv-item > .cv-controls, .cv-item > .cv-btn { margin-top: 4px; }
 .cv-item > .cv-grip { margin-top: 8px; }
 .cv-item[data-off] .cv-input { color: var(--color-muted); border-style: dashed; }
+.cv-bullet-card { flex-direction: column; align-items: stretch; gap: 6px; border: 1px solid var(--cv-edge); border-radius: 10px; padding: 10px 12px; background: rgb(255 255 255 / 0.015); margin-top: 10px; }
+.mk .cv .cv-bullet-card, .cv.mk .cv-bullet-card, [data-theme="light"] .cv .cv-bullet-card, .cv[data-theme="light"] .cv-bullet-card { background: var(--surface-raised); }
+.cv-bullet-card > .cv-item-main { flex: none; width: 100%; }
+.cv-bullet-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.cv-bullet-head .cv-grip { padding: 2px; margin-top: 0; }
+.cv-bullet-foot { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
 .cv-group { display: flex; gap: 8px; align-items: flex-start; padding-top: 14px; border-top: 1px solid var(--color-line); }
 .cv-group:first-of-type { border-top: 0; padding-top: 0; }
-.cv-skillchip { font: inherit; font-size: 13px; color: var(--color-ink); cursor: pointer; }
+.cv-skillchip { font: inherit; font-size: 13px; color: var(--color-ink); cursor: pointer; border-radius: var(--radius-chip); padding: 4px 10px; }
 .cv-skillchip[aria-pressed="true"] { border-color: var(--color-blue); background: var(--cv-selected); font-weight: 550; }
 .cv-skillchip[aria-pressed="false"] { color: var(--color-muted); text-decoration: line-through; border-style: dashed; }
 /* A term from the advert that is on the CV: pressed shows where. Not pressed is not "off", so nothing is struck through. */
-.cv-termchip { font: inherit; font-size: 13px; color: var(--color-ink); cursor: pointer; }
+.cv-termchip { font: inherit; font-size: 13px; color: var(--color-ink); cursor: pointer; border-radius: var(--radius-chip); padding: 4px 10px; }
 .cv-termchip[aria-pressed="true"] { border-color: var(--color-blue); background: var(--cv-selected); }
 
 /* The paper pane: tools, then the page. The page itself is always light: it is the printed sheet. */
 .cv-paperpane { min-width: 0; }
 .cv-papertools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-height: 42px; margin-bottom: 10px; }
 .cv-papertools .cv-btn-quiet { padding: 4px 8px; min-width: 32px; }
-.cv-papertools [aria-pressed="true"] { color: var(--color-ink); background: var(--cv-selected); }
-.cv-paperscroll { overflow: auto; max-height: calc(100vh - 150px); border-radius: var(--radius-control); background: var(--color-panel-2); border: 1px solid var(--cv-edge); padding: 12px; }
+.cv-papertools [aria-pressed="true"] { color: var(--color-ink); background: var(--cv-selected); border-color: var(--cv-edge); }
+.cv-paperscroll { overflow: auto; max-height: calc(100vh - 150px); border-radius: var(--radius-panel); background: var(--color-panel); border: 1px solid var(--cv-edge); padding: 14px; }
 .cv-paperscroll[data-state="loading"] { opacity: 0.6; }
 .cv-papersheet { position: relative; margin: 0 auto; }
 .cv-paper { display: block; width: 100%; height: auto; border-radius: var(--radius-paper); box-shadow: 0 0 0 1px var(--cv-edge), var(--shadow-paper); }
@@ -355,13 +386,15 @@ textarea.cv-input { resize: vertical; field-sizing: content; }
 .cv-text-passage:hover { background: var(--cv-selected); }
 
 /* Finish: templates, colours, order, files. */
-.cv-templates { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
-.cv-template { align-items: center; padding: 8px; font-size: 13px; }
+.cv-templates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 767px) { .cv-templates { grid-template-columns: minmax(0, 1fr); } }
+.cv-template { align-items: center; padding: 10px; font-size: 13px; }
 .cv-template small { font-size: 11px; line-height: 1.3; }
 .cv-thumb { flex: none; border-radius: 2px; box-shadow: 0 0 0 1px rgb(0 0 0 / 0.18); width: 42px; height: 55px; }
 .cv-swatch { cursor: pointer; display: inline-flex; padding: 3px; border-radius: 50%; border: 2px solid transparent; }
-.cv-swatch > span[aria-hidden] { width: 22px; height: 22px; border-radius: 50%; display: block; box-shadow: 0 0 0 1px rgb(255 255 255 / 0.35); }
+.cv-swatch > span[aria-hidden] { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px; font-weight: 700; box-shadow: 0 0 0 1px rgb(255 255 255 / 0.35); }
 .cv-swatch:has(input:checked) { border-color: var(--color-ink); }
+.cv-swatch:has(input:checked) > span[aria-hidden]::after { content: "✓"; }
 .cv-swatch:has(input:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
 .cv-orderlist, .cv-filelist, .cv-overlist, .cv-plainlist { list-style: none; margin: 0; padding: 0; }
 .cv-orderlist li { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 9px 20px; border-bottom: 1px solid var(--color-line); font-size: 14px; }
@@ -370,7 +403,7 @@ textarea.cv-input { resize: vertical; field-sizing: content; }
 .cv-overlist li { display: flex; align-items: flex-start; gap: 8px; flex-wrap: wrap; padding: 9px 0; border-bottom: 1px solid var(--color-line); font-size: 14px; }
 .cv-plainlist li { padding: 5px 0; border-bottom: 1px solid var(--color-line); font-size: 14px; overflow-wrap: anywhere; }
 .cv-compare > div { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 6px; }
-.cv-compare > div > div { background: var(--color-panel-2); border: 1px solid var(--cv-edge); border-radius: var(--radius-control); padding: 10px 12px; font-size: 13px; min-width: 0; overflow-wrap: anywhere; }
+.cv-compare > div > div { background: var(--cv-input-bg); border: 1px solid var(--cv-edge); border-radius: var(--radius-control); padding: 10px 12px; font-size: 13px; min-width: 0; overflow-wrap: anywhere; }
 .cv-compare p + p { margin-top: 4px; }
 
 @media (max-width: 767px) {
@@ -415,8 +448,8 @@ textarea.cv-input { resize: vertical; field-sizing: content; }
 .cv-method td:last-child, .cv-method thead th:last-child { text-align: right; white-space: nowrap; padding-right: 0; }
 
 /* Software view: what the CV says beside what was read from the file. */
-.cv-seg > a { display: block; font-size: 13px; color: var(--color-ink); padding: 6px 12px; text-decoration: none; white-space: nowrap; }
-.cv-seg > a.cv-seg-on { background: var(--cv-selected); box-shadow: inset 0 -2px var(--color-blue); font-weight: 650; }
+.cv-seg > a { display: block; font-size: 13px; color: var(--color-muted); border-radius: var(--radius-chip); padding: 6px 12px; text-decoration: none; white-space: nowrap; }
+.cv-seg > a.cv-seg-on { background: var(--accent); color: var(--on-accent); font-weight: 650; }
 .cv-fields th, .cv-fields td { padding: 9px 12px 9px 20px; font-size: 13px; overflow-wrap: anywhere; }
 .cv-fields td:last-child, .cv-fields thead th:last-child { padding-right: 20px; }
 .cv-fields tr[data-ok="false"] { background: var(--cv-issue-bg); }
@@ -437,12 +470,13 @@ textarea.cv-input { resize: vertical; field-sizing: content; }
 .cv .cv-plainlist li.cv-req[data-status="partly"] { border-left-color: var(--color-blue); }
 .cv .cv-plainlist li.cv-req[data-status="missing"] { border-left-color: var(--color-red); }
 .cv .cv-plainlist li.cv-req[data-selected] { background: var(--cv-selected); }
-.cv-status[data-status="met"] { color: var(--cv-green); }
-.cv-status[data-status="missing"] { color: var(--color-red); }
-.cv-status[data-status="partly"] { color: var(--cv-note-ink); }
+.cv-status { border-color: transparent; font-weight: 600; }
+.cv-status[data-status="met"] { color: var(--cv-green); background: var(--success-surface); }
+.cv-status[data-status="missing"] { color: var(--color-red); background: var(--danger-surface); }
+.cv-status[data-status="partly"] { color: var(--cv-note-ink); background: var(--surface-selected); }
 .cv-req-quote { display: block; margin-top: 8px; font-size: 15px; font-weight: 550; }
 .cv-req-line { margin-top: 6px; font-size: 13px; }
-.cv-mini { font: inherit; font-size: 12px; color: var(--color-ink); background: var(--color-panel-2); border: 1px solid var(--cv-input-edge); border-radius: var(--radius-chip); padding: 2px 6px; }
+.cv-mini { font: inherit; font-size: 12px; color: var(--color-ink); background: var(--cv-input-bg); border: 1px solid var(--cv-input-edge); border-radius: var(--radius-chip); padding: 4px 8px; }
 .cv-linklist { max-height: 300px; overflow: auto; margin-top: 8px; display: grid; gap: 8px; font-size: 14px; }
 .cv .cv-plainlist li.cv-change { padding: 14px 20px; border-bottom: 1px solid var(--color-line); }
 .cv-termmark { pointer-events: none; }
@@ -453,7 +487,9 @@ textarea.cv-input { resize: vertical; field-sizing: content; }
 /* ---------------------------------------------------------- the cover letter */
 
 .cv-lfield { border: 0; padding: 0; margin: 0; min-width: 0; }
-.cv-lpara { padding: 12px 14px; border: 1px solid var(--cv-edge); border-radius: var(--radius-control); background: var(--color-panel); }
+.cv-lpara { padding: 14px; border: 1px solid var(--cv-edge); border-radius: var(--radius-control); background: rgb(255 255 255 / 0.015); }
+.mk .cv .cv-lpara, .cv.mk .cv-lpara, [data-theme="light"] .cv .cv-lpara, .cv[data-theme="light"] .cv-lpara { background: var(--surface-raised); }
+.cv-lpara:focus-within { border-color: var(--accent); }
 .cv-lpara[data-over] { border-color: var(--cv-issue-edge); box-shadow: inset 3px 0 var(--color-red); }
 .cv .cv-plainlist.cv-lsents { margin-top: 8px; border-top: 1px solid var(--color-line); }
 .cv .cv-plainlist li.cv-lsent { padding: 8px 0 8px 11px; border-bottom: 1px solid var(--color-line); border-left: 3px solid transparent; font-size: 14px; line-height: 1.5; }

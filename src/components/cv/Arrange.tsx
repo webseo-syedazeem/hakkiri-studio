@@ -12,11 +12,14 @@ import { Btn } from "./ui";
  */
 
 /** An on/off switch. `label` says what it switches. */
-export function Switch({ checked, onChange, label }: { checked: boolean; onChange: (on: boolean) => void; label: string }) {
+export function Switch({ checked, onChange, label, showWord = true }: { checked: boolean; onChange: (on: boolean) => void; label: string; showWord?: boolean }) {
   return (
-    <button type="button" role="switch" aria-checked={checked} aria-label={label} title={checked ? "In this version" : "Off in this version"} className="cv-switch" onClick={() => onChange(!checked)}>
-      <span aria-hidden="true" />
-    </button>
+    <span className="cv-switch-wrap">
+      <button type="button" role="switch" aria-checked={checked} aria-label={label} title={checked ? "In this version" : "Off in this version"} className="cv-switch" onClick={() => onChange(!checked)}>
+        <span aria-hidden="true" />
+      </button>
+      {showWord && checked && <span className="cv-switch-word" aria-hidden="true">Included</span>}
+    </span>
   );
 }
 

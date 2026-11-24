@@ -138,9 +138,13 @@ export function ImportHome({ importId }: { importId: string }) {
                     const kind = imp.draft.sections.find((x) => x.id === s.sectionId)?.kind;
                     return (
                       <li key={s.key} className="cv-pick">
+                        <span className="cv-step-badge" aria-hidden="true">
+                          {i + 1}
+                        </span>
                         <div className="min-w-0 grow">
                           <Link href={`/cv/import/${importId}/review/${s.key}`} className="font-semibold hover:underline">
-                            {i + 1}. {stepName(imp, cv, s.key)}
+                            <span className="sr-only">{i + 1}. </span>
+                            {stepName(imp, cv, s.key)}
                           </Link>
                           <small style={{ display: "block", marginTop: 3 }}>{s.key === "unassigned" ? "Text from your file that we couldn’t place" : s.key === "contact" ? "Name, email, phone, town and links" : kind ? SECTION_DEFS[kind].rule[cv.region] : ""}</small>
                         </div>
@@ -156,10 +160,10 @@ export function ImportHome({ importId }: { importId: string }) {
                   <div className="cv-row">
                     <Btn onClick={() => open("replace-file", { item: "file" })}>Replace file</Btn>
                     <Btn onClick={() => open("replace-file", { item: "paste" })}>Paste text instead</Btn>
-                    <Btn kind="danger" onClick={() => open("discard-import")}>
-                      Discard upload
-                    </Btn>
                   </div>
+                  <Btn kind="danger" style={{ width: "100%" }} onClick={() => open("discard-import")}>
+                    Discard upload
+                  </Btn>
                 </div>
               </Panel>
             </div>

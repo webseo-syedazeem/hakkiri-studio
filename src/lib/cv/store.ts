@@ -26,10 +26,24 @@ export async function atCvLimit(userId: string): Promise<boolean> {
   return (await listOwnCvs(userId)).length >= MAX_CVS;
 }
 
+/** Recursively omits null/undefined properties (which MongoDB BSON produces from undefined keys) so Zod .optional() schemas validate cleanly. */
+function stripNulls(v: unknown): unknown {
+  if (v === null) return undefined;
+  if (Array.isArray(v)) return v.map(stripNulls);
+  if (v && typeof v === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [k, val] of Object.entries(v as Record<string, unknown>)) {
+      if (val !== null && val !== undefined) out[k] = stripNulls(val);
+    }
+    return out;
+  }
+  return v;
+}
+
 /** A stored record that no longer fits the rules is treated as missing, not served half-read. */
 function valid<T>(schema: { safeParse: (v: unknown) => { success: boolean; data?: T } }, raw: unknown, what: string): T | null {
   if (!raw) return null;
-  const parsed = schema.safeParse(raw);
+  const parsed = schema.safeParse(stripNulls(raw));
   if (!parsed.success) {
     console.warn(`[cv/store] A stored ${what} did not match its schema and was skipped.`);
     return null;

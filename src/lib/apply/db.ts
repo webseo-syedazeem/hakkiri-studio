@@ -134,7 +134,7 @@ export async function saveDoc<T extends { id?: string; userId?: string }>(
           { _id: docKey as any },
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           { _id: docKey as any, ...doc, updatedAt: new Date().toISOString() },
-          { upsert: true },
+          { upsert: true, ignoreUndefined: true },
         );
         return doc;
       }
