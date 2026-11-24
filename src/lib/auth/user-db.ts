@@ -3,7 +3,7 @@ import { z } from "zod";
 import { getMongoDb, isMongoConfigured } from "@/lib/storage/mongodb";
 import { loadJson, saveJson } from "@/lib/storage/disk";
 import type { User } from "@/lib/types";
-import { LEGACY_MASTER_ID, isReservedAdminEmail } from "./admin-list";
+import { BY_INVITATION, LEGACY_MASTER_ID, isReservedAdminEmail, signUpAllowed } from "./admin-list";
 import { passwordProblem } from "./password-rule";
 
 /**
@@ -217,6 +217,9 @@ export async function createUser(
   }
   const problem = passwordProblem(password, normEmail);
   if (problem) return { ok: false, error: problem };
+  // A closed beta: only invited addresses may join (HAKKIRI_SIGNUP_ALLOW). Said before anything is looked up,
+  // so the answer is the same whether or not the address has an account.
+  if (!signUpAllowed(normEmail)) return { ok: false, error: BY_INVITATION };
 
   const cleanName = String(name ?? "").replace(/[\u0000-\u001f\u007f]/g, " ").replace(/\s+/g, " ").trim().slice(0, 80);
   const { firstName, initials } = computeInitials(cleanName, normEmail);
@@ -489,6 +492,14 @@ export async function deleteUser(userId: string): Promise<boolean> {
 
 /* ---------------------------------------------------------------- Google */
 
+/** Thrown when Google confirms an address that isn't invited, in a closed beta. */
+export class SignUpClosed extends Error {
+  constructor() {
+    super(BY_INVITATION);
+    this.name = "SignUpClosed";
+  }
+}
+
 /** Look up an existing user by email address. */
 export async function findUserByEmail(email: string): Promise<User | null> {
   const normEmail = normaliseEmail(email);
@@ -536,6 +547,10 @@ export async function findOrCreateOAuthUser(profile: {
     }
     return toUser(existing);
   }
+
+  // A new account through Google is still a sign-up: in a closed beta it needs an invited address.
+  // (An administrator's listed address is always let in: that is how an administrator arrives.)
+  if (!signUpAllowed(normEmail) && !isReservedAdminEmail(normEmail)) throw new SignUpClosed();
 
   const record: DbUserRecord = {
     _id: `usr_${crypto.randomBytes(12).toString("hex")}`,

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { findOrCreateOAuthUser, createSession } from "@/lib/auth/user-db";
+import { findOrCreateOAuthUser, createSession, SignUpClosed } from "@/lib/auth/user-db";
 import { sessionCookie } from "@/lib/auth/session-cookie";
 
 export const dynamic = "force-dynamic";
@@ -121,6 +121,11 @@ export async function GET(req: NextRequest) {
 
     return res;
   } catch (err) {
+    if (err instanceof SignUpClosed) {
+      const closed = NextResponse.redirect(new URL("/login?error=signup_closed", origin));
+      closed.cookies.delete("g_oauth_state");
+      return closed;
+    }
     console.error("[google/callback] OAuth callback exception:", err);
     return NextResponse.redirect(new URL("/login?error=google_failed", origin));
   }

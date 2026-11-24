@@ -93,6 +93,36 @@ describe("creating an account", () => {
   });
 });
 
+describe("a closed beta (HAKKIRI_SIGNUP_ALLOW)", () => {
+  it("lets only invited addresses and domains create an account, by password or through Google", async () => {
+    vi.stubEnv("HAKKIRI_SIGNUP_ALLOW", " Invited@Example.com , @partner.example ");
+    const refused = await createUser(address(), PASSWORD);
+    expect(refused).toEqual({ ok: false, error: "Sign-up is by invitation at the moment. If you’ve been invited, use the email address your invitation was sent to." });
+    expect((await createUser("invited@example.com", PASSWORD)).ok).toBe(true);
+    expect((await createUser(`anyone${++n}@Partner.Example`, PASSWORD)).ok).toBe(true);
+    // A look-alike domain is not the domain.
+    expect((await createUser(`x${++n}@notpartner.example`, PASSWORD)).ok).toBe(false);
+    expect((await createUser(`x${++n}@partner.example.evil.test`, PASSWORD)).ok).toBe(false);
+    await expect(findOrCreateOAuthUser({ email: address(), provider: "google" })).rejects.toThrow("by invitation");
+    expect((await findOrCreateOAuthUser({ email: `g${++n}@partner.example`, provider: "google" })).id).toBeTruthy();
+  });
+
+  it("never locks out someone who already has an account, and an administrator's listed address still gets in through Google", async () => {
+    const email = address();
+    await createUser(email, PASSWORD);
+    vi.stubEnv("HAKKIRI_SIGNUP_ALLOW", "someone.else@example.com");
+    vi.stubEnv("ADMIN_EMAILS", "the-admin@example.com");
+    expect((await authenticateUser(email, PASSWORD)).ok).toBe(true);
+    expect((await findOrCreateOAuthUser({ email, provider: "google" })).email).toBe(email);
+    expect((await findOrCreateOAuthUser({ email: "the-admin@example.com", provider: "google" })).email).toBe("the-admin@example.com");
+  });
+
+  it("is open to anyone when the list is empty", async () => {
+    vi.stubEnv("HAKKIRI_SIGNUP_ALLOW", " , ");
+    expect((await createUser(address(), PASSWORD)).ok).toBe(true);
+  });
+});
+
 describe("signing in", () => {
   it("gives one answer for a wrong password, an unknown address and a Google-only account", async () => {
     const email = address();

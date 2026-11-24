@@ -17,6 +17,7 @@ const GOOGLE_ERRORS: Record<string, string> = {
   google_profile_failed: "Signing in with Google didn’t work. Try again, or use your email and password.",
   google_failed: "Signing in with Google didn’t work. Try again, or use your email and password.",
   no_email_provided: "Google didn’t give us an email address for that account.",
+  signup_closed: "Sign-up is by invitation at the moment. If you’ve been invited, use the email address your invitation was sent to.",
   google_email_unverified: "Google hasn’t confirmed the email address on that account, so it can’t be used to sign in.",
 };
 
