@@ -113,6 +113,31 @@ Things worth knowing:
 - **Private achievements** are not offered when building a CV.
 - The prompts are in `write/assist.ts`. They ask for the right thing; the checks are what guarantee it.
 
+## Step 4: the CV score, findings, the Software view and download records
+
+| Where | What |
+| --- | --- |
+| `score/detect.ts` | The patterns the score looks for in a line (a weak verb, filler, a likely passive, the other region's spelling, an unexplained acronym, a big claim, an outcome, scale). Each returns the exact phrase it found. No AI call. |
+| `score/score.ts` | `scoreCv`: 35 checks in four groups (Evidence 45, Clarity 20, Structure 20, Readable by software 15) and the unscored gap prompt (`gapsIn`). The weights are the `RULES` table. Every finding carries a pointer to its line (`at`), the span of the phrase, the reason, the action and what fixing it is worth. |
+| `score/audit.ts` | The free public check (`/cv-audit`, `POST /api/audit`) on the same engine: pasted text is read by the upload reader and scored by the same checks. What pasted text cannot show is left pending. This replaces the old rubric, which had floors. |
+| `render/software.ts` | The Software view: the real file is made and read back, then compared two ways: every word in order, and the fields a parser sorts them into (name, headings, each role's title, employer, dates and bullets). `atsReady` is true only when all of that holds; otherwise `why` lists the reasons. |
+| `src/app/api/cv/versions/[id]/software` | `GET ?format=pdf|docx`: the Software view for the saved CV. |
+| `src/app/api/cv/versions/[id]/exports`, `src/app/api/cv/exports/[exportId]` (+ `/file`) | Download records (`cv_exports`). Each download saves the CV exactly as it was. `/file` makes the file again from that copy at the same time stamp, which gives the same bytes. The newest 30 per CV are kept. |
+| `src/components/cv/Workspace.tsx` | Works the score out 400ms after the last change (`score`), and remembers findings seen in this visit that are no longer found (`cleared`). |
+| `src/components/cv/Findings.tsx` | The score screen (`/cv/v/[id]/findings`, 320 / 848): the number, the four groups, findings by severity, Fixed, Excluded from this version, "How this is scored", the gap prompt, and "good enough" at 85. |
+| `src/components/cv/Editor.tsx` | The score in the bar; under the field being edited, its most important finding with "View more", "Add the number" and "Accept". |
+| `src/components/cv/Software.tsx` | The Software view screen (`/cv/v/[id]/software/[format]`), the "what you sent" screen (`/cv/v/[id]/exports/[exportId]`) and the downloads list on Finish. |
+
+How the points work, as built:
+
+- A per-item check earns its weight in proportion to the visible items that pass ("5 of 7 bullets").
+- A check that does not apply (no phone given, no links, no acronyms) hands its weight to the rest of its group, so each group is always worth its full points.
+- A missing essential field earns nothing. With no bullets, the evidence checks earn nothing.
+- File checks that have not run for the CV as it is now are pending: shown as "x points confirmed · y pending".
+- There is no floor, and nothing here blocks a download. 85 is "good enough to apply".
+- `cv.accepted` holds words the person told the checks to leave alone (a name spelt the other region's way, an acronym).
+- A finding on a line that is then switched off is "Excluded from this version", not "Fixed" (`edit.ts: stateAt`).
+
 ## Tests
 
 - `npx vitest run src/lib/cv`: every reading rule (`dates`, `lines`, `reader`), every sample file
@@ -130,7 +155,9 @@ Things worth knowing:
 - `write/*.test.ts`: every writing rule (figures, estimates, "helped" against "led", nothing added, nothing
   lost), the rule drafters, skills suggestions, and the routes with the AI service replaced by a
   stand-in that replies with good drafts, bad drafts and nothing at all.
-- Browser tests: `e2e/cv-cleanup.cjs`, `e2e/cv-start.cjs`, `e2e/cv-upload.cjs`, `e2e/cv-editor.cjs`, `e2e/cv-writing.cjs`
+- `score/*.test.ts`: every check, the sums (weights, hand-on, pending, no floor), gaps in work, and the
+  public check. The Software view, the ATS-ready label and download records are in `api.test.ts`.
+- Browser tests: `e2e/cv-cleanup.cjs`, `e2e/cv-start.cjs`, `e2e/cv-upload.cjs`, `e2e/cv-editor.cjs`, `e2e/cv-writing.cjs`, `e2e/cv-score.cjs`
   (see `e2e/README.md`). `cv-editor.cjs` downloads every file it makes into `e2e/out/cv-downloads/`,
   opens each one and compares its text with the saved CV (`e2e/cv-files.cjs`).
 
@@ -143,8 +170,16 @@ Things worth knowing:
   CVs, how many uploads) are not set.
 - **Downloads** use the same `guard(req, "read")` limit (30 a minute per address). There is no per-plan
   limit on downloads, and no decision yet on what is free (requirement 47).
-- **Export records** (a saved snapshot of exactly what was sent) and the "ATS-ready" label come with
-  step 4; today a file is "Checked" or it is not sent.
+- **Download records** add a collection, `cv_exports`; add an index on `userId`. They are in "Download
+  my data" and "Delete all my data". Each holds a full copy of the CV, so 30 per CV is the limit.
+- **The public check's page** (`/cv-audit`) is the existing one; only its engine changed. Its stored
+  audits now carry the new finding ids. The old `auditCvText` rubric in `src/lib/apply/checks/` is no
+  longer used by it (the robot tester still imports that file).
+- **Spelling.** The score checks UK against US spellings from a word list, with "Accept". A full
+  dictionary check is left to the browser's own spell-check in the fields.
+- **Judgement checks are patterns.** "Likely passive", "weak verb" and "big claim" are word patterns,
+  shown as suggestions with the phrase that triggered them. They will sometimes be wrong; that is why
+  they are suggestions and why each can be seen and ignored.
 - **Word page count.** The Word file names its fonts and falls back to Arial or Georgia where they are
   not installed, so its page breaks can differ from the PDF's. The PDF embeds its fonts.
 - **Real model output has not been run.** There are no keys here, so the model path was tested with a

@@ -1,7 +1,9 @@
 "use client";
 
-import { type ReactNode, createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
+import { type ReactNode, createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { fieldFor, tabFor } from "@/lib/cv/edit";
 import type { Locator } from "@/lib/cv/schema";
+import { type Finding, type Score, scoreCv } from "@/lib/cv/score/score";
 import { useCv } from "./useCv";
 import { usePaper } from "./usePaper";
 
@@ -47,7 +49,26 @@ type Workspace = ReturnType<typeof useCv> &
     /** A profile being tried on the paper before it is put in the CV. Never saved from here. */
     previewProfile: string | null;
     setPreviewProfile: (text: string | null) => void;
+    /** The CV score, worked out in code 400ms after the last change. Null until the CV has loaded. */
+    score: Score | null;
+    /** Findings seen in this visit that are no longer found: fixed, or their line was switched off or removed. */
+    cleared: Finding[];
+    /** Points the tab for a place in the CV, opens its entry and queues its field for focus. Returns the tab to show. */
+    locate: (at: Locator) => string;
+    /** Set when the person came to the builder from the findings list, so they can go straight back. */
+    fromFindings: boolean;
+    setFromFindings: (v: boolean) => void;
   };
+
+/** A value that follows another after it has stopped changing for a moment. */
+function useSettled<T>(value: T, ms: number): T {
+  const [settled, setSettled] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setSettled(value), ms);
+    return () => clearTimeout(t);
+  }, [value, ms]);
+  return settled;
+}
 
 const Ctx = createContext<Workspace | null>(null);
 
@@ -69,9 +90,42 @@ export function CvWorkspace({ versionId, children }: { versionId: string; childr
   const [checks, setChecks] = useState<FileChecks | null>(null);
   const wanted = useRef<{ entry: string; field: string } | null>(null);
   const setOpenEntry = useCallback((sectionId: string, entryId: string) => setOpen((o) => ({ ...o, [sectionId]: entryId })), []);
+  const [fromFindings, setFromFindings] = useState(false);
+
+  // The checks run in code, 400ms after the last change. File checks count only for the CV exactly as it is now.
+  const settled = useSettled(c.cv, 400);
+  const now = useRef(new Date()).current;
+  const pages = paper.paper?.layout.blocks.length ? paper.paper.layout.pages : undefined;
+  const glyphs = paper.paper?.layout.missing;
+  const current = !!checks && !!c.cv && checks.rev === c.cv.rev && c.save === "saved";
+  const pdf = current ? checks?.pdf?.status : undefined;
+  const docx = current ? checks?.docx?.status : undefined;
+  const score = useMemo(() => (settled ? scoreCv({ cv: settled, pages, missingGlyphs: glyphs, files: { pdf, docx }, now }) : null), [settled, pages, glyphs, pdf, docx, now]);
+  const seen = useRef(new Map<string, Finding>());
+  const [cleared, setCleared] = useState<Finding[]>([]);
+  useEffect(() => {
+    if (!score) return;
+    const live = new Set(score.findings.map((f) => f.id));
+    for (const f of score.findings) seen.current.set(f.id, f);
+    setCleared([...seen.current.values()].filter((f) => !live.has(f.id)));
+  }, [score]);
+
+  const cvNow = c.cv;
+  const locate = useCallback(
+    (at: Locator) => {
+      if (!cvNow || at.section === "finish") return "finish";
+      const field = fieldFor(cvNow, at);
+      if (at.section !== "contact" && field.entry) setOpen((o) => ({ ...o, [at.section]: field.entry }));
+      wanted.current = field;
+      setView("edit");
+      setFocus({ ...at });
+      return tabFor(cvNow, at);
+    },
+    [cvNow],
+  );
   const value = useMemo(
-    () => ({ ...c, ...paper, versionId, focus, setFocus, openEntry, setOpenEntry, view, setView, wanted, checks, setChecks, inspect, setInspect, previewProfile, setPreviewProfile }),
-    [c, paper, versionId, focus, openEntry, setOpenEntry, view, checks, inspect, previewProfile],
+    () => ({ ...c, ...paper, versionId, focus, setFocus, openEntry, setOpenEntry, view, setView, wanted, checks, setChecks, inspect, setInspect, previewProfile, setPreviewProfile, score, cleared, locate, fromFindings, setFromFindings }),
+    [c, paper, versionId, focus, openEntry, setOpenEntry, view, checks, inspect, previewProfile, score, cleared, locate, fromFindings],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { auditCvText } from "@/lib/apply/checks/rubric";
+import { ImportError } from "@/lib/cv/import";
+import { auditText } from "@/lib/cv/score/audit";
 import { saveAudit } from "@/lib/apply/db";
 import { guard } from "@/lib/usage/limits";
 import crypto from "node:crypto";
@@ -35,7 +36,15 @@ export async function POST(req: Request) {
 
     const textHash = crypto.createHash("sha256").update(text.trim()).digest("hex");
     const auditId = `aud_${crypto.randomBytes(8).toString("hex")}`;
-    const result = auditCvText(text, region, jobText);
+    // The same checks the builder runs, so the number here is the number after signing up. No floor, and no AI call.
+    let result;
+    try {
+      result = auditText(text, region === "us" ? "us" : "uk");
+    } catch (err) {
+      // Too little text to read as a CV.
+      if (err instanceof ImportError) return NextResponse.json({ error: "invalid_input", message: "Please provide at least 50 characters of CV text or upload a document." }, { status: 400 });
+      throw err;
+    }
 
     const now = new Date();
     const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
@@ -53,8 +62,8 @@ export async function POST(req: Request) {
       interviewerQuestions: result.interviewerQuestions,
       region,
       expiresAt,
-      modelVersion: "rubric-v2",
-      rubricVersion: "2026.1",
+      modelVersion: "cv-score",
+      rubricVersion: "2026.2",
       createdAt: now.toISOString(),
       updatedAt: now.toISOString(),
     };
@@ -71,6 +80,8 @@ export async function POST(req: Request) {
       teaserFindings: topFindings,
       totalFindingsCount: result.findings.length,
       isGoodEnough: result.isGoodEnough,
+      // Points that wait on the finished file (its page count, and how the PDF and Word file read back).
+      pendingPoints: result.pending,
       interviewerQuestionsCount: result.interviewerQuestions.length,
     });
   } catch (err: unknown) {
