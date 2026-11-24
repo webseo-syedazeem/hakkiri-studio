@@ -420,9 +420,18 @@ export function QuestionFeedbackView({
                     </p>
                   </div>
                 </div>
-                <button type="button" onClick={saveStronger} className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.06] hover:bg-white/[0.12] px-3 py-1.5 text-xs font-semibold text-white transition-all cursor-pointer">
-                  <Icon name="doc" size={12} />
-                  <span aria-live="polite">{savedExample ? "Saved to your examples" : "Save to my examples"}</span>
+                <button
+                  type="button"
+                  onClick={saveStronger}
+                  className={clsx(
+                    "inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer shadow-sm",
+                    savedExample
+                      ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
+                      : "border-white/10 bg-white/[0.06] hover:bg-white/[0.12] text-white",
+                  )}
+                >
+                  <Icon name={savedExample ? "check" : "doc"} size={12} className={savedExample ? "text-emerald-300" : "text-muted"} />
+                  <span aria-live="polite">{savedExample ? "Saved to your examples & copied!" : "Save to my examples"}</span>
                 </button>
               </div>
               <p className="rounded-xl bg-[#141624] p-4 text-xs sm:text-[13px] text-[#d6d7e2] leading-relaxed border border-white/[0.06]">&ldquo;{feedback.stronger}&rdquo;</p>

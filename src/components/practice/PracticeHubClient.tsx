@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import { Icon, type IconName } from "@/components/ui";
 import { AnsweringGuides } from "@/components/practice/AnsweringGuides";
+import { QuestionPlaybooks } from "@/components/interview/QuestionPlaybooks";
 import type { PracticeStats, PracticeType } from "@/lib/sessions/practice-stats";
 
 export type PracticeQuestionType = PracticeType;
@@ -435,6 +436,10 @@ export function PracticeHubClient({ interviews, initialInterviewId, initialType,
             </Link>
           </div>
         )}
+      </div>
+
+      <div className="mt-12 pt-8 border-t border-white/[0.08]" data-testid="hub-playbooks">
+        <QuestionPlaybooks role={current.role} company={current.company} />
       </div>
 
       <div className="mt-12 pt-8 border-t border-white/[0.08]">

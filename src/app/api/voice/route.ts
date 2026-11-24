@@ -17,6 +17,8 @@ export const maxDuration = 30;
 
 const Body = z.object({ text: z.string().trim().min(1).max(700), voice: z.enum(["easy", "medium", "hard"]) });
 
+const memVoiceCache = new Map<string, ArrayBuffer>();
+
 /**
  * POST /api/voice: the interviewer says `text` (MP3). Each line is made once
  * and kept, so the same question never costs twice. Uses ElevenLabs if an
@@ -51,20 +53,32 @@ export async function POST(req: Request) {
   const model = elevenKey ? ELEVENLABS_MODEL : "aura";
 
   const hash = createHash("sha256").update(`${provider}|${voiceId}|${model}|${text}`).digest("hex").slice(0, 32);
+  const headers = { "content-type": "audio/mpeg", "cache-control": "private, max-age=86400" };
+  const inMem = memVoiceCache.get(hash);
+  if (inMem) return new Response(new Uint8Array(inMem), { headers });
+
   const file = `voice-cache/${hash}.mp3`;
   const cached = loadFile(file);
-  const headers = { "content-type": "audio/mpeg", "cache-control": "private, max-age=86400" };
-  if (cached) return new Response(cached, { headers });
+  if (cached) {
+    memVoiceCache.set(hash, cached);
+    return new Response(new Uint8Array(cached), { headers });
+  }
 
   try {
-    const audio = elevenKey
-      ? await synthesise(text, voice, elevenKey)
-      : await synthesiseDeepgram(text, voice, deepgramKey);
+    const synthPromise = elevenKey
+      ? synthesise(text, voice, elevenKey)
+      : synthesiseDeepgram(text, voice, deepgramKey);
+    // Timeout in 2400ms so the user never waits more than 2.5s for audio
+    const audio = await Promise.race([
+      synthPromise,
+      new Promise<ArrayBuffer>((_, reject) => setTimeout(() => reject(new Error("Voice synthesis timed out")), 2400)),
+    ]);
+    memVoiceCache.set(hash, audio);
     saveFile(file, audio);
     recordUsage({ userId: user.id, service: provider, label: "interviewer-voice", model, characters: text.length, feature: "voice" });
-    return new Response(audio, { headers });
+    return new Response(new Uint8Array(audio), { headers });
   } catch (err) {
-    console.warn(`[voice] ${provider} failed, the browser voice takes over:`, err instanceof Error ? err.message : err);
+    console.warn(`[voice] ${provider} synthesis delayed/failed, fallback smoothly to browser voice:`, err instanceof Error ? err.message : err);
     void reportProblem({ source: "service", where: `${provider}: interviewer voice`, message: err instanceof Error ? err.message : String(err) });
     return NextResponse.json({ error: "voice-failed" }, { status: 502 });
   }

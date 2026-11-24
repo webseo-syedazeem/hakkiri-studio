@@ -10,7 +10,7 @@ import { Button, buttonClass, Chip, Icon } from "@/components/ui";
 import { Segmented } from "@/components/ui/Segmented";
 import { useMicrophone } from "@/components/audio/useMicrophone";
 import { TargetRail } from "@/components/audio/TargetRail";
-import { speak, voiceFor, type VoiceName } from "@/components/audio/speak";
+import { prefetchVoice, speak, voiceFor, type VoiceName } from "@/components/audio/speak";
 import { capitalise, inWords, mmss } from "@/lib/format";
 import { followUpProfile } from "@/lib/scoring/profiles";
 import { followUpLimit } from "@/lib/followups";
@@ -239,6 +239,15 @@ export function LiveInterview(p: LiveInterviewProps) {
     return () => clearInterval(t);
   }, [session?.minutes]);
 
+  // Warm voice cache for initial questions so the interviewer speaks with < 3s latency
+  useEffect(() => {
+    if (p.questions && p.questions.length > 0) {
+      p.questions.slice(0, 3).forEach((q: LiveQuestion) => {
+        prefetchVoice(q.text, voiceName.current);
+      });
+    }
+  }, [p.questions]);
+
   /** The interviewer says `text`, then the mic opens (or resumes, after a repeat). */
   const ask = useCallback(
     async (text: string, mic_: "start" | "resume") => {
@@ -270,8 +279,13 @@ export function LiveInterview(p: LiveInterviewProps) {
       setTurn({ kind: "main" });
       setMainSec(0);
       void ask(`${lead}${question.text}`, "start");
+      // Pre-warm the next question in the background
+      const nextIndex = askedIds.current.length;
+      if (nextIndex < p.questions.length && p.questions[nextIndex]) {
+        prefetchVoice(p.questions[nextIndex].text, voiceName.current);
+      }
     },
-    [ask],
+    [ask, p.questions],
   );
 
   const fail = useCallback((message: string, stage: Stage) => {
