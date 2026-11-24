@@ -145,14 +145,14 @@ export default function ApplicationWorkspacePage({
           </Link>
           <div className="flex items-center gap-2 mt-2">
             <h1 className="text-xl md:text-2xl font-black text-ink tracking-tight">
-              {job.title}
+              {job.title || "Title not found in the advert"}
             </h1>
-            <span className="text-muted text-sm font-medium">@ {job.employer}</span>
+            <span className="text-muted text-sm font-medium">{job.employer ? `@ ${job.employer}` : "Employer not found in the advert"}</span>
           </div>
           <div className="flex items-center gap-3 text-xs text-muted mt-1 font-mono">
-            <span>📍 {job.location}</span>
+            <span>📍 {job.location || "Location not found in the advert"}</span>
             <span>•</span>
-            <span className="text-blue font-semibold">{job.applyRoute} route</span>
+            <span className="text-blue font-semibold">{job.applyRoute === "unknown" ? "How to apply: not known" : `${job.applyRoute} route`}</span>
           </div>
         </div>
 
@@ -191,7 +191,7 @@ export default function ApplicationWorkspacePage({
           { id: "gap", label: `Gap Map (${strongMatchesCount}/${app.gapMap.length} Matched)` },
           { id: "letter", label: "Cover Letter Generator" },
           { id: "job", label: "Job Description & Specs" },
-          { id: "send", label: "Send Log & Audit Trail" },
+          { id: "send", label: "Send log" },
         ].map((tab) => (
           <button
             key={tab.id}
@@ -372,7 +372,7 @@ export default function ApplicationWorkspacePage({
           <div className="rounded-xl bg-canvas p-4 border border-line text-xs font-mono text-muted space-y-2">
             <div>• Application system: {job.applicationSystem || "Not known"}</div>
             <div>• Status: {app.status.toUpperCase()}</div>
-            <div>• Route: {job.applyRoute}</div>
+            <div>• Route: {job.applyRoute === "unknown" ? "Not known" : job.applyRoute}</div>
             <div>• Last Checked: {new Date(app.updatedAt).toLocaleString()}</div>
           </div>
         </div>

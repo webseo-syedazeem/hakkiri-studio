@@ -85,7 +85,7 @@ export default function ProfilePage() {
             Candidate Career Profile
           </h1>
           <p className="text-xs text-muted max-w-2xl">
-            The single structured source of truth for all your tailored CVs, cover letters, and auto-applied forms.
+            Your own career details, kept in one place for your applications. Only what you enter is here.
           </p>
         </div>
 
