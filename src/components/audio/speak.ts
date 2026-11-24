@@ -25,15 +25,17 @@ const NATURAL_WAIT_MS = 9000;
 
 /** In-memory object URL cache for prefetched question audio. */
 const audioBlobCache = new Map<string, string>();
+const pendingPrefetches = new Map<string, Promise<string | null>>();
 
 /** Prefetches voice synthesis in the background so it plays instantly when the question begins. */
-export function prefetchVoice(text: string, voice: VoiceName = "medium") {
-  if (typeof window === "undefined" || !text.trim() || natural === "off") return;
+export function prefetchVoice(text: string, voice: VoiceName = "medium"): Promise<string | null> {
+  if (typeof window === "undefined" || !text.trim() || natural === "off") return Promise.resolve(null);
   const spokenText = humaniseSpeechText(text).trim();
   const key = `${voice}|${spokenText}`;
-  if (audioBlobCache.has(key)) return;
+  if (audioBlobCache.has(key)) return Promise.resolve(audioBlobCache.get(key)!);
+  if (pendingPrefetches.has(key)) return pendingPrefetches.get(key)!;
 
-  fetch("/api/voice", {
+  const promise = fetch("/api/voice", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ text: spokenText, voice }),
@@ -44,10 +46,19 @@ export function prefetchVoice(text: string, voice: VoiceName = "medium") {
     })
     .then((blob) => {
       if (blob) {
-        audioBlobCache.set(key, URL.createObjectURL(blob));
+        const url = URL.createObjectURL(blob);
+        audioBlobCache.set(key, url);
+        return url;
       }
+      return null;
     })
-    .catch(() => {});
+    .catch(() => null)
+    .finally(() => {
+      pendingPrefetches.delete(key);
+    });
+
+  pendingPrefetches.set(key, promise);
+  return promise;
 }
 
 /**
@@ -207,6 +218,40 @@ export function speak(text: string, opts: SpeakOptions = {}): Speech {
     });
     void audio.play().catch(() => {
       browserSpeak(spoken, opts, finish, setCancel);
+    });
+    return { done, cancel: () => cancel() };
+  }
+
+  const pending = pendingPrefetches.get(voiceKey);
+  if (pending) {
+    void pending.then((url) => {
+      if (finished) return;
+      if (url) {
+        const audio = sharedPlayer();
+        audio.pause();
+        audio.src = url;
+        audio.playbackRate = opts.rate ?? 1;
+        let stuck: ReturnType<typeof setTimeout> | undefined;
+        const end = () => {
+          clearTimeout(stuck);
+          finish();
+        };
+        audio.onplay = () => opts.onStart?.();
+        audio.onended = end;
+        audio.onerror = end;
+        audio.onloadedmetadata = () => {
+          if (Number.isFinite(audio.duration)) stuck = setTimeout(end, (audio.duration / audio.playbackRate) * 1000 + 3000);
+        };
+        setCancel(() => {
+          audio.pause();
+          end();
+        });
+        void audio.play().catch(() => {
+          browserSpeak(spoken, opts, finish, setCancel);
+        });
+      } else {
+        browserSpeak(spoken, opts, finish, setCancel);
+      }
     });
     return { done, cancel: () => cancel() };
   }

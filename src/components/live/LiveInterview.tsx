@@ -243,30 +243,63 @@ export function LiveInterview(p: LiveInterviewProps) {
     return () => clearInterval(t);
   }, [session?.minutes]);
 
-  // Warm voice cache for initial questions so the interviewer speaks with < 3s latency
+  // Progressive audio prefetching:
+  // Starts by loading the first 3 questions (0, 1, 2) and intro.
+  // When user is on question 1 (idx 0), load question 4 (idx 3).
+  // When user is on question 2 (idx 1), load question 5 (idx 4), maintaining a 3-question lookahead buffer.
   useEffect(() => {
-    if (p.questions && p.questions.length > 0) {
-      const isFullInterview = isRun && session?.mode === "interview";
-      if (isFullInterview && p.questions[0]) {
-        const fullIntro = getFullInterviewIntro({
-          interviewerName: name,
-          interviewerTitle: p.interviewer.title,
-          heading: p.heading,
-          minutes: session?.minutes,
-          style,
-          firstQuestionText: p.questions[0].text,
-        });
-        prefetchVoice(fullIntro.spoken, voiceName.current);
-        if (p.questions[1]) {
-          const q1Bridge = getConversationalBridge(1, style, p.questions[1].slot);
-          prefetchVoice(`${q1Bridge}${p.questions[1].text}`, voiceName.current);
-        }
-      }
-      p.questions.slice(0, 3).forEach((q: LiveQuestion) => {
-        prefetchVoice(q.text, voiceName.current);
+    if (!p.questions || p.questions.length === 0) return;
+
+    const isFullInterview = isRun && session?.mode === "interview";
+    if (isFullInterview && p.questions[0]) {
+      const fullIntro = getFullInterviewIntro({
+        interviewerName: name,
+        interviewerTitle: p.interviewer.title,
+        heading: p.heading,
+        minutes: session?.minutes,
+        style,
+        firstQuestionText: p.questions[0].text,
       });
+      prefetchVoice(fullIntro.spoken, voiceName.current);
     }
+
+    // Load initial 3 questions
+    p.questions.slice(0, 3).forEach((q: LiveQuestion, i: number) => {
+      prefetchVoice(q.text, voiceName.current);
+      if (i > 0) {
+        const bridge = getConversationalBridge(i, style, q.slot);
+        prefetchVoice(`${bridge}${q.text}`, voiceName.current);
+      }
+    });
   }, [p.questions, isRun, session?.mode, session?.minutes, name, p.interviewer.title, p.heading, style]);
+
+  // Progressive lookahead prefetch as the user advances through the interview:
+  // On question 1 (qIndex 0) -> prefetch question 4 (index 3)
+  // On question 2 (qIndex 1) -> prefetch question 5 (index 4)
+  // On question k (qIndex k-1) -> prefetch question k + 3 (index k + 2)
+  useEffect(() => {
+    if (!p.questions || p.questions.length === 0) return;
+
+    // Prefetch question k + 3
+    const aheadIdx = qIndex + 3;
+    if (aheadIdx < p.questions.length && p.questions[aheadIdx]) {
+      const aheadQ = p.questions[aheadIdx];
+      const aheadBridge = getConversationalBridge(aheadIdx, style, aheadQ.slot);
+      prefetchVoice(aheadQ.text, voiceName.current);
+      prefetchVoice(`${aheadBridge}${aheadQ.text}`, voiceName.current);
+    }
+
+    // Ensure immediate next questions in the lookahead buffer are primed
+    for (const offset of [1, 2]) {
+      const idx = qIndex + offset;
+      if (idx < p.questions.length && p.questions[idx]) {
+        const nextQ = p.questions[idx];
+        const nextBridge = getConversationalBridge(idx, style, nextQ.slot);
+        prefetchVoice(nextQ.text, voiceName.current);
+        prefetchVoice(`${nextBridge}${nextQ.text}`, voiceName.current);
+      }
+    }
+  }, [qIndex, p.questions, style]);
 
   /** The interviewer says `text`, then the mic opens (or resumes, after a repeat). */
   const ask = useCallback(
@@ -300,13 +333,24 @@ export function LiveInterview(p: LiveInterviewProps) {
       setTurn({ kind: "main" });
       setMainSec(0);
       void ask(`${lead}${question.text}`, "start");
-      // Pre-warm the next question in the background (both with conversational bridge and clean question)
-      const nextIndex = askedIds.current.length;
-      if (nextIndex < p.questions.length && p.questions[nextIndex]) {
-        const nextQ = p.questions[nextIndex];
-        const nextBridge = getConversationalBridge(nextIndex, style, nextQ.slot);
-        prefetchVoice(`${nextBridge}${nextQ.text}`, voiceName.current);
+
+      // Progressive lookahead: when starting question k, prefetch question k + 3
+      const currentIdx = Math.max(0, askedIds.current.length - 1);
+      const aheadIdx = currentIdx + 3;
+      if (aheadIdx < p.questions.length && p.questions[aheadIdx]) {
+        const aheadQ = p.questions[aheadIdx];
+        const aheadBridge = getConversationalBridge(aheadIdx, style, aheadQ.slot);
+        prefetchVoice(aheadQ.text, voiceName.current);
+        prefetchVoice(`${aheadBridge}${aheadQ.text}`, voiceName.current);
+      }
+
+      // Also ensure immediate next question is primed
+      const nextIdx = currentIdx + 1;
+      if (nextIdx < p.questions.length && p.questions[nextIdx]) {
+        const nextQ = p.questions[nextIdx];
+        const nextBridge = getConversationalBridge(nextIdx, style, nextQ.slot);
         prefetchVoice(nextQ.text, voiceName.current);
+        prefetchVoice(`${nextBridge}${nextQ.text}`, voiceName.current);
       }
     },
     [ask, p.questions, style],

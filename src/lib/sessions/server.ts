@@ -136,12 +136,31 @@ export async function planInterview(interviewId: string, settings: SessionSettin
   let picked = pickQuestions(interview.questions, settings, lastAsked);
   const need = questionsNeeded(picked);
   if (needsAny(need)) {
-    await withLock(interviewId, userId, async () => {
-      const fresh = (await getInterviewAsync(interviewId, userId)) ?? getInterview(interviewId, userId)!;
-      await addQuestions(fresh, need, { difficulty: settings.difficulty }, userId);
-    });
-    interview = getInterview(interviewId, userId)!;
-    picked = pickQuestions(interview.questions, settings, lastAsked);
+    const missingMain = CATEGORY_ORDER.some((c) => picked.short[c] > 0);
+    if (missingMain) {
+      // If bank has questions that can be repeated, start immediately and top up in background
+      const withRepeats = pickQuestions(interview.questions, settings, lastAsked, { allowRepeats: true });
+      if (CATEGORY_ORDER.every((c) => withRepeats.short[c] === 0) && withRepeats.questionIds.length > 0) {
+        picked = withRepeats;
+        void withLock(interviewId, userId, async () => {
+          const fresh = (await getInterviewAsync(interviewId, userId)) ?? getInterview(interviewId, userId)!;
+          await addQuestions(fresh, need, { difficulty: settings.difficulty }, userId);
+        }).catch((err) => console.warn("[sessions] background question generation:", err));
+      } else {
+        await withLock(interviewId, userId, async () => {
+          const fresh = (await getInterviewAsync(interviewId, userId)) ?? getInterview(interviewId, userId)!;
+          await addQuestions(fresh, need, { difficulty: settings.difficulty }, userId);
+        });
+        interview = getInterview(interviewId, userId)!;
+        picked = pickQuestions(interview.questions, settings, lastAsked);
+      }
+    } else {
+      // Main questions are 100% ready; generate spares in background so the user starts with zero wait
+      void withLock(interviewId, userId, async () => {
+        const fresh = (await getInterviewAsync(interviewId, userId)) ?? getInterview(interviewId, userId)!;
+        await addQuestions(fresh, need, { difficulty: settings.difficulty }, userId);
+      }).catch((err) => console.warn("[sessions] background spare generation:", err));
+    }
   }
   // Still short (the standard set ran out without a key): bring back the ones you had longest ago (same difficulty only).
   if (CATEGORY_ORDER.some((c) => picked.short[c] > 0)) picked = pickQuestions(interview.questions, settings, lastAsked, { allowRepeats: true });
