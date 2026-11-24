@@ -130,23 +130,23 @@ function fallbackRephrase(q: string): string {
     return "If you had to pick one specific example from your experience, what would you choose and what was the reasoning behind it?";
   }
   if (/^how would you ensure /i.test(q)) {
-    const topic = q.replace(/^how would you ensure /i, "").replace(/\?$/, "");
+    const topic = q.replace(/^how would you ensure /i, "").replace(/[?.!\s]+$/, "");
     return `What concrete steps, design patterns and safeguards would you use to ensure ${topic}?`;
   }
   if (/^tell (me|us) about a time /i.test(q)) {
-    const action = q.replace(/^tell (me|us) about a time (when )?you /i, "").replace(/\?$/, "");
+    const action = q.replace(/^tell (me|us) about a time (when )?you /i, "").replace(/[?.!\s]+$/, "");
     return `Can you share a real-world story from your past where you ${action}, and what the final result was?`;
   }
   if (/^describe a (situation|time) /i.test(q)) {
-    const action = q.replace(/^describe a (situation|time) (where|when) you /i, "").replace(/\?$/, "");
+    const action = q.replace(/^describe a (situation|time) (where|when) you /i, "").replace(/[?.!\s]+$/, "");
     return `Walk us through an actual situation where you ${action}: what was your personal role and outcome?`;
   }
   if (/^how do you /i.test(q)) {
-    const action = q.replace(/^how do you /i, "").replace(/\?$/, "");
+    const action = q.replace(/^how do you /i, "").replace(/[?.!\s]+$/, "");
     return `In your everyday workflow, what is your step-by-step approach to ${action}?`;
   }
   if (/^what (would you|do you) /i.test(q)) {
-    const action = q.replace(/^what (would you|do you) /i, "").replace(/\?$/, "");
+    const action = q.replace(/^what (would you|do you) /i, "").replace(/[?.!\s]+$/, "");
     return `If put in this situation, what would be your initial decision and reasoning regarding ${action}?`;
   }
 
