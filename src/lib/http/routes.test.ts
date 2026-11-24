@@ -129,7 +129,9 @@ describe("rephrasing a question", () => {
     expect((await rephrase.POST(json({ question: "q".repeat(300), hint: "h".repeat(5000) }))).status).toBe(413);
     const ok = await rephrase.POST(json({ question: "Tell me about a time you led a team." }));
     expect(ok.status).toBe(200);
-    expect(typeof ((await ok.json()) as { rephrased: string }).rephrased).toBe("string");
+    const said = ((await ok.json()) as { rephrased: string }).rephrased;
+    // The reworded question is one clean sentence: the original's full stop is not left in the middle of it.
+    expect(said).toBe("Can you share a real-world story from your past where you led a team, and what the final result was?");
     // Twenty a minute for one person; another person is not held up by it.
     rate()?.clear();
     for (let i = 0; i < 20; i++) await rephrase.POST(json({ question: "Why do you want this role?" }));
