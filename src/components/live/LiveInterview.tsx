@@ -256,6 +256,10 @@ export function LiveInterview(p: LiveInterviewProps) {
           firstQuestionText: p.questions[0].text,
         });
         prefetchVoice(fullIntro.spoken, voiceName.current);
+        if (p.questions[1]) {
+          const q1Bridge = getConversationalBridge(1, style, p.questions[1].slot);
+          prefetchVoice(`${q1Bridge}${p.questions[1].text}`, voiceName.current);
+        }
       }
       p.questions.slice(0, 3).forEach((q: LiveQuestion) => {
         prefetchVoice(q.text, voiceName.current);
@@ -295,13 +299,16 @@ export function LiveInterview(p: LiveInterviewProps) {
       setTurn({ kind: "main" });
       setMainSec(0);
       void ask(`${lead}${question.text}`, "start");
-      // Pre-warm the next question in the background
+      // Pre-warm the next question in the background (both with conversational bridge and clean question)
       const nextIndex = askedIds.current.length;
       if (nextIndex < p.questions.length && p.questions[nextIndex]) {
-        prefetchVoice(p.questions[nextIndex].text, voiceName.current);
+        const nextQ = p.questions[nextIndex];
+        const nextBridge = getConversationalBridge(nextIndex, style, nextQ.slot);
+        prefetchVoice(`${nextBridge}${nextQ.text}`, voiceName.current);
+        prefetchVoice(nextQ.text, voiceName.current);
       }
     },
-    [ask, p.questions],
+    [ask, p.questions, style],
   );
 
   const fail = useCallback((message: string, stage: Stage) => {
