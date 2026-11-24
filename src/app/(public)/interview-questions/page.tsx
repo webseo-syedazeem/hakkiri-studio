@@ -94,7 +94,7 @@ export default function InterviewQuestionsHubPage() {
         {/* Decorative background glow circle */}
         <div className="pointer-events-none absolute -top-24 left-1/2 -z-10 h-96 w-96 -translate-x-1/2 rounded-full bg-gradient-to-tr from-blue-400/20 to-indigo-400/20 blur-3xl" />
 
-        <div className="mx-auto max-w-[1040px] px-4 sm:px-6">
+        <div className="mx-auto max-w-[1140px] px-4 sm:px-6">
           <div className="inline-flex items-center gap-2 rounded-full border border-blue-300 bg-blue-100/70 px-4 py-1 text-xs font-bold text-blue-800 shadow-xs">
             <span className="h-2 w-2 rounded-full bg-blue-600 animate-pulse" />
             INTERVIEW QUESTIONS HUB
@@ -127,11 +127,13 @@ export default function InterviewQuestionsHubPage() {
       </section>
 
       {/* SECTION 2: THE 7 MOST COMMON (NUMBERED QUICK LIST) */}
-      <section className="border-b border-slate-200/80 bg-white py-14 sm:py-18">
-        <div className="mx-auto max-w-[1040px] px-4 sm:px-6">
-          <div className="max-w-2xl">
-            <span className="text-xs font-bold text-blue-600 uppercase tracking-wider block mb-1">QUICK START</span>
-            <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
+      <section className="border-b border-slate-200/80 bg-slate-50/80 py-16 sm:py-20">
+        <div className="mx-auto max-w-[1140px] px-4 sm:px-6">
+          <div className="text-center max-w-2xl mx-auto mb-10">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-100 text-blue-700 px-3.5 py-1 text-xs font-bold uppercase tracking-wider mb-2">
+              ⚡ QUICK START
+            </span>
+            <h2 className="text-2xl sm:text-4xl font-black tracking-tight text-slate-900">
               The 7 most common interview questions
             </h2>
             <p className="mt-2 text-sm text-slate-600">
@@ -139,119 +141,113 @@ export default function InterviewQuestionsHubPage() {
             </p>
           </div>
 
-          <div className="mt-8 rounded-3xl border border-slate-200/90 bg-gradient-to-b from-slate-50/80 via-white to-slate-50/40 p-6 sm:p-8 shadow-sm">
-            <ol className="divide-y divide-slate-200/70 space-y-4">
-              <li className="pt-3.5 first:pt-0 flex items-start gap-4">
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-xs font-black text-white shadow-sm">
-                  1
-                </span>
-                <div className="text-sm text-slate-700 leading-relaxed">
-                  <strong className="text-slate-900 font-bold">Tell me about yourself.</strong> A 60-second summary of who you are, what you have done and why this job.{" "}
-                  <Link href="/interview-questions/tell-me-about-yourself" className="font-bold text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-0.5 ml-1">
-                    See how to answer <IconChevronRight className="h-3 w-3" />
-                  </Link>
+          <div className="grid gap-3.5 max-w-4xl mx-auto">
+            {[
+              {
+                num: 1,
+                q: "Tell me about yourself.",
+                desc: "A 60-second summary of who you are, what you have done and why this job.",
+                linkText: "See how to answer",
+                href: "/interview-questions/tell-me-about-yourself"
+              },
+              {
+                num: 2,
+                q: "Why do you want this job?",
+                desc: "Link what the role offers to what you want to do next in your career.",
+                linkText: "Jump to answer",
+                href: "#q14"
+              },
+              {
+                num: 3,
+                q: "Why should we hire you?",
+                desc: "Match your top skills to the job and prove them with quantifiable examples.",
+                linkText: "See how to answer",
+                href: "/interview-questions/why-should-we-hire-you"
+              },
+              {
+                num: 4,
+                q: "What are your strengths?",
+                desc: "Pick two strengths the job needs and give a concrete example of each.",
+                linkText: "Jump to answer",
+                href: "#q3"
+              },
+              {
+                num: 5,
+                q: "What is your greatest weakness?",
+                desc: "Name a real weakness and what proactive steps you are taking to improve it.",
+                linkText: "Jump to answer",
+                href: "#q4"
+              },
+              {
+                num: 6,
+                q: "Tell me about a challenge you faced.",
+                desc: "Tell a short story: the problem, what you personally did, and the measurable result.",
+                linkText: "Jump to answer",
+                href: "#q9"
+              },
+              {
+                num: 7,
+                q: "Do you have any questions for us?",
+                desc: "Always say yes, and ask about team culture, metrics of success, or 90-day goals.",
+                linkText: "Jump to answer",
+                href: "#q20"
+              },
+            ].map((item) => (
+              <div
+                key={item.num}
+                className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-5 sm:p-6 rounded-2xl border border-slate-200/90 bg-white shadow-xs hover:border-blue-400 hover:shadow-md transition-all group"
+              >
+                <div className="flex items-start sm:items-center gap-4">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-xs font-black text-white shadow-md shadow-blue-500/25">
+                    {item.num}
+                  </span>
+                  <div>
+                    <h3 className="text-base font-black text-slate-900 group-hover:text-blue-600 transition-colors">
+                      {item.q}
+                    </h3>
+                    <p className="mt-1 text-xs sm:text-sm text-slate-600 leading-relaxed font-medium">
+                      {item.desc}
+                    </p>
+                  </div>
                 </div>
-              </li>
-
-              <li className="pt-3.5 flex items-start gap-4">
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-xs font-black text-white shadow-sm">
-                  2
-                </span>
-                <div className="text-sm text-slate-700 leading-relaxed">
-                  <strong className="text-slate-900 font-bold">Why do you want this job?</strong> Link what the role offers to what you want to do next.{" "}
-                  <a href="#q14" className="font-semibold text-blue-600 hover:underline ml-1">
-                    Jump to answer
-                  </a>
-                </div>
-              </li>
-
-              <li className="pt-3.5 flex items-start gap-4">
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-xs font-black text-white shadow-sm">
-                  3
-                </span>
-                <div className="text-sm text-slate-700 leading-relaxed">
-                  <strong className="text-slate-900 font-bold">Why should we hire you?</strong> Match your top skills to the job and prove them with examples.{" "}
-                  <Link href="/interview-questions/why-should-we-hire-you" className="font-bold text-blue-600 hover:text-blue-800 hover:underline inline-flex items-center gap-0.5 ml-1">
-                    See how to answer <IconChevronRight className="h-3 w-3" />
-                  </Link>
-                </div>
-              </li>
-
-              <li className="pt-3.5 flex items-start gap-4">
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-xs font-black text-white shadow-sm">
-                  4
-                </span>
-                <div className="text-sm text-slate-700 leading-relaxed">
-                  <strong className="text-slate-900 font-bold">What are your strengths?</strong> Pick two strengths the job needs and give an example of each.{" "}
-                  <a href="#q3" className="font-semibold text-blue-600 hover:underline ml-1">
-                    Jump to answer
-                  </a>
-                </div>
-              </li>
-
-              <li className="pt-3.5 flex items-start gap-4">
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-xs font-black text-white shadow-sm">
-                  5
-                </span>
-                <div className="text-sm text-slate-700 leading-relaxed">
-                  <strong className="text-slate-900 font-bold">What is your greatest weakness?</strong> Name a real weakness and what you are doing to improve it.{" "}
-                  <a href="#q4" className="font-semibold text-blue-600 hover:underline ml-1">
-                    Jump to answer
-                  </a>
-                </div>
-              </li>
-
-              <li className="pt-3.5 flex items-start gap-4">
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-xs font-black text-white shadow-sm">
-                  6
-                </span>
-                <div className="text-sm text-slate-700 leading-relaxed">
-                  <strong className="text-slate-900 font-bold">Tell me about a challenge you faced.</strong> Tell a short story: the problem, what you did and the result.{" "}
-                  <a href="#q9" className="font-semibold text-blue-600 hover:underline ml-1">
-                    Jump to answer
-                  </a>
-                </div>
-              </li>
-
-              <li className="pt-3.5 flex items-start gap-4">
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-xs font-black text-white shadow-sm">
-                  7
-                </span>
-                <div className="text-sm text-slate-700 leading-relaxed">
-                  <strong className="text-slate-900 font-bold">Do you have any questions for us?</strong> Always say yes, and ask about the role, the team or success in the job.{" "}
-                  <a href="#q20" className="font-semibold text-blue-600 hover:underline ml-1">
-                    Jump to answer
-                  </a>
-                </div>
-              </li>
-            </ol>
+                <Link
+                  href={item.href}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-800 shrink-0 self-end sm:self-center"
+                >
+                  {item.linkText} <IconArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+                </Link>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* SECTION 3: THE 4 TYPES OF QUESTIONS (CARDS WITH VIBRANT ACCENTS) */}
-      <section className="border-b border-slate-200/80 bg-slate-50/60 py-14 sm:py-18">
-        <div className="mx-auto max-w-[1040px] px-4 sm:px-6">
-          <div className="max-w-2xl mb-8">
-            <span className="text-xs font-bold text-blue-600 uppercase tracking-wider block mb-1">CATEGORIES</span>
-            <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
+      <section className="border-b border-slate-200/80 bg-white py-16 sm:py-24">
+        <div className="mx-auto max-w-[1140px] px-4 sm:px-6">
+          <div className="text-center max-w-2xl mx-auto mb-12">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-100 text-purple-700 px-3.5 py-1 text-xs font-bold uppercase tracking-wider mb-2">
+              📚 QUESTION TYPES
+            </span>
+            <h2 className="text-2xl sm:text-4xl font-black tracking-tight text-slate-900">
               The 4 types of interview questions
             </h2>
             <p className="mt-2 text-sm text-slate-600">
-              Knowing the type of question tells you what kind of answer to give.
+              Knowing the category tells you immediately what kind of answer the hiring panel is evaluating.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Card 1: About you */}
-            <div className="group rounded-2xl border border-purple-200/90 bg-gradient-to-b from-purple-50/50 via-white to-white p-6 shadow-xs transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-purple-400 flex flex-col justify-between">
+            <div className="group rounded-3xl border-2 border-purple-200 bg-gradient-to-br from-purple-50/70 via-white to-purple-50/20 p-7 shadow-md transition-all duration-300 hover:shadow-xl hover:-translate-y-1.5 hover:border-purple-400 flex flex-col justify-between">
               <div>
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 text-white font-bold mb-4 shadow-md shadow-purple-500/25">
                   <IconUserCheck className="h-6 w-6" />
                 </div>
-                <h3 className="text-lg font-black text-slate-900">About you</h3>
+                <span className="text-[11px] font-black text-purple-700 uppercase tracking-wider">Category 1</span>
+                <h3 className="text-xl font-black text-slate-900 mt-1">About you</h3>
                 <p className="mt-2 text-xs text-slate-600 leading-relaxed font-medium">
-                  Who you are and what you want.
+                  Who you are, what motivates you, and your professional identity.
                 </p>
               </div>
               <div className="mt-6 pt-3 border-t border-purple-100 text-xs italic font-serif text-purple-900">
@@ -260,14 +256,15 @@ export default function InterviewQuestionsHubPage() {
             </div>
 
             {/* Card 2: About experience */}
-            <div className="group rounded-2xl border border-blue-200/90 bg-gradient-to-b from-blue-50/50 via-white to-white p-6 shadow-xs transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-blue-400 flex flex-col justify-between">
+            <div className="group rounded-3xl border-2 border-blue-200 bg-gradient-to-br from-blue-50/70 via-white to-blue-50/20 p-7 shadow-md transition-all duration-300 hover:shadow-xl hover:-translate-y-1.5 hover:border-blue-400 flex flex-col justify-between">
               <div>
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-600 text-white font-bold mb-4 shadow-md shadow-blue-500/25">
                   <IconBriefcase className="h-6 w-6" />
                 </div>
-                <h3 className="text-lg font-black text-slate-900">About your experience</h3>
+                <span className="text-[11px] font-black text-blue-700 uppercase tracking-wider">Category 2</span>
+                <h3 className="text-xl font-black text-slate-900 mt-1">Your experience</h3>
                 <p className="mt-2 text-xs text-slate-600 leading-relaxed font-medium">
-                  Your skills and past work.
+                  Your core skills, hard competencies, and past career highlights.
                 </p>
               </div>
               <div className="mt-6 pt-3 border-t border-blue-100 text-xs italic font-serif text-blue-900">
@@ -276,14 +273,15 @@ export default function InterviewQuestionsHubPage() {
             </div>
 
             {/* Card 3: Behavioral */}
-            <div className="group rounded-2xl border border-emerald-200/90 bg-gradient-to-b from-emerald-50/50 via-white to-white p-6 shadow-xs transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-emerald-400 flex flex-col justify-between">
+            <div className="group rounded-3xl border-2 border-emerald-200 bg-gradient-to-br from-emerald-50/70 via-white to-emerald-50/20 p-7 shadow-md transition-all duration-300 hover:shadow-xl hover:-translate-y-1.5 hover:border-emerald-400 flex flex-col justify-between">
               <div>
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white font-bold mb-4 shadow-md shadow-emerald-500/25">
                   <IconMessageSquare className="h-6 w-6" />
                 </div>
-                <h3 className="text-lg font-black text-slate-900">Behavioral</h3>
+                <span className="text-[11px] font-black text-emerald-700 uppercase tracking-wider">Category 3</span>
+                <h3 className="text-xl font-black text-slate-900 mt-1">Behavioral</h3>
                 <p className="mt-2 text-xs text-slate-600 leading-relaxed font-medium">
-                  How you acted in real situations. Answer with a story.
+                  How you act under pressure and in team conflict. Answer with STAR.
                 </p>
               </div>
               <div className="mt-6 pt-3 border-t border-emerald-100 text-xs italic font-serif text-emerald-900">
@@ -292,14 +290,15 @@ export default function InterviewQuestionsHubPage() {
             </div>
 
             {/* Card 4: About the job */}
-            <div className="group rounded-2xl border border-amber-200/90 bg-gradient-to-b from-amber-50/50 via-white to-white p-6 shadow-xs transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-amber-400 flex flex-col justify-between">
+            <div className="group rounded-3xl border-2 border-amber-200 bg-gradient-to-br from-amber-50/70 via-white to-amber-50/20 p-7 shadow-md transition-all duration-300 hover:shadow-xl hover:-translate-y-1.5 hover:border-amber-400 flex flex-col justify-between">
               <div>
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white font-bold mb-4 shadow-md shadow-amber-500/25">
                   <IconTarget className="h-6 w-6" />
                 </div>
-                <h3 className="text-lg font-black text-slate-900">About the job</h3>
+                <span className="text-[11px] font-black text-amber-700 uppercase tracking-wider">Category 4</span>
+                <h3 className="text-xl font-black text-slate-900 mt-1">About the job</h3>
                 <p className="mt-2 text-xs text-slate-600 leading-relaxed font-medium">
-                  Why this role and this company.
+                  Why this specific company, role, team dynamics, and vision.
                 </p>
               </div>
               <div className="mt-6 pt-3 border-t border-amber-100 text-xs italic font-serif text-amber-900">
@@ -312,7 +311,7 @@ export default function InterviewQuestionsHubPage() {
 
       {/* SECTION 4: ALL 20 QUESTIONS WITH ANSWERS */}
       <section className="border-b border-slate-200/80 bg-white py-16 sm:py-24">
-        <div className="mx-auto max-w-[1040px] px-4 sm:px-6">
+        <div className="mx-auto max-w-[1140px] px-4 sm:px-6">
           <div className="max-w-2xl mb-8">
             <span className="text-xs font-bold text-blue-600 uppercase tracking-wider block mb-1">INTERACTIVE QUESTION LIBRARY</span>
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-slate-900">
@@ -329,7 +328,7 @@ export default function InterviewQuestionsHubPage() {
 
       {/* SECTION 5: GUIDES BY SITUATION (ALL 3 LIVE GUIDES LINKED) */}
       <section className="border-b border-slate-200/80 bg-gradient-to-b from-slate-50 via-white to-slate-50 py-16 sm:py-20">
-        <div className="mx-auto max-w-[1040px] px-4 sm:px-6">
+        <div className="mx-auto max-w-[1140px] px-4 sm:px-6">
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 uppercase tracking-wider mb-2">
               <IconBookOpen className="h-3.5 w-3.5" /> DEEP DIVE GUIDES
@@ -411,7 +410,7 @@ export default function InterviewQuestionsHubPage() {
 
       {/* SECTION 6: HOW TO PREPARE (3 COLUMNS) */}
       <section className="border-b border-slate-200/80 bg-white py-16 sm:py-20">
-        <div className="mx-auto max-w-[1040px] px-4 sm:px-6">
+        <div className="mx-auto max-w-[1140px] px-4 sm:px-6">
           <div className="max-w-2xl">
             <span className="text-xs font-bold text-blue-600 uppercase tracking-wider block mb-1">PRACTICAL ROUTINE</span>
             <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">

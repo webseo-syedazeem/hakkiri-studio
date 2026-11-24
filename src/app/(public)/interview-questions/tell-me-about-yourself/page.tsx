@@ -8,7 +8,8 @@ import {
   IconXCircle, 
   IconChevronRight, 
   IconHelpCircle, 
-  IconCompass 
+  IconCompass,
+  IconTarget 
 } from "@/components/interview-questions/Icons";
 import { 
   InteractiveAnswerBuilder, 
@@ -109,100 +110,171 @@ export default function TellMeAboutYourselfPage() {
       </section>
 
       {/* SECTION 2: AT A GLANCE (3 STAT CARDS) */}
-      <section className="border-b border-slate-200/80 bg-white py-12 sm:py-16">
-        <div className="mx-auto max-w-[1040px] px-4 sm:px-6">
-          <div className="max-w-2xl mb-8">
-            <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
+      <section className="border-b border-slate-200/80 bg-slate-50/80 py-16 sm:py-20">
+        <div className="mx-auto max-w-[1140px] px-4 sm:px-6">
+          <div className="text-center max-w-2xl mx-auto mb-12">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-100 text-blue-700 px-3.5 py-1 text-xs font-bold uppercase tracking-wider mb-3">
+              ⚡ At A Glance
+            </span>
+            <h2 className="text-2xl sm:text-4xl font-black tracking-tight text-slate-900">
               "Tell me about yourself" at a glance
             </h2>
+            <p className="mt-2 text-sm text-slate-600">
+              Three essential rules to remember before you walk into the interview.
+            </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-6 shadow-xs">
-              <div className="text-3xl sm:text-4xl font-black text-blue-600">60–90 sec</div>
-              <p className="mt-2 text-xs sm:text-sm font-medium text-slate-600">
-                How long your answer should be
-              </p>
+            <div className="group relative rounded-3xl border-2 border-blue-200 bg-gradient-to-br from-blue-50/90 via-white to-blue-50/30 p-7 sm:p-8 shadow-md hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between overflow-hidden">
+              <div className="absolute -top-12 -right-12 h-32 w-32 rounded-full bg-blue-400/10 blur-2xl group-hover:bg-blue-400/20 transition-all" />
+              <div>
+                <div className="flex items-center justify-between gap-2 mb-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-bold shadow-md shadow-blue-500/25">
+                    <IconClock className="h-6 w-6" />
+                  </div>
+                  <span className="rounded-full bg-blue-100 px-3 py-1 text-[11px] font-bold text-blue-800">
+                    Target Pace
+                  </span>
+                </div>
+                <div className="text-4xl sm:text-5xl font-black text-blue-600 tracking-tight">60–90 sec</div>
+                <h3 className="mt-3 text-base font-bold text-slate-900">Recommended Duration</h3>
+                <p className="mt-1 text-xs sm:text-sm font-medium text-slate-600 leading-relaxed">
+                  Long enough to prove value, short enough to keep the interviewer fully hooked.
+                </p>
+              </div>
+              <div className="mt-6 pt-4 border-t border-blue-100/80 flex items-center gap-2 text-xs text-blue-700 font-semibold">
+                <span>⏱️ ~130–160 spoken words</span>
+              </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-6 shadow-xs">
-              <div className="text-3xl sm:text-4xl font-black text-indigo-600">3 parts</div>
-              <p className="mt-2 text-xs sm:text-sm font-medium text-slate-600">
-                Present, past, future structure
-              </p>
+            <div className="group relative rounded-3xl border-2 border-purple-200 bg-gradient-to-br from-purple-50/90 via-white to-purple-50/30 p-7 sm:p-8 shadow-md hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between overflow-hidden">
+              <div className="absolute -top-12 -right-12 h-32 w-32 rounded-full bg-purple-400/10 blur-2xl group-hover:bg-purple-400/20 transition-all" />
+              <div>
+                <div className="flex items-center justify-between gap-2 mb-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-600 to-indigo-600 text-white font-bold shadow-md shadow-purple-500/25">
+                    <IconCompass className="h-6 w-6" />
+                  </div>
+                  <span className="rounded-full bg-purple-100 px-3 py-1 text-[11px] font-bold text-purple-800">
+                    Structure
+                  </span>
+                </div>
+                <div className="text-4xl sm:text-5xl font-black text-purple-600 tracking-tight">3 parts</div>
+                <h3 className="mt-3 text-base font-bold text-slate-900">Proven Architecture</h3>
+                <p className="mt-1 text-xs sm:text-sm font-medium text-slate-600 leading-relaxed">
+                  Present (who you are), past (relevant achievement), and future (why this job).
+                </p>
+              </div>
+              <div className="mt-6 pt-4 border-t border-purple-100/80 flex items-center gap-1.5 text-xs text-purple-700 font-semibold">
+                <span className="inline-block h-2 w-2 rounded-full bg-blue-500" /> Present
+                <span className="inline-block h-2 w-2 rounded-full bg-purple-500 ml-1.5" /> Past
+                <span className="inline-block h-2 w-2 rounded-full bg-emerald-500 ml-1.5" /> Future
+              </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-6 shadow-xs">
-              <div className="text-3xl sm:text-4xl font-black text-emerald-600">1st question</div>
-              <p className="mt-2 text-xs sm:text-sm font-medium text-slate-600">
-                Often how the interview starts, so it sets the tone
-              </p>
+            <div className="group relative rounded-3xl border-2 border-emerald-200 bg-gradient-to-br from-emerald-50/90 via-white to-emerald-50/30 p-7 sm:p-8 shadow-md hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between overflow-hidden">
+              <div className="absolute -top-12 -right-12 h-32 w-32 rounded-full bg-emerald-400/10 blur-2xl group-hover:bg-emerald-400/20 transition-all" />
+              <div>
+                <div className="flex items-center justify-between gap-2 mb-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-600 text-white font-bold shadow-md shadow-emerald-500/25">
+                    <IconTarget className="h-6 w-6" />
+                  </div>
+                  <span className="rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-bold text-emerald-800">
+                    First Impression
+                  </span>
+                </div>
+                <div className="text-4xl sm:text-5xl font-black text-emerald-600 tracking-tight">1st question</div>
+                <h3 className="mt-3 text-base font-bold text-slate-900">Sets The Whole Tone</h3>
+                <p className="mt-1 text-xs sm:text-sm font-medium text-slate-600 leading-relaxed">
+                  Almost every interview opens here. Nailing it creates immediate interviewer confidence.
+                </p>
+              </div>
+              <div className="mt-6 pt-4 border-t border-emerald-100/80 flex items-center gap-2 text-xs text-emerald-700 font-semibold">
+                <span>🎯 Creates positive anchor bias</span>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
       {/* SECTION 3: THE FORMULA (3 STEP CARDS) */}
-      <section className="border-b border-slate-200/80 bg-slate-50/50 py-14 sm:py-20">
-        <div className="mx-auto max-w-[1040px] px-4 sm:px-6">
-          <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 uppercase tracking-wider mb-2">
+      <section className="border-b border-slate-200/80 bg-white py-16 sm:py-24">
+        <div className="mx-auto max-w-[1140px] px-4 sm:px-6">
+          <div className="text-center max-w-2xl mx-auto mb-12">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-100 text-indigo-700 px-3.5 py-1 text-xs font-bold uppercase tracking-wider mb-3">
               <IconCompass className="h-3.5 w-3.5" /> PROVEN FRAMEWORK
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
+            </span>
+            <h2 className="text-2xl sm:text-4xl font-black tracking-tight text-slate-900">
               The present–past–future formula
             </h2>
-            <p className="mt-2 text-sm text-slate-600">
-              This is the simplest way to structure your answer. Each part is only one to three sentences.
+            <p className="mt-2 text-sm text-slate-600 leading-relaxed">
+              This is the simplest, most effective way to structure your answer. Each part is only one to three punchy sentences.
             </p>
           </div>
 
-          <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Step 1: Present */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs flex flex-col justify-between">
+            <div className="group rounded-3xl border-2 border-blue-200/90 bg-gradient-to-b from-blue-50/50 via-white to-white p-7 shadow-md hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between relative overflow-hidden">
+              <div className="h-2 w-full bg-gradient-to-r from-blue-500 to-indigo-600 absolute top-0 left-0" />
               <div>
-                <span className="inline-flex items-center rounded-lg bg-blue-100/80 px-2.5 py-1 text-xs font-black text-blue-800 mb-3">
-                  1. Present
-                </span>
-                <h3 className="text-base font-bold text-slate-900">Who you are now</h3>
-                <p className="mt-2 text-xs text-slate-600 leading-relaxed">
-                  Your current role, field or studies, and the main thing you are good at.
+                <div className="flex items-center justify-between gap-3 mb-4 mt-1">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-black text-sm shadow-md shadow-blue-500/30">
+                    1
+                  </span>
+                  <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-black text-blue-800">
+                    PRESENT
+                  </span>
+                </div>
+                <h3 className="text-lg font-black text-slate-900">Who you are now</h3>
+                <p className="mt-2 text-xs sm:text-sm text-slate-600 leading-relaxed font-medium">
+                  State your current role, field or recent degree, and highlight the main skill you excel at.
                 </p>
               </div>
-              <blockquote className="mt-6 rounded-xl border border-slate-100 bg-slate-50 p-3.5 text-xs italic text-slate-700 font-serif">
-                "I'm a customer service rep with three years of experience in busy call centers."
+              <blockquote className="mt-6 rounded-2xl border border-blue-100 bg-blue-50/70 p-4 text-xs sm:text-sm italic text-blue-950 font-serif leading-relaxed shadow-2xs">
+                "I'm a customer service rep with three years of experience in fast-paced call center teams."
               </blockquote>
             </div>
 
             {/* Step 2: Past */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs flex flex-col justify-between">
+            <div className="group rounded-3xl border-2 border-purple-200/90 bg-gradient-to-b from-purple-50/50 via-white to-white p-7 shadow-md hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between relative overflow-hidden">
+              <div className="h-2 w-full bg-gradient-to-r from-purple-500 to-indigo-600 absolute top-0 left-0" />
               <div>
-                <span className="inline-flex items-center rounded-lg bg-indigo-100/80 px-2.5 py-1 text-xs font-black text-indigo-800 mb-3">
-                  2. Past
-                </span>
-                <h3 className="text-base font-bold text-slate-900">What you have done</h3>
-                <p className="mt-2 text-xs text-slate-600 leading-relaxed">
-                  One or two achievements or experiences that match this job.
+                <div className="flex items-center justify-between gap-3 mb-4 mt-1">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-600 to-indigo-600 text-white font-black text-sm shadow-md shadow-purple-500/30">
+                    2
+                  </span>
+                  <span className="rounded-full bg-purple-100 px-3 py-1 text-xs font-black text-purple-800">
+                    PAST
+                  </span>
+                </div>
+                <h3 className="text-lg font-black text-slate-900">What you have done</h3>
+                <p className="mt-2 text-xs sm:text-sm text-slate-600 leading-relaxed font-medium">
+                  Share 1 or 2 achievements with a concrete result that proves you can do this job.
                 </p>
               </div>
-              <blockquote className="mt-6 rounded-xl border border-slate-100 bg-slate-50 p-3.5 text-xs italic text-slate-700 font-serif">
-                "Last year I was chosen to train new hires, and our team's satisfaction scores went up."
+              <blockquote className="mt-6 rounded-2xl border border-purple-100 bg-purple-50/70 p-4 text-xs sm:text-sm italic text-purple-950 font-serif leading-relaxed shadow-2xs">
+                "Last year I was chosen to train 12 new hires, and our team's satisfaction scores increased by 15%."
               </blockquote>
             </div>
 
             {/* Step 3: Future */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs flex flex-col justify-between">
+            <div className="group rounded-3xl border-2 border-emerald-200/90 bg-gradient-to-b from-emerald-50/50 via-white to-white p-7 shadow-md hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between relative overflow-hidden">
+              <div className="h-2 w-full bg-gradient-to-r from-emerald-500 to-teal-600 absolute top-0 left-0" />
               <div>
-                <span className="inline-flex items-center rounded-lg bg-emerald-100/80 px-2.5 py-1 text-xs font-black text-emerald-800 mb-3">
-                  3. Future
-                </span>
-                <h3 className="text-base font-bold text-slate-900">Why this job</h3>
-                <p className="mt-2 text-xs text-slate-600 leading-relaxed">
-                  What you want next and why this role and company fit.
+                <div className="flex items-center justify-between gap-3 mb-4 mt-1">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-600 text-white font-black text-sm shadow-md shadow-emerald-500/30">
+                    3
+                  </span>
+                  <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-800">
+                    FUTURE
+                  </span>
+                </div>
+                <h3 className="text-lg font-black text-slate-900">Why this job</h3>
+                <p className="mt-2 text-xs sm:text-sm text-slate-600 leading-relaxed font-medium">
+                  Bridge your ambition to their exact position and explain why their mission excites you.
                 </p>
               </div>
-              <blockquote className="mt-6 rounded-xl border border-slate-100 bg-slate-50 p-3.5 text-xs italic text-slate-700 font-serif">
-                "Now I want a role where I can grow into team leadership, which is why this position stood out."
+              <blockquote className="mt-6 rounded-2xl border border-emerald-100 bg-emerald-50/70 p-4 text-xs sm:text-sm italic text-emerald-950 font-serif leading-relaxed shadow-2xs">
+                "Now I want a role where I can step into team leadership, which is why this position stood out."
               </blockquote>
             </div>
           </div>
@@ -210,14 +282,17 @@ export default function TellMeAboutYourselfPage() {
       </section>
 
       {/* SECTION 4: ANSWER BUILDER (FILL-IN TEMPLATE) */}
-      <section className="border-b border-slate-200/80 bg-white py-14 sm:py-20">
-        <div className="mx-auto max-w-[1040px] px-4 sm:px-6">
-          <div className="max-w-2xl mb-8">
-            <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
+      <section className="border-b border-slate-200/80 bg-slate-50/70 py-16 sm:py-24">
+        <div className="mx-auto max-w-[1140px] px-4 sm:px-6">
+          <div className="text-center max-w-2xl mx-auto mb-10">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-100 text-blue-700 px-3.5 py-1 text-xs font-bold uppercase tracking-wider mb-3">
+              <IconSparkles className="h-3.5 w-3.5 text-amber-500 animate-pulse" /> INSTANT PITCH STUDIO
+            </span>
+            <h2 className="text-2xl sm:text-4xl font-black tracking-tight text-slate-900">
               Build your answer in 2 minutes
             </h2>
             <p className="mt-2 text-sm text-slate-600">
-              Fill in the blanks, then read it out loud and time it.
+              Fill in each part of your background below. The studio automatically formats your speech and calculates your spoken time.
             </p>
           </div>
 
@@ -226,14 +301,17 @@ export default function TellMeAboutYourselfPage() {
       </section>
 
       {/* SECTION 5: SAMPLE ANSWERS (TABS / ACCORDION) */}
-      <section id="sample-answers" className="scroll-mt-20 border-b border-slate-200/80 bg-slate-50/50 py-14 sm:py-20">
-        <div className="mx-auto max-w-[1040px] px-4 sm:px-6">
-          <div className="max-w-2xl mb-8">
-            <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
+      <section id="sample-answers" className="scroll-mt-20 border-b border-slate-200/80 bg-white py-16 sm:py-24">
+        <div className="mx-auto max-w-[1140px] px-4 sm:px-6">
+          <div className="text-center max-w-2xl mx-auto mb-12">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-100 text-indigo-700 px-3.5 py-1 text-xs font-bold uppercase tracking-wider mb-3">
+              🎯 9 TAILORED PERSONAS
+            </span>
+            <h2 className="text-2xl sm:text-4xl font-black tracking-tight text-slate-900">
               "Tell me about yourself" sample answers
             </h2>
             <p className="mt-2 text-sm text-slate-600">
-              Pick the one closest to your situation and swap in your own details. Never invent results; interviewers often ask follow-up questions.
+              Pick the one closest to your career stage and swap in your own details.
             </p>
           </div>
 
@@ -242,69 +320,87 @@ export default function TellMeAboutYourselfPage() {
       </section>
 
       {/* SECTION 6: DO / DON'T (TWO COLUMNS) */}
-      <section className="border-b border-slate-200/80 bg-white py-14 sm:py-20">
-        <div className="mx-auto max-w-[1040px] px-4 sm:px-6">
-          <div className="max-w-2xl mb-8">
-            <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
+      <section className="border-b border-slate-200/80 bg-slate-50/80 py-16 sm:py-24">
+        <div className="mx-auto max-w-[1140px] px-4 sm:px-6">
+          <div className="text-center max-w-2xl mx-auto mb-12">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-200 text-slate-800 px-3.5 py-1 text-xs font-bold uppercase tracking-wider mb-3">
+              ⚖️ INTERVIEW STRATEGY
+            </span>
+            <h2 className="text-2xl sm:text-4xl font-black tracking-tight text-slate-900">
               What to say and what to leave out
             </h2>
+            <p className="mt-2 text-sm text-slate-600">
+              Hiring managers filter candidates rapidly in the first 2 minutes. Keep these green and red flags in mind.
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* DO COLUMN */}
-            <div className="rounded-2xl border border-emerald-200 bg-emerald-50/40 p-6 sm:p-7">
-              <div className="flex items-center gap-2 text-emerald-800 font-black text-lg mb-4">
-                <IconCheckCircle className="h-5 w-5 text-emerald-600" /> Do
+            <div className="rounded-[28px] border-2 border-emerald-300/80 bg-gradient-to-b from-emerald-50/90 via-white to-white p-7 sm:p-8 shadow-lg relative overflow-hidden">
+              <div className="flex items-center gap-3 pb-5 mb-5 border-b border-emerald-100">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/25">
+                  <IconCheckCircle className="h-6 w-6" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-slate-900">Do These (Green Flags)</h3>
+                  <p className="text-xs text-emerald-800 font-semibold">What interviewers love to hear</p>
+                </div>
               </div>
               <ul className="space-y-3.5 text-xs sm:text-sm text-slate-700">
-                <li className="flex items-start gap-2.5">
-                  <IconCheckCircle className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
-                  <span><strong>Start with your current role or field</strong> to set context immediately.</span>
+                <li className="flex items-start gap-3 rounded-2xl bg-white p-3.5 border border-emerald-100 shadow-2xs">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 font-black text-xs">✓</span>
+                  <span><strong className="text-slate-900">Start with your current role or field</strong> to establish context and competence immediately.</span>
                 </li>
-                <li className="flex items-start gap-2.5">
-                  <IconCheckCircle className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
-                  <span><strong>Pick one or two achievements</strong> that directly match this job's needs.</span>
+                <li className="flex items-start gap-3 rounded-2xl bg-white p-3.5 border border-emerald-100 shadow-2xs">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 font-black text-xs">✓</span>
+                  <span><strong className="text-slate-900">Pick one or two achievements</strong> that directly solve problems mentioned in the job description.</span>
                 </li>
-                <li className="flex items-start gap-2.5">
-                  <IconCheckCircle className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
-                  <span><strong>Use a number or tangible result</strong> where you can to prove credibility.</span>
+                <li className="flex items-start gap-3 rounded-2xl bg-white p-3.5 border border-emerald-100 shadow-2xs">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 font-black text-xs">✓</span>
+                  <span><strong className="text-slate-900">Use a number or tangible metric</strong> (e.g. 40% latency cut, $50k saved) to make your value undeniable.</span>
                 </li>
-                <li className="flex items-start gap-2.5">
-                  <IconCheckCircle className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
-                  <span><strong>End with why you want this role</strong> and connect your goals to their mission.</span>
+                <li className="flex items-start gap-3 rounded-2xl bg-white p-3.5 border border-emerald-100 shadow-2xs">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 font-black text-xs">✓</span>
+                  <span><strong className="text-slate-900">End by connecting your goals</strong> to their mission and why this specific company appeals to you.</span>
                 </li>
-                <li className="flex items-start gap-2.5">
-                  <IconCheckCircle className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
-                  <span><strong>Keep it to 60 to 90 seconds</strong> to keep the interviewer fully engaged.</span>
+                <li className="flex items-start gap-3 rounded-2xl bg-white p-3.5 border border-emerald-100 shadow-2xs">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 font-black text-xs">✓</span>
+                  <span><strong className="text-slate-900">Keep it strictly to 60–90 seconds</strong> to leave plenty of room for engaging follow-up dialogue.</span>
                 </li>
               </ul>
             </div>
 
             {/* DON'T COLUMN */}
-            <div className="rounded-2xl border border-red-200 bg-red-50/40 p-6 sm:p-7">
-              <div className="flex items-center gap-2 text-red-800 font-black text-lg mb-4">
-                <IconXCircle className="h-5 w-5 text-red-600" /> Don't
+            <div className="rounded-[28px] border-2 border-rose-300/80 bg-gradient-to-b from-rose-50/90 via-white to-white p-7 sm:p-8 shadow-lg relative overflow-hidden">
+              <div className="flex items-center gap-3 pb-5 mb-5 border-b border-rose-100">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-500 to-red-600 text-white shadow-md shadow-rose-500/25">
+                  <IconXCircle className="h-6 w-6" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-slate-900">Avoid These (Red Flags)</h3>
+                  <p className="text-xs text-rose-800 font-semibold">Common pitfalls that lose offers</p>
+                </div>
               </div>
               <ul className="space-y-3.5 text-xs sm:text-sm text-slate-700">
-                <li className="flex items-start gap-2.5">
-                  <IconXCircle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />
-                  <span><strong>Tell your life story from school onwards.</strong> Keep it focused on relevant work.</span>
+                <li className="flex items-start gap-3 rounded-2xl bg-white p-3.5 border border-rose-100 shadow-2xs">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-rose-100 text-rose-700 font-black text-xs">✕</span>
+                  <span><strong className="text-slate-900">Telling your life story from childhood</strong> or listing every high school achievement.</span>
                 </li>
-                <li className="flex items-start gap-2.5">
-                  <IconXCircle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />
-                  <span><strong>Read your resume line by line.</strong> They already have it in front of them.</span>
+                <li className="flex items-start gap-3 rounded-2xl bg-white p-3.5 border border-rose-100 shadow-2xs">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-rose-100 text-rose-700 font-black text-xs">✕</span>
+                  <span><strong className="text-slate-900">Reading your resume chronologically.</strong> They have your resume; tell the story behind the bullet points.</span>
                 </li>
-                <li className="flex items-start gap-2.5">
-                  <IconXCircle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />
-                  <span><strong>Share personal details</strong> like age, marital status, family or religion.</span>
+                <li className="flex items-start gap-3 rounded-2xl bg-white p-3.5 border border-rose-100 shadow-2xs">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-rose-100 text-rose-700 font-black text-xs">✕</span>
+                  <span><strong className="text-slate-900">Sharing personal details</strong> like marital status, age, political beliefs or hobbies unrelated to work.</span>
                 </li>
-                <li className="flex items-start gap-2.5">
-                  <IconXCircle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />
-                  <span><strong>Complain about your current employer</strong> or past managers.</span>
+                <li className="flex items-start gap-3 rounded-2xl bg-white p-3.5 border border-rose-100 shadow-2xs">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-rose-100 text-rose-700 font-black text-xs">✕</span>
+                  <span><strong className="text-slate-900">Badmouthing your previous manager</strong> or company culture, which signals negativity.</span>
                 </li>
-                <li className="flex items-start gap-2.5">
-                  <IconXCircle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />
-                  <span><strong>Recite a memorized script word for word</strong> that sounds robotic or stiff.</span>
+                <li className="flex items-start gap-3 rounded-2xl bg-white p-3.5 border border-rose-100 shadow-2xs">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-rose-100 text-rose-700 font-black text-xs">✕</span>
+                  <span><strong className="text-slate-900">Reciting a memorized script</strong> word for word that sounds robotic, flat or uninspired.</span>
                 </li>
               </ul>
             </div>
@@ -313,53 +409,103 @@ export default function TellMeAboutYourselfPage() {
       </section>
 
       {/* SECTION 7: FOLLOW-UPS */}
-      <section id="follow-ups" className="scroll-mt-20 border-b border-slate-200/80 bg-slate-50/50 py-14 sm:py-20">
-        <div className="mx-auto max-w-[1040px] px-4 sm:px-6">
-          <div className="max-w-2xl">
-            <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
+      <section id="follow-ups" className="scroll-mt-20 border-b border-slate-200/80 bg-white py-16 sm:py-24">
+        <div className="mx-auto max-w-[1140px] px-4 sm:px-6">
+          <div className="text-center max-w-2xl mx-auto mb-12">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-100 text-blue-700 px-3.5 py-1 text-xs font-bold uppercase tracking-wider mb-3">
+              🔮 BE ONE STEP AHEAD
+            </span>
+            <h2 className="text-2xl sm:text-4xl font-black tracking-tight text-slate-900">
               Questions that often come next
             </h2>
             <p className="mt-2 text-sm text-slate-600">
-              Your answer sets up the rest of the interview. Be ready for these follow-up questions:
+              Your opening answer sets up the next 20 minutes. Prepare for these immediate follow-up probes.
             </p>
           </div>
 
-          <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
-              <span className="text-xs font-bold text-slate-400 block mb-1">Follow-up 1</span>
-              <p className="text-sm font-bold text-slate-900">"Tell me more about that project."</p>
-              <p className="mt-1 text-xs text-slate-500">Have specific metrics and your exact role ready.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="rounded-3xl border border-slate-200/90 bg-gradient-to-b from-slate-50/60 to-white p-6 shadow-sm hover:shadow-lg hover:border-blue-400 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group">
+              <div>
+                <span className="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-[11px] font-bold text-blue-800 mb-3">
+                  Follow-up 1
+                </span>
+                <h3 className="text-base font-black text-slate-900 group-hover:text-blue-600 transition-colors">
+                  "Tell me more about that project."
+                </h3>
+                <p className="mt-2 text-xs text-slate-600 leading-relaxed font-medium">
+                  Have specific metrics, the team size, and your exact personal role and challenges ready.
+                </p>
+              </div>
+              <div className="mt-5 pt-3 border-t border-slate-100 text-[11px] font-semibold text-slate-500">
+                Uses STAR method
+              </div>
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
-              <span className="text-xs font-bold text-slate-400 block mb-1">Follow-up 2</span>
-              <p className="text-sm font-bold text-slate-900">"Why are you leaving your current job?"</p>
-              <Link href="/interview-questions#q7" className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:underline">
-                View recommended answer <IconArrowRight className="h-3 w-3" />
+            <div className="rounded-3xl border border-slate-200/90 bg-gradient-to-b from-slate-50/60 to-white p-6 shadow-sm hover:shadow-lg hover:border-blue-400 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group">
+              <div>
+                <span className="inline-flex items-center rounded-full bg-purple-100 px-3 py-1 text-[11px] font-bold text-purple-800 mb-3">
+                  Follow-up 2
+                </span>
+                <h3 className="text-base font-black text-slate-900 group-hover:text-purple-600 transition-colors">
+                  "Why are you leaving your current job?"
+                </h3>
+                <p className="mt-2 text-xs text-slate-600 leading-relaxed font-medium">
+                  Focus on what you are moving toward (growth, new scale) rather than running away from issues.
+                </p>
+              </div>
+              <Link href="/interview-questions#q7" className="mt-5 pt-3 border-t border-slate-100 inline-flex items-center gap-1.5 text-xs font-bold text-purple-600 group-hover:text-purple-800">
+                View recommended answer <IconArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
               </Link>
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
-              <span className="text-xs font-bold text-slate-400 block mb-1">Follow-up 3</span>
-              <p className="text-sm font-bold text-slate-900">"Why do you want to work here?"</p>
-              <Link href="/interview-questions#q15" className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:underline">
-                View recommended answer <IconArrowRight className="h-3 w-3" />
+            <div className="rounded-3xl border border-slate-200/90 bg-gradient-to-b from-slate-50/60 to-white p-6 shadow-sm hover:shadow-lg hover:border-blue-400 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group">
+              <div>
+                <span className="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-bold text-emerald-800 mb-3">
+                  Follow-up 3
+                </span>
+                <h3 className="text-base font-black text-slate-900 group-hover:text-emerald-600 transition-colors">
+                  "Why do you want to work here?"
+                </h3>
+                <p className="mt-2 text-xs text-slate-600 leading-relaxed font-medium">
+                  Reference their product, culture, or recent milestones rather than generic platitudes.
+                </p>
+              </div>
+              <Link href="/interview-questions#q15" className="mt-5 pt-3 border-t border-slate-100 inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 group-hover:text-emerald-800">
+                View recommended answer <IconArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
               </Link>
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
-              <span className="text-xs font-bold text-slate-400 block mb-1">Follow-up 4</span>
-              <p className="text-sm font-bold text-slate-900">"Why should we hire you?"</p>
-              <Link href="/interview-questions#q16" className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:underline">
-                View 3-sentence formula <IconArrowRight className="h-3 w-3" />
+            <div className="rounded-3xl border border-slate-200/90 bg-gradient-to-b from-slate-50/60 to-white p-6 shadow-sm hover:shadow-lg hover:border-blue-400 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group">
+              <div>
+                <span className="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-[11px] font-bold text-amber-800 mb-3">
+                  Follow-up 4
+                </span>
+                <h3 className="text-base font-black text-slate-900 group-hover:text-amber-600 transition-colors">
+                  "Why should we hire you?"
+                </h3>
+                <p className="mt-2 text-xs text-slate-600 leading-relaxed font-medium">
+                  Deliver the 3-sentence Need-Proof-Value pitch that proves you deliver immediate ROI.
+                </p>
+              </div>
+              <Link href="/interview-questions/why-should-we-hire-you" className="mt-5 pt-3 border-t border-slate-100 inline-flex items-center gap-1.5 text-xs font-bold text-amber-600 group-hover:text-amber-800">
+                View full 3-sentence guide <IconArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
               </Link>
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs sm:col-span-2 lg:col-span-2">
-              <span className="text-xs font-bold text-slate-400 block mb-1">Follow-up 5</span>
-              <p className="text-sm font-bold text-slate-900">"What are your strengths?"</p>
-              <Link href="/interview-questions#q3" className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:underline">
-                How to pick 2 matching strengths <IconArrowRight className="h-3 w-3" />
+            <div className="rounded-3xl border border-slate-200/90 bg-gradient-to-b from-slate-50/60 to-white p-6 shadow-sm hover:shadow-lg hover:border-blue-400 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group sm:col-span-2 lg:col-span-2">
+              <div>
+                <span className="inline-flex items-center rounded-full bg-indigo-100 px-3 py-1 text-[11px] font-bold text-indigo-800 mb-3">
+                  Follow-up 5
+                </span>
+                <h3 className="text-base font-black text-slate-900 group-hover:text-indigo-600 transition-colors">
+                  "What are your strengths?"
+                </h3>
+                <p className="mt-2 text-xs text-slate-600 leading-relaxed font-medium">
+                  Pick two high-impact strengths that match the job description, backed by measurable examples.
+                </p>
+              </div>
+              <Link href="/interview-questions#q3" className="mt-5 pt-3 border-t border-slate-100 inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 group-hover:text-indigo-800">
+                How to pick 2 matching strengths <IconArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
               </Link>
             </div>
           </div>
