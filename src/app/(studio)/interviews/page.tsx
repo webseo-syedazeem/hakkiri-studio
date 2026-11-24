@@ -18,7 +18,7 @@ export default async function InterviewsPage() {
   const user = await requirePageUser();
   const all = await listInterviewsAsync(londonToday(), user.id);
   const serialized = all.map((iv) => {
-    const st = standing(iv);
+    const st = standing(iv, user.id);
     const when = interviewWhen(iv.date, londonToday());
     return {
       id: iv.id,
@@ -38,7 +38,7 @@ export default async function InterviewsPage() {
 
   return (
     <div className="flex grow flex-col">
-      <header className="flex animate-rise items-end justify-between gap-6">
+      <header className="flex animate-rise flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
         <div>
           <h1 className="text-[28px] font-semibold tracking-[-0.025em]">Interviews</h1>
           <p className="mt-1 text-[15px] text-muted">One for each job you’re going for, built from the company, the job spec and your CV.</p>

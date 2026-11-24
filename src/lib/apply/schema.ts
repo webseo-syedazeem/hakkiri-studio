@@ -335,6 +335,8 @@ export type JobQuestion = z.infer<typeof JobQuestionSchema>;
 
 export const JobSchema = z.object({
   id: z.string(),
+  /** Whose saved job this is. A job belongs to the person who pasted it; it is never shared. */
+  userId: z.string().optional(),
   source: z.enum(["paste", "link", "extension", "feed"]).default("paste"),
   feedId: z.string().optional(),
   url: z.string().optional(),

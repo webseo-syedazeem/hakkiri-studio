@@ -16,7 +16,8 @@ fs.mkdirSync(out, { recursive: true });
 const server = spawn(process.platform === "win32" ? "npx.cmd" : "npx", ["next", "start", "-p", PORT, "-H", "127.0.0.1"], {
   cwd: root,
   // HAKKIRI_TRUST_PROXY lets each test account sign up from its own address, so the sign-up limit isn't hit.
-  env: { ...process.env, HAKKIRI_DATA_DIR: data, HAKKIRI_MOCK_AI: "1", HAKKIRI_TRUST_PROXY: "1", HAKKIRI_SAVE: undefined },
+  // The tests run a production build with sample results, which takes both test-mode variables (see src/lib/ai/mock.ts).
+  env: { ...process.env, HAKKIRI_DATA_DIR: data, HAKKIRI_MOCK_AI: "1", HAKKIRI_MOCK_AI_IN_PRODUCTION: "1", HAKKIRI_TRUST_PROXY: "1", HAKKIRI_SAVE: undefined },
   stdio: ["ignore", "ignore", "inherit"],
 });
 
@@ -44,8 +45,10 @@ function run(script, extraEnv = {}) {
   let ok = true;
   try {
     await waitForServer();
-    // Order matters: stories and pitch expect only the demo data; flow adds an interview; audit clicks everything.
-    for (const s of ["stories", "pitch", "flow", "slots", "pay", "cv-cleanup", "cv-start", "cv-upload", "cv-editor", "cv-writing"]) ok = run(s) && ok;
+    // Every script signs up its own account(s) and makes what it needs through the app, so none depends on
+    // another or on built-in demo content. audit and a11y-page come last: they look at every page.
+    for (const s of ["accounts", "data", "honest", "honest-screens", "phone", "stories", "pitch", "flow", "slots", "pay", "cv-cleanup", "cv-start", "cv-upload", "cv-editor", "cv-writing"]) ok = run(s) && ok;
+    // EXTRA: old addresses or landing pages which should still lead somewhere cleanly.
     ok = run("audit", { EXTRA: "/settings,/landing,/present,/privacy,/terms,/story-bank" }) && ok;
     ok = run("a11y-page", {}) && ok;
   } finally {

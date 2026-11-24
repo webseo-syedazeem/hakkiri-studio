@@ -15,7 +15,7 @@ export async function GET(req: Request) {
     return r as Response;
   }
 
-  const blocked = guard(req, "read");
+  const blocked = guard(req, "read", { userId: user.id });
   if (blocked) return blocked;
   const zip = await exportAll(user.id);
   return new Response(new Uint8Array(zip), {

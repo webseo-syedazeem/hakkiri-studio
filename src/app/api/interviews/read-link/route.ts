@@ -3,6 +3,7 @@ import { z } from "zod";
 import { readLink } from "@/lib/interviews/links";
 import { guard } from "@/lib/usage/limits";
 import { requireUser } from "@/lib/auth/require";
+import { readJsonValue } from "@/lib/http/body";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -22,9 +23,11 @@ export async function POST(req: Request) {
     return r as Response;
   }
 
-  const blocked = guard(req, "read");
+  const blocked = guard(req, "read", { userId: user.id });
   if (blocked) return blocked;
-  const parsed = Body.safeParse(await req.json().catch(() => null));
+  const sent = await readJsonValue(req, 4_000);
+  if (!sent.ok) return sent.response;
+  const parsed = Body.safeParse(sent.json);
   if (!parsed.success) return NextResponse.json({ ok: false, message: "That doesn’t look like a web address." }, { status: 400 });
   return NextResponse.json(await readLink(parsed.data.url, parsed.data.kind));
 }

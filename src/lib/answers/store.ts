@@ -1,7 +1,7 @@
 import type { Answer } from "@/lib/types";
 import { answers as demoAnswers } from "@/lib/mock-data";
 import { loadJson, loadJsonAsync, saveJson, saveJsonAsync } from "@/lib/storage/disk";
-import { isMongoConfigured, saveToMongo, loadFromMongo } from "@/lib/storage/mongodb";
+import { isMongoConfigured, saveToMongo, loadFromMongo, deleteFromMongo } from "@/lib/storage/mongodb";
 
 /**
  * Scored answers (build plan: "Answers" table). Kept in memory and saved to
@@ -12,8 +12,16 @@ const FILE = "answers.json";
 const g = globalThis as unknown as { __hakkiriAnswers?: Map<string, Answer> };
 const store = (g.__hakkiriAnswers ??= new Map<string, Answer>(loadJson<Answer[]>(FILE, []).map((a) => [a.id, a])));
 
-export function saveAnswer(answer: Answer, userId?: string) {
-  const item = { ...answer, userId: userId || answer.userId, createdAt: answer.createdAt ?? new Date().toISOString() };
+/** The database keeps each answer as its own document as well as in the list: a deleted answer is removed from both. */
+function forget(ids: string[]) {
+  if (!isMongoConfigured() || !ids.length) return;
+  for (const id of ids) void deleteFromMongo("answers", id);
+  void saveJsonAsync(FILE, [...store.values()]);
+}
+
+export function saveAnswer(answer: Answer, userId: string) {
+  if (!userId) return;
+  const item = { ...answer, userId, createdAt: answer.createdAt ?? new Date().toISOString() };
   store.set(answer.id, item);
   saveJson(FILE, [...store.values()]);
   if (isMongoConfigured()) {
@@ -21,8 +29,9 @@ export function saveAnswer(answer: Answer, userId?: string) {
   }
 }
 
-export async function saveAnswerAsync(answer: Answer, userId?: string): Promise<void> {
-  const item = { ...answer, userId: userId || answer.userId, createdAt: answer.createdAt ?? new Date().toISOString() };
+export async function saveAnswerAsync(answer: Answer, userId: string): Promise<void> {
+  if (!userId) return;
+  const item = { ...answer, userId, createdAt: answer.createdAt ?? new Date().toISOString() };
   store.set(answer.id, item);
   if (isMongoConfigured()) {
     try {
@@ -44,18 +53,22 @@ export async function saveAnswerAsync(answer: Answer, userId?: string): Promise<
   saveJson(FILE, [...store.values()]);
 }
 
-export function findAnswer(id: string, userId?: string): Answer | undefined {
+/**
+ * One person's answer, or nothing. With no account named, or for an answer that is someone else's or has no owner,
+ * nothing is returned. The built-in demo answers can be read by anyone and changed by nobody.
+ */
+export function findAnswer(id: string, userId: string): Answer | undefined {
   const isDemo = demoAnswers.some((x) => x.id === id);
   const a = store.get(id) ?? (isDemo ? demoAnswers.find((x) => x.id === id) : undefined);
   if (!a) return undefined;
-  if (!isDemo && (userId && a.userId !== userId)) {
+  if (!isDemo && (!userId || a.userId !== userId)) {
     return undefined;
   }
   // Answers saved before follow-ups existed have no followUps list.
   return { ...a, followUps: a.followUps ?? [] };
 }
 
-export async function findAnswerAsync(id: string, userId?: string): Promise<Answer | undefined> {
+export async function findAnswerAsync(id: string, userId: string): Promise<Answer | undefined> {
   const cached = findAnswer(id, userId);
   if (cached && !demoAnswers.some((x) => x.id === cached.id)) return cached;
 
@@ -87,13 +100,14 @@ export async function findAnswerAsync(id: string, userId?: string): Promise<Answ
 }
 
 /** Answers you've recorded for an interview, oldest first (demo answers not included). */
-export function listAnswers(interviewId: string, userId?: string): Answer[] {
+export function listAnswers(interviewId: string, userId: string): Answer[] {
+  if (!userId) return [];
   return [...store.values()]
-    .filter((a) => a.interviewId === interviewId && (!userId || a.userId === userId))
+    .filter((a) => a.interviewId === interviewId && a.userId === userId)
     .map((a) => ({ ...a, followUps: a.followUps ?? [] }));
 }
 
-export async function listAnswersAsync(interviewId: string, userId?: string): Promise<Answer[]> {
+export async function listAnswersAsync(interviewId: string, userId: string): Promise<Answer[]> {
   if (isMongoConfigured()) {
     try {
       const fromDb = await loadJsonAsync<Answer[]>(FILE, []);
@@ -110,12 +124,14 @@ export async function listAnswersAsync(interviewId: string, userId?: string): Pr
 }
 
 /** Deletes every answer to an interview; returns their ids (for their recordings). */
-export function deleteAnswersFor(interviewId: string, userId?: string): string[] {
+export function deleteAnswersFor(interviewId: string, userId: string): string[] {
+  if (!userId) return [];
   const ids = [...store.values()]
-    .filter((a) => a.interviewId === interviewId && (!userId || a.userId === userId))
+    .filter((a) => a.interviewId === interviewId && a.userId === userId)
     .map((a) => a.id);
   for (const id of ids) store.delete(id);
   saveJson(FILE, [...store.values()]);
+  forget(ids);
   return ids;
 }
 
@@ -125,13 +141,8 @@ export function allAnswers(userId?: string): Answer[] {
 
 /** "Delete all my data". */
 export function clearAnswers(userId?: string) {
-  if (userId) {
-    for (const [id, a] of store.entries()) {
-      if (a.userId === userId) store.delete(id);
-    }
-    saveJson(FILE, [...store.values()]);
-  } else {
-    store.clear();
-    saveJson(FILE, []);
-  }
+  const gone = [...store.values()].filter((a) => !userId || a.userId === userId).map((a) => a.id);
+  for (const id of gone) store.delete(id);
+  saveJson(FILE, [...store.values()]);
+  forget(gone);
 }

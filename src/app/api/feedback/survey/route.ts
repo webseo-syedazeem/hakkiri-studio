@@ -1,21 +1,15 @@
+import { adminDenied } from "@/lib/auth/admin";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import crypto from "node:crypto";
 import { addSurveySubmission, recentSurveysAsync } from "@/lib/feedback/survey-store";
 import { findMock, findMockAsync } from "@/lib/mocks/store";
 import { clientKey, rateLimited } from "@/lib/usage/limits";
 import { getCurrentUser } from "@/lib/auth/require";
+import { accountOf, noteVoucherClaim } from "@/lib/auth/user-db";
+import { readCapped } from "@/lib/http/body";
 
 export const runtime = "nodejs";
 
-function isTimingSafeBearer(header: string | null, secret: string | undefined): boolean {
-  if (!header || !secret) return false;
-  const expected = `Bearer ${secret}`;
-  const headerBuf = Buffer.from(header);
-  const expectedBuf = Buffer.from(expected);
-  if (headerBuf.length !== expectedBuf.length) return false;
-  return crypto.timingSafeEqual(headerBuf, expectedBuf);
-}
 
 const Body = z.object({
   email: z.string().trim().email().max(200),
@@ -32,22 +26,8 @@ const Body = z.object({
 
 /** GET /api/feedback/survey: View recent surveys or export as CSV (?format=csv) - Protected by admin */
 export async function GET(req: Request) {
-  const authHeader = req.headers.get("authorization");
-  const adminSecret = process.env.ADMIN_SECRET_KEY;
-  const isSecretValid = isTimingSafeBearer(authHeader, adminSecret);
-  const user = await getCurrentUser();
-  const userEmail = user?.email?.toLowerCase() ?? "";
-  const isAdminUser = Boolean(
-    userEmail &&
-      process.env.ADMIN_EMAILS &&
-      process.env.ADMIN_EMAILS.split(",")
-        .map((e) => e.trim().toLowerCase())
-        .includes(userEmail)
-  );
-
-  if (!isSecretValid && !isAdminUser) {
-    return NextResponse.json({ error: "unauthorised", message: "Admin access required to view survey submissions." }, { status: 403 });
-  }
+  const denied = await adminDenied(req, { allowSecret: true });
+  if (denied) return denied;
 
   const { searchParams } = new URL(req.url);
   const surveys = await recentSurveysAsync(200);
@@ -104,14 +84,24 @@ export async function POST(req: Request) {
 
   // 1. Enforce user authentication
   const user = await getCurrentUser();
-  if (!user) {
+  if (!user?.id) {
     return NextResponse.json(
       { error: "unauthorised", message: "Sign in required to claim the £15 beta voucher reward." },
       { status: 401 }
     );
   }
+  if (rateLimited(`survey:user:${user.id}`, 10, 60_000)) {
+    return NextResponse.json({ error: "slow-down" }, { status: 429 });
+  }
 
-  const json = await req.json().catch(() => null);
+  const raw = await readCapped(req, 64_000).catch(() => "");
+  if (raw === null) return NextResponse.json({ error: "too-large", message: "That is too long to send. Shorten your answers and try again." }, { status: 413 });
+  let json: unknown = null;
+  try {
+    json = JSON.parse(raw);
+  } catch {
+    /* not JSON: fails the check below */
+  }
   const parsed = Body.safeParse(json);
   if (!parsed.success) {
     return NextResponse.json(
@@ -121,22 +111,18 @@ export async function POST(req: Request) {
   }
 
   // 2. Validate that the session is a real full completed interview belonging to this user
-  const mock = (await findMockAsync(parsed.data.mockId)) ?? findMock(parsed.data.mockId);
-  if (!mock) {
+  // The session must be this person's own. Someone else's, or one that does not exist, is "not found".
+  const mock = user.id ? ((await findMockAsync(parsed.data.mockId, user.id)) ?? findMock(parsed.data.mockId, user.id)) : undefined;
+  if (!mock || mock.userId !== user.id) {
     return NextResponse.json(
       { error: "mock-not-found", message: "Interview session not found." },
       { status: 404 }
     );
   }
 
-  if (mock.userId && mock.userId !== user.id) {
-    return NextResponse.json(
-      { error: "forbidden", message: "This session belongs to another tester." },
-      { status: 403 }
-    );
-  }
-
-  const isInterview = mock.kind === "interview" || mock.kind === "full";
+  // A full interview is one the server planned ("interview"), with its settings. A session the browser
+  // reported by itself, from answers recorded one at a time, does not count towards the voucher.
+  const isInterview = mock.kind === "interview" && !!mock.settings;
   const isDone = mock.status === "done";
   const skippedByChoice = (mock.skipped ?? []).filter((s) => s.reason === "by-choice").length;
   const replaced = (mock.skipped ?? []).filter((s) => s.reason !== "by-choice").length;
@@ -156,12 +142,18 @@ export async function POST(req: Request) {
   // 3. Prevent duplicate submissions per session or email address
   const existingSurveys = await recentSurveysAsync(1000);
   const normalizedEmail = parsed.data.email.toLowerCase().trim();
-  const alreadyClaimed = existingSurveys.some(
-    (s) =>
-      s.mockId === parsed.data.mockId ||
-      s.email.toLowerCase().trim() === normalizedEmail ||
-      (user.email && s.email.toLowerCase().trim() === user.email.toLowerCase().trim())
-  );
+  // The account remembers that it has claimed, so deleting your data (which removes the survey answers
+  // and the address you gave) doesn't open a second claim.
+  const account = await accountOf(user.id);
+  const alreadyClaimed =
+    !!account?.voucherClaimedAt ||
+    existingSurveys.some(
+      (s) =>
+        s.userId === user.id ||
+        s.mockId === parsed.data.mockId ||
+        s.email.toLowerCase().trim() === normalizedEmail ||
+        (user.email && s.email.toLowerCase().trim() === user.email.toLowerCase().trim())
+    );
 
   if (alreadyClaimed) {
     return NextResponse.json(
@@ -173,7 +165,8 @@ export async function POST(req: Request) {
     );
   }
 
-  const submission = await addSurveySubmission(parsed.data);
+  const submission = await addSurveySubmission({ ...parsed.data, userId: user.id });
+  await noteVoucherClaim(user.id);
   return NextResponse.json({ ok: true, id: submission.id });
 }
 

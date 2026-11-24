@@ -11,7 +11,11 @@ import { GROUP_ORDER } from "@/lib/labels";
 import { bankCounts } from "@/lib/ai/interview/build-plan";
 import { PRESETS } from "./settings";
 
+/** The account these tests act as. Every record has an owner. */
+const U = "usr_test_owner";
+
 const input: BuildInput = {
+  userId: U,
   company: { name: "Acme Payroll", siteText: "Acme Payroll runs payroll for 4,000 small businesses in the UK." },
   job: { title: "Data Analyst", text: "Own the SQL models behind payroll accuracy. Python a plus." },
   cv: { text: "Sam Okafor. Analyst at Brightline Energy since 2022: churn models, cut reporting from 3 days to 4 hours, found a billing error worth 120,000 pounds.", label: "cv.pdf" },
@@ -89,7 +93,7 @@ describe("building an interview with Claude", () => {
     expect(interview.stories?.[0].id).toBe("s1");
     expect(interview.settings?.preset).toBe("final");
     expect(interview.round).toBe("final");
-    expect(getInterview(interview.id)?.company).toBe("Acme Payroll");
+    expect(getInterview(interview.id, U)?.company).toBe("Acme Payroll");
   });
 
   it("falls back to the standard questions if Claude can't produce a valid plan", async () => {
@@ -114,7 +118,7 @@ describe("building an interview with Claude", () => {
     expect(calls[0]).toMatch(/Questions already written \(do not repeat or reword\)/);
     expect(added).toHaveLength(1);
     expect(added[0].id).toMatch(/^t\d+$/);
-    expect(getInterview(interview.id)?.questions.some((q) => q.text.startsWith("How would you check a payroll run"))).toBe(true);
+    expect(getInterview(interview.id, U)?.questions.some((q) => q.text.startsWith("How would you check a payroll run"))).toBe(true);
   });
 
   it("rethinks the job from your feedback", async () => {
@@ -151,16 +155,16 @@ describe("adding questions in the background", () => {
     const q = JSON.stringify({ questions: [{ group: "technical", type: "technical", text: "How do you reconcile a payroll run?", short: "Reconciling" }, { group: "technical", type: "technical", text: "Which checks first?", short: "Checks" }] });
     // Deleted during the call: nothing is saved.
     fakeClaude(q, '{"drop":[]}');
-    deleteInterview(interview.id);
+    deleteInterview(interview.id, U);
     await addQuestions(interview, { technical: 1 });
-    expect(getInterview(interview.id)).toBeUndefined();
+    expect(getInterview(interview.id, U)).toBeUndefined();
     // Rules written during the call survive: only the questions are replaced.
-    saveInterview(interview);
+    saveInterview(interview, U);
     fakeClaude(q, '{"drop":[]}');
     const pending = addQuestions(interview, { technical: 1 });
-    updateInterview(interview.id, (i) => ({ ...i, rules: ["Keep it to payroll."] }));
+    updateInterview(interview.id, (i) => ({ ...i, rules: ["Keep it to payroll."] }), U);
     await pending;
-    const after = getInterview(interview.id)!;
+    const after = getInterview(interview.id, U)!;
     expect(after.rules).toEqual(["Keep it to payroll."]);
     expect(after.questions.some((x) => x.text.startsWith("How do you reconcile"))).toBe(true);
   });

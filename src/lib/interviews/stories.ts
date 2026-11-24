@@ -45,8 +45,9 @@ export async function draftStory(input: StoryInput): Promise<{ title: string; te
   return templateStory(input);
 }
 
-export async function buildStory(interviewId: string, input: StoryInput): Promise<{ story: Story; questionId: string }> {
-  const interview = getInterview(interviewId);
+/** Drafts a story from a person's own words and saves it to their interview. `userId` is the owner: nobody else's interview can be written to. */
+export async function buildStory(interviewId: string, input: StoryInput, userId: string): Promise<{ story: Story; questionId: string }> {
+  const interview = getInterview(interviewId, userId);
   if (!interview) throw new Error("not-found");
   const drafted = await draftStory(input);
 
@@ -76,6 +77,6 @@ export async function buildStory(interviewId: string, input: StoryInput): Promis
       }
     }
     return { ...i, stories: [...stories, story], questions };
-  });
+  }, userId);
   return { story: story!, questionId: questionId! };
 }

@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import type { User } from "@/lib/types";
+import { browserData } from "@/lib/browser/owner";
 
 interface AuthContextType {
   user: User | null;
@@ -89,6 +90,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await fetch("/api/auth/logout", { method: "POST" });
     } finally {
+      // What this browser holds for the person is set aside, so whoever uses it next starts clean.
+      browserData.release(user?.id);
       setUser(null);
       window.location.href = "/";
     }

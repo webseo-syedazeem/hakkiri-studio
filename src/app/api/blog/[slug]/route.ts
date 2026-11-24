@@ -22,7 +22,7 @@ export async function GET(
   } catch (err) {
     console.error("[api/blog/[slug]] GET error:", err);
     return NextResponse.json(
-      { error: "Internal Server Error", message: err instanceof Error ? err.message : "Failed to load post" },
+      { error: "Internal Server Error", message: "Failed to load post" },
       { status: 500 }
     );
   }

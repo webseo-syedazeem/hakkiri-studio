@@ -1,51 +1,32 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { runAuditLogic } from "@/lib/robot-test/tester";
-import { getCurrentUser } from "@/lib/auth/require";
-import { isAdminEmail } from "@/lib/auth/admins";
+import { adminDenied } from "@/lib/auth/admin";
+import { readJsonValue } from "@/lib/http/body";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
-  const user = await getCurrentUser();
-  if (!user || !isAdminEmail(user.email)) {
-    return NextResponse.json({ error: "Access denied. Admins only." }, { status: 403 });
-  }
+const Body = z.object({ runIteration: z.number().int().min(1).max(100_000).optional() });
 
-  try {
-    const report = runAuditLogic();
-    return NextResponse.json(report);
-  } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to generate robot test audit", detail: String(error) },
-      { status: 500 }
-    );
-  }
+/**
+ * GET and POST /api/robot-test: the robot tester's report, for administrators.
+ * No automated check is run (see lib/robot-test/tester.ts), so the report says
+ * so and carries no results. It used to return scores written into the code.
+ */
+export async function GET() {
+  const denied = await adminDenied();
+  if (denied) return denied;
+  return NextResponse.json(runAuditLogic());
 }
 
 export async function POST(req: Request) {
-  let runIteration = 1;
-  let bodyEmail: string | undefined;
+  // Administrators only. Who is asking comes from the session, never from an address in the request.
+  const denied = await adminDenied();
+  if (denied) return denied;
 
-  try {
-    const body = await req.json();
-    runIteration = Number(body?.runIteration) || 1;
-    bodyEmail = body?.email;
-  } catch {}
-
-  const user = await getCurrentUser();
-  const effectiveEmail = user?.email || bodyEmail;
-
-  if (effectiveEmail && !isAdminEmail(effectiveEmail)) {
-    return NextResponse.json({ error: "Access denied. Admins only." }, { status: 403 });
-  }
-
-  try {
-    const report = runAuditLogic(runIteration);
-    return NextResponse.json({ ok: true, report });
-  } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to run robot test audit", detail: String(error) },
-      { status: 500 }
-    );
-  }
+  const sent = await readJsonValue(req, 1_000);
+  if (!sent.ok) return sent.response;
+  const parsed = Body.safeParse(sent.json ?? {});
+  const report = runAuditLogic(parsed.success ? (parsed.data.runIteration ?? 1) : 1);
+  return NextResponse.json({ ok: true, ran: false, report });
 }

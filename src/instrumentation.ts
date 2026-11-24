@@ -5,10 +5,11 @@
 /** On server start: prune recordings past their retention, then every six hours. */
 export async function register() {
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
-  const { pruneRecordings } = await import("@/lib/answers/audio");
+  // Each person's own "keep recordings for" choice, applied to their own recordings.
+  const { pruneOldRecordings } = await import("@/lib/data/account");
   const run = () => {
     try {
-      pruneRecordings({ force: true });
+      pruneOldRecordings({ force: true });
     } catch (err) {
       console.warn("[retention]", err instanceof Error ? err.message : err);
     }

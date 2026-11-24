@@ -295,10 +295,10 @@ export default function ApplyHomePage() {
               </span>
             </div>
             <h3 className="text-base font-black text-ink group-hover:text-blue-soft transition">
-              Auto-Apply Approval Gate
+              Job preferences and limits
             </h3>
             <p className="text-xs text-muted leading-relaxed">
-              Provable emergency pause, daily send caps, salary floor filters, and explicit candidate approval before anything leaves.
+              The job titles, places, salary and employers you set. Hakkiri doesn’t send applications for you: you send each one yourself.
             </p>
             <div className="pt-2 text-xs font-bold text-blue flex items-center gap-1 group-hover:translate-x-1 transition duration-200">
               Configure Safeguards <span>→</span>
@@ -366,28 +366,6 @@ export default function ApplyHomePage() {
             </div>
           </Link>
 
-          <Link
-            href="/robot-test"
-            className="group relative rounded-3xl border border-line bg-panel p-5 hover:border-blue/50 hover:bg-panel-2 transition-all duration-300 space-y-3 shadow-lg hover:shadow-2xl hover:shadow-blue/5 hover:scale-[1.01]"
-          >
-            <div className="flex items-center justify-between">
-              <div className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-panel-2 border border-line text-xl group-hover:scale-110 transition duration-300">
-                🤖
-              </div>
-              <span className="text-[10px] font-mono text-purple-300 bg-purple-500/10 px-2.5 py-0.5 rounded-full border border-purple-500/20 font-bold">
-                5 Personas Audit
-              </span>
-            </div>
-            <h3 className="text-base font-black text-ink group-hover:text-blue-soft transition">
-              Robot Tester & Quality Audit
-            </h3>
-            <p className="text-xs text-muted leading-relaxed">
-              Automated audit bot verifying all 3 sections across Sam (intern), Priya (graduate), Daniel (senior), Margaret (COO), and Aleksandra.
-            </p>
-            <div className="pt-2 text-xs font-bold text-blue flex items-center gap-1 group-hover:translate-x-1 transition duration-200">
-              Run Audit Suite <span>→</span>
-            </div>
-          </Link>
         </div>
       </div>
 

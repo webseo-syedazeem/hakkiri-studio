@@ -22,23 +22,6 @@ const COMPETENCY_OPTIONS = [
   { value: "Decision-making", label: "Decision-making" },
 ];
 
-const ROLE_OPTIONS = [
-  { value: "Senior Adviser, Policy & Strategy", label: "Senior Adviser, Policy & Strategy" },
-  { value: "Senior Product Manager", label: "Senior Product Manager" },
-  { value: "Operations / Delivery Lead", label: "Operations / Delivery Lead" },
-  { value: "Engineering / Technical Lead", label: "Engineering / Technical Lead" },
-  { value: "General / Universal", label: "General / Universal" },
-];
-
-const INTERVIEW_TYPE_OPTIONS = [
-  { value: "Competency", label: "Competency round" },
-  { value: "Hiring manager", label: "Hiring manager interview" },
-  { value: "Technical", label: "Technical round" },
-  { value: "Final panel", label: "Final panel" },
-  { value: "Recruiter screen", label: "Recruiter screen" },
-  { value: "Case interview", label: "Case interview" },
-];
-
 const PRESET_TAGS = [
   "Leadership",
   "Stakeholder management",
@@ -59,7 +42,7 @@ export function AddExampleView() {
   const [interviewType, setInterviewType] = useState("");
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
-  const [selectedTags, setSelectedTags] = useState<string[]>(["Leadership"]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [customTagInput, setCustomTagInput] = useState("");
   const [showCustomTagField, setShowCustomTagField] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -91,27 +74,9 @@ export function AddExampleView() {
       return;
     }
 
-    let titleCandidate =
-      answer
-        .split(/[.\n]/)[0]
-        ?.replace(/^(situation|task|action|result|in my role|i)\s*[:,-]?\s*/i, "")
-        ?.trim();
-
-    if (!titleCandidate || titleCandidate.toLowerCase().includes("star method") || titleCandidate.length < 8) {
-      titleCandidate = question.trim();
-    }
-
-    saveExample({
-      title: titleCandidate.length > 70 ? `${titleCandidate.slice(0, 70)}...` : titleCandidate,
-      question: question.trim(),
-      answer: answer.trim(),
-      competency: competency || "Leadership",
-      role: role || "Senior Role",
-      interviewType: interviewType || "Competency",
-      tags: selectedTags.length > 0 ? selectedTags : ["Leadership"],
-      isFavorite: false,
-      isStarStructure: true,
-    });
+    // Saved as given. A box left empty stays empty: no competency, role, interview type or tag is chosen for
+    // the person, and the heading and the STAR mark are worked out from their own text.
+    saveExample({ question, answer, competency, role, interviewType, tags: selectedTags });
 
     router.push("/interview-examples");
   };

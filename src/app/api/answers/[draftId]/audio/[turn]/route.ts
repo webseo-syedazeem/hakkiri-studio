@@ -1,6 +1,8 @@
 import { getRecording, getRecordingAsync } from "@/lib/answers/audio";
 import { findAnswer, findAnswerAsync } from "@/lib/answers/store";
 import { requireUser } from "@/lib/auth/require";
+import { ownsRecording } from "@/lib/data/account";
+import { servableAudioType } from "@/lib/http/sniff";
 
 export const runtime = "nodejs";
 
@@ -19,15 +21,20 @@ export async function GET(req: Request, { params }: { params: Promise<{ draftId:
   }
 
   const { draftId, turn } = await params;
-  const ans = (await findAnswerAsync(draftId, user.id)) ?? findAnswer(draftId, user.id);
-  if (!ans) {
+  const n = Number(turn);
+  if (!Number.isInteger(n) || n < 0 || n > 20) return new Response("Not found", { status: 404 });
+  // The signed-in person's own recording: of an interview answer, or of an answer in one of their own
+  // audience Q&A rounds (those are kept with the presentation, not with the interview answers).
+  const mine = ownsRecording(user.id, draftId) || !!(await findAnswerAsync(draftId, user.id)) || !!findAnswer(draftId, user.id);
+  if (!mine) {
     return new Response("Not found", { status: 404 });
   }
 
-  const rec = (await getRecordingAsync(draftId, Number(turn))) ?? getRecording(draftId, Number(turn));
+  const rec = (await getRecordingAsync(draftId, n)) ?? getRecording(draftId, n);
   if (!rec) return new Response("Not found", { status: 404 });
   const bytes = new Uint8Array(rec.data);
-  const headers = { "content-type": rec.type || "audio/webm", "accept-ranges": "bytes", "cache-control": "private, max-age=3600" };
+  // Served as audio whatever type it was uploaded with, and the browser is told not to guess otherwise.
+  const headers = { "content-type": servableAudioType(rec.type), "x-content-type-options": "nosniff", "accept-ranges": "bytes", "cache-control": "private, max-age=3600" };
   const range = req.headers.get("range")?.match(/bytes=(\d*)-(\d*)/);
   if (range) {
     const start = range[1] ? Number(range[1]) : 0;

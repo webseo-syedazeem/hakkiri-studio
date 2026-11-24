@@ -150,12 +150,39 @@ export function dailyCosts(todayIso: string, n = 14, userId?: string): { day: st
   return out;
 }
 
-/** "Delete all my data": usage stays (it drives the spending limits) but loses its links to your interviews. */
-export function anonymiseUsage() {
+/**
+ * "Delete all my data": the person's usage rows lose every link to what they
+ * practised (which interview, session or presentation). What stays is a count:
+ * when a service was called, how many seconds or characters, and the estimated
+ * cost. It has to stay while the account does, or deleting your data would
+ * also reset your monthly allowance. With no account named: everyone's (tests).
+ */
+export function anonymiseUsage(userId?: string) {
   for (const e of entries) {
+    if (userId && e.userId !== userId) continue;
     delete e.interviewId;
     delete e.sessionId;
     delete e.presentationId;
   }
   saveJson(FILE, entries);
+}
+
+/**
+ * "Delete my account": the rows are no longer anybody's. The counts stay,
+ * because the app's own spending ceilings and the bill are worked out from
+ * them, but nothing says whose they were. Returns how many rows.
+ */
+export function disownUsage(userId: string): number {
+  if (!userId) return 0;
+  let n = 0;
+  for (const e of entries) {
+    if (e.userId !== userId) continue;
+    delete e.userId;
+    delete e.interviewId;
+    delete e.sessionId;
+    delete e.presentationId;
+    n++;
+  }
+  if (n) saveJson(FILE, entries);
+  return n;
 }

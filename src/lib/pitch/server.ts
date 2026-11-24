@@ -67,7 +67,8 @@ export async function suggestPlan(input: { title: string; audience: Audience; as
 
 export interface RecordRunInput {
   presentation: Presentation;
-  userId?: string;
+  /** The signed-in person rehearsing. Every run has an owner. */
+  userId: string;
   mode: RunMode;
   from: number;
   to: number;
@@ -109,7 +110,7 @@ export async function recordRun(input: RecordRunInput): Promise<Run | { error: "
   const run = assembleRun({
     id,
     presentation: p,
-    number: nextRunNumber(p.id, input.userId || p.userId),
+    number: nextRunNumber(p.id, input.userId),
     mode: input.mode,
     from: input.from,
     to: input.to,
@@ -121,25 +122,25 @@ export async function recordRun(input: RecordRunInput): Promise<Run | { error: "
     model,
     hasAudio: true,
   });
-  run.userId = input.userId || p.userId;
+  run.userId = input.userId;
   saveRecordings(`run-${id}`, [{ data: await input.audio.arrayBuffer(), type: input.audio.type || "audio/webm" }]);
-  saveRun(run, input.userId || p.userId);
+  saveRun(run, input.userId);
   return run;
 }
 
 // ---------------------------------------------------------------------- Q&A
 
 /** Starts a Q&A session: the persona, and questions from your slides and your last full run. */
-export async function startQa(p: Presentation, style: QaStyle, userId?: string): Promise<QaDraft> {
+export async function startQa(p: Presentation, style: QaStyle, userId: string): Promise<QaDraft> {
   const persona = personaFor(p.audience, style);
-  const last = latestFullRun(p.id, userId || p.userId);
+  const last = latestFullRun(p.id, userId);
   const said = last ? last.slides.map((s) => ({ n: s.n, words: s.words })) : [];
   const count = QA_QUESTIONS;
   const input = { title: p.title, audience: p.audience, ask: p.ask, style, persona, slides: p.slides, said, count };
   const questions = (modelAvailable() ? await generateQuestions(input) : null) ?? ruleQuestions(input);
   const draft: QaDraft = {
     id: randomUUID(),
-    userId: userId || p.userId,
+    userId,
     presentationId: p.id,
     style,
     persona,
@@ -261,7 +262,7 @@ export function scoreQaQuestion(draft: QaDraft, p: Presentation, k: number): Pro
 }
 
 /** Ends the session: waits for every answered question's score (guaranteeing a report is always produced), then saves it. */
-export async function finishQa(draft: QaDraft, p: Presentation, userId?: string): Promise<QaSession> {
+export async function finishQa(draft: QaDraft, p: Presentation, userId: string): Promise<QaSession> {
   const answered = draft.turns.map((t, k) => (t.length ? k : -1)).filter((k) => k >= 0);
   const indices = answered.length > 0 ? answered : [0];
   let results = await Promise.all(indices.map((k) => scoreQaQuestion(draft, p, k)));
@@ -287,7 +288,7 @@ export async function finishQa(draft: QaDraft, p: Presentation, userId?: string)
     const a = answers[i];
     if (a && draft.audio[k]) saveRecordings(a.id, draft.audio[k]);
   });
-  const effectiveUserId = userId || draft.userId || p.userId;
+  const effectiveUserId = userId;
   const session: QaSession = {
     id: draft.id,
     userId: effectiveUserId,

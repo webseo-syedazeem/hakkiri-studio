@@ -1,7 +1,19 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { requireUser } from "@/lib/auth/require";
+import { readJson } from "@/lib/http/body";
 import { getDoc, saveDoc, deleteDoc, APPLY_COLLECTIONS } from "@/lib/apply/db";
 import type { Evidence } from "@/lib/apply/schema";
+
+/** What a person can change about a piece of their evidence. Its owner and where it came from can't be sent in. */
+const Patch = z
+  .object({
+    text: z.string().trim().min(5).max(5000).optional(),
+    numbers: z.array(z.string().trim().min(1).max(40)).max(30).optional(),
+    skillTags: z.array(z.string().trim().min(1).max(60)).max(30).optional(),
+    confirmed: z.boolean().optional(),
+  })
+  .strict();
 
 export async function PATCH(
   req: Request,
@@ -16,12 +28,11 @@ export async function PATCH(
       return NextResponse.json({ error: "not_found", message: "Evidence not found." }, { status: 404 });
     }
 
-    const body = await req.json();
+    const read = await readJson(req, Patch, { max: 40_000, message: "That change couldn’t be saved." });
+    if (!read.ok) return read.response;
     const updated: Evidence = {
       ...existing,
-      ...body,
-      id: existing.id,
-      userId: user.id,
+      ...read.data,
       updatedAt: new Date().toISOString(),
     };
 

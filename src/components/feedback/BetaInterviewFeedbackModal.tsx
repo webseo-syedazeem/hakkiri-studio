@@ -117,7 +117,9 @@ export function BetaInterviewFeedbackModal({
         if (p.q7More) setQ7More(p.q7More);
       }
 
-      const dismissed = sessionStorage.getItem(dismissedKey);
+      // The survey offers itself once for a session's report. Once closed it stays closed on later visits:
+      // the banner on the report opens it again whenever the person wants.
+      const dismissed = localStorage.getItem(dismissedKey);
       if (autoPrompt && !dismissed) {
         const timer = setTimeout(() => {
           setIsOpen(true);
@@ -171,7 +173,7 @@ export function BetaInterviewFeedbackModal({
   const handleDismiss = () => {
     setIsOpen(false);
     try {
-      sessionStorage.setItem(dismissedKey, "1");
+      localStorage.setItem(dismissedKey, "1");
     } catch {}
   };
 

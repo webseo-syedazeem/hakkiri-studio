@@ -32,6 +32,9 @@ import { exportAll, deleteAll } from "@/lib/data/account";
 import { halden } from "@/lib/mock-data";
 import type { Interview, Answer } from "@/lib/types";
 
+/** The account these tests act as. Every record has an owner. */
+const U = "usr_test_owner";
+
 describe("Access Control & Multi-Tenant Isolation", () => {
   beforeEach(() => {
     deleteAll();
@@ -319,7 +322,7 @@ describe("Access Control & Multi-Tenant Isolation", () => {
         userId: undefined,
         company: "Legacy Unowned Corp",
       };
-      saveInterview(unownedInterview);
+      saveInterview(unownedInterview, U);
 
       // Neither User A nor User B can see unowned interview
       expect(getInterview("iv-unowned-legacy", userA)).toBeUndefined();

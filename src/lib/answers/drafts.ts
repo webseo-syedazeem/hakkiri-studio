@@ -1,7 +1,7 @@
 import type { FollowUpKind, InterviewerStyle } from "@/lib/types";
 import type { Turn } from "@/lib/ai/types";
 import type { Recording } from "./audio";
-import { isMongoConfigured, getMongoDb } from "@/lib/storage/mongodb";
+import { isMongoConfigured, getMongoDb, deleteManyFromMongo } from "@/lib/storage/mongodb";
 
 /**
  * An answer in progress: the main answer plus any follow-ups so far,
@@ -171,6 +171,15 @@ export async function deleteDraftAsync(id: string): Promise<void> {
   }
 }
 
+/** One person's answers that are still in progress (what was said so far), for "Download my data". The audio is not included. */
+export function draftsOf(userId: string): { id: string; interviewId: string; questionId: string; startedAt: string; turns: Turn[] }[] {
+  if (!userId) return [];
+  const now = Date.now();
+  return [...drafts.values()]
+    .filter((d) => d.userId === userId && now - d.createdAt <= TTL_MS)
+    .map((d) => ({ id: d.id, interviewId: d.interviewId, questionId: d.questionId, startedAt: new Date(d.createdAt).toISOString(), turns: d.turns }));
+}
+
 /** "Delete all my data": answers still being scored. */
 export function clearDrafts(userId?: string) {
   if (userId) {
@@ -180,4 +189,11 @@ export function clearDrafts(userId?: string) {
   } else {
     drafts.clear();
   }
+}
+
+/** The same, and the database's copies too (they hold the audio of each turn). Returns how many went from the database. */
+export async function clearDraftsAsync(userId: string): Promise<number> {
+  if (!userId) return 0;
+  clearDrafts(userId);
+  return deleteManyFromMongo("drafts", { userId });
 }

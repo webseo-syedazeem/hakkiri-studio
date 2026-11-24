@@ -40,8 +40,8 @@ export default async function WelcomePage() {
   return (
     <div className="mx-auto flex w-full max-w-[1120px] grow flex-col justify-center">
       <div className="text-[15px] text-muted">Welcome to Hakkiri Studio, {user.firstName}</div>
-      <h1 className="mt-1.5 animate-rise text-[40px] font-semibold tracking-[-0.03em]">What are you preparing for?</h1>
-      <div className="mt-[30px] grid grid-cols-2 gap-[22px]">
+      <h1 className="mt-1.5 animate-rise text-[28px] sm:text-[40px] font-semibold tracking-[-0.03em]">What are you preparing for?</h1>
+      <div className="mt-[30px] grid grid-cols-1 md:grid-cols-2 gap-[22px]">
         <Choice
           href="/welcome/start?next=/interviews/new"
           title="A job interview"

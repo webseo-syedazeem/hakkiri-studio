@@ -7,6 +7,7 @@ import type { ApplySettings } from "@/lib/apply/schema";
 export default function ApplySettingsPage() {
   const [settings, setSettings] = useState<ApplySettings | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [savedMsg, setSavedMsg] = useState(false);
   const [newTitle, setNewTitle] = useState("");
@@ -20,23 +21,11 @@ export default function ApplySettingsPage() {
         if (res.ok && data && data.dailyCap) {
           setSettings(data);
         } else {
-          setSettings({
-            userId: "usr_guest",
-            titles: ["Product Manager", "Lead Developer", "Full Stack Engineer"],
-            locations: ["London", "UK Remote"],
-            remote: true,
-            salaryMin: 80000,
-            excludeEmployers: ["Scam Recruitment Ltd", "Unverified Staffing"],
-            minFit: 75,
-            dailyCap: 5,
-            perEmployerCap: 2,
-            handsOff: false,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          });
+          // It couldn't be loaded. The person is told: nothing is shown in its place.
+          setLoadError("Your job preferences couldn’t be loaded. Refresh the page to try again.");
         }
-      } catch (err) {
-        console.warn("Using default apply settings:", err);
+      } catch {
+        setLoadError("Your job preferences couldn’t be loaded because the app couldn’t be reached. Check your connection and refresh.");
       } finally {
         setLoading(false);
       }
@@ -62,16 +51,6 @@ export default function ApplySettingsPage() {
     } finally {
       setSaving(false);
     }
-  };
-
-  const handleTogglePause = () => {
-    if (!settings) return;
-    const isCurrentlyPaused = Boolean(settings.pausedAt);
-    const updated: ApplySettings = {
-      ...settings,
-      pausedAt: isCurrentlyPaused ? undefined : new Date().toISOString(),
-    };
-    handleSave(updated);
   };
 
   const handleAddTitle = () => {
@@ -115,13 +94,17 @@ export default function ApplySettingsPage() {
 
   if (loading || !settings) {
     return (
-      <div className="flex h-64 items-center justify-center text-muted">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue border-t-transparent" />
+      <div className="flex h-64 items-center justify-center text-muted" data-testid="apply-loading">
+        {loadError ? (
+          <p role="alert" className="max-w-md rounded-xl border border-red/30 bg-red/10 px-4 py-3 text-center text-xs text-red-soft">
+            {loadError}
+          </p>
+        ) : (
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-blue border-t-transparent" />
+        )}
       </div>
     );
   }
-
-  const isPaused = Boolean(settings.pausedAt);
 
   return (
     <div className="w-full space-y-6 animate-fadeIn pb-16">
@@ -133,10 +116,10 @@ export default function ApplySettingsPage() {
             Hakkiri Apply Suite · Safety & Governance
           </div>
           <h1 className="text-2xl md:text-3xl font-black text-ink tracking-tight">
-            Auto-Apply Settings & Safety Limits
+            Job preferences and limits
           </h1>
           <p className="text-xs text-muted max-w-2xl">
-            Configure search titles, safety caps, and emergency pause controls. You approve everything that leaves.
+            The job titles, places and limits you want kept with your applications.
           </p>
         </div>
 
@@ -156,38 +139,12 @@ export default function ApplySettingsPage() {
         </div>
       </div>
 
-      {/* Emergency Pause Box (Prominent Spec Feature) */}
-      <div
-        className={`rounded-3xl border p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-5 transition shadow-xl backdrop-blur-sm ${
-          isPaused
-            ? "border-rose-500/50 bg-rose-500/10 text-rose-300"
-            : "border-line bg-panel text-ink"
-        }`}
-      >
-        <div className="space-y-1">
-          <div className="flex items-center gap-2.5">
-            <span className="text-xl">{isPaused ? "🛑" : "🟢"}</span>
-            <h3 className="text-base font-extrabold text-ink">
-              {isPaused ? "Auto-Apply is PAUSED" : "Auto-Apply Status: Active & Ready"}
-            </h3>
-          </div>
-          <p className="text-xs text-muted max-w-3xl leading-relaxed">
-            {isPaused
-              ? `Paused at ${new Date(settings.pausedAt!).toLocaleTimeString()}. All outgoing browser form fills, token approvals, and auto-sends are provably stopped.`
-              : "Pause means provable stop. Pressing pause immediately halts all queued applications, disarms browser extensions, and blocks any sends."}
-          </p>
-        </div>
-
-        <button
-          onClick={handleTogglePause}
-          className={`rounded-2xl px-6 py-3 text-xs font-black uppercase tracking-wider transition shadow-lg shrink-0 ${
-            isPaused
-              ? "bg-emerald-500 text-white hover:bg-emerald-600 shadow-emerald-500/25"
-              : "bg-rose-500 text-white hover:bg-rose-600 shadow-rose-500/25"
-          }`}
-        >
-          {isPaused ? "Resume Auto-Apply" : "Emergency Pause All Sends"}
-        </button>
+      {/* What happens today: nothing is sent, so there is nothing to pause. */}
+      <div className="rounded-3xl border border-line bg-panel p-6 shadow-xl" data-testid="apply-not-sending">
+        <h3 className="text-base font-extrabold text-ink">Hakkiri doesn’t send applications for you</h3>
+        <p className="mt-1 text-xs text-muted max-w-3xl leading-relaxed">
+          Nothing is queued, filled in or submitted to an employer from here. The preferences below are only what you enter, and are kept for your own use.
+        </p>
       </div>
 
       {/* Main 2-Column Responsive Workspace */}
@@ -363,38 +320,23 @@ export default function ApplySettingsPage() {
 
         {/* Right Column: Governance Rules & ATS Adapters (4 cols) */}
         <div className="xl:col-span-4 space-y-6">
-          {/* Rules Guarantee */}
+          {/* What these settings do today */}
           <div className="rounded-3xl border border-line bg-panel p-6 space-y-3 shadow-xl">
-            <h3 className="text-xs font-black uppercase tracking-wider text-ink border-b border-line pb-3">
-              Core Spec Rules
-            </h3>
+            <h3 className="text-xs font-black uppercase tracking-wider text-ink border-b border-line pb-3">What these settings do</h3>
             <ul className="space-y-2.5 text-xs text-muted leading-relaxed">
               <li className="flex items-start gap-2">
-                <span className="text-emerald-400 font-bold">✓</span>
-                <span><strong className="text-ink">They Approve What Leaves:</strong> Nothing is ever submitted to an employer without explicit manual sign-off.</span>
+                <span aria-hidden className="text-emerald-400 font-bold">✓</span>
+                <span>
+                  <strong className="text-ink">Nothing is sent for you.</strong> Hakkiri doesn’t submit applications to employers. You send each one yourself.
+                </span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="text-emerald-400 font-bold">✓</span>
-                <span><strong className="text-ink">Fail Visibly:</strong> If a form field cannot be confidently resolved from your profile, the extension pauses and asks you.</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-emerald-400 font-bold">✓</span>
-                <span><strong className="text-ink">Traceable History:</strong> Every send creates a tamper-proof timestamped audit trail.</span>
+                <span aria-hidden className="text-emerald-400 font-bold">✓</span>
+                <span>
+                  <strong className="text-ink">They are yours.</strong> The job titles, places, salary and employers here are only the ones you enter. A new account has none.
+                </span>
               </li>
             </ul>
-          </div>
-
-          {/* Supported Adapters */}
-          <div className="rounded-3xl border border-line bg-panel p-6 space-y-3 shadow-xl">
-            <h3 className="text-xs font-black uppercase tracking-wider text-ink border-b border-line pb-2">
-              Supported Application Systems
-            </h3>
-            <div className="grid grid-cols-2 gap-2 text-xs font-bold text-ink">
-              <div className="p-2.5 rounded-xl bg-panel-2 border border-line">Greenhouse</div>
-              <div className="p-2.5 rounded-xl bg-panel-2 border border-line">Workday</div>
-              <div className="p-2.5 rounded-xl bg-panel-2 border border-line">Lever</div>
-              <div className="p-2.5 rounded-xl bg-panel-2 border border-line">Ashby</div>
-            </div>
           </div>
         </div>
       </div>

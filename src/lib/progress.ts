@@ -18,12 +18,13 @@ export interface Progress {
 
 const round1 = (n: number) => Math.round(n * 10) / 10;
 
-export function progressFor(interview: Interview, opts: { excludeAnswerIds?: string[] } = {}): Progress {
+/** One person's progress on an interview, from their own recorded answers. */
+export function progressFor(interview: Interview, userId: string, opts: { excludeAnswerIds?: string[] } = {}): Progress {
   const exclude = new Set(opts.excludeAnswerIds ?? []);
   const questions = new Map<string, { score: number; answerId?: string }>();
   for (const q of interview.questions) if (q.lastScore != null) questions.set(q.id, { score: q.lastScore });
 
-  const recorded = listAnswers(interview.id).filter((a) => !exclude.has(a.id));
+  const recorded = listAnswers(interview.id, userId).filter((a) => !exclude.has(a.id));
   for (const a of recorded) {
     const q = interview.questions.find((x) => x.id === a.questionId);
     if (!q) continue;

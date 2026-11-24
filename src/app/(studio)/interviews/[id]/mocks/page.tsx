@@ -30,7 +30,7 @@ export default async function PastSessionsPage({ params }: { params: Promise<{ i
           <h1 className="mt-2 text-[28px] font-semibold tracking-[-0.025em]">Past interviews</h1>
           <p className="mt-1 text-sm text-muted">Interviews, re-runs and drills. Only interviews with new questions count towards your verdict.</p>
         </div>
-        <ButtonLink href={`/interviews/${interview.id}#new-questions`} variant="primary">
+        <ButtonLink href={`/interviews/${interview.id}`} variant="primary">
           <Icon name="mic" size={16} strokeWidth={2} />
           {started ? "New questions" : "Start interview"}
         </ButtonLink>
@@ -40,7 +40,7 @@ export default async function PastSessionsPage({ params }: { params: Promise<{ i
       <Panel aria-label="Past sessions" className="mt-5 animate-rise px-5 pb-1.5 pt-3 [animation-delay:0.05s]">
         {sessions.length === 0 && <p className="px-1 py-3.5 text-sm text-muted">Nothing yet. Your interviews, re-runs and drills appear here, each with its report.</p>}
         {sessions.map((m, k) => {
-          const rows = rowsFor(m);
+          const rows = rowsFor(m, user.id);
           const score = mockScore(rows);
           const followUps = rows.reduce((n, r) => n + r.followUps.length, 0);
           const stopped = m.status === "stopped";

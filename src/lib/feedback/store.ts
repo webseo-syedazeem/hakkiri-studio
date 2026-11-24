@@ -67,8 +67,19 @@ export async function addFeedback(
   return f;
 }
 
-/** For tests and "Delete all my data". */
-export function clearFeedback() {
-  list.length = 0;
+/** The notes one person sent while signed in, for "Download my data". */
+export function feedbackOf(userId: string): Feedback[] {
+  return userId ? list.filter((f) => f.userId === userId) : [];
+}
+
+/** "Delete all my data": the notes that person sent while signed in. With no account named: every note (tests). Returns how many went. */
+export function clearFeedback(userId?: string): number {
+  const before = list.length;
+  if (userId) {
+    for (let i = list.length - 1; i >= 0; i--) if (list[i].userId === userId) list.splice(i, 1);
+  } else {
+    list.length = 0;
+  }
   saveJson(FILE, list);
+  return before - list.length;
 }

@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import { useAuth } from "@/lib/auth/AuthContext";
-import { isAdminEmail } from "@/lib/auth/admins";
 
 /** The public site's top links matching the modern executive navigation. */
 export function SiteNav() {
@@ -28,7 +27,7 @@ export function SiteNav() {
     [`${base}#faq`, "Questions", false],
   ];
 
-  const isUserAdmin = isAdminEmail(user?.email);
+  const isUserAdmin = !!user?.isAdmin;
 
   // Close dropdown when clicking outside
   useEffect(() => {

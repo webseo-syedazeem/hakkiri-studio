@@ -34,19 +34,20 @@ export function proxy(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // 2. Allow public pages, blog, admin console, free audits, and static files
+  // 2. Allow public pages, blog, free audits, and static files. The admin console is NOT public:
+  //    a request for it with no session goes to sign in, and the pages check for an administrator themselves.
   if (
     pathname === "/" ||
     pathname === "/login" ||
     pathname === "/signup" ||
     pathname === "/landing" ||
     pathname === "/present" ||
+    pathname === "/about" ||
     pathname === "/privacy" ||
     pathname === "/terms" ||
     pathname.startsWith("/cv-audit") ||
     pathname.startsWith("/cover-letter-audit") ||
     pathname.startsWith("/audit") ||
-    pathname.startsWith("/admin") ||
     pathname.startsWith("/blog") ||
     pathname.startsWith("/_next") ||
     pathname.includes(".")
@@ -58,6 +59,8 @@ export function proxy(req: NextRequest) {
   const sessionToken = req.cookies.get("hakkiri_session")?.value;
   if (!sessionToken) {
     const loginUrl = new URL("/login", req.url);
+    // After signing in the person is taken to the page they asked for (the sign-in form checks it is one of ours).
+    if (pathname !== "/dashboard") loginUrl.searchParams.set("next", `${pathname}${req.nextUrl.search}`);
     return NextResponse.redirect(loginUrl);
   }
 
@@ -67,6 +70,6 @@ export function proxy(req: NextRequest) {
 export const config = {
   matcher: [
     "/api/:path*",
-    "/((?!_next|cv-audit|cover-letter-audit|audit|admin|blog|login|signup|privacy|terms|present|landing|robots.txt|sitemap.xml|favicon.ico|icon.png|apple-icon.png|opengraph-image.png|$).*)",
+    "/((?!_next|cv-audit|cover-letter-audit|audit|blog|login|signup|privacy|terms|present|landing|robots.txt|sitemap.xml|favicon.ico|icon.png|apple-icon.png|opengraph-image.png|$).*)",
   ],
 };

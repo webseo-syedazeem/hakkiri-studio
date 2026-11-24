@@ -4,6 +4,9 @@ import { completeStory, storyBank, storyKey } from "./bank";
 import { halden, roadmapAnswer } from "@/lib/mock-data";
 import { londonToday } from "@/lib/dates";
 
+/** The account these tests act as. Every record has an owner. */
+const U = "usr_test_owner";
+
 const story = (title: string) => halden.stories!.find((s) => s.title === title)!;
 
 describe("story themes", () => {
@@ -26,7 +29,7 @@ describe("story themes", () => {
 
 describe("the story bank", () => {
   it("gathers the demo's stories while you have no interview of your own", () => {
-    const bank = storyBank(londonToday());
+    const bank = storyBank(londonToday(), U);
     expect(bank.demo).toBe(true);
     expect(bank.stories).toHaveLength(halden.stories!.length);
     // Complete stories first.
@@ -39,7 +42,7 @@ describe("the story bank", () => {
 
   it("fills in a story's gaps from your words, result first", async () => {
     const key = storyKey("Moving from design into product");
-    const s = await completeStory(key, { situation: "", task: "", action: "I asked to own the checkout metrics and ran the first experiments myself", result: "Checkout conversion grew 17% in a year" }, londonToday());
+    const s = await completeStory(key, { situation: "", task: "", action: "I asked to own the checkout metrics and ran the first experiments myself", result: "Checkout conversion grew 17% in a year" }, londonToday(), U);
     expect(s?.missing).toEqual([]);
     expect(s?.text?.startsWith("Checkout conversion grew 17% in a year.")).toBe(true);
   });

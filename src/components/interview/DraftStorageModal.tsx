@@ -50,7 +50,7 @@ export function DraftStorageModal({
   }, []);
 
   const handleDiscard = () => {
-    if (confirm("Are you sure you want to discard this draft? All progress will be removed from your workspace storage.")) {
+    if (confirm("Discard this draft? It will be removed from this browser.")) {
       try {
         localStorage.removeItem("hk_interview_wizard_draft");
         setDraft(null);
@@ -79,8 +79,8 @@ export function DraftStorageModal({
               <Icon name="archive" size={20} />
             </div>
             <div>
-              <h2 className="text-[17px] font-bold text-ink">Draft Storage Details</h2>
-              <p className="text-xs text-muted">Where and how your progress is saved</p>
+              <h2 className="text-[17px] font-bold text-ink">Where your draft is kept</h2>
+              <p className="text-xs text-muted">And what is in it</p>
             </div>
           </div>
           <button
@@ -98,12 +98,10 @@ export function DraftStorageModal({
           <div className="rounded-[12px] bg-panel-2 p-3.5 border border-line">
             <div className="flex items-center gap-2 font-semibold text-ink mb-1">
               <Icon name="globe" size={14} className="text-blue-soft" />
-              <span>Workspace Local Cache</span>
+              <span>In this browser, on this device</span>
             </div>
             <p className="text-muted leading-relaxed">
-              Your draft is securely preserved in your browser&apos;s workspace storage (
-              <code className="text-blue-soft font-mono font-medium">hk_interview_wizard_draft</code>
-              ). It will not be lost if you refresh, close the tab, or navigate elsewhere.
+              Your draft is saved in this browser as you go, including any CV or job text you added. It is not sent anywhere until you build the interview, and it isn&apos;t on your other devices. A refresh or a closed tab doesn&apos;t lose it. Clearing this browser&apos;s site data does.
             </p>
           </div>
 
@@ -114,15 +112,15 @@ export function DraftStorageModal({
               <div className="grid grid-cols-2 gap-2 text-muted">
                 <div className="flex items-center gap-1.5">
                   <Icon name="check" size={12} className="text-[#10b981] shrink-0" />
-                  <span className="truncate">Role: {draft.jobTitle || "Senior Product Manager, Payments"}</span>
+                  <span className="truncate">Role: {draft.jobTitle || "not entered yet"}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Icon name="check" size={12} className="text-[#10b981] shrink-0" />
-                  <span className="truncate">Company: {draft.companyName || "Halden"}</span>
+                  <span className="truncate">Company: {draft.companyName || "not entered yet"}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Icon name="check" size={12} className="text-[#10b981] shrink-0" />
-                  <span>Stages: {draft.stages?.length || 4} configured</span>
+                  <span>Stages: {draft.stages?.length ?? 0}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Icon name="check" size={12} className="text-[#10b981] shrink-0" />
@@ -131,14 +129,14 @@ export function DraftStorageModal({
               </div>
             ) : (
               <div className="py-2 text-muted">
-                No active draft stored. Starting an interview setup will automatically save your progress here.
+                Nothing is saved yet. Once you enter something in the set-up form it is saved here as you go.
               </div>
             )}
           </div>
 
           {draft?.savedAt && (
             <div className="flex items-center justify-between text-dim pt-1 text-[11px]">
-              <span>Last saved timestamp:</span>
+              <span>Last saved:</span>
               <span className="font-medium text-ink">{draft.savedAt}</span>
             </div>
           )}

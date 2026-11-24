@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import clsx from "clsx";
 import { CustomSelect, Icon, Panel } from "@/components/ui";
-import { ImportFromCvModal } from "@/components/examples/ImportFromCvModal";
 import {
   loadExamples,
   toggleExampleFavorite,
@@ -13,13 +12,25 @@ import {
   type InterviewExample,
 } from "@/lib/examples/store";
 
-export function InterviewExamplesView() {
+/** A story held on one of the person's own interviews (from their CV at set-up, or built with the story builder). */
+export interface LibraryStory {
+  key: string;
+  title: string;
+  source: string;
+  text: string;
+  skill: string;
+  interviews: { id: string; company: string }[];
+  /** The parts (situation, task, action, result) it doesn't yet have. */
+  missing: string[];
+  practiseHref: string | null;
+}
+
+export function InterviewExamplesView({ stories = [] }: { stories?: LibraryStory[] }) {
   const [examples, setExamples] = useState<InterviewExample[]>([]);
   const [tab, setTab] = useState<"all" | "competency" | "role" | "favourites">("all");
   const [search, setSearch] = useState("");
   const [selectedTag, setSelectedTag] = useState("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [showImportModal, setShowImportModal] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Edit response state
@@ -52,12 +63,13 @@ export function InterviewExamplesView() {
     updateExample(id, {
       question: editQuestion.trim(),
       answer: editAnswer.trim(),
-      role: editRole.trim() || "General",
-      interviewType: editInterviewType.trim() || "Competency",
-      competency: editCompetency || "Leadership",
+      // Saved as entered: an empty box stays empty, and nothing is chosen for the person.
+      role: editRole.trim(),
+      interviewType: editInterviewType.trim(),
+      competency: editCompetency.trim(),
     });
     setEditingId(null);
-    setToastMessage("Example response updated! ✓");
+    setToastMessage("Example updated.");
     setTimeout(() => setToastMessage(null), 3000);
   };
 
@@ -123,19 +135,14 @@ export function InterviewExamplesView() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-white">Experience Library</h1>
           <p className="mt-1 text-xs text-muted max-w-[680px]">
-            Build a personal bank of real examples to use in interviews. Capture, organise and reuse your best experiences.
+            Your own bank of examples to use in interviews: ones you write, and stronger versions you save from your practice feedback.
+          </p>
+          <p className="mt-1 text-[11px] text-muted max-w-[680px]" data-testid="library-where">
+            Kept in this browser only. It is not part of your account, so it is not in your data download and won’t appear on another device.
           </p>
         </div>
 
         <div className="flex items-center gap-2.5 shrink-0">
-          <button
-            type="button"
-            onClick={() => setShowImportModal(true)}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-semibold text-white/90 hover:bg-white/[0.08] hover:text-white transition-all cursor-pointer"
-          >
-            <Icon name="download" size={13} className="rotate-180" />
-            <span>Import from CV</span>
-          </button>
 
           <Link
             href="/interview-examples/new"
@@ -221,14 +228,50 @@ export function InterviewExamplesView() {
         </div>
       </div>
 
+      {stories.length > 0 && (
+        <section aria-labelledby="library-stories" className="mt-6" data-testid="library-stories">
+          <h2 id="library-stories" className="text-sm font-bold text-white">
+            Stories from your interviews ({stories.length})
+          </h2>
+          <p className="mt-1 text-[11px] text-muted">Found in your CV when you set an interview up, or built with the story builder. These are saved to your account.</p>
+          <ul className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+            {stories.map((s) => (
+              <li key={s.key}>
+                <Panel className="h-full p-4 space-y-1.5 text-xs">
+                  <div className="font-bold text-white">{s.title}</div>
+                  <div className="text-[11px] text-dim">
+                    {s.source}
+                    {s.interviews.length ? ` · ${s.interviews.map((i) => i.company).join(", ")}` : ""}
+                  </div>
+                  {s.text ? <p className="text-[#c9cad8] leading-relaxed whitespace-pre-line">{s.text}</p> : <p className="text-muted">Only its outline is saved. {s.missing.length ? `Still missing: ${s.missing.join(", ")}.` : ""}</p>}
+                  {s.practiseHref ? (
+                    <Link href={s.practiseHref} className="inline-block font-semibold text-blue-soft hover:underline">
+                      Practise it on a question →
+                    </Link>
+                  ) : null}
+                </Panel>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {/* Main 2-Column Grid */}
       <div className="mt-6 grid grid-cols-1 lg:grid-cols-[1.65fr_1fr] gap-6 items-start">
         {/* Left Column: Examples List */}
         <div className="space-y-3">
-          {filteredExamples.length === 0 ? (
+          {examples.length === 0 ? (
+            <Panel className="p-8 text-center text-xs text-muted" data-testid="library-empty">
+              <p className="font-semibold text-white">Your library is empty</p>
+              <p className="mt-1 text-dim max-w-md mx-auto">Nothing is added here for you. Write an example of your own, or save a stronger version from the feedback on one of your practice answers.</p>
+              <Link href="/interview-examples/new" className="mt-4 inline-flex items-center rounded-xl bg-blue-fill hover:bg-blue-hover px-4 py-2 text-xs font-semibold text-white">
+                Add your first example
+              </Link>
+            </Panel>
+          ) : filteredExamples.length === 0 ? (
             <Panel className="p-8 text-center text-xs text-muted">
-              <p className="font-semibold text-white">No examples found</p>
-              <p className="mt-1 text-dim">Try adjusting your search or tag filters, or add a new example.</p>
+              <p className="font-semibold text-white">No examples match</p>
+              <p className="mt-1 text-dim">Change the search or the tag filter to see the rest.</p>
             </Panel>
           ) : (
             filteredExamples.map((ex) => {
@@ -255,7 +298,7 @@ export function InterviewExamplesView() {
                       </button>
 
                       <div className="min-w-0 space-y-2">
-                        <h3 className="text-sm font-semibold text-white leading-snug">{ex.title}</h3>
+                        <h2 className="text-sm font-semibold text-white leading-snug">{ex.title}</h2>
 
                         {/* Tags */}
                         <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
@@ -387,9 +430,9 @@ export function InterviewExamplesView() {
 
                           <div className="flex flex-wrap items-center justify-between gap-3 pt-1 text-[11px] text-muted">
                             <div className="flex flex-wrap items-center gap-4">
-                              <span>Role: <b className="text-white font-medium">{ex.role}</b></span>
-                              <span>Competency: <b className="text-white font-medium">{ex.competency}</b></span>
-                              <span>Type: <b className="text-white font-medium">{ex.interviewType}</b></span>
+                              <span>Role: <b className="text-white font-medium">{ex.role || "Not set"}</b></span>
+                              <span>Competency: <b className="text-white font-medium">{ex.competency || "Not set"}</b></span>
+                              <span>Type: <b className="text-white font-medium">{ex.interviewType || "Not set"}</b></span>
                             </div>
 
                             <div className="flex items-center gap-2">
@@ -481,9 +524,9 @@ export function InterviewExamplesView() {
                   </div>
                   <div>
                     <h3 className="text-xs font-semibold text-white group-hover:text-indigo-300 transition-colors">
-                      Practise with your examples
+                      Practice Hub
                     </h3>
-                    <p className="text-[11px] text-muted">Turn your examples into interview practice</p>
+                    <p className="text-[11px] text-muted">Practise the questions written for your interviews</p>
                   </div>
                 </div>
                 <Icon name="chevronRight" size={14} className="text-dim group-hover:text-white transition-colors" />
@@ -499,9 +542,9 @@ export function InterviewExamplesView() {
                   </div>
                   <div>
                     <h3 className="text-xs font-semibold text-white group-hover:text-indigo-300 transition-colors">
-                      Create from a prompt
+                      Add an example
                     </h3>
-                    <p className="text-[11px] text-muted">Get guided help to write a new example</p>
+                    <p className="text-[11px] text-muted">Write a question and your own answer to it</p>
                   </div>
                 </div>
                 <Icon name="chevronRight" size={14} className="text-dim group-hover:text-white transition-colors" />
@@ -511,15 +554,6 @@ export function InterviewExamplesView() {
         </div>
       </div>
 
-      {/* Import from CV Modal */}
-      <ImportFromCvModal
-        isOpen={showImportModal}
-        onClose={() => setShowImportModal(false)}
-        onSuccess={(count) => {
-          setToastMessage(`Successfully imported ${count} STAR examples from your CV!`);
-          setTimeout(() => setToastMessage(null), 4500);
-        }}
-      />
 
       {/* Success Toast Notification */}
       {toastMessage && (

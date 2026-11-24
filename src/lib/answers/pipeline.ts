@@ -44,7 +44,8 @@ export function brain(): InterviewerBrain {
 
 /** Everything the interviewer needs to decide on a follow-up for this draft. */
 export function followUpInput(draft: Draft): FollowUpInput | null {
-  const interview = getInterview(draft.interviewId);
+  // The draft carries its owner: the interview is looked up as theirs.
+  const interview = getInterview(draft.interviewId, draft.userId ?? "");
   const question = resolveInterviewQuestion(interview, draft.questionId);
   if (!interview || !question) return null;
   return {

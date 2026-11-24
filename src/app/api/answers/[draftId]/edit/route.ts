@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth/require";
 import { findAnswer, findAnswerAsync, saveAnswerAsync } from "@/lib/answers/store";
-import type { Word } from "@/lib/types";
+import { readJsonValue } from "@/lib/http/body";
 
 const Body = z.object({
   text: z.string().trim().min(1, "Answer text cannot be empty").max(10000),
@@ -15,7 +15,7 @@ export async function POST(
   { params }: { params: Promise<{ draftId: string }> }
 ) {
   const user = await getCurrentUser();
-  if (!user) {
+  if (!user?.id) {
     return NextResponse.json({ error: "unauthorised", message: "Sign in required to edit responses." }, { status: 401 });
   }
 
@@ -25,31 +25,22 @@ export async function POST(
     return NextResponse.json({ error: "not-found", message: "Answer not found." }, { status: 404 });
   }
 
-  const json = await req.json().catch(() => null);
-  const parsed = Body.safeParse(json);
+  const sent = await readJsonValue(req, 40_000);
+  if (!sent.ok) return sent.response;
+  const parsed = Body.safeParse(sent.json);
   if (!parsed.success) {
     return NextResponse.json({ error: "bad-request", details: parsed.error.issues }, { status: 400 });
   }
 
-  const newText = parsed.data.text;
-  const rawWords = newText.split(/\s+/).filter(Boolean);
-
-  // Generate synthetic word timings preserving speech cadence
-  let cursor = 0;
-  const words: Word[] = rawWords.map((w, idx) => {
-    const start = cursor;
-    const end = Number((cursor + 0.35).toFixed(2));
-    cursor = Number((end + 0.08).toFixed(2));
-    return { text: w, start, end };
-  });
-
-  const updated = {
-    ...answer,
-    words,
-    highlights: [{ kind: "good" as const, from: 0, to: Math.min(words.length, 12) }],
-  };
+  // The correction is kept beside the answer. The words as they were heard, with their timings and marks, are
+  // left untouched, so the length, pace, delivery score and every other measurement stay those of the recording.
+  // (This used to replace the words with the corrected ones and invented timings for them, which changed the
+  // delivery score and length shown for an answer nobody had re-recorded.)
+  const corrected = parsed.data.text.replace(/\s+/g, " ").trim();
+  const heard = answer.words.map((w) => w.text).join(" ");
+  const updated = { ...answer, correctedText: corrected === heard ? undefined : corrected };
 
   await saveAnswerAsync(updated, user.id);
 
-  return NextResponse.json({ ok: true, id: answer.id, wordCount: words.length });
+  return NextResponse.json({ ok: true, id: answer.id, wordCount: corrected.split(" ").length, corrected: updated.correctedText !== undefined });
 }

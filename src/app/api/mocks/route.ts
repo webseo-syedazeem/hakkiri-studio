@@ -12,6 +12,7 @@ import { flushStorage } from "@/lib/storage/disk";
 import { guard } from "@/lib/usage/limits";
 import { withUsageContext } from "@/lib/usage/store";
 import { requireUser } from "@/lib/auth/require";
+import { readJsonValue } from "@/lib/http/body";
 
 export const runtime = "nodejs";
 
@@ -54,7 +55,12 @@ export async function POST(req: Request) {
     return r as Response;
   }
 
-  const parsed = Body.safeParse(await req.json().catch(() => null));
+  // Saving a session starts question writing in the background, so it is limited like the other session routes.
+  const blocked = guard(req, "plan", { userId: user.id });
+  if (blocked) return blocked;
+  const sent = await readJsonValue(req, 24_000);
+  if (!sent.ok) return sent.response;
+  const parsed = Body.safeParse(sent.json);
   if (!parsed.success) return NextResponse.json({ error: "bad-request", message: "That interview couldn’t be saved." }, { status: 400 });
   const body = parsed.data;
   let interview = (await getInterviewAsync(body.interviewId, user.id)) ?? getInterview(body.interviewId, user.id);
@@ -76,26 +82,34 @@ export async function POST(req: Request) {
   const realAnswers = answers.filter((a): a is Answer => Boolean(a && a.interviewId === interview.id));
   const effectiveAnswerIds = realAnswers.map((a) => a.id);
   const finishedAt = new Date().toISOString();
+  // A session is a set of answers the person really gave in this interview. With none, there is nothing to save:
+  // no report is made from ids that are not theirs.
+  if (!effectiveAnswerIds.length) {
+    return NextResponse.json({ error: "no-answers", message: "There are no saved answers for that session, so there is no report to make." }, { status: 400 });
+  }
 
   if (body.sessionId) {
-    let session = (await findMockAsync(body.sessionId, user.id)) ?? findMock(body.sessionId, user.id);
-    if (!session || session.interviewId !== interview.id) {
-      session = {
-        id: body.sessionId,
-        userId: user.id,
-        interviewId: interview.id,
-        kind: body.kind ?? "full",
-        drill: body.drill,
-        status: "done",
-        startedAt: body.startedAt,
-        finishedAt,
-        answerIds: effectiveAnswerIds,
-        style: body.style ?? "realistic",
-        planned: body.planned,
-        questionIds: body.askedIds ?? interview.questions.slice(0, body.planned).map((q) => q.id),
-      };
-    }
-    if (session.status === "done" && session.answerIds?.length) return NextResponse.json({ id: session.id });
+    const found = (await findMockAsync(body.sessionId, user.id)) ?? findMock(body.sessionId, user.id);
+    const planned = found && found.interviewId === interview.id ? found : undefined;
+    // Already saved (the report was asked for twice): nothing more to do.
+    if (planned && planned.status === "done" && planned.answerIds?.length) return NextResponse.json({ id: planned.id });
+    // Practice on a topic isn't planned on the server: it arrives with an id the page made up
+    // ("topic_star_medium"), the same for everyone who picks that topic. It is saved under an id of
+    // its own, so its report opens and never takes the place of someone else's.
+    const session: MockRecord = planned ?? {
+      id: randomUUID(),
+      userId: user.id,
+      interviewId: interview.id,
+      kind: body.kind ?? "full",
+      drill: body.drill,
+      status: "done",
+      startedAt: body.startedAt,
+      finishedAt,
+      answerIds: effectiveAnswerIds,
+      style: body.style ?? "realistic",
+      planned: body.planned,
+      questionIds: body.askedIds ?? interview.questions.slice(0, body.planned).map((q) => q.id),
+    };
     const skipped = body.skipped ?? [];
     const updatedMock: MockRecord = {
       ...session,
@@ -115,10 +129,10 @@ export async function POST(req: Request) {
       const updatedInt = updateInterview(interview.id, (i) => ({ ...i, rules: mergeRules(i.rules, rules) }), user.id);
       if (updatedInt) await saveInterviewAsync(updatedInt, user.id);
     }
-    retireSkipped(interview.id, skipped);
+    retireSkipped(interview.id, skipped, user.id);
     const refreshed = getInterview(interview.id, user.id);
     if (refreshed && skipped.length) await saveInterviewAsync(refreshed, user.id);
-    after(() => withUsageContext({ userId: user.id, interviewId: interview.id, feature: "questions" }, () => topUp(interview.id)).catch((err) => console.warn("[sessions] top-up failed:", err)));
+    after(() => withUsageContext({ userId: user.id, interviewId: interview.id, feature: "questions" }, () => topUp(interview.id, user.id)).catch((err) => console.warn("[sessions] top-up failed:", err)));
     await flushStorage();
     return NextResponse.json({ id: session.id });
   }

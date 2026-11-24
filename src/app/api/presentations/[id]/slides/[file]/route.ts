@@ -15,8 +15,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   }
 
   const { id, file } = await params;
-  const p = getPresentation(id);
-  if (!p || (p.userId && p.userId !== user.id)) {
+  // The signed-in person's own presentation (or the built-in demo). Anyone else's is "not found".
+  const p = getPresentation(id, user.id);
+  if (!p) {
     return new Response("Not found", { status: 404 });
   }
 
@@ -26,5 +27,5 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const ext = file.match(/^[\w-]+\.(jpg|png|webp)$/)?.[1];
   const data = ext ? ((await loadSlideImageAsync(id, file)) ?? loadSlideImage(id, file)) : null;
   if (!data || !ext) return new Response("Not found", { status: 404 });
-  return new Response(new Uint8Array(data), { headers: { "content-type": TYPE[ext], "cache-control": "private, max-age=86400, immutable" } });
+  return new Response(new Uint8Array(data), { headers: { "content-type": TYPE[ext], "x-content-type-options": "nosniff", "cache-control": "private, max-age=86400, immutable" } });
 }

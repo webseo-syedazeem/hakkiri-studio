@@ -217,7 +217,7 @@ export function BlogIndexClient({
 
                       <div className="flex flex-1 flex-col justify-between p-5 sm:p-6">
                         <div>
-                          <div className="flex items-center gap-2 text-[11px] text-slate-400 mb-2">
+                          <div className="flex items-center gap-2 text-[11px] text-slate-500 mb-2">
                             <span>{new Date(post.publishedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</span>
                             <span>•</span>
                             <span>{post.readingTimeMinutes} min read</span>

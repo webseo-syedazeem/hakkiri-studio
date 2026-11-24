@@ -5,6 +5,7 @@ import { buildStory } from "@/lib/interviews/stories";
 import { guard } from "@/lib/usage/limits";
 import { setUsageContext } from "@/lib/usage/store";
 import { requireUser } from "@/lib/auth/require";
+import { readJsonValue } from "@/lib/http/body";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -26,15 +27,18 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   }
 
   const { id } = await params;
-  const blocked = guard(req, "ai");
+  const blocked = guard(req, "ai", { userId: user.id });
   if (blocked) return blocked;
-  setUsageContext({ interviewId: id, feature: "stories" });
-  const interview = getInterview(id);
+  setUsageContext({ userId: user.id, interviewId: id, feature: "stories" });
+  // Only the signed-in person's own interview: anyone else's is "not found".
+  const interview = getInterview(id, user.id);
   if (!interview) return NextResponse.json({ error: "not-found", message: "That interview doesn’t exist any more." }, { status: 404 });
-  const parsed = Body.safeParse(await req.json().catch(() => null));
+  const sent = await readJsonValue(req, 40_000);
+  if (!sent.ok) return sent.response;
+  const parsed = Body.safeParse(sent.json);
   if (!parsed.success) return NextResponse.json({ error: "bad-request", message: parsed.error.issues[0]?.message ?? "Fill in what you did, at least." }, { status: 400 });
   try {
-    const { story, questionId } = await buildStory(id, { ...parsed.data, role: interview.role });
+    const { story, questionId } = await buildStory(id, { ...parsed.data, role: interview.role }, user.id);
     return NextResponse.json({ story, practiseHref: `/mock/${id}?q=${questionId}&story=${story.id}` });
   } catch (err) {
     console.error("[stories] failed:", err);

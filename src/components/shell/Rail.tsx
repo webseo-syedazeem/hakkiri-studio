@@ -8,7 +8,6 @@ import { Mark } from "@/components/brand/Mark";
 import { Icon, type IconName } from "@/components/ui";
 import { FeedbackButton } from "./FeedbackButton";
 import { useAuth } from "@/lib/auth/AuthContext";
-import { isAdminEmail } from "@/lib/auth/admins";
 
 const ITEMS: {
   label: string;
@@ -79,7 +78,7 @@ export function Rail({
   const [mobileOpen, setMobileOpen] = useState(false);
   const displayInitials = authUser?.initials || initials || "SA";
 
-  const isUserAdmin = isAdminEmail(authUser?.email);
+  const isUserAdmin = !!authUser?.isAdmin;
   const visibleItems = ITEMS.filter(
     (it) => it.href !== "/robot-test" || isUserAdmin
   );

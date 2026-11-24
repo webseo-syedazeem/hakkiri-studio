@@ -1,12 +1,19 @@
+import { adminDenied } from "@/lib/auth/admin";
 import { NextResponse } from "next/server";
 import { getBlogPostsAsync, saveBlogPostAsync } from "@/lib/blog/store";
 import { getCurrentUser } from "@/lib/auth/require";
 import type { BlogPost } from "@/lib/blog/types";
 import { slugify } from "@/lib/blog/seo";
+import { readJson } from "@/lib/http/body";
+import { POST_MAX_BYTES, PostBody } from "./schema";
 
 export const runtime = "nodejs";
 
 export async function GET(req: Request) {
+  // Administrators only, decided on the server before anything else happens.
+  const denied = await adminDenied();
+  if (denied) return denied;
+
   try {
     const user = await getCurrentUser();
     // Allow studio users or admin access
@@ -24,17 +31,23 @@ export async function GET(req: Request) {
   } catch (err) {
     console.error("[api/admin/blog] GET error:", err);
     return NextResponse.json(
-      { error: "Internal Server Error", message: err instanceof Error ? err.message : "Failed to load posts" },
+      { error: "Internal Server Error", message: "Failed to load posts" },
       { status: 500 }
     );
   }
 }
 
 export async function POST(req: Request) {
-  try {
-    const body = await req.json();
+  // Administrators only, decided on the server before anything else happens.
+  const denied = await adminDenied();
+  if (denied) return denied;
 
-    if (!body.title || typeof body.title !== "string") {
+  try {
+    const read = await readJson(req, PostBody, { max: POST_MAX_BYTES, message: "That post couldn’t be saved. Check each field and try again." });
+    if (!read.ok) return read.response;
+    const body = read.data;
+
+    if (!body.title || !body.title.trim()) {
       return NextResponse.json({ error: "Title is required" }, { status: 400 });
     }
 
@@ -78,7 +91,7 @@ export async function POST(req: Request) {
   } catch (err) {
     console.error("[api/admin/blog] POST error:", err);
     return NextResponse.json(
-      { error: "Internal Server Error", message: err instanceof Error ? err.message : "Failed to save post" },
+      { error: "Internal Server Error", message: "Failed to save post" },
       { status: 500 }
     );
   }

@@ -40,10 +40,10 @@ export async function POST(_req: Request, { params }: { params: Promise<{ draftI
   if (blocked) return blocked;
 
   const { draftId } = await params;
-  const limited = guard(_req, "answer", { inSession: true });
+  const limited = guard(_req, "answer", { inSession: true, userId: user.id });
   if (limited) return limited;
   const draft = (await getDraftAsync(draftId)) ?? getDraft(draftId);
-  if (draft && draft.userId && draft.userId !== user.id) {
+  if (draft && draft.userId !== user.id) {
     return NextResponse.json({ error: "not-found", message: "That answer doesn’t exist." }, { status: 404 });
   }
   const interview = draft ? ((await getInterviewAsync(draft.interviewId, user.id)) ?? getInterview(draft.interviewId, user.id)) : undefined;
@@ -94,12 +94,12 @@ export async function POST(_req: Request, { params }: { params: Promise<{ draftI
       words: main.words,
       result,
       profile: profileFor(question.type),
-      previousOverall: progressFor(interview).questions.get(question.id)?.score,
+      previousOverall: progressFor(interview, user.id).questions.get(question.id)?.score,
       followUps: followScores ? followTurns.map((t, k) => buildFollowUp({ kind: t.kind as FollowUpKind, asked: t.asked, words: t.words }, followScores.followUps[k])) : [],
     });
     await saveAnswerAsync(answer, user.id);
-    await recordAskedQuestionAsync(draft.sessionId, answer.questionId);
-    saveRecordings(answer.id, draft.audio ?? []);
+    await recordAskedQuestionAsync(draft.sessionId, answer.questionId, user.id);
+    saveRecordings(answer.id, draft.audio ?? [], user.id);
     await deleteDraftAsync(draft.id);
     await flushStorage();
     // The measured row comes back too, so a drill can show feedback straight away.

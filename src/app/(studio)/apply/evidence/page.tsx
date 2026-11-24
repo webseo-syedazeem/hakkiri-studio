@@ -137,8 +137,8 @@ export default function EvidenceBankPage() {
             <div className="text-2xl font-black text-blue-soft mt-0.5">{totalSkills}</div>
           </div>
           <div className="p-4 rounded-2xl bg-booth/70 border border-line/80 backdrop-blur-sm">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-muted">Grounding Rule</span>
-            <div className="text-2xl font-black text-purple-300 mt-0.5">100% Truth</div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-muted">What is in here</span>
+            <div className="text-sm font-black text-purple-300 mt-1.5">Only what you add</div>
           </div>
         </div>
       </div>

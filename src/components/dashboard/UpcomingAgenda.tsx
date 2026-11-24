@@ -15,13 +15,15 @@ export interface UpcomingEvent {
   relative?: string;
   href: string;
   actionLabel: string;
+  /** Whether it falls within the next seven days. */
+  thisWeek: boolean;
 }
 
 export function UpcomingAgenda({ events }: { events: UpcomingEvent[] }) {
   const [filter, setFilter] = useState<"this-week" | "all">("this-week");
 
-  // In the mockup, "This week" shows the 2 upcoming items cleanly
-  const displayed = filter === "this-week" ? events.slice(0, 2) : events;
+  // "This week" is the next seven days. These are the person's own dated interviews and presentations.
+  const displayed = filter === "this-week" ? events.filter((e) => e.thisWeek) : events;
 
   return (
     <div className="flex h-full flex-col justify-between gap-5">
@@ -37,12 +39,13 @@ export function UpcomingAgenda({ events }: { events: UpcomingEvent[] }) {
               </span>
             </div>
             <p className="mt-0.5 text-[13px] text-muted">
-              Your scheduled interviews and presentations.
+              Your own interviews and presentations that have a date.
             </p>
           </div>
           <div className="inline-flex rounded-xl bg-panel-2 p-1 shadow-[inset_0_0_0_1px_var(--color-line)]">
             <button
               type="button"
+              aria-pressed={filter === "this-week"}
               onClick={() => setFilter("this-week")}
               className={clsx(
                 "rounded-lg px-3 py-1 text-xs font-semibold transition-all duration-300 cursor-pointer",
@@ -55,6 +58,7 @@ export function UpcomingAgenda({ events }: { events: UpcomingEvent[] }) {
             </button>
             <button
               type="button"
+              aria-pressed={filter === "all"}
               onClick={() => setFilter("all")}
               className={clsx(
                 "rounded-lg px-3 py-1 text-xs font-semibold transition-all duration-300 cursor-pointer",
@@ -69,7 +73,14 @@ export function UpcomingAgenda({ events }: { events: UpcomingEvent[] }) {
         </div>
 
         {/* Event List */}
-        <div className="mt-4 flex flex-col gap-4">
+        <div className="mt-4 flex flex-col gap-4" data-testid="home-agenda">
+          {displayed.length === 0 && (
+            <p className="rounded-[15px] bg-panel-2 p-4 text-xs text-muted" data-testid="home-agenda-empty">
+              {events.length === 0
+                ? "Nothing is booked. When you add a date to an interview stage or a presentation, it shows here."
+                : `Nothing in the next seven days. Your next one is ${events[0].relative ?? "later"}: choose “All upcoming” to see it.`}
+            </p>
+          )}
           {displayed.map((item, idx) => (
             <div
               key={item.id}
@@ -78,6 +89,7 @@ export function UpcomingAgenda({ events }: { events: UpcomingEvent[] }) {
             >
               <span className="mb-1.5 block text-xs font-semibold text-muted">
                 {item.dateGroup}
+                {item.relative ? <span className="font-normal"> · {item.relative}</span> : null}
               </span>
               <div className="group relative overflow-hidden flex items-center justify-between gap-3.5 rounded-[15px] bg-panel-2 p-4 shadow-[inset_0_0_0_1px_var(--color-line)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_28px_-6px_rgba(0,0,0,0.6),inset_0_0_0_1px_var(--color-line-strong)]">
                 {/* Subtle sheen highlight on hover */}
@@ -96,7 +108,7 @@ export function UpcomingAgenda({ events }: { events: UpcomingEvent[] }) {
                     <Icon name={item.type === "interview" ? "cal" : "present"} size={20} />
                   </div>
                   <div className="shrink-0 text-left">
-                    <div className="text-sm font-bold text-ink font-mono">{item.time}</div>
+                    <div className="text-sm font-bold text-ink font-mono">{item.time || <span className="font-sans text-xs font-medium text-muted">No time set</span>}</div>
                     <span
                       className={clsx(
                         "inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold mt-0.5",
@@ -145,7 +157,7 @@ export function UpcomingAgenda({ events }: { events: UpcomingEvent[] }) {
           className="group inline-flex items-center gap-2 text-xs font-semibold text-muted hover:text-ink transition-colors"
         >
           <Icon name="cal" size={14} className="text-muted group-hover:text-blue-soft transition-colors" />
-          <span>View calendar →</span>
+          <span>See all your interviews →</span>
         </Link>
       </div>
     </div>

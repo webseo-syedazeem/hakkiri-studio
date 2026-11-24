@@ -33,7 +33,8 @@ import { settingsOr, type Difficulty, type SessionSettings } from "./settings";
  */
 
 export interface BuildInput {
-  userId?: string;
+  /** The account the interview is being built for. Every interview has an owner. */
+  userId: string;
   company: { name: string; url?: string; siteText?: string };
   job: { title: string; text?: string; url?: string; label?: string };
   cv: { text: string; label: string };
@@ -196,7 +197,7 @@ export function understandingOf(interview: Interview): RoleUnderstanding {
  * Returns the updated interview and how many questions it couldn't find
  * (only possible without a key, when the standard set runs out).
  */
-export async function addQuestions(interview: Interview, need: Partial<Record<QuestionGroup, number>>, opts: { retireExcept?: string[]; templatesOnly?: boolean; difficulty?: Difficulty } = {}): Promise<{ interview: Interview; added: Question[]; short: number }> {
+export async function addQuestions(interview: Interview, need: Partial<Record<QuestionGroup, number>>, opts: { retireExcept?: string[]; templatesOnly?: boolean; difficulty?: Difficulty } = {}, userId: string = interview.userId ?? ""): Promise<{ interview: Interview; added: Question[]; short: number }> {
   // Questions you added yourself live in their own store; the bank is the rest.
   let bank = interview.questions.filter((q) => !q.custom);
   if (opts.retireExcept) {
@@ -250,8 +251,8 @@ export async function addQuestions(interview: Interview, need: Partial<Record<Qu
   // The model call above can take a minute. Save only the questions, onto the interview as it
   // is now (rules, settings or retired flags may have changed meanwhile), and not at all if it
   // was deleted while we waited.
-  const saved = updateInterview(interview.id, (now) => ({ ...now, questions, groupCounts: countGroups(questions) }));
-  if (saved) await saveInterviewAsync(saved);
+  const saved = updateInterview(interview.id, (now) => ({ ...now, questions, groupCounts: countGroups(questions) }), userId);
+  if (saved) await saveInterviewAsync(saved, userId);
   const updated: Interview = saved ?? { ...interview, questions, groupCounts: countGroups(questions) };
   const short = GROUP_ORDER.reduce((n, g) => n + Math.max(0, counts[g] - added.filter((q) => q.group === g).length), 0);
   return { interview: updated, added, short };

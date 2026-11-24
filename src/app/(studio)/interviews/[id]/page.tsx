@@ -6,8 +6,9 @@ import { understandingOf } from "@/lib/interviews/build";
 import { PRESETS, settingsOr } from "@/lib/interviews/settings";
 import { interviewWhen, sessionTitle } from "@/lib/sessions/labels";
 import { DRILL_TOPICS, getTopicsForInterview } from "@/lib/sessions/topics";
-import { listMocksAsync, rowsFor } from "@/lib/mocks/store";
-import { mockScore } from "@/lib/mocks/report";
+import { isFresh, listMocksAsync, rowsFor } from "@/lib/mocks/store";
+import { categoryScores, mockScore } from "@/lib/mocks/report";
+import { overviewCategories } from "@/lib/sessions/overview";
 import { whenSaid } from "@/lib/format";
 import { requirePageUser } from "@/lib/auth/require";
 import {
@@ -41,9 +42,9 @@ export default async function InterviewOverview({
   const when = interviewWhen(interview.date, londonToday());
   const src = interview.sources ?? {};
 
-  const roleTitle = interview.role || "Senior Product Manager, Payments";
-  const companyName = interview.company || "Halden";
-  const isPaymentsRole = /payment|fintech|checkout|halden/i.test(`${companyName} ${roleTitle}`);
+  // The interview's own role and company. Where one wasn't given, the screen says so plainly.
+  const roleTitle = interview.role || "this role";
+  const companyName = interview.company || "the company";
 
   const customStages: OverviewStageOption[] = (interview.stages && interview.stages.length > 0)
     ? interview.stages.map((st, idx) => {
@@ -75,96 +76,56 @@ export default async function InterviewOverview({
       })
     : [];
 
-  const defaultHaldenStages: OverviewStageOption[] = [
-    {
-      id: "screening",
-      label: "Recruiter screen",
-      selectLabel: "Recruiter screen",
-      titlePhrase: "recruiter screen",
-      description:
-        "Focus on your career story, why this role fits your background, and clear alignment on scope and expectations.",
-      status: "completed",
-      subtitle: "Completed",
-      preset: "screening",
-      mix: PRESETS.screening.mix,
-    },
-    {
-      id: "hiring-manager",
-      label: "Hiring manager",
-      selectLabel: "Hiring manager interview",
-      titlePhrase: "hiring manager",
-      description: isPaymentsRole
-        ? "Focus on your experience, product decisions and stakeholder management, with payments-related trade-offs."
-        : "Focus on your experience, role decisions and stakeholder management, tailored to the job requirements.",
-      status: "next",
-      subtitle: when.text || "Fri 13 Nov, 10:00",
-      preset: "balanced",
-      mix: PRESETS.balanced.mix,
-    },
-    {
-      id: "technical",
-      label: "Technical interview",
-      selectLabel: "Technical interview",
-      titlePhrase: "technical interview",
-      description: isPaymentsRole
-        ? "Focus on payments architecture, authorisation metrics, fraud vs conversion trade-offs and technical depth."
-        : `Focus on ${u.technicalLabel.toLowerCase()} depth, practical problem-solving and system or trade-off reasoning.`,
-      status: "upcoming",
-      subtitle: "Upcoming",
-      preset: "technical",
-      mix: PRESETS.technical.mix,
-    },
-    {
-      id: "final",
-      label: "Final panel",
-      selectLabel: "Final panel",
-      titlePhrase: "final panel",
-      description:
-        "Focus on senior judgement, cross-functional leadership, handling executive pushback and long-term motivation.",
-      status: "upcoming",
-      subtitle: "Upcoming",
-      preset: "final",
-      mix: PRESETS.final.mix,
-    },
+  // An interview with no stages of its own gets the four kinds of round to practise. They are choices of what to
+  // practise, not a record of the person's process: none is marked as done or given a date.
+  const round = (id: string, label: string, description: string, preset: Exclude<keyof typeof PRESETS, "custom">): OverviewStageOption => ({
+    id,
+    label,
+    selectLabel: label,
+    titlePhrase: label.toLowerCase(),
+    description,
+    status: "upcoming",
+    subtitle: "Practice round",
+    preset,
+    mix: PRESETS[preset].mix,
+  });
+  const practiceRounds: OverviewStageOption[] = [
+    round("screening", "Recruiter screen", "Your career story, why this role fits your background, and what you expect from it.", "screening"),
+    round("hiring-manager", "Hiring manager interview", "Your experience, the decisions you made and how you work with other people, against what the job asks for.", "balanced"),
+    round("technical", "Technical interview", `${u.technicalLabel} depth, practical problem-solving and reasoning about trade-offs.`, "technical"),
+    round("final", "Final panel", "Judgement, working across teams, handling pushback and why you want the role.", "final"),
   ];
 
-  const stages = customStages.length > 0 ? customStages : defaultHaldenStages;
+  const stages = customStages.length > 0 ? customStages : practiceRounds;
   const initialStage = stages.find((s) => s.status === "next") ?? stages[0];
   const initialStageId = initialStage.id;
 
   const mockSessions = (await listMocksAsync(interview.id, user.id)).filter((m) => m.status !== "planned");
   const recentSessions: OverviewPracticeItem[] = mockSessions.map((m) => {
-    const rows = rowsFor(m);
+    const rows = rowsFor(m, user.id);
     const score = mockScore(rows);
     return {
       id: m.id,
       title: sessionTitle(m, interview),
-      dateText: whenSaid(m.startedAt) || "Recently",
+      dateText: whenSaid(m.startedAt),
       score: score != null ? Number(score.toFixed(1)) : null,
       href: `/interviews/${interview.id}/mocks/${m.id}`,
     };
   });
 
-  const scoreCategories: OverviewScoreCategory[] =
-    interview.id === "halden" || recentSessions.length > 0
-      ? [
-          { name: "Experience", score: 4.0, delta: "+0.4", positive: true, tone: "purple" },
-          { name: "Skills", score: 3.4, delta: "+0.2", positive: true, tone: "purple" },
-          { name: "Technical", score: 3.1, delta: "+0.1", positive: true, tone: "purple" },
-          { name: "Motivation", score: 4.4, delta: "+0.3", positive: true, tone: "purple" },
-          { name: "Situational", score: 3.5, delta: "+0.2", positive: true, tone: "purple" },
-        ]
-      : [];
+  // Category scores from this person's own interviews with new questions, newest first. Empty until one is scored.
+  const fresh = mockSessions.filter((m) => m.status === "done" && isFresh(m)).sort((a, b) => Date.parse(b.startedAt) - Date.parse(a.startedAt));
+  const scoreCategories: OverviewScoreCategory[] = overviewCategories(fresh.map((m) => categoryScores(rowsFor(m, user.id))), u.technicalLabel).map((c) => ({ name: c.name, score: c.score, delta: c.delta }));
 
   const roleSummary = `${u.role}, ${u.level.toLowerCase()}: ${u.field}`;
   const inputsSummary =
-    [src.cv, src.coverLetter, src.job, src.company].filter(Boolean).join(", ") || "CV and job description";
+    [src.cv, src.coverLetter, src.job, src.company].filter(Boolean).join(", ") || "No documents on file";
 
   return (
     <InterviewOverviewClient
       interviewId={interview.id}
       companyName={companyName}
-      companyInitial={interview.companyInitial || companyName[0] || "H"}
+      companyInitial={interview.companyInitial || (interview.company ? interview.company[0].toUpperCase() : "?")}
       roleTitle={roleTitle}
       whenText={when.text}
       whenRel={when.rel}
@@ -175,6 +136,7 @@ export default async function InterviewOverview({
       initialSettings={settings}
       initialStageId={initialStageId}
       stages={stages}
+      ownStages={customStages.length > 0}
       scoreCategories={scoreCategories}
       topics={getTopicsForInterview(interview).map((t) => ({ id: t.id, title: t.title }))}
       roleSummary={roleSummary}

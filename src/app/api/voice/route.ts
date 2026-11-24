@@ -10,6 +10,7 @@ import { guard } from "@/lib/usage/limits";
 import { recordUsage } from "@/lib/usage/store";
 import { reportProblem } from "@/lib/alerts/store";
 import { requireUser } from "@/lib/auth/require";
+import { readJsonValue } from "@/lib/http/body";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -37,9 +38,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "not-configured" }, { status: 501 });
   }
 
-  const blocked = guard(req, "voice");
+  const blocked = guard(req, "voice", { userId: user.id });
   if (blocked) return blocked;
-  const parsed = Body.safeParse(await req.json().catch(() => null));
+  const sent = await readJsonValue(req, 8_000);
+  if (!sent.ok) return sent.response;
+  const parsed = Body.safeParse(sent.json);
   if (!parsed.success) return NextResponse.json({ error: "bad-request" }, { status: 400 });
   const { text, voice } = parsed.data;
 
@@ -58,7 +61,7 @@ export async function POST(req: Request) {
       ? await synthesise(text, voice, elevenKey)
       : await synthesiseDeepgram(text, voice, deepgramKey);
     saveFile(file, audio);
-    recordUsage({ service: provider, label: "interviewer-voice", model, characters: text.length, feature: "voice" });
+    recordUsage({ userId: user.id, service: provider, label: "interviewer-voice", model, characters: text.length, feature: "voice" });
     return new Response(audio, { headers });
   } catch (err) {
     console.warn(`[voice] ${provider} failed, the browser voice takes over:`, err instanceof Error ? err.message : err);

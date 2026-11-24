@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth/require";
+import { z } from "zod";
+import { readJson } from "@/lib/http/body";
 import { listEvidence, removeSeededEvidence, saveEvidence } from "@/lib/apply/db";
-import type { Evidence } from "@/lib/apply/schema";
+import { EvidenceSourceKind, type Evidence } from "@/lib/apply/schema";
+
+const Body = z.object({ text: z.string().max(5000), sourceKind: EvidenceSourceKind.optional(), sourceRef: z.string().max(300).optional(), transcript: z.string().max(40_000).optional() });
 import crypto from "node:crypto";
 
 function extractNumbersAndSkills(text: string): { numbers: string[]; skillTags: string[] } {
@@ -24,7 +28,7 @@ function extractNumbersAndSkills(text: string): { numbers: string[]; skillTags: 
 export async function GET() {
   try {
     const user = await requireUser();
-    const userId = user.id as string;
+    const userId = user.id;
     // Clear out the three invented entries an earlier build put into every account.
     await removeSeededEvidence(userId);
     return NextResponse.json(await listEvidence(userId));
@@ -38,11 +42,12 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const user = await requireUser();
-    const userId = user.id || "usr_guest";
-    const body = await req.json();
-    const { text, sourceKind = "typed-note", sourceRef, transcript } = body;
+    const userId = user.id;
+    const read = await readJson(req, Body, { max: 100_000, message: "That couldn’t be saved. Write the evidence as plain text, up to 5,000 characters." });
+    if (!read.ok) return read.response;
+    const { text, sourceKind = "typed-note", sourceRef, transcript } = read.data;
 
-    if (!text || typeof text !== "string" || text.trim().length < 5) {
+    if (text.trim().length < 5) {
       return NextResponse.json({ error: "invalid_text", message: "Evidence text is too short." }, { status: 400 });
     }
 

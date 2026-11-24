@@ -223,6 +223,13 @@ export interface Answer {
   followUps: FollowUp[];
   /** When it was recorded (ISO). */
   createdAt?: string;
+  /**
+   * The person's own correction of the transcript. It is shown in place of the
+   * words that were heard. The words, their timings and marks, and every score
+   * worked out from them, stay exactly as they were: a correction never
+   * changes how the answer was measured.
+   */
+  correctedText?: string;
 }
 
 export interface Story {
@@ -250,4 +257,6 @@ export interface User {
   trial: { interviewSecondsLeft: number; pitchSecondsLeft: number };
   tier?: "free" | "beta" | "job_search" | "monthly";
   createdAt?: string;
+  /** Set by the server for the signed-in account. It only decides which menu links are shown: every admin page and route checks again on the server. */
+  isAdmin?: boolean;
 }

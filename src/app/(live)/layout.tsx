@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { PhoneNotice } from "@/components/shell/PhoneNotice";
+import { BrowserOwner } from "@/components/shell/BrowserOwner";
 import { getCurrentUser } from "@/lib/auth/require";
 
 export const metadata: Metadata = {
@@ -19,6 +20,7 @@ export default async function LiveLayout({ children }: { children: React.ReactNo
 
   return (
     <div className="min-h-screen">
+      {currentUser.id ? <BrowserOwner userId={currentUser.id} /> : null}
       {children}
       <PhoneNotice />
     </div>

@@ -7,6 +7,8 @@ import { MAX_AUDIO_BYTES, notConfigured, scoringError, transcribe } from "@/lib/
 import { guard } from "@/lib/usage/limits";
 import { setUsageContext } from "@/lib/usage/store";
 import { requireUser } from "@/lib/auth/require";
+import { readForm } from "@/lib/http/body";
+import { sniffAudio } from "@/lib/http/sniff";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -24,24 +26,27 @@ export async function POST(req: Request, { params }: { params: Promise<{ session
     return r as Response;
   }
 
-  const limited = guard(req, "answer", { inSession: true });
+  const limited = guard(req, "answer", { inSession: true, userId: user.id });
   if (limited) return limited;
   setUsageContext({ userId: user.id, sessionId: (await params).sessionId, feature: "q&a" });
   const blocked = notConfigured();
   if (blocked) return blocked;
   const { sessionId } = await params;
   const draft = (await getQaDraftAsync(sessionId)) ?? getQaDraft(sessionId);
-  if (!draft || (draft.userId && draft.userId !== user.id)) return NextResponse.json({ error: "not-found", message: "This Q&A has expired. Start it again." }, { status: 404 });
+  if (!draft || draft.userId !== user.id) return NextResponse.json({ error: "not-found", message: "This Q&A has expired. Start it again." }, { status: 404 });
   const p = getPresentation(draft.presentationId, user.id);
   if (!p) return NextResponse.json({ error: "not-found", message: "This Q&A has expired. Start it again." }, { status: 404 });
 
-  const form = await req.formData().catch(() => null);
-  const audio = form?.get("audio");
-  const k = Number(form?.get("k"));
+  const read = await readForm(req, MAX_AUDIO_BYTES + 64_000, "Missing the recording.");
+  if (!read.ok) return read.response;
+  const form = read.data;
+  const audio = form.get("audio");
+  const k = Number(form.get("k"));
   if (!(audio instanceof Blob) || !Number.isInteger(k) || k < 0 || k >= draft.questions.length) {
     return NextResponse.json({ error: "bad-request", message: "Missing the recording." }, { status: 400 });
   }
   if (audio.size > MAX_AUDIO_BYTES) return NextResponse.json({ error: "too-large", message: "That answer is too long to score." }, { status: 413 });
+  if (!(await sniffAudio(audio))) return NextResponse.json({ error: "bad-request", message: "That recording couldn’t be read as audio. Record it again." }, { status: 400 });
 
   try {
     const turn = draft.turns[k].length;
@@ -49,7 +54,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ session
     if (turn === 0 && words.length < 3) {
       return NextResponse.json({ error: "no-speech", message: "We couldn’t hear an answer. Check your mic and try again." }, { status: 422 });
     }
-    const press = await answerQa(draft, p, k, words, { data: await audio.arrayBuffer(), type: audio.type || "audio/webm" }, form?.get("cutIn") === "1");
+    const press = await answerQa(draft, p, k, words, { data: await audio.arrayBuffer(), type: audio.type || "audio/webm" }, form.get("cutIn") === "1");
     return NextResponse.json({ press });
   } catch (err) {
     return scoringError(err);

@@ -25,7 +25,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
       </main>
       <footer className="bg-mk-mist">
         <div className="mx-auto flex w-full max-w-[1120px] flex-col gap-3 border-t border-mk-line/70 px-4 py-6 text-[12px] text-mk-slate sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <span className="font-medium text-mk-slate/90">
+          <span className="font-medium text-mk-slate">
             © {new Date().getFullYear()} Hakkiri Studio · A trading name of Happy Cheeks Ltd (company no. 15146182).
           </span>
           <nav aria-label="Legal" className="flex flex-wrap gap-x-6 gap-y-2">

@@ -2,43 +2,27 @@
 
 import type { ArchivedItem } from "@/components/dashboard/ArchiveModal";
 
-export const DEFAULT_ARCHIVED_ITEMS: ArchivedItem[] = [
-  {
-    id: "archive-1",
-    role: "Lead Product Manager",
-    company: "Stripe",
-    outcome: "Unsuccessful",
-    stageReached: "Stage 3 · Case interview",
-    date: "28 Oct",
-    feedbackNotes:
-      "Strong product vision and API depth. Interviewers recommended deepening operational risk and ledger scale experience.",
-  },
-  {
-    id: "archive-2",
-    role: "Group PM, Growth & Retention",
-    company: "Monzo",
-    outcome: "Unsuccessful",
-    stageReached: "Stage 2 · Hiring manager",
-    date: "14 Oct",
-    feedbackNotes:
-      "Impressive storytelling and structure. Team decided to proceed with an internal candidate.",
-  },
-];
-
+/**
+ * The person's own archive: applications they marked as ended, kept in this
+ * browser. It starts empty and holds only what they put there.
+ */
 const STORAGE_KEY = "hk_archived_interviews";
 
+/** Entries an earlier build put into every browser as samples. They were never the person's, so they are dropped. */
+const SAMPLE_IDS = new Set(["archive-1", "archive-2"]);
+
 export function loadArchivedItems(): ArchivedItem[] {
-  if (typeof window === "undefined") return DEFAULT_ARCHIVED_ITEMS;
+  if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_ARCHIVED_ITEMS));
-      return DEFAULT_ARCHIVED_ITEMS;
-    }
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : DEFAULT_ARCHIVED_ITEMS;
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    const own = (parsed as ArchivedItem[]).filter((item) => item && typeof item.id === "string" && !SAMPLE_IDS.has(item.id) && !item.id.startsWith("halden-archived-"));
+    if (own.length !== parsed.length) localStorage.setItem(STORAGE_KEY, JSON.stringify(own));
+    return own;
   } catch {
-    return DEFAULT_ARCHIVED_ITEMS;
+    return [];
   }
 }
 

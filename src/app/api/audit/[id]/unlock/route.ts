@@ -1,12 +1,18 @@
 import { NextResponse } from "next/server";
 import { getAudit, saveAudit, saveLead, getLead } from "@/lib/apply/db";
 import crypto from "node:crypto";
+import { readJsonValue } from "@/lib/http/body";
+import { normaliseEmail } from "@/lib/auth/user-db";
+import { clientKey, rateLimited } from "@/lib/usage/limits";
 
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    if (rateLimited(`audit-unlock:${clientKey(req)}`, 10, 60_000)) {
+      return NextResponse.json({ error: "slow-down", message: "That’s a lot of requests in a short time. Wait a minute, then try again." }, { status: 429 });
+    }
     const { id } = await params;
     const audit = await getAudit(id);
 
@@ -14,14 +20,15 @@ export async function POST(
       return NextResponse.json({ error: "not_found", message: "Audit not found." }, { status: 404 });
     }
 
-    const body = await req.json();
-    const { email, marketing = false } = body;
-
-    if (!email || typeof email !== "string" || !email.includes("@")) {
+    const sent = await readJsonValue(req, 2_000);
+    if (!sent.ok) return sent.response;
+    const body = (sent.json && typeof sent.json === "object" && !Array.isArray(sent.json) ? sent.json : {}) as Record<string, unknown>;
+    const marketing = body.marketing === true;
+    const cleanEmail = normaliseEmail(body.email);
+    if (!cleanEmail) {
       return NextResponse.json({ error: "invalid_email", message: "Please enter a valid email address." }, { status: 400 });
     }
 
-    const cleanEmail = email.trim().toLowerCase();
     const now = new Date().toISOString();
 
     let lead = await getLead(cleanEmail);

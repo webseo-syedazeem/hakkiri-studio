@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getInterview } from "@/lib/interviews/store";
 import { addQuestion, removeQuestion } from "@/lib/questions/store";
 import { requireUser } from "@/lib/auth/require";
+import { readJsonValue } from "@/lib/http/body";
 
 export const runtime = "nodejs";
 
@@ -21,11 +22,13 @@ export async function POST(req: Request) {
     return r as Response;
   }
 
-  const parsed = Add.safeParse(await req.json().catch(() => null));
+  const sent = await readJsonValue(req, 4_000);
+  if (!sent.ok) return sent.response;
+  const parsed = Add.safeParse(sent.json);
   if (!parsed.success) return NextResponse.json({ error: "bad-request", message: parsed.error.issues[0]?.message ?? "That question couldn’t be added." }, { status: 400 });
   const interview = getInterview(parsed.data.interviewId, user.id);
   if (!interview) return NextResponse.json({ error: "not-found", message: "That interview doesn’t exist." }, { status: 404 });
-  const q = addQuestion(parsed.data.interviewId, parsed.data.text, parsed.data.group);
+  const q = addQuestion(parsed.data.interviewId, parsed.data.text, parsed.data.group, user.id);
   return NextResponse.json({ question: q });
 }
 
@@ -43,6 +46,6 @@ export async function DELETE(req: Request) {
   const interview = getInterview(interviewId, user.id);
   if (!interview) return NextResponse.json({ error: "not-found", message: "That interview doesn’t exist." }, { status: 404 });
 
-  const ok = removeQuestion(interviewId, url.searchParams.get("id") ?? "");
+  const ok = removeQuestion(interviewId, url.searchParams.get("id") ?? "", user.id);
   return ok ? NextResponse.json({ ok: true }) : NextResponse.json({ error: "not-found", message: "Only questions you added can be removed." }, { status: 404 });
 }

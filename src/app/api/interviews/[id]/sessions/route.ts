@@ -8,6 +8,7 @@ import { guard } from "@/lib/usage/limits";
 import { setUsageContext } from "@/lib/usage/store";
 import { flushStorage } from "@/lib/storage/disk";
 import { requireUser } from "@/lib/auth/require";
+import { readJsonValue } from "@/lib/http/body";
 
 export const runtime = "nodejs";
 export const maxDuration = 180;
@@ -45,11 +46,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   }
 
   const { id } = await params;
-  const blocked = guard(req, "plan", { practice: true });
+  const blocked = guard(req, "plan", { practice: true, userId: user.id });
   if (blocked) return blocked;
   setUsageContext({ userId: user.id, interviewId: id, feature: "questions" });
   if (!((await getInterviewAsync(id, user.id)) ?? getInterview(id, user.id))) return NextResponse.json({ error: "not-found", message: "That interview doesn’t exist any more." }, { status: 404 });
-  const parsed = Body.safeParse(await req.json().catch(() => null));
+  const sent = await readJsonValue(req, 8_000);
+  if (!sent.ok) return sent.response;
+  const parsed = Body.safeParse(sent.json);
   if (!parsed.success) return NextResponse.json({ error: "bad-request", message: "Those settings couldn’t be used. Check them and try again." }, { status: 400 });
   const body = parsed.data;
   try {

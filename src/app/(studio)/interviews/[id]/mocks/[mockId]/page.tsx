@@ -11,7 +11,6 @@ import { understandingOf } from "@/lib/interviews/build";
 import { categoryLabel, settingsLine } from "@/lib/interviews/settings";
 import { findAnswer } from "@/lib/answers/store";
 import { doneSessions, findMock, findMockAsync, isFresh, previousScore, rerunOf, rowsFor, rowsForAsync, SKIP_REASON_LABEL, type MockRecord } from "@/lib/mocks/store";
-import { demoMock, roadmapAnswer } from "@/lib/mock-data";
 import { buildReport, countsLine, VERDICT_LABEL, type MockRow } from "@/lib/mocks/report";
 import { compareRuns } from "@/lib/sessions/compare";
 import { HABIT_FOR_FIX, HABIT_LABEL, habitLine, rowHabit, suggestDrills } from "@/lib/sessions/drills";
@@ -26,13 +25,9 @@ import { devOr, isLaunch } from "@/lib/launch";
 import { totals, usageFor } from "@/lib/usage/store";
 import { dollars } from "@/lib/usage/prices";
 import { requirePageUser } from "@/lib/auth/require";
+import { mockAiEnabled } from "@/lib/ai/mock";
 
 export const dynamic = "force-dynamic";
-
-const DEMO_NOTE: Record<string, string> = {
-  "no-keys": devOr("This is the demo report. Add DEEPGRAM_API_KEY and GEMINI_API_KEY or ANTHROPIC_API_KEY to .env.local to get a report on your own answers.", "Scoring isn’t available right now, so this is an example. Try again in a few minutes."),
-  "no-audio": "No recording was captured (the mic may be blocked), so this is the demo report.",
-};
 
 const verdictTone = { ready: "text-blue-soft", nearly: "text-lilac", "not-yet": "text-red-soft" } as const;
 
@@ -66,8 +61,8 @@ function Check({ ok }: { ok: boolean | null }) {
 }
 
 /** The first words of an answer, for a quote. */
-function quoteOf(answerId: string | undefined, words = 22): string | null {
-  const a = answerId ? findAnswer(answerId) : undefined;
+function quoteOf(answerId: string | undefined, userId: string, words = 22): string | null {
+  const a = answerId ? findAnswer(answerId, userId) : undefined;
   if (!a || !a.words.length) return null;
   const text = a.words.slice(0, words).map((w) => w.text).join(" ");
   return a.words.length > words ? `${text}…` : text;
@@ -123,23 +118,20 @@ export default async function SessionReportPage({ params, searchParams }: { para
   const { id, mockId } = await params;
   const { demo } = await searchParams;
   const interview = (await getInterviewAsync(id, user.id)) ?? getInterview(id, user.id);
-  let mock = (await findMockAsync(mockId, user.id)) ?? findMock(mockId, user.id);
-  if (!mock && interview?.id === "halden" && !isLaunch()) {
-    mock = { ...demoMock, answerIds: [roadmapAnswer.id], planned: 6, id: mockId };
-  }
+  // Only a session that exists for this person. An address that names no session is "not found": the demo's
+  // session is never shown in its place.
+  const mock = (await findMockAsync(mockId, user.id)) ?? findMock(mockId, user.id);
   if (!interview || !mock || mock.interviewId !== interview.id) notFound();
 
   const micOk = (await cookies()).get("hk_mic_ok")?.value === "1";
   const u = understandingOf(interview);
   const label = (g: MockRow["group"]) => categoryLabel(g, u.technicalLabel);
-  const rows = (await rowsForAsync(mock)) ?? rowsFor(mock);
+  const rows = (await rowsForAsync(mock, user.id)) ?? rowsFor(mock, user.id);
   const report = buildReport(rows, interview.interviewer.name);
   const lengthSec = Math.max(0, (Date.parse(mock.finishedAt) - Date.parse(mock.startedAt)) / 1000);
   const title = sessionTitle(mock, interview);
   const answerHref = (answerId: string, followUps = false) => `/interviews/${interview.id}/answers/${answerId}?mock=${mock.id}${followUps ? "&tab=follow-ups" : ""}`;
   const shortOf = (qid: string) => resolveInterviewQuestion(interview, qid)?.short ?? "this question";
-
-  const demoNote = null;
 
   /* ------------------------------------------------------------ stopped */
   if ((mock.status === "stopped" || mock.status === "planned") && rows.length === 0) {
@@ -171,15 +163,14 @@ export default async function SessionReportPage({ params, searchParams }: { para
 
   /* -------------------------------------------------------------- re-run */
   if (mock.kind === "rerun" && mock.rerunOf) {
-    const source = findMock(mock.rerunOf);
-    const beforeRows = source ? rowsFor(source) : [];
+    const source = findMock(mock.rerunOf, user.id);
+    const beforeRows = source ? rowsFor(source, user.id) : [];
     const fixes = buildReport(beforeRows, interview.interviewer.name).fixes;
     const habits = [...new Set(fixes.map((f) => HABIT_FOR_FIX[f.id]))];
     const c = compareRuns(beforeRows, rows, habits);
     const up = c.score.before != null && c.score.after != null ? c.score.after - c.score.before : null;
     return (
       <div className="flex grow flex-col">
-        {demoNote}
         <Header
           interview={interview}
           mock={mock}
@@ -210,8 +201,8 @@ export default async function SessionReportPage({ params, searchParams }: { para
               {habits.length > 0 && <span className="text-[13px] text-muted">The fixes you were asked to make: {habits.map((h) => HABIT_LABEL[h].toLowerCase()).join(", ")}</span>}
             </div>
             {c.rows.map((r, k) => {
-              const qb = quoteOf(r.beforeAnswerId, 18);
-              const qa = quoteOf(r.afterAnswerId, 18);
+              const qb = quoteOf(r.beforeAnswerId, user.id, 18);
+              const qa = quoteOf(r.afterAnswerId, user.id, 18);
               return (
                 <div key={r.questionId} className={clsx("py-4", k > 0 && "border-t border-line")}>
                   <div className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-4">
@@ -303,7 +294,7 @@ export default async function SessionReportPage({ params, searchParams }: { para
             <Panel className="animate-rise px-6 py-5 [animation-delay:0.14s]">
               <h2 className="text-[15px] font-semibold">Next</h2>
               <p className="mt-0.5 text-[13px] text-muted">Your verdict comes from interviews with new questions. Test what you’ve learned on ones you haven’t heard.</p>
-              <ButtonLink href={`/interviews/${interview.id}#new-questions`} variant="primary" className="mt-3 w-full">
+              <ButtonLink href={`/interviews/${interview.id}`} variant="primary" className="mt-3 w-full">
                 New questions
               </ButtonLink>
             </Panel>
@@ -320,7 +311,7 @@ export default async function SessionReportPage({ params, searchParams }: { para
     const done = d.kind === "habit" && habit ? rows.filter((r) => rowHabit(r, habit)).length : null;
     const first = rows[0];
     const stage = payStage(interview.round);
-    const payRows = d.kind === "pay" ? rows.map((r) => ({ r, checks: payChecks(r.questionId, findAnswer(r.answerId ?? "")?.words ?? [], stage) })) : [];
+    const payRows = d.kind === "pay" ? rows.map((r) => ({ r, checks: payChecks(r.questionId, findAnswer(r.answerId ?? "", user.id)?.words ?? [], stage) })) : [];
     const payMarked = payRows.flatMap((x) => x.checks).filter((c) => c.ok != null);
     const summary =
       d.kind === "pay"
@@ -336,7 +327,6 @@ export default async function SessionReportPage({ params, searchParams }: { para
               : "";
     return (
       <div className="flex grow flex-col">
-        {demoNote}
         <Header
           interview={interview}
           mock={mock}
@@ -359,7 +349,7 @@ export default async function SessionReportPage({ params, searchParams }: { para
         />
         <Panel aria-label="Each answer" className="mt-5 animate-rise px-6 py-4 [animation-delay:0.05s]">
           {rows.map((r, k) => {
-            const a = r.answerId ? findAnswer(r.answerId) : undefined;
+            const a = r.answerId ? findAnswer(r.answerId, user.id) : undefined;
             const before = d.kind === "fix" && k === 0 ? d.before ?? null : null;
             return (
               <div key={r.number} className={clsx("grid grid-cols-[28px_minmax(0,1fr)_200px] gap-4 py-3.5", k > 0 && "border-t border-line")}>
@@ -449,14 +439,14 @@ export default async function SessionReportPage({ params, searchParams }: { para
   }
 
   /* ----------------------------------------------------------- interview */
-  const prev = previousScore(mock);
+  const prev = previousScore(mock, user.id);
   const fresh = isFresh(mock);
-  const latestFresh = doneSessions(interview.id).find(isFresh);
+  const latestFresh = doneSessions(interview.id, user.id).find(isFresh);
   const isLatest = latestFresh?.id === mock.id;
-  const rerun = fresh ? rerunOf(mock.id) : undefined;
+  const rerun = fresh ? rerunOf(mock.id, user.id) : undefined;
   const canRerun = fresh && rerun?.status !== "done";
   const storiesBuilt = new Set((interview.stories ?? []).map((s) => s.skill).filter(Boolean));
-  const doneDrills = doneSessions(interview.id).filter((m) => m.kind === "drill" && m.drill?.fromSession === mock.id).map((m) => m.drill!);
+  const doneDrills = doneSessions(interview.id, user.id).filter((m) => m.kind === "drill" && m.drill?.fromSession === mock.id).map((m) => m.drill!);
   const drills = fresh
     ? suggestDrills({ sessionId: mock.id, rows, fixes: report.fixes, categories: report.categories, gaps: (interview.gaps ?? []).filter((g) => !storiesBuilt.has(g.skill)), technicalLabel: u.technicalLabel, shortOf }).map((x) => ({
         ...x,
@@ -468,28 +458,28 @@ export default async function SessionReportPage({ params, searchParams }: { para
   const replacedCount = skipped.filter((s) => s.reason !== "by-choice").length;
   const skippedByChoice = skipped.filter((s) => s.reason === "by-choice").length;
   const endedEarly = report.questionCount < mock.planned - replacedCount - skippedByChoice;
-  const isFullInterview =
-    (mock.kind === "interview" || mock.kind === "full") &&
-    mock.status === "done" &&
-    !endedEarly &&
-    report.questionCount >= 2;
+  // The same rule the survey route applies: the person's own full interview, planned by the server with its
+  // settings, finished, with at least two answers. The example's built-in session never qualifies.
+  const isFullInterview = mock.userId === user.id && mock.kind === "interview" && !!mock.settings && mock.status === "done" && !endedEarly && report.questionCount >= 2;
   const textOf = (qid: string) => interview.questions.find((q) => q.id === qid)?.text ?? "A question";
   const overallOf = (qid: string) => rows.find((r) => r.questionId === qid)?.overall ?? undefined;
 
   return (
     <div className="flex grow flex-col">
-      {demoNote}
       <InterviewReportView
         interview={interview}
         mock={mock}
         rows={rows}
         report={report}
         whenFormatted={whenSaid(mock.startedAt)}
-        durationFormatted={minutesLong(lengthSec)}
-        difficultyFormatted="Medium"
+        durationFormatted={lengthSec > 0 ? minutesLong(lengthSec) : ""}
+        difficultyFormatted={mock.settings ? settingsLine(mock.settings) : ""}
         isFullInterview={isFullInterview}
         endedEarly={endedEarly}
         micOk={micOk}
+        drills={drills}
+        skipped={skipped.map((s) => ({ question: textOf(s.questionId), reason: SKIP_REASON_LABEL[s.reason] }))}
+        testMode={mockAiEnabled()}
       />
     </div>
   );

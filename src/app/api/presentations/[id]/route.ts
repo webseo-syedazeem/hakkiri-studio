@@ -3,6 +3,7 @@ import { presentationFromForm } from "@/lib/pitch/payload";
 import { deletePresentation, getPresentation, savePresentation } from "@/lib/pitch/store";
 import { deleteRecordings } from "@/lib/answers/audio";
 import { requireUser } from "@/lib/auth/require";
+import { readForm } from "@/lib/http/body";
 
 export const runtime = "nodejs";
 
@@ -20,8 +21,10 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   if (!existing) {
     return NextResponse.json({ error: "not-found", message: "That presentation doesn’t exist." }, { status: 404 });
   }
-  const form = await req.formData().catch(() => null);
-  if (!form) return NextResponse.json({ error: "bad-request", message: "Those changes couldn’t be read. Try again." }, { status: 400 });
+  // A deck's text and its slide pictures: 64 MB in all is far more than a real deck, and nothing larger is read in.
+  const read = await readForm(req, 64 * 1024 * 1024, "Those changes couldn’t be read. Try again.");
+  if (!read.ok) return read.response;
+  const form = read.data;
   const p = await presentationFromForm(form, id, existing);
   if ("message" in p) return NextResponse.json({ error: "bad-request", message: p.message }, { status: 400 });
   p.userId = user.id;

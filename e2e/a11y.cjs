@@ -1,25 +1,18 @@
-// Accessibility pass: crawl the app's pages and run axe-core (WCAG 2.1 A/AA) on each.
+// Accessibility pass: crawl the app's pages as a signed-in user and run axe-core (WCAG 2.1 A/AA) on each.
 // Usage: BASE=http://127.0.0.1:3100 node a11y.cjs > report.json
 const { chromium } = require("playwright");
 const fs = require("fs");
-const path = require("path");
-const BASE = process.env.BASE || "http://127.0.0.1:3100";
+const { BASE, FAKE_MIC, signIn } = require("./helpers.cjs");
 const MAX = Number(process.env.MAX || 60);
 const AXE = fs.readFileSync(require.resolve("axe-core/axe.min.js"), "utf8");
-const START = ["/", "/interviews", "/interviews/new", "/presentations", "/presentations/new", "/story-bank", "/settings", "/mic-check", "/welcome", "/landing", "/privacy", "/terms", ...(process.env.EXTRA || "").split(",").filter(Boolean)];
+const START = ["/", "/dashboard", "/interviews", "/interviews/new", "/practice", "/presentations", "/presentations/new", "/cv", "/interview-examples", "/settings", "/mic-check", "/welcome", "/about", "/privacy", "/terms", ...(process.env.EXTRA || "").split(",").filter(Boolean)];
 
 const pattern = (p) => p.replace(/[0-9a-f]{8}-[0-9a-f-]{27,}/g, ":id").replace(/\?.*$/, "");
 
 (async () => {
-  const browser = await chromium.launch({ args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"] });
-  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, permissions: ["microphone"] });
-  await ctx.addCookies([{ name: "hk_welcomed", value: "1", url: BASE }, { name: "hk_mic_ok", value: "1", url: BASE }]);
-  await ctx.addInitScript(() => {
-    try {
-      Object.defineProperty(window, "speechSynthesis", { value: undefined });
-    } catch {}
-  });
-  const page = await ctx.newPage();
+  const browser = await chromium.launch({ args: FAKE_MIC });
+  // Signed in: without a session every app page is just the login page.
+  const { page } = await signIn(browser, "a11y-crawl");
   const queue = [...START];
   const seen = new Set();
   const results = [];

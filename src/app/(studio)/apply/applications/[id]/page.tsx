@@ -38,6 +38,7 @@ export default function ApplicationWorkspacePage({
 
   // Status Updater
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -58,47 +59,9 @@ export default function ApplicationWorkspacePage({
         } else {
           throw new Error("Application data not found in response");
         }
-      } catch (err) {
-        console.warn("Using fallback application in workspace:", err);
-        setApp({
-          id,
-          userId: "usr_guest",
-          jobId: "job_1",
-          status: "ready",
-          gapMap: [
-            { requirementId: "r-1", strength: "strong", evidenceIds: ["ev_1"] },
-            { requirementId: "r-2", strength: "strong", evidenceIds: ["ev_2"] },
-            { requirementId: "r-3", strength: "partial", evidenceIds: [] },
-          ],
-          fit: 91,
-          mode: "approved",
-          stages: [{ name: "Review Ready", date: new Date().toISOString().slice(0, 10) }],
-          notes: "Auto-matched against candidate Evidence Bank.",
-          answerOutputIds: [],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        });
-        setJob({
-          id: "job_1",
-          source: "paste",
-          title: "Senior Full Stack Engineer & Tech Lead",
-          employer: "FinTech Scaleup",
-          location: "London, UK (Hybrid)",
-          remote: true,
-          text: "Looking for an experienced Senior Full Stack Engineer with strong TypeScript, Next.js, and cloud systems architecture experience.",
-          applyRoute: "open-form",
-          requirements: [
-            { id: "r-1", text: "5+ years commercial TypeScript & modern web frameworks", kind: "must", group: "experience", sourceQuote: "5+ years TypeScript" },
-            { id: "r-2", text: "Track record architecting and scaling cloud systems with 99.99% uptime", kind: "must", group: "skill", sourceQuote: "scaling cloud systems" },
-            { id: "r-3", text: "Experience mentoring cross-functional engineering squads", kind: "nice", group: "trait", sourceQuote: "mentoring squads" },
-          ],
-          keywords: ["TypeScript", "Next.js", "Cloud Architecture", "AWS", "Leadership"],
-          questions: [],
-          tone: "neutral",
-          dedupeKey: "fintech_senior_engineer",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        });
+      } catch {
+        // Not found, not this person's, or it couldn't be loaded. Nothing is shown in its place.
+        setNotFound(true);
       } finally {
         setLoading(false);
       }
@@ -146,6 +109,18 @@ export default function ApplicationWorkspacePage({
     }
   };
 
+  if (notFound || (!loading && (!app || !job))) {
+    return (
+      <div className="flex h-64 flex-col items-center justify-center gap-3 text-center" data-testid="application-not-found">
+        <p className="text-sm font-bold text-ink">This application couldn’t be found</p>
+        <p className="text-xs text-muted">It may have been removed, or it isn’t one of yours.</p>
+        <Link href="/apply/applications" className="rounded-2xl border border-line bg-panel-2 px-4 py-2 text-xs font-bold text-ink">
+          Back to your applications
+        </Link>
+      </div>
+    );
+  }
+
   if (loading || !app || !job) {
     return (
       <div className="flex h-64 items-center justify-center text-muted">
@@ -170,14 +145,14 @@ export default function ApplicationWorkspacePage({
           </Link>
           <div className="flex items-center gap-2 mt-2">
             <h1 className="text-xl md:text-2xl font-black text-ink tracking-tight">
-              {job.title}
+              {job.title || "Title not found in the advert"}
             </h1>
-            <span className="text-muted text-sm font-medium">@ {job.employer}</span>
+            <span className="text-muted text-sm font-medium">{job.employer ? `@ ${job.employer}` : "Employer not found in the advert"}</span>
           </div>
           <div className="flex items-center gap-3 text-xs text-muted mt-1 font-mono">
-            <span>📍 {job.location}</span>
+            <span>📍 {job.location || "Location not found in the advert"}</span>
             <span>•</span>
-            <span className="text-blue font-semibold">{job.applyRoute} route</span>
+            <span className="text-blue font-semibold">{job.applyRoute === "unknown" ? "How to apply: not known" : `${job.applyRoute} route`}</span>
           </div>
         </div>
 
@@ -185,7 +160,7 @@ export default function ApplicationWorkspacePage({
         <div className="flex items-center gap-3">
           <div className="rounded-2xl bg-panel border border-line px-4 py-2 text-center shadow-sm">
             <div className="text-[10px] text-muted font-bold uppercase">Match Fit</div>
-            <div className="text-base font-black text-emerald-400">{app.fit}%</div>
+            <div className="text-base font-black text-emerald-400">{(app as Application & { fitKnown?: boolean }).fitKnown === false ? "Not known" : `${app.fit}%`}</div>
           </div>
 
           <div className="w-52">
@@ -216,7 +191,7 @@ export default function ApplicationWorkspacePage({
           { id: "gap", label: `Gap Map (${strongMatchesCount}/${app.gapMap.length} Matched)` },
           { id: "letter", label: "Cover Letter Generator" },
           { id: "job", label: "Job Description & Specs" },
-          { id: "send", label: "Send Log & Audit Trail" },
+          { id: "send", label: "Send log" },
         ].map((tab) => (
           <button
             key={tab.id}
@@ -387,18 +362,17 @@ export default function ApplicationWorkspacePage({
       {activeTab === "send" && (
         <div className="rounded-2xl border border-line bg-booth p-6 space-y-4">
           <div className="flex items-center justify-between border-b border-line pb-3">
-            <h3 className="text-sm font-bold text-white">Send Log & Verification Trail</h3>
-            <span className="text-xs text-emerald-400">Audit Trail Active</span>
+            <h3 className="text-sm font-bold text-white">Send log</h3>
           </div>
 
           <p className="text-xs text-muted">
-            Every submission through the Hakkiri browser extension writes an immutable send log with filled values and employer confirmation.
+            Nothing has been sent for this application. Hakkiri doesn’t submit applications for you: you send it yourself, and can record where it has got to with the status above.
           </p>
 
           <div className="rounded-xl bg-canvas p-4 border border-line text-xs font-mono text-muted space-y-2">
-            <div>• Application System: {job.applicationSystem || "Greenhouse / Lever Adapter"}</div>
+            <div>• Application system: {job.applicationSystem || "Not known"}</div>
             <div>• Status: {app.status.toUpperCase()}</div>
-            <div>• Route: {job.applyRoute}</div>
+            <div>• Route: {job.applyRoute === "unknown" ? "Not known" : job.applyRoute}</div>
             <div>• Last Checked: {new Date(app.updatedAt).toLocaleString()}</div>
           </div>
         </div>

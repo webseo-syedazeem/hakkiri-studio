@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { LiveInterview, type LiveQuestion, type LiveSession } from "@/components/live/LiveInterview";
-import { demoMock, roadmapAnswer } from "@/lib/mock-data";
+
 import { isLaunch } from "@/lib/launch";
 import { getInterview, getInterviewAsync } from "@/lib/interviews/store";
 import { understandingOf } from "@/lib/interviews/build";
@@ -16,6 +16,7 @@ import { getTopic, resolveInterviewQuestion, topicQuestions } from "@/lib/sessio
 import type { Question } from "@/lib/types";
 import { PAY_STAGE_LABEL, PAY_TIPS, payStage } from "@/lib/sessions/pay";
 import { requirePageUser } from "@/lib/auth/require";
+import { mockAiEnabled } from "@/lib/ai/mock";
 
 export const dynamic = "force-dynamic";
 
@@ -70,10 +71,7 @@ export default async function MockInterviewPage({
   const common = {
     interviewId: interview.id,
     heading: `${interview.company}, ${interview.role.split(",")[0]}`,
-    // Without keys (or a recording), the demo feedback and report are shown: they belong to the Halden demo.
-    // The demo is hidden at launch, so don't point anyone at it.
-    demoFeedbackHref: isLaunch() ? undefined : `/interviews/${demoMock.interviewId}/answers/${roadmapAnswer.id}`,
-    demoReportHref: isLaunch() ? undefined : `/interviews/${demoMock.interviewId}/mocks/${demoMock.id}`,
+    testMode: mockAiEnabled(),
   };
   const byId = (qid: string) => resolveInterviewQuestion(interview, qid);
 
@@ -109,7 +107,7 @@ export default async function MockInterviewPage({
     }
     if (mode === "rerun" && m.rerunOf) {
       const source = findMock(m.rerunOf, user.id);
-      const rows = source ? rowsFor(source) : [];
+      const rows = source ? rowsFor(source, user.id) : [];
       const report = buildReport(rows, interview.interviewer.name);
       live.focus = report.fixes.map((f) => f.title);
       live.before = Object.fromEntries(rows.filter((r) => r.overall != null).map((r) => [r.questionId, r.overall!]));

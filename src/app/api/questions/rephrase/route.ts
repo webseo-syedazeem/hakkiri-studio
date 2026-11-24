@@ -4,13 +4,17 @@ import { aiConfig } from "@/lib/ai/config";
 import { callClaude, extractJson } from "@/lib/ai/providers/claude";
 import { callGemini } from "@/lib/ai/providers/gemini";
 import { mockAiEnabled } from "@/lib/ai/mock";
+import { requireUser } from "@/lib/auth/require";
+import { readJson } from "@/lib/http/body";
+import { guard } from "@/lib/usage/limits";
+import { setUsageContext } from "@/lib/usage/store";
 
 export const runtime = "nodejs";
 
 const Body = z.object({
   question: z.string().trim().min(3).max(400),
-  group: z.string().optional(),
-  hint: z.string().optional(),
+  group: z.string().max(40).optional(),
+  hint: z.string().max(400).optional(),
 });
 
 function fallbackRephrase(q: string): string {
@@ -126,23 +130,23 @@ function fallbackRephrase(q: string): string {
     return "If you had to pick one specific example from your experience, what would you choose and what was the reasoning behind it?";
   }
   if (/^how would you ensure /i.test(q)) {
-    const topic = q.replace(/^how would you ensure /i, "").replace(/\?$/, "");
+    const topic = q.replace(/^how would you ensure /i, "").replace(/[?.!\s]+$/, "");
     return `What concrete steps, design patterns and safeguards would you use to ensure ${topic}?`;
   }
   if (/^tell (me|us) about a time /i.test(q)) {
-    const action = q.replace(/^tell (me|us) about a time (when )?you /i, "").replace(/\?$/, "");
+    const action = q.replace(/^tell (me|us) about a time (when )?you /i, "").replace(/[?.!\s]+$/, "");
     return `Can you share a real-world story from your past where you ${action}, and what the final result was?`;
   }
   if (/^describe a (situation|time) /i.test(q)) {
-    const action = q.replace(/^describe a (situation|time) (where|when) you /i, "").replace(/\?$/, "");
+    const action = q.replace(/^describe a (situation|time) (where|when) you /i, "").replace(/[?.!\s]+$/, "");
     return `Walk us through an actual situation where you ${action}: what was your personal role and outcome?`;
   }
   if (/^how do you /i.test(q)) {
-    const action = q.replace(/^how do you /i, "").replace(/\?$/, "");
+    const action = q.replace(/^how do you /i, "").replace(/[?.!\s]+$/, "");
     return `In your everyday workflow, what is your step-by-step approach to ${action}?`;
   }
   if (/^what (would you|do you) /i.test(q)) {
-    const action = q.replace(/^what (would you|do you) /i, "").replace(/\?$/, "");
+    const action = q.replace(/^what (would you|do you) /i, "").replace(/[?.!\s]+$/, "");
     return `If put in this situation, what would be your initial decision and reasoning regarding ${action}?`;
   }
 
@@ -150,15 +154,25 @@ function fallbackRephrase(q: string): string {
   return "Put simply: walk the interviewer through your personal thinking and decision-making on this topic, using a real-world example.";
 }
 
-/** POST /api/questions/rephrase: rephrases an interview question clearly and concisely */
+/**
+ * POST /api/questions/rephrase: rephrases an interview question clearly and concisely.
+ * It calls an AI service, so it is for signed-in people only, counted against
+ * their own allowance like every other AI route.
+ */
 export async function POST(req: Request) {
-  const json = await req.json().catch(() => null);
-  const parsed = Body.safeParse(json);
-  if (!parsed.success) {
-    return NextResponse.json({ error: "bad-request", message: "Question text is required." }, { status: 400 });
+  let user;
+  try {
+    user = await requireUser();
+  } catch (r) {
+    return r as Response;
   }
+  const blocked = guard(req, "ai", { inSession: true, userId: user.id });
+  if (blocked) return blocked;
+  setUsageContext({ userId: user.id, feature: "interview" });
 
-  const { question } = parsed.data;
+  const read = await readJson(req, Body, { max: 4_000, message: "Question text is required." });
+  if (!read.ok) return read.response;
+  const { question } = read.data;
 
   // If AI is disabled or keys not configured, return smart rule-based rephrase
   if (mockAiEnabled() || (!aiConfig.anthropicKey && !aiConfig.geminiKey)) {
