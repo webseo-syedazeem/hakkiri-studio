@@ -125,45 +125,63 @@ export class PlanError extends Error {}
 
 /** An interview with new questions. Writes more first if the bank is short. */
 export async function planInterview(interviewId: string, settings: SessionSettings, userId: string): Promise<MockRecord> {
-  await settled(interviewId, userId);
   let interview = (await getInterviewAsync(interviewId, userId)) ?? getInterview(interviewId, userId);
   if (!interview) throw new PlanError("That interview doesn’t exist any more.");
+  if (interview.questions.length === 0) {
+    await settled(interviewId, userId);
+    interview = (await getInterviewAsync(interviewId, userId)) ?? getInterview(interviewId, userId);
+    if (!interview) throw new PlanError("That interview doesn’t exist any more.");
+  }
   // Remember these settings for next time.
   // A named mix sets the round too (it decides how the pay drill talks about pay).
   interview = updateInterview(interviewId, (i) => ({ ...i, settings, style: styleFor(settings.difficulty), round: settings.preset === "custom" ? i.round : roundFor(settings.preset) }), userId) ?? interview;
   await saveInterviewAsync(interview, userId);
   const lastAsked = await lastAskedMapAsync(interviewId, userId);
   let picked = pickQuestions(interview.questions, settings, lastAsked);
+
+  // If short of unheard questions in this difficulty tier, allow repeats first
+  if (CATEGORY_ORDER.some((c) => picked.short[c] > 0)) {
+    const withRepeats = pickQuestions(interview.questions, settings, lastAsked, { allowRepeats: true });
+    if (CATEGORY_ORDER.every((c) => withRepeats.short[c] === 0) && withRepeats.questionIds.length > 0) {
+      picked = withRepeats;
+    }
+  }
+
+  // If still short in a category (e.g. tier has no questions), backfill from other tiers in that category
+  if (CATEGORY_ORDER.some((c) => picked.short[c] > 0)) {
+    for (const c of CATEGORY_ORDER) {
+      while (picked.short[c] > 0) {
+        const pool = interview.questions.filter(
+          (q) => q.group === c && !q.slot && !q.retired && !q.pay && !q.drillOnly,
+        );
+        if (!pool.length) break;
+        const candidate = pool.find((q) => !picked.questionIds.includes(q.id)) ?? pool[0];
+        if (!candidate) break;
+        picked.questionIds.push(candidate.id);
+        picked.short[c] -= 1;
+      }
+    }
+  }
+
   const need = questionsNeeded(picked);
   if (needsAny(need)) {
-    const missingMain = CATEGORY_ORDER.some((c) => picked.short[c] > 0);
-    if (missingMain) {
-      // If bank has questions that can be repeated, start immediately and top up in background
-      const withRepeats = pickQuestions(interview.questions, settings, lastAsked, { allowRepeats: true });
-      if (CATEGORY_ORDER.every((c) => withRepeats.short[c] === 0) && withRepeats.questionIds.length > 0) {
-        picked = withRepeats;
-        void withLock(interviewId, userId, async () => {
-          const fresh = (await getInterviewAsync(interviewId, userId)) ?? getInterview(interviewId, userId)!;
-          await addQuestions(fresh, need, { difficulty: settings.difficulty }, userId);
-        }).catch((err) => console.warn("[sessions] background question generation:", err));
-      } else {
-        await withLock(interviewId, userId, async () => {
-          const fresh = (await getInterviewAsync(interviewId, userId)) ?? getInterview(interviewId, userId)!;
-          await addQuestions(fresh, need, { difficulty: settings.difficulty }, userId);
-        });
-        interview = getInterview(interviewId, userId)!;
-        picked = pickQuestions(interview.questions, settings, lastAsked);
-      }
+    if (picked.questionIds.length === 0) {
+      // Bank is completely empty; must generate synchronously
+      await withLock(interviewId, userId, async () => {
+        const fresh = (await getInterviewAsync(interviewId, userId)) ?? getInterview(interviewId, userId)!;
+        await addQuestions(fresh, need, { difficulty: settings.difficulty }, userId);
+      });
+      interview = getInterview(interviewId, userId)!;
+      picked = pickQuestions(interview.questions, settings, lastAsked);
     } else {
-      // Main questions are 100% ready; generate spares in background so the user starts with zero wait
+      // Questions are ready for this session; generate additional / tier questions in background so start is instantaneous (< 100ms)
       void withLock(interviewId, userId, async () => {
         const fresh = (await getInterviewAsync(interviewId, userId)) ?? getInterview(interviewId, userId)!;
         await addQuestions(fresh, need, { difficulty: settings.difficulty }, userId);
-      }).catch((err) => console.warn("[sessions] background spare generation:", err));
+      }).catch((err) => console.warn("[sessions] background question generation:", err));
     }
   }
-  // Still short (the standard set ran out without a key): bring back the ones you had longest ago (same difficulty only).
-  if (CATEGORY_ORDER.some((c) => picked.short[c] > 0)) picked = pickQuestions(interview.questions, settings, lastAsked, { allowRepeats: true });
+
   if (picked.questionIds.length === 0) throw new PlanError("There are no questions for these settings yet.");
   const session = createSession({ interviewId, kind: "interview", settings, questionIds: picked.questionIds, spareIds: picked.spareIds, style: styleFor(settings.difficulty) }, userId);
   await saveMockAsync(session, userId);
@@ -206,9 +224,13 @@ export function ensurePayQuestions(interviewId: string, userId: string): Intervi
 
 /** A drill: its questions come from the bank (writing more for a category drill if needed). */
 export async function planDrill(interviewId: string, spec: DrillSpec, userId: string): Promise<MockRecord> {
-  await settled(interviewId, userId);
   let interview = spec.kind === "pay" ? ensurePayQuestions(interviewId, userId) : ((await getInterviewAsync(interviewId, userId)) ?? getInterview(interviewId, userId));
   if (!interview) throw new PlanError("That interview doesn’t exist any more.");
+  if (interview.questions.length === 0) {
+    await settled(interviewId, userId);
+    interview = spec.kind === "pay" ? ensurePayQuestions(interviewId, userId) : ((await getInterviewAsync(interviewId, userId)) ?? getInterview(interviewId, userId));
+    if (!interview) throw new PlanError("That interview doesn’t exist any more.");
+  }
   const settings = settingsOr(interview.settings, interview.style);
   const lastAsked = await lastAskedMapAsync(interviewId, userId);
   if (spec.kind === "category" && spec.group) {

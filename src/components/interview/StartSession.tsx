@@ -143,7 +143,7 @@ export function NewInterviewPanel({
       <div className="mt-4 flex items-center justify-end gap-3 border-t border-line pt-4">
         <Button variant="primary" size="lg" disabled={busy} onClick={() => void plan({ kind: "interview", settings })}>
           <Icon name="mic" size={17} strokeWidth={2} />
-          {busy ? (slow ? "Writing your questions…" : "Starting…") : label}
+          {busy ? (slow ? "Preparing questions…" : "Starting…") : label}
         </Button>
       </div>
       {error && (

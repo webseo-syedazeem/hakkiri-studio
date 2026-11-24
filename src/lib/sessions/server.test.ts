@@ -78,6 +78,25 @@ describe("skipped questions", () => {
 });
 
 describe("no-repeat persistence across difficulty levels", () => {
+  it("plans HMRC interview instantly for easy, medium, and hard without delay", async () => {
+    const t0 = performance.now();
+    const hmrcEasy = await planInterview(
+      "hmrc",
+      { ...DEFAULT_SETTINGS, minutes: 10, difficulty: "easy", mix: { competency: 40, technical: 20, curveball: 20, motivation: 20, cv: 0 } },
+      U,
+    );
+    const duration = performance.now() - t0;
+    expect(duration).toBeLessThan(150); // Instant, under 150ms!
+    expect((hmrcEasy.questionIds ?? []).length).toBeGreaterThanOrEqual(3);
+
+    const hmrc30 = await planInterview(
+      "hmrc",
+      { ...DEFAULT_SETTINGS, minutes: 30, difficulty: "medium" },
+      U,
+    );
+    expect((hmrc30.questionIds ?? []).length).toBeGreaterThanOrEqual(6);
+  });
+
   it("tracks asked questions in incomplete sessions and keeps Easy separate from Hard", async () => {
     const easyRun1 = await planInterview("halden", { ...DEFAULT_SETTINGS, minutes: 20, difficulty: "easy" }, U);
     const firstNonSlot = (easyRun1.questionIds ?? []).filter((id) => id !== "open" && id !== "close");

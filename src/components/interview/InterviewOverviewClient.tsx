@@ -65,6 +65,7 @@ export const FOCUS_PRESETS: Record<
 import { InterviewTabs } from "./InterviewTabs";
 import { StartButton } from "./StartSession";
 import { updateClientInterviewStages } from "@/lib/interviews/client-store";
+import { prefetchVoice } from "@/components/audio/speak";
 
 export type OverviewStageOption = {
   id: string;
@@ -324,6 +325,12 @@ export function InterviewOverviewClient({
     window.addEventListener("hk_interviews_updated", syncStages);
     return () => window.removeEventListener("hk_interviews_updated", syncStages);
   }, [interviewId, roleTitle, companyName, stageId]);
+
+  useEffect(() => {
+    // Pre-warm the interviewer's voice for the opening question so audio is ready immediately
+    const introText = `Welcome. I’m ${interviewerName}. Tell me about yourself and your background.`;
+    prefetchVoice(introText);
+  }, [interviewerName]);
 
   const deleteStage = async (e: React.MouseEvent, idToDelete: string) => {
     e.stopPropagation();
