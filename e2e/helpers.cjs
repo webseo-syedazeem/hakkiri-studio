@@ -89,4 +89,25 @@ async function closeSurvey(page) {
   if (await close.waitFor({ timeout: 4000 }).then(() => true, () => false)) await close.click();
 }
 
-module.exports = { BASE, OUT, FIXTURES, FAKE_MIC, JOB_SPEC, signIn, setUpInterview, closeSurvey };
+/**
+ * Answers every question the interviewer asks (and each follow-up) until the address matches `done`:
+ * "Start answering", a few seconds of the fake microphone, "Finish answer". Returns how many were answered.
+ */
+async function answerUntil(page, done, { speakMs = 3600, limit = 120 } = {}) {
+  let answered = 0;
+  for (let n = 0; !done.test(page.url()); n++) {
+    if (n > limit) throw new Error(`answerUntil: still at ${page.url()} after ${limit} tries`);
+    const start = page.getByRole("button", { name: "Start answering" });
+    if (!(await start.waitFor({ timeout: 1500 }).then(() => true, () => false))) continue;
+    // The question may finish being read out before the click lands.
+    await start.click({ timeout: 2500 }).catch(() => {});
+    const finish = page.getByRole("button", { name: "Finish answer" });
+    if (!(await finish.waitFor({ timeout: 20000 }).then(() => true, () => false))) continue;
+    await page.waitForTimeout(speakMs);
+    await finish.click().catch(() => {});
+    answered++;
+  }
+  return answered;
+}
+
+module.exports = { BASE, OUT, FIXTURES, FAKE_MIC, JOB_SPEC, signIn, setUpInterview, closeSurvey, answerUntil };

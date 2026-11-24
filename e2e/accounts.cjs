@@ -236,7 +236,10 @@ const personalKeys = (page) =>
     check((await s.getByPlaceholder("e.g. HMRC, Monzo, Google").inputValue()) === DRAFT_COMPANY, "…and the set-up form shows it");
     await s.screenshot({ path: `${OUT}/accounts-shared-first-back.png` });
 
-    // Deleting all data clears what the browser holds as well.
+    // Deleting all data clears what the browser holds as well. (The button is offered once the account has
+    // something saved on the server, so this person sets up an interview first.)
+    const mine = await sApi.post(`${BASE}/api/interviews`, { data: { company: { name: "Lantern Atlas" }, job: { title: "Collections Officer", text: JOB }, cv: { text: CV, label: "CV.pdf" }, format: "video" } });
+    if (!mine.ok()) throw new Error(`The first person's interview couldn't be built: ${mine.status()} ${await mine.text()}`);
     await s.goto(`${BASE}/settings`, { waitUntil: "networkidle" });
     const del = s.getByRole("button", { name: /Delete (all )?my data|Delete everything/i }).first();
     if (await del.count()) {
@@ -249,6 +252,8 @@ const personalKeys = (page) =>
       check(res.ok(), "“Delete all my data” succeeds", `${res.status()}`);
       await s.waitForFunction(() => !localStorage.getItem("hk_interview_wizard_draft"), null, { timeout: 10000 }).catch(() => undefined);
       check((await personalKeys(s)).length === 0, "…and what the browser held for that person is gone too", (await personalKeys(s)).join(", "));
+      await s.goto(`${BASE}/interviews`, { waitUntil: "networkidle" });
+      check(!(await s.locator("body").innerText()).includes("Lantern Atlas"), "…and the interview they set up is gone from their list");
     } else {
       check(false, "The “Delete all my data” button was not found on Settings");
     }

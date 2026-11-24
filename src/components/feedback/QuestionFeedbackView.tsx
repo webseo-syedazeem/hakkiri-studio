@@ -265,7 +265,7 @@ export function QuestionFeedbackView({
             )}
           </div>
 
-          <Link href={closeReportUrl} aria-label="Close and go back" className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-muted hover:text-white transition-colors">
+          <Link href={closeReportUrl} aria-label="Close and return to report" title="Close and return to report" className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-muted hover:text-white transition-colors">
             <Icon name="x" size={16} />
           </Link>
         </div>

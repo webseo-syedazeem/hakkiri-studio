@@ -61,7 +61,7 @@ const input = "w-full rounded-[9px] bg-panel-2 px-3 py-2 text-sm outline-none sh
 
 function Row({ label, was, isChanged, showWas, children }: { label: string; was: string; isChanged: boolean; showWas: boolean; children: React.ReactNode }) {
   return (
-    <div className="grid grid-cols-[150px_minmax(0,1fr)] gap-4 border-t border-line py-3 first-of-type:border-t-0">
+    <div className="grid grid-cols-1 gap-2 border-t border-line py-3 first-of-type:border-t-0 sm:grid-cols-[150px_minmax(0,1fr)] sm:gap-4">
       <div className="pt-2 text-[13px] font-semibold">
         {label}
         {isChanged && <span className="ml-2 rounded-[5px] bg-blue/20 px-1.5 py-0.5 text-[11px] font-bold text-blue-soft">Changed</span>}
@@ -224,7 +224,7 @@ export function RebuildFlow({
   }
 
   return (
-    <div className="mt-5 grid grid-cols-[minmax(0,1fr)_400px] items-start gap-5">
+    <div className="mt-5 grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_400px]">
       <Panel aria-label="What Hakkiri understood" className="animate-rise px-6 py-5">
         <div className="flex items-baseline justify-between gap-4">
           <h2 className="text-[15px] font-semibold">{sessionId ? (anyChange ? "What Hakkiri changed" : "What Hakkiri understood") : "What Hakkiri understood"}</h2>

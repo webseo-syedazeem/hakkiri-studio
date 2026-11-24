@@ -642,7 +642,7 @@ export function InterviewReportView(p: InterviewReportViewProps) {
                 className={clsx(
                   "px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all border",
                   active
-                    ? "bg-blue border-blue-soft text-white shadow-[0_0_14px_rgba(79,70,229,0.4)]"
+                    ? "bg-blue-fill border-blue-soft text-white shadow-[0_0_14px_rgba(79,70,229,0.4)]"
                     : "bg-[#141326] border-white/10 text-muted hover:text-white hover:border-white/20"
                 )}
               >
@@ -666,7 +666,7 @@ export function InterviewReportView(p: InterviewReportViewProps) {
             <div className="space-y-2">
               {activePlaybook.structure.map((item) => (
                 <div key={item.step} className="flex items-start gap-2.5 text-xs text-[#c9cad3]">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue text-[10px] font-bold text-white mt-0.5">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-fill text-[10px] font-bold text-white mt-0.5">
                     {item.step}
                   </span>
                   <div>

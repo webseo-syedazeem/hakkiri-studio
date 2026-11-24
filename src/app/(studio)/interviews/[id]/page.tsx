@@ -136,6 +136,7 @@ export default async function InterviewOverview({
       initialSettings={settings}
       initialStageId={initialStageId}
       stages={stages}
+      ownStages={customStages.length > 0}
       scoreCategories={scoreCategories}
       topics={getTopicsForInterview(interview).map((t) => ({ id: t.id, title: t.title }))}
       roleSummary={roleSummary}

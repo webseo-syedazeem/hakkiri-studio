@@ -238,6 +238,7 @@ export function InterviewOverviewClient({
   initialSettings,
   initialStageId,
   stages,
+  ownStages,
   scoreCategories,
   topics,
   roleSummary,
@@ -257,6 +258,8 @@ export function InterviewOverviewClient({
   initialSettings: SessionSettings;
   initialStageId: string;
   stages: OverviewStageOption[];
+  /** True when the stages are the ones the person entered for this interview, not the default kinds of round. */
+  ownStages: boolean;
   scoreCategories: OverviewScoreCategory[];
   topics: { id: string; title: string }[];
   roleSummary: string;
@@ -425,9 +428,17 @@ export function InterviewOverviewClient({
               <div className="mt-0.5 text-xs text-muted flex flex-wrap items-center gap-2">
                 <span>{companyName}</span>
                 <span>·</span>
-                <span>{activeStages.length} interview {activeStages.length === 1 ? "stage" : "stages"}</span>
-                <span>·</span>
-                <span>Next: {nextStage.label}</span>
+                {ownStages ? (
+                  <>
+                    <span>
+                      {activeStages.length} interview {activeStages.length === 1 ? "stage" : "stages"}
+                    </span>
+                    <span>·</span>
+                    <span>Next: {nextStage.label}</span>
+                  </>
+                ) : (
+                  <span>No stages added</span>
+                )}
                 <span>·</span>
                 <span>
                   {whenText}{" "}
@@ -437,7 +448,7 @@ export function InterviewOverviewClient({
             </div>
           </div>
 
-          <div className="flex shrink-0 items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2.5">
             <Link
               href={`/interviews/${interviewId}/rebuild?edit=1`}
               className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-semibold text-white/90 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.08] hover:text-white hover:shadow-[0_4px_16px_rgba(0,0,0,0.3)] active:scale-[0.98]"
@@ -691,8 +702,8 @@ export function InterviewOverviewClient({
           {/* Card 4: Your interview stages */}
           <Panel className="p-5 sm:p-6 space-y-3">
             <div>
-              <h2 className="text-sm font-bold text-white">Your interview stages</h2>
-              <p className="text-xs text-muted">Track your progress and prepare for each round.</p>
+              <h2 className="text-sm font-bold text-white">{ownStages ? "Your interview stages" : "Rounds to practise"}</h2>
+              <p className="text-xs text-muted">{ownStages ? "Track your progress and prepare for each round." : "You haven’t added this interview’s stages, so these are the usual kinds of round. Pick one to practise it."}</p>
             </div>
 
             <div className="relative pl-6 space-y-3.5 before:absolute before:left-2.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-line pt-2">

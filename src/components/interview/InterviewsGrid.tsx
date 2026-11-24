@@ -34,7 +34,7 @@ export function InterviewsGrid({
   const merged: SerializedInterview[] = initialInterviews;
 
   return (
-    <div className="mt-6 grid grid-cols-[repeat(auto-fill,minmax(400px,1fr))] gap-5">
+    <div className="mt-6 grid grid-cols-[repeat(auto-fill,minmax(min(100%,400px),1fr))] gap-5">
       {merged.map((iv, i) => (
         <Link
           key={iv.id}
