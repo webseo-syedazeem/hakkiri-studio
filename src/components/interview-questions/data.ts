@@ -170,8 +170,8 @@ export const QUESTIONS_DATA: QuestionItem[] = [
     howToAnswer: "Their need, your proof, your value, in 30 to 60 seconds.",
     example: "You need someone who can handle a high volume of customers. I've done that for three years and often took escalated cases. I can help your team from week one.",
     guideLink: {
-      href: "/interview-questions/tell-me-about-yourself#follow-ups",
-      text: "Full guide with sample answers →",
+      href: "/interview-questions/why-should-we-hire-you",
+      text: "Full guide with 20+ sample answers →",
     },
   },
   {
@@ -335,5 +335,212 @@ export const GUIDE_FAQS = [
   {
     q: "How can I practice my answer?",
     a: "Write your three parts, then say them out loud and time yourself. Practicing with a mock interview, such as an AI interviewer that asks follow-up questions, helps you sound natural.",
+  },
+];
+
+/* =========================================================================
+   WHY SHOULD WE HIRE YOU DATA
+   ========================================================================= */
+
+export interface SampleAnswerItem {
+  id: string;
+  label: string;
+  role?: string;
+  text: string;
+  note?: string;
+}
+
+export const WHY_HIRE_SITUATION_ANSWERS: SampleAnswerItem[] = [
+  {
+    id: "no-experience",
+    label: "With no experience",
+    role: "Recent Graduate / First Job",
+    text: "You're looking for someone who learns quickly and works well with a team. At college, I led a four-person project to build a marketing plan for a local café, and the owner used our ideas for her spring promotion. I also worked part-time while studying, so I know how to manage my time and deal with customers. I'm ready to learn fast and be useful early.",
+    note: "Connects course project success and student part-time work to fast on-the-job contribution.",
+  },
+  {
+    id: "internship",
+    label: "For an internship",
+    role: "Student / Intern",
+    text: "I've already used the skills this internship needs. In my data class, I cleaned and analyzed a real dataset and presented what I found. I'm curious, I ask questions early and I finish what I start. I'd bring that energy and learn as much as I can from your team.",
+    note: "Directly proves coursework skills, curiosity, and work ethic.",
+  },
+  {
+    id: "experienced",
+    label: "As an experienced candidate",
+    role: "Mid / Senior Level",
+    text: "You need someone who can run projects from start to finish and keep stakeholders aligned. Over the last five years, I've led projects with budgets of up to $500,000, and I set up a weekly report that cut our status meetings in half. I can bring the same structure here and help your team deliver with fewer surprises.",
+    note: "Quantifies budget management ($500k) and shows time-saving efficiency.",
+  },
+  {
+    id: "career-changer",
+    label: "As a career changer",
+    role: "Transferring Industries",
+    text: "I'm new to this field, but not to the skills it needs. As a teacher, I explained complex ideas simply, managed 30 people at once and kept detailed records every day. Those are the core of a customer success role. I've also completed a course to fill the technical gaps, so I'd bring a fresh view and strong communication from day one.",
+    note: "Frames transferable strengths (communication, group management) and coursework proactively.",
+  },
+  {
+    id: "over-others",
+    label: "Over other candidates",
+    role: "Standing Out Professionally",
+    text: "I can't speak for the other candidates, but I can tell you what I bring. I have the technical skills this role needs and three years of working directly with clients, so I can build the solution and explain it clearly to the people who use it.",
+    note: "Never criticizes other candidates. Highlights a rare dual mix of technical depth + client-facing clarity.",
+  },
+];
+
+export const WHY_HIRE_JOB_ANSWERS: SampleAnswerItem[] = [
+  {
+    id: "customer-service",
+    label: "Customer service representative",
+    text: "You need someone calm under pressure who fixes problems on the first contact. I've handled a high call volume for two years and regularly took escalated cases. I'd help your team keep customers happy and reduce repeat calls.",
+  },
+  {
+    id: "retail-sales",
+    label: "Retail sales associate",
+    text: "You want someone who can help customers and drive sales on a busy floor. In my last store, I was often one of the top sellers on my shift because I asked questions before suggesting products. I'd bring that same approach to your store.",
+  },
+  {
+    id: "nurse",
+    label: "Nurse",
+    text: "Your unit needs a nurse who stays organized under pressure and communicates clearly with patients and families. During my rotations, I cared for up to five patients per shift and worked closely with doctors on care plans. I'm committed to safe, kind care, and I'd be a dependable part of your team.",
+  },
+  {
+    id: "teacher",
+    label: "Teacher",
+    text: "You're looking for a teacher who can engage every student, not just the confident ones. I use small groups and quick check-ins so no one falls behind, and my students' reading scores rose over the year. I'd bring that focus on every learner to your classroom.",
+  },
+  {
+    id: "software-engineer",
+    label: "Software engineer",
+    text: "You need an engineer who can ship reliable code and work across teams. In my current role, I rebuilt a slow part of our checkout, working with design and product the whole way. I'd bring that mix of hands-on coding and teamwork.",
+  },
+  {
+    id: "data-analyst",
+    label: "Data analyst",
+    text: "You need someone who can turn data into decisions. I built a weekly dashboard that my manager used to plan stock, and it helped us cut waste. I can do the same with your data and make it easy for non-technical teams to use.",
+  },
+  {
+    id: "project-manager",
+    label: "Project manager",
+    text: "You need someone who keeps projects on time and people informed. I've delivered projects across several teams by setting clear owners and weekly check-ins. I'd bring that structure and help your team hit deadlines with less stress.",
+  },
+  {
+    id: "marketing-coordinator",
+    label: "Marketing coordinator",
+    text: "You want someone who can plan campaigns and track what works. I ran our social media calendar and grew engagement by testing posts and doubling down on what performed. I'd bring that test-and-learn approach to your campaigns.",
+  },
+  {
+    id: "admin-assistant",
+    label: "Administrative assistant",
+    text: "You need someone organized who keeps the office running smoothly. I managed calendars, travel and supplies for a team of 12, with nothing falling through the cracks. I'd take that off your plate so your team can focus on their work.",
+  },
+  {
+    id: "accountant",
+    label: "Accountant or bookkeeper",
+    text: "You need accurate books and on-time closes. I handled monthly reconciliations for several clients and spotted errors before they became problems. I'd bring that attention to detail to your finance team.",
+  },
+  {
+    id: "sales-rep",
+    label: "Sales representative",
+    text: "You need someone who can build a pipeline and close. I consistently met my targets by following up quickly and learning each client's real problem. I'd bring that discipline and help your team grow revenue.",
+  },
+  {
+    id: "restaurant-staff",
+    label: "Server or restaurant staff",
+    text: "You need someone fast, friendly and calm on a busy night. I've worked weekend rushes for two years and kept tables happy even when the kitchen was backed up. I'd be a steady pair of hands on your floor.",
+  },
+  {
+    id: "warehouse-associate",
+    label: "Warehouse associate",
+    text: "You need someone reliable who works safely and hits pick targets. I've worked full shifts on my feet, followed safety rules closely and rarely missed a day. You can count on me to show up and get the work done.",
+  },
+  {
+    id: "medical-assistant",
+    label: "Medical assistant",
+    text: "You need someone who can keep patients comfortable and the schedule moving. I've taken vitals, prepared rooms and updated records in a busy clinic. I'd help your providers see patients on time and feel supported.",
+  },
+  {
+    id: "graphic-designer",
+    label: "Graphic designer",
+    text: "You need a designer who delivers on brand and on deadline. My portfolio shows campaigns I took from brief to launch, often with tight turnarounds. I'd bring clean, consistent design and easy collaboration to your team.",
+  },
+];
+
+export const WHY_HIRE_FAQS = [
+  {
+    q: "What is the best answer to \"Why should we hire you?\"",
+    a: "Connect two or three of your strongest skills to what the job needs, prove each with a real example, and end with how you will help the team, all in 30 to 60 seconds.",
+  },
+  {
+    q: "How do I answer \"Why should we hire you?\" with no experience?",
+    a: "Use projects, part-time work, volunteering or school results as proof, and show that you learn fast and are ready to contribute early.",
+  },
+  {
+    q: "How long should my answer be?",
+    a: "About 30 to 60 seconds, or four to six sentences.",
+  },
+  {
+    q: "How do I answer \"Why should we hire you over other candidates?\"",
+    a: "Don't mention the other candidates. Explain what makes you different, such as a rare mix of skills or direct experience with the same problems the company has.",
+  },
+  {
+    q: "Should I memorize my answer?",
+    a: "Learn your three main points, not a script. Then practice out loud until it sounds natural.",
+  },
+  {
+    q: "Can I mention salary in my answer?",
+    a: "No. This question is about what you bring to the company, so keep the focus on your skills and value.",
+  },
+];
+
+export const WEAK_TO_STRONG_DRAFTS = [
+  {
+    draft: "Draft 1: Weak",
+    badge: "Weak",
+    badgeClass: "bg-red-100 text-red-700 border-red-200",
+    quote: "I'm a hard worker, I'm great with people, and I'm really passionate about customer service. I think I'd be a great fit.",
+    analysis: "Problem: nothing is proven. Any candidate could say it.",
+  },
+  {
+    draft: "Draft 2: Better",
+    badge: "Better",
+    badgeClass: "bg-amber-100 text-amber-700 border-amber-200",
+    quote: "I have two years of customer service experience at a busy call center. I handled a lot of calls and often took the difficult cases. I'm patient and I like solving problems.",
+    analysis: "Better: real experience. Still missing: it is about the candidate, not the company.",
+  },
+  {
+    draft: "Draft 3: Strong",
+    badge: "Strong (Winning Answer)",
+    badgeClass: "bg-emerald-100 text-emerald-800 border-emerald-300 font-bold",
+    quote: "Your job post says you need someone who can handle a high volume of calls and calm down upset customers. That's what I did for two years at a busy call center, where I handled around 60 calls a day and was the person my manager gave escalated cases to. I listen first, I stay calm and I follow up until the problem is fixed. I'd bring that from my first week and help your team keep wait times and complaints down.",
+    analysis: "Why it works: it starts with their need, proves it with a number and ends with what the company gets.",
+  },
+];
+
+export const INTERVIEWER_CHECKLIST = [
+  {
+    listenFor: "Relevance",
+    strong: "Skills from this job description",
+    weak: "General strengths",
+  },
+  {
+    listenFor: "Proof",
+    strong: "A number, result or short story",
+    weak: "Words like \"hardworking\"",
+  },
+  {
+    listenFor: "Focus",
+    strong: "What the company gets",
+    weak: "What you want from the job",
+  },
+  {
+    listenFor: "Length",
+    strong: "30 to 60 seconds",
+    weak: "Two-plus minutes, or one line",
+  },
+  {
+    listenFor: "Delivery",
+    strong: "Calm, clear, natural",
+    weak: "Rushed or memorized word for word",
   },
 ];

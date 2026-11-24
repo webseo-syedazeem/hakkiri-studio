@@ -124,6 +124,20 @@ export function SiteNav() {
                 The 60-second formula & 9 role sample answers
               </span>
             </Link>
+
+            <Link
+              href="/interview-questions/why-should-we-hire-you"
+              onClick={() => setQuestionsMenuOpen(false)}
+              className="flex flex-col gap-0.5 rounded-xl p-2.5 transition-colors hover:bg-slate-100/80"
+            >
+              <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                <span className="text-emerald-600 font-bold">●</span>
+                Why Should We Hire You? Guide
+              </span>
+              <span className="text-[11px] text-slate-500 pl-3.5">
+                3-sentence formula & 20+ sample answers
+              </span>
+            </Link>
           </div>
         )}
       </div>

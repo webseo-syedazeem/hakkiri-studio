@@ -164,9 +164,9 @@ export default function InterviewQuestionsHubPage() {
                 </span>
                 <div className="text-sm text-slate-700 leading-relaxed">
                   <strong className="text-slate-900">Why should we hire you?</strong> Match your top skills to the job and prove them with examples.{" "}
-                  <a href="#q16" className="font-semibold text-blue-600 hover:underline inline-flex items-center gap-0.5">
+                  <Link href="/interview-questions/why-should-we-hire-you" className="font-semibold text-blue-600 hover:underline inline-flex items-center gap-0.5">
                     See how to answer <IconChevronRight className="h-3 w-3" />
-                  </a>
+                  </Link>
                 </div>
               </li>
 
@@ -356,22 +356,25 @@ export default function InterviewQuestionsHubPage() {
             </Link>
 
             {/* Guide 2 */}
-            <div className="group relative rounded-2xl border border-slate-200 bg-white p-6 shadow-xs flex flex-col justify-between">
+            <Link
+              href="/interview-questions/why-should-we-hire-you"
+              className="group relative rounded-2xl border border-slate-200 bg-white p-6 shadow-xs transition-all hover:border-blue-400 hover:shadow-md flex flex-col justify-between"
+            >
               <div>
-                <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold text-slate-600 uppercase tracking-wide mb-3">
-                  Quick Guide
+                <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700 uppercase tracking-wide mb-3">
+                  Comprehensive Guide
                 </span>
-                <h3 className="text-lg font-bold text-slate-900">
+                <h3 className="text-lg font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
                   Why should we hire you?
                 </h3>
                 <p className="mt-2 text-xs text-slate-600 leading-relaxed">
                   A proven 3-sentence formula and 20+ sample answers to prove your value quickly.
                 </p>
               </div>
-              <a href="#q16" className="mt-6 flex items-center gap-1.5 text-xs font-semibold text-slate-700 hover:text-blue-600">
-                Jump to question 16 <IconArrowRight className="h-3.5 w-3.5" />
-              </a>
-            </div>
+              <div className="mt-6 flex items-center gap-1.5 text-xs font-semibold text-blue-600">
+                Read the full guide <IconArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+              </div>
+            </Link>
 
             {/* Guide 3 */}
             <div className="group relative rounded-2xl border border-slate-200 bg-white p-6 shadow-xs flex flex-col justify-between">
