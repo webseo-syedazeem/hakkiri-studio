@@ -544,3 +544,152 @@ export const INTERVIEWER_CHECKLIST = [
     weak: "Rushed or memorized word for word",
   },
 ];
+
+/* =========================================================================
+   TELL ME ABOUT YOURSELF (INTERNSHIP) DATA
+   ========================================================================= */
+
+export const INTERNSHIP_LOOK_FOR = [
+  {
+    title: "Interest",
+    badge: "Passion & Purpose",
+    badgeColor: "bg-blue-100 text-blue-800 border-blue-200",
+    gradient: "from-blue-500/10 via-indigo-500/5 to-transparent",
+    question: "Do you care about this field, and can you say why?",
+    detail: "They want to hear genuine excitement about the subject matter rather than someone looking for just any resume line.",
+  },
+  {
+    title: "Initiative",
+    badge: "Self-Starter",
+    badgeColor: "bg-indigo-100 text-indigo-800 border-indigo-200",
+    gradient: "from-indigo-500/10 via-violet-500/5 to-transparent",
+    question: "Have you done something on your own, like a project, club or job?",
+    detail: "Showing you built, organized, or led something demonstrates curiosity and work ethic without formal corporate experience.",
+  },
+  {
+    title: "Coachability",
+    badge: "Learning Speed",
+    badgeColor: "bg-emerald-100 text-emerald-800 border-emerald-200",
+    gradient: "from-emerald-500/10 via-teal-500/5 to-transparent",
+    question: "Will you learn fast and take feedback well?",
+    detail: "Managers love interns who listen actively, ask smart clarifying questions, and quickly apply constructive guidance.",
+  },
+];
+
+export const INTERNSHIP_EXPERIENCE_TABLE = [
+  {
+    useThis: "Class project",
+    icon: "📚",
+    shows: "Skills and teamwork",
+    howToSay: '"In my final-year project, I built a prototype application with a team of four..."',
+  },
+  {
+    useThis: "Club or society role",
+    icon: "🤝",
+    shows: "Leadership and initiative",
+    howToSay: '"As treasurer of the business club, I managed the event budget and grew attendance..."',
+  },
+  {
+    useThis: "Part-time job",
+    icon: "☕",
+    shows: "Reliability and people skills",
+    howToSay: '"Working at a busy café taught me to stay calm under rush hours and communicate clearly..."',
+  },
+  {
+    useThis: "Volunteering",
+    icon: "🌱",
+    shows: "Values and commitment",
+    howToSay: '"Every weekend I volunteer at the food pantry, coordinating intake and logistics..."',
+  },
+  {
+    useThis: "Personal project",
+    icon: "💻",
+    shows: "Curiosity and self-motivation",
+    howToSay: '"In my free time, I built a small web app to track my study habits and published it..."',
+  },
+  {
+    useThis: "Online course or certificate",
+    icon: "🎓",
+    shows: "Willingness to learn",
+    howToSay: '"I completed a specialized course in SQL to analyze deeper dataset patterns..."',
+  },
+];
+
+export const INTERNSHIP_FIELD_ANSWERS: SampleAnswerItem[] = [
+  {
+    id: "marketing",
+    label: "Marketing internship",
+    role: "Marketing Student",
+    text: "I'm a third-year marketing student, and I'm most interested in social media. I run the Instagram account for my university's film club, and I grew it by posting student reviews and short clips. I also work part-time in a clothing store, so I see how customers react to promotions. I'm applying here because I want to learn how a real brand plans campaigns, and I love how your team works with local businesses.",
+    note: "Mixes digital club growth metrics with face-to-face consumer retail insights.",
+  },
+  {
+    id: "swe",
+    label: "Software engineering internship",
+    role: "Computer Science Student",
+    text: "I'm a second-year computer science student, and I enjoy building things people can use. Last semester, my team built a study-planner app for a class project, and I wrote the back end. In my free time, I'm learning React through an online course. I'd love to intern here because I want to see how a real engineering team ships code, and your mentorship program stood out.",
+    note: "Demonstrates practical backend coursework, active frontend self-learning, and eagerness for engineering mentorship.",
+  },
+  {
+    id: "finance",
+    label: "Finance or accounting internship",
+    role: "Finance Major",
+    text: "I'm a finance major in my junior year, and I'm interested in how companies make investment decisions. As treasurer of our business club, I manage a small budget and track every expense in a spreadsheet. I'm also studying for a financial modeling certificate. This internship would let me apply what I'm learning to real numbers, and your firm's focus on small businesses really interests me.",
+    note: "Highlights budget handling responsibility, certification initiative, and small business financial alignment.",
+  },
+  {
+    id: "healthcare",
+    label: "Healthcare or nursing internship",
+    role: "Nursing Student",
+    text: "I'm a second-year nursing student, and I'm drawn to patient education. I volunteer at a local clinic on weekends, where I help check patients in and explain forms. My clinical placements have taught me to stay calm and organized. I'm applying because I want hands-on experience in a busy hospital, and your hospital's training for students is well known.",
+    note: "Validates clinic volunteering, bedside calm, and dedication to patient understanding.",
+  },
+  {
+    id: "business-ops",
+    label: "Business or operations internship",
+    role: "Business Administration",
+    text: "I'm studying business administration, and I'm interested in how teams run efficiently. For a class project, I mapped out the ordering process at a local restaurant and suggested changes the owner tried. I also work part-time as a shift lead at a café. I want this internship to learn how operations work at a larger company like yours.",
+    note: "Highlights process optimization experience and part-time leadership responsibility.",
+  },
+  {
+    id: "design",
+    label: "Design internship",
+    role: "Graphic Design Student",
+    text: "I'm a graphic design student in my final year, and I love branding. I've designed logos and posters for three student events, and one was used across campus. I'm also building my portfolio with personal projects. I'd love to intern with your studio because your brand work for startups is exactly the kind of design I want to learn.",
+    note: "Cites published campus designs and specific admiration for startup brand identity.",
+  },
+  {
+    id: "high-school",
+    label: "High school student (first internship)",
+    role: "High School Senior",
+    text: "I'm a high school senior, and I'm interested in engineering. I'm on my school's robotics team, where I help build and test our robot for competitions. I also tutor younger students in math. I'm applying for this internship because I want to see what engineers do every day, and it would help me choose what to study in college.",
+    note: "Shows extracurricular robotics testing, tutoring commitment, and clear college discernment goals.",
+  },
+];
+
+export const INTERNSHIP_FAQS = [
+  {
+    q: "How do I answer \"Tell me about yourself\" for an internship?",
+    a: "Say what you study and what interests you, share one project, club or job that shows a relevant skill, and explain why you want this internship. Keep it to 45 to 60 seconds.",
+  },
+  {
+    q: "What if I have no work experience?",
+    a: "That is normal for interns. Use class projects, clubs, volunteering, part-time jobs or personal projects as your examples.",
+  },
+  {
+    q: "How long should my answer be for an internship interview?",
+    a: "About 45 to 60 seconds. Internship answers can be a little shorter than answers for full-time jobs.",
+  },
+  {
+    q: "Should I mention my GPA?",
+    a: "Only if it is strong and relevant, or if the company asks for it. Projects and real examples usually say more than grades.",
+  },
+  {
+    q: "Can I talk about hobbies?",
+    a: "Yes, if they link to the role or show a useful skill, such as a coding hobby for a tech internship. Keep it to one sentence.",
+  },
+  {
+    q: "What are the most common internship interview questions?",
+    a: '"Tell me about yourself," "Why do you want this internship?", "Tell me about a project you\'re proud of," "Describe a time you worked in a team," and "What are your strengths and weaknesses?"',
+  },
+];

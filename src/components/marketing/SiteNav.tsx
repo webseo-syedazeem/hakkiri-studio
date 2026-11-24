@@ -138,6 +138,20 @@ export function SiteNav() {
                 3-sentence formula & 20+ sample answers
               </span>
             </Link>
+
+            <Link
+              href="/interview-questions/tell-me-about-yourself-internship"
+              onClick={() => setQuestionsMenuOpen(false)}
+              className="flex flex-col gap-0.5 rounded-xl p-2.5 transition-colors hover:bg-slate-100/80"
+            >
+              <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                <span className="text-violet-600 font-bold">●</span>
+                Internship Interview Guide
+              </span>
+              <span className="text-[11px] text-slate-500 pl-3.5">
+                Formula with no experience & 7 field samples
+              </span>
+            </Link>
           </div>
         )}
       </div>
