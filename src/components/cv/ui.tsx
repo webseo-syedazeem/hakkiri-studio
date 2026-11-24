@@ -82,9 +82,9 @@ export function BtnLink({ kind = "default", className, ...rest }: ComponentProps
 }
 
 /** Something to check about a field: the reason and what can be done about it. */
-export function Note({ label, children, actions, id }: { label?: string; children: ReactNode; actions?: ReactNode; id?: string }) {
+export function Note({ label, children, actions, id, kind }: { label?: string; children: ReactNode; actions?: ReactNode; id?: string; /** "issue" for a concrete defect (red); otherwise a suggestion or something to check (blue). */ kind?: "issue" | "suggestion" }) {
   return (
-    <div className="cv-note" id={id} role="note">
+    <div className="cv-note" id={id} role="note" data-kind={kind}>
       {label && <b>{label}</b>}
       {label && <br />}
       {children}

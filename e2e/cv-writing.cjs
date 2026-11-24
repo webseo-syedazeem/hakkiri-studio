@@ -348,6 +348,8 @@ run("CV writing help", async (browser) => {
   await page.getByRole("button", { name: "Edit Senior PPC Executive" }).click();
   await page.getByRole("button", { name: "Use a saved achievement" }).click();
   await dialog.waitFor();
+  // The list arrives a moment after the dialog opens.
+  await dialog.getByText("1 private achievement is not offered here.").waitFor({ timeout: 10000 }).catch(() => {});
   check((await dialog.getByText("1 private achievement is not offered here.").isVisible()) && (await dialog.getByRole("button", { name: /^Use: Trained three/ }).count()) === 0, "a private achievement is not offered when building a CV");
   await dialog.getByRole("button", { name: "Close" }).click();
   await page.goto(`${BASE}/cv/bank`);

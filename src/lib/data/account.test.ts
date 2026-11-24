@@ -163,7 +163,11 @@ describe("“Delete all my data”", () => {
     expect(all).not.toContain(alice.email);
     expect(hasData(dataCounts(alice.id))).toBe(false);
     for (const id of ["ans-ALICEMARK", "run-r-ALICEMARK", "qa-ALICEMARK-a0"]) expect(getRecording(id, 0), id).toBeNull();
-    expect(await exportCvData(alice.id)).toEqual({ cvs: [], uploads: [], achievements: [] });
+    // Every kind of CV record is empty for her, whatever kinds the CV section holds (CVs, uploads, achievements,
+    // download records, file checks…): checked by kind, so a kind added later is covered too.
+    const cvLeft = await exportCvData(alice.id);
+    expect(Object.keys(cvLeft).length).toBeGreaterThanOrEqual(3);
+    for (const [kind, rows] of Object.entries(cvLeft)) expect(rows, kind).toEqual([]);
     expect(Object.values(await exportApplyData(alice.id, alice.email)).flat()).toEqual([]);
     // Her copy of the demo is the built-in one again.
     expect(JSON.stringify(getInterview(DEMO_INTERVIEW_ID, alice.id))).not.toContain("ALICEMARK");

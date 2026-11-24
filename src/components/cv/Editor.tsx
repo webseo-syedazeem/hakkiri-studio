@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { diffParts, fieldFor, formTabs, itemCount, snapshotOf, switchOff, tabFor } from "@/lib/cv/edit";
+import { diffParts, fieldFor, formTabs, itemCount, snapshotOf, stateAt, switchOff, tabFor } from "@/lib/cv/edit";
+import type { Finding } from "@/lib/cv/score/score";
 import { fitToPages } from "@/lib/cv/render/layout";
 import { type CvSummary, type Locator, type Section, type SectionKind, cvIsEmpty, emptySection, isEntrySection } from "@/lib/cv/schema";
 import { OPTIONAL_KINDS, SECTION_DEFS, docWord, sectionHeading } from "@/lib/cv/sections";
@@ -11,11 +12,12 @@ import { Switch } from "./Arrange";
 import { BulletHelp } from "./Assist";
 import { api, messageOf } from "./client";
 import { Dialog, usePanel } from "./Dialog";
+import { scoreLabel } from "./Findings";
 import { Finish } from "./Finish";
 import { PaperView } from "./Paper";
 import { ContactForm, type FieldHooks, SectionForm } from "./SectionForms";
 import { ACCEPT, STAGE_WORDS, type UploadStage, sendUpload } from "./upload";
-import { Announce, Bar, Btn, BtnLink, CvScreen, Field, Panel, Skeleton, Toolbar } from "./ui";
+import { Announce, Bar, Btn, BtnLink, CvScreen, Field, Fixed, Note, Panel, Skeleton, Toolbar } from "./ui";
 import { SAVE_WORDS } from "./useCv";
 import { useWorkspace } from "./Workspace";
 import { ChooseAchievement, ProfileChooser, SkillSuggestions } from "./Writing";
@@ -36,6 +38,7 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
   const [said, setSaid] = useState("");
   const [removed, setRemoved] = useState(false);
   const [busy, setBusy] = useState("");
+  const [moreFor, setMoreFor] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
   const versionId = w.versionId;
 
@@ -179,7 +182,53 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
     }
   }
 
+  /** The findings for one field, shown under it while the cursor is there: the most important first, the rest on request. */
+  const findingNote = (sectionId: string, entry: string, field: string) => {
+    if (!focus || focus.section !== sectionId) return undefined;
+    const section = cv.sections.find((s) => s.id === sectionId);
+    // A skill is typed in its group's box: the note for it shows while the cursor is in that box.
+    const here = section?.kind === "skills" ? section.groups.find((g) => g.skills.some((k) => k.id === field))?.id === focus.entry : (focus.entry ?? "") === entry && focus.field === field;
+    if (!here) return undefined;
+    const match = (f: Finding) => f.at.section === sectionId && f.at.field === field && (section?.kind === "skills" || (f.at.entry ?? "") === entry);
+    // "Nothing here yet" is not said under a field while it is being filled in; that finding is in the list.
+    const mine = (w.score?.findings ?? []).filter(match).filter((f) => !((f.rule === "name" || f.rule === "email") && !f.excerpt.trim()));
+    if (!mine.length) return w.cleared.some((f) => match(f) && stateAt(cv.sections, f.at) === "on") ? <Fixed>Fixed</Fixed> : undefined;
+    const [top, ...rest] = mine;
+    const shown = moreFor === top.id ? mine : [top];
+    return (
+      <div data-testid="inline-finding">
+        {shown.map((f) => (
+          <Note
+            key={f.id}
+            kind={f.severity}
+            label={f.severity === "issue" ? "Issue" : "Suggestion"}
+            actions={
+              <>
+                {f.fix === "add-number" && (
+                  <Btn
+                    onClick={() => {
+                      w.setInspect(f.at);
+                      setView("paper");
+                      openPanel("add-number");
+                    }}
+                  >
+                    Add the number
+                  </Btn>
+                )}
+                {f.fix === "accept" && f.word && <Btn onClick={() => update({ accepted: [...cv.accepted.filter((x) => x !== f.word), f.word!] })}>Accept “{f.word}”</Btn>}
+                {f === top && rest.length > 0 && moreFor !== top.id && <Btn onClick={() => setMoreFor(top.id)}>View {rest.length} more</Btn>}
+              </>
+            }
+          >
+            {f.reason} {f.action}
+          </Note>
+        ))}
+      </div>
+    );
+  };
+
   const hooks = (sectionId: string): FieldHooks => ({
+    note: (entry, field) => findingNote(sectionId, entry, field),
     onFocus: (entry, field) => setFocus({ section: sectionId, entry: entry || undefined, field }),
     // The writing help for one bullet opens in place of the paper.
     onHelp: (entry, bullet) => {
@@ -202,7 +251,15 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
   return (
     <CvScreen>
       <Bar crumbs={crumbs}>
+        {w.fromFindings && (
+          <BtnLink href={`/cv/v/${cv.id}/findings`} onClick={() => void flush()}>
+            Back to findings
+          </BtnLink>
+        )}
         <span className="cv-chip">{cv.kind === "base" ? `Base ${word}` : cv.target?.employer || "Tailored version"}</span>
+        <BtnLink href={`/cv/v/${cv.id}/findings`} onClick={() => void flush()} data-testid="score-button">
+          {scoreLabel(w.score, word)}
+        </BtnLink>
         <small role="status" data-testid="save-state">
           {SAVE_WORDS[save]}
         </small>

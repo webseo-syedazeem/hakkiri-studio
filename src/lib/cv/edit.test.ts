@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type Snapshot, TYPING_PAUSE_MS, addBullets, bulletAt, changeBullet, diffParts, emptyHistory, fieldFor, formTabs, itemCount, moveById, moveItem, record, redo, samePassage, snapshotOf, switchOff, tabFor, undo } from "./edit";
+import { type Snapshot, TYPING_PAUSE_MS, addBullets, bulletAt, changeBullet, diffParts, emptyHistory, fieldFor, formTabs, itemCount, moveById, moveItem, record, redo, samePassage, snapshotOf, stateAt, switchOff, tabFor, undo } from "./edit";
 import { buildFlow, flowText } from "./render/flow";
 import { TEMPLATES } from "./render/templates";
 import { fernCv } from "./render/testing";
@@ -206,6 +206,41 @@ describe("changing and adding bullets", () => {
     expect(entries[0]).toMatchObject({ id: out.entryId, title: "Shop assistant", org: "Example Books", visible: true });
     expect(entries[0].bullets.map((b) => b.text)).toEqual(["Ran the till"]);
     expect(out.entryId).not.toBe("new");
+  });
+});
+
+describe("whether a place is on the page, switched off, or gone", () => {
+  it("tells the three apart for a bullet, an entry and a section", () => {
+    const c = cv();
+    const exp = section(c, "experience") as EntrySection;
+    const e = exp.entries[0];
+    const at = { section: exp.id, entry: e.id, field: e.bullets[0].id };
+    expect(stateAt(c.sections, at)).toBe("on");
+    e.bullets[0].visible = false;
+    expect(stateAt(c.sections, at)).toBe("off");
+    e.bullets[0].visible = true;
+    e.visible = false;
+    expect(stateAt(c.sections, at)).toBe("off");
+    e.visible = true;
+    exp.visible = false;
+    expect(stateAt(c.sections, at)).toBe("off");
+    exp.visible = true;
+    e.bullets = e.bullets.slice(1);
+    expect(stateAt(c.sections, at)).toBe("gone");
+    expect(stateAt(c.sections, { section: "s_nowhere" })).toBe("gone");
+    expect(stateAt(c.sections, { section: "contact", field: "email" })).toBe("on");
+  });
+
+  it("knows a skill that is switched off from one that was removed", () => {
+    const c = cv();
+    const skills = section(c, "skills") as SkillsSection;
+    const g = skills.groups[0];
+    const at = { section: skills.id, entry: g.id, field: g.skills[0].id };
+    expect(stateAt(c.sections, at)).toBe("on");
+    g.skills[0].visible = false;
+    expect(stateAt(c.sections, at)).toBe("off");
+    g.skills = g.skills.slice(1);
+    expect(stateAt(c.sections, at)).toBe("gone");
   });
 });
 
