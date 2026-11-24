@@ -250,12 +250,17 @@ export function PaperView({ paper, state, retry, cv, focus, onPick, word, childr
           <TextView flow={paper.flow} onPick={onPick} />
         )
       ) : (
-        <div className="cv-paperscroll" data-state={state} tabIndex={0} role="region" aria-label={`Your ${word} on paper`}>
-          <div className="cv-papersheet" style={{ width: widthPx ?? "100%" }}>
-            <Page layout={paper.layout} flow={paper.flow} page={current} margin={paper.style.page.marginX} cv={cv} focus={focus} onPick={onPick} highlight={highlight} overlay={overlay} label={empty ? `An empty page. Your ${word} will appear here as you fill it in.` : `Page ${current + 1} of ${pages} of your ${word}. Use Text view to read it.`} />
-            {empty && <p className="cv-paperhint">Your {word} will appear here as you fill it in.</p>}
+        <>
+          <div className="cv-paperscroll" data-state={state} data-zoom={zoom === "fit" ? "fit" : "zoomed"} tabIndex={0} role="region" aria-label={`Your ${word} on paper`}>
+            <div className="cv-papersheet" style={{ width: widthPx ?? "100%" }}>
+              <Page layout={paper.layout} flow={paper.flow} page={current} margin={paper.style.page.marginX} cv={cv} focus={focus} onPick={onPick} highlight={highlight} overlay={overlay} label={empty ? `An empty page. Your ${word} will appear here as you fill it in.` : `Page ${current + 1} of ${pages} of your ${word}. Use Text view to read it.`} />
+              {empty && <p className="cv-paperhint">Your {word} will appear here as you fill it in.</p>}
+            </div>
           </div>
-        </div>
+          <p className="cv-papercaption" aria-hidden="true">
+            {paper.layout.width === 612 ? "US Letter" : "A4"} · Live paper preview
+          </p>
+        </>
       )}
     </div>
   );

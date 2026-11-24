@@ -185,7 +185,10 @@ export function Finish({ onOverflow, say }: { onOverflow: () => void; say: (text
                   <input type="radio" name="template" className="sr-only" checked={design.template === id} onChange={() => set({ template: id })} />
                   <TemplateThumb def={t} accent={ACCENTS[design.accent ?? t.accent].hex} />
                   <span className="min-w-0">
-                    <b>{t.name}</b>
+                    <b>
+                      {design.template === id && <span aria-hidden="true">✓ </span>}
+                      {t.name}
+                    </b>
                     <small style={{ display: "block" }}>{t.suits}</small>
                   </span>
                 </label>

@@ -356,7 +356,7 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
           </button>
         </div>
 
-        <div className="cv-layout" style={{ gridTemplateColumns: isFinish ? "minmax(0, 352fr) minmax(0, 816fr)" : "minmax(0, 552fr) minmax(0, 616fr)" }}>
+        <div className="cv-layout" style={{ gridTemplateColumns: isFinish ? "minmax(0, 0.94fr) minmax(0, 1.16fr)" : "minmax(0, 552fr) minmax(0, 616fr)" }}>
           <div className={view === "edit" ? "min-w-0" : "min-w-0 cv-wide"} onBlur={() => void flush()}>
             {empty && !pending && !isFinish && (
               <Panel style={{ marginBottom: 18 }}>
