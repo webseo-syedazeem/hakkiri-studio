@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { forgetCheck, fromCheckPath, rememberedCheck } from "@/lib/cv/carry";
 import { type CvDoc, type CvSummary, LEVEL_LABELS } from "@/lib/cv/schema";
 import { docWord } from "@/lib/cv/sections";
-import { api, messageOf } from "./client";
+import { ApiError, api, messageOf } from "./client";
 import { Dialog, usePanel } from "./Dialog";
 import { Announce, Bar, Btn, BtnLink, CvScreen, Field, Panel, Skeleton, Toolbar } from "./ui";
 
@@ -23,6 +25,9 @@ export function Dashboard() {
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState("");
   const [said, setSaid] = useState("");
+  const router = useRouter();
+  const [job, setJob] = useState({ title: "", employer: "", advert: "" });
+  const [fields, setFields] = useState<Record<string, string>>({});
 
   const load = useCallback(() => {
     setError("");
@@ -34,11 +39,16 @@ export function Dashboard() {
       .catch((e) => setError(messageOf(e)));
   }, []);
   useEffect(load, [load]);
+  // A free check the person asked to open in the builder before they were signed in, if they arrived here another way.
+  const [waiting, setWaiting] = useState<string | null>(null);
+  useEffect(() => setWaiting(rememberedCheck()), []);
 
   const chosen = cvs?.find((c) => c.id === item);
   // The rename box starts with the current name each time it opens.
   useEffect(() => {
     if (panel === "rename" && chosen) setName(chosen.name);
+    if (panel === "tailor") setJob({ title: "", employer: "", advert: "" });
+    setFields({});
     setProblem("");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [panel, item, chosen?.name]);
@@ -79,6 +89,21 @@ export function Dashboard() {
       return `${chosen?.name ?? "CV"} deleted.`;
     });
 
+  /** A tailored version: a copy for one job, opened straight on its tailoring screen. */
+  async function tailor() {
+    setBusy(true);
+    setProblem("");
+    setFields({});
+    try {
+      const made = await api<{ id: string }>(`/api/cv/versions/${item}/tailor`, { method: "POST", json: job });
+      router.push(`/cv/v/${made.id}/tailor`);
+    } catch (e) {
+      if (e instanceof ApiError) setFields(e.fields);
+      setProblem(messageOf(e));
+      setBusy(false);
+    }
+  }
+
   const bases = (cvs ?? []).filter((c) => c.kind === "base" || !cvs?.some((p) => p.id === c.parentId));
   const tailored = (id: string) => (cvs ?? []).filter((c) => c.kind === "tailored" && c.parentId === id);
 
@@ -93,6 +118,25 @@ export function Dashboard() {
           </BtnLink>
         </Toolbar>
 
+        {waiting && (
+          <div className="cv-note" style={{ marginBottom: 18 }} data-testid="waiting-check">
+            You checked a CV before you signed in. Open that text in the builder to fix what the check found: you won’t need to paste it again.
+            <div className="cv-row" style={{ marginTop: 8 }}>
+              <BtnLink kind="primary" href={fromCheckPath(waiting)}>
+                Open it in the builder
+              </BtnLink>
+              <Btn
+                kind="quiet"
+                onClick={() => {
+                  forgetCheck();
+                  setWaiting(null);
+                }}
+              >
+                Not now
+              </Btn>
+            </div>
+          </div>
+        )}
         {error && (
           <div className="cv-issue" role="alert" style={{ marginBottom: 18 }}>
             <strong>Couldn’t load your CVs</strong>
@@ -122,6 +166,12 @@ export function Dashboard() {
         {cvs?.length === 0 && (
           <Panel>
             <div className="cv-pad cv-stack" style={{ padding: "36px 24px", textAlign: "center" }}>
+              <div className="cv-empty-symbol" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <path d="M14 2v6h6M8 13h8m-8 4h6" />
+                </svg>
+              </div>
               <h2>You have no CVs yet</h2>
               <p className="cv-muted" style={{ maxWidth: "52ch", margin: "8px auto 0" }}>
                 Start a new CV, or upload the one you have. A new CV starts empty: everything on it will be what you put there.
@@ -223,7 +273,36 @@ export function Dashboard() {
           )}
         </Dialog>
       )}
-      {panel && ["rename", "duplicate", "delete-version"].includes(panel) && cvs && !chosen && (
+      {panel === "tailor" && chosen && (
+        <Dialog
+          title="Tailor to a job"
+          onClose={close}
+          wide
+          actions={
+            <>
+              <Btn onClick={close}>Cancel</Btn>
+              <Btn kind="primary" busy={busy} onClick={() => void tailor()}>
+                Make tailored version
+              </Btn>
+            </>
+          }
+        >
+          <p>
+            This makes a copy of <b>{chosen.name}</b> for one job. You tailor the copy; your base {docWord(chosen.region)} keeps everything.
+          </p>
+          <div className="cv-pair">
+            <Field label="Job title" value={job.title} onChange={(title) => setJob({ ...job, title })} maxLength={160} error={fields.title} />
+            <Field label="Employer" value={job.employer} onChange={(employer) => setJob({ ...job, employer })} maxLength={160} />
+          </div>
+          <Field label="The advert" rule="Paste all of it. It is kept word for word, and what it asks for is read from it." multiline rows={8} maxLength={20000} value={job.advert} onChange={(advert) => setJob({ ...job, advert })} error={fields.advert} />
+          {problem && !fields.title && !fields.advert && (
+            <p className="cv-error-text" role="alert">
+              {problem}
+            </p>
+          )}
+        </Dialog>
+      )}
+      {panel && ["rename", "duplicate", "delete-version", "tailor"].includes(panel) && cvs && !chosen && (
         <Dialog title="CV not found" onClose={close}>
           <p>That CV is no longer in your list.</p>
         </Dialog>
@@ -232,22 +311,34 @@ export function Dashboard() {
   );
 }
 
-function Row({ cv, indent, onAction }: { cv: CvSummary; indent?: boolean; onAction: (what: "rename" | "duplicate" | "delete-version") => void }) {
-  const href = cv.pendingImportId ? `/cv/import/${cv.pendingImportId}` : `/cv/v/${cv.id}/edit/contact`;
+function Row({ cv, indent, onAction }: { cv: CvSummary; indent?: boolean; onAction: (what: "rename" | "duplicate" | "delete-version" | "tailor") => void }) {
+  const href = cv.pendingImportId ? `/cv/import/${cv.pendingImportId}` : indent && cv.fit !== undefined ? `/cv/v/${cv.id}/tailor` : `/cv/v/${cv.id}/edit/contact`;
   const target = [cv.targetTitle, cv.targetEmployer].filter(Boolean).join(" · ");
   return (
-    <div className="cv-pick" style={indent ? { paddingLeft: 44 } : undefined}>
+    <div className="cv-pick" data-child={indent || undefined} style={indent ? { paddingLeft: 44 } : undefined}>
       <div className="min-w-0 grow">
         <Link href={href} className="font-semibold hover:underline" style={{ overflowWrap: "anywhere" }}>
           {cv.name}
         </Link>
         <small style={{ display: "block", marginTop: 3 }}>
-          {indent ? "Tailored version" : `Base ${docWord(cv.region)}`} · {LEVEL_LABELS[cv.level]} · {cv.region.toUpperCase()}
+          {cv.kind === "tailored" ? (indent ? "Tailored version" : `Tailored version (its base ${docWord(cv.region)} was deleted)`) : `Base ${docWord(cv.region)}`} · {LEVEL_LABELS[cv.level]} · {cv.region.toUpperCase()}
           {target ? ` · ${target}` : ""} · Edited {when(cv.updatedAt)}
         </small>
       </div>
-      {cv.pendingImportId ? <span className="cv-chip cv-link" style={{ textDecoration: "none" }}>Upload to check</span> : cv.empty ? <span className="cv-chip">Empty</span> : null}
+      {cv.pendingImportId ? <span className="cv-chip cv-link" style={{ textDecoration: "none" }} data-testid="row-upload">{cv.importFailed ? "Upload not read" : "Upload to check"}</span> : cv.empty ? <span className="cv-chip">Empty</span> : null}
+      {cv.score !== undefined && !cv.pendingImportId && <span className="cv-chip" data-testid="row-score">Score {cv.score}</span>}
+      {cv.fit !== undefined && <span className="cv-chip" data-testid="row-fit">Job fit {cv.fit}</span>}
       <span className="cv-controls">
+        {!indent && !cv.empty && !cv.pendingImportId && (
+          <Btn onClick={() => onAction("tailor")} aria-label={`Tailor ${cv.name} to a job`}>
+            Tailor to a job
+          </Btn>
+        )}
+        {!cv.empty && !cv.pendingImportId && (
+          <BtnLink kind="quiet" href={`/cv/v/${cv.id}/letter`} aria-label={`${cv.letter ? "Open the cover letter for" : "Write a cover letter for"} ${cv.name}`} data-testid="row-letter">
+            {cv.letter ? "Letter" : "Write letter"}
+          </BtnLink>
+        )}
         <Btn kind="quiet" onClick={() => onAction("rename")} aria-label={`Rename ${cv.name}`}>
           Rename
         </Btn>
@@ -257,7 +348,7 @@ function Row({ cv, indent, onAction }: { cv: CvSummary; indent?: boolean; onActi
         <Btn kind="quiet" onClick={() => onAction("delete-version")} aria-label={`Delete ${cv.name}`}>
           Delete
         </Btn>
-        <BtnLink href={href}>{cv.pendingImportId ? "Check upload" : "Open"}</BtnLink>
+        <BtnLink href={href}>{cv.pendingImportId ? (cv.importFailed ? "Try again" : "Check upload") : "Open"}</BtnLink>
       </span>
     </div>
   );

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { checkGrounded, checkMerge, checkProfile, checkRewrite, refusalMessage } from "./check";
-import { figures, leadWords, sentences, stem, supportWords, terms } from "./facts";
+import { counted, countsTheSame, figures, leadWords, meaningWords, negated, sentences, stem, supportWords, terms } from "./facts";
 
 const keys = (t: string) => figures(t).map((f) => f.key);
 const says = (v: { problems: { say: string }[] }) => v.problems.map((p) => p.say);
@@ -92,7 +92,39 @@ describe("a draft adds nothing to the person's words", () => {
 
   it("passes a bullet made only of their words", () => {
     expect(checkGrounded("Helped run the weekly planning meeting for the Leeds site", notes).ok).toBe(true);
-    expect(checkGrounded("Cut late orders by roughly 12% over the year", notes).ok).toBe(true);
+    expect(checkGrounded("Cut late orders by roughly 12% over the year, as part of the team", notes).ok).toBe(true);
+  });
+
+  it("refuses a draft that drops “we”: the work was a team's", () => {
+    const v = checkGrounded("Cut late orders by roughly 12% over the year", notes);
+    expect(says(v)).toEqual(["It dropped “we”, so it claims more of the work than your words do."]);
+    // Any wording that keeps it shared will do.
+    expect(checkGrounded("Helped cut late orders by roughly 12% over the year", notes).ok).toBe(true);
+  });
+
+  it("refuses a figure moved from the thing it counted to another", () => {
+    const said = ["I trained 4 volunteers in 40 hours of sessions. I catalogued 1,200 objects."];
+    expect(says(checkGrounded("Trained 40 volunteers", said))).toEqual(["It says “40 volunteers”. In your words, “40” is about something else."]);
+    expect(says(checkGrounded("Trained 1,200 volunteers", said))).toEqual(["It says “1,200 volunteers”. In your words, “1,200” is about something else."]);
+    expect(checkGrounded("Trained 4 volunteers in 40 hours", said).ok).toBe(true);
+    expect(checkGrounded("Catalogued 1,200 objects", said).ok).toBe(true);
+  });
+
+  it("knows what a figure counts from the words beside it", () => {
+    const fig = (t: string, n = 0) => counted(t, figures(t)[n]);
+    // The noun phrase straight after a count, up to the next small word; the words before a percentage.
+    expect(fig("Trained six new starters on the café till").after).toEqual(["new", "starters"].map(stem));
+    expect(fig("Catalogued 1,200 objects in the collections database").after).toEqual(["objects"].map(stem));
+    expect(fig("Managed 5 engineers and 12 contractors", 1).after).toEqual(["contractors"].map(stem));
+    expect(fig("Cut average cost per lead by 18% in six months").before).toEqual(["lead", "cost"].map(stem));
+    expect(fig("a team of 5")).toEqual({ after: [], before: ["team"] });
+    // The same figure about the same thing, said another way, still matches.
+    const same = (a: string, b: string) => countsTheSame(a, figures(a)[0], b, figures(b)[0]);
+    expect(same("3,200 maps", "maps catalogued: 3,200")).toBe(true);
+    expect(same("six starters", "six new starters")).toBe(true);
+    expect(same("cut lead costs 18%", "Cut average cost per lead by 18%")).toBe(true);
+    expect(same("in 2021", "Aug 2021 – Aug 2023")).toBe(true);
+    expect(same("12 engineers", "12 contractors")).toBe(false);
   });
 
   it("refuses a figure they never gave", () => {
@@ -181,6 +213,47 @@ describe("a rewrite loses nothing", () => {
     expect(v.problems[0].say).toBe("It replaced “volunteers” with “staff”.");
   });
 
+  it.each([
+    ["Designed a process that could cut onboarding time by 30%", "Designed a process that cut onboarding time by 30%", "It dropped “could”, which changes what you claim."],
+    ["Did not miss a deadline in 3 years", "Missed a deadline in 3 years", "It dropped “not”, which changes what you claim."],
+    ["Didn’t miss a deadline in 3 years", "Missed a deadline in 3 years", "It dropped “not”, which changes what you claim."],
+    ["Ran most of the weekly stand-ups for the team", "Ran the weekly stand-ups for the team", "It dropped “most”, which changes what you claim."],
+    ["Ran the weekly stand-ups for the team", "Ran all the weekly stand-ups for the team", "It added “all”, which changes what you claim."],
+    ["Would have led the migration", "Led the migration", "It dropped “would”, which changes what you claim."],
+    ["Never missed a release date", "Missed a release date", "It dropped “never”, which changes what you claim."],
+  ])("small words carry meaning: “%s” may not become “%s”", (original, proposed, say) => {
+    expect(says(checkRewrite(original, proposed))).toContain(say);
+  });
+
+  it("refuses “we” turned into the person's own work, and accepts it kept as a team's", () => {
+    expect(says(checkRewrite("We reduced churn by 18% in 2022", "Reduced churn by 18% in 2022"))).toEqual(["It dropped “we”, so it claims more of the work than your words do."]);
+    expect(checkRewrite("We reduced churn by 18% in 2022", "Reduced churn by 18% in 2022, as part of the team").ok).toBe(true);
+  });
+
+  it("figures keep their order and the thing they count", () => {
+    expect(says(checkRewrite("Cut churn from 18% to 12%", "Cut churn from 12% to 18%"))).toEqual(["It changed the order of the figures. Your words have them as “18%, 12%”."]);
+    expect(checkRewrite("Managed 5 engineers and 12 contractors", "Managed 12 engineers and 5 contractors").ok).toBe(false);
+    expect(says(checkRewrite("Managed 5 engineers and 12 contractors", "Managed 12 engineers and 5 contractors")).join(" ")).toContain("“12 engineers”");
+    // Reordering that keeps each figure with its own thing is fine.
+    expect(checkRewrite("Managed 5 engineers and 12 contractors", "Managed 12 contractors and 5 engineers").ok).toBe(true);
+    expect(checkRewrite("Grew the list from 400 to 1,200 subscribers", "Grew the list from 1,200 to 400 subscribers").ok).toBe(false);
+  });
+
+  it("does not refuse the same fact written another way", () => {
+    expect(checkRewrite("Cut waste by 18 per cent in a year", "Cut waste by 18% in a year").ok).toBe(true);
+    expect(checkRewrite("Have shown new starters how to use the till", "Showed new starters how to use the till").ok).toBe(true);
+    expect(checkRewrite("Has proven the approach in three pilots", "Proved the approach in three pilots").ok).toBe(true);
+  });
+
+  it("reads the small words that carry meaning, and whether a line says “not”", () => {
+    expect(meaningWords("We couldn’t ship most of it, and never would")).toEqual(["not", "most", "never", "would"]);
+    expect(meaningWords("Cannot")).toEqual(["not"]);
+    expect(negated("I have not worked in a museum before")).toBe(true);
+    expect(negated("No experience of cataloguing")).toBe(true);
+    expect(negated("I didn’t manage a budget")).toBe(true);
+    expect(negated("I have worked in a museum, and know the notes system")).toBe(false);
+  });
+
   it("refuses a bigger share of the credit", () => {
     const v = checkRewrite("Helped the events team run a conference for 300 people", "Ran a conference for 300 people");
     expect(v.ok).toBe(false);
@@ -259,5 +332,21 @@ describe("a profile says only what the CV says", () => {
   it("refuses a profile that runs on", () => {
     const text = Array.from({ length: 6 }, () => "Catalogued 3,200 maps in two years.").join(" ");
     expect(checkProfile(text, cv).problems.map((p) => p.kind)).toEqual(["length"]);
+  });
+});
+
+describe("a profile keeps each figure with what it counted", () => {
+  const lines = ["Catalogued 1,200 objects in the collections database", "Trained 4 volunteers in object handling"];
+
+  it("refuses figures swapped between two lines of the CV", () => {
+    const v = checkProfile("Collections volunteer who trained 1,200 volunteers and catalogued 4 collections.", ["Collections volunteer", ...lines]);
+    expect(v.ok).toBe(false);
+    expect(says(v).join(" ")).toContain("It says “1,200 volunteers”. In your CV, “1,200” is about something else.");
+  });
+
+  it("accepts them where they belong, and the years worked out from the dates", () => {
+    expect(checkProfile("Collections volunteer who catalogued 1,200 objects and trained 4 volunteers.", ["Collections volunteer", ...lines]).ok).toBe(true);
+    // "4 years" is vouched for by the dates, even though "4" is also on the CV about volunteers.
+    expect(checkProfile("Collections volunteer with 4 years’ experience.", ["Collections volunteer", ...lines], { years: 4 }).ok).toBe(true);
   });
 });

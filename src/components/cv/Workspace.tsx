@@ -28,7 +28,9 @@ export interface FileChecks {
 }
 
 type Workspace = ReturnType<typeof useCv> &
-  ReturnType<typeof usePaper> & {
+  Pick<ReturnType<typeof usePaper>, "paper" | "state"> & {
+    /** Loads the preview's fonts again after they failed. Not the save's "Retry": the two once shared a name, and this one won. */
+    retryPaper: () => void;
     versionId: string;
     /** The field the cursor is in: its passage is marked on the paper. */
     focus: Locator | null;
@@ -90,6 +92,11 @@ export function CvWorkspace({ versionId, children }: { versionId: string; childr
   const [checks, setChecks] = useState<FileChecks | null>(null);
   const wanted = useRef<{ entry: string; field: string } | null>(null);
   const setOpenEntry = useCallback((sectionId: string, entryId: string) => setOpen((o) => ({ ...o, [sectionId]: entryId })), []);
+  // The file checks made for the CV as it was loaded come with it, so a reload does not forget them (or change the score).
+  const loadedFiles = c.files;
+  useEffect(() => {
+    if (loadedFiles) setChecks((now) => now ?? loadedFiles);
+  }, [loadedFiles]);
   const [fromFindings, setFromFindings] = useState(false);
 
   // The checks run in code, 400ms after the last change. File checks count only for the CV exactly as it is now.
@@ -124,7 +131,7 @@ export function CvWorkspace({ versionId, children }: { versionId: string; childr
     [cvNow],
   );
   const value = useMemo(
-    () => ({ ...c, ...paper, versionId, focus, setFocus, openEntry, setOpenEntry, view, setView, wanted, checks, setChecks, inspect, setInspect, previewProfile, setPreviewProfile, score, cleared, locate, fromFindings, setFromFindings }),
+    () => ({ ...c, paper: paper.paper, state: paper.state, retryPaper: paper.retry, versionId, focus, setFocus, openEntry, setOpenEntry, view, setView, wanted, checks, setChecks, inspect, setInspect, previewProfile, setPreviewProfile, score, cleared, locate, fromFindings, setFromFindings }),
     [c, paper, versionId, focus, openEntry, setOpenEntry, view, checks, inspect, previewProfile, score, cleared, locate, fromFindings],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

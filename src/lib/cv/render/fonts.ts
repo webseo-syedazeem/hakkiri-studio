@@ -36,3 +36,26 @@ export function fontKey(family: FamilyId, weight: 400 | 600 | 700, italic = fals
   if (exact in FONT_FILES) return exact as FontKey;
   return `${family}-${weight}` as FontKey;
 }
+
+/**
+ * True for a character from a script that none of the fonts here has: Chinese,
+ * Japanese, Korean, Arabic, Hebrew, the scripts of India, emoji. The fonts
+ * cover Latin, Greek and Cyrillic letters and the common symbols; for those a
+ * different pairing can have a character that this one lacks.
+ */
+export function beyondOurFonts(ch: string): boolean {
+  const cp = ch.codePointAt(0) ?? 0;
+  return cp >= 0x0530 && !(cp >= 0x1e00 && cp <= 0x2bff) && !(cp >= 0xfb00 && cp <= 0xfb06);
+}
+
+/**
+ * What to do about characters the fonts cannot draw, said truthfully. When no
+ * font here has them, choosing another pairing cannot help, so it is not
+ * suggested. The Word file is drawn with the fonts on the computer that opens
+ * it, so it can hold them.
+ */
+export function cannotDrawAdvice(chars: string[]): string {
+  return chars.some(beyondOurFonts)
+    ? "None of our fonts can draw these, so they can’t go in the PDF. Write them in Latin letters, or use the Word file, which is drawn with the fonts on the computer that opens it."
+    : "These fonts can’t draw them, so they can’t go in the PDF. Replace them, try a different font pairing, or use the Word file.";
+}

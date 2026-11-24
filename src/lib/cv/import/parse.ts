@@ -171,6 +171,8 @@ export function unplacedLines(lines: DocLine[], skip: Set<number>, placed: Set<n
   const lost = new Map<number, string>();
   const need = new Map<string, number>();
   const lastAt = new Map<string, number>();
+  /** The words of each line that was found in the CV, piece by piece. */
+  const wordsAt = new Map<number, string[]>();
   lines.forEach((l, i) => {
     if (skip.has(i)) return;
     const text = plain(l);
@@ -187,15 +189,35 @@ export function unplacedLines(lines: DocLine[], skip: Set<number>, placed: Set<n
       lost.set(i, missing.length === pieces.length ? text : missing.map((p) => p.raw).join(", "));
       return;
     }
-    for (const w of pieces.map((p) => p.key).join(" ").split(" ")) {
+    const all = pieces.map((p) => p.key).join(" ").split(" ");
+    wordsAt.set(i, all);
+    for (const w of all) {
       need.set(w, (need.get(w) ?? 0) + 1);
       lastAt.set(w, i);
     }
   });
-  // A word used more often in the file than in the CV: one of its lines was dropped.
-  for (const [w, n] of need) {
-    const at = lastAt.get(w)!;
-    if (n > (have.get(w) ?? 0) && !lost.has(at)) lost.set(at, plain(lines[at]));
+  // A word used more often in the file than in the CV: a line that had it was dropped. How many more times says how
+  // many lines: a role with 35 lines of which 30 were kept has five to report, not one.
+  const short = new Map<string, number>();
+  for (const [w, n] of need) if (n > (have.get(w) ?? 0)) short.set(w, n - (have.get(w) ?? 0));
+  if (short.size) {
+    // A line dropped whole is short of every one of its words. They are looked for from the last line back, because
+    // what does not fit is cut from the end.
+    for (let i = lines.length - 1; i >= 0 && short.size; i--) {
+      const all = wordsAt.get(i);
+      if (!all || lost.has(i) || !all.every((w) => short.has(w))) continue;
+      lost.set(i, plain(lines[i]));
+      for (const w of all) {
+        const left = (short.get(w) ?? 0) - 1;
+        if (left > 0) short.set(w, left);
+        else short.delete(w);
+      }
+    }
+    // A word still short belongs to a line that lost only part of itself: the last line that has the word.
+    for (const w of short.keys()) {
+      const at = lastAt.get(w)!;
+      if (!lost.has(at)) lost.set(at, plain(lines[at]));
+    }
   }
   return [...lost.entries()].sort((a, b) => a[0] - b[0]).map(([line, text]) => ({ line, text }));
 }

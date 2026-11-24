@@ -1,6 +1,7 @@
 import "server-only";
 import fs from "node:fs";
 import path from "node:path";
+import { type LetterPrintable, isoDate, layoutLetter, letterFit } from "../letter/flow";
 import type { CvDoc } from "../schema";
 import { writeDocx } from "./docx";
 import type { Flow } from "./flow";
@@ -62,4 +63,31 @@ export async function exportCv(cv: Printable, format: ExportFormat, now = new Da
   }
   const name = fileName(cv, format);
   return { bytes, name, mime: MIME[format], pages: layout.pages, check, missing: layout.missing, flow, headers: { "content-type": MIME[format], "content-disposition": contentDisposition(name), "cache-control": "no-store" } };
+}
+
+export interface ExportedLetter extends Exported {
+  /** Pages the letter itself takes: it is meant to take one. */
+  letterPages: number;
+}
+
+/**
+ * Makes the file for a cover letter, on its own or followed by the CV, and
+ * reads it straight back. The letter is set in the CV's own template, fonts,
+ * colour and paper size. `today` is the date printed when the letter has none
+ * of its own.
+ */
+export async function exportLetter(cv: LetterPrintable, format: ExportFormat, opts: { withCv?: boolean; now?: Date; today?: string } = {}): Promise<ExportedLetter> {
+  const now = opts.now ?? new Date();
+  const fonts = loadFonts(fontsNeeded(paperStyle(cv.design)));
+  const { flow, layout, style } = layoutLetter(cv, fonts, opts.today ?? isoDate(now), opts.withCv);
+  const info = { title: flow.title, lang: flow.lang, created: now };
+  const bytes = format === "pdf" ? writePdf(layout, flow, fonts, info) : await writeDocx(flow, style, info);
+  let check: ReadBack | null = null;
+  try {
+    check = format === "pdf" ? await readBackPdf(bytes, flow) : await readBackDocx(bytes, flow);
+  } catch (err) {
+    console.error(`[cv export] the ${format} letter could not be read back:`, err);
+  }
+  const name = fileName(cv, format, opts.withCv ? "both" : "letter");
+  return { bytes, name, mime: MIME[format], pages: layout.pages, letterPages: letterFit(layout).pages, check, missing: layout.missing, flow, headers: { "content-type": MIME[format], "content-disposition": contentDisposition(name), "cache-control": "no-store" } };
 }

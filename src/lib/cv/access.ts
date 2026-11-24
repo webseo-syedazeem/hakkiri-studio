@@ -1,8 +1,9 @@
 import "server-only";
+import { rateLimited } from "@/lib/usage/limits";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth/require";
-import { type CvDoc, CV_LEVELS, CV_REGIONS, ContactSchema, DesignSchema, ExcerptSchema, SectionSchema, TargetSchema, coreSections, emptyContact, newId } from "./schema";
+import { type CvDoc, CV_LEVELS, CV_REGIONS, ChangeRecordSchema, ContactSchema, DesignSchema, ExcerptSchema, LIMITS, LetterSchema, RequirementSchema, type Section, SectionSchema, TargetSchema, coreSections, emptyContact, newId } from "./schema";
 
 /** The signed-in person's id. Throws the same 401 response as requireUser when signed out. */
 export async function requireUserId(): Promise<string> {
@@ -59,11 +60,70 @@ export const EditableSchema = z
     sections: z.array(SectionSchema).max(24).optional(),
     design: DesignSchema.optional(),
     accepted: z.array(oneLine(60)).max(200).optional(),
+    requirements: z.array(RequirementSchema).max(40).optional(),
+    changes: z.array(ChangeRecordSchema).max(200).optional(),
+    letter: LetterSchema.nullable().optional(),
   })
   .strict();
 
-/** Every section id in a change must be different. */
-export const sectionIdsDiffer = (sections: { id: string }[] = []) => new Set(sections.map((s) => s.id)).size === sections.length;
+/**
+ * Every id in a change must be different: sections, and the entries, lines,
+ * skill groups, skills and list items inside them. Two things with one id
+ * could not be told apart by a click on the page, a finding or a letter's source.
+ */
+export function sectionIdsDiffer(sections: Section[] = []): boolean {
+  const ids: string[] = [];
+  for (const s of sections) {
+    ids.push(s.id);
+    if ("entries" in s) for (const e of s.entries) ids.push(e.id, ...e.bullets.map((b) => b.id));
+    if ("groups" in s) for (const g of s.groups) ids.push(g.id, ...g.skills.map((k) => k.id));
+    if ("items" in s) ids.push(...s.items.map((i) => i.id));
+  }
+  return new Set(ids).size === ids.length;
+}
+
+/** Why a CV is too big to save as a whole, in words for the person; null when it is not. */
+export function tooBig(sections: Section[] = []): string | null {
+  let lines = 0;
+  let skills = 0;
+  let entries = 0;
+  for (const s of sections) {
+    if ("entries" in s) {
+      entries += s.entries.length;
+      for (const e of s.entries) lines += e.bullets.length;
+    }
+    if ("groups" in s) for (const g of s.groups) skills += g.skills.length;
+  }
+  if (lines > LIMITS.totalLines) return `This CV has ${lines} lines. It can hold ${LIMITS.totalLines}: remove some to save.`;
+  if (skills > LIMITS.totalSkills) return `This CV lists ${skills} skills. It can hold ${LIMITS.totalSkills}: remove some to save.`;
+  if (entries > LIMITS.totalEntries) return `This CV has ${entries} entries. It can hold ${LIMITS.totalEntries}: remove some to save.`;
+  return null;
+}
+
+const LIST_WORDS: Record<string, string> = {
+  bullets: `One role has more than ${LIMITS.bullets} lines. Remove one to save.`,
+  entries: `One section has more than ${LIMITS.entries} entries. Remove one to save.`,
+  skills: `One group has more than ${LIMITS.skills} skills. Remove some to save.`,
+  groups: `There are more than ${LIMITS.groups} groups of skills. Remove one to save.`,
+  items: `One list has more than ${LIMITS.items} items. Remove one to save.`,
+  sections: "There are more than 24 sections. Remove one to save.",
+  links: "There are more than 4 links. Remove one to save.",
+};
+
+/** Why a change was refused, in words for the person: which list is too long, or which text. */
+export function saveProblem(error: z.ZodError): string {
+  for (const issue of error.issues) {
+    const path = issue.path.map(String);
+    const last = path[path.length - 1] ?? "";
+    if (issue.code === "too_big") {
+      // A list that is too long is named by the list; anything else that is too big is a piece of text.
+      if (last in LIST_WORDS) return LIST_WORDS[last];
+      return `Some text is longer than can be saved (${last || "a field"}). Shorten it to save.`;
+    }
+    if (issue.code === "unrecognized_keys") return "That change holds something that cannot be saved here.";
+  }
+  return "That change could not be saved. Reload the page and try again.";
+}
 
 /** What the browser may set on a saved achievement. The owner, the id and the dates are never taken from it. */
 export const AchievementInput = z
@@ -99,9 +159,65 @@ export function newCv(userId: string, setup: Setup, now: string): CvDoc {
     contact: emptyContact(),
     sections: coreSections(setup.level),
     accepted: [],
+    requirements: [],
+    changes: [],
     // One page for students, graduates and early career; up to two for experienced and senior.
     design: { template: setup.level === "student" ? "graduate" : "standard", pageSize: setup.region === "us" ? "letter" : "a4", density: "default", pageTarget: setup.level === "student" || setup.level === "early" ? 1 : 2 },
     createdAt: now,
     updatedAt: now,
   };
 }
+
+/** New CVs (made, copied or tailored) one person can start in a minute. A person clicking never reaches it; a script does. */
+export const NEW_CVS_A_MINUTE = 20;
+
+/**
+ * Refuses when one person is making CVs faster than anyone clicking could.
+ * Counted by account, not by address, so one person cannot slow another down.
+ */
+export function makingTooFast(userId: string): NextResponse | null {
+  if (!rateLimited(`cv-make:${userId}`, NEW_CVS_A_MINUTE, 60_000)) return null;
+  return NextResponse.json({ error: "slow-down", message: "That’s a lot of new CVs in a short time. Wait a minute, then try again." }, { status: 429 });
+}
+
+/** The most a save may hold. A CV at every one of its limits, with its letter and advert, is well under this. */
+export const MAX_SAVE_BYTES = 4 * 1024 * 1024;
+
+export type JsonBody = { ok: true; body: unknown } | { ok: false; reason: "too-big" | "not-json" };
+
+/**
+ * Reads a JSON body, counting the bytes as they arrive. More than `max` is
+ * refused without reading the rest: the size a request claims for itself is
+ * not relied on, because it can be left out or be wrong.
+ */
+export async function readJson(req: Request, max: number): Promise<JsonBody> {
+  if (Number(req.headers.get("content-length") ?? 0) > max) return { ok: false, reason: "too-big" };
+  if (!req.body) return { ok: false, reason: "not-json" };
+  const reader = req.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    size += value.byteLength;
+    if (size > max) {
+      await reader.cancel().catch(() => {});
+      return { ok: false, reason: "too-big" };
+    }
+    chunks.push(value);
+  }
+  const bytes = new Uint8Array(size);
+  let at = 0;
+  for (const c of chunks) {
+    bytes.set(c, at);
+    at += c.byteLength;
+  }
+  try {
+    return { ok: true, body: JSON.parse(new TextDecoder().decode(bytes)) };
+  } catch {
+    return { ok: false, reason: "not-json" };
+  }
+}
+
+/** The answer to a save that is larger than any CV: said plainly, so the screen can show it. */
+export const tooBigToSave = () => NextResponse.json({ error: "too_large", message: "That is more than a CV can hold, so it was not saved. Shorten what you pasted and try again." }, { status: 413 });

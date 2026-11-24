@@ -1,4 +1,4 @@
-import { FILLER, type Figure, figures, leadWords, sentences, stem, supportWords, terms } from "./facts";
+import { FILLER, type Figure, TEAM, countedPhrase, countsTheSame, figures, leadWords, meaningWords, orderedFigures, sentences, stem, supportWords, terms } from "./facts";
 
 /**
  * The checks every piece of drafted writing must pass before a person sees it
@@ -13,7 +13,7 @@ import { FILLER, type Figure, figures, leadWords, sentences, stem, supportWords,
  *    as they gave it.
  */
 
-export type ProblemKind = "added-figure" | "dropped-figure" | "estimate" | "ownership" | "added-word" | "dropped-word" | "replaced" | "first-person" | "length";
+export type ProblemKind = "added-figure" | "dropped-figure" | "estimate" | "ownership" | "added-word" | "dropped-word" | "replaced" | "first-person" | "length" | "unsourced" | "negation";
 
 export interface Problem {
   kind: ProblemKind;
@@ -42,7 +42,15 @@ interface GroundOptions {
   whose?: string;
   /** The draft is a new wording of the sources as a whole (a rewrite), so every supporting word in them must stay. */
   sameClaim?: boolean;
+  /** An exact figure may be said less exactly ("about 1,200" for 1,200). Never the other way round. */
+  mayHedge?: boolean;
+  /**
+   * The sources that are the person's own words, when not all of them are. Only in these does "we" mean the
+   * person and their team: an employer's "We are a travel company" is not work the person shared in.
+   */
+  own?: string[];
 }
+
 
 /** A draft says nothing that its sources do not: no new figure, no new word that carries a claim, no bigger share of the credit, no estimate made exact. */
 export function checkGrounded(draft: string, sources: string[], opts: GroundOptions = {}): Verdict {
@@ -52,15 +60,23 @@ export function checkGrounded(draft: string, sources: string[], opts: GroundOpti
   const allowedFigures = new Set(opts.allowFigures ?? []);
 
   for (const f of figures(draft)) {
+    // A figure the caller vouches for (years worked out from the dates, the day someone can start) is not checked against the sources.
+    if (allowedFigures.has(f.key)) continue;
     const same = sourceFigures.filter((s) => s.key === f.key);
     if (!same.length) {
-      if (!allowedFigures.has(f.key)) problems.push({ kind: "added-figure", proposed: f.text, say: `It added ${q(f.text)}, which isn’t in ${whose}.` });
+      problems.push({ kind: "added-figure", proposed: f.text, say: `It added ${q(f.text)}, which isn’t in ${whose}.` });
       continue;
     }
     // An estimate stays an estimate; a floor stays a floor.
-    if (!same.some((s) => s.hedge === f.hedge)) {
+    if (!same.some((s) => s.hedge === f.hedge) && !(opts.mayHedge && f.hedge === "about" && same.some((s) => s.hedge === ""))) {
       const s = same[0];
       problems.push({ kind: "estimate", original: s.phrase, proposed: f.phrase, say: `${cap(whose)} say ${q(s.phrase)} (${HEDGE_WORD[s.hedge]}); the draft says ${q(f.phrase)} (${HEDGE_WORD[f.hedge]}).` });
+    }
+    // A figure counts something, and it must count the same thing here as where it came from: "1,200 objects"
+    // does not back "1,200 volunteers", and "5 engineers and 12 contractors" does not back "12 engineers".
+    const holders = sources.flatMap((src) => figures(src).filter((g) => g.key === f.key).map((g) => ({ src, g })));
+    if (!holders.some((h) => countsTheSame(draft, f, h.src, h.g))) {
+      problems.push({ kind: "added-figure", proposed: f.text, say: `It says ${q(countedPhrase(draft, f))}. In ${whose}, ${q(f.text)} is about something else.` });
     }
   }
 
@@ -73,8 +89,10 @@ export function checkGrounded(draft: string, sources: string[], opts: GroundOpti
   const draftSupport = family(supportWords(draft));
   const draftStems = new Set(terms(draft).map((t) => t.stem));
   const droppedSupport: string[] = [];
-  for (const sentence of sources.flatMap(sentences)) {
-    const support = supportWords(sentence).filter((w) => !draftSupport.has(stem(w.split(" ")[0])));
+  const mine = opts.own ?? sources;
+  for (const sentence of mine.flatMap(sentences)) {
+    // "We" is kept as "we", or as any wording that says the work was shared ("as part of the team").
+    const support = supportWords(sentence).filter((w) => !draftSupport.has(stem(w.split(" ")[0])) && !(TEAM.includes(w) && draftSupport.size > 0));
     if (!support.length) continue;
     const skip = new Set(supportWords(sentence).flatMap((w) => w.split(" ").map(stem)));
     const content = terms(sentence).filter((t) => !skip.has(t.stem));
@@ -87,6 +105,8 @@ export function checkGrounded(draft: string, sources: string[], opts: GroundOpti
 
   const known = new Set(sources.flatMap(terms).map((t) => t.stem));
   for (const w of opts.allow ?? []) known.add(stem(w));
+  // "As part of the team" is how "we" is said on a CV: where the person said "we", those words add nothing.
+  if (mine.some((src) => supportWords(src).some((w) => TEAM.includes(w)))) for (const w of ["part", "team"]) known.add(stem(w));
   const flagged = new Set<string>(problems.flatMap((p) => [p.proposed ?? "", p.original ?? ""]).flatMap((p) => p.toLowerCase().split(" ")));
   const added = terms(draft).filter((t) => !known.has(t.stem) && !flagged.has(t.text.toLowerCase()));
   for (const t of dedupe(added)) problems.push({ kind: "added-word", proposed: t.text, say: `It added ${q(t.text)}, which isn’t in ${whose}.` });
@@ -109,6 +129,27 @@ export function checkRewrite(original: string, proposed: string, extra: string[]
   for (const f of figures(original)) if (!kept.has(f.key) && !droppedFigures.some((d) => d.key === f.key)) droppedFigures.push(f);
   for (const f of droppedFigures) problems.push({ kind: "dropped-figure", original: f.text, say: `It dropped ${q(f.text)}.` });
 
+  // Small words carry meaning: "could cut" is not "cut", "did not miss" is not "missed", "most of" is not all of.
+  const tally = (words: string[]) => words.reduce((m, w) => m.set(w, (m.get(w) ?? 0) + 1), new Map<string, number>());
+  const had = tally(meaningWords(original));
+  const mayHave = tally(meaningWords([original, ...extra].join(" ")));
+  const has = tally(meaningWords(proposed));
+  const said = new Set(problems.flatMap((p) => `${p.original ?? ""} ${p.proposed ?? ""}`.toLowerCase().split(/\s+/)));
+  for (const w of new Set([...had.keys(), ...has.keys()])) {
+    if (said.has(w)) continue;
+    if ((has.get(w) ?? 0) > (mayHave.get(w) ?? 0)) problems.push({ kind: "added-word", proposed: w, say: `It added ${q(w)}, which changes what you claim.` });
+    else if ((has.get(w) ?? 0) < (had.get(w) ?? 0)) problems.push({ kind: "dropped-word", original: w, say: `It dropped ${q(w)}, which changes what you claim.` });
+  }
+
+  // Where only the order says which figure is which ("from 18% to 12%"), the order stays.
+  const order = (text: string) => orderedFigures(text).map((f) => f.key);
+  const was = order(original).filter((k) => order(proposed).includes(k));
+  const now = order(proposed).filter((k) => was.includes(k));
+  if (was.join("|") !== now.join("|")) {
+    const shown = orderedFigures(original).map((f) => f.text).join(", ");
+    problems.push({ kind: "replaced", original: shown, say: `It changed the order of the figures. Your words have them as ${q(shown)}.` });
+  }
+
   const there = new Set(terms(proposed).map((t) => t.stem));
   const flagged = new Set(problems.flatMap((p) => (p.original ?? "").toLowerCase().split(" ")));
   const dropped = dedupe(terms(original).filter((t) => !there.has(t.stem) && !FILLER.has(t.text.toLowerCase()) && !flagged.has(t.text.toLowerCase())));
@@ -117,6 +158,9 @@ export function checkRewrite(original: string, proposed: string, extra: string[]
     // One word out and one word in: say it as a replacement.
     const at = problems.indexOf(added[0]);
     problems[at] = { kind: "replaced", original: dropped[0].text, proposed: added[0].proposed, say: `It replaced ${q(dropped[0].text)} with ${q(added[0].proposed!)}.` };
+    // The same swap, seen through the figure beside it ("40 volunteers" to "40 staff"), is not said twice.
+    const swapped = added[0].proposed!.toLowerCase();
+    return { ok: false, problems: problems.filter((p) => !(p.kind === "added-figure" && p.say.includes("about something else") && p.say.toLowerCase().includes(` ${swapped}”`))) };
   } else for (const t of dropped) problems.push({ kind: "dropped-word", original: t.text, say: `It dropped ${q(t.text)}.` });
 
   return { ok: problems.length === 0, problems };

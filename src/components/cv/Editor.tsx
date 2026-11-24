@@ -17,6 +17,8 @@ import { Finish } from "./Finish";
 import { PaperView } from "./Paper";
 import { ContactForm, type FieldHooks, SectionForm } from "./SectionForms";
 import { ACCEPT, STAGE_WORDS, type UploadStage, sendUpload } from "./upload";
+import { jobFit } from "@/lib/cv/tailor/fit";
+import { fitLabel } from "./Tailor";
 import { Announce, Bar, Btn, BtnLink, CvScreen, Field, Fixed, Note, Panel, Skeleton, Toolbar } from "./ui";
 import { SAVE_WORDS } from "./useCv";
 import { useWorkspace } from "./Workspace";
@@ -260,6 +262,12 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
         <BtnLink href={`/cv/v/${cv.id}/findings`} onClick={() => void flush()} data-testid="score-button">
           {scoreLabel(w.score, word)}
         </BtnLink>
+        <BtnLink href={`/cv/v/${cv.id}/tailor`} onClick={() => void flush()} data-testid="fit-button">
+          {fitLabel(cv.requirements.length ? jobFit(cv).score : null)}
+        </BtnLink>
+        <BtnLink href={`/cv/v/${cv.id}/letter`} onClick={() => void flush()} data-testid="letter-button">
+          Cover letter
+        </BtnLink>
         <small role="status" data-testid="save-state">
           {SAVE_WORDS[save]}
         </small>
@@ -285,10 +293,15 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
             </Btn>
           </div>
         )}
-        {(save === "device" || save === "failed") && (
-          <div className="cv-issue" role="alert" style={{ marginBottom: 18 }}>
-            <strong>{SAVE_WORDS[save]}</strong>
-            <span>{save === "device" ? "Your changes couldn’t reach us, so they are kept on this device. They will be saved when you’re back online." : "Your changes couldn’t be saved. Check you’re online and press Retry."}</span>
+        {w.saveNote && (
+          <div className="cv-note" role="status" style={{ marginBottom: 18 }} data-testid="save-note">
+            {w.saveNote}
+          </div>
+        )}
+        {(save === "device" || save === "failed" || (save === "saving" && w.troubled)) && (
+          <div className="cv-issue" role="alert" style={{ marginBottom: 18 }} data-testid="save-trouble">
+            <strong>{save === "saving" ? "Trying again…" : SAVE_WORDS[save]}</strong>
+            <span>{save === "saving" ? "Sending your changes again." : save === "device" ? "Your changes couldn’t reach us, so they are kept on this device. They will be saved when you’re back online." : (w.saveError ? `${w.saveError} What you typed is still here.` : "Your changes couldn’t be saved. Check you’re online and press Retry.")}</span>
           </div>
         )}
         {pending && (
@@ -437,7 +450,7 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
                 }}
               />
             ) : (
-            <PaperView paper={paper} state={w.state} retry={w.retry} cv={cv} focus={isFinish ? null : focus} onPick={pick} word={word}>
+            <PaperView paper={paper} state={w.state} retry={w.retryPaper} cv={cv} focus={isFinish ? null : focus} onPick={pick} word={word}>
               {w.previewProfile !== null && (
                 <div className="cv-note" style={{ marginBottom: 10 }} data-testid="profile-preview">
                   Preview of your profile. It isn’t in your {word} yet.

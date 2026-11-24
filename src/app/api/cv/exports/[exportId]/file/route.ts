@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { failure, notFound, requireUserId } from "@/lib/cv/access";
-import { exportCv } from "@/lib/cv/render/server";
+import { exportCv, exportLetter } from "@/lib/cv/render/server";
 import { getOwnExport } from "@/lib/cv/store";
 import { guard } from "@/lib/usage/limits";
 
@@ -18,7 +18,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ exportId
     const userId = await requireUserId();
     const record = await getOwnExport((await params).exportId, userId);
     if (!record) return notFound("Download");
-    const out = await exportCv({ ...record.cv, design: { ...record.cv.design } }, record.format, new Date(record.at));
+    const kept = { ...record.cv, design: { ...record.cv.design } };
+    const out = record.what === "cv" ? await exportCv(kept, record.format, new Date(record.at)) : await exportLetter(kept, record.format, { withCv: record.what === "both", now: new Date(record.at) });
     if (record.checked && out.check?.status !== "checked") return NextResponse.json({ error: "loss", message: "This file can no longer be made exactly as it was." }, { status: 409 });
     return new Response(out.bytes as unknown as BodyInit, { headers: { ...out.headers, "content-disposition": out.headers["content-disposition"].replace(/filename="[^"]*"/, `filename="${record.name.replace(/[^\x20-\x7e]|["\\]/g, "")}"`).replace(/filename\*=UTF-8''[^;]*/, `filename*=UTF-8''${encodeURIComponent(record.name)}`), "x-cv-check": record.checked ? "checked" : "unchecked" } });
   } catch (err) {

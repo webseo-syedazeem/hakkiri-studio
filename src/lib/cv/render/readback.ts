@@ -27,6 +27,8 @@ export interface ReadBack {
 export function wordsOf(text: string): string[] {
   return text
     .normalize("NFKC")
+    // Characters that take no space and cannot be seen (a soft hyphen pasted in from a web page) are not words.
+    .replace(/[\u00ad\u200b-\u200f\u2028\u2029\u2060\ufeff]/g, "")
     .toLowerCase()
     // Curly and straight quotes are the same words; the readers tidy one into the other.
     .replace(/[\u2018\u2019\u201a\u201b]/g, "'")
@@ -34,6 +36,22 @@ export function wordsOf(text: string): string[] {
     .replace(/[•·\t]/g, " ")
     .split(/\s+/)
     .filter(Boolean);
+}
+
+/**
+ * How many of the file's words, starting at `from`, join up to make `word`
+ * exactly: 0 when they do not. Only for a word long enough that a page could
+ * not hold it on one line; two ordinary words run together are a difference.
+ */
+function piecesOf(word: string, got: string[], from: number): number {
+  if (word.length < 30 || !word.startsWith(got[from]) || got[from].length >= word.length) return 0;
+  let joined = got[from];
+  let n = 1;
+  while (joined.length < word.length && from + n < got.length && word.startsWith(joined + got[from + n])) {
+    joined += got[from + n];
+    n++;
+  }
+  return joined === word ? n : 0;
 }
 
 /** Compares what the CV should say with what a file's text says. */
@@ -58,6 +76,14 @@ export function compareText(flow: Flow, fileText: string, pages = 0): ReadBack {
       j++;
       continue;
     }
+    // A word too long for one line of the page (a web address) is drawn on two lines or more, and is read back in
+    // pieces. Pieces that, put together in order, are exactly the word are that word: nothing is lost or added.
+    const pieces = piecesOf(want[i], got, j);
+    if (pieces) {
+      i++;
+      j += pieces;
+      continue;
+    }
     let skipWant = -1;
     let skipGot = -1;
     for (let k = 1; k <= AHEAD && skipWant < 0 && skipGot < 0; k++) {
@@ -79,18 +105,22 @@ export function compareText(flow: Flow, fileText: string, pages = 0): ReadBack {
   }
   for (; i < want.length; i++) missing.add(owner[i]);
   unexpected.push(...got.slice(j));
+  // Every difference turned out to be a word drawn in pieces: the file says what the CV says.
+  if (!missing.size && !unexpected.length) return { status: "checked", missing: [], unexpected: [], words: want.length, pages };
   return { status: "loss", missing: [...missing].sort((a, b) => a - b).map((p) => pieces[p]), unexpected, words: want.length, pages };
 }
 
 /** Reads a PDF back with pdf.js and compares it with the CV. */
 export async function readBackPdf(bytes: Uint8Array, flow: Flow): Promise<ReadBack> {
   // Our own files have no running headers or footers, so no line is set aside as one.
-  const file = await extractPdf(bytes, isOnlyDates, { keepEdges: true });
+  // The text is read as it is on the page. The upload reader's tidying (taking list marks off, joining a line that
+  // ends in a hyphen to the next) is for other people's files; on ours it would report differences that are not there.
+  const file = await extractPdf(bytes, isOnlyDates, { keepEdges: true, raw: true });
   return compareText(flow, file.lines.map((l) => l.text).join("\n"), file.pages);
 }
 
 /** Reads a Word file back with the .docx reader and compares it with the CV. */
 export async function readBackDocx(bytes: Uint8Array, flow: Flow): Promise<ReadBack> {
-  const file = await extractDocx(bytes);
+  const file = await extractDocx(bytes, { raw: true });
   return compareText(flow, file.lines.map((l) => l.text).join("\n"), file.pages);
 }

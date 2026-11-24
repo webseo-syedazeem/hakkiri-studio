@@ -28,6 +28,8 @@ interface AuditResponse {
   teaserFindings: TeaserFinding[];
   totalFindingsCount: number;
   isGoodEnough: boolean;
+  /** One or two sentences made by the server from this check's own results. */
+  summary?: string;
   interviewerQuestionsCount: number;
 }
 
@@ -165,7 +167,7 @@ export default function CvAuditPage() {
                 <span>✦</span> Free CV check
               </div>
               <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white">
-                Free AI Resume & CV Score Audit
+                Free CV and resume check
               </h1>
               <p className="text-sm sm:text-base text-slate-300 max-w-2xl mx-auto leading-relaxed">
                 Know where your CV stands before you apply: a score, the lines to fix first, and the questions an interviewer is likely to ask.
@@ -368,52 +370,41 @@ export default function CvAuditPage() {
                   <span
                     className={clsx(
                       "text-xs font-bold uppercase tracking-wider",
-                      result.score >= 85
-                        ? "text-emerald-400"
-                        : result.score >= 70
-                        ? "text-blue-300"
-                        : "text-amber-400"
+                      result.isGoodEnough ? "text-emerald-400" : "text-amber-400"
                     )}
                   >
-                    {result.score >= 85
-                      ? "Ready to Apply"
-                      : result.score >= 70
-                      ? "Competitive"
-                      : "Needs Improvement"}
+                    {result.isGoodEnough ? "Good enough to apply" : `${result.totalFindingsCount} ${result.totalFindingsCount === 1 ? "thing" : "things"} to look at`}
                   </span>
                 </div>
               </div>
 
-              <p className="text-sm text-slate-300 max-w-xl mx-auto leading-relaxed">
-                {result.score >= 85
-                  ? "🌟 Strong CV: Surpasses the 85+ stop-polishing line. Stop polishing and start applying."
-                  : result.score >= 70
-                  ? "👍 Good with gaps: High clarity, but adding quantified impact metrics will dramatically boost interview callback rates."
-                  : "⚠️ Needs Optimization: High-severity duty phrasing and missing metrics detected. Follow the diagnostic findings below."}
+              {/* Said from this check's own results, never a stock line. */}
+              <p className="text-sm text-slate-300 max-w-xl mx-auto leading-relaxed" data-testid="check-summary">
+                {result.summary || (result.isGoodEnough ? "This CV is good enough to apply with." : "The findings below say what to look at first.")}
               </p>
 
               {/* 5 ATS Subscores Grid */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-6 border-t border-white/10 text-left">
                 <div className="rounded-2xl bg-[#18192c] p-4 border border-white/10">
-                  <div className="text-[11px] text-slate-400 font-mono">Evidence & Metrics (35%)</div>
+                  <div className="text-[11px] text-slate-400 font-mono">Evidence (45 points)</div>
                   <div className="text-2xl font-black text-emerald-400 font-mono mt-1">
                     {result.subscores.evidence}%
                   </div>
                 </div>
                 <div className="rounded-2xl bg-[#18192c] p-4 border border-white/10">
-                  <div className="text-[11px] text-slate-400 font-mono">Clarity & Brevity (25%)</div>
+                  <div className="text-[11px] text-slate-400 font-mono">Clarity (20 points)</div>
                   <div className="text-2xl font-black text-blue-300 font-mono mt-1">
                     {result.subscores.clarity}%
                   </div>
                 </div>
                 <div className="rounded-2xl bg-[#18192c] p-4 border border-white/10">
-                  <div className="text-[11px] text-slate-400 font-mono">Structure & Norms (20%)</div>
+                  <div className="text-[11px] text-slate-400 font-mono">Structure (20 points)</div>
                   <div className="text-2xl font-black text-purple-300 font-mono mt-1">
                     {result.subscores.structure}%
                   </div>
                 </div>
                 <div className="rounded-2xl bg-[#18192c] p-4 border border-white/10">
-                  <div className="text-[11px] text-slate-400 font-mono">Readable by software (10%)</div>
+                  <div className="text-[11px] text-slate-400 font-mono">Readable by software (15 points)</div>
                   <div className="text-2xl font-black text-teal-300 font-mono mt-1">
                     {result.subscores.software}%
                   </div>
@@ -444,9 +435,11 @@ export default function CvAuditPage() {
                       </span>
                     </div>
 
-                    <div className="rounded-xl bg-[#090a14] p-3 border-l-4 border-blue text-xs font-mono text-slate-300 italic">
-                      &quot;{finding.quote}&quot;
-                    </div>
+                    {finding.quote?.trim() && (
+                      <div className="rounded-xl bg-[#090a14] p-3 border-l-4 border-blue text-xs font-mono text-slate-300 italic">
+                        &quot;{finding.quote}&quot;
+                      </div>
+                    )}
 
                     <div className="text-xs text-slate-300">
                       <b className="text-white">Problem:</b> {finding.problem}
@@ -467,10 +460,11 @@ export default function CvAuditPage() {
                   <span>✓</span> Free 1-Click Access
                 </div>
                 <h3 className="text-xl sm:text-2xl font-black text-white">
-                  Unlock Full Report & Challenger Interview Questions
+                  {result.interviewerQuestionsCount > 0 ? "Unlock the full report and interview questions" : "Unlock the full report"}
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                  Access the complete diagnostic breakdown ({result.totalFindingsCount} findings), and the {result.interviewerQuestionsCount} challenger questions hiring managers will ask based on this CV.
+                  See all {result.totalFindingsCount} {result.totalFindingsCount === 1 ? "finding" : "findings"}
+                  {result.interviewerQuestionsCount > 0 ? `, and ${result.interviewerQuestionsCount} ${result.interviewerQuestionsCount === 1 ? "question" : "questions"} an interviewer could ask about lines in this CV` : ""}. Then open the same text in the CV builder to fix them.
                 </p>
 
                 <form onSubmit={handleUnlock} className="space-y-4 pt-3 text-left">

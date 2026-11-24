@@ -9,7 +9,7 @@ import { docWord } from "@/lib/cv/sections";
 import { ApiError, api, messageOf } from "./client";
 import { PaperView } from "./Paper";
 import { Bar, Btn, BtnLink, CvScreen, Panel, Skeleton, Toolbar } from "./ui";
-import { usePaper } from "./usePaper";
+import { useLetterPaper, usePaper } from "./usePaper";
 import { useWorkspace } from "./Workspace";
 
 type Format = "pdf" | "docx";
@@ -161,7 +161,7 @@ export function Software({ format }: { format: Format }) {
         {view && first && !stale && (
           <div className="cv-issue" style={{ marginBottom: 18 }} data-testid="first-loss">
             <span className="min-w-0 grow">
-              {first.read ? `The ${NAME[format]} reads ${first.label.toLowerCase()} as “${first.read.split("\n")[0]}”. Your ${word} says “${first.expected.split("\n")[0]}”.` : `The ${NAME[format]} lost ${first.label.toLowerCase()}. Your ${word} contains “${first.expected.split("\n")[0]}”. Nothing was read for it.`}
+              {first.read ? `The ${NAME[format]} reads ${first.label.toLowerCase()} as “${first.read.split("\n")[0]}”. Your ${word} says “${first.expected.split("\n")[0]}”.` : `A parser reading the ${NAME[format]} did not find ${/^[aeiou]/i.test(first.label) ? "an" : "a"} ${first.label.toLowerCase()}. Your ${word} says “${first.expected.split("\n")[0]}”. The words may still be in the file: compare the two.`}
             </span>
             <Btn onClick={() => (setTab("fields"), document.getElementById(`field-${wrong.indexOf(first)}`)?.scrollIntoView({ block: "center" }))}>Compare entry</Btn>
             <Btn onClick={() => void check()}>Rebuild {format === "pdf" ? "PDF" : "Word file"}</Btn>
@@ -275,9 +275,13 @@ export function ExportRecordView({ exportId }: { exportId: string }) {
       .then((r) => setRecord(r.export))
       .catch(() => setMissing(true));
   }, [exportId]);
-  const paper = usePaper(record?.cv ?? null);
-  const back = `/cv/v/${w.versionId}/edit/finish#files`;
-  const crumbs = [{ label: "CVs and letters", href: "/cv" }, { label: w.cv?.name ?? record?.cv.name ?? "CV", href: back }, { label: "What you sent" }];
+  const hasLetter = !!record && record.what !== "cv";
+  const paper = usePaper(record && record.what !== "letter" ? record.cv : null);
+  // A letter is shown with the date it was sent with, which was fixed when the file was made.
+  const letterPaper = useLetterPaper(hasLetter ? record.cv : null, record?.at.slice(0, 10) ?? "");
+  const back = hasLetter ? `/cv/v/${w.versionId}/letter` : `/cv/v/${w.versionId}/edit/finish#files`;
+  const backWord = hasLetter ? "Back to the letter" : "Back to Finish";
+  const crumbs = [{ label: "CVs and letters", href: "/cv" }, { label: w.cv?.name ?? record?.cv.name ?? "CV", href: back }, { label: "What you downloaded" }];
 
   if (missing)
     return (
@@ -285,7 +289,7 @@ export function ExportRecordView({ exportId }: { exportId: string }) {
         <Bar crumbs={crumbs} />
         <div className="cv-area">
           <Toolbar title="Download not found" subtitle="It may have been deleted, or it belongs to another account.">
-            <BtnLink href={back}>Back to Finish</BtnLink>
+            <BtnLink href={back}>{backWord}</BtnLink>
           </Toolbar>
         </div>
       </CvScreen>
@@ -301,6 +305,7 @@ export function ExportRecordView({ exportId }: { exportId: string }) {
     );
 
   const word = docWord(record.cv.region);
+  const what = record.what === "letter" ? "cover letter" : record.what === "both" ? `cover letter and ${word}` : word;
   const changed = !!w.cv && w.cv.rev !== record.rev;
   const run = async (what: string, fn: () => Promise<void>) => {
     setBusy(what);
@@ -316,10 +321,10 @@ export function ExportRecordView({ exportId }: { exportId: string }) {
   return (
     <CvScreen>
       <Bar crumbs={crumbs}>
-        <BtnLink href={back}>Back to Finish</BtnLink>
+        <BtnLink href={back}>{backWord}</BtnLink>
       </Bar>
       <div className="cv-area">
-        <Toolbar eyebrow={`Downloaded ${when(record.at)}`} title={record.name} subtitle={`Your ${word} exactly as it was when this file was made.`}>
+        <Toolbar eyebrow={`Downloaded ${when(record.at)}`} title={record.name} subtitle={`Your ${what} exactly as ${record.what === "both" ? "they were" : "it was"} when this file was made.`}>
           <Btn kind="primary" busy={busy === "file"} onClick={() => void run("file", async () => void (await saveFile(`/api/cv/exports/${record.id}/file`, record.name)))}>
             Download this file again
           </Btn>
@@ -327,14 +332,14 @@ export function ExportRecordView({ exportId }: { exportId: string }) {
         <div className="cv-layout" style={{ gridTemplateColumns: "minmax(0, 352fr) minmax(0, 816fr)" }}>
           <Panel title="About this file" data-testid="export-record">
             <div className="cv-pad cv-stack">
-              <p className={record.checked ? "cv-good" : "cv-warn"}>{record.checked ? "✓ Checked when it was made: it read back the same as your CV." : "Downloaded unchecked: the check could not be run at the time."}</p>
+              <p className={record.checked ? "cv-good" : "cv-warn"}>{record.checked ? `✓ Checked when it was made: it read back the same as your ${what}.` : "Downloaded unchecked: the check could not be run at the time."}</p>
               <ul className="cv-plainlist">
                 <li>{record.format === "pdf" ? "PDF" : "Word file"}{record.pages ? `, ${record.pages === 1 ? "one page" : `${record.pages} pages`}` : ""}</li>
                 <li>Template: {record.cv.design.template}</li>
                 {record.cv.target?.title && <li>For: {[record.cv.target.title, record.cv.target.employer].filter(Boolean).join(" · ")}</li>}
               </ul>
               <p className="cv-note" data-testid="record-changed">
-                {changed ? `Your ${word} has been changed since. This page shows what you sent, not what it says now.` : `Your ${word} has not changed since this download.`}
+                {changed ? `Your ${word}${hasLetter ? " or letter" : ""} has been changed since. This page shows what you downloaded, not what it says now.` : `Your ${word}${hasLetter ? " and letter have" : " has"} not changed since this download.`}
               </p>
               {problem && (
                 <p className="cv-error-text" role="alert">
@@ -359,10 +364,19 @@ export function ExportRecordView({ exportId }: { exportId: string }) {
                 </Btn>
               </div>
               <small style={{ display: "block" }}>Deleting the record does not change your {word}.</small>
+              {record.cv.target?.advert && (
+                <details data-testid="record-advert">
+                  <summary>The advert as it was</summary>
+                  <p className="cv-small" style={{ whiteSpace: "pre-wrap", marginTop: 6 }}>
+                    {record.cv.target.advert}
+                  </p>
+                </details>
+              )}
             </div>
           </Panel>
-          <div className="min-w-0">
-            <PaperView paper={paper.paper} state={paper.state} retry={paper.retry} cv={record.cv} focus={null} word={word} />
+          <div className="cv-stack min-w-0">
+            {hasLetter && <PaperView paper={letterPaper.paper} state={letterPaper.state} retry={letterPaper.retry} cv={record.cv} focus={null} word="letter" />}
+            {record.what !== "letter" && <PaperView paper={paper.paper} state={paper.state} retry={paper.retry} cv={record.cv} focus={null} word={word} />}
           </div>
         </div>
       </div>
@@ -394,7 +408,7 @@ export function Downloads({ versionId, refresh }: { versionId: string; refresh: 
           </li>
         ))}
       </ul>
-      <small style={{ display: "block", marginTop: 6 }}>Each one opens exactly what you sent, even after your CV changes.</small>
+      <small style={{ display: "block", marginTop: 6 }}>Each one opens exactly what you downloaded, even after your CV changes.</small>
     </div>
   );
 }

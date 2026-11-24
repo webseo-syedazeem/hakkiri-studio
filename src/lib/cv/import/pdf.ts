@@ -9,6 +9,16 @@ import { type DocLine, cleanText, makeLine, splitBullet, splitNumbered } from ".
  */
 
 const MAX_PAGES = 12;
+/**
+ * The most pieces of text taken from one page, the most characters from one
+ * file, and how long reading one file may take. A CV has a few thousand
+ * pieces; a file made to waste time draws the same line a million times.
+ */
+const MAX_PAGE_ITEMS = 30_000;
+const MAX_FILE_CHARS = 400_000;
+const MAX_READ_MS = 20_000;
+/** A file this app wrote is read back whatever its length; this only stops a runaway. */
+const MAX_OWN_PAGES = 400;
 
 interface Item {
   str: string;
@@ -131,14 +141,17 @@ function findGutter(rows: Row[], isDates: (s: string) => boolean): number | null
   return x;
 }
 
-function rowToRaw(segs: Seg[], y: number, page: number, col: number, top: number): Raw | null {
+function rowToRaw(segs: Seg[], y: number, page: number, col: number, top: number, raw = false): Raw | null {
   if (!segs.length) return null;
   let parts = segs.map((s) => cleanText(s.text));
   let bullet = false;
   let textX = segs[0].x0;
   // A bullet mark may be a piece of its own, or the start of the first piece.
-  const first = splitBullet(parts[0]);
-  if (first.bullet) {
+  // Reading one of our own files back, nothing is taken as a mark: a line that starts "- from a two-day course" is text.
+  const first = raw ? { bullet: false, text: parts[0] } : splitBullet(parts[0]);
+  if (raw) {
+    /* every piece is kept as it is */
+  } else if (first.bullet) {
     bullet = true;
     if (first.text) {
       parts[0] = first.text;
@@ -268,7 +281,20 @@ export interface ExtractedFile {
 }
 
 /** Reads a PDF into lines. Throws an ImportError with a plain reason when the file cannot be read. */
-export async function extractPdf(bytes: Uint8Array, isDates: (s: string) => boolean, opts: { /** Keep every line: the file is known to have no running headers or footers. */ keepEdges?: boolean } = {}): Promise<ExtractedFile> {
+export async function extractPdf(
+  bytes: Uint8Array,
+  isDates: (s: string) => boolean,
+  opts: {
+    /** Keep every line: the file is known to have no running headers or footers. */
+    keepEdges?: boolean;
+    /**
+     * Read the text exactly as it is on the page: no list marks taken off, no wrapped lines joined, no columns
+     * looked for, no page limit. Used only to read back a file this app has just written, where any tidying
+     * would make the file look different from what was put into it.
+     */
+    raw?: boolean;
+  } = {},
+): Promise<ExtractedFile> {
   // The legacy build runs on the server without a browser.
   const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
   const task = pdfjs.getDocument({ data: new Uint8Array(bytes), verbosity: 0, fontExtraProperties: true, useSystemFonts: false });
@@ -280,14 +306,34 @@ export async function extractPdf(bytes: Uint8Array, isDates: (s: string) => bool
     if (name === "PasswordException") throw new ImportError("password", "The PDF is password-protected.");
     throw new ImportError("unreadable", "The PDF could not be opened.");
   }
+  // An uploaded file gets a fixed time. When it runs out the reading is stopped where it is and the file is refused.
+  let outOfTime = false;
+  const clock = opts.raw
+    ? null
+    : setTimeout(() => {
+        outOfTime = true;
+        void task.destroy().catch(() => {});
+      }, MAX_READ_MS);
   try {
-    if (doc.numPages > MAX_PAGES) throw new ImportError("too-long", `The PDF has ${doc.numPages} pages.`);
+    if (doc.numPages > (opts.raw ? MAX_OWN_PAGES : MAX_PAGES)) throw new ImportError("too-long", `The PDF has ${doc.numPages} pages.`);
     const raw: Raw[][] = [[], []];
     let chars = 0;
     for (let p = 1; p <= doc.numPages; p++) {
       const page = await doc.getPage(p);
       const view = page.getViewport({ scale: 1 });
-      const content = await page.getTextContent();
+      // The text is taken a batch at a time, so a page with far more on it than any CV is given up on part-way.
+      const content: { items: unknown[] } = { items: [] };
+      const batches = page.streamTextContent().getReader();
+      for (;;) {
+        const { done, value } = await batches.read();
+        if (done) break;
+        for (const it of value.items) content.items.push(it);
+        if (!opts.raw && content.items.length > MAX_PAGE_ITEMS) {
+          // The reader must be given a reason, or it refuses to stop.
+          await batches.cancel(new Error("more text than a CV")).catch(() => {});
+          throw new ImportError("too-much", "A page of the PDF has far more text on it than a CV.");
+        }
+      }
       // Font names say which text is bold; they are only loaded once the page has been walked.
       const fontBold = new Map<string, boolean>();
       try {
@@ -308,8 +354,8 @@ export async function extractPdf(bytes: Uint8Array, isDates: (s: string) => bool
         return fontBold.get(font)!;
       };
       const items: Item[] = [];
-      for (const it of content.items) {
-        if (!("str" in it) || !it.str.trim()) continue;
+      for (const it of content.items as { str?: string; transform: number[]; height: number; width: number; fontName: string }[]) {
+        if (typeof it.str !== "string" || !it.str.trim()) continue;
         const [a, b, c, d, e, f] = it.transform as number[];
         // Text set at an angle (a rotated side label) is not part of the reading order.
         if (Math.abs(b) > 0.01 || Math.abs(c) > 0.01) continue;
@@ -317,13 +363,14 @@ export async function extractPdf(bytes: Uint8Array, isDates: (s: string) => bool
         items.push({ str: it.str, x: e, y: f, w: it.width, size, bold: isBold(it.fontName) });
         chars += it.str.trim().length;
       }
+      if (!opts.raw && chars > MAX_FILE_CHARS) throw new ImportError("too-much", "The PDF has far more text in it than a CV.");
       const rows = toRows(items);
-      const gutter = findGutter(rows, isDates);
+      const gutter = opts.raw ? null : findGutter(rows, isDates);
       const links = (await page.getAnnotations().catch(() => [])).filter((a: { url?: string; rect?: number[] }) => a.url && a.rect) as { url: string; rect: number[] }[];
       const pageLines: Raw[][] = [[], []];
       if (gutter === null) {
         for (const r of rows) {
-          const l = rowToRaw(r.segs, r.y, p, 0, 1 - r.y / view.height);
+          const l = rowToRaw(r.segs, r.y, p, 0, 1 - r.y / view.height, opts.raw);
           if (l) pageLines[0].push(l);
         }
       } else {
@@ -352,13 +399,13 @@ export async function extractPdf(bytes: Uint8Array, isDates: (s: string) => bool
       raw[1].push(...pageLines[1]);
       page.cleanup();
     }
-    if (chars < 40) throw new ImportError("scanned", "No text was found in the PDF.");
+    if (!opts.raw && chars < 40) throw new ImportError("scanned", "No text was found in the PDF.");
 
     // The main column of every page, then the side column of every page.
     const all = [...raw[0], ...raw[1]];
     const ordered = opts.keepEdges ? all : dropFurniture(all, doc.numPages);
-    const joined = joinWrapped(ordered);
-    markIndentedBullets(joined);
+    const joined = opts.raw ? ordered : joinWrapped(ordered);
+    if (!opts.raw) markIndentedBullets(joined);
     const left = new Map<string, number>();
     for (const l of joined) {
       const k = `${l.page}:${l.col}`;
@@ -366,7 +413,11 @@ export async function extractPdf(bytes: Uint8Array, isDates: (s: string) => bool
     }
     const lines = joined.map((l) => makeLine(l.text, { bullet: l.bullet, bold: l.bold, size: l.size, indent: Math.max(0, Math.round(l.x - (left.get(`${l.page}:${l.col}`) ?? l.x))), links: l.links, page: l.page, col: l.col }));
     return { lines, pages: doc.numPages };
+  } catch (err) {
+    if (outOfTime && !(err instanceof ImportError)) throw new ImportError("too-much", "The PDF took too long to read.");
+    throw err;
   } finally {
+    if (clock) clearTimeout(clock);
     await task.destroy().catch(() => {});
   }
 }

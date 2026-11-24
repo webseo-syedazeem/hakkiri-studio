@@ -28,14 +28,22 @@ export interface Capture {
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const END = /[.;,\s]+$/;
 
-/** A sentence as a CV bullet: no "I", no list mark, no full stop, a capital first. Nothing else changes. */
+const SUBJECT = /^(I|We)(?:['’]ve|['’]d| have| had)?\s+(?:also\s+)?/i;
+/** Said on a CV in place of "we": the work was shared, and the bullet keeps saying so. */
+const AS_A_TEAM = ", as part of the team";
+
+/**
+ * A sentence as a CV bullet: no "I", no list mark, no full stop, a capital
+ * first. "We did" becomes "Did …, as part of the team": dropping the "we"
+ * would make a team's work read as the person's alone.
+ */
 export function asBullet(sentence: string): string {
-  const t = oneLine(sentence)
+  const start = oneLine(sentence)
     .replace(/^(?:[-•*·–]\s*|\d+[.)]\s+)/, "")
-    .replace(/^(?:I|We)(?:['’]ve|['’]d| have| had)?\s+(?:also\s+)?/i, "")
-    .replace(/^(?:And|Also|Then)\s+/i, "")
-    .replace(END, "");
-  return cap(t);
+    .replace(/^(?:And|Also|Then)\s+/i, "");
+  const team = /^we/i.test(SUBJECT.exec(start)?.[1] ?? "");
+  const t = start.replace(SUBJECT, "").replace(/^(?:And|Also|Then)\s+/i, "").replace(END, "");
+  return cap(team && !supportWords(t).length ? `${t}${AS_A_TEAM}` : t);
 }
 
 /** The words a number can be introduced by: lower-cased when a detail is set inside a sentence. */
@@ -108,10 +116,12 @@ const TIDY: [RegExp, string][] = [
  * the same text when there is nothing to tidy.
  */
 export function tidyByRule(text: string): string {
-  let t = oneLine(text).replace(/^(?:I|We)(?:['’]ve|['’]d| have| had)?\s+(?:also\s+)?/i, "");
+  const start = oneLine(text);
+  const team = /^we/i.test(SUBJECT.exec(start)?.[1] ?? "");
+  let t = start.replace(SUBJECT, "");
   for (const [re, to] of TIDY) t = t.replace(re, to);
-  t = t.replace(/\s+([,.;])/g, "$1").replace(/\s{2,}/g, " ").replace(END, "");
-  return cap(t.trim());
+  t = t.replace(/\s+([,.;])/g, "$1").replace(/\s{2,}/g, " ").replace(END, "").trim();
+  return cap(team && !supportWords(t).length ? `${t}${AS_A_TEAM}` : t);
 }
 
 /* ------------------------------------------------------------------ profile */
@@ -137,6 +147,15 @@ export function yearsOfExperience(cv: Pick<CvDoc, "sections">, now: Date): numbe
   const end = Math.max(...roles.map((e) => (e.current || !e.end ? (e.current ? today : month(e.start)) : month(e.end))));
   const years = Math.floor((end - start) / 12);
   return years >= 1 ? years : undefined;
+}
+
+/** The role the dates show to be the latest: the current one, or the one that ended last. Roles with no dates cannot be placed. */
+export function latestRole<T extends { id: string; start: string; end: string; current: boolean }>(roles: T[]): T | undefined {
+  const month = (d: string) => Number(d.slice(0, 4)) * 12 + (d.length > 4 ? Number(d.slice(5, 7)) - 1 : 0);
+  const dated = roles.filter((e) => /^\d{4}/.test(e.start) || /^\d{4}/.test(e.end));
+  const ended = (e: T) => (e.current ? Infinity : month(/^\d{4}/.test(e.end) ? e.end : e.start));
+  const began = (e: T) => (/^\d{4}/.test(e.start) ? month(e.start) : month(e.end));
+  return [...dated].sort((a, b) => (ended(b) === ended(a) ? began(b) - began(a) : ended(b) > ended(a) ? 1 : -1))[0];
 }
 
 /** Everything on the CV that is switched on, as plain strings: what a profile may draw on. */
@@ -170,7 +189,10 @@ export function profilesByRule(cv: Printable, pick: { entryId?: string; skills: 
   const roles = visibleRoles(cv);
   const role = roles.find((e) => e.id === pick.entryId) ?? roles[0];
   if (!role || !role.title.trim()) return { versions: [] };
-  const years = yearsOfExperience(cv, now);
+  // The years, and the words "most recently", are said only of the role the dates show to be the latest. Of a role
+  // with no dates, or an earlier one, neither is known to be true: "7 years' experience, most recently at X" would
+  // then be a claim the CV does not make.
+  const years = latestRole(roles)?.id === role.id ? yearsOfExperience(cv, now) : undefined;
   const title = cap(role.title.trim());
   const org = role.org.trim();
   const skills = pick.skills.map((s) => s.trim()).filter(Boolean).slice(0, 4);

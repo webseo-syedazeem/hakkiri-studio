@@ -28,7 +28,7 @@ const clean = (s: string) => oneLine(s).replace(/^(?:the|a|an|our|your|using|and
 const key = (s: string) => s.toLowerCase().split(/\s+/).map(stem).join(" ");
 
 /** Names written with capitals inside a sentence ("Google Ads", "Looker Studio"), acronyms ("PPC") and names with a digit or symbol ("GA4", "C#"). */
-function namedTerms(text: string, opts: { firstWord: boolean } = { firstWord: true }): string[] {
+export function namedTerms(text: string, opts: { firstWord: boolean } = { firstWord: true }): string[] {
   const out: string[] = [];
   // A name does not run across a comma or a bracket: each stretch between them is read on its own.
   const stretches = sentences(text).flatMap((sentence) => sentence.split(/[,;:()\[\]–—]|\s-\s/).map((part, i) => ({ part, opens: i === 0 })));
@@ -55,7 +55,7 @@ function namedTerms(text: string, opts: { firstWord: boolean } = { firstWord: tr
 }
 
 /** What an advert says it wants, read from its own phrases: "experience with X, Y and Z". */
-function askedFor(advert: string): string[] {
+export function askedFor(advert: string): string[] {
   const out: string[] = [];
   for (const m of advert.matchAll(CUES)) {
     // "knowledge of SQL is desirable": the wish ends where the sentence turns to something else.
@@ -69,7 +69,7 @@ function askedFor(advert: string): string[] {
   return out;
 }
 
-const contains = (line: string, term: string) => new RegExp(`(?<![\\p{L}\\p{N}])${term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?![\\p{L}\\p{N}])`, "iu").test(line);
+export const contains = (line: string, term: string) => new RegExp(`(?<![\\p{L}\\p{N}])${term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?![\\p{L}\\p{N}])`, "iu").test(line);
 
 /** Suggestions for the Skills section: evidenced ones first, then what the advert asks for that the CV does not yet show. */
 export function suggestSkills(cv: Pick<CvDoc, "sections" | "contact" | "target">, limit = 12): SkillSuggestion[] {

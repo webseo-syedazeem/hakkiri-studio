@@ -25,12 +25,28 @@ export const LEVEL_LABELS: Record<CvLevel, string> = {
 export const CV_REGIONS = ["uk", "us"] as const;
 export type CvRegion = (typeof CV_REGIONS)[number];
 
+/**
+ * Text as it is kept: without characters that cannot be seen or cannot be
+ * written to a file. A soft hyphen or a zero-width space pasted in from a web
+ * page would sit inside a word unseen and make the downloaded file read
+ * differently from the page; a few characters are not allowed in a Word file
+ * at all.
+ */
+export function storable(s: string): string {
+  return s
+    .replace(/[\u00ad\u200b-\u200f\u2060\ufeff]/g, "")
+    .replace(/[\u2028\u2029]/g, "\n")
+    .replace(/[\u0080-\u009f]/g, " ")
+    .replace(/\p{Noncharacter_Code_Point}/gu, "")
+    .replace(/[\uD800-\uDFFF]/gu, "");
+}
+
 /** A short single-line string: trimmed, no control characters, capped. */
 const line = (max: number) =>
   z
     .string()
     .max(max * 2)
-    .transform((s) => s.replace(/[\u0000-\u001f\u007f]+/g, " ").replace(/\s+/g, " ").trim().slice(0, max))
+    .transform((s) => [...storable(s).replace(/[\u0000-\u001f\u007f]+/g, " ").replace(/\s+/g, " ").trim()].slice(0, max).join(""))
     .default("");
 /** Longer text that may keep its line breaks. */
 const prose = (max: number) =>
@@ -38,16 +54,52 @@ const prose = (max: number) =>
     .string()
     .max(max * 2)
     .transform((s) =>
-      s
+      storable(s)
         .replace(/\r/g, "")
         .replace(/[\u0000-\u0008\u000b-\u001f\u007f]+/g, " ")
         .replace(/[ \t]+/g, " ")
         .replace(/\n{3,}/g, "\n\n")
-        .trim()
-        .slice(0, max),
+        .trim(),
     )
+    // Cut by whole characters: half of an emoji is not a character any file can hold.
+    .transform((s) => (s.length > max ? [...s].slice(0, max).join("") : s))
     .default("");
 const id = z.string().regex(/^[A-Za-z0-9_-]{4,40}$/);
+
+/**
+ * How much a CV can hold. The form's fields use the same numbers, so the
+ * screen can never hold more than is saved and a file can never differ from
+ * the page beside it.
+ */
+export const LIMITS = {
+  name: 120,
+  email: 160,
+  phone: 40,
+  location: 120,
+  link: 200,
+  bullet: 600,
+  /** Lines under one role. */
+  bullets: 30,
+  /** Roles, qualifications or other entries in one section. */
+  entries: 40,
+  title: 400,
+  org: 160,
+  orgInfo: 240,
+  subject: 120,
+  grade: 120,
+  summary: 2000,
+  skill: 80,
+  skills: 40,
+  groups: 12,
+  groupName: 60,
+  item: 120,
+  itemLevel: 60,
+  items: 40,
+  /** Across the whole CV: more than any CV needs, and few enough to check and draw quickly. */
+  totalLines: 400,
+  totalSkills: 200,
+  totalEntries: 120,
+} as const;
 
 /** A date as the person gave it: "", a year ("2021") or a month ("2021-03"). */
 export const PartialDateSchema = z.string().regex(/^(|\d{4}|\d{4}-(0[1-9]|1[0-2]))$/).default("");
@@ -247,6 +299,114 @@ export const LocatorSchema = z.object({
 });
 export type Locator = z.infer<typeof LocatorSchema>;
 
+/* ------------------------------------------------------------- tailoring */
+
+/**
+ * One thing a job advert asks for. `quote` is the advert's own wording, kept
+ * exactly; `text` is how the person reads it. Whether it is met is worked out
+ * from the CV each time, from the lines linked here and the lines that match:
+ * it is never stored, so it cannot go stale.
+ */
+export const RequirementSchema = z.object({
+  id,
+  quote: prose(600),
+  text: line(300),
+  /** Required weighs 2 in job fit. Preferred, or not stated, weighs 1. */
+  priority: z.enum(["required", "preferred"]).default("required"),
+  /** Lines of the CV the person has said show this. */
+  evidence: z.array(LocatorSchema).max(8).default([]),
+  /** The person's own judgement of the lines they linked. */
+  judged: z.enum(["met", "partly"]).optional(),
+  /** For "partly": the part of the requirement their evidence does not cover. */
+  uncovered: line(300),
+  /** "No, I don't have this." It stays in the total and earns nothing. */
+  gap: z.boolean().default(false),
+});
+export type Requirement = z.infer<typeof RequirementSchema>;
+
+/** One change made while tailoring, with why. Together these are the report of what changed. */
+export const ChangeRecordSchema = z.object({
+  id,
+  at: z.string(),
+  kind: z.enum(["included", "off", "moved", "reworded"]),
+  /** The role or section it happened in, by name. */
+  where: line(200),
+  before: prose(700),
+  after: prose(700),
+  reason: line(300),
+  /** The requirement it was made for, if any. */
+  requirementId: z.string().max(40).optional(),
+});
+export type ChangeRecord = z.infer<typeof ChangeRecordSchema>;
+
+/* ------------------------------------------------------------ cover letter */
+
+/**
+ * What a sentence of the letter rests on: a line of the CV, a sentence of the
+ * person's reason for applying, a note they added, a clause of the advert or
+ * the job's own title and employer. `text` is the wording as it was when the
+ * sentence was last checked against it, so a later change can be noticed.
+ */
+export const LETTER_SOURCE_KINDS = ["cv", "reason", "note", "advert", "job"] as const;
+export const LetterSourceSchema = z.object({
+  kind: z.enum(LETTER_SOURCE_KINDS),
+  /** For a line of the CV: where it is. */
+  at: LocatorSchema.optional(),
+  /** For a note: which one. */
+  noteId: z.string().max(40).optional(),
+  text: prose(900),
+});
+export type LetterSource = z.infer<typeof LetterSourceSchema>;
+
+export const LetterSentenceSchema = z.object({
+  id,
+  text: line(700),
+  /** "drafted" sentences were assembled from the person's words; "typed" ones they wrote here. Both are checked the same way. */
+  origin: z.enum(["typed", "drafted"]).default("typed"),
+  sources: z.array(LetterSourceSchema).max(6).default([]),
+});
+export type LetterSentence = z.infer<typeof LetterSentenceSchema>;
+
+export const LETTER_ROLES = ["opening", "evidence", "close"] as const;
+export const LetterParagraphSchema = z.object({
+  id,
+  role: z.enum(LETTER_ROLES).default("evidence"),
+  sentences: z.array(LetterSentenceSchema).max(12).default([]),
+});
+export type LetterParagraph = z.infer<typeof LetterParagraphSchema>;
+
+/** Something the person has said, in their own words, to back a sentence of the letter. */
+export const LetterNoteSchema = z.object({ id, text: prose(1200) });
+export type LetterNote = z.infer<typeof LetterNoteSchema>;
+
+/**
+ * The cover letter of one version: it belongs to that version's job. What the
+ * person gave to write it from (their reason, the lines of the CV to use, a
+ * passage of their own writing for the tone), and the letter itself as
+ * paragraphs of sentences, each sentence with what it rests on.
+ */
+export const LetterSchema = z.object({
+  /** The person's answer to "Why do you want this role?", typed or spoken and corrected by them. */
+  reason: prose(3000),
+  /** The lines of the CV chosen as evidence: one or two. */
+  evidence: z.array(LocatorSchema).max(3).default([]),
+  /** A passage of the person's own writing. It guides the tone only: it is never used as a fact. */
+  voice: prose(3000),
+  /** Who the letter is to. Empty gives "Dear Hiring Manager". */
+  recipient: line(120),
+  /** The date on the letter, "2026-11-23". Empty means the day the file is made. */
+  date: z.string().regex(/^(|\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]))$/).default(""),
+  /** The sign-off. Empty uses the usual one for the region and the greeting. */
+  signoff: line(60),
+  notes: z.array(LetterNoteSchema).max(20).default([]),
+  paragraphs: z.array(LetterParagraphSchema).max(8).default([]),
+  /** True once a letter has been started, by drafting or by "Write it myself". */
+  started: z.boolean().default(false),
+});
+export type Letter = z.infer<typeof LetterSchema>;
+
+export const emptyLetter = (): Letter => ({ reason: "", evidence: [], voice: "", recipient: "", date: "", signoff: "", notes: [], paragraphs: [], started: false });
+
 /* -------------------------------------------------------------- the CV doc */
 
 export const CvDocSchema = z.object({
@@ -271,6 +431,12 @@ export const CvDocSchema = z.object({
   importId: z.string().optional(),
   /** Words the person has told the checks to leave alone: a name, a specialist term, an acronym they chose not to spell out. */
   accepted: z.array(line(60)).max(200).default([]),
+  /** What the target advert asks for, as the person has confirmed it. */
+  requirements: z.array(RequirementSchema).max(40).default([]),
+  /** What was changed while tailoring this version, and why. */
+  changes: z.array(ChangeRecordSchema).max(200).default([]),
+  /** The cover letter for this version's job, once one has been started. */
+  letter: LetterSchema.optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -288,8 +454,16 @@ export interface CvSummary {
   targetEmployer: string;
   /** An upload for this CV is waiting to be checked: the import to reopen. */
   pendingImportId?: string;
+  /** That upload could not be read: there is nothing to check, only a reason and another way to try. */
+  importFailed?: boolean;
+  /** A cover letter has been started for this version. */
+  letter?: boolean;
   /** True when nothing has been entered yet. */
   empty: boolean;
+  /** The CV score: the same number the builder shows for the CV as it was last saved. Absent for an empty CV. */
+  score?: number;
+  /** Job fit, where the CV has an advert with something to assess. */
+  fit?: number;
   roles: number;
   updatedAt: string;
 }
@@ -308,6 +482,8 @@ export const ExportRecordSchema = z.object({
   /** The revision of the CV the file was made from. */
   rev: z.number().int().min(1),
   format: z.enum(["pdf", "docx"]),
+  /** What the file holds: the CV, the cover letter, or the letter followed by the CV. */
+  what: z.enum(["cv", "letter", "both"]).default("cv"),
   /** The file's name. */
   name: line(200),
   /** When it was downloaded: also the time written into the file. */
@@ -315,9 +491,41 @@ export const ExportRecordSchema = z.object({
   /** True when the file read back the same as the CV. False when it was downloaded as "unchecked". */
   checked: z.boolean(),
   pages: z.number().int().min(0).default(0),
-  cv: z.object({ name: line(120), level: z.enum(CV_LEVELS), region: z.enum(CV_REGIONS), target: TargetSchema.optional(), contact: ContactSchema, sections: z.array(SectionSchema).max(24), design: DesignSchema }),
+  cv: z.object({ name: line(120), level: z.enum(CV_LEVELS), region: z.enum(CV_REGIONS), target: TargetSchema.optional(), contact: ContactSchema, sections: z.array(SectionSchema).max(24), design: DesignSchema, letter: LetterSchema.optional() }),
 });
 export type ExportRecord = z.infer<typeof ExportRecordSchema>;
+
+/** How one file of a CV read back when it was last made and checked. */
+export const FileCheckSchema = z.object({
+  status: z.enum(["checked", "loss", "failed"]),
+  /** For "failed": the file was made, and it was the reading of it that failed. */
+  made: z.boolean().optional(),
+  name: line(200).optional(),
+  pages: z.number().int().min(0).optional(),
+  words: z.number().int().min(0).optional(),
+  size: z.number().int().min(0).optional(),
+  missing: z.array(line(300)).max(60).optional(),
+  unexpected: z.array(line(300)).max(60).optional(),
+  unsupported: z.array(line(40)).max(60).optional(),
+});
+export type StoredFileCheck = z.infer<typeof FileCheckSchema>;
+
+/**
+ * The file checks for one revision of one CV, kept beside the CV (never in
+ * it, so recording a check can never overwrite an edit). It is why the score
+ * is the same number in the builder, after a reload and in the list. Once the
+ * CV changes, the record is out of date and is ignored.
+ */
+export const FileCheckRecordSchema = z.object({
+  /** The CV's id: one record a CV. */
+  id: z.string().min(1),
+  userId: z.string().min(1),
+  rev: z.number().int().min(1),
+  pdf: FileCheckSchema.optional(),
+  docx: FileCheckSchema.optional(),
+  at: z.string(),
+});
+export type FileCheckRecord = z.infer<typeof FileCheckRecordSchema>;
 
 /* ----------------------------------------------------------------- helpers */
 
@@ -389,6 +597,7 @@ export function summarise(cv: CvDoc, pendingImportId?: string): CvSummary {
     targetTitle: cv.target?.title ?? "",
     targetEmployer: cv.target?.employer ?? "",
     pendingImportId,
+    letter: cv.letter?.started || undefined,
     empty: cvIsEmpty(cv),
     roles: exp && isEntrySection(exp) ? exp.entries.length : 0,
     updatedAt: cv.updatedAt,

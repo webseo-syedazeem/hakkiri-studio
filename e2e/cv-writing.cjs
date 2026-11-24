@@ -62,7 +62,9 @@ run("CV writing help", async (browser) => {
   await page.getByRole("button", { name: "Draft bullets" }).click();
   await page.getByTestId("proposed").first().waitFor({ timeout: 20000 });
   const proposed = await page.getByRole("textbox", { name: /^Proposed bullet/ }).evaluateAll((els) => els.map((e) => e.value));
-  check(JSON.stringify(proposed) === JSON.stringify(["Ran the weekly planning meeting for the Leeds site", "Trained about 12 new starters on the order system", "Cut late orders over the year"]), "three bullets are proposed, each made of the person's own sentences", JSON.stringify(proposed));
+  // The person wrote "We cut late orders": the bullet keeps that it was the team's work, and does not claim it for them alone.
+  check(JSON.stringify(proposed) === JSON.stringify(["Ran the weekly planning meeting for the Leeds site", "Trained about 12 new starters on the order system", "Cut late orders over the year, as part of the team"]), "three bullets are proposed, each made of the person's own sentences", JSON.stringify(proposed));
+  check(/as part of the team$/.test(proposed[2]) && !/^We\b/.test(proposed[2]), "“We cut…” becomes “Cut…, as part of the team”: the team is not dropped");
   check(proposed[1].includes("about 12"), "the number went into the bullet it was about, and “about” was kept");
   const notes = [DID, CHANGED, NUMBER].join("\n");
   const marks = await page.locator("mark.cv-mark").allInnerTexts();

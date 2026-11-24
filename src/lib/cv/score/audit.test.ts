@@ -15,6 +15,12 @@ Sep 2023 – Present
 - Wrote a 40-page handling guide used at every induction since March 2024
 - Trained 40 volunteers to handle paper safely each term
 
+Reading room assistant, Example City Library
+Jun 2021 – Aug 2023
+- Cut retrieval time from 3 days to 1 by re-shelving the reading room
+- Scanned 600 glass negatives for the online collection in one summer
+- Ran the monthly conservation audit across both stores for two years
+
 Education
 BA (Hons) History, Example University, 2018 – 2021
 
@@ -42,6 +48,17 @@ describe("the free public check", () => {
     expect(a.score).toBeGreaterThan(55);
     // No finding about a file that does not exist yet.
     expect(a.findings.some((f) => /PDF|Word file|page count/i.test(f.problem))).toBe(false);
+  });
+
+  it("a few lines are not judged as a whole CV, and are never called good enough", () => {
+    const short = auditText(STRONG.replace(/Reading room assistant[\s\S]*?two years\n/, ""), "uk", NOW);
+    expect(short.detail.thin).toEqual({ have: 3, need: 6 });
+    expect(short.isGoodEnough).toBe(false);
+    expect(short.score).toBeLessThan(auditText(STRONG, "uk", NOW).score);
+    // One line of text is nearly nothing, in every group: "readable by software" is not 100% of nothing.
+    const one = auditText("Sam Example worked in a shop for a while doing various things for people", "uk", NOW);
+    expect(one.subscores).toEqual({ evidence: 0, clarity: 0, structure: expect.any(Number), software: 0 });
+    expect(one.score).toBeLessThan(5);
   });
 
   it("has no floor: a weak CV gets a low score, group by group", () => {

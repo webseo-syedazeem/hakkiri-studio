@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import clsx from "clsx";
-import { type ComponentProps, type ReactNode, useId, useLayoutEffect, useRef } from "react";
+import { type ComponentProps, type ReactNode, useEffect, useId, useLayoutEffect, useRef } from "react";
 
 /**
  * The small pieces every CV screen is built from: the bar across the top, a
@@ -10,8 +11,42 @@ import { type ComponentProps, type ReactNode, useId, useLayoutEffect, useRef } f
  * the screens stay consistent and can be restyled together.
  */
 
+/**
+ * Puts the cursor on the screen's heading. That is where someone using a
+ * keyboard or a screen reader should find themselves after the screen has
+ * changed: not back at the top of the page, with the whole menu to tab
+ * through again. Returns false when the heading has not been drawn yet.
+ */
+export function focusHeading(): boolean {
+  const h = document.querySelector<HTMLElement>(".cv h1");
+  if (!h) return false;
+  if (!h.hasAttribute("tabindex")) h.setAttribute("tabindex", "-1");
+  h.focus();
+  return document.activeElement === h;
+}
+
+/** The address of the CV screen last shown, so a change of screen can be told from a first visit. */
+let lastScreen: string | null = null;
+
 /** Wraps a CV screen and cancels the app shell's own padding, so the bar can run edge to edge. */
 export function CvScreen({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  // Moving from one CV screen to another ("Continue to Experience", tailoring to the letter) leaves the button that
+  // was pressed behind, and the cursor with it. It is put on the new screen's heading, unless a field has asked for
+  // it (the line a finding points at) or a dialog is open.
+  useEffect(() => {
+    const from = lastScreen;
+    lastScreen = pathname;
+    if (from === null || from === pathname) return;
+    let tries = 0;
+    const timer = setInterval(() => {
+      const at = document.activeElement as HTMLElement | null;
+      const taken = !!at && at !== document.body && (/^(?:INPUT|TEXTAREA|SELECT)$/.test(at.tagName) || !!at.closest('[role="dialog"]'));
+      // The heading is not there while the screen is still loading: it is looked for again, for a couple of seconds.
+      if (taken || focusHeading() || ++tries > 25) clearInterval(timer);
+    }, 80);
+    return () => clearInterval(timer);
+  }, [pathname]);
   return <div className="cv -mx-4 -my-4 sm:-mx-6 sm:-my-6 md:-mx-9 md:-my-7 min-w-0 grow">{children}</div>;
 }
 
@@ -121,7 +156,9 @@ interface FieldProps {
 
 /** A labelled input. Its rule, error and note are tied to it for screen readers. */
 export function Field({ label, rule, error, uncertain, note, multiline, rows = 3, value, onChange, className, fieldKey, ...rest }: FieldProps & Omit<ComponentProps<"input">, "value" | "onChange">) {
-  const id = useId();
+  // A field that something else needs to find (to put the cursor in it) can be given its own id.
+  const auto = useId();
+  const id = rest.id ?? auto;
   const describedBy = [rule && `${id}-rule`, error && `${id}-error`, note && `${id}-note`].filter(Boolean).join(" ") || undefined;
   // A text box grows with what is in it, so a whole bullet can be read without scrolling inside the box.
   // Browsers that can size a field to its content do it themselves (see cv.css); the rest are measured here.
@@ -132,6 +169,10 @@ export function Field({ label, rule, error, uncertain, note, multiline, rows = 3
     el.style.height = "auto";
     if (el.scrollHeight > 0) el.style.height = `${el.scrollHeight + 2}px`;
   }, [value, multiline]);
+  // A field never holds more than is saved. As the limit comes near, the count is shown, so text is never cut unseen.
+  const limit = typeof rest.maxLength === "number" ? rest.maxLength : 0;
+  const near = limit >= 40 && value.length >= Math.floor(limit * 0.9);
+  const full = limit > 0 && value.length >= limit;
   const shared = { id, "data-cvf": fieldKey, "aria-describedby": describedBy, "aria-invalid": error ? true : undefined, className: clsx("cv-input", uncertain && "cv-uncertain") };
   return (
     <div className={className}>
@@ -147,6 +188,11 @@ export function Field({ label, rule, error, uncertain, note, multiline, rows = 3
         <textarea {...shared} ref={area} rows={rows} style={{ minHeight: `calc(${rows} * 1.4em + 16px)` }} value={value} onChange={(e) => onChange(e.target.value)} onFocus={rest.onFocus as never} onBlur={rest.onBlur as never} placeholder={rest.placeholder} maxLength={rest.maxLength} disabled={rest.disabled} />
       ) : (
         <input {...rest} {...shared} value={value} onChange={(e) => onChange(e.target.value)} />
+      )}
+      {near && (
+        <small className={full ? "cv-warn" : undefined} style={{ display: "block", marginTop: 4 }} role="status" data-testid="field-count">
+          {full ? `That is the most this field holds: ${limit} characters.` : `${[...value].length} of ${limit} characters.`}
+        </small>
       )}
       {error && (
         <p className="cv-error-text" id={`${id}-error`}>

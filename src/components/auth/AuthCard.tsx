@@ -7,6 +7,7 @@ import { Mark } from "@/components/brand/Mark";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { safeNext } from "@/lib/auth/next";
 import { PASSWORD_MAX, PASSWORD_MIN, PASSWORD_RULE } from "@/lib/auth/password-rule";
+import { afterSignIn } from "@/lib/cv/carry";
 
 /** What went wrong with "Continue with Google", in words (the callback sends a code in the address). */
 const GOOGLE_ERRORS: Record<string, string> = {
@@ -50,7 +51,8 @@ export function AuthCard({ initialMode = "signin" }: { initialMode?: "signin" | 
       if (mode === "signin") {
         const res = await login(email, password);
         if (res.ok) {
-          router.push(next);
+          // To the CV they asked to open from a free check, if one is waiting; otherwise where they were heading.
+          router.push(afterSignIn(next));
           router.refresh();
         } else {
           setError(res.error ?? "Failed to sign in. Please verify your email and password.");
@@ -58,7 +60,7 @@ export function AuthCard({ initialMode = "signin" }: { initialMode?: "signin" | 
       } else {
         const res = await signup(email, password, name);
         if (res.ok) {
-          router.push(next);
+          router.push(afterSignIn(next));
           router.refresh();
         } else {
           setError(res.error ?? "Failed to create account. Please try again.");

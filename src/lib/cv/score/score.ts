@@ -1,4 +1,5 @@
 import { fileBaseName } from "../render/filename";
+import { cannotDrawAdvice } from "../render/fonts";
 import { type Bullet, type CvDoc, type Entry, type Locator, type Section, cvIsEmpty, isEntrySection, isListSection, sectionIsEmpty } from "../schema";
 import { SECTION_DEFS, sectionHeading } from "../sections";
 import { figures, oneLine, stem, terms } from "../write/facts";
@@ -14,6 +15,12 @@ import { type Hit, bigClaim, buzzwords, countSentences, countWords, dutyLead, fi
  *  - A check that truly does not apply (no phone given, no links) hands its weight to the rest of its group.
  *  - A missing essential field earns nothing. A group with nothing to judge earns nothing.
  *  - A file check that has not run is pending: its points are neither earned nor lost yet.
+ *  - Lines that say the same thing count once. The second and later copies are flagged, and are left out of every
+ *    other check, so a strong line pasted twenty times is worth what it is worth once.
+ *  - A check that a CV with almost nothing in it passes without trying ("no bullet is repeated", "one column")
+ *    earns in proportion to how many different lines the CV has, up to the number a CV needs (LINES_NEEDED).
+ *    With no lines it earns nothing.
+ *  - "Good enough to apply" needs the score AND real substance: see `whatIsMissing`.
  *  - There is no floor, and nothing here ever blocks a download.
  */
 
@@ -25,8 +32,10 @@ export const GROUPS: { id: GroupId; name: string; points: number }[] = [
   { id: "structure", name: "Structure", points: 20 },
   { id: "software", name: "Readable by software", points: 15 },
 ];
-/** At this score the CV is good enough to apply with. */
+/** At this score the CV is good enough to apply with, if it also has what `whatIsMissing` asks for. */
 export const GOOD_ENOUGH = 85;
+/** How many different lines saying what the person did a CV needs, by level, before it is judged as a whole CV. */
+export const LINES_NEEDED: Record<CvDoc["level"], number> = { student: 3, early: 3, experienced: 6, senior: 6 };
 
 export interface Finding {
   /** The same finding has the same id wherever it is shown: rule and place. */
@@ -63,6 +72,8 @@ export interface Check {
   passed: number;
   total: number;
   unit: string;
+  /** True when this check earned only a share of its points because the CV has too few lines to judge it by. */
+  thin?: boolean;
   findings: Finding[];
 }
 
@@ -86,7 +97,12 @@ export interface Score {
   findings: Finding[];
   /** Gaps in work of more than six months: a prompt, never a deduction. */
   gaps: Gap[];
+  /** The score is high enough AND nothing a CV needs is missing. */
   goodEnough: boolean;
+  /** Set when the CV has fewer different lines than a CV needs: how many it has, and how many it needs. */
+  thin: { have: number; need: number } | null;
+  /** What a CV needs before it is sent that this one does not have yet, each said in a few words. Empty when nothing is. */
+  missing: string[];
 }
 
 export interface ScoreInput {
@@ -114,27 +130,28 @@ interface Line {
 }
 
 type Draft = Omit<Check, "points" | "earned" | "group" | "weight" | "findings"> & { findings: Omit<Finding, "id" | "rule" | "group" | "points">[] };
-type Rule = { id: string; group: GroupId; weight: number; title: string; severity: Severity };
+/** `thin`: a CV with almost nothing in it passes this without trying, so it earns by how much there is to judge. */
+type Rule = { id: string; group: GroupId; weight: number; title: string; severity: Severity; thin?: true };
 
 const RULES: Rule[] = [
-  { id: "sources", group: "evidence", weight: 10, title: "Claims trace to your own words", severity: "issue" },
-  { id: "contribution", group: "evidence", weight: 9, title: "Your own contribution is clear", severity: "suggestion" },
-  { id: "outcome", group: "evidence", weight: 8, title: "The outcome or deliverable is concrete", severity: "suggestion" },
-  { id: "scale", group: "evidence", weight: 5, title: "Scale has a number or clear edges", severity: "suggestion" },
+  { id: "sources", group: "evidence", weight: 10, title: "Claims trace to your own words", severity: "issue", thin: true },
+  { id: "contribution", group: "evidence", weight: 9, title: "Your own contribution is clear", severity: "suggestion", thin: true },
+  { id: "outcome", group: "evidence", weight: 8, title: "The outcome or deliverable is concrete", severity: "suggestion", thin: true },
+  { id: "scale", group: "evidence", weight: 5, title: "Scale has a number or clear edges", severity: "suggestion", thin: true },
   { id: "skills-shown", group: "evidence", weight: 6, title: "Listed skills have examples", severity: "suggestion" },
-  { id: "challenge", group: "evidence", weight: 5, title: "Big claims have supporting context", severity: "suggestion" },
-  { id: "repeat", group: "evidence", weight: 2, title: "No bullet is repeated", severity: "issue" },
-  { id: "weak-verb", group: "clarity", weight: 2, title: "Bullets open with a strong verb", severity: "suggestion" },
-  { id: "duty", group: "clarity", weight: 2, title: "Bullets say what you did, not what the job was", severity: "suggestion" },
-  { id: "filler", group: "clarity", weight: 2, title: "No filler", severity: "suggestion" },
-  { id: "buzzword", group: "clarity", weight: 2, title: "No buzzwords", severity: "suggestion" },
-  { id: "passive", group: "clarity", weight: 2, title: "Active phrasing", severity: "suggestion" },
-  { id: "fragment", group: "clarity", weight: 2, title: "Bullets are complete", severity: "suggestion" },
-  { id: "spelling", group: "clarity", weight: 2, title: "Spelling matches the region", severity: "suggestion" },
-  { id: "first-person", group: "clarity", weight: 2, title: "No “I”", severity: "suggestion" },
-  { id: "tense", group: "clarity", weight: 2, title: "Past roles are in the past tense", severity: "suggestion" },
-  { id: "acronym", group: "clarity", weight: 1, title: "Acronyms are spelt out on first use", severity: "suggestion" },
-  { id: "punctuation", group: "clarity", weight: 1, title: "Bullets end the same way", severity: "suggestion" },
+  { id: "challenge", group: "evidence", weight: 5, title: "Big claims have supporting context", severity: "suggestion", thin: true },
+  { id: "repeat", group: "evidence", weight: 2, title: "No bullet is repeated", severity: "issue", thin: true },
+  { id: "weak-verb", group: "clarity", weight: 2, title: "Bullets open with a strong verb", severity: "suggestion", thin: true },
+  { id: "duty", group: "clarity", weight: 2, title: "Bullets say what you did, not what the job was", severity: "suggestion", thin: true },
+  { id: "filler", group: "clarity", weight: 2, title: "No filler", severity: "suggestion", thin: true },
+  { id: "buzzword", group: "clarity", weight: 2, title: "No buzzwords", severity: "suggestion", thin: true },
+  { id: "passive", group: "clarity", weight: 2, title: "Active phrasing", severity: "suggestion", thin: true },
+  { id: "fragment", group: "clarity", weight: 2, title: "Bullets are complete", severity: "suggestion", thin: true },
+  { id: "spelling", group: "clarity", weight: 2, title: "Spelling matches the region", severity: "suggestion", thin: true },
+  { id: "first-person", group: "clarity", weight: 2, title: "No “I”", severity: "suggestion", thin: true },
+  { id: "tense", group: "clarity", weight: 2, title: "Past roles are in the past tense", severity: "suggestion", thin: true },
+  { id: "acronym", group: "clarity", weight: 1, title: "Acronyms are spelt out on first use", severity: "suggestion", thin: true },
+  { id: "punctuation", group: "clarity", weight: 1, title: "Bullets end the same way", severity: "suggestion", thin: true },
   { id: "name", group: "structure", weight: 2, title: "Name", severity: "issue" },
   { id: "email", group: "structure", weight: 2, title: "A valid email address", severity: "issue" },
   { id: "phone", group: "structure", weight: 1, title: "Phone number format", severity: "issue" },
@@ -143,15 +160,15 @@ const RULES: Rule[] = [
   { id: "profile-length", group: "structure", weight: 1, title: "Profile is 3 to 4 sentences", severity: "suggestion" },
   { id: "skills-count", group: "structure", weight: 1, title: "8 to 10 skills", severity: "suggestion" },
   { id: "word-count", group: "structure", weight: 2, title: "400 to 1,600 words", severity: "suggestion" },
-  { id: "page-count", group: "structure", weight: 4, title: "Page count suits your level", severity: "issue" },
+  { id: "page-count", group: "structure", weight: 4, title: "Page count suits your level", severity: "issue", thin: true },
   { id: "links", group: "structure", weight: 1, title: "Links are well formed", severity: "issue" },
-  { id: "one-column", group: "software", weight: 2, title: "One column", severity: "issue" },
-  { id: "headings", group: "software", weight: 2, title: "Standard section headings", severity: "suggestion" },
-  { id: "body-type", group: "software", weight: 2, title: "Readable body type", severity: "issue" },
+  { id: "one-column", group: "software", weight: 2, title: "One column", severity: "issue", thin: true },
+  { id: "headings", group: "software", weight: 2, title: "Standard section headings", severity: "suggestion", thin: true },
+  { id: "body-type", group: "software", weight: 2, title: "Readable body type", severity: "issue", thin: true },
   { id: "file-name", group: "software", weight: 1, title: "A usable file name", severity: "suggestion" },
-  { id: "real-text", group: "software", weight: 2, title: "Real, visible text", severity: "issue" },
-  { id: "pdf-readback", group: "software", weight: 3, title: "The PDF reads back correctly", severity: "issue" },
-  { id: "docx-readback", group: "software", weight: 3, title: "The Word file reads back correctly", severity: "issue" },
+  { id: "real-text", group: "software", weight: 2, title: "Real, visible text", severity: "issue", thin: true },
+  { id: "pdf-readback", group: "software", weight: 3, title: "The PDF reads back correctly", severity: "issue", thin: true },
+  { id: "docx-readback", group: "software", weight: 3, title: "The Word file reads back correctly", severity: "issue", thin: true },
 ];
 export const CHECKS = RULES;
 
@@ -171,6 +188,37 @@ function linesOf(cv: ScoreInput["cv"]): Line[] {
   return out;
 }
 
+/** The words a line is made of, without its numbers. */
+const wordsOf = (text: string) => [...new Set(terms(text).map((t) => t.stem))].sort();
+
+/**
+ * Whether two lines say the same thing: the same words, or four in five of
+ * them. A line that differs from another only in a figure, a full stop or a
+ * word or two adds no new evidence.
+ */
+function sameWords(a: string[], b: string[]): boolean {
+  if (!a.length || !b.length) return false;
+  const inB = new Set(b);
+  const shared = a.filter((w) => inB.has(w)).length;
+  if (shared === a.length && shared === b.length) return true;
+  return shared >= 3 && shared >= 0.8 * Math.max(a.length, b.length);
+}
+
+/** Each line that repeats an earlier one, with the line it repeats and whether the two are word for word the same. */
+function repeatsIn(lines: Line[]): Map<Line, { before: Line; exact: boolean }> {
+  const firsts: { l: Line; words: string[]; figs: string; plain: string }[] = [];
+  const out = new Map<Line, { before: Line; exact: boolean }>();
+  for (const l of lines) {
+    const words = wordsOf(l.text);
+    const figs = figures(l.text).map((f) => f.key).sort().join(" ");
+    const plain = oneLine(l.text).toLowerCase().replace(/[.!\s]+$/, "");
+    const hit = firsts.find((f) => f.plain === plain || sameWords(words, f.words));
+    if (hit) out.set(l, { before: hit.l, exact: hit.plain === plain || (hit.figs === figs && hit.words.join(" ") === words.join(" ")) });
+    else firsts.push({ l, words, figs, plain });
+  }
+  return out;
+}
+
 /** A check made by testing each item: it passes for the items with no finding. */
 function each<T>(items: T[], unit: string, test: (item: T) => Draft["findings"][number] | null): Omit<Draft, "id" | "title"> {
   const findings = items.map(test).filter((f): f is Draft["findings"][number] => !!f);
@@ -185,7 +233,14 @@ export function scoreCv(input: ScoreInput): Score {
   const { cv } = input;
   const region = cv.region;
   const word = region === "us" ? "resume" : "CV";
-  const lines = linesOf(cv);
+  const every = linesOf(cv);
+  // A line that says the same as an earlier one counts once: the copies are flagged below and judged by nothing else.
+  const repeats = repeatsIn(every);
+  const lines = every.filter((l) => !repeats.has(l));
+  const repeated = new Set([...repeats.keys()].map((l) => l.bullet));
+  const need = LINES_NEEDED[cv.level] ?? LINES_NEEDED.experienced;
+  // How much of a CV there is to judge: 1 when it has the lines a CV needs, less in proportion when it has fewer.
+  const share = Math.min(1, lines.length / need);
   const summary = cv.sections.find((s) => s.kind === "summary" && s.visible && s.text.trim());
   const summaryAt: Locator | null = summary ? { section: summary.id, field: "text" } : null;
   const prose = [...lines.map((l) => ({ text: l.text, at: l.at })), ...(summary && summary.kind === "summary" && summaryAt ? [{ text: summary.text, at: summaryAt }] : [])];
@@ -202,25 +257,26 @@ export function scoreCv(input: ScoreInput): Score {
   });
   out.outcome = each(lines, "bullets", (l) => (hasOutcome(l.text) ? null : { severity: "suggestion", at: l.at, excerpt: cut(l.text), reason: "This says what you did, but not what came of it.", action: "Add what changed, or what you produced." }));
   out.scale = each(lines, "bullets", (l) => (hasScale(l.text) ? null : { severity: "suggestion", at: l.at, excerpt: cut(l.text), reason: "There is nothing here to show how big this was.", action: "Add the number, or say how far it reached (“every new starter”, “across the Leeds site”).", fix: "add-number" }));
+  // The words of each line are worked out once, however many skills are listed.
+  const proseWords = prose.map((p) => new Set(terms(p.text).map((t) => t.stem)));
+  const proseText = prose.map((p) => p.text).join("\n");
   const shown = (name: string) => {
     const want = terms(name).map((t) => t.stem);
-    if (!want.length) return new RegExp(`(?<![\\p{L}\\p{N}])${name.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?![\\p{L}\\p{N}])`, "iu").test(prose.map((p) => p.text).join("\n"));
-    return prose.some((p) => {
-      const have = new Set(terms(p.text).map((t) => t.stem));
-      return want.every((w) => have.has(w));
-    });
+    if (!want.length) return new RegExp(`(?<![\\p{L}\\p{N}])${name.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?![\\p{L}\\p{N}])`, "iu").test(proseText);
+    return proseWords.some((have) => want.every((w) => have.has(w)));
   };
   out["skills-shown"] = each(skills, "skills", ({ k, g, s }) => (shown(k.name) ? null : { severity: "suggestion", at: { section: s.id, entry: g.id, field: k.id }, excerpt: k.name, reason: `Nothing else on your ${word} shows “${k.name}”.`, action: "Add a line that uses it, or leave it out. Only list what you could explain in an interview." }));
   const claims = lines.map((l) => ({ l, h: bigClaim(l.text) })).filter((x) => x.h);
   out.challenge = claims.length
     ? each(claims, "claims", ({ l, h }) => (hasContext(l.text) || l.entry.orgInfo.trim() ? null : { severity: "suggestion", at: l.at, span: spanOf(h), excerpt: cut(l.text), reason: `An interviewer is likely to ask about “${h!.text}”.`, action: "Say how you did it, over what time, or compared with what." }))
     : notApplicable("claims");
-  const seen = new Map<string, Line>();
-  out.repeat = each(lines, "bullets", (l) => {
-    const k = terms(l.text).map((t) => t.stem).concat(figures(l.text).map((f) => f.key)).sort().join(" ");
-    const before = seen.get(k);
-    if (!before) return seen.set(k, l), null;
-    return { severity: "issue", at: l.at, excerpt: cut(l.text), reason: `This says the same as a bullet under ${before.entry.title || before.entry.org || "another entry"}.`, action: "Keep it where it is strongest and change or remove the other." };
+  out.repeat = each(every, "bullets", (l) => {
+    const r = repeats.get(l);
+    if (!r) return null;
+    const where = r.before.entry === l.entry ? "another bullet in this entry" : `a bullet under ${r.before.entry.title || r.before.entry.org || "another entry"}`;
+    return r.exact
+      ? { severity: "issue", at: l.at, excerpt: cut(l.text), reason: `This says the same as ${where}. It is counted once.`, action: "Keep it where it is strongest and change or remove the other." }
+      : { severity: "issue", at: l.at, excerpt: cut(l.text), reason: `This says almost the same as ${where}. The two are counted as one.`, action: "If it was a different piece of work, say what was different about it. If not, keep one." };
   });
 
   /* ------------------------------------------------------------ clarity */
@@ -280,10 +336,12 @@ export function scoreCv(input: ScoreInput): Score {
     return null;
   });
   out["bullets-per-role"] = each(roles, "roles", ({ e, s }) => {
-    const n = e.bullets.filter((b) => b.visible && b.text.trim()).length;
+    const all = e.bullets.filter((b) => b.visible && b.text.trim());
+    // Copies of a line are not more bullets: the least a role needs is counted in different ones.
+    const n = all.filter((b) => !repeated.has(b)).length;
     const short = !!e.start && !!e.end && !e.current && monthOf(e.end) - monthOf(e.start) < 6;
-    if (n > 6) return { severity: "suggestion", at: { section: s.id, entry: e.id, field: "title" }, excerpt: e.title || e.org, reason: `${e.title || "This role"} has ${n} bullets.`, action: "Keep the strongest six. Switch the rest off; they stay in your master copy." };
-    if (n < (short ? 1 : 3)) return { severity: "suggestion", at: { section: s.id, entry: e.id, field: "title" }, excerpt: e.title || e.org, reason: `${e.title || "This role"} has ${n === 0 ? "no bullets" : plural(n, "bullet")}.`, action: short ? "Add at least one line about what you did." : "Aim for three to six. Use “Tell me what you did” to add more from your own words." };
+    if (all.length > 6) return { severity: "suggestion", at: { section: s.id, entry: e.id, field: "title" }, excerpt: e.title || e.org, reason: `${e.title || "This role"} has ${all.length} bullets.`, action: "Keep the strongest six. Switch the rest off; they stay in your master copy." };
+    if (n < (short ? 1 : 3)) return { severity: "suggestion", at: { section: s.id, entry: e.id, field: "title" }, excerpt: e.title || e.org, reason: `${e.title || "This role"} has ${n === 0 ? "no bullets" : plural(n, "bullet")}${n < all.length ? " that say different things" : ""}.`, action: short ? "Add at least one line about what you did." : "Aim for three to six. Use “Tell me what you did” to add more from your own words." };
     return null;
   });
   if (summary && summary.kind === "summary" && summaryAt) {
@@ -294,7 +352,9 @@ export function scoreCv(input: ScoreInput): Score {
   out["skills-count"] = whole(skills.length >= 8 && skills.length <= 10, { severity: "suggestion", at: { section: skillsSection?.id ?? "contact" }, excerpt: "", reason: skills.length ? `You list ${plural(skills.length, "skill")}.` : "You list no skills.", action: skills.length > 10 ? "Keep the eight to ten that matter most for this job." : "Aim for eight to ten, hard skills first." });
   const count = countWords([c.fullName, c.email, c.phone, c.location, ...c.links, ...visibleSections.flatMap(sectionWords)]);
   const [low, high] = cv.level === "student" || cv.level === "early" ? [250, 1600] : [400, 1600];
-  out["word-count"] = whole(count >= low && count <= high, { severity: "suggestion", at: { section: "finish" }, excerpt: "", reason: `Your ${word} is ${count.toLocaleString("en-GB")} words.`, action: count < low ? `${low} to ${high.toLocaleString("en-GB")} is the usual range. Add what you did in each role.` : `${low} to ${high.toLocaleString("en-GB")} is the usual range. Switch off what matters least for this job.` });
+  // Repeated bullets make a CV longer without saying more: they count towards "too long", never towards "long enough".
+  const said = count - countWords([...repeats.keys()].map((l) => l.text));
+  out["word-count"] = whole(said >= low && count <= high, { severity: "suggestion", at: { section: "finish" }, excerpt: "", reason: said < count && said < low ? `Your ${word} is ${said.toLocaleString("en-GB")} words once repeated bullets are counted once.` : `Your ${word} is ${count.toLocaleString("en-GB")} words.`, action: said < low ? `${low} to ${high.toLocaleString("en-GB")} is the usual range. Add what you did in each role.` : `${low} to ${high.toLocaleString("en-GB")} is the usual range. Switch off what matters least for this job.` });
   const allowed = cv.level === "student" || cv.level === "early" ? 1 : 2;
   out["page-count"] =
     input.pages === undefined
@@ -311,7 +371,37 @@ export function scoreCv(input: ScoreInput): Score {
   const base = fileBaseName({ contact: c, target: cv.target, region, design: cv.design });
   out["file-name"] = !ours ? unknown("The file’s name") : whole(!!c.fullName.trim() && base.length <= 80, { severity: "suggestion", at: { section: "finish" }, excerpt: base, reason: c.fullName.trim() ? "The file name is very long." : "With no name on it, the file would be called just “CV”.", action: c.fullName.trim() ? "Shorten it on the Finish tab." : "Add your name.", fix: "finish" });
   const boxes = input.missingGlyphs ?? [];
-  out["real-text"] = !ours ? unknown("Whether the text is real text") : whole(boxes.length === 0, { severity: "issue", at: { section: "finish" }, excerpt: boxes.join(" "), reason: `${boxes.length === 1 ? "This character" : "These characters"} can’t be drawn by the fonts and would print as empty boxes: ${boxes.join(" ")}`, action: "Replace them, or choose a different font pairing.", fix: "finish" });
+  if (!ours) out["real-text"] = unknown("Whether the text is real text");
+  else if (!boxes.length) out["real-text"] = whole(true, null);
+  else {
+    // Said on the field that holds them, so it is seen as they are typed, and not only at the moment of download.
+    const held = (t: string) => boxes.filter((b) => t.includes(b));
+    const places: { at: Locator; chars: string[] }[] = [];
+    const look = (at: Locator, t: string) => {
+      const chars = held(t ?? "");
+      if (chars.length) places.push({ at, chars });
+    };
+    look({ section: "contact", field: "fullName" }, c.fullName);
+    look({ section: "contact", field: "email" }, c.email);
+    look({ section: "contact", field: "phone" }, c.phone);
+    look({ section: "contact", field: "location" }, c.location);
+    look({ section: "contact", field: "links" }, c.links.join(" "));
+    if (summary && summary.kind === "summary" && summaryAt) look(summaryAt, summary.text);
+    for (const s of visibleSections) {
+      if (!isEntrySection(s)) continue;
+      for (const e of s.entries) {
+        if (!e.visible) continue;
+        look({ section: s.id, entry: e.id, field: "title" }, e.title);
+        look({ section: s.id, entry: e.id, field: "org" }, e.org);
+        for (const b of e.bullets) if (b.visible) look({ section: s.id, entry: e.id, field: b.id }, b.text);
+      }
+    }
+    const say = (chars: string[]) => `${chars.length === 1 ? "This character" : "These characters"} can’t be drawn by the fonts, so the PDF can’t be made with ${chars.length === 1 ? "it" : "them"}: ${chars.join(" ")}`;
+    const findings = places.length
+      ? places.slice(0, 6).map((p) => ({ severity: "issue" as const, at: p.at, excerpt: p.chars.join(" "), reason: say(p.chars), action: cannotDrawAdvice(p.chars) }))
+      : [{ severity: "issue" as const, at: { section: "finish" }, excerpt: boxes.join(" "), reason: say(boxes), action: cannotDrawAdvice(boxes), fix: "finish" as const }];
+    out["real-text"] = { state: "scored", passed: 0, total: 1, unit: "", findings };
+  }
   for (const [id, format, label] of [["pdf-readback", "pdf", "PDF"], ["docx-readback", "docx", "Word file"]] as const) {
     const state = input.files?.[format];
     out[id] =
@@ -332,10 +422,12 @@ export function scoreCv(input: ScoreInput): Score {
     const checks: Check[] = rules.map((r) => {
       const d = out[r.id];
       const points = d.state === "na" ? 0 : r.weight * factor;
-      const earned = empty || d.state !== "scored" || !d.total ? 0 : (points * d.passed) / d.total;
+      // What the check can earn in this CV as it is: all of its points, or a share of them while the CV is too short to judge.
+      const reach = points * (r.thin ? share : 1);
+      const earned = empty || d.state !== "scored" || !d.total ? 0 : (reach * d.passed) / d.total;
       rawEarned += earned;
-      if (d.state === "pending") rawPending += points;
-      const each = d.findings.length ? (points - earned) / d.findings.length : 0;
+      if (d.state === "pending") rawPending += reach;
+      const each = d.findings.length ? Math.max(0, reach - earned) / d.findings.length : 0;
       return {
         id: r.id,
         group: g.id,
@@ -347,7 +439,8 @@ export function scoreCv(input: ScoreInput): Score {
         passed: d.passed,
         total: d.total,
         unit: d.unit,
-        findings: d.findings.map((f) => ({ ...f, id: `${r.id}:${key(f.at)}${f.word ? `:${f.word}` : ""}`, rule: r.id, group: g.id, points: round(d.state === "pending" ? points : each) })),
+        thin: (r.thin && share < 1 && d.state !== "na") || undefined,
+        findings: d.findings.map((f) => ({ ...f, id: `${r.id}:${key(f.at)}${f.word ? `:${f.word}` : ""}`, rule: r.id, group: g.id, points: round(d.state === "pending" ? reach : each) })),
       };
     });
     // Sums are taken before rounding, so a group can never show more than it is worth.
@@ -355,7 +448,38 @@ export function scoreCv(input: ScoreInput): Score {
   });
   const total = round(groups.reduce((n, g) => n + g.raw, 0));
   const findings = empty ? [] : groups.flatMap((g) => g.checks.flatMap((x) => x.findings)).sort((a, b) => (a.severity === b.severity ? b.points - a.points : a.severity === "issue" ? -1 : 1));
-  return { empty, total, shown: Math.round(total), pending: round(groups.reduce((n, g) => n + g.pending, 0)), groups: groups.map(({ raw: _raw, ...g }) => g), findings, gaps: empty ? [] : gapsIn(cv), goodEnough: !empty && Math.round(total) >= GOOD_ENOUGH };
+  const missing = empty ? [] : whatIsMissing(cv, lines.length);
+  return {
+    empty,
+    total,
+    shown: Math.round(total),
+    pending: round(groups.reduce((n, g) => n + g.pending, 0)),
+    groups: groups.map(({ raw: _raw, ...g }) => g),
+    findings,
+    gaps: empty ? [] : gapsIn(cv),
+    goodEnough: !empty && Math.round(total) >= GOOD_ENOUGH && missing.length === 0,
+    thin: !empty && share < 1 ? { have: lines.length, need } : null,
+    missing,
+  };
+}
+
+/**
+ * What a CV needs before it is worth sending, whatever its score: who it is
+ * from, somewhere the person worked or studied, enough different lines saying
+ * what they did, and a qualification or course. A CV missing any of these is
+ * never called "good enough to apply". Each is said in a few words, to finish
+ * the sentence "It still needs …".
+ */
+export function whatIsMissing(cv: ScoreInput["cv"], differentLines: number): string[] {
+  const out: string[] = [];
+  const newer = cv.level === "student" || cv.level === "early";
+  const named = (kinds: Section["kind"][]) => cv.sections.some((s) => s.visible && isEntrySection(s) && kinds.includes(s.kind) && s.entries.some((e) => e.visible && (e.title.trim() || e.org.trim())));
+  if (!cv.contact.fullName.trim() || !validEmail(cv.contact.email)) out.push("your name and an email address that works");
+  if (!named(newer ? ["experience", "projects", "volunteering", "education"] : ["experience"])) out.push(newer ? "a role, a project or a course of study" : "at least one role");
+  const need = LINES_NEEDED[cv.level] ?? LINES_NEEDED.experienced;
+  if (differentLines < need) out.push(`${need} different lines saying what you did (it has ${differentLines})`);
+  if (!named(["education", "certificates", "courses"])) out.push("a qualification, certificate or course");
+  return out;
 }
 
 const round = (n: number) => Math.round(n * 10) / 10;

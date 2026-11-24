@@ -110,13 +110,19 @@ export function figures(text: string): Figure[] {
 const SUPPORT = ["helped", "help", "helping", "assisted", "assist", "assisting", "supported", "support", "supporting", "contributed", "contribute", "contributing", "participated", "shadowed", "collaborated", "co-led", "co-wrote", "co-authored", "co-ordinated with", "worked with", "worked alongside", "worked on", "part of", "member of", "took part", "involved in", "alongside", "under the direction of", "under supervision"];
 const LEAD = ["led", "lead", "leading", "owned", "own", "owning", "managed", "manage", "managing", "headed", "directed", "ran", "run", "running", "oversaw", "oversee", "overseeing", "supervised", "supervise", "supervising", "spearheaded", "chaired", "founded", "in charge of", "responsible for", "accountable for", "sole", "solely", "single-handedly", "pioneered", "drove", "championed", "orchestrated"];
 
+/**
+ * "We" and "our" say the work was a team's. A draft that drops them reads as
+ * the person's alone, so they are kept: as "we", or as "as part of the team".
+ */
+export const TEAM = ["we", "our"];
+
 const found = (text: string, phrases: string[]) => {
   const t = ` ${text.toLowerCase().replace(/[^a-z0-9-]+/g, " ")} `;
   return phrases.filter((p) => t.includes(` ${p} `));
 };
 
 /** Words in the text that say the person supported the work. */
-export const supportWords = (text: string) => found(text, SUPPORT);
+export const supportWords = (text: string) => [...found(text, SUPPORT), ...found(text.replace(/['’](?:ve|d|re|ll)\b/g, " "), TEAM)];
 /** Words in the text that say the person was in charge of the work. */
 export const leadWords = (text: string) => found(text, LEAD);
 
@@ -126,7 +132,9 @@ const FAMILY: string[][] = [
   ["ran", "run", "running"],
   ["owned", "own", "owning"],
   ["oversaw", "oversee", "overseeing"],
-  ["drove", "drive", "driving"],
+  ["drove", "drive", "driving", "driven"],
+  ["showed", "show", "showing", "shown"],
+  ["proved", "prove", "proving", "proven"],
   ["wrote", "write", "writing", "written"],
   ["built", "build", "building"],
   ["grew", "grow", "growing", "grown"],
@@ -223,7 +231,8 @@ export function terms(text: string): Term[] {
   for (const m of text.matchAll(/\p{L}[\p{L}\p{N}'’+#.&/-]*[\p{L}\p{N}+#]|\p{L}/gu)) {
     const word = m[0].replace(/[.,;:]+$/, "");
     const lower = word.toLowerCase();
-    if (GLUE.has(lower) || isNumberWord(lower)) continue;
+    // "18 per cent" is the figure 18%, read by `figures`: "cent" is not a word of its own.
+    if (GLUE.has(lower) || isNumberWord(lower) || lower === "cent" || lower === "percent") continue;
     // "year-on-year", "client-facing": the parts are checked, so a hyphen added or dropped is not a new word.
     const parts = lower.includes("-") && !FILLER.has(lower) ? lower.split("-") : [lower];
     for (const p of parts) {
@@ -245,4 +254,122 @@ export function sentences(text: string): string[] {
     .split(/\n+|(?<=[.!?])\s+(?=[A-Z0-9£$€“"'])/)
     .map((s) => s.trim())
     .filter((s) => /[A-Za-z0-9]/.test(s));
+}
+
+/* ------------------------------------------------- small words with meaning */
+
+/**
+ * Small words that change what is claimed. "Could cut" is not "cut"; "did not
+ * miss" is not "missed"; "most of" is not all of. A rewrite may not add or
+ * drop one. Returned as written, with "didn't" and "cannot" read as "not".
+ */
+const MEANING = new Set(["could", "would", "might", "may", "should", "not", "no", "never", "most", "some", "all", "almost", "nearly"]);
+export function meaningWords(text: string): string[] {
+  const out: string[] = [];
+  for (const m of text.toLowerCase().matchAll(/[a-z]+n['’]t|[a-z]+/g)) {
+    const w = m[0];
+    if (/n['’]t$/.test(w) || w === "cannot") out.push("not");
+    else if (MEANING.has(w)) out.push(w);
+  }
+  return out;
+}
+
+/** True when a text says something is NOT so: "not", "never", "no experience", "didn't". */
+export const negated = (text: string) => /(?<![\p{L}])(?:not|never|no|nor|neither|cannot|hardly|barely)(?![\p{L}])|n['’]t(?![\p{L}])/iu.test(text);
+
+/* -------------------------------------------------- what a figure is counting */
+
+/** Words that end the phrase a figure counts: "1,200 objects in the database" counts objects, not databases. */
+const EDGE = new Set(
+  "in on at to for of by with from and or who that which across over per a an the each every since during used as into through under within but so while when where after before until than is are was were i we my our".split(" "),
+);
+const isMeasure = (f: Figure) => /[%£$€x/]/.test(f.key);
+/** A year is a date, not a count of anything. */
+const isYear = (f: Figure) => /^(?:19|20)\d\d$/.test(f.key);
+const BREAK = /[,.;:()\[\]–—·|\n]|\s-\s/;
+const WORD = /[\p{L}\p{N}'’+#&/-]+/gu;
+const bare = (w: string) => w.toLowerCase().replace(/['’]s?$/, "");
+
+/** Units of time, as stems: what a figure counts when it gives how long something lasted. */
+const TIME_UNITS = new Set(["year", "month", "week", "day", "hour", "minute", "term", "season", "quarter"].map((w) => stem(w)));
+
+export interface Counted {
+  /** The noun phrase straight after the figure: "new starters" in "six new starters on the till". Stems. */
+  after: string[];
+  /** The two words of substance before it: "cost", "lead" in "cut cost per lead by 18%". Stems. */
+  before: string[];
+}
+
+/** What a figure in a text is counting or measuring, read from the words on either side of it. */
+export function counted(text: string, f: Figure): Counted {
+  const tail = text.slice(f.index + f.text.length).split(BREAK)[0];
+  const after: string[] = [];
+  for (const m of tail.matchAll(WORD)) {
+    const w = bare(m[0]);
+    if (EDGE.has(w) || /^\d/.test(w) || isNumberWord(w)) break;
+    const st = stem(w);
+    if (st) after.push(st);
+    if (after.length === 3) break;
+  }
+  const lead = text.slice(0, Math.max(0, f.index - (f.phrase.length - f.text.length)));
+  const head = lead.split(BREAK).pop() ?? "";
+  const before: string[] = [];
+  const words = [...head.matchAll(WORD)].map((m) => bare(m[0]));
+  for (let i = words.length - 1; i >= 0 && before.length < 2; i--) {
+    const w = words[i];
+    // Another figure belongs to its own phrase: "5 engineers and 12 contractors".
+    if (/^[£$€]?\d/.test(w) || isNumberWord(w)) break;
+    if (EDGE.has(w) || GLUE.has(w)) continue;
+    const st = stem(w);
+    if (st) before.push(st);
+  }
+  return { after, before };
+}
+
+/** A figure with the words it counts, as written, for messages: "1,200 volunteers". */
+export function countedPhrase(text: string, f: Figure): string {
+  const tail = text.slice(f.index + f.text.length).split(BREAK)[0];
+  const words: string[] = [];
+  for (const m of tail.matchAll(WORD)) {
+    const w = bare(m[0]);
+    if (EDGE.has(w) || /^\d/.test(w) || isNumberWord(w) || words.length === 3) break;
+    words.push(m[0]);
+  }
+  return words.length ? `${f.text} ${words.join(" ")}` : f.phrase;
+}
+
+/**
+ * Whether a figure in a draft counts the same thing as the same figure in a
+ * source. "1,200 volunteers" is not backed by "1,200 objects", and "12
+ * engineers" is not backed by "5 engineers and 12 contractors". A year, and a
+ * figure with nothing said about what it counts, cannot disagree.
+ */
+export function countsTheSame(draft: string, f: Figure, source: string, g: Figure): boolean {
+  if (isYear(f)) return true;
+  const d = counted(draft, f);
+  const s = counted(source, g);
+  if (isMeasure(f)) {
+    const mine = [...d.before, ...d.after];
+    const theirs = [...s.before, ...s.after];
+    return !mine.length || !theirs.length || mine.some((x) => theirs.includes(x));
+  }
+  // A length of time is the same length of time whatever is said after it: "five years’ experience" and "for five
+  // years at Northlight" both count years. It is not backed by five of anything else.
+  if (d.after.length && TIME_UNITS.has(d.after[0]) && s.after.length) return s.after[0] === d.after[0];
+  if (d.after.length) {
+    if (s.after.length) return d.after.every((x) => s.after.includes(x));
+    return !s.before.length || d.after.some((x) => s.before.includes(x));
+  }
+  if (!d.before.length) return true;
+  const theirs = [...s.after, ...s.before];
+  return !theirs.length || d.before.some((x) => theirs.includes(x));
+}
+
+/** Figures whose order matters because nothing else says which is which: "from 18% to 12%", "12 to 18". */
+export function orderedFigures(text: string): Figure[] {
+  return figures(text).filter((f) => {
+    if (isYear(f)) return false;
+    const c = counted(text, f);
+    return isMeasure(f) || (!c.after.length && !c.before.length);
+  });
 }

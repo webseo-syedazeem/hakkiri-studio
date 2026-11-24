@@ -1,57 +1,174 @@
 /*
- * The CV and cover letter section. Sizes, spacing and colours follow the design
- * mock-ups (editor, tailoring, Software view). Every colour comes from a token,
- * so the same screens work on the dark app surface and on the light one (.mk).
+ * Hakkiri CV Builder — Calm Precision Design System (01-design-system/design-tokens.css)
+ * Every colour, typography scale, spacing step, radius and elevation token from the
+ * handoff specification is defined here for both dark (default) and light (.mk / [data-theme="light"]).
  */
 .cv {
-  --cv-edge: rgb(255 255 255 / 0.14); /* panel and button edges */
-  --cv-input-edge: #76798c; /* inputs get a stronger, visible edge */
-  --cv-green: #8bc9ab; /* confirmed, fixed */
-  --cv-note-bg: #25283c; /* a suggestion or a thing to check */
-  --cv-note-ink: var(--color-blue-soft);
-  --cv-issue-bg: #302229; /* a concrete problem */
-  --cv-issue-edge: #84464e;
-  --cv-mark: rgb(123 136 255 / 0.22); /* the marked passage in a source */
-  --cv-selected: #292c43;
+  /* Dark theme tokens (default) */
+  --background: #13171F;
+  --surface: #1B202A;
+  --surface-raised: #242B36;
+  --surface-hover: #2B3442;
+  --surface-selected: #283651;
+  --border: #384352;
+  --border-control: #8290A5;
+  --text: #F2F4F8;
+  --text-muted: #B0BAC9;
+  --text-subtle: #9AA8BB;
+  --accent: #AAB8FF;
+  --accent-hover: #C1CBFF;
+  --accent-active: #98A9FA;
+  --on-accent: #131A34;
+  --success: #83D5B4;
+  --success-surface: #17382F;
+  --warning: #F2C477;
+  --warning-surface: #382C1D;
+  --danger: #FFB4B1;
+  --danger-surface: #422A2E;
+  --focus: #D0DAFF;
+
+  /* Short aliases from handoff mock-up CSS (TOKEN-CHECK.md) */
+  --bg: var(--background);
+  --raised: var(--surface-raised);
+  --hover: var(--surface-hover);
+  --selected: var(--surface-selected);
+  --control-border: var(--border-control);
+  --muted: var(--text-muted);
+  --subtle: var(--text-subtle);
+  --accent-2: var(--accent-hover);
+  --ok: var(--success);
+  --ok-bg: var(--success-surface);
+  --warn: var(--warning);
+  --warn-bg: var(--warning-surface);
+  --danger-bg: var(--danger-surface);
+
+  /* CV paper tokens (always light, representing the printed page) */
+  --cv-paper: #FFFFFF;
+  --cv-paper-ink: #141821;
+  --cv-paper-muted: #4C5565;
+  --cv-paper-rule: #D9DFE8;
+  --cv-paper-accent: #223B7B;
+  --paper: var(--cv-paper);
+  --paper-text: var(--cv-paper-ink);
+  --paper-muted: var(--cv-paper-muted);
+  --paper-rule: var(--cv-paper-rule);
+  --paper-accent: var(--cv-paper-accent);
+
+  /* Spacing, radii & elevation tokens */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 48px;
+  --radius-chip: 6px;
+  --radius-control: 8px;
+  --radius-panel: 12px;
+  --radius-paper: 4px;
+  --shadow-panel: 0 1px 2px rgba(7, 10, 16, 0.24);
+  --shadow-dialog: 0 18px 48px rgba(5, 8, 14, 0.42);
+  --shadow-paper: 0 10px 30px rgba(8, 12, 20, 0.28);
+
+  /* Mapped internal component tokens */
+  --color-booth: var(--background);
+  --color-panel: var(--surface);
+  --color-panel-2: var(--surface-raised);
+  --color-line: var(--border);
+  --cv-edge: var(--border);
+  --cv-input-edge: var(--border-control);
+  --color-ink: var(--text);
+  --color-muted: var(--text-muted);
+  --color-dim: var(--text-subtle);
+  --color-blue: var(--accent);
+  --color-blue-fill: var(--accent);
+  --color-blue-hover: var(--accent-hover);
+  --color-blue-soft: var(--accent);
+  --cv-green: var(--success);
+  --color-red: var(--danger);
+  --cv-note-bg: var(--surface-selected);
+  --cv-note-ink: var(--accent-hover);
+  --cv-issue-bg: var(--danger-surface);
+  --cv-issue-edge: #8C4A52;
+  --cv-mark: rgb(170 184 255 / 0.24);
+  --cv-selected: var(--surface-selected);
+
+  background: var(--background);
   color: var(--color-ink);
   font-size: 15px;
   line-height: 1.45;
 }
+
 .mk .cv,
-.cv.mk {
-  --cv-edge: rgb(0 0 0 / 0.16);
-  --cv-input-edge: #7c7e8c;
-  --cv-green: #1c7a50;
-  --cv-note-bg: #eceefe;
-  --cv-note-ink: #2f3bb5;
-  --cv-issue-bg: #fdecec;
-  --cv-issue-edge: #d9a3a3;
-  --cv-mark: rgb(61 75 216 / 0.16);
-  --cv-selected: #e4e7fb;
-  --color-blue: #3d4bd8;
-  --color-red: #c1272d;
-  /* Small grey text sits on tinted fields here, so it is a shade darker than the public pages' grey (5.6:1). */
-  --color-muted: #595b68;
-  --color-dim: #595b68;
+.cv.mk,
+[data-theme="light"] .cv,
+.cv[data-theme="light"] {
+  --background: #F5F7FA;
+  --surface: #FFFFFF;
+  --surface-raised: #EEF1F5;
+  --surface-hover: #E4E9F1;
+  --surface-selected: #E9EEFF;
+  --border: #D7DEE8;
+  --border-control: #6C788B;
+  --text: #172234;
+  --text-muted: #48576B;
+  --text-subtle: #566477;
+  --accent: #394FC5;
+  --accent-hover: #2D40A8;
+  --accent-active: #25358D;
+  --on-accent: #FFFFFF;
+  --success: #196448;
+  --success-surface: #E8F5EE;
+  --warning: #80510D;
+  --warning-surface: #FFF3D9;
+  --danger: #A12F38;
+  --danger-surface: #FCECEF;
+  --focus: #3047BC;
+  --shadow-panel: 0 1px 2px rgba(16, 24, 40, 0.06);
+  --shadow-dialog: 0 18px 48px rgba(16, 24, 40, 0.16);
+  --shadow-paper: 0 10px 28px rgba(16, 24, 40, 0.12);
+
+  --color-booth: var(--background);
+  --color-panel: var(--surface);
+  --color-panel-2: var(--surface-raised);
+  --color-line: var(--border);
+  --cv-edge: var(--border);
+  --cv-input-edge: var(--border-control);
+  --color-ink: var(--text);
+  --color-muted: var(--text-muted);
+  --color-dim: var(--text-subtle);
+  --color-blue: var(--accent);
+  --color-blue-fill: var(--accent);
+  --color-blue-hover: var(--accent-hover);
+  --color-blue-soft: var(--accent);
+  --cv-green: var(--success);
+  --color-red: var(--danger);
+  --cv-note-bg: var(--surface-selected);
+  --cv-note-ink: var(--accent-hover);
+  --cv-issue-bg: var(--danger-surface);
+  --cv-issue-edge: #D9A3AA;
+  --cv-mark: rgb(57 79 197 / 0.16);
+  --cv-selected: var(--surface-selected);
 }
 
-.cv h1 { font-size: 32px; letter-spacing: -1.3px; line-height: 1.13; font-weight: 700; margin: 3px 0; }
-.cv h2 { font-size: 18px; letter-spacing: -0.4px; font-weight: 650; margin: 0; }
+.cv h1 { font-size: 32px; letter-spacing: -0.02em; line-height: 1.13; font-weight: 700; margin: 3px 0; }
+.cv h2 { font-size: 18px; letter-spacing: -0.015em; font-weight: 650; margin: 0; }
 .cv h3 { font-size: 15px; font-weight: 650; margin: 0; }
 .cv p { margin: 0; }
 .cv small, .cv .cv-small { font-size: 12px; color: var(--color-muted); }
 .cv .cv-help { display: block; font-size: 12px; color: var(--color-muted); }
 .cv fieldset { border: 0; padding: 0; min-width: 0; margin-left: 0; margin-right: 0; margin-bottom: 0; }
 .cv .cv-muted { color: var(--color-muted); }
-.cv .cv-eyebrow { font-size: 11px; letter-spacing: 0.11em; font-weight: 650; text-transform: uppercase; color: var(--color-muted); }
+.cv .cv-eyebrow { font-size: 11px; letter-spacing: 0.08em; font-weight: 650; text-transform: uppercase; color: var(--color-muted); }
 .cv .cv-link { color: var(--color-blue-soft); text-decoration: underline; text-underline-offset: 2px; }
 .cv .cv-good { color: var(--cv-green); }
 .cv .cv-warn { color: var(--color-red); }
 
 /* The 64px bar across the top of the working area. */
-.cv-bar { min-height: 64px; padding: 10px 24px; border-bottom: 1px solid var(--cv-edge); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.cv-bar { min-height: 64px; padding: 10px 24px; background: var(--surface); border-bottom: 1px solid var(--cv-edge); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .cv-crumb { font-size: 13px; color: var(--color-muted); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.cv-crumb b, .cv-crumb [aria-current] { color: var(--color-ink); font-weight: 550; }
+.cv-crumb b, .cv-crumb [aria-current] { color: var(--color-ink); font-weight: 600; }
 .cv-crumb a:hover { color: var(--color-ink); }
 .cv-area { padding: 24px; max-width: 1240px; }
 .cv-toolbar { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 18px; flex-wrap: wrap; }
@@ -59,19 +176,20 @@
 .cv-push { margin-left: auto; }
 
 /* Buttons: a quiet default and one primary action per screen. */
-.cv-btn { font: inherit; color: var(--color-ink); background: var(--color-panel-2); border: 1px solid var(--cv-edge); border-radius: 6px; padding: 7px 12px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; white-space: nowrap; }
-.cv-btn:hover { border-color: var(--color-blue-hover); }
+.cv-btn { font: inherit; font-weight: 500; color: var(--color-ink); background: var(--color-panel-2); border: 1px solid var(--cv-edge); border-radius: var(--radius-control); padding: 7px 12px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; white-space: nowrap; transition: background-color 0.14s ease, border-color 0.14s ease; }
+.cv-btn:hover:not(:disabled):not([aria-disabled="true"]) { background: var(--surface-hover); border-color: var(--border-control); }
 .cv-btn:disabled, .cv-btn[aria-disabled="true"] { opacity: 0.55; cursor: default; }
-/* The label sits on the base fill (4.6:1); hovering changes the edge only, which keeps that contrast. */
-.cv-btn-primary { background: var(--color-blue-fill); color: #f1f1f4; font-weight: 600; border-color: transparent; }
-.cv-btn-primary:hover { border-color: #aeb6ff; }
-.cv-btn-quiet { background: transparent; border-color: transparent; color: var(--color-blue-soft); padding-left: 4px; padding-right: 4px; }
+.cv-btn-primary { background: var(--accent); color: var(--on-accent); font-weight: 600; border-color: var(--accent); }
+.cv-btn-primary:hover:not(:disabled):not([aria-disabled="true"]) { background: var(--accent-hover); border-color: var(--accent-hover); }
+.cv-btn-primary:active:not(:disabled):not([aria-disabled="true"]) { background: var(--accent-active); border-color: var(--accent-active); }
+.cv-btn-quiet { background: transparent; border-color: transparent; color: var(--color-blue-soft); padding-left: 6px; padding-right: 6px; }
+.cv-btn-quiet:hover:not(:disabled):not([aria-disabled="true"]) { background: var(--surface-hover); border-color: transparent; }
 .cv-btn-danger { color: var(--color-red); }
-.cv :is(button, a, input, textarea, select, [tabindex]):focus-visible { outline: 2px solid var(--color-blue-soft); outline-offset: 3px; }
-.cv-chip { font-size: 12px; padding: 3px 8px; white-space: nowrap; background: var(--color-panel-2); border: 1px solid var(--cv-edge); border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; }
+.cv :is(button, a, input, textarea, select, [tabindex]):focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.cv-chip { font-size: 12px; padding: 3px 8px; white-space: nowrap; background: var(--color-panel-2); border: 1px solid var(--cv-edge); border-radius: var(--radius-chip); display: inline-flex; align-items: center; gap: 6px; }
 
 /* Panels. */
-.cv-panel { border: 1px solid var(--cv-edge); border-radius: 10px; background: var(--color-panel); overflow: hidden; }
+.cv-panel { border: 1px solid var(--cv-edge); border-radius: var(--radius-panel); background: var(--color-panel); box-shadow: var(--shadow-panel); overflow: hidden; }
 .cv-panelhead, .cv-panelfoot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 15px 20px; flex-wrap: wrap; }
 .cv-panelhead { border-bottom: 1px solid var(--color-line); }
 .cv-panelfoot { border-top: 1px solid var(--color-line); }
@@ -80,33 +198,38 @@
 .cv-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .cv-layout { display: grid; gap: 24px; align-items: start; }
 
+/* Empty state badge (J01). */
+.cv-empty-symbol { width: 48px; height: 48px; border-radius: var(--radius-panel); background: var(--color-panel-2); border: 1px solid var(--cv-edge); color: var(--accent); display: inline-flex; align-items: center; justify-content: center; margin: 0 auto 4px; }
+
 /* Fields: the label, the rule under it, the input, then anything to check. */
 .cv-label { display: block; font-size: 13px; font-weight: 550; }
 .cv-rule { display: block; font-size: 12px; color: var(--color-muted); margin-top: 2px; font-weight: 400; }
-.cv-input { width: 100%; font: inherit; color: var(--color-ink); background: var(--color-panel-2); border: 1px solid var(--cv-input-edge); border-radius: 5px; padding: 7px 9px; margin-top: 4px; display: block; line-height: 1.4; }
+.cv-input { width: 100%; font: inherit; color: var(--color-ink); background: var(--color-panel-2); border: 1px solid var(--cv-input-edge); border-radius: var(--radius-control); padding: 7px 10px; margin-top: 4px; display: block; line-height: 1.4; }
 .cv-input::placeholder { color: var(--color-dim); opacity: 1; }
 textarea.cv-input { resize: vertical; field-sizing: content; }
 .cv-input[aria-invalid="true"] { border-color: var(--color-red); }
 .cv-input.cv-uncertain { border-color: var(--color-blue); box-shadow: inset 3px 0 var(--color-blue); }
-.cv-note { margin-top: 6px; padding: 9px 12px; color: var(--cv-note-ink); background: var(--cv-note-bg); border-left: 2px solid var(--color-blue); font-size: 13px; border-radius: 0 4px 4px 0; }
+.cv-note { margin-top: 6px; padding: 10px 12px; color: var(--cv-note-ink); background: var(--cv-note-bg); border-left: 3px solid var(--color-blue); font-size: 13px; border-radius: 0 var(--radius-chip) var(--radius-chip) 0; }
 .cv-note .cv-btn { font-size: 13px; padding: 4px 10px; }
-.cv-issue { display: flex; gap: 13px; align-items: center; flex-wrap: wrap; background: var(--cv-issue-bg); border: 1px solid var(--cv-issue-edge); border-radius: 8px; padding: 14px 18px; }
+.cv-issue { display: flex; gap: 13px; align-items: center; flex-wrap: wrap; background: var(--cv-issue-bg); border: 1px solid var(--cv-issue-edge); border-radius: var(--radius-control); padding: 14px 18px; }
 .cv-issue strong { color: var(--color-red); }
 .cv-fixed { margin-top: 6px; font-size: 13px; color: var(--cv-green); display: flex; align-items: center; gap: 6px; }
 .cv-error-text { margin-top: 4px; font-size: 13px; color: var(--color-red); }
 
 /* Section navigation. */
 .cv-tabs { display: flex; align-items: center; gap: 23px; min-height: 42px; border-bottom: 1px solid var(--cv-edge); margin-bottom: 18px; overflow-x: auto; }
-.cv-tabs a, .cv-tabs button { padding: 9px 0; color: var(--color-muted); font-size: 14px; white-space: nowrap; background: none; border: 0; border-bottom: 2px solid transparent; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+.cv-tabs a, .cv-tabs button { padding: 9px 0; color: var(--color-muted); font-size: 14px; white-space: nowrap; background: none; border: 0; border-bottom: 3px solid transparent; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+.cv-tabs a:hover, .cv-tabs button:hover { color: var(--color-ink); }
 .cv-tabs [aria-current="page"], .cv-tabs [aria-selected="true"] { color: var(--color-ink); border-bottom-color: var(--color-blue); font-weight: 650; }
 .cv-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--color-blue); display: inline-block; }
 
 /* Rows in a list (dashboard, review steps). */
-.cv-pick { display: flex; align-items: center; gap: 16px; border-bottom: 1px solid var(--color-line); padding: 13px 18px; min-height: 73px; flex-wrap: wrap; }
+.cv-pick { position: relative; display: flex; align-items: center; gap: 16px; border-bottom: 1px solid var(--color-line); padding: 13px 18px; min-height: 73px; flex-wrap: wrap; }
 .cv-pick:last-child { border-bottom: 0; }
 .cv-pick-active { background: var(--cv-selected); box-shadow: inset 3px 0 var(--color-blue); }
+.cv-pick[data-child]::before { content: ""; position: absolute; left: 24px; top: 14px; bottom: 14px; width: 2px; background: var(--cv-edge); border-radius: 1px; }
 .cv-subhead { padding: 8px 18px; background: var(--color-panel-2); font-size: 12px; font-weight: 650; }
-.cv-quote { margin: 9px 0 0; padding: 12px 14px; border-left: 2px solid var(--color-blue); background: var(--color-panel-2); line-height: 1.5; }
+.cv-quote { margin: 9px 0 0; padding: 12px 14px; border-left: 3px solid var(--color-blue); background: var(--color-panel-2); line-height: 1.5; border-radius: 0 var(--radius-chip) var(--radius-chip) 0; }
 
 /* The file's own text, shown beside the fields read from it. */
 .cv-source { font-size: 13px; line-height: 1.5; max-height: min(72vh, 900px); overflow-y: auto; }
@@ -117,12 +240,12 @@ textarea.cv-input { resize: vertical; field-sizing: content; }
 .cv-source-page { padding: 6px 20px; font-size: 11px; letter-spacing: 0.11em; text-transform: uppercase; color: var(--color-muted); border-top: 1px solid var(--color-line); margin-top: 8px; }
 
 /* Choice cards (level, region, how to start). */
-.cv-choice { display: flex; gap: 10px; align-items: flex-start; padding: 11px 13px; border: 1px solid var(--cv-edge); border-radius: 8px; background: var(--color-panel-2); cursor: pointer; }
+.cv-choice { display: flex; gap: 10px; align-items: flex-start; padding: 11px 13px; border: 1px solid var(--cv-edge); border-radius: var(--radius-control); background: var(--color-panel-2); cursor: pointer; }
 .cv-choice:has(input:checked) { border-color: var(--color-blue); box-shadow: inset 0 0 0 1px var(--color-blue); background: var(--cv-selected); }
-.cv-choice:has(input:focus-visible) { outline: 2px solid var(--color-blue-soft); outline-offset: 3px; }
-.cv-choice input { margin-top: 3px; accent-color: var(--color-blue-fill); }
+.cv-choice:has(input:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
+.cv-choice input { margin-top: 3px; accent-color: var(--accent); }
 
-.cv-skeleton { border-radius: 6px; background: linear-gradient(90deg, var(--color-panel-2), var(--color-panel), var(--color-panel-2)); background-size: 200% 100%; animation: cv-shimmer 1.4s linear infinite; }
+.cv-skeleton { border-radius: var(--radius-chip); background: linear-gradient(90deg, var(--color-panel-2), var(--color-panel), var(--color-panel-2)); background-size: 200% 100%; animation: cv-shimmer 1.4s linear infinite; }
 @keyframes cv-shimmer { to { background-position: -200% 0; } }
 
 /* Two working panes from 1200px; below that, one pane with a switch between them. */
@@ -157,19 +280,19 @@ textarea.cv-input { resize: vertical; field-sizing: content; }
 .cv-tabs a[data-off="true"] { font-style: italic; opacity: 0.75; }
 
 /* A two- or three-way choice: Edit / Paper, A4 / US Letter, Tighter / Default / Looser. */
-.cv-seg { display: inline-flex; border: 1px solid var(--cv-input-edge); border-radius: 6px; overflow: hidden; background: var(--color-panel-2); }
+.cv-seg { display: inline-flex; border: 1px solid var(--cv-input-edge); border-radius: var(--radius-control); overflow: hidden; background: var(--color-panel-2); }
 .cv-seg > button, .cv-seg > label > span { display: block; font: inherit; font-size: 13px; color: var(--color-ink); background: none; border: 0; padding: 6px 12px; cursor: pointer; white-space: nowrap; }
 .cv-seg > * + * { border-left: 1px solid var(--cv-edge); }
 .cv-seg > button[aria-pressed="true"], .cv-seg > label:has(input:checked) > span { background: var(--cv-selected); box-shadow: inset 0 -2px var(--color-blue); font-weight: 650; }
-.cv-seg > label:has(input:focus-visible) { outline: 2px solid var(--color-blue-soft); outline-offset: -2px; }
+.cv-seg > label:has(input:focus-visible) { outline: 2px solid var(--focus); outline-offset: -2px; }
 .cv-seg.cv-narrow { margin-bottom: 14px; }
 
 /* The inclusion switch. On: in this version. Off: kept, but left off the page. The button is the touch area; the track is drawn inside it. */
 .cv-switch { position: relative; width: 36px; height: 20px; flex: none; padding: 0; border: 0; background: none; cursor: pointer; border-radius: 10px; }
 .cv-switch::before { content: ""; position: absolute; left: 50%; top: 50%; width: 36px; height: 20px; transform: translate(-50%, -50%); box-sizing: border-box; border-radius: 10px; border: 1px solid var(--cv-input-edge); background: var(--color-panel-2); }
 .cv-switch > span { position: absolute; left: 50%; top: 50%; width: 14px; height: 14px; margin: -7px 0 0 -15px; border-radius: 50%; background: var(--color-muted); transition: transform 0.12s; }
-.cv-switch[aria-checked="true"]::before { background: var(--color-blue-fill); border-color: var(--color-blue-fill); }
-.cv-switch[aria-checked="true"] > span { transform: translateX(16px); background: #fff; }
+.cv-switch[aria-checked="true"]::before { background: var(--accent); border-color: var(--accent); }
+.cv-switch[aria-checked="true"] > span { transform: translateX(16px); background: var(--on-accent); }
 .cv-off-chip { color: var(--color-muted); font-style: italic; }
 .cv-controls { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; flex-wrap: wrap; justify-content: flex-end; }
 .cv-controls .cv-btn-quiet { padding-top: 4px; padding-bottom: 4px; }
@@ -182,12 +305,12 @@ textarea.cv-input { resize: vertical; field-sizing: content; }
 
 /* The Move menu. */
 .cv-menu { position: relative; display: inline-flex; }
-.cv-menu-list { position: absolute; z-index: 20; top: 100%; right: 0; min-width: 170px; display: flex; flex-direction: column; gap: 2px; padding: 6px; background: var(--color-panel); border: 1px solid var(--cv-input-edge); border-radius: 8px; box-shadow: 0 10px 28px rgb(0 0 0 / 0.35); }
-.cv-menu-list > button { font: inherit; font-size: 14px; color: var(--color-ink); background: none; border: 0; border-radius: 5px; padding: 7px 9px; text-align: left; cursor: pointer; }
+.cv-menu-list { position: absolute; z-index: 20; top: 100%; right: 0; min-width: 170px; display: flex; flex-direction: column; gap: 2px; padding: 6px; background: var(--color-panel); border: 1px solid var(--cv-input-edge); border-radius: var(--radius-control); box-shadow: var(--shadow-dialog); }
+.cv-menu-list > button { font: inherit; font-size: 14px; color: var(--color-ink); background: none; border: 0; border-radius: var(--radius-chip); padding: 7px 9px; text-align: left; cursor: pointer; }
 .cv-menu-list > button:hover:not(:disabled) { background: var(--cv-selected); }
 .cv-menu-list > button:disabled { opacity: 0.45; cursor: default; }
 .cv-menu-list > .cv-menu-to { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 14px; padding: 5px 9px; }
-.cv-menu-list select { font: inherit; color: var(--color-ink); background: var(--color-panel-2); border: 1px solid var(--cv-input-edge); border-radius: 5px; padding: 3px 6px; }
+.cv-menu-list select { font: inherit; color: var(--color-ink); background: var(--color-panel-2); border: 1px solid var(--cv-input-edge); border-radius: var(--radius-chip); padding: 3px 6px; }
 
 /* Repeatable items: an entry, a bullet, a group of skills, a language. */
 .cv-entry { border-bottom: 1px solid var(--color-line); }
@@ -201,24 +324,27 @@ textarea.cv-input { resize: vertical; field-sizing: content; }
 .cv-group { display: flex; gap: 8px; align-items: flex-start; padding-top: 14px; border-top: 1px solid var(--color-line); }
 .cv-group:first-of-type { border-top: 0; padding-top: 0; }
 .cv-skillchip { font: inherit; font-size: 13px; color: var(--color-ink); cursor: pointer; }
-.cv-skillchip[aria-pressed="true"] { border-color: var(--color-blue); }
+.cv-skillchip[aria-pressed="true"] { border-color: var(--color-blue); background: var(--cv-selected); font-weight: 550; }
 .cv-skillchip[aria-pressed="false"] { color: var(--color-muted); text-decoration: line-through; border-style: dashed; }
+/* A term from the advert that is on the CV: pressed shows where. Not pressed is not "off", so nothing is struck through. */
+.cv-termchip { font: inherit; font-size: 13px; color: var(--color-ink); cursor: pointer; }
+.cv-termchip[aria-pressed="true"] { border-color: var(--color-blue); background: var(--cv-selected); }
 
 /* The paper pane: tools, then the page. The page itself is always light: it is the printed sheet. */
 .cv-paperpane { min-width: 0; }
 .cv-papertools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-height: 42px; margin-bottom: 10px; }
 .cv-papertools .cv-btn-quiet { padding: 4px 8px; min-width: 32px; }
 .cv-papertools [aria-pressed="true"] { color: var(--color-ink); background: var(--cv-selected); }
-.cv-paperscroll { overflow: auto; max-height: calc(100vh - 150px); border-radius: 6px; background: var(--color-panel-2); border: 1px solid var(--cv-edge); padding: 12px; }
+.cv-paperscroll { overflow: auto; max-height: calc(100vh - 150px); border-radius: var(--radius-control); background: var(--color-panel-2); border: 1px solid var(--cv-edge); padding: 12px; }
 .cv-paperscroll[data-state="loading"] { opacity: 0.6; }
 .cv-papersheet { position: relative; margin: 0 auto; }
-.cv-paper { display: block; width: 100%; height: auto; box-shadow: 0 0 0 1px var(--cv-edge), 0 6px 18px rgb(0 0 0 / 0.12); }
+.cv-paper { display: block; width: 100%; height: auto; border-radius: var(--radius-paper); box-shadow: 0 0 0 1px var(--cv-edge), var(--shadow-paper); }
 .cv-paper text { cursor: pointer; }
 .cv-passage > rect { cursor: pointer; }
 .cv-passage:hover > rect { fill: #f0f1ff; }
 .cv-passage[data-marked] > rect, .cv-passage[data-marked]:hover > rect { fill: #e6e8ff; }
-.cv-paperhint { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; padding: 24px; color: #5d5f6c; font-size: 14px; pointer-events: none; }
-.cv-textview { background: var(--color-panel); border: 1px solid var(--cv-edge); border-radius: 10px; padding: 18px 20px; max-height: calc(100vh - 150px); overflow: auto; font-size: 15px; line-height: 1.5; }
+.cv-paperhint { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; padding: 24px; color: #4C5565; font-size: 14px; pointer-events: none; }
+.cv-textview { background: var(--color-panel); border: 1px solid var(--cv-edge); border-radius: var(--radius-panel); padding: 18px 20px; max-height: calc(100vh - 150px); overflow: auto; font-size: 15px; line-height: 1.5; }
 .cv-textview h3 { margin: 18px 0 4px; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-muted); }
 .cv-textview h4 { margin: 10px 0 0; font-size: 15px; font-weight: 650; }
 .cv-textview p[data-role="meta"] { color: var(--color-muted); font-size: 13px; }
@@ -236,7 +362,7 @@ textarea.cv-input { resize: vertical; field-sizing: content; }
 .cv-swatch { cursor: pointer; display: inline-flex; padding: 3px; border-radius: 50%; border: 2px solid transparent; }
 .cv-swatch > span[aria-hidden] { width: 22px; height: 22px; border-radius: 50%; display: block; box-shadow: 0 0 0 1px rgb(255 255 255 / 0.35); }
 .cv-swatch:has(input:checked) { border-color: var(--color-ink); }
-.cv-swatch:has(input:focus-visible) { outline: 2px solid var(--color-blue-soft); outline-offset: 2px; }
+.cv-swatch:has(input:focus-visible) { outline: 2px solid var(--focus); outline-offset: 2px; }
 .cv-orderlist, .cv-filelist, .cv-overlist, .cv-plainlist { list-style: none; margin: 0; padding: 0; }
 .cv-orderlist li { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 9px 20px; border-bottom: 1px solid var(--color-line); font-size: 14px; }
 .cv-filelist li { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 0; border-bottom: 1px solid var(--color-line); }
@@ -244,7 +370,7 @@ textarea.cv-input { resize: vertical; field-sizing: content; }
 .cv-overlist li { display: flex; align-items: flex-start; gap: 8px; flex-wrap: wrap; padding: 9px 0; border-bottom: 1px solid var(--color-line); font-size: 14px; }
 .cv-plainlist li { padding: 5px 0; border-bottom: 1px solid var(--color-line); font-size: 14px; overflow-wrap: anywhere; }
 .cv-compare > div { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 6px; }
-.cv-compare > div > div { background: var(--color-panel-2); border-radius: 6px; padding: 10px 12px; font-size: 13px; min-width: 0; overflow-wrap: anywhere; }
+.cv-compare > div > div { background: var(--color-panel-2); border: 1px solid var(--cv-edge); border-radius: var(--radius-control); padding: 10px 12px; font-size: 13px; min-width: 0; overflow-wrap: anywhere; }
 .cv-compare p + p { margin-top: 4px; }
 
 @media (max-width: 767px) {
@@ -264,8 +390,10 @@ textarea.cv-input { resize: vertical; field-sizing: content; }
 .cv .cv-mark, .cv small .cv-mark { background: var(--cv-mark); color: var(--color-ink); padding: 1px 4px; border-radius: 3px; box-decoration-break: clone; -webkit-box-decoration-break: clone; margin-right: 4px; }
 
 /* The score and its findings. Issues are red; suggestions are data blue; fixed is green. */
-.cv-scorebig { font-size: 56px; font-weight: 700; letter-spacing: -2px; line-height: 1; margin-top: 4px; }
+.cv-scorebig { font-size: 56px; font-weight: 700; letter-spacing: -2px; line-height: 1; margin-top: 4px; font-variant-numeric: tabular-nums; }
 .cv-scorebig small { font-size: 16px; letter-spacing: 0; font-weight: 500; }
+.cv-scorebar, .cv-fit-meter { display: block; width: 100%; height: 6px; border-radius: 999px; background: var(--color-panel-2); overflow: hidden; margin-top: 6px; }
+.cv-scorebar > span, .cv-fit-meter > span { display: block; height: 100%; border-radius: 999px; background: var(--accent); transition: width 0.2s ease; }
 .cv .cv-plainlist li.cv-finding { display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap; padding: 14px 20px 14px 17px; border-bottom: 1px solid var(--color-line); border-left: 3px solid var(--color-blue); font-size: 14px; }
 .cv .cv-plainlist li.cv-finding:last-child { border-bottom: 0; }
 .cv .cv-plainlist li.cv-finding[data-kind="issue"] { border-left-color: var(--color-red); }
@@ -302,3 +430,46 @@ textarea.cv-input { resize: vertical; field-sizing: content; }
   .cv-fields tr { display: block; padding: 8px 0; border-bottom: 1px solid var(--color-line); }
   .cv-fields th, .cv-fields td { display: block; border: 0; padding: 2px 16px; text-align: left !important; }
 }
+
+/* Tailoring: one row per thing the advert asks for, with where the CV shows it. */
+.cv .cv-plainlist li.cv-req { padding: 14px 20px 14px 17px; border-bottom: 1px solid var(--color-line); border-left: 3px solid var(--cv-input-edge); }
+.cv .cv-plainlist li.cv-req[data-status="met"] { border-left-color: var(--cv-green); }
+.cv .cv-plainlist li.cv-req[data-status="partly"] { border-left-color: var(--color-blue); }
+.cv .cv-plainlist li.cv-req[data-status="missing"] { border-left-color: var(--color-red); }
+.cv .cv-plainlist li.cv-req[data-selected] { background: var(--cv-selected); }
+.cv-status[data-status="met"] { color: var(--cv-green); }
+.cv-status[data-status="missing"] { color: var(--color-red); }
+.cv-status[data-status="partly"] { color: var(--cv-note-ink); }
+.cv-req-quote { display: block; margin-top: 8px; font-size: 15px; font-weight: 550; }
+.cv-req-line { margin-top: 6px; font-size: 13px; }
+.cv-mini { font: inherit; font-size: 12px; color: var(--color-ink); background: var(--color-panel-2); border: 1px solid var(--cv-input-edge); border-radius: var(--radius-chip); padding: 2px 6px; }
+.cv-linklist { max-height: 300px; overflow: auto; margin-top: 8px; display: grid; gap: 8px; font-size: 14px; }
+.cv .cv-plainlist li.cv-change { padding: 14px 20px; border-bottom: 1px solid var(--color-line); }
+.cv-termmark { pointer-events: none; }
+@media (max-width: 767px) {
+  .cv-mini { min-height: 44px; font-size: 16px; }
+}
+
+/* ---------------------------------------------------------- the cover letter */
+
+.cv-lfield { border: 0; padding: 0; margin: 0; min-width: 0; }
+.cv-lpara { padding: 12px 14px; border: 1px solid var(--cv-edge); border-radius: var(--radius-control); background: var(--color-panel); }
+.cv-lpara[data-over] { border-color: var(--cv-issue-edge); box-shadow: inset 3px 0 var(--color-red); }
+.cv .cv-plainlist.cv-lsents { margin-top: 8px; border-top: 1px solid var(--color-line); }
+.cv .cv-plainlist li.cv-lsent { padding: 8px 0 8px 11px; border-bottom: 1px solid var(--color-line); border-left: 3px solid transparent; font-size: 14px; line-height: 1.5; }
+.cv .cv-plainlist li.cv-lsent:last-child { border-bottom: 0; }
+.cv .cv-plainlist li.cv-lsent[data-state="unsupported"] { border-left-color: var(--color-red); }
+.cv .cv-plainlist li.cv-lsent[data-state="review"] { border-left-color: var(--cv-note-ink); }
+.cv .cv-plainlist li.cv-lsent[data-selected] { background: var(--cv-selected); }
+.cv-lsent > button { display: block; width: 100%; }
+.cv-lstate { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 650; color: var(--color-muted); white-space: nowrap; }
+.cv-lstate[data-state="sourced"] { color: var(--cv-green); }
+.cv-lstate[data-state="unsupported"] { color: var(--color-red); }
+.cv-lstate[data-state="review"] { color: var(--cv-note-ink); }
+/* On a selected row the tint behind the label is darker: the label is set in ink there, and the row's edge keeps the colour. */
+.cv-lsent[data-selected] .cv-lstate { color: var(--color-ink); }
+.cv-lsources { padding: 8px 10px 4px 2px; font-size: 13px; }
+.cv .cv-plainlist li.cv-lsource { padding: 6px 0 6px 10px; border-left: 2px solid var(--color-blue); margin-top: 6px; }
+.cv .cv-plainlist li.cv-lsource[data-kind="advert"], .cv .cv-plainlist li.cv-lsource[data-kind="job"] { border-left-color: var(--cv-input-edge); }
+.cv .cv-plainlist.cv-lproblems li { padding: 4px 0 4px 10px; border-left: 2px solid var(--color-red); margin-top: 6px; }
+.cv button.cv-link { font: inherit; font-size: 13px; background: none; border: 0; padding: 0; margin-top: 2px; cursor: pointer; }

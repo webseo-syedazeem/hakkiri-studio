@@ -108,7 +108,7 @@ run("CV start", async (browser) => {
 
   // --- The dashboard now lists it, with the target job ---
   await page.goto(`${BASE}/cv`);
-  await page.getByRole("link", { name: "Fern Example – Collections Officer" }).waitFor();
+  await page.getByRole("link", { name: "Fern Example – Collections Officer", exact: true }).waitFor();
   const row = await page.locator(".cv-pick").first().innerText();
   check(/Collections officer · Lantern Atlas/.test(row) && /Early career/.test(row), "the dashboard row shows the level and the target role and employer", row.replace(/\n/g, " / "));
   check((await page.locator(".cv-pick").count()) === 1, "the dashboard lists her one CV and nothing else");
@@ -177,7 +177,7 @@ run("CV start", async (browser) => {
   await p.page.goto(`${BASE}/cv/new`);
   await fitsWidth(p.page, "set-up on a phone");
   await p.page.goto(`${BASE}/cv`);
-  await p.page.getByRole("link", { name: "Phone CV" }).waitFor();
+  await p.page.getByRole("link", { name: "Phone CV", exact: true }).waitFor();
   await fitsWidth(p.page, "dashboard on a phone");
 
   check(a.errors.length + b.errors.length + p.errors.length === 0, "no page errors", [...a.errors, ...b.errors, ...p.errors].join("\n"));

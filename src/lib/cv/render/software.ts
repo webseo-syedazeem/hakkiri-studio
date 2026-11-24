@@ -1,3 +1,5 @@
+import { scoreCv } from "../score/score";
+import { cannotDrawAdvice } from "./fonts";
 import "server-only";
 import { readCvFile } from "../import";
 import { type CvDoc, type Entry, type Section, isEntrySection, sectionIsEmpty } from "../schema";
@@ -48,7 +50,7 @@ export interface SoftwareView {
 const norm = (s: string) => s.normalize("NFKC").replace(/[‘’]/g, "'").replace(/[“”]/g, '"').replace(/\s+/g, " ").trim().toLowerCase();
 const row = (label: string, expected: string, read: string): FieldRow => ({ label, expected, read, ok: norm(expected) === norm(read) });
 
-type Printable = Pick<CvDoc, "contact" | "sections" | "design" | "region" | "target" | "rev">;
+type Printable = Pick<CvDoc, "contact" | "sections" | "design" | "region" | "target" | "rev"> & Partial<Pick<CvDoc, "level">>;
 const shown = (sections: Section[]) => sections.filter((s) => s.visible && !sectionIsEmpty(s));
 const entriesOf = (sections: Section[], kind: Section["kind"]): Entry[] => sections.filter((s) => s.kind === kind && isEntrySection(s)).flatMap((s) => (isEntrySection(s) ? s.entries : []));
 
@@ -85,9 +87,12 @@ export async function softwareView(cv: Printable, format: ExportFormat, now = ne
 
   const why: string[] = [];
   if (out.check.status !== "checked") why.push("The file does not say exactly what your CV says.");
-  if (out.missing.length) why.push(`These characters would print as empty boxes: ${out.missing.join(" ")}`);
+  if (out.missing.length) why.push(`The fonts can’t draw these characters: ${out.missing.join(" ")}. ${cannotDrawAdvice(out.missing)}`);
   const odd = shown(cv.sections).filter((s) => s.kind === "custom" || (s.title.trim() && norm(s.title) !== norm(sectionHeading({ kind: s.kind, title: "" }, cv.region))));
   if (odd.length) why.push(`${odd.length === 1 ? "One heading is" : "Some headings are"} not standard: ${odd.map((s) => `“${sectionHeading(s, cv.region)}”`).join(", ")}.`);
+  // A file can read back perfectly and still be nearly empty. "Ready" is not said of a CV that lacks what a CV needs.
+  const lacking = scoreCv({ cv: { ...cv, level: cv.level ?? "experienced", accepted: [] }, now }).missing;
+  if (lacking.length) why.push(`The file reads back correctly, but there is too little on the ${cv.region === "us" ? "resume" : "CV"} to call it ready. It still needs: ${lacking.join("; ")}.`);
   const wrong = fields.filter((f) => !f.ok);
   if (!fields.length) why.push("The file could not be sorted into fields.");
   else if (wrong.length) why.push(`A parser reads ${wrong.length === 1 ? "one field" : `${wrong.length} fields`} differently from your CV: ${wrong.slice(0, 4).map((f) => f.label).join(", ")}${wrong.length > 4 ? "…" : ""}.`);

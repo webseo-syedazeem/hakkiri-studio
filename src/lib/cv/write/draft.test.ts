@@ -2,17 +2,29 @@ import { describe, expect, it } from "vitest";
 import { fernCv } from "../render/testing";
 import type { CvDoc, EntrySection } from "../schema";
 import { checkGrounded, checkMerge, checkProfile, checkRewrite } from "./check";
-import { asBullet, bulletsByRule, mergeDetail, profilesByRule, questionFor, tidyByRule, visibleText, yearsOfExperience } from "./draft";
+import { asBullet, bulletsByRule, latestRole, mergeDetail, profilesByRule, questionFor, tidyByRule, visibleText, yearsOfExperience } from "./draft";
 
 const NOW = new Date("2026-11-23T12:00:00Z");
 
 describe("a sentence as a bullet", () => {
   it("drops “I”, the list mark and the full stop, and changes nothing else", () => {
     expect(asBullet("I ran the weekly planning meeting.")).toBe("Ran the weekly planning meeting");
-    expect(asBullet("- we cut late orders by 12% over the year")).toBe("Cut late orders by 12% over the year");
+    expect(asBullet("I’ve trained six new starters on the till;")).toBe("Trained six new starters on the till");
+  });
+
+  it("keeps “we” as “as part of the team”: a team's work is not turned into the person's alone", () => {
+    expect(asBullet("- we cut late orders by 12% over the year")).toBe("Cut late orders by 12% over the year, as part of the team");
+    expect(asBullet("We’ve rebuilt the rota.")).toBe("Rebuilt the rota, as part of the team");
+    // Already says it was shared: nothing is added.
+    expect(asBullet("We worked with the events team to run a conference")).toBe("Worked with the events team to run a conference");
+    expect(checkGrounded(asBullet("We cut late orders by 12% over the year"), ["We cut late orders by 12% over the year"]).ok).toBe(true);
+    expect(checkGrounded("Cut late orders by 12% over the year", ["We cut late orders by 12% over the year"]).problems[0].say).toBe("It dropped “we”, so it claims more of the work than your words do.");
+  });
+
+  it("leaves the rest of a sentence alone", () => {
     expect(asBullet("I’ve trained six new starters on the till;")).toBe("Trained six new starters on the till");
     expect(asBullet("2. Wrote the handling guide")).toBe("Wrote the handling guide");
-    expect(asBullet("Also I helped with stock takes")).toBe("I helped with stock takes");
+    expect(asBullet("Also I helped with stock takes")).toBe("Helped with stock takes");
   });
 });
 
@@ -26,7 +38,7 @@ describe("bullets from the three answers, by rule", () => {
 
   it("makes one bullet from each sentence, in the person's words", () => {
     const out = bulletsByRule(capture);
-    expect(out.map((b) => b.text)).toEqual(["Ran the weekly planning meeting for the Leeds site", "Trained about 12 new starters on the order system", "Cut late orders over the year", "The team stopped using paper order forms"]);
+    expect(out.map((b) => b.text)).toEqual(["Ran the weekly planning meeting for the Leeds site", "Trained about 12 new starters on the order system", "Cut late orders over the year, as part of the team", "The team stopped using paper order forms"]);
   });
 
   it("every bullet says only what its own passages say, and the passages are in the notes word for word", () => {
@@ -92,7 +104,7 @@ describe("putting the person's detail into their bullet", () => {
 describe("tidying a bullet by rule", () => {
   const cases: [string, string][] = [
     ["I successfully managed the till on a daily basis.", "Managed the till daily"],
-    ["We utilised Excel in order to track stock", "Used Excel to track stock"],
+    ["We utilised Excel in order to track stock", "Used Excel to track stock, as part of the team"],
     ["I was able to cut waste by 12% in a year", "Cut waste by 12% in a year"],
     ["Managed a wide range of client accounts", "Managed client accounts"],
     ["Wrote reports as well as the weekly bulletin", "Wrote reports and the weekly bulletin"],
@@ -175,6 +187,31 @@ describe("two profiles from the CV, by rule", () => {
     const c = structuredClone(cv);
     (c.sections.find((s) => s.kind === "experience") as EntrySection).entries = [];
     expect(profilesByRule(c, { skills: [] }, NOW).versions).toEqual([]);
+  });
+
+  it("says the years and “most recently” only of the role the dates show to be the latest", () => {
+    // A role with no dates (made from notes, which ask for none) beside a current role of seven years elsewhere.
+    const c = structuredClone(cv);
+    const e = (c.sections.find((s) => s.kind === "experience") as EntrySection).entries;
+    e[0] = { ...e[0], title: "Transport planner", org: "Clyde Freight", start: "2019-06", end: "", current: true };
+    e[1] = { ...e[1], title: "Night shift lead", org: "Example Depot", start: "", end: "", current: false };
+    const undated = profilesByRule(c, { entryId: e[1].id, skills: [] }, NOW);
+    expect(undated.years).toBeUndefined();
+    expect(undated.versions[0].text).toMatch(/^Night shift lead at Example Depot\./);
+    for (const v of undated.versions) expect(v.text).not.toMatch(/years|most recently/);
+    // The current role is the latest: of it, both are true.
+    const latest = profilesByRule(c, { entryId: e[0].id, skills: [] }, NOW);
+    expect(latest.years).toBe(7);
+    expect(latest.versions[0].text).toMatch(/^Transport planner with 7 years’ experience, most recently at Clyde Freight\./);
+    // An earlier, dated role is not "most recently" either.
+    e[1] = { ...e[1], start: "2015-01", end: "2019-05" };
+    const earlier = profilesByRule(c, { entryId: e[1].id, skills: [] }, NOW);
+    expect(earlier.years).toBeUndefined();
+    for (const v of earlier.versions) expect(v.text).not.toMatch(/years|most recently/);
+    // Two roles held now: the one that began later is the latest.
+    e[1] = { ...e[1], start: "2022-01", end: "", current: true };
+    expect(latestRole(e)!.id).toBe(e[1].id);
+    expect(latestRole([{ id: "x", start: "", end: "", current: false }])).toBeUndefined();
   });
 
   it("leaves the years out when the dates cannot give them", () => {

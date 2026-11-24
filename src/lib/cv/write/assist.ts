@@ -30,11 +30,14 @@ const RULES = `You help a person word their own CV. You never add a fact.
 - Every number, name, tool, employer, timeframe and result you write must already be in the person's own text.
 - Reuse their words. You may reorder them, cut filler, fix grammar and change a word's ending. Do not swap in a different word that carries meaning.
 - Do not strengthen a claim. "helped" stays "helped". "roughly 40" stays "roughly 40". "up to" stays "up to".
-- Never write "I" or "we". No full stop at the end of a bullet.
+- Never write "I" or "we". Where they say "we", keep that the work was shared: end the bullet with "as part of the team". Never turn "we" into something they did alone.
+- Keep small words that carry meaning: could, would, might, not, never, no, most, some, all, almost, nearly.
+- A number stays with the thing it counts. Never move a number from one thing to another, and never change the order of two numbers.
+- No full stop at the end of a bullet.
 - Reply with one JSON object and nothing else.`;
 
 /** One checked call: the draft and, when it was refused twice, why. Null when the service did not answer. */
-async function drafted<T>(o: { label: string; system: string; user: string; maxTokens: number; schema: z.ZodType<T> }, verify: (value: T) => Verdict): Promise<{ value: T } | { refused: Verdict } | null> {
+export async function drafted<T>(o: { label: string; system: string; user: string; maxTokens: number; schema: z.ZodType<T> }, verify: (value: T) => Verdict): Promise<{ value: T } | { refused: Verdict } | null> {
   let last: Verdict | null = null;
   const value = await ask<T>({
     model: aiConfig.mainModel,

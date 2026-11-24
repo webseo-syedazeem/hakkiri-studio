@@ -61,6 +61,8 @@ export const CvImportSchema = z.object({
   omitted: z.array(z.object({ text: z.string().max(1000), reason: z.string().max(200), line: z.number().int().min(0) })).max(50).default([]),
   /** The review steps the person has confirmed, by step key. */
   reviewed: z.array(z.string().max(40)).max(40).default([]),
+  /** The free public check this upload was started from, if it was: the person then lands on the score, where its findings are. */
+  checkId: z.string().regex(/^aud_[A-Za-z0-9_-]{8,40}$/).optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });

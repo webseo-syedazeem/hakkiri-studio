@@ -3,7 +3,8 @@ import { failure, notFound, requireUserId } from "@/lib/cv/access";
 import { exportCv } from "@/lib/cv/render/server";
 import { cvIsEmpty } from "@/lib/cv/schema";
 import { cvIsEmpty as isEmpty, newId } from "@/lib/cv/schema";
-import { getOwnCv, saveExport } from "@/lib/cv/store";
+import { privateLines, privateMessage } from "@/lib/cv/privacy";
+import { getOwnCv, listOwnAchievements, noteFileChecks, saveExport } from "@/lib/cv/store";
 import { guard } from "@/lib/usage/limits";
 
 export const runtime = "nodejs";
@@ -30,15 +31,20 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     const format = new URL(req.url).searchParams.get("format");
     if (format !== "pdf" && format !== "docx") return NextResponse.json({ error: "invalid_input", message: "Choose PDF or Word." }, { status: 400 });
     if (cvIsEmpty(cv)) return NextResponse.json({ error: "empty", message: "There is nothing to download yet. Add your details first." }, { status: 409 });
+    // A line taken from an achievement marked private is not sent anywhere until the person has dealt with it.
+    const kept = privateLines(cv, await listOwnAchievements(userId));
+    if (kept.length) return NextResponse.json({ error: "private", message: privateMessage(kept, cv.region === "us" ? "resume" : "CV"), lines: kept }, { status: 409 });
     const now = new Date();
     const out = await exportCv(cv, format, now);
     /** Remembers this download: the CV exactly as it was, so the same file can be made again later. */
     const remember = async (checked: boolean) => {
       if (isEmpty(cv)) return "";
       const id = newId("exp_").slice(0, 20);
-      await saveExport({ id, userId, versionId: cv.id, rev: cv.rev, format, name: out.name, at: now.toISOString(), checked, pages: out.pages, cv: { name: cv.name, level: cv.level, region: cv.region, target: cv.target, contact: cv.contact, sections: cv.sections, design: cv.design } }).catch((err) => console.error("[cv export] the record of this download could not be saved:", err));
+      await saveExport({ id, userId, versionId: cv.id, rev: cv.rev, format, what: "cv", name: out.name, at: now.toISOString(), checked, pages: out.pages, cv: { name: cv.name, level: cv.level, region: cv.region, target: cv.target, contact: cv.contact, sections: cv.sections, design: cv.design } }).catch((err) => console.error("[cv export] the record of this download could not be saved:", err));
       return id;
     };
+    // How the file read back is kept for this revision, so the score says the same everywhere.
+    await noteFileChecks(cv, { [format]: out.check ? { status: out.check.status, name: out.name, pages: out.pages, words: out.check.words, missing: out.check.missing, unexpected: out.check.unexpected, unsupported: out.missing, size: out.bytes.length } : { status: "failed", made: true, name: out.name } });
     if (!out.check) {
       if (new URL(req.url).searchParams.get("unchecked") !== "1") {
         return NextResponse.json({ error: "check_failed", message: "The file was made, but it could not be read back to check it." }, { status: 503 });

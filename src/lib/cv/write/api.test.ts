@@ -85,11 +85,11 @@ const capture = { did: "I helped run the weekly planning meeting for the Leeds s
 describe("bullets from what the person says", () => {
   it("returns the model's bullets when every word of them is in the notes", async () => {
     const id = await filledCv();
-    ai.replies = [{ bullets: [{ text: "Helped run the weekly planning meeting for the Leeds site", quotes: ["I helped run the weekly planning meeting for the Leeds site."] }, { text: "Cut late orders by roughly 12% over the year", quotes: ["We cut late orders by roughly 12% over the year."] }] }];
+    ai.replies = [{ bullets: [{ text: "Helped run the weekly planning meeting for the Leeds site", quotes: ["I helped run the weekly planning meeting for the Leeds site."] }, { text: "Cut late orders by roughly 12% over the year, as part of the team", quotes: ["We cut late orders by roughly 12% over the year."] }] }];
     const { status, body } = await run(id, "bullets", capture);
     expect(status).toBe(200);
     expect(body.by).toBe("ai");
-    expect(body.bullets.map((b: { text: string }) => b.text)).toEqual(["Helped run the weekly planning meeting for the Leeds site", "Cut late orders by roughly 12% over the year"]);
+    expect(body.bullets.map((b: { text: string }) => b.text)).toEqual(["Helped run the weekly planning meeting for the Leeds site", "Cut late orders by roughly 12% over the year, as part of the team"]);
     expect(ai.calls[0].system).toContain("You never add a fact");
     expect(ai.calls[0].system).toContain("UK spelling");
   });
@@ -100,20 +100,22 @@ describe("bullets from what the person says", () => {
     ["“helped” turned into “led”", "Led the weekly planning meeting for the Leeds site"],
     ["a tool nobody mentioned", "Cut late orders by roughly 12% over the year using SAP"],
     ["“I”", "I cut late orders by roughly 12% over the year"],
+    ["“we” dropped, so a team's work reads as theirs alone", "Cut late orders by roughly 12% over the year"],
+    ["a number moved to another thing", "Helped run 12 weekly planning meetings for the Leeds site"],
   ])("never shows a draft with %s: it falls back to the person's own sentences", async (_what, text) => {
     const id = await filledCv();
     const bad = { bullets: [{ text, quotes: [capture.did, capture.changed] }] };
     ai.replies = [bad, bad];
     const { body } = await run(id, "bullets", capture);
     expect(body.by).toBe("rules");
-    expect(body.bullets.map((b: { text: string }) => b.text)).toEqual(["Helped run the weekly planning meeting for the Leeds site", "Cut late orders by roughly 12% over the year"]);
-    expect(JSON.stringify(body.bullets)).not.toContain(text);
+    expect(body.bullets.map((b: { text: string }) => b.text)).toEqual(["Helped run the weekly planning meeting for the Leeds site", "Cut late orders by roughly 12% over the year, as part of the team"]);
+    expect(body.bullets.map((b: { text: string }) => b.text)).not.toContain(text);
     expect(body.note).toMatch(/your own sentences/);
   });
 
   it("refuses a quote that is not in the notes word for word", async () => {
     const id = await filledCv();
-    const bad = { bullets: [{ text: "Cut late orders by roughly 12% over the year", quotes: ["Late orders were cut by roughly 12% over the year."] }] };
+    const bad = { bullets: [{ text: "Cut late orders by roughly 12% over the year, as part of the team", quotes: ["Late orders were cut by roughly 12% over the year."] }] };
     ai.replies = [bad, bad];
     expect((await run(id, "bullets", capture)).body.by).toBe("rules");
   });

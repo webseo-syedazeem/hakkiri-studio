@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { badInput, failure, notFound, requireUserId } from "@/lib/cv/access";
 import { IMPORT_ERRORS } from "@/lib/cv/import";
-import { readUpload, tooLarge } from "@/lib/cv/import/server";
+import { readForm, readUpload } from "@/lib/cv/import/server";
 import { getOwnCv, getOwnImport, saveImport } from "@/lib/cv/store";
 import { guard } from "@/lib/usage/limits";
 
@@ -22,8 +22,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     if (imp.status === "confirmed") return NextResponse.json({ error: "closed", message: "This upload has already been opened in the builder." }, { status: 409 });
     const cv = await getOwnCv(imp.versionId, userId);
     if (!cv) return notFound();
-    if (tooLarge(req)) return NextResponse.json({ error: "too_big", message: IMPORT_ERRORS["too-big"].message }, { status: 413 });
-    const form = await req.formData().catch(() => null);
+    const form = await readForm(req);
+    if (form === "too-big") return NextResponse.json({ error: "too_big", message: IMPORT_ERRORS["too-big"].message }, { status: 413 });
     const file = form?.get("file");
     const text = form?.get("text");
     const hasFile = file instanceof File && file.size > 0;

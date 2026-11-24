@@ -15,7 +15,16 @@ import type { PaperStyle } from "./templates";
  * line breaks, and with them the page count, can differ from the PDF.
  */
 
-const x = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+/** Text made safe for XML: the four characters that have a meaning in it are escaped, and the few that XML does not allow at all are left out. */
+const x = (s: string) =>
+  s
+    .replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, "")
+    .replace(/\p{Noncharacter_Code_Point}/gu, "")
+    .replace(/[\uD800-\uDFFF]/gu, "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 const twips = (pt: number) => Math.round(pt * 20);
 const half = (pt: number) => Math.round(pt * 2);
 const hex = (c: string) => c.replace("#", "").toUpperCase();
@@ -65,6 +74,8 @@ export async function writeDocx(flow: Flow, style: PaperStyle, info: DocxInfo): 
       `<w:pStyle w:val="${STYLE_OF[s.tag]}"/>`,
       s.keepWithNext ? "<w:keepNext/>" : "",
       s.tag !== "P" || s.kind === "contact" ? "<w:keepLines/>" : "",
+      // In the order Word's own files use: keepNext, keepLines, pageBreakBefore.
+      s.pageBreak ? "<w:pageBreakBefore/>" : "",
       s.tag === "LI" ? '<w:numPr><w:ilvl w:val="0"/><w:numId w:val="1"/></w:numPr>' : "",
       borders,
       `<w:spacing w:before="${twips(s.before)}" w:after="${twips(s.after)}" w:line="${twips(s.lineHeight)}" w:lineRule="exact"/>`,
@@ -99,8 +110,10 @@ export async function writeDocx(flow: Flow, style: PaperStyle, info: DocxInfo): 
   const app = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>Hakkiri</Application></Properties>`;
 
   const zip = new JSZip();
-  // Fixed dates inside the zip, so the same CV always gives the same file.
-  const opts = { date: info.created };
+  // Fixed dates inside the zip, so the same CV always gives the same file. No separate entries are made for the
+  // folders: the zip library stamps those with the time on the clock, which made two files written either side of a
+  // tick of it differ by a few bytes.
+  const opts = { date: info.created, createFolders: false };
   zip.file("[Content_Types].xml", types, opts);
   zip.file("_rels/.rels", top, opts);
   zip.file("word/document.xml", document, opts);
