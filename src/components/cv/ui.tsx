@@ -176,14 +176,16 @@ export function Field({ label, rule, error, uncertain, note, multiline, rows = 3
   const shared = { id, "data-cvf": fieldKey, "aria-describedby": describedBy, "aria-invalid": error ? true : undefined, className: clsx("cv-input", uncertain && "cv-uncertain") };
   return (
     <div className={className}>
-      <label className="cv-label" htmlFor={id}>
-        {label}
-      </label>
-      {rule && (
-        <span className="cv-rule" id={`${id}-rule`}>
-          {rule}
-        </span>
-      )}
+      <div className="cv-field-header">
+        <label className="cv-label" htmlFor={id}>
+          {label}
+        </label>
+        {rule && (
+          <span className="cv-rule" id={`${id}-rule`}>
+            {rule}
+          </span>
+        )}
+      </div>
       {multiline ? (
         <textarea {...shared} ref={area} rows={rows} style={{ minHeight: `calc(${rows} * 1.4em + 16px)` }} value={value} onChange={(e) => onChange(e.target.value)} onFocus={rest.onFocus as never} onBlur={rest.onBlur as never} placeholder={rest.placeholder} maxLength={rest.maxLength} disabled={rest.disabled} />
       ) : (

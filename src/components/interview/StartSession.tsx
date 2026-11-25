@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import type { QuestionGroup } from "@/lib/types";
@@ -57,41 +58,45 @@ const PREP_STEPS = [
 ] as const;
 
 function PreparingSessionModal() {
+  const [mounted, setMounted] = useState(false);
   const { user } = useAuth();
-  const displayName = user?.firstName || user?.email?.split("@")[0] || "Candidate";
+  const displayName = [user?.firstName, user?.lastName].filter(Boolean).join(" ") || (user?.email ? user.email.split("@")[0] : "") || "Candidate";
   const [stepIdx, setStepIdx] = useState(0);
-  const [pct, setPct] = useState(18);
+  const [pct, setPct] = useState(24);
 
   useEffect(() => {
+    setMounted(true);
     const stepTimer = setInterval(() => {
       setStepIdx((prev) => (prev < PREP_STEPS.length - 1 ? prev + 1 : prev));
-    }, 1150);
+    }, 1100);
     const pctTimer = setInterval(() => {
-      setPct((prev) => (prev < 94 ? Math.min(94, prev + Math.max(2, Math.round((95 - prev) * 0.18))) : prev));
-    }, 320);
+      setPct((prev) => (prev < 95 ? Math.min(95, prev + Math.max(2, Math.round((96 - prev) * 0.16))) : prev));
+    }, 260);
     return () => {
       clearInterval(stepTimer);
       clearInterval(pctTimer);
     };
   }, []);
 
-  return (
+  if (!mounted || typeof document === "undefined") return null;
+
+  return createPortal(
     <div
       role="status"
       aria-live="polite"
       data-testid="preparing-session-container"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4 backdrop-blur-md animate-fade-in"
+      className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/75 p-4 backdrop-blur-md animate-fade-in"
     >
-      <div className="relative w-full max-w-[490px] overflow-hidden rounded-2xl border border-blue/35 bg-[#191a24]/95 p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_28px_72px_-12px_rgba(0,0,0,0.85)] animate-scale-in">
+      <div className="relative w-full max-w-[490px] overflow-hidden rounded-2xl border border-blue/40 bg-[#161722]/98 p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.15),0_32px_80px_-12px_rgba(0,0,0,0.9)] animate-scale-in">
         {/* Ambient top glow */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute -top-24 left-1/2 h-48 w-80 -translate-x-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(92,95,252,0.28),transparent_70%)]"
+          className="pointer-events-none absolute -top-24 left-1/2 h-48 w-80 -translate-x-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(92,95,252,0.35),transparent_70%)]"
         />
 
         {/* Header with user name & animated voice bars */}
         <div className="relative flex items-start gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-blue/40 bg-gradient-to-br from-[#4f52f8]/30 to-[#6d5eff]/15 text-blue-soft shadow-[0_0_24px_rgba(79,82,248,0.35)]">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-blue/40 bg-gradient-to-br from-[#4f52f8]/35 to-[#6d5eff]/20 text-blue-soft shadow-[0_0_24px_rgba(79,82,248,0.4)]">
             <div className="flex items-end gap-1 h-5" aria-hidden="true">
               <span className="w-1 h-4 rounded-full bg-blue-soft animate-wave" style={{ animationDelay: "0ms" }} />
               <span className="w-1 h-5 rounded-full bg-white animate-wave" style={{ animationDelay: "180ms" }} />
@@ -103,7 +108,7 @@ function PreparingSessionModal() {
           <div className="min-w-0 flex-1">
             <div className="flex items-center justify-between gap-2">
               <span className="inline-flex items-center gap-1.5 rounded-full border border-blue/30 bg-blue/15 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-blue-soft">
-                <span className="h-1.5 w-1.5 rounded-full bg-blue animate-ping" />
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />
                 Live Studio Setup
               </span>
               <span className="num text-xs font-bold text-blue-soft">{pct}%</span>
@@ -112,15 +117,15 @@ function PreparingSessionModal() {
               Preparing your interview, {displayName}…
             </h3>
             <p className="mt-0.5 text-[13px] text-muted">
-              Setting up your tailored questions and interviewer voice. Everything will open automatically in a moment.
+              Tailoring your questions and calibrating the AI interviewer. Your session will open automatically in a moment.
             </p>
           </div>
         </div>
 
         {/* Animated Shimmer Progress Bar */}
-        <div className="mt-5 h-2 w-full overflow-hidden rounded-full bg-[#111219] border border-white/10">
+        <div className="mt-5 h-2 w-full overflow-hidden rounded-full bg-[#0d0e15] border border-white/10">
           <div
-            className="relative h-full rounded-full bg-gradient-to-r from-[#4f52f8] via-[#7b88ff] to-[#aeb6ff] shadow-[0_0_14px_rgba(123,136,255,0.65)] transition-all duration-300 ease-out"
+            className="relative h-full rounded-full bg-gradient-to-r from-[#4f52f8] via-[#7b88ff] to-[#aeb6ff] shadow-[0_0_16px_rgba(123,136,255,0.7)] transition-all duration-300 ease-out"
             style={{ width: `${pct}%` }}
           />
         </div>
@@ -136,10 +141,10 @@ function PreparingSessionModal() {
                 className={clsx(
                   "flex items-center justify-between gap-3 rounded-xl border px-3.5 py-2.5 text-[13px] transition-all duration-300",
                   done
-                    ? "border-emerald-400/25 bg-emerald-500/10 text-white"
+                    ? "border-emerald-400/30 bg-emerald-500/10 text-white"
                     : active
-                      ? "border-blue/40 bg-blue/15 text-white shadow-[0_4px_16px_-4px_rgba(79,82,248,0.35)]"
-                      : "border-white/5 bg-white/[0.02] text-muted opacity-65",
+                      ? "border-blue/40 bg-blue/15 text-white shadow-[0_0_16px_rgba(79,82,248,0.2)]"
+                      : "border-white/5 bg-white/[0.02] text-dim",
                 )}
               >
                 <div className="flex items-center gap-2.5 min-w-0">
@@ -172,7 +177,8 @@ function PreparingSessionModal() {
           <span>Please stay on this screen — your studio will launch automatically</span>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

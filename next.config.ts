@@ -42,7 +42,7 @@ const nextConfig: NextConfig = {
           { key: "X-Frame-Options", value: "DENY" },
           {
             key: "Content-Security-Policy",
-            value: "default-src 'self'; frame-ancestors 'none'; frame-src 'self' https://vercel.live https:; worker-src 'self' blob:; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://vercel.live https: blob:; script-src-elem 'self' 'unsafe-inline' https://vercel.live https: blob:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; media-src 'self' blob: data: https:; connect-src 'self' https: wss:; font-src 'self' data: https:;",
+            value: "default-src 'self'; frame-ancestors 'none'; frame-src 'self' https://vercel.live https:; worker-src 'self' blob:; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://vercel.live https: blob:; script-src-elem 'self' 'unsafe-eval' 'unsafe-inline' https://vercel.live https: blob:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; media-src 'self' blob: data: https:; connect-src 'self' https: wss:; font-src 'self' data: https:;",
           },
           { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
           { key: "X-Content-Type-Options", value: "nosniff" },

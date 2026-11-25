@@ -606,20 +606,31 @@
   gap: 14px;
   align-items: stretch;
 }
+.cv-field-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 22px;
+  margin-bottom: 6px;
+}
+.cv-field-header .cv-rule {
+  margin-top: 0;
+  margin-bottom: 0;
+  text-align: right;
+  white-space: nowrap;
+}
 .cv-pair > div {
   display: flex;
   flex-direction: column;
 }
-.cv-pair > div > .cv-rule {
-  margin-bottom: 6px;
-}
-.cv-pair > div > .cv-label:has(+ .cv-input),
-.cv-pair > div > .cv-label:has(+ .cv-select-wrap) {
+.cv-pair > div > .cv-field-header {
+  min-height: 22px;
   margin-bottom: 6px;
 }
 .cv-pair > div > .cv-input,
 .cv-pair > div > .cv-select-wrap {
-  margin-top: auto;
+  margin-top: 0;
 }
 .cv-layout { display: grid; gap: 24px; align-items: start; }
 
@@ -1071,8 +1082,75 @@ select.cv-mini option,
   align-items: center;
   justify-content: flex-end;
   gap: 12px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   margin-left: auto;
+  flex-shrink: 0;
+}
+.cv-dashboard-action-slots {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.cv-slot-tailor {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 126px;
+}
+.cv-slot-letter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 96px;
+}
+.cv-slot-rename {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 78px;
+}
+.cv-slot-duplicate {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 86px;
+}
+.cv-slot-delete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 74px;
+}
+.cv-slot-open {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 88px;
+}
+.cv-slot-open .cv-btn,
+.cv-slot-open .cv-btn-link {
+  min-width: 86px;
+  text-align: center;
+  justify-content: center;
+}
+@media (max-width: 1080px) {
+  .cv-dashboard-actions {
+    flex-wrap: wrap;
+    width: 100%;
+    justify-content: space-between;
+    margin-top: 8px;
+  }
+  .cv-dashboard-action-slots {
+    flex-wrap: wrap;
+  }
+  .cv-slot-tailor,
+  .cv-slot-letter,
+  .cv-slot-rename,
+  .cv-slot-duplicate,
+  .cv-slot-delete,
+  .cv-slot-open {
+    min-width: 0;
+  }
 }
 .cv-pick[data-child]::before {
   content: "";

@@ -356,30 +356,42 @@ function Row({ cv, indent, onAction }: { cv: CvSummary; indent?: boolean; onActi
       </div>
 
       <div className="cv-dashboard-actions">
-        <span className="cv-controls" style={{ marginLeft: 0 }}>
-          {!indent && !cv.empty && !cv.pendingImportId && (
-            <Btn onClick={() => onAction("tailor")} aria-label={`Tailor ${cv.name} to a job`}>
-              Tailor to a job
+        <div className="cv-dashboard-action-slots">
+          <div className="cv-slot-tailor">
+            {!indent && !cv.empty && !cv.pendingImportId ? (
+              <Btn onClick={() => onAction("tailor")} aria-label={`Tailor ${cv.name} to a job`}>
+                Tailor to a job
+              </Btn>
+            ) : null}
+          </div>
+          <div className="cv-slot-letter">
+            {!cv.empty && !cv.pendingImportId ? (
+              <BtnLink kind="quiet" href={`/cv/v/${cv.id}/letter`} aria-label={`${cv.letter ? "Open the cover letter for" : "Write a cover letter for"} ${cv.name}`} data-testid="row-letter">
+                {cv.letter ? "Letter" : "Write letter"}
+              </BtnLink>
+            ) : null}
+          </div>
+          <div className="cv-slot-rename">
+            <Btn kind="quiet" onClick={() => onAction("rename")} aria-label={`Rename ${cv.name}`}>
+              Rename
             </Btn>
-          )}
-          {!cv.empty && !cv.pendingImportId && (
-            <BtnLink kind="quiet" href={`/cv/v/${cv.id}/letter`} aria-label={`${cv.letter ? "Open the cover letter for" : "Write a cover letter for"} ${cv.name}`} data-testid="row-letter">
-              {cv.letter ? "Letter" : "Write letter"}
-            </BtnLink>
-          )}
-          <Btn kind="quiet" onClick={() => onAction("rename")} aria-label={`Rename ${cv.name}`}>
-            Rename
-          </Btn>
-          <Btn kind="quiet" onClick={() => onAction("duplicate")} aria-label={`Duplicate ${cv.name}`}>
-            Duplicate
-          </Btn>
-          <Btn kind="quiet" className="cv-btn-danger" onClick={() => onAction("delete-version")} aria-label={`Delete ${cv.name}`}>
-            Delete
-          </Btn>
-        </span>
-        <BtnLink kind="primary" href={href}>
-          {cv.pendingImportId ? (cv.importFailed ? "Try again" : "Check upload") : "Open"}
-        </BtnLink>
+          </div>
+          <div className="cv-slot-duplicate">
+            <Btn kind="quiet" onClick={() => onAction("duplicate")} aria-label={`Duplicate ${cv.name}`}>
+              Duplicate
+            </Btn>
+          </div>
+          <div className="cv-slot-delete">
+            <Btn kind="quiet" className="cv-btn-danger" onClick={() => onAction("delete-version")} aria-label={`Delete ${cv.name}`}>
+              Delete
+            </Btn>
+          </div>
+        </div>
+        <div className="cv-slot-open">
+          <BtnLink kind="primary" href={href}>
+            {cv.pendingImportId ? (cv.importFailed ? "Try again" : "Check upload") : "Open"}
+          </BtnLink>
+        </div>
       </div>
     </div>
   );
