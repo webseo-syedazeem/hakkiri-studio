@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { AuthCard } from "@/components/auth/AuthCard";
+import { getCurrentUser } from "@/lib/auth/require";
 
 export const metadata: Metadata = {
   title: "Sign in · Hakkiri Studio",
@@ -10,7 +12,12 @@ export const metadata: Metadata = {
   },
 };
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  const user = await getCurrentUser();
+  if (user?.id) {
+    redirect("/dashboard");
+  }
+
   return (
     <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-booth px-4 py-12">
       {/* Subtle ambient lighting */}

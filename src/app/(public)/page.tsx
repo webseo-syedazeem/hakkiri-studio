@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { LandingHero } from "@/components/landing/LandingHero";
 import { LandingLiveSection } from "@/components/landing/LandingLiveSection";
 import { LandingSteps } from "@/components/landing/LandingSteps";
@@ -11,6 +12,7 @@ import { LandingPrivacy } from "@/components/landing/LandingPrivacy";
 import { LandingFaq } from "@/components/landing/LandingFaq";
 import { LandingFinalCta } from "@/components/landing/LandingFinalCta";
 import { StickyCta } from "@/components/marketing/StickyCta";
+import { getCurrentUser } from "@/lib/auth/require";
 import { getHomepageContentAsync } from "@/lib/site/site-content";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -51,7 +53,19 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default async function LandingPage() {
+export default async function LandingPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ preview?: string }>;
+}) {
+  const params = searchParams ? await searchParams : undefined;
+  if (!params?.preview) {
+    const user = await getCurrentUser();
+    if (user?.id) {
+      redirect("/dashboard");
+    }
+  }
+
   const content = await getHomepageContentAsync();
 
   const faqSchemaItems = [

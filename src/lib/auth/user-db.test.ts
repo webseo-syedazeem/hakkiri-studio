@@ -119,7 +119,7 @@ describe("no built-in administrator", () => {
     if (authResult.ok) {
       expect(authResult.user.id).toBe("usr_admin_official");
       expect(authResult.user.isAdmin).toBe(true);
-      const sessionToken = await createSession(authResult.user.id, authResult.user.email!);
+      const sessionToken = await createSession(authResult.user.id!, authResult.user.email!);
       const sessionUser = await validateSession(sessionToken);
       expect(sessionUser).not.toBeNull();
       expect(sessionUser?.id).toBe("usr_admin_official");
