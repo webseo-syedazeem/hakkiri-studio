@@ -15,10 +15,12 @@ import {
   StrengthsWeaknessesBuilder,
   SampleCard,
   StrengthsWeaknessesFaqAccordion,
+} from "@/components/blog/StrengthsWeaknessesClient";
+import {
   STRENGTH_SAMPLES,
   WEAKNESS_SAMPLES,
   FAQ_LIST,
-} from "@/components/blog/StrengthsWeaknessesClient";
+} from "@/lib/blog/strengths-weaknesses-data";
 
 export const metadata: Metadata = {
   title: {
