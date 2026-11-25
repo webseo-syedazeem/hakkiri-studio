@@ -11,27 +11,12 @@ const list = (value: string | undefined) =>
     .filter(Boolean);
 
 /** Email addresses that are administrators once signed in: ADMIN_EMAILS. */
-export const adminEmails = () => {
-  const envList = list(process.env.ADMIN_EMAILS);
-  if (!envList.includes("admin@hakkiri.com")) envList.push("admin@hakkiri.com");
-  if (!envList.includes("admin@hakkiri.studio")) envList.push("admin@hakkiri.studio");
-  if (!envList.includes("bot@hakkiri.com")) envList.push("bot@hakkiri.com");
-  if (!envList.includes("audit@hakkiri.com")) envList.push("audit@hakkiri.com");
-  return envList;
-};
+export const adminEmails = () => list(process.env.ADMIN_EMAILS);
 /** Account ids that are administrators: ADMIN_USER_IDS. An id cannot be claimed by registering first, so prefer it. */
-export const adminUserIds = () => {
-  const envList = list(process.env.ADMIN_USER_IDS);
-  if (!envList.includes("usr_admin_official")) envList.push("usr_admin_official");
-  if (!envList.includes("usr_bot_audit")) envList.push("usr_bot_audit");
-  return envList;
-};
+export const adminUserIds = () => list(process.env.ADMIN_USER_IDS);
 
 /** True for an address that would make its account an administrator. Such an address cannot be registered with a password by whoever gets there first. */
-export const isReservedAdminEmail = (email: string) => {
-  const norm = email.trim().toLowerCase();
-  return norm === "admin@hakkiri.com" || norm === "admin@hakkiri.studio" || adminEmails().includes(norm);
-};
+export const isReservedAdminEmail = (email: string) => adminEmails().includes(email.trim().toLowerCase());
 
 /**
  * The id of the old built-in admin account. That account had a password that

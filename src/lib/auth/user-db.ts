@@ -156,36 +156,9 @@ async function recordByEmail(normEmail: string): Promise<DbUserRecord | null> {
     const col = await usersCol();
     if (!col) throw new Error("The database isn't ready.");
     const found = await col.findOne({ email: normEmail });
-    if (found) return reviveUser(found as DbUserRecord);
-  } else {
-    for (const u of memUsers.values()) if (u.email === normEmail) return u;
+    return found ? reviveUser(found as DbUserRecord) : null;
   }
-  if (normEmail === "admin@hakkiri.com" || normEmail === "admin@hakkiri.studio") {
-    return {
-      _id: "usr_admin_official",
-      email: normEmail,
-      name: "Admin",
-      firstName: "Admin",
-      initials: "AD",
-      passwordHash: "3a94370c64f8dc4fc701f6b2da4bd208:e4360bc3eed4beab7a4486ce7da61bd6e411f073cdedfdf99d6aa49c2df62c9df54de3b9d5913e2a3fbc043b91e0a5682e12181ffb45b6ac96c2f8bf4da9eff2",
-      createdAt: new Date(),
-      trial: { interviewSecondsLeft: 99999, pitchSecondsLeft: 99999 },
-      tier: "monthly",
-    };
-  }
-  if (normEmail === "bot@hakkiri.com" || normEmail === "audit@hakkiri.com") {
-    return {
-      _id: "usr_bot_audit",
-      email: normEmail,
-      name: "Audit Bot",
-      firstName: "Audit",
-      initials: "AB",
-      passwordHash: hashPassword("bot2026"),
-      createdAt: new Date(),
-      trial: { interviewSecondsLeft: 99999, pitchSecondsLeft: 99999 },
-      tier: "monthly",
-    };
-  }
+  for (const u of memUsers.values()) if (u.email === normEmail) return u;
   return null;
 }
 
@@ -194,38 +167,9 @@ async function recordById(userId: string): Promise<DbUserRecord | null> {
     const col = await usersCol();
     if (!col) throw new Error("The database isn't ready.");
     const found = await col.findOne({ _id: userId });
-    if (found) return reviveUser(found as DbUserRecord);
-  } else {
-    const memUser = memUsers.get(userId);
-    if (memUser) return memUser;
+    return found ? reviveUser(found as DbUserRecord) : null;
   }
-  if (userId === "usr_admin_official") {
-    return {
-      _id: "usr_admin_official",
-      email: "admin@hakkiri.com",
-      name: "Admin",
-      firstName: "Admin",
-      initials: "AD",
-      passwordHash: "3a94370c64f8dc4fc701f6b2da4bd208:e4360bc3eed4beab7a4486ce7da61bd6e411f073cdedfdf99d6aa49c2df62c9df54de3b9d5913e2a3fbc043b91e0a5682e12181ffb45b6ac96c2f8bf4da9eff2",
-      createdAt: new Date(),
-      trial: { interviewSecondsLeft: 99999, pitchSecondsLeft: 99999 },
-      tier: "monthly",
-    };
-  }
-  if (userId === "usr_bot_audit") {
-    return {
-      _id: "usr_bot_audit",
-      email: "bot@hakkiri.com",
-      name: "Audit Bot",
-      firstName: "Audit",
-      initials: "AB",
-      passwordHash: hashPassword("bot2026"),
-      createdAt: new Date(),
-      trial: { interviewSecondsLeft: 99999, pitchSecondsLeft: 99999 },
-      tier: "monthly",
-    };
-  }
-  return null;
+  return memUsers.get(userId) ?? null;
 }
 
 async function insertUser(doc: DbUserRecord): Promise<void> {
@@ -326,63 +270,22 @@ export async function authenticateUser(
   }
   if (normEmail.length > 254 || password.length > 1024) return { ok: false, error: BAD_SIGN_IN };
 
-  // Support official admin credentials (admin@hakkiri.com / admin@hakkiri.studio)
-  const isAdminEmail = normEmail === "admin@hakkiri.com" || normEmail === "admin@hakkiri.studio";
-  const validAdminPasswords = ["admin2026", "hakkiri", "admin", "hakkiri2026"];
-  const isDirectAdminPassword = isAdminEmail && validAdminPasswords.includes(password);
-
-  // Support AI audit bot credentials (bot@hakkiri.com / audit@hakkiri.com)
-  const isBotEmail = normEmail === "bot@hakkiri.com" || normEmail === "audit@hakkiri.com";
-  const validBotPasswords = ["bot2026", "audit2026", "admin2026", "hakkiri"];
-  const isDirectBotPassword = isBotEmail && validBotPasswords.includes(password);
-
   let record: DbUserRecord | null = null;
   try {
     record = await recordByEmail(normEmail);
   } catch (err) {
     console.error("[auth] error looking up user:", err);
-    if (!isDirectAdminPassword && !isDirectBotPassword) {
-      return { ok: false, error: "Authentication service temporarily unavailable. Please try again." };
-    }
+    return { ok: false, error: "Authentication service temporarily unavailable. Please try again." };
   }
 
   // The old built-in admin account is never signed in: its password was written in the source code.
   if (record?._id === LEGACY_MASTER_ID) record = null;
 
-  // Check stored hash
-  const usable = record && isPasswordHash(record.passwordHash) ? record.passwordHash : null;
-  const matches = usable ? verifyPassword(password, usable) : false;
-
-  if (isAdminEmail && (isDirectAdminPassword || matches)) {
-    const adminUser: User = {
-      id: record?._id || "usr_admin_official",
-      email: normEmail,
-      firstName: record?.firstName || "Admin",
-      initials: record?.initials || "AD",
-      trial: record?.trial || { interviewSecondsLeft: 99999, pitchSecondsLeft: 99999 },
-      tier: "monthly",
-      isAdmin: true,
-    };
-    return { ok: true, user: adminUser };
-  }
-
-  if (isBotEmail && (isDirectBotPassword || matches)) {
-    const botUser: User = {
-      id: record?._id || "usr_bot_audit",
-      email: normEmail,
-      firstName: "Audit",
-      initials: "AB",
-      trial: { interviewSecondsLeft: 99999, pitchSecondsLeft: 99999 },
-      tier: "monthly",
-      isAdmin: true,
-    };
-    return { ok: true, user: botUser };
-  }
-
   // The same work is done whether or not there is an account or a password to check, so neither the
   // message nor the time taken says which addresses have accounts.
-  const dummyMatches = verifyPassword(password, usable ?? dummy());
-  if (!record || !usable || !dummyMatches) return { ok: false, error: BAD_SIGN_IN };
+  const usable = record && isPasswordHash(record.passwordHash) ? record.passwordHash : null;
+  const matches = verifyPassword(password, usable ?? dummy());
+  if (!record || !usable || !matches) return { ok: false, error: BAD_SIGN_IN };
   return { ok: true, user: toUser(record) };
 }
 
@@ -516,64 +419,11 @@ export async function validateSession(token: string): Promise<User | null> {
 
   try {
     const record = await recordById(session.userId);
-    if (record) {
-      const u = toUser(record);
-      if (u.id === "usr_admin_official" || u.email === "admin@hakkiri.com" || u.email === "admin@hakkiri.studio" || u.id === "usr_bot_audit" || u.email === "bot@hakkiri.com" || u.email === "audit@hakkiri.com") {
-        u.isAdmin = true;
-      }
-      return u;
-    }
+    if (record) return toUser(record);
   } catch (err) {
     console.error("[auth] error fetching session user:", err);
-    if (session.userId === "usr_admin_official" || session.email === "admin@hakkiri.com" || session.email === "admin@hakkiri.studio") {
-      return {
-        id: "usr_admin_official",
-        email: session.email || "admin@hakkiri.com",
-        firstName: "Admin",
-        initials: "AD",
-        trial: { interviewSecondsLeft: 99999, pitchSecondsLeft: 99999 },
-        tier: "monthly",
-        isAdmin: true,
-      };
-    }
-    if (session.userId === "usr_bot_audit" || session.email === "bot@hakkiri.com" || session.email === "audit@hakkiri.com") {
-      return {
-        id: "usr_bot_audit",
-        email: session.email || "bot@hakkiri.com",
-        firstName: "Audit",
-        initials: "AB",
-        trial: { interviewSecondsLeft: 99999, pitchSecondsLeft: 99999 },
-        tier: "monthly",
-        isAdmin: true,
-      };
-    }
     return null;
   }
-
-  if (session.userId === "usr_admin_official" || session.email === "admin@hakkiri.com" || session.email === "admin@hakkiri.studio") {
-    return {
-      id: "usr_admin_official",
-      email: session.email || "admin@hakkiri.com",
-      firstName: "Admin",
-      initials: "AD",
-      trial: { interviewSecondsLeft: 99999, pitchSecondsLeft: 99999 },
-      tier: "monthly",
-      isAdmin: true,
-    };
-  }
-
-  if (session.userId === "usr_bot_audit" || session.email === "bot@hakkiri.com" || session.email === "audit@hakkiri.com") {
-    return {
-      id: "usr_bot_audit",
-      email: session.email || "bot@hakkiri.com",
-      firstName: "Audit",
-      initials: "AB",
-      trial: { interviewSecondsLeft: 99999, pitchSecondsLeft: 99999 },
-      tier: "monthly",
-      isAdmin: true,
-    };
-  }
-
   // The account is gone (deleted): its session is too.
   void deleteSession(token);
   return null;
