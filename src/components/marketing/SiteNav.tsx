@@ -68,10 +68,10 @@ export function SiteNav() {
           href={href}
           aria-current={current ? "page" : undefined}
           className={clsx(
-            "hidden rounded-full px-3.5 py-1.5 transition-all duration-200 md:inline-flex items-center font-medium text-[13px] whitespace-nowrap leading-none",
+            "hidden rounded-full px-3.5 py-1.5 transition-all duration-200 md:inline-flex items-center font-medium text-[13px] whitespace-nowrap leading-none select-none",
             current
-              ? "text-slate-900 font-semibold bg-black/[0.06] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.04)]"
-              : "text-slate-600 hover:text-slate-900 hover:bg-black/[0.04]"
+              ? "text-blue-600 font-semibold bg-blue-50/90 border border-blue-200/80 shadow-sm"
+              : "text-slate-600 hover:text-blue-600 hover:bg-blue-50/60 hover:shadow-sm hover:scale-[1.02] active:scale-[0.98]"
           )}
         >
           {label}
@@ -89,15 +89,15 @@ export function SiteNav() {
           type="button"
           onClick={() => setQuestionsMenuOpen((prev) => !prev)}
           className={clsx(
-            "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 transition-all duration-200 font-medium text-[13px] cursor-pointer whitespace-nowrap leading-none",
-            isQuestionsActive
-              ? "text-slate-900 font-semibold bg-black/[0.06] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.04)]"
-              : "text-slate-600 hover:text-slate-900 hover:bg-black/[0.04]"
+            "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 transition-all duration-200 font-medium text-[13px] cursor-pointer whitespace-nowrap leading-none select-none",
+            isQuestionsActive || questionsMenuOpen
+              ? "text-blue-600 font-semibold bg-blue-50/90 border border-blue-200/80 shadow-sm"
+              : "text-slate-600 hover:text-blue-600 hover:bg-blue-50/60 hover:shadow-sm hover:scale-[1.02] active:scale-[0.98]"
           )}
           aria-expanded={questionsMenuOpen}
         >
           <span>Interview Questions</span>
-          <IconChevronDown className={clsx("h-3.5 w-3.5 text-slate-400 transition-transform duration-200", questionsMenuOpen && "rotate-180 text-slate-700")} />
+          <IconChevronDown className={clsx("h-3.5 w-3.5 transition-transform duration-200", questionsMenuOpen ? "rotate-180 text-blue-600" : "text-slate-400")} />
         </button>
 
         {questionsMenuOpen && (
@@ -216,10 +216,10 @@ export function SiteNav() {
           href={href}
           aria-current={current ? "page" : undefined}
           className={clsx(
-            "hidden rounded-full px-3.5 py-1.5 transition-all duration-200 md:inline-flex items-center font-medium text-[13px] whitespace-nowrap leading-none",
+            "hidden rounded-full px-3.5 py-1.5 transition-all duration-200 md:inline-flex items-center font-medium text-[13px] whitespace-nowrap leading-none select-none",
             current
-              ? "text-slate-900 font-semibold bg-black/[0.06] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.04)]"
-              : "text-slate-600 hover:text-slate-900 hover:bg-black/[0.04]"
+              ? "text-blue-600 font-semibold bg-blue-50/90 border border-blue-200/80 shadow-sm"
+              : "text-slate-600 hover:text-blue-600 hover:bg-blue-50/60 hover:shadow-sm hover:scale-[1.02] active:scale-[0.98]"
           )}
         >
           {label}
