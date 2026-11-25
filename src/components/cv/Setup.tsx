@@ -216,13 +216,15 @@ export function Setup() {
 
               {method === "example" && (
                 <div className="cv-stack" style={{ padding: "12px 0" }}>
-                  <span className="cv-label" style={{ marginBottom: 6, color: "var(--text, #f1f1f4)" }}>
+                  <span className="cv-label" style={{ marginBottom: 6, color: "#f1f1f4" }}>
                     Choose an industry template
                   </span>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     {EXAMPLE_TEMPLATES.map((tpl) => (
                       <div
                         key={tpl.id}
+                        className="cv-tpl-card"
+                        data-selected={selectedTemplateId === tpl.id}
                         onClick={() => {
                           setSelectedTemplateId(tpl.id);
                           if (!name.trim()) setName(tpl.title);
@@ -230,24 +232,35 @@ export function Setup() {
                           if (!region) setRegion(tpl.region);
                         }}
                         style={{
-                          padding: "12px 14px",
+                          padding: "13px 15px",
                           borderRadius: 12,
-                          border: selectedTemplateId === tpl.id ? "2px solid var(--accent, #7b88ff)" : "1px solid var(--border, rgba(255, 255, 255, 0.1))",
-                          background: selectedTemplateId === tpl.id ? "rgba(123, 136, 255, 0.12)" : "var(--surface, #1c1d25)",
+                          border: selectedTemplateId === tpl.id ? "2px solid #7b88ff" : "1px solid rgba(255, 255, 255, 0.12)",
+                          background: selectedTemplateId === tpl.id ? "rgba(123, 136, 255, 0.14)" : "rgba(255, 255, 255, 0.03)",
                           cursor: "pointer",
                           transition: "all 0.15s ease",
                         }}
                       >
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-                          <span style={{ fontWeight: 600, fontSize: 13, color: "var(--text, #f1f1f4)" }}>{tpl.title}</span>
-                          <span className="cv-chip" style={{ fontSize: 10, fontWeight: 600 }}>
+                          <span className="cv-tpl-card-title" style={{ fontWeight: 600, fontSize: 13.5, color: "#f1f1f4" }}>
+                            {tpl.title}
+                          </span>
+                          <span
+                            className="cv-chip"
+                            style={{
+                              fontSize: 10,
+                              fontWeight: 600,
+                              background: "rgba(255, 255, 255, 0.08)",
+                              color: "#f1f1f4",
+                              borderColor: "rgba(255, 255, 255, 0.15)",
+                            }}
+                          >
                             {tpl.badge}
                           </span>
                         </div>
-                        <p style={{ margin: 0, fontSize: 11, color: "var(--text-muted, #9a9ba7)", lineHeight: 1.4 }}>
+                        <p className="cv-tpl-card-desc" style={{ margin: 0, fontSize: 11.5, color: "#9a9ba7", lineHeight: 1.45 }}>
                           {tpl.description}
                         </p>
-                        <div style={{ display: "flex", gap: 10, marginTop: 6, fontSize: 11, fontWeight: 500, color: "var(--accent, #7b88ff)" }}>
+                        <div className="cv-tpl-card-stats" style={{ display: "flex", gap: 10, marginTop: 7, fontSize: 11, fontWeight: 600, color: "#93c5fd" }}>
                           <span>⏱ {tpl.stats.experienceYears}</span>
                           <span>• {tpl.stats.rolesCount} Roles</span>
                           <span>• {tpl.stats.skillsCount} Skills</span>
@@ -261,19 +274,20 @@ export function Setup() {
               <label className="cv-choice">
                 <input type="radio" name="method" checked={method === "linkedin"} onChange={() => setMethod("linkedin")} />
                 <span>
-                  <b style={{ display: "block", fontWeight: 600 }}>Import from LinkedIn</b>
-                  <small>Paste your LinkedIn profile address or profile sections to auto-populate your CV.</small>
+                  <b style={{ display: "block", fontWeight: 600, color: "#f1f1f4" }}>Import from LinkedIn</b>
+                  <small style={{ color: "#9a9ba7" }}>Paste your LinkedIn profile address or profile sections to auto-populate your CV.</small>
                 </span>
               </label>
 
               {method === "linkedin" && (
                 <div
                   data-field="linkedin"
+                  className="cv-linkedin-box"
                   style={{
                     margin: "10px 0 16px",
                     padding: "18px 20px",
                     borderRadius: "16px",
-                    background: "rgba(10, 102, 194, 0.1)",
+                    background: "rgba(10, 102, 194, 0.12)",
                     border: "1px solid rgba(123, 136, 255, 0.35)",
                     display: "flex",
                     flexDirection: "column",
@@ -310,10 +324,10 @@ export function Setup() {
                         </svg>
                       </div>
                       <div>
-                        <h4 style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "var(--text, #f1f1f4)" }}>
+                        <h4 style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "#f1f1f4" }}>
                           LinkedIn Profile Sync
                         </h4>
-                        <p style={{ margin: 0, fontSize: "12px", color: "var(--text-muted, #9a9ba7)" }}>
+                        <p style={{ margin: "2px 0 0", fontSize: "12px", color: "#9a9ba7" }}>
                           Auto-extract your professional experience, education, and skills.
                         </p>
                       </div>
@@ -324,9 +338,9 @@ export function Setup() {
                         fontWeight: 600,
                         padding: "3px 9px",
                         borderRadius: "9999px",
-                        background: "rgba(10, 102, 194, 0.25)",
+                        background: "rgba(10, 102, 194, 0.35)",
                         color: "#93c5fd",
-                        border: "1px solid rgba(147, 197, 253, 0.35)",
+                        border: "1px solid rgba(147, 197, 253, 0.4)",
                       }}
                     >
                       Instant Import
@@ -337,11 +351,11 @@ export function Setup() {
                   <div>
                     <label
                       htmlFor="linkedin-url-input"
-                      style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "var(--text, #f1f1f4)", marginBottom: "4px" }}
+                      style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#f1f1f4", marginBottom: "4px" }}
                     >
                       LinkedIn Profile URL or Handle
                     </label>
-                    <p style={{ margin: "0 0 8px", fontSize: "11px", color: "var(--text-muted, #9a9ba7)" }}>
+                    <p style={{ margin: "0 0 8px", fontSize: "11px", color: "#9a9ba7" }}>
                       Paste your public link, e.g. <code style={{ fontSize: "11px", background: "rgba(255,255,255,0.08)", color: "#93c5fd", padding: "1px 5px", borderRadius: "4px" }}>linkedin.com/in/username</code> or your full web address.
                     </p>
                     <input
@@ -351,7 +365,7 @@ export function Setup() {
                       onChange={(e) => setLinkedinUrl(e.target.value)}
                       placeholder="https://www.linkedin.com/in/yourname"
                       className="cv-input"
-                      style={{ width: "100%", borderRadius: "10px", fontSize: "13px" }}
+                      style={{ width: "100%", borderRadius: "10px", fontSize: "13px", color: "#f1f1f4", background: "#13141b" }}
                     />
                     {errors.linkedin && (
                       <p className="cv-error-text" style={{ marginTop: "6px" }}>
@@ -365,13 +379,13 @@ export function Setup() {
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
                       <label
                         htmlFor="linkedin-text-input"
-                        style={{ fontSize: "13px", fontWeight: 600, color: "var(--text, #f1f1f4)" }}
+                        style={{ fontSize: "13px", fontWeight: 600, color: "#f1f1f4" }}
                       >
                         Profile Content &amp; Experience Text
                       </label>
-                      <span style={{ fontSize: "11px", color: "var(--text-muted, #9a9ba7)", fontWeight: 500 }}>(Optional)</span>
+                      <span style={{ fontSize: "11px", color: "#9a9ba7", fontWeight: 500 }}>(Optional)</span>
                     </div>
-                    <p style={{ margin: "0 0 8px", fontSize: "11px", color: "var(--text-muted, #9a9ba7)", lineHeight: 1.4 }}>
+                    <p style={{ margin: "0 0 8px", fontSize: "11px", color: "#9a9ba7", lineHeight: 1.4 }}>
                       If your LinkedIn profile requires a sign-in or has restricted visibility, copy &amp; paste your About, Experience, or Education sections here.
                     </p>
                     <textarea
@@ -381,7 +395,7 @@ export function Setup() {
                       onChange={(e) => setLinkedinText(e.target.value)}
                       placeholder="Paste your LinkedIn summary, job roles, or qualifications here..."
                       className="cv-input"
-                      style={{ width: "100%", borderRadius: "10px", fontSize: "12px", lineHeight: "1.5", resize: "vertical" }}
+                      style={{ width: "100%", borderRadius: "10px", fontSize: "12px", lineHeight: "1.5", resize: "vertical", color: "#f1f1f4", background: "#13141b" }}
                     />
                   </div>
 
@@ -394,15 +408,15 @@ export function Setup() {
                       padding: "10px 12px",
                       borderRadius: "10px",
                       background: "rgba(255, 255, 255, 0.04)",
-                      border: "1px dashed rgba(255, 255, 255, 0.15)",
+                      border: "1px dashed rgba(255, 255, 255, 0.18)",
                       fontSize: "11px",
-                      color: "var(--text-muted, #9a9ba7)",
+                      color: "#9a9ba7",
                       lineHeight: "1.45",
                     }}
                   >
                     <span style={{ fontSize: "14px" }}>💡</span>
                     <span>
-                      <strong style={{ color: "var(--text, #f1f1f4)" }}>Pro tip:</strong> You can also export your complete LinkedIn profile as a PDF (open LinkedIn &gt; <em>More</em> &gt; <em>Save to PDF</em>) and use the <strong>Upload a CV</strong> option above for 100% fidelity.
+                      <strong style={{ color: "#f1f1f4" }}>Pro tip:</strong> You can also export your complete LinkedIn profile as a PDF (open LinkedIn &gt; <em>More</em> &gt; <em>Save to PDF</em>) and use the <strong>Upload a CV</strong> option above for 100% fidelity.
                     </span>
                   </div>
                 </div>

@@ -171,6 +171,44 @@
   background: var(--background);
 }
 
+.mk .cv .cv-tpl-card,
+[data-theme="light"] .cv .cv-tpl-card {
+  background: #ffffff;
+  border-color: #d7dee8;
+  color: #17181f;
+}
+.mk .cv .cv-tpl-card-title,
+[data-theme="light"] .cv .cv-tpl-card-title {
+  color: #17181f !important;
+}
+.mk .cv .cv-tpl-card-desc,
+[data-theme="light"] .cv .cv-tpl-card-desc {
+  color: #48566a !important;
+}
+.mk .cv .cv-tpl-card[data-selected="true"],
+[data-theme="light"] .cv .cv-tpl-card[data-selected="true"] {
+  background: #e8edff;
+  border-color: #3d4bd8;
+}
+.mk .cv .cv-linkedin-box,
+[data-theme="light"] .cv .cv-linkedin-box {
+  background: #f0f6ff;
+  border-color: #bfdbfe;
+  color: #1e293b;
+}
+.mk .cv .cv-linkedin-box h4,
+[data-theme="light"] .cv .cv-linkedin-box h4 {
+  color: #0f172a !important;
+}
+.mk .cv .cv-linkedin-box p,
+[data-theme="light"] .cv .cv-linkedin-box p {
+  color: #475569 !important;
+}
+.mk .cv .cv-linkedin-box label,
+[data-theme="light"] .cv .cv-linkedin-box label {
+  color: #0f172a !important;
+}
+
 /* Keyframe Animations */
 @keyframes cv-rise {
   from {
@@ -1260,6 +1298,78 @@ select.cv-mini option,
 .cv-choice input {
   margin-top: 3px;
   accent-color: var(--color-blue-fill);
+}
+
+/* Template selection cards in Setup */
+.cv-tpl-card {
+  padding: 13px 15px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--surface, #1c1d25);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  color: var(--text, #f1f1f4);
+}
+.cv-tpl-card:hover {
+  border-color: rgba(123, 136, 255, 0.45);
+  background: var(--surface-hover, #292b37);
+  transform: translateY(-1.5px);
+  box-shadow: 0 6px 18px -4px rgba(0, 0, 0, 0.3);
+}
+.cv-tpl-card[data-selected="true"] {
+  border: 2px solid var(--accent, #7b88ff);
+  background: rgba(123, 136, 255, 0.14);
+  box-shadow: 0 0 0 1px rgba(123, 136, 255, 0.25), 0 8px 24px -6px rgba(74, 90, 240, 0.35);
+}
+.cv-tpl-card-title {
+  font-weight: 600;
+  font-size: 13.5px;
+  color: #f1f1f4 !important;
+}
+.cv-tpl-card-desc {
+  margin: 3px 0 0;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: #9a9ba7 !important;
+}
+.cv-tpl-card-stats {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent, #7b88ff);
+}
+
+/* LinkedIn Profile Sync Card in Setup */
+.cv-linkedin-box {
+  margin: 10px 0 16px;
+  padding: 18px 20px;
+  border-radius: 16px;
+  background: rgba(10, 102, 194, 0.12);
+  border: 1px solid rgba(123, 136, 255, 0.35);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  color: #f1f1f4;
+}
+.cv-linkedin-box h4 {
+  color: #f1f1f4 !important;
+}
+.cv-linkedin-box p {
+  color: #9a9ba7 !important;
+}
+.cv-linkedin-box label {
+  color: #f1f1f4 !important;
+}
+.cv-linkedin-box .cv-input {
+  background: #13141b !important;
+  color: #f1f1f4 !important;
+  border-color: rgba(255, 255, 255, 0.18) !important;
+}
+.cv-linkedin-box .cv-input:focus {
+  border-color: #7b88ff !important;
+  box-shadow: 0 0 0 3px rgba(74, 90, 240, 0.25) !important;
 }
 
 .cv-skeleton {
