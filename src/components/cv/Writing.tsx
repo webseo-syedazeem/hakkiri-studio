@@ -6,7 +6,7 @@ import { type Achievement, type Entry, type Locator, type SkillsSection, type Su
 import { docWord } from "@/lib/cv/sections";
 import { api, messageOf } from "./client";
 import { Dialog, usePanel } from "./Dialog";
-import { Btn, Field, Panel } from "./ui";
+import { Btn, CvSelect, Field, Panel } from "./ui";
 import { useWorkspace } from "./Workspace";
 
 /**
@@ -99,13 +99,15 @@ export function ProfileChooser({ section, say }: { section: SummarySection; say:
             <label className="cv-label" htmlFor="cv-profile-role">
               Role to write about
             </label>
-            <select id="cv-profile-role" className="cv-input" value={entryId || roles[0].id} onChange={(e) => setEntryId(e.target.value)}>
-              {roles.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {[r.title, r.org].filter(Boolean).join(" · ")}
-                </option>
-              ))}
-            </select>
+            <CvSelect
+              id="cv-profile-role"
+              value={entryId || roles[0].id}
+              onChange={(val) => setEntryId(val)}
+              options={roles.map((r) => ({
+                value: r.id,
+                label: [r.title, r.org].filter(Boolean).join(" · "),
+              }))}
+            />
           </div>
           {skills.length > 0 && (
             <div role="group" aria-label="Skills to highlight, up to four">
@@ -332,14 +334,18 @@ export function SkillSuggestions({ section, onShow }: { section: SkillsSection; 
                 Add this line to a role
               </label>
               <span className="cv-rule">Optional. It is saved to your achievements either way.</span>
-              <select id="cv-skill-role" className="cv-input" value={roleId} onChange={(e) => setRoleId(e.target.value)}>
-                <option value="">Not now</option>
-                {roles.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {[r.title, r.org].filter(Boolean).join(" · ")}
-                  </option>
-                ))}
-              </select>
+              <CvSelect
+                id="cv-skill-role"
+                value={roleId}
+                onChange={(val) => setRoleId(val)}
+                options={[
+                  { value: "", label: "Not now" },
+                  ...roles.map((r) => ({
+                    value: r.id,
+                    label: [r.title, r.org].filter(Boolean).join(" · "),
+                  })),
+                ]}
+              />
             </div>
           )}
         </Dialog>

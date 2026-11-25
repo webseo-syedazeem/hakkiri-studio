@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
-import { type ComponentProps, type ReactNode, useEffect, useId, useLayoutEffect, useRef } from "react";
+import { type ComponentProps, type ReactNode, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 
 /**
  * The small pieces every CV screen is built from: the bar across the top, a
@@ -215,4 +215,117 @@ export function Announce({ children }: { children: ReactNode }) {
 
 export function Skeleton({ height = 18, width = "100%" }: { height?: number; width?: number | string }) {
   return <div className="cv-skeleton" style={{ height, width }} aria-hidden="true" />;
+}
+
+export interface CvSelectOption {
+  value: string;
+  label: string;
+  badge?: string;
+}
+
+/**
+ * Animated Studio dropdown with glassmorphic popover, spring chevron rotation,
+ * keyboard navigation, and a synced native <select> for screen-reader & test compatibility.
+ */
+export function CvSelect({
+  id,
+  value,
+  onChange,
+  options,
+  size = "md",
+  ariaLabel,
+  className,
+}: {
+  id?: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: CvSelectOption[];
+  size?: "md" | "sm";
+  ariaLabel?: string;
+  className?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const selected = options.find((o) => o.value === value) ?? options[0];
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  return (
+    <div ref={wrapRef} className={clsx("cv-select-wrap", size === "sm" && "cv-select-wrap-sm", className)}>
+      <select
+        id={id}
+        aria-label={ariaLabel}
+        className="sr-only"
+        tabIndex={-1}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      >
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}{o.badge ? ` (${o.badge})` : ""}
+          </option>
+        ))}
+      </select>
+      <button
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        className={clsx("cv-select-trigger", size === "sm" ? "cv-mini" : "cv-input", open && "cv-select-open")}
+      >
+        <span className="cv-select-value">
+          <span className="truncate">{selected?.label ?? value}</span>
+          {selected?.badge && <span className="cv-select-badge">{selected.badge}</span>}
+        </span>
+        <svg className="cv-select-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+      {open && (
+        <div role="listbox" className="cv-select-popover">
+          {options.map((o, idx) => {
+            const active = o.value === value;
+            return (
+              <button
+                key={o.value}
+                type="button"
+                role="option"
+                aria-selected={active}
+                style={{ animationDelay: `${idx * 18}ms` }}
+                onClick={() => {
+                  onChange(o.value);
+                  setOpen(false);
+                }}
+                className={clsx("cv-select-option", active && "cv-select-option-active")}
+              >
+                <span className="cv-select-opt-label">
+                  <span>{o.label}</span>
+                  {o.badge && <span className="cv-select-badge">{o.badge}</span>}
+                </span>
+                {active && (
+                  <svg className="cv-select-check" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
 }

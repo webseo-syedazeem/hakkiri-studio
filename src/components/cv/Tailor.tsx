@@ -12,7 +12,7 @@ import { asBullet } from "@/lib/cv/write/draft";
 import { api, messageOf } from "./client";
 import { Dialog, usePanel } from "./Dialog";
 import { PaperView } from "./Paper";
-import { Bar, Btn, BtnLink, CvScreen, Field, Panel, Skeleton, Toolbar } from "./ui";
+import { Bar, Btn, BtnLink, CvScreen, CvSelect, Field, Panel, Skeleton, Toolbar } from "./ui";
 import { useWorkspace } from "./Workspace";
 
 const STATUS = { met: "Met", partly: "Partly met", missing: "Missing" } as const;
@@ -286,13 +286,18 @@ export function Tailor() {
                           <span className="cv-chip cv-status" data-status={r.status}>
                             {STATUS[r.status]}
                           </span>
-                          <label className="cv-row" style={{ gap: 6, fontSize: 12 }}>
-                            <span className="sr-only">Priority of: {q.text}</span>
-                            <select className="cv-mini" value={q.priority} onChange={(e) => setReq(q.id, { priority: e.target.value as Requirement["priority"] })}>
-                              <option value="required">Required (2)</option>
-                              <option value="preferred">Preferred or not stated (1)</option>
-                            </select>
-                          </label>
+                          <div className="cv-row" style={{ gap: 6, fontSize: 12 }}>
+                            <CvSelect
+                              size="sm"
+                              ariaLabel={`Priority of: ${q.text}`}
+                              value={q.priority}
+                              onChange={(val) => setReq(q.id, { priority: val as Requirement["priority"] })}
+                              options={[
+                                { value: "required", label: "Required (2)" },
+                                { value: "preferred", label: "Preferred or not stated (1)" },
+                              ]}
+                            />
+                          </div>
                           <small className="cv-push">
                             {r.earned} of {r.weight}
                           </small>
@@ -459,10 +464,15 @@ export function Tailor() {
             <label className="cv-label" htmlFor="cv-req-priority">
               Priority
             </label>
-            <select id="cv-req-priority" className="cv-input" value={draft.priority} onChange={(e) => setDraft({ ...draft, priority: e.target.value as Requirement["priority"] })}>
-              <option value="required">Required (counts 2)</option>
-              <option value="preferred">Preferred or not stated (counts 1)</option>
-            </select>
+            <CvSelect
+              id="cv-req-priority"
+              value={draft.priority}
+              onChange={(val) => setDraft({ ...draft, priority: val as Requirement["priority"] })}
+              options={[
+                { value: "required", label: "Required", badge: "counts 2" },
+                { value: "preferred", label: "Preferred or not stated", badge: "counts 1" },
+              ]}
+            />
           </div>
         </Dialog>
       )}
@@ -543,14 +553,16 @@ export function Tailor() {
               <label className="cv-label" htmlFor="cv-req-role">
                 Put it under
               </label>
-              <select id="cv-req-role" className="cv-input" value={roleId} onChange={(e) => setRoleId(e.target.value)}>
-                {roles.map(({ e }) => (
-                  <option key={e.id} value={e.id}>
-                    {[e.title, e.org].filter(Boolean).join(" · ")}
-                    {bestRoleFor(cv, req.text || req.quote)?.entryId === e.id ? " (suggested)" : ""}
-                  </option>
-                ))}
-              </select>
+              <CvSelect
+                id="cv-req-role"
+                value={roleId}
+                onChange={(val) => setRoleId(val)}
+                options={roles.map(({ e }) => ({
+                  value: e.id,
+                  label: [e.title, e.org].filter(Boolean).join(" · "),
+                  badge: bestRoleFor(cv, req.text || req.quote)?.entryId === e.id ? "suggested" : undefined,
+                }))}
+              />
             </div>
           )}
           {line.trim() && (

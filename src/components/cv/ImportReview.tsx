@@ -11,7 +11,7 @@ import { Dialog, usePanel } from "./Dialog";
 import { stepName } from "./ImportHome";
 import { ReplaceFileDialog } from "./ReplaceFile";
 import { ContactForm, type FieldHooks, SectionForm, entryLabel } from "./SectionForms";
-import { Announce, Bar, Btn, BtnLink, CvScreen, Fixed, Note, Panel, Skeleton, Toolbar } from "./ui";
+import { Announce, Bar, Btn, BtnLink, CvScreen, CvSelect, Fixed, Note, Panel, Skeleton, Toolbar } from "./ui";
 import { useImport } from "./useImport";
 
 const RESOLVED_WORDS = { confirmed: "Confirmed", edited: "Changed by you", blank: "Left blank" } as const;
@@ -101,13 +101,7 @@ function AssignDialog({ text, draft, region, onAssign, onClose }: { text: string
         <label className="cv-label" htmlFor="assign-to">
           Where it goes
         </label>
-        <select id="assign-to" className="cv-input" value={to} onChange={(e) => setTo(e.target.value)}>
-          {options.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </select>
+        <CvSelect id="assign-to" value={to} onChange={(val) => setTo(val)} options={options} />
         {options.length === 0 && <p className="cv-error-text">There is no role or section to add it to yet. You can add it in the builder.</p>}
       </div>
     </Dialog>

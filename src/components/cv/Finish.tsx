@@ -13,7 +13,7 @@ import { Grip, ItemControls, useDragOrder } from "./Arrange";
 import { ApiError, api, messageOf } from "./client";
 import { Dialog, usePanel } from "./Dialog";
 import { Downloads } from "./Software";
-import { Btn, BtnLink, Field, Panel } from "./ui";
+import { Btn, BtnLink, CvSelect, Field, Panel } from "./ui";
 import { type FileCheck, type FileChecks, useWorkspace } from "./Workspace";
 
 type Format = "pdf" | "docx";
@@ -206,14 +206,16 @@ export function Finish({ onOverflow, say }: { onOverflow: () => void; say: (text
             <label className="cv-label" htmlFor="cv-fonts">
               Fonts
             </label>
-            <select id="cv-fonts" className="cv-input" value={fontChoice} onChange={(e) => set({ fonts: e.target.value as TemplateId })}>
-              {FONT_CHOICES.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.label}
-                  {c.id === template.id || pairLabel(TEMPLATES[c.id].fonts) === pairLabel(template.fonts) ? ` (${template.name}’s own)` : ""}
-                </option>
-              ))}
-            </select>
+            <CvSelect
+              id="cv-fonts"
+              value={fontChoice}
+              onChange={(val) => set({ fonts: val as TemplateId })}
+              options={FONT_CHOICES.map((c) => ({
+                value: c.id,
+                label: c.label,
+                badge: c.id === template.id || pairLabel(TEMPLATES[c.id].fonts) === pairLabel(template.fonts) ? `${template.name}’s own` : undefined,
+              }))}
+            />
           </div>
           <fieldset>
             <legend className="cv-label">Colour</legend>

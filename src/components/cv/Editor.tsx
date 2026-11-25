@@ -19,7 +19,7 @@ import { ContactForm, type FieldHooks, SectionForm } from "./SectionForms";
 import { ACCEPT, STAGE_WORDS, type UploadStage, sendUpload } from "./upload";
 import { jobFit } from "@/lib/cv/tailor/fit";
 import { fitLabel } from "./Tailor";
-import { Announce, Bar, Btn, BtnLink, CvScreen, Field, Fixed, Note, Panel, Skeleton, Toolbar } from "./ui";
+import { Announce, Bar, Btn, BtnLink, CvScreen, CvSelect, Field, Fixed, Note, Panel, Skeleton, Toolbar } from "./ui";
 import { SAVE_WORDS } from "./useCv";
 import { useWorkspace } from "./Workspace";
 import { ChooseAchievement, ProfileChooser, SkillSuggestions } from "./Writing";
@@ -335,14 +335,16 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
             <label className="cv-label" htmlFor="cv-section-picker">
               Section
             </label>
-            <select id="cv-section-picker" className="cv-input" value={tab.key} onChange={(e) => go(e.target.value)}>
-              {tabs.map((t) => (
-                <option key={t.key} value={t.key}>
-                  {t.label}
-                  {t.section && !t.section.visible ? " (off)" : ""}
-                </option>
-              ))}
-            </select>
+            <CvSelect
+              id="cv-section-picker"
+              value={tab.key}
+              onChange={(val) => go(val)}
+              options={tabs.map((t) => ({
+                value: t.key,
+                label: t.label,
+                badge: t.section && !t.section.visible ? "off" : undefined,
+              }))}
+            />
           </div>
           <Btn onClick={() => openPanel("add-section")}>+ Add section</Btn>
         </div>
@@ -357,7 +359,7 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
         </div>
 
         <div className="cv-layout" style={{ gridTemplateColumns: isFinish ? "minmax(0, 0.94fr) minmax(0, 1.16fr)" : "minmax(0, 552fr) minmax(0, 616fr)" }}>
-          <div className={view === "edit" ? "min-w-0" : "min-w-0 cv-wide"} onBlur={() => void flush()}>
+          <div key={tab.key} className={view === "edit" ? "min-w-0 cv-tab-content" : "min-w-0 cv-wide cv-tab-content"} onBlur={() => void flush()}>
             {empty && !pending && !isFinish && (
               <Panel style={{ marginBottom: 18 }}>
                 <div className="cv-pad cv-stack">
