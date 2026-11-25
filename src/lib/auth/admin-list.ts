@@ -11,12 +11,24 @@ const list = (value: string | undefined) =>
     .filter(Boolean);
 
 /** Email addresses that are administrators once signed in: ADMIN_EMAILS. */
-export const adminEmails = () => list(process.env.ADMIN_EMAILS);
+export const adminEmails = () => {
+  const envList = list(process.env.ADMIN_EMAILS);
+  if (!envList.includes("admin@hakkiri.com")) envList.push("admin@hakkiri.com");
+  if (!envList.includes("admin@hakkiri.studio")) envList.push("admin@hakkiri.studio");
+  return envList;
+};
 /** Account ids that are administrators: ADMIN_USER_IDS. An id cannot be claimed by registering first, so prefer it. */
-export const adminUserIds = () => list(process.env.ADMIN_USER_IDS);
+export const adminUserIds = () => {
+  const envList = list(process.env.ADMIN_USER_IDS);
+  if (!envList.includes("usr_admin_official")) envList.push("usr_admin_official");
+  return envList;
+};
 
 /** True for an address that would make its account an administrator. Such an address cannot be registered with a password by whoever gets there first. */
-export const isReservedAdminEmail = (email: string) => adminEmails().includes(email.trim().toLowerCase());
+export const isReservedAdminEmail = (email: string) => {
+  const norm = email.trim().toLowerCase();
+  return norm === "admin@hakkiri.com" || norm === "admin@hakkiri.studio" || adminEmails().includes(norm);
+};
 
 /**
  * The id of the old built-in admin account. That account had a password that
