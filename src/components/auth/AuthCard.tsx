@@ -32,12 +32,17 @@ export function AuthCard({ initialMode = "signin" }: { initialMode?: "signin" | 
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  /** Where the person was heading before they were asked to sign in: they are taken there, not to the public home page. */
-  const [next, setNext] = useState("/dashboard");
+  /** Where the person lands after signing in: home page with Open Studio & profile pill */
+  const [next, setNext] = useState("/");
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    setNext(safeNext(params.get("next")));
+    const paramNext = params.get("next");
+    if (paramNext) {
+      setNext(safeNext(paramNext, "/"));
+    } else {
+      setNext("/");
+    }
     const code = params.get("error");
     if (code) setError(GOOGLE_ERRORS[code] ?? "Signing in didn’t work. Try again.");
   }, []);

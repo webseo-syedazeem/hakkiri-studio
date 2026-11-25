@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
   }
 
   const nextParam = req.nextUrl.searchParams.get("next");
-  const target = safeNext(nextParam, "/dashboard");
+  const target = nextParam ? safeNext(nextParam, "/") : "/";
   const redirectRes = NextResponse.redirect(new URL(target, req.url), 303);
   redirectRes.cookies.set(sessionCookie(token, req));
   return redirectRes;

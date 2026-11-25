@@ -115,7 +115,7 @@ export async function GET(req: NextRequest) {
     // 5. Create session and set cookie
     const sessionToken = await createSession(user.id as string, normEmail);
 
-    const res = NextResponse.redirect(new URL("/dashboard", origin));
+    const res = NextResponse.redirect(new URL("/", origin));
     res.cookies.set(sessionCookie(sessionToken, req));
     res.cookies.delete("g_oauth_state");
 
