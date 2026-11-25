@@ -267,24 +267,144 @@ export function Setup() {
               </label>
 
               {method === "linkedin" && (
-                <div className="cv-stack" data-field="linkedin" style={{ padding: "8px 0" }}>
-                  <Field
-                    label="LinkedIn profile address or URL"
-                    rule="e.g. linkedin.com/in/yourname or https://www.linkedin.com/in/yourname"
-                    value={linkedinUrl}
-                    onChange={setLinkedinUrl}
-                    error={errors.linkedin}
-                    placeholder="https://www.linkedin.com/in/yourname"
-                  />
-                  <Field
-                    label="Profile text / sections (Optional)"
-                    rule="If your profile is private or requires login, paste your About, Experience or Education text here."
-                    multiline
-                    rows={5}
-                    value={linkedinText}
-                    onChange={setLinkedinText}
-                    placeholder="Paste text from your LinkedIn profile if you wish..."
-                  />
+                <div
+                  data-field="linkedin"
+                  style={{
+                    margin: "10px 0 16px",
+                    padding: "18px 20px",
+                    borderRadius: "16px",
+                    background: "rgba(10, 102, 194, 0.05)",
+                    border: "1px solid rgba(10, 102, 194, 0.3)",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "16px",
+                  }}
+                >
+                  {/* LinkedIn Brand Header */}
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      borderBottom: "1px solid rgba(10, 102, 194, 0.15)",
+                      paddingBottom: "12px",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                      <div
+                        style={{
+                          width: "32px",
+                          height: "32px",
+                          borderRadius: "8px",
+                          background: "#0a66c2",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          color: "#ffffff",
+                          flexShrink: 0,
+                          boxShadow: "0 2px 5px rgba(10, 102, 194, 0.25)",
+                        }}
+                      >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h4 style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "var(--cv-ink, #0f172a)" }}>
+                          LinkedIn Profile Sync
+                        </h4>
+                        <p style={{ margin: 0, fontSize: "12px", color: "var(--cv-muted, #64748b)" }}>
+                          Auto-extract your professional experience, education, and skills.
+                        </p>
+                      </div>
+                    </div>
+                    <span
+                      style={{
+                        fontSize: "11px",
+                        fontWeight: 600,
+                        padding: "3px 8px",
+                        borderRadius: "9999px",
+                        background: "rgba(10, 102, 194, 0.12)",
+                        color: "#0a66c2",
+                        border: "1px solid rgba(10, 102, 194, 0.25)",
+                      }}
+                    >
+                      Instant Import
+                    </span>
+                  </div>
+
+                  {/* Field 1: LinkedIn URL */}
+                  <div>
+                    <label
+                      htmlFor="linkedin-url-input"
+                      style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "var(--cv-ink, #0f172a)", marginBottom: "4px" }}
+                    >
+                      LinkedIn Profile URL or Handle
+                    </label>
+                    <p style={{ margin: "0 0 8px", fontSize: "11px", color: "var(--cv-muted, #64748b)" }}>
+                      Paste your public link, e.g. <code style={{ fontSize: "11px", background: "rgba(0,0,0,0.06)", padding: "1px 5px", borderRadius: "4px" }}>linkedin.com/in/username</code> or your full web address.
+                    </p>
+                    <input
+                      id="linkedin-url-input"
+                      type="url"
+                      value={linkedinUrl}
+                      onChange={(e) => setLinkedinUrl(e.target.value)}
+                      placeholder="https://www.linkedin.com/in/yourname"
+                      className="cv-input"
+                      style={{ width: "100%", borderRadius: "10px", fontSize: "13px" }}
+                    />
+                    {errors.linkedin && (
+                      <p className="cv-error-text" style={{ marginTop: "6px" }}>
+                        {errors.linkedin}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Field 2: Profile Content (Optional) */}
+                  <div>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
+                      <label
+                        htmlFor="linkedin-text-input"
+                        style={{ fontSize: "13px", fontWeight: 600, color: "var(--cv-ink, #0f172a)" }}
+                      >
+                        Profile Content &amp; Experience Text
+                      </label>
+                      <span style={{ fontSize: "11px", color: "var(--cv-muted, #94a3b8)", fontWeight: 500 }}>(Optional)</span>
+                    </div>
+                    <p style={{ margin: "0 0 8px", fontSize: "11px", color: "var(--cv-muted, #64748b)", lineHeight: 1.4 }}>
+                      If your LinkedIn profile requires a sign-in or has restricted visibility, copy &amp; paste your About, Experience, or Education sections here.
+                    </p>
+                    <textarea
+                      id="linkedin-text-input"
+                      rows={4}
+                      value={linkedinText}
+                      onChange={(e) => setLinkedinText(e.target.value)}
+                      placeholder="Paste your LinkedIn summary, job roles, or qualifications here..."
+                      className="cv-input"
+                      style={{ width: "100%", borderRadius: "10px", fontSize: "12px", lineHeight: "1.5", resize: "vertical" }}
+                    />
+                  </div>
+
+                  {/* Pro-Tip Box */}
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: "8px",
+                      padding: "10px 12px",
+                      borderRadius: "10px",
+                      background: "rgba(0, 0, 0, 0.04)",
+                      border: "1px dashed var(--cv-line, #cbd5e1)",
+                      fontSize: "11px",
+                      color: "var(--cv-muted, #64748b)",
+                      lineHeight: "1.45",
+                    }}
+                  >
+                    <span style={{ fontSize: "14px" }}>💡</span>
+                    <span>
+                      <strong>Pro tip:</strong> You can also export your complete LinkedIn profile as a PDF (open LinkedIn &gt; <em>More</em> &gt; <em>Save to PDF</em>) and use the <strong>Upload a CV</strong> option above for 100% fidelity.
+                    </span>
+                  </div>
                 </div>
               )}
 
