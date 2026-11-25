@@ -359,7 +359,7 @@ function Row({ cv, indent, onAction }: { cv: CvSummary; indent?: boolean; onActi
         <div className="cv-dashboard-action-slots">
           <div className="cv-slot-tailor">
             {!indent && !cv.empty && !cv.pendingImportId ? (
-              <Btn onClick={() => onAction("tailor")} aria-label={`Tailor ${cv.name} to a job`}>
+              <Btn kind="quiet" onClick={() => onAction("tailor")} aria-label={`Tailor ${cv.name} to a job`}>
                 Tailor to a job
               </Btn>
             ) : null}

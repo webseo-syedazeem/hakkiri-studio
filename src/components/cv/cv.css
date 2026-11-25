@@ -1027,8 +1027,16 @@ select.cv-mini option,
   align-items: center;
   justify-content: space-between;
   gap: 18px;
-  padding: 18px 22px;
-  flex-wrap: wrap;
+  padding: 16px 22px;
+  flex-wrap: nowrap;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background 0.16s ease;
+}
+.cv-dashboard-row:hover {
+  background: rgba(255, 255, 255, 0.025);
+}
+.cv-dashboard-row:last-child {
+  border-bottom: none;
 }
 .cv-dashboard-main {
   display: flex;
@@ -1086,6 +1094,25 @@ select.cv-mini option,
   margin-left: auto;
   flex-shrink: 0;
 }
+.cv-dashboard-actions .cv-btn-quiet {
+  font-size: 13px;
+  font-weight: 500;
+  padding: 5px 9px;
+  border-radius: 8px;
+  color: #9da4c4;
+  transition: all 0.15s ease;
+}
+.cv-dashboard-actions .cv-btn-quiet:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+.cv-dashboard-actions .cv-btn-danger {
+  color: #f87171;
+}
+.cv-dashboard-actions .cv-btn-danger:hover {
+  color: #ff4d4f;
+  background: rgba(239, 68, 68, 0.15) !important;
+}
 .cv-dashboard-action-slots {
   display: flex;
   align-items: center;
@@ -1095,7 +1122,7 @@ select.cv-mini option,
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  min-width: 126px;
+  min-width: 120px;
 }
 .cv-slot-letter {
   display: flex;
@@ -1107,31 +1134,36 @@ select.cv-mini option,
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 78px;
+  min-width: 76px;
 }
 .cv-slot-duplicate {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 86px;
+  min-width: 84px;
 }
 .cv-slot-delete {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 74px;
+  min-width: 72px;
 }
 .cv-slot-open {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  min-width: 88px;
+  min-width: 84px;
 }
 .cv-slot-open .cv-btn,
 .cv-slot-open .cv-btn-link {
-  min-width: 86px;
+  min-width: 80px;
+  height: 33px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 9px;
   text-align: center;
   justify-content: center;
+  box-shadow: 0 4px 16px rgba(79, 82, 248, 0.35);
 }
 @media (max-width: 1080px) {
   .cv-dashboard-actions {
