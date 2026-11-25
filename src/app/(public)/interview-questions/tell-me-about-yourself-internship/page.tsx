@@ -11,7 +11,14 @@ import {
   IconTarget,
   IconBriefcase,
   IconUserCheck,
-  IconBookOpen
+  IconBookOpen,
+  IconFolderKanban,
+  IconUsers,
+  IconCoffee,
+  IconHeartHandshake,
+  IconLaptopCode,
+  IconGraduationCap,
+  IconLightbulb
 } from "@/components/interview-questions/Icons";
 import { 
   InternshipAnswerBuilder, 
@@ -269,7 +276,7 @@ export default function TellMeAboutYourselfInternshipPage() {
         <div className="mx-auto max-w-[1140px] px-4 sm:px-6">
           <div className="text-center max-w-2xl mx-auto mb-12">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-100 text-blue-700 px-3.5 py-1 text-xs font-bold uppercase tracking-wider mb-3">
-              💡 ALTERNATIVE PROOF POINTS
+              <IconLightbulb className="h-3.5 w-3.5" /> ALTERNATIVE PROOF POINTS
             </span>
             <h2 className="text-2xl sm:text-4xl font-black tracking-tight text-slate-900">
               No work experience? Use these instead
@@ -290,16 +297,30 @@ export default function TellMeAboutYourselfInternshipPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-slate-700">
-                  {INTERNSHIP_EXPERIENCE_TABLE.map((row, idx) => (
-                    <tr key={idx} className="hover:bg-blue-50/40 transition-colors">
-                      <td className="px-6 py-4 font-black text-slate-900 whitespace-nowrap">
-                        <span className="mr-2 text-base">{row.icon}</span>
-                        {row.useThis}
-                      </td>
-                      <td className="px-6 py-4 font-semibold text-slate-700">{row.shows}</td>
-                      <td className="px-6 py-4 text-blue-900 font-serif italic bg-blue-50/20">{row.howToSay}</td>
-                    </tr>
-                  ))}
+                  {INTERNSHIP_EXPERIENCE_TABLE.map((row, idx) => {
+                    const iconMap: Record<string, React.ReactNode> = {
+                      folder: <IconFolderKanban className="h-4 w-4" />,
+                      users: <IconUsers className="h-4 w-4" />,
+                      coffee: <IconCoffee className="h-4 w-4" />,
+                      heart: <IconHeartHandshake className="h-4 w-4" />,
+                      laptop: <IconLaptopCode className="h-4 w-4" />,
+                      graduation: <IconGraduationCap className="h-4 w-4" />,
+                    };
+                    return (
+                      <tr key={idx} className="hover:bg-blue-50/40 transition-colors">
+                        <td className="px-6 py-4 font-bold text-slate-900 whitespace-nowrap">
+                          <div className="flex items-center gap-3">
+                            <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${row.badgeClass}`}>
+                              {iconMap[row.iconKey] || <IconBriefcase className="h-4 w-4" />}
+                            </div>
+                            <span className="text-[14px] font-bold text-slate-900 tracking-tight">{row.useThis}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 font-semibold text-slate-700">{row.shows}</td>
+                        <td className="px-6 py-4 text-blue-900 font-serif italic bg-blue-50/20 leading-relaxed">{row.howToSay}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -312,7 +333,7 @@ export default function TellMeAboutYourselfInternshipPage() {
         <div className="mx-auto max-w-[1140px] px-4 sm:px-6">
           <div className="text-center max-w-2xl mx-auto mb-12">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-100 text-indigo-700 px-3.5 py-1 text-xs font-bold uppercase tracking-wider mb-3">
-              ⚡ INTERACTIVE BUILDER
+              <IconSparkles className="h-3.5 w-3.5" /> INTERACTIVE BUILDER
             </span>
             <h2 className="text-2xl sm:text-4xl font-black tracking-tight text-slate-900">
               Build your internship answer
