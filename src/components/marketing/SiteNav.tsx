@@ -5,7 +5,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import { useAuth } from "@/lib/auth/AuthContext";
-import { IconChevronDown } from "@/components/interview-questions/Icons";
+import {
+  IconChevronDown,
+  IconChevronRight,
+  IconMessageSquare,
+  IconUserCheck,
+  IconTarget,
+  IconGraduationCap,
+} from "@/components/interview-questions/Icons";
 
 /** The public site's top links matching the modern executive navigation. */
 export function SiteNav() {
@@ -94,62 +101,111 @@ export function SiteNav() {
         </button>
 
         {questionsMenuOpen && (
-          <div className="absolute left-0 top-[calc(100%+8px)] z-50 w-76 rounded-2xl border border-black/10 bg-white/95 p-2 shadow-2xl backdrop-blur-xl animate-dropdown">
+          <div className="absolute left-0 top-[calc(100%+8px)] z-[100] w-84 sm:w-92 rounded-2xl border border-slate-200/90 bg-white p-2.5 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.22),0_0_0_1px_rgba(0,0,0,0.06)] animate-dropdown">
+            {/* Header Badge */}
+            <div className="px-2.5 py-1.5 border-b border-slate-100 flex items-center justify-between mb-1.5">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Interview Guides</span>
+              <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200/70 px-2 py-0.5 rounded-full">
+                Free & Verified
+              </span>
+            </div>
+
             <Link
               href="/interview-questions"
               onClick={() => setQuestionsMenuOpen(false)}
-              className="flex flex-col gap-0.5 rounded-xl p-2.5 transition-colors hover:bg-slate-100/80"
+              className="group flex items-center gap-3 rounded-xl p-2.5 transition-all duration-200 hover:bg-slate-50"
             >
-              <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                <span className="text-blue-600 font-bold">●</span>
-                20 Most Common Questions
-              </span>
-              <span className="text-[11px] text-slate-500 pl-3.5">
-                The 20 most asked questions and sample answers
-              </span>
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition-colors group-hover:bg-blue-600 group-hover:text-white">
+                <IconMessageSquare className="h-4.5 w-4.5" />
+              </div>
+              <div className="flex flex-col min-w-0 flex-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-[13px] font-semibold text-slate-900 group-hover:text-blue-600 transition-colors">
+                    20 Most Common Questions
+                  </span>
+                  <IconChevronRight className="h-3.5 w-3.5 text-slate-300 opacity-0 -translate-x-1 transition-all group-hover:opacity-100 group-hover:translate-x-0 group-hover:text-blue-600" />
+                </div>
+                <span className="text-[11px] text-slate-500 leading-normal line-clamp-1">
+                  Top questions, sample answers & scoring rubrics
+                </span>
+              </div>
             </Link>
 
             <Link
               href="/interview-questions/tell-me-about-yourself"
               onClick={() => setQuestionsMenuOpen(false)}
-              className="flex flex-col gap-0.5 rounded-xl p-2.5 transition-colors hover:bg-slate-100/80"
+              className="group flex items-center gap-3 rounded-xl p-2.5 transition-all duration-200 hover:bg-slate-50"
             >
-              <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                <span className="text-indigo-600 font-bold">●</span>
-                Tell Me About Yourself Guide
-              </span>
-              <span className="text-[11px] text-slate-500 pl-3.5">
-                The 60-second formula & 9 role sample answers
-              </span>
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 transition-colors group-hover:bg-indigo-600 group-hover:text-white">
+                <IconUserCheck className="h-4.5 w-4.5" />
+              </div>
+              <div className="flex flex-col min-w-0 flex-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-[13px] font-semibold text-slate-900 group-hover:text-indigo-600 transition-colors">
+                    Tell Me About Yourself Guide
+                  </span>
+                  <IconChevronRight className="h-3.5 w-3.5 text-slate-300 opacity-0 -translate-x-1 transition-all group-hover:opacity-100 group-hover:translate-x-0 group-hover:text-indigo-600" />
+                </div>
+                <span className="text-[11px] text-slate-500 leading-normal line-clamp-1">
+                  The proven 60-second formula & 9 role scripts
+                </span>
+              </div>
             </Link>
 
             <Link
               href="/interview-questions/why-should-we-hire-you"
               onClick={() => setQuestionsMenuOpen(false)}
-              className="flex flex-col gap-0.5 rounded-xl p-2.5 transition-colors hover:bg-slate-100/80"
+              className="group flex items-center gap-3 rounded-xl p-2.5 transition-all duration-200 hover:bg-slate-50"
             >
-              <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                <span className="text-emerald-600 font-bold">●</span>
-                Why Should We Hire You? Guide
-              </span>
-              <span className="text-[11px] text-slate-500 pl-3.5">
-                3-sentence formula & 20+ sample answers
-              </span>
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 transition-colors group-hover:bg-emerald-600 group-hover:text-white">
+                <IconTarget className="h-4.5 w-4.5" />
+              </div>
+              <div className="flex flex-col min-w-0 flex-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-[13px] font-semibold text-slate-900 group-hover:text-emerald-600 transition-colors">
+                    Why Should We Hire You? Guide
+                  </span>
+                  <IconChevronRight className="h-3.5 w-3.5 text-slate-300 opacity-0 -translate-x-1 transition-all group-hover:opacity-100 group-hover:translate-x-0 group-hover:text-emerald-600" />
+                </div>
+                <span className="text-[11px] text-slate-500 leading-normal line-clamp-1">
+                  3-sentence value formula & 20+ best answers
+                </span>
+              </div>
             </Link>
 
             <Link
               href="/interview-questions/tell-me-about-yourself-internship"
               onClick={() => setQuestionsMenuOpen(false)}
-              className="flex flex-col gap-0.5 rounded-xl p-2.5 transition-colors hover:bg-slate-100/80"
+              className="group flex items-center gap-3 rounded-xl p-2.5 transition-all duration-200 hover:bg-slate-50"
             >
-              <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                <span className="text-violet-600 font-bold">●</span>
-                Internship Interview Guide
-              </span>
-              <span className="text-[11px] text-slate-500 pl-3.5">
-                Formula with no experience & 7 field samples
-              </span>
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-purple-600 transition-colors group-hover:bg-purple-600 group-hover:text-white">
+                <IconGraduationCap className="h-4.5 w-4.5" />
+              </div>
+              <div className="flex flex-col min-w-0 flex-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-[13px] font-semibold text-slate-900 group-hover:text-purple-600 transition-colors">
+                    Internship Interview Guide
+                  </span>
+                  <IconChevronRight className="h-3.5 w-3.5 text-slate-300 opacity-0 -translate-x-1 transition-all group-hover:opacity-100 group-hover:translate-x-0 group-hover:text-purple-600" />
+                </div>
+                <span className="text-[11px] text-slate-500 leading-normal line-clamp-1">
+                  Formula for zero experience & 7 field examples
+                </span>
+              </div>
             </Link>
+
+            {/* Footer Prompt */}
+            <div className="mt-1.5 pt-2 border-t border-slate-100 px-2.5 py-1 flex items-center justify-between">
+              <span className="text-[11px] text-slate-500">Practise aloud with live AI:</span>
+              <Link
+                href="/dashboard"
+                onClick={() => setQuestionsMenuOpen(false)}
+                className="text-[11px] font-semibold text-blue-600 hover:text-blue-700 hover:underline flex items-center gap-1"
+              >
+                <span>Open Studio</span>
+                <span>→</span>
+              </Link>
+            </div>
           </div>
         )}
       </div>
@@ -206,21 +262,26 @@ export function SiteNav() {
 
           {/* Polished Glass Dropdown Menu */}
           {userMenuOpen && (
-            <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-56 rounded-2xl border border-black/10 bg-white/95 p-2 shadow-2xl backdrop-blur-xl animate-dropdown">
-              <div className="border-b border-black/[0.06] px-3 py-2">
-                <p className="truncate text-xs font-bold text-slate-900">
-                  {user.firstName ? `${user.firstName} ${user.lastName || ""}`.trim() : "Authenticated User"}
-                </p>
-                <p className="truncate text-[11px] text-slate-500">
-                  {user.email}
-                </p>
+            <div className="absolute right-0 top-[calc(100%+8px)] z-[100] w-64 rounded-2xl border border-slate-200/90 bg-white p-2 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.22),0_0_0_1px_rgba(0,0,0,0.06)] animate-dropdown">
+              <div className="border-b border-slate-100 px-3 py-2.5 flex items-center gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white shadow-sm">
+                  {user.initials || "U"}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-xs font-bold text-slate-900">
+                    {user.firstName ? `${user.firstName} ${user.lastName || ""}`.trim() : "Authenticated User"}
+                  </p>
+                  <p className="truncate text-[11px] text-slate-500">
+                    {user.email}
+                  </p>
+                </div>
               </div>
 
-              <div className="py-1">
+              <div className="py-1.5 space-y-0.5">
                 <Link
                   href="/dashboard"
                   onClick={() => setUserMenuOpen(false)}
-                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 hover:bg-black/[0.04] hover:text-slate-900 transition-colors"
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors"
                 >
                   <span className="text-blue-600 font-bold">●</span>
                   Studio Dashboard
@@ -229,7 +290,7 @@ export function SiteNav() {
                 <Link
                   href="/interviews"
                   onClick={() => setUserMenuOpen(false)}
-                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 hover:bg-black/[0.04] hover:text-slate-900 transition-colors"
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors"
                 >
                   <span className="text-violet-600 font-bold">🎙️</span>
                   Mock Interviews
@@ -238,7 +299,7 @@ export function SiteNav() {
                 <Link
                   href="/presentations"
                   onClick={() => setUserMenuOpen(false)}
-                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 hover:bg-black/[0.04] hover:text-slate-900 transition-colors"
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors"
                 >
                   <span className="text-indigo-600 font-bold">📊</span>
                   Presentations
@@ -248,7 +309,7 @@ export function SiteNav() {
                   <Link
                     href="/admin"
                     onClick={() => setUserMenuOpen(false)}
-                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-purple-700 bg-purple-50/60 hover:bg-purple-100 transition-colors"
+                    className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold text-purple-700 bg-purple-50/70 hover:bg-purple-100/80 transition-colors"
                   >
                     <span className="text-purple-600 font-bold">⚙️</span>
                     Admin Console
@@ -258,14 +319,14 @@ export function SiteNav() {
                 <Link
                   href="/settings"
                   onClick={() => setUserMenuOpen(false)}
-                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 hover:bg-black/[0.04] hover:text-slate-900 transition-colors"
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors"
                 >
-                  <span className="text-slate-500 font-bold">⚙️</span>
+                  <span className="text-slate-400 font-bold">⚙️</span>
                   Account Settings
                 </Link>
               </div>
 
-              <div className="border-t border-black/[0.06] pt-1">
+              <div className="border-t border-slate-100 pt-1">
                 <button
                   type="button"
                   onClick={() => {
