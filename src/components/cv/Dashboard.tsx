@@ -111,6 +111,7 @@ export function Dashboard() {
     <CvScreen>
       <div className="cv-area">
         <Toolbar title="CVs and letters" subtitle="Build a CV from your own words, check it, and tailor a version for each job.">
+          <BtnLink href="/cv/examples">Example Resumes</BtnLink>
           <BtnLink href="/cv/bank">Achievements</BtnLink>
           <BtnLink kind="primary" href="/cv/new">
             New CV
@@ -179,6 +180,7 @@ export function Dashboard() {
                 <BtnLink kind="primary" href="/cv/new">
                   New CV
                 </BtnLink>
+                <BtnLink href="/cv/examples">Browse Example Resumes</BtnLink>
                 <BtnLink href="/cv-audit">Free CV audit</BtnLink>
               </div>
             </div>

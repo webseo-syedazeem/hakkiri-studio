@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { SetupSchema, badInput, failure, fieldErrors, makingTooFast, newCv, notFound, requireUserId } from "@/lib/cv/access";
 import { IMPORT_ERRORS } from "@/lib/cv/import";
+import { readLinkedInProfile } from "@/lib/cv/import/linkedin";
 import { newImportId } from "@/lib/cv/import/record";
 import { readForm, readUpload } from "@/lib/cv/import/server";
 import { cvIsEmpty } from "@/lib/cv/schema";
@@ -10,10 +11,9 @@ import { guard } from "@/lib/usage/limits";
 export const runtime = "nodejs";
 
 /**
- * Starts a CV from an uploaded file or pasted text. Sent as a form with the
- * set-up answers (or the id of an existing empty CV) and either `file` or
- * `text`. The CV itself stays empty until the person has checked what was
- * read and opened it in the builder.
+ * Starts a CV from an uploaded file, pasted text, or LinkedIn profile.
+ * Sent as a form with the set-up answers (or the id of an existing empty CV)
+ * and `file`, `text`, or `linkedinUrl`.
  */
 export async function POST(req: Request) {
   const limited = guard(req, "read");
@@ -26,9 +26,25 @@ export async function POST(req: Request) {
     if (!form) return badInput("Send the form again.");
     const file = form.get("file");
     const text = form.get("text");
+    const linkedinUrl = form.get("linkedinUrl");
+    const linkedinText = form.get("linkedinText");
     const hasFile = file instanceof File && file.size > 0;
-    const hasText = typeof text === "string" && text.trim().length > 0;
-    if (!hasFile && !hasText) return badInput("Choose a file or paste the text of your CV.", { file: "Choose a file or paste the text of your CV." });
+    const hasLinkedIn = typeof linkedinUrl === "string" && linkedinUrl.trim().length > 0;
+    let hasText = typeof text === "string" && text.trim().length > 0;
+    let finalText = hasText ? (text as string) : "";
+
+    if (hasLinkedIn) {
+      const parsedLinkedIn = await readLinkedInProfile(
+        linkedinUrl as string,
+        typeof linkedinText === "string" ? (linkedinText as string) : undefined
+      );
+      finalText = parsedLinkedIn.text;
+      hasText = true;
+    }
+
+    if (!hasFile && !hasText) {
+      return badInput("Choose a file, paste the text of your CV, or enter your LinkedIn profile.", { file: "Choose a file or enter your LinkedIn profile." });
+    }
 
     const now = new Date().toISOString();
     const versionId = form.get("versionId");
@@ -50,7 +66,7 @@ export async function POST(req: Request) {
     }
 
     // Reading never throws: a file that cannot be read gives a record that says why.
-    const imp = await readUpload({ id: newImportId(), userId, versionId: cv.id, createdAt: now }, cv, { file: hasFile ? (file as File) : null, text: hasText ? (text as string) : null }, now);
+    const imp = await readUpload({ id: newImportId(), userId, versionId: cv.id, createdAt: now }, cv, { file: hasFile ? (file as File) : null, text: hasText ? finalText : null }, now);
     try {
       if (isNew) await saveCv(cv);
       await saveImport(imp);

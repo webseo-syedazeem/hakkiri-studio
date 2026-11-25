@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { type FormEvent, useRef, useState } from "react";
 import { CV_LEVELS, type CvLevel, type CvRegion, LEVEL_LABELS } from "@/lib/cv/schema";
+import { EXAMPLE_TEMPLATES } from "@/lib/cv/templates/examples";
 import { ApiError, api, messageOf } from "./client";
 import { ACCEPT, STAGE_WORDS, UPLOAD_HELP, type UploadStage, sendUpload } from "./upload";
 import { Announce, Bar, Btn, CvScreen, Field, Panel, Toolbar } from "./ui";
@@ -14,7 +15,7 @@ const LEVEL_HELP: Record<CvLevel, string> = {
   senior: "Leading a function, a department or an organisation.",
 };
 
-type Method = "empty" | "notes" | "upload" | "paste";
+type Method = "empty" | "example" | "linkedin" | "upload" | "paste" | "notes";
 
 /**
  * Set-up: four questions before any CV exists. What it is called, the level,
@@ -31,6 +32,9 @@ export function Setup() {
   const [targetEmployer, setTargetEmployer] = useState("");
   const [targetAdvert, setTargetAdvert] = useState("");
   const [method, setMethod] = useState<Method>("empty");
+  const [selectedTemplateId, setSelectedTemplateId] = useState("software-engineer");
+  const [linkedinUrl, setLinkedinUrl] = useState("");
+  const [linkedinText, setLinkedinText] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [text, setText] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -46,13 +50,14 @@ export function Setup() {
     if (!region) e.region = "Choose UK or US.";
     if (method === "upload" && !file) e.file = "Choose the file to upload.";
     if (method === "paste" && text.trim().length < 40) e.text = "Paste the text of your CV.";
+    if (method === "linkedin" && !linkedinUrl.trim()) e.linkedin = "Enter your LinkedIn profile link or username.";
     return e;
   }
 
   /** Shows the problems and moves to the first field that has one. */
   function showErrors(e: Record<string, string>) {
     setErrors(e);
-    const first = ["name", "level", "region", "file", "text"].find((k) => e[k]);
+    const first = ["name", "level", "region", "file", "text", "linkedin"].find((k) => e[k]);
     if (first) requestAnimationFrame(() => formRef.current?.querySelector<HTMLElement>(`[data-field="${first}"] input, [data-field="${first}"] textarea, [data-field="${first}"] button`)?.focus());
   }
 
@@ -67,6 +72,15 @@ export function Setup() {
     setErrors({});
     const setup = { name: name.trim(), level, region, targetTitle, targetEmployer, targetAdvert };
     try {
+      if (method === "example") {
+        setStage("creating");
+        const res = await api<{ id: string }>("/api/cv/templates", {
+          method: "POST",
+          json: { templateId: selectedTemplateId, name: name.trim() },
+        });
+        router.push(`/cv/v/${res.id}/edit/contact`);
+        return;
+      }
       if (method === "empty" || method === "notes") {
         setStage("creating");
         const { id } = await api<{ id: string }>("/api/cv/versions", { method: "POST", json: setup });
@@ -77,7 +91,10 @@ export function Setup() {
       const form = new FormData();
       for (const [k, v] of Object.entries(setup)) form.set(k, v);
       if (method === "upload" && useFile) form.set("file", useFile);
-      else form.set("text", text);
+      else if (method === "linkedin") {
+        form.set("linkedinUrl", linkedinUrl.trim());
+        if (linkedinText.trim()) form.set("linkedinText", linkedinText.trim());
+      } else form.set("text", text);
       const made = await sendUpload<{ importId: string }>("/api/cv/imports", form, setStage);
       router.push(`/cv/import/${made.importId}`);
     } catch (err) {
@@ -88,7 +105,20 @@ export function Setup() {
   }
 
   const busy = stage !== "";
-  const action = method === "empty" ? "Create CV" : method === "notes" ? "Start with notes" : method === "paste" ? "Read this text" : file ? `Upload ${file.name}` : "Choose file";
+  const action =
+    method === "empty"
+      ? "Create CV"
+      : method === "example"
+      ? "Use this example template"
+      : method === "linkedin"
+      ? "Import from LinkedIn"
+      : method === "notes"
+      ? "Start with notes"
+      : method === "paste"
+      ? "Read this text"
+      : file
+      ? `Upload ${file.name}`
+      : "Choose file";
 
   return (
     <CvScreen>
@@ -176,6 +206,88 @@ export function Setup() {
 
           <Panel title="How do you want to start?">
             <div className="cv-pad cv-stack">
+              <label className="cv-choice">
+                <input type="radio" name="method" checked={method === "example"} onChange={() => setMethod("example")} />
+                <span>
+                  <b style={{ display: "block", fontWeight: 600 }}>Start from an example template</b>
+                  <small>Choose a verified, ATS-optimised example CV and customize it with your own details.</small>
+                </span>
+              </label>
+
+              {method === "example" && (
+                <div className="cv-stack" style={{ padding: "12px 0" }}>
+                  <span className="cv-label" style={{ marginBottom: 6 }}>
+                    Choose an industry template
+                  </span>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {EXAMPLE_TEMPLATES.map((tpl) => (
+                      <div
+                        key={tpl.id}
+                        onClick={() => {
+                          setSelectedTemplateId(tpl.id);
+                          if (!name.trim()) setName(tpl.title);
+                          if (!level) setLevel(tpl.level);
+                          if (!region) setRegion(tpl.region);
+                        }}
+                        style={{
+                          padding: "12px 14px",
+                          borderRadius: 12,
+                          border: selectedTemplateId === tpl.id ? "2px solid #2563eb" : "1px solid var(--cv-line, #e2e8f0)",
+                          background: selectedTemplateId === tpl.id ? "rgba(37, 99, 235, 0.04)" : "var(--cv-card, #ffffff)",
+                          cursor: "pointer",
+                          transition: "all 0.15s ease",
+                        }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+                          <span style={{ fontWeight: 600, fontSize: 13, color: "var(--cv-ink, #0f172a)" }}>{tpl.title}</span>
+                          <span className="cv-chip" style={{ fontSize: 10, fontWeight: 600 }}>
+                            {tpl.badge}
+                          </span>
+                        </div>
+                        <p style={{ margin: 0, fontSize: 11, color: "var(--cv-muted, #64748b)", lineHeight: 1.4 }}>
+                          {tpl.description}
+                        </p>
+                        <div style={{ display: "flex", gap: 10, marginTop: 6, fontSize: 11, fontWeight: 500, color: "#2563eb" }}>
+                          <span>⏱ {tpl.stats.experienceYears}</span>
+                          <span>• {tpl.stats.rolesCount} Roles</span>
+                          <span>• {tpl.stats.skillsCount} Skills</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <label className="cv-choice">
+                <input type="radio" name="method" checked={method === "linkedin"} onChange={() => setMethod("linkedin")} />
+                <span>
+                  <b style={{ display: "block", fontWeight: 600 }}>Import from LinkedIn</b>
+                  <small>Paste your LinkedIn profile address or profile sections to auto-populate your CV.</small>
+                </span>
+              </label>
+
+              {method === "linkedin" && (
+                <div className="cv-stack" data-field="linkedin" style={{ padding: "8px 0" }}>
+                  <Field
+                    label="LinkedIn profile address or URL"
+                    rule="e.g. linkedin.com/in/yourname or https://www.linkedin.com/in/yourname"
+                    value={linkedinUrl}
+                    onChange={setLinkedinUrl}
+                    error={errors.linkedin}
+                    placeholder="https://www.linkedin.com/in/yourname"
+                  />
+                  <Field
+                    label="Profile text / sections (Optional)"
+                    rule="If your profile is private or requires login, paste your About, Experience or Education text here."
+                    multiline
+                    rows={5}
+                    value={linkedinText}
+                    onChange={setLinkedinText}
+                    placeholder="Paste text from your LinkedIn profile if you wish..."
+                  />
+                </div>
+              )}
+
               <label className="cv-choice">
                 <input type="radio" name="method" checked={method === "empty"} onChange={() => setMethod("empty")} />
                 <span>

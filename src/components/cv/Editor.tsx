@@ -259,6 +259,35 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
           </BtnLink>
         )}
         <span className="cv-chip">{cv.kind === "base" ? `Base ${word}` : cv.target?.employer || "Tailored version"}</span>
+        <button
+          type="button"
+          onClick={() => {
+            const nextRegion = cv.region === "uk" ? "us" : "uk";
+            update({
+              region: nextRegion,
+              design: {
+                ...cv.design,
+                pageSize: nextRegion === "uk" ? "a4" : "letter",
+              },
+            });
+            say(`Spelling switched to ${nextRegion === "uk" ? "UK English (A4)" : "US English (Letter)"}.`);
+          }}
+          className="cv-chip"
+          style={{
+            cursor: "pointer",
+            fontWeight: 600,
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 5,
+            border: "1px solid var(--cv-line, #cbd5e1)",
+          }}
+          title={`Spelling format: ${cv.region === "uk" ? "UK (British)" : "US (American)"}. Click to toggle.`}
+          aria-label={`Toggle spelling between UK and US. Currently ${cv.region.toUpperCase()}`}
+          data-testid="spelling-toggle"
+        >
+          <span>{cv.region === "uk" ? "🇬🇧 UK" : "🇺🇸 US"}</span>
+          <span style={{ fontSize: 10, opacity: 0.7 }}>⇄</span>
+        </button>
         <BtnLink href={`/cv/v/${cv.id}/findings`} onClick={() => void flush()} data-testid="score-button">
           {scoreLabel(w.score, word)}
         </BtnLink>
