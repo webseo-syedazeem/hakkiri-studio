@@ -71,21 +71,6 @@ export function AuthCard({ initialMode = "signin" }: { initialMode?: "signin" | 
     }
   };
 
-  const handleInstantPreview = async () => {
-    setError(null);
-    setSubmitting(true);
-    try {
-      const res = await login("preview@hakkiri.com", "Preview123!");
-      if (res.ok) {
-        window.location.href = "/cv";
-      } else {
-        setError(res.error ?? "Failed to sign in to demo preview.");
-      }
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   const inputStyle =
     "mt-1.5 w-full rounded-xl border border-line bg-panel-2 px-3.5 py-2.5 text-[15px] text-ink placeholder:text-muted/60 transition-all duration-200 focus:border-blue focus:ring-2 focus:ring-blue/20 focus:outline-none [&:-webkit-autofill]:[box-shadow:0_0_0_1000px_#22232c_inset] [&:-webkit-autofill]:[-webkit-text-fill-color:#f1f1f4]";
 
@@ -260,16 +245,6 @@ export function AuthCard({ initialMode = "signin" }: { initialMode?: "signin" | 
           />
         </svg>
         Continue with Google
-      </button>
-
-      {/* 1-Click Instant Preview for CV Builder Review */}
-      <button
-        type="button"
-        disabled={submitting}
-        onClick={handleInstantPreview}
-        className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-blue/40 bg-blue/15 hover:bg-blue/25 text-blue-soft py-2.5 text-[14px] font-semibold transition-all duration-200 hover:scale-[1.01] active:scale-[0.98] cursor-pointer shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
-      >
-        <span>⚡</span> Instant Preview Access (CV Builder)
       </button>
 
       {/* There is no guest access: every screen in the Studio needs an account. */}
