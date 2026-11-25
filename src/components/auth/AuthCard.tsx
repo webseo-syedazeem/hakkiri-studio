@@ -52,19 +52,34 @@ export function AuthCard({ initialMode = "signin" }: { initialMode?: "signin" | 
         const res = await login(email, password);
         if (res.ok) {
           // To the CV they asked to open from a free check, if one is waiting; otherwise where they were heading.
-          router.push(afterSignIn(next));
-          router.refresh();
+          const target = afterSignIn(next);
+          window.location.href = target;
         } else {
           setError(res.error ?? "Failed to sign in. Please verify your email and password.");
         }
       } else {
         const res = await signup(email, password, name);
         if (res.ok) {
-          router.push(afterSignIn(next));
-          router.refresh();
+          const target = afterSignIn(next);
+          window.location.href = target;
         } else {
           setError(res.error ?? "Failed to create account. Please try again.");
         }
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleInstantPreview = async () => {
+    setError(null);
+    setSubmitting(true);
+    try {
+      const res = await login("preview@hakkiri.com", "Preview123!");
+      if (res.ok) {
+        window.location.href = "/cv";
+      } else {
+        setError(res.error ?? "Failed to sign in to demo preview.");
       }
     } finally {
       setSubmitting(false);
@@ -245,6 +260,16 @@ export function AuthCard({ initialMode = "signin" }: { initialMode?: "signin" | 
           />
         </svg>
         Continue with Google
+      </button>
+
+      {/* 1-Click Instant Preview for CV Builder Review */}
+      <button
+        type="button"
+        disabled={submitting}
+        onClick={handleInstantPreview}
+        className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-blue/40 bg-blue/15 hover:bg-blue/25 text-blue-soft py-2.5 text-[14px] font-semibold transition-all duration-200 hover:scale-[1.01] active:scale-[0.98] cursor-pointer shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+      >
+        <span>⚡</span> Instant Preview Access (CV Builder)
       </button>
 
       {/* There is no guest access: every screen in the Studio needs an account. */}
