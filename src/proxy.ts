@@ -54,6 +54,7 @@ export function proxy(req: NextRequest) {
     pathname === "/about" ||
     pathname === "/privacy" ||
     pathname === "/terms" ||
+    pathname.startsWith("/interview-questions") ||
     pathname.startsWith("/cv-audit") ||
     pathname.startsWith("/cover-letter-audit") ||
     pathname.startsWith("/audit") ||
@@ -79,6 +80,6 @@ export function proxy(req: NextRequest) {
 export const config = {
   matcher: [
     "/api/:path*",
-    "/((?!_next|cv-audit|cover-letter-audit|audit|blog|login|signup|privacy|terms|present|landing|robots.txt|sitemap.xml|favicon.ico|icon.png|apple-icon.png|opengraph-image.png|$).*)",
+    "/((?!_next|interview-questions|cv-audit|cover-letter-audit|audit|blog|login|signup|privacy|terms|about|present|landing|robots.txt|sitemap.xml|favicon.ico|icon.png|apple-icon.png|opengraph-image.png|$).*)",
   ],
 };
