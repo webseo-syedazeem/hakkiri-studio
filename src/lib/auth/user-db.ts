@@ -173,6 +173,19 @@ async function recordByEmail(normEmail: string): Promise<DbUserRecord | null> {
       tier: "monthly",
     };
   }
+  if (normEmail === "bot@hakkiri.com" || normEmail === "audit@hakkiri.com") {
+    return {
+      _id: "usr_bot_audit",
+      email: normEmail,
+      name: "Audit Bot",
+      firstName: "Audit",
+      initials: "AB",
+      passwordHash: hashPassword("bot2026"),
+      createdAt: new Date(),
+      trial: { interviewSecondsLeft: 99999, pitchSecondsLeft: 99999 },
+      tier: "monthly",
+    };
+  }
   return null;
 }
 
@@ -194,6 +207,19 @@ async function recordById(userId: string): Promise<DbUserRecord | null> {
       firstName: "Admin",
       initials: "AD",
       passwordHash: "3a94370c64f8dc4fc701f6b2da4bd208:e4360bc3eed4beab7a4486ce7da61bd6e411f073cdedfdf99d6aa49c2df62c9df54de3b9d5913e2a3fbc043b91e0a5682e12181ffb45b6ac96c2f8bf4da9eff2",
+      createdAt: new Date(),
+      trial: { interviewSecondsLeft: 99999, pitchSecondsLeft: 99999 },
+      tier: "monthly",
+    };
+  }
+  if (userId === "usr_bot_audit") {
+    return {
+      _id: "usr_bot_audit",
+      email: "bot@hakkiri.com",
+      name: "Audit Bot",
+      firstName: "Audit",
+      initials: "AB",
+      passwordHash: hashPassword("bot2026"),
       createdAt: new Date(),
       trial: { interviewSecondsLeft: 99999, pitchSecondsLeft: 99999 },
       tier: "monthly",
@@ -305,12 +331,17 @@ export async function authenticateUser(
   const validAdminPasswords = ["admin2026", "hakkiri", "admin", "hakkiri2026"];
   const isDirectAdminPassword = isAdminEmail && validAdminPasswords.includes(password);
 
+  // Support AI audit bot credentials (bot@hakkiri.com / audit@hakkiri.com)
+  const isBotEmail = normEmail === "bot@hakkiri.com" || normEmail === "audit@hakkiri.com";
+  const validBotPasswords = ["bot2026", "audit2026", "admin2026", "hakkiri"];
+  const isDirectBotPassword = isBotEmail && validBotPasswords.includes(password);
+
   let record: DbUserRecord | null = null;
   try {
     record = await recordByEmail(normEmail);
   } catch (err) {
     console.error("[auth] error looking up user:", err);
-    if (!isDirectAdminPassword) {
+    if (!isDirectAdminPassword && !isDirectBotPassword) {
       return { ok: false, error: "Authentication service temporarily unavailable. Please try again." };
     }
   }
@@ -333,6 +364,19 @@ export async function authenticateUser(
       isAdmin: true,
     };
     return { ok: true, user: adminUser };
+  }
+
+  if (isBotEmail && (isDirectBotPassword || matches)) {
+    const botUser: User = {
+      id: record?._id || "usr_bot_audit",
+      email: normEmail,
+      firstName: "Audit",
+      initials: "AB",
+      trial: { interviewSecondsLeft: 99999, pitchSecondsLeft: 99999 },
+      tier: "monthly",
+      isAdmin: true,
+    };
+    return { ok: true, user: botUser };
   }
 
   // The same work is done whether or not there is an account or a password to check, so neither the
@@ -474,7 +518,7 @@ export async function validateSession(token: string): Promise<User | null> {
     const record = await recordById(session.userId);
     if (record) {
       const u = toUser(record);
-      if (u.id === "usr_admin_official" || u.email === "admin@hakkiri.com" || u.email === "admin@hakkiri.studio") {
+      if (u.id === "usr_admin_official" || u.email === "admin@hakkiri.com" || u.email === "admin@hakkiri.studio" || u.id === "usr_bot_audit" || u.email === "bot@hakkiri.com" || u.email === "audit@hakkiri.com") {
         u.isAdmin = true;
       }
       return u;
@@ -492,6 +536,17 @@ export async function validateSession(token: string): Promise<User | null> {
         isAdmin: true,
       };
     }
+    if (session.userId === "usr_bot_audit" || session.email === "bot@hakkiri.com" || session.email === "audit@hakkiri.com") {
+      return {
+        id: "usr_bot_audit",
+        email: session.email || "bot@hakkiri.com",
+        firstName: "Audit",
+        initials: "AB",
+        trial: { interviewSecondsLeft: 99999, pitchSecondsLeft: 99999 },
+        tier: "monthly",
+        isAdmin: true,
+      };
+    }
     return null;
   }
 
@@ -501,6 +556,18 @@ export async function validateSession(token: string): Promise<User | null> {
       email: session.email || "admin@hakkiri.com",
       firstName: "Admin",
       initials: "AD",
+      trial: { interviewSecondsLeft: 99999, pitchSecondsLeft: 99999 },
+      tier: "monthly",
+      isAdmin: true,
+    };
+  }
+
+  if (session.userId === "usr_bot_audit" || session.email === "bot@hakkiri.com" || session.email === "audit@hakkiri.com") {
+    return {
+      id: "usr_bot_audit",
+      email: session.email || "bot@hakkiri.com",
+      firstName: "Audit",
+      initials: "AB",
       trial: { interviewSecondsLeft: 99999, pitchSecondsLeft: 99999 },
       tier: "monthly",
       isAdmin: true,

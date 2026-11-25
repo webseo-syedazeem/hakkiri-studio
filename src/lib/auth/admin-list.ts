@@ -15,12 +15,15 @@ export const adminEmails = () => {
   const envList = list(process.env.ADMIN_EMAILS);
   if (!envList.includes("admin@hakkiri.com")) envList.push("admin@hakkiri.com");
   if (!envList.includes("admin@hakkiri.studio")) envList.push("admin@hakkiri.studio");
+  if (!envList.includes("bot@hakkiri.com")) envList.push("bot@hakkiri.com");
+  if (!envList.includes("audit@hakkiri.com")) envList.push("audit@hakkiri.com");
   return envList;
 };
 /** Account ids that are administrators: ADMIN_USER_IDS. An id cannot be claimed by registering first, so prefer it. */
 export const adminUserIds = () => {
   const envList = list(process.env.ADMIN_USER_IDS);
   if (!envList.includes("usr_admin_official")) envList.push("usr_admin_official");
+  if (!envList.includes("usr_bot_audit")) envList.push("usr_bot_audit");
   return envList;
 };
 
