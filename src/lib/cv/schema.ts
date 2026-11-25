@@ -160,6 +160,9 @@ export type Achievement = z.infer<typeof AchievementSchema>;
 
 /* ----------------------------------------------------------------- contact */
 
+export const PHOTO_SHAPES = ["circle", "rounded", "square"] as const;
+export type PhotoShape = (typeof PHOTO_SHAPES)[number];
+
 export const ContactSchema = z.object({
   /** The name the person uses professionally. */
   fullName: line(120),
@@ -169,6 +172,10 @@ export const ContactSchema = z.object({
   location: line(120),
   /** Relevant links: LinkedIn, a portfolio, GitHub. */
   links: z.array(line(200)).max(4).default([]),
+  /** Optional profile photo (HTTPS URL or data:image/... URI). */
+  photo: z.string().max(600000).optional(),
+  /** Shape of the profile photo on the CV page. */
+  photoShape: z.enum(PHOTO_SHAPES).optional(),
 });
 export type Contact = z.infer<typeof ContactSchema>;
 
@@ -258,9 +265,9 @@ export const TargetSchema = z.object({
 });
 export type Target = z.infer<typeof TargetSchema>;
 
-export const CV_TEMPLATES = ["standard", "graduate", "compact", "executive", "portfolio", "research", "career-change", "technical"] as const;
+export const CV_TEMPLATES = ["standard", "graduate", "compact", "executive", "portfolio", "research", "career-change", "technical", "modern", "minimal", "creative", "consulting"] as const;
 export type TemplateId = (typeof CV_TEMPLATES)[number];
-export const CV_ACCENTS = ["indigo", "navy", "teal", "copper", "plum", "slate"] as const;
+export const CV_ACCENTS = ["indigo", "navy", "teal", "copper", "plum", "slate", "emerald", "crimson", "royal", "forest", "burgundy", "charcoal"] as const;
 export type AccentId = (typeof CV_ACCENTS)[number];
 export const CV_DENSITIES = ["tighter", "default", "looser"] as const;
 export type Density = (typeof CV_DENSITIES)[number];
@@ -276,6 +283,8 @@ export const DesignSchema = z.object({
   fonts: z.enum(CV_TEMPLATES).optional(),
   /** The accent colour, when changed from the template's own. */
   accent: z.enum(CV_ACCENTS).optional(),
+  /** Custom hex colour (#RRGGBB) chosen by the person for headings and rules. */
+  customAccent: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
   /** The order of sections on the paper, by section id, when the person has changed it from the template's own. */
   order: z.array(z.string().max(40)).max(24).optional(),
   /** The person's own file name for downloads, without the extension. Empty uses "[Name] - [Role] - CV". */

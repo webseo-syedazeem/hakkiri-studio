@@ -47,7 +47,7 @@ export function CvScreen({ children }: { children: ReactNode }) {
     }, 80);
     return () => clearInterval(timer);
   }, [pathname]);
-  return <div className="cv -mx-4 -my-4 sm:-mx-6 sm:-my-6 md:-mx-9 md:-my-7 min-w-0 grow">{children}</div>;
+  return <div className="cv min-w-0 grow w-full">{children}</div>;
 }
 
 export interface Crumb {

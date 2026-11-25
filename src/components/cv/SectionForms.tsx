@@ -37,13 +37,189 @@ const hook = (h: FieldHooks | undefined, entryId: string, field: string) => ({
 /* ------------------------------------------------------------------- contact */
 
 export function ContactForm({ value, onChange, hooks }: { value: Contact; onChange: (c: Contact) => void; hooks?: FieldHooks }) {
+  const [photoMode, setPhotoMode] = useState<"pc" | "url">("pc");
+  const [urlInput, setUrlInput] = useState(value.photo && !value.photo.startsWith("data:") ? value.photo : "");
+  const [photoErr, setPhotoErr] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const set = (field: keyof Contact, v: string) => {
     hooks?.onEdit?.("", field);
     onChange({ ...value, [field]: v });
   };
+
+  function handlePcPhoto(file: File) {
+    setPhotoErr("");
+    if (!file.type.startsWith("image/")) {
+      setPhotoErr("Please choose a PNG, JPG, or WebP image file.");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setPhotoErr("Please choose an image under 10 MB.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const src = typeof reader.result === "string" ? reader.result : "";
+      if (!src) return;
+      const img = new window.Image();
+      img.onload = () => {
+        const size = 280;
+        const canvas = document.createElement("canvas");
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          onChange({ ...value, photo: src, photoShape: value.photoShape ?? "circle" });
+          return;
+        }
+        const side = Math.min(img.width, img.height);
+        const sx = (img.width - side) / 2;
+        const sy = (img.height - side) / 2;
+        ctx.drawImage(img, sx, sy, side, side, 0, 0, size, size);
+        const compressed = canvas.toDataURL("image/jpeg", 0.88);
+        onChange({ ...value, photo: compressed, photoShape: value.photoShape ?? "circle" });
+      };
+      img.onerror = () => setPhotoErr("Could not read that image file. Try another photo.");
+      img.src = src;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function applyPhotoUrl() {
+    setPhotoErr("");
+    const trimmed = urlInput.trim();
+    if (!trimmed) {
+      setPhotoErr("Paste a valid image URL first.");
+      return;
+    }
+    if (!/^(https?:\/\/|data:image\/)/i.test(trimmed)) {
+      setPhotoErr("Enter a full image URL starting with https://");
+      return;
+    }
+    onChange({ ...value, photo: trimmed, photoShape: value.photoShape ?? "circle" });
+  }
+
+  const shape = value.photoShape ?? "circle";
   const links = [...value.links, ""].slice(0, 4);
   return (
     <div className="cv-stack">
+      {/* Profile Photo (From PC or URL) */}
+      <div className="cv-photo-card">
+        <div className="cv-photo-header">
+          <div
+            className="cv-photo-preview"
+            data-shape={shape}
+            onClick={() => fileInputRef.current?.click()}
+            title="Click to upload photo from your computer"
+          >
+            {value.photo ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={value.photo} alt={value.fullName || "Profile photo"} className="cv-photo-img" />
+            ) : (
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                <circle cx="12" cy="13" r="4" />
+              </svg>
+            )}
+          </div>
+          <div className="min-w-0 grow">
+            <div className="cv-row" style={{ justifyContent: "space-between", gap: 8 }}>
+              <div>
+                <span className="cv-label">Profile photo</span>
+                <span className="cv-rule">Optional. Upload from your PC or paste an image URL.</span>
+              </div>
+              {value.photo && (
+                <Btn
+                  kind="quiet"
+                  className="cv-btn-danger"
+                  onClick={() => {
+                    setUrlInput("");
+                    onChange({ ...value, photo: undefined });
+                  }}
+                >
+                  Remove photo
+                </Btn>
+              )}
+            </div>
+
+            <div className="cv-row" style={{ gap: 8, marginTop: 10 }}>
+              <div className="cv-seg">
+                <button type="button" aria-pressed={photoMode === "pc"} onClick={() => { setPhotoMode("pc"); setPhotoErr(""); }}>
+                  From PC
+                </button>
+                <button type="button" aria-pressed={photoMode === "url"} onClick={() => { setPhotoMode("url"); setPhotoErr(""); }}>
+                  From URL
+                </button>
+              </div>
+
+              {value.photo && (
+                <div className="cv-seg" role="group" aria-label="Photo shape">
+                  {(["circle", "rounded", "square"] as const).map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      aria-pressed={shape === s}
+                      onClick={() => onChange({ ...value, photoShape: s })}
+                    >
+                      {s === "circle" ? "Circle" : s === "rounded" ? "Rounded" : "Square"}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {photoMode === "pc" ? (
+              <div className="cv-row" style={{ gap: 10, marginTop: 10 }}>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/gif"
+                  className="sr-only"
+                  tabIndex={-1}
+                  aria-label="Upload profile photo from computer"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) handlePcPhoto(f);
+                    e.target.value = "";
+                  }}
+                />
+                <Btn onClick={() => fileInputRef.current?.click()}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="17 8 12 3 7 8" />
+                    <line x1="12" y1="3" x2="12" y2="15" />
+                  </svg>
+                  {value.photo ? "Change photo from PC" : "Choose photo from PC"}
+                </Btn>
+                <small>PNG, JPG or WebP · Auto-cropped square</small>
+              </div>
+            ) : (
+              <div className="cv-row" style={{ gap: 8, marginTop: 10, flexWrap: "nowrap" }}>
+                <input
+                  type="url"
+                  aria-label="Profile photo image URL"
+                  placeholder="https://example.com/your-photo.jpg"
+                  className="cv-input"
+                  style={{ marginTop: 0, minHeight: 38 }}
+                  value={urlInput}
+                  onChange={(e) => setUrlInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      applyPhotoUrl();
+                    }
+                  }}
+                />
+                <Btn kind="primary" onClick={applyPhotoUrl}>
+                  Apply URL
+                </Btn>
+              </div>
+            )}
+            {photoErr && <p className="cv-error-text">{photoErr}</p>}
+          </div>
+        </div>
+      </div>
+
       <Field label="Name" rule="The name you use professionally." autoComplete="name" maxLength={LIMITS.name} value={value.fullName} onChange={(v) => set("fullName", v)} {...hook(hooks, "", "fullName")} />
       <div className="cv-pair">
         <Field label="Email" type="email" autoComplete="email" inputMode="email" maxLength={LIMITS.email} value={value.email} onChange={(v) => set("email", v)} {...hook(hooks, "", "email")} />

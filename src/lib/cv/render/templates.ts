@@ -17,6 +17,12 @@ export const ACCENTS: Record<AccentId, { name: string; hex: string }> = {
   copper: { name: "Copper", hex: "#85441D" }, // 7.39:1
   plum: { name: "Plum", hex: "#673E83" }, // 8.10:1
   slate: { name: "Slate", hex: "#384352" }, // 10.03:1
+  emerald: { name: "Emerald", hex: "#166534" }, // 7.15:1
+  crimson: { name: "Crimson", hex: "#991B1B" }, // 8.28:1
+  royal: { name: "Royal Blue", hex: "#1E40AF" }, // 8.59:1
+  forest: { name: "Forest", hex: "#14532D" }, // 9.21:1
+  burgundy: { name: "Burgundy", hex: "#701A46" }, // 9.54:1
+  charcoal: { name: "Charcoal", hex: "#1F2937" }, // 14.6:1
 };
 
 export const INK = "#17181F";
@@ -145,6 +151,54 @@ export const TEMPLATES: Record<TemplateId, TemplateDef> = {
     contact: { align: "right" },
     heading: { size: 12.5, weight: 700, align: "left", accent: false, rule: "bar-before", ruleAccent: true },
   },
+  modern: {
+    id: "modern",
+    name: "Modern",
+    suits: "Clean contemporary layout",
+    order: ["summary", "experience", "skills", "projects", "education"],
+    fonts: { heading: "inter", body: "inter" },
+    accent: "royal",
+    space: { section: 14, entry: 8 },
+    title: { size: 28, weight: 700, align: "left", accent: true, ruleBelow: true },
+    contact: { align: "left" },
+    heading: { size: 12, weight: 700, caps: true, tracking: 0.05, align: "left", accent: true, rule: "bar-before", ruleAccent: true },
+  },
+  minimal: {
+    id: "minimal",
+    name: "Minimal",
+    suits: "Crisp editorial whitespace",
+    order: ["summary", "experience", "education", "skills"],
+    fonts: { heading: "lora", body: "inter" },
+    accent: "charcoal",
+    space: { section: 17, entry: 9 },
+    title: { size: 26, weight: 400, align: "left" },
+    contact: { align: "left", ruleBelow: true },
+    heading: { size: 11, weight: 600, caps: true, tracking: 0.06, align: "left", accent: true, rule: "hairline-below", ruleAccent: true },
+  },
+  creative: {
+    id: "creative",
+    name: "Creative",
+    suits: "Design, product & media roles",
+    order: ["summary", "projects", "experience", "skills", "education"],
+    fonts: { heading: "lora", body: "plex" },
+    accent: "burgundy",
+    space: { section: 15, entry: 8 },
+    title: { size: 31, weight: 700, align: "left", accent: true },
+    contact: { align: "left" },
+    heading: { size: 13, weight: 700, align: "left", accent: true, rule: "short-above", ruleAccent: true },
+  },
+  consulting: {
+    id: "consulting",
+    name: "Consulting",
+    suits: "Strategy, finance & advisory",
+    order: ["education", "experience", "achievements", "skills"],
+    fonts: { heading: "serif", body: "inter" },
+    accent: "forest",
+    space: { section: 13, entry: 7 },
+    title: { size: 25, weight: 700, align: "center", ruleBelow: true },
+    contact: { align: "center", tight: true },
+    heading: { size: 11.5, weight: 700, caps: true, tracking: 0.04, align: "left", accent: true, rule: "hairline-below", ruleAccent: true },
+  },
 };
 
 /** Sections a template does not place go after the ones it does, in this order. */
@@ -171,12 +225,13 @@ export interface PaperStyle {
 
 const PAGES = { a4: { width: 595.28, height: 841.89 }, letter: { width: 612, height: 792 } };
 
-export function paperStyle(design: { template: TemplateId; pageSize: "a4" | "letter"; density: Density; fonts?: TemplateId; accent?: AccentId }): PaperStyle {
+export function paperStyle(design: { template: TemplateId; pageSize: "a4" | "letter"; density: Density; fonts?: TemplateId; accent?: AccentId; customAccent?: string }): PaperStyle {
   const template = TEMPLATES[design.template] ?? TEMPLATES.standard;
+  const customHex = design.customAccent && /^#[0-9A-Fa-f]{6}$/.test(design.customAccent) ? design.customAccent : undefined;
   return {
     template,
     fonts: TEMPLATES[design.fonts ?? template.id]?.fonts ?? template.fonts,
-    accent: ACCENTS[design.accent ?? template.accent].hex,
+    accent: customHex ?? ACCENTS[design.accent ?? template.accent].hex,
     density: DENSITY_FACTOR[design.density] ?? 1,
     // The same safe margins on every template: wide enough for any printer, and never changed by fitting.
     page: { ...PAGES[design.pageSize], marginX: 50, marginY: 46 },

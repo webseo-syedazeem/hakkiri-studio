@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import type { QuestionGroup } from "@/lib/types";
 import { Button, Icon } from "@/components/ui";
+import { useAuth } from "@/lib/auth/AuthContext";
 import { SettingsPicker } from "./SettingsPicker";
 import type { DrillSpec } from "@/lib/sessions/drills";
 import { CATEGORY_LABEL, type Mix, type SessionSettings, type TechnicalLabel } from "@/lib/interviews/settings";
@@ -46,6 +47,133 @@ function usePlan(interviewId: string, micOk: boolean) {
     }
   }
   return { plan, busy, slow, error };
+}
+
+const PREP_STEPS = [
+  "Analysing role criteria & candidate profile",
+  "Structuring tailored interview questions & follow-up probes",
+  "Calibrating AI interviewer voice & studio acoustics",
+  "Opening your live rehearsal booth",
+] as const;
+
+function PreparingSessionModal() {
+  const { user } = useAuth();
+  const displayName = user?.firstName || user?.email?.split("@")[0] || "Candidate";
+  const [stepIdx, setStepIdx] = useState(0);
+  const [pct, setPct] = useState(18);
+
+  useEffect(() => {
+    const stepTimer = setInterval(() => {
+      setStepIdx((prev) => (prev < PREP_STEPS.length - 1 ? prev + 1 : prev));
+    }, 1150);
+    const pctTimer = setInterval(() => {
+      setPct((prev) => (prev < 94 ? Math.min(94, prev + Math.max(2, Math.round((95 - prev) * 0.18))) : prev));
+    }, 320);
+    return () => {
+      clearInterval(stepTimer);
+      clearInterval(pctTimer);
+    };
+  }, []);
+
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      data-testid="preparing-session-container"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-4 backdrop-blur-md animate-fade-in"
+    >
+      <div className="relative w-full max-w-[490px] overflow-hidden rounded-2xl border border-blue/35 bg-[#191a24]/95 p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_28px_72px_-12px_rgba(0,0,0,0.85)] animate-scale-in">
+        {/* Ambient top glow */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -top-24 left-1/2 h-48 w-80 -translate-x-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(92,95,252,0.28),transparent_70%)]"
+        />
+
+        {/* Header with user name & animated voice bars */}
+        <div className="relative flex items-start gap-4">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-blue/40 bg-gradient-to-br from-[#4f52f8]/30 to-[#6d5eff]/15 text-blue-soft shadow-[0_0_24px_rgba(79,82,248,0.35)]">
+            <div className="flex items-end gap-1 h-5" aria-hidden="true">
+              <span className="w-1 h-4 rounded-full bg-blue-soft animate-wave" style={{ animationDelay: "0ms" }} />
+              <span className="w-1 h-5 rounded-full bg-white animate-wave" style={{ animationDelay: "180ms" }} />
+              <span className="w-1 h-3.5 rounded-full bg-blue-soft animate-wave" style={{ animationDelay: "360ms" }} />
+              <span className="w-1 h-5 rounded-full bg-white animate-wave" style={{ animationDelay: "520ms" }} />
+            </div>
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center justify-between gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-blue/30 bg-blue/15 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-blue-soft">
+                <span className="h-1.5 w-1.5 rounded-full bg-blue animate-ping" />
+                Live Studio Setup
+              </span>
+              <span className="num text-xs font-bold text-blue-soft">{pct}%</span>
+            </div>
+            <h3 className="mt-2 text-lg font-semibold tracking-tight text-white">
+              Preparing your interview, {displayName}…
+            </h3>
+            <p className="mt-0.5 text-[13px] text-muted">
+              Setting up your tailored questions and interviewer voice. Everything will open automatically in a moment.
+            </p>
+          </div>
+        </div>
+
+        {/* Animated Shimmer Progress Bar */}
+        <div className="mt-5 h-2 w-full overflow-hidden rounded-full bg-[#111219] border border-white/10">
+          <div
+            className="relative h-full rounded-full bg-gradient-to-r from-[#4f52f8] via-[#7b88ff] to-[#aeb6ff] shadow-[0_0_14px_rgba(123,136,255,0.65)] transition-all duration-300 ease-out"
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+
+        {/* Live Step-by-Step Checklist */}
+        <ul className="mt-5 space-y-2.5">
+          {PREP_STEPS.map((stepText, idx) => {
+            const done = idx < stepIdx;
+            const active = idx === stepIdx;
+            return (
+              <li
+                key={stepText}
+                className={clsx(
+                  "flex items-center justify-between gap-3 rounded-xl border px-3.5 py-2.5 text-[13px] transition-all duration-300",
+                  done
+                    ? "border-emerald-400/25 bg-emerald-500/10 text-white"
+                    : active
+                      ? "border-blue/40 bg-blue/15 text-white shadow-[0_4px_16px_-4px_rgba(79,82,248,0.35)]"
+                      : "border-white/5 bg-white/[0.02] text-muted opacity-65",
+                )}
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  {done ? (
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-400/20 text-emerald-300 text-xs font-bold">
+                      ✓
+                    </span>
+                  ) : active ? (
+                    <span className="h-4 w-4 shrink-0 rounded-full border-2 border-blue-soft/30 border-t-blue-soft animate-spin" />
+                  ) : (
+                    <span className="h-2 w-2 mx-1.5 shrink-0 rounded-full bg-white/25" />
+                  )}
+                  <span className="truncate font-medium">{stepText}</span>
+                </div>
+                <span
+                  className={clsx(
+                    "shrink-0 text-[11px] font-semibold",
+                    done ? "text-emerald-300" : active ? "text-blue-soft" : "text-dim",
+                  )}
+                >
+                  {done ? "Completed" : active ? "In progress…" : "Queued"}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+
+        <div className="mt-4 flex items-center justify-center gap-2 text-center text-[12px] text-muted">
+          <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+          <span>Please stay on this screen — your studio will launch automatically</span>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 /** One button that starts a planned session: an interview with saved settings, a re-run, or a drill. */
@@ -94,6 +222,7 @@ export function StartButton({
           </span>
         ) : children}
       </Button>
+      {busy && <PreparingSessionModal />}
       {error && (
         <span role="alert" className="max-w-[320px] text-right text-xs text-red-soft">
           {error}
@@ -146,6 +275,7 @@ export function NewInterviewPanel({
           {busy ? (slow ? "Preparing questions…" : "Starting…") : label}
         </Button>
       </div>
+      {busy && <PreparingSessionModal />}
       {error && (
         <p role="alert" className="mt-2 text-right text-[13px] text-red-soft">
           {error}

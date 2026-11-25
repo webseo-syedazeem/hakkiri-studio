@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { fileBaseName, fileName } from "@/lib/cv/render/filename";
 import { cannotDrawAdvice } from "@/lib/cv/render/fonts";
 import { paperOrder } from "@/lib/cv/render/flow";
@@ -66,6 +66,171 @@ function statusOf(check: FileCheck | undefined, checks: FileChecks | null, curre
   return { word: "Check failed", tone: "bad" };
 }
 
+function hexToHsv(hex: string): { h: number; s: number; v: number } {
+  const clean = /^#?([0-9A-Fa-f]{6})$/.exec(hex.trim());
+  if (!clean) return { h: 230, s: 75, v: 85 };
+  const n = parseInt(clean[1], 16);
+  const r = ((n >> 16) & 255) / 255;
+  const g = ((n >> 8) & 255) / 255;
+  const b = (n & 255) / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const d = max - min;
+  let h = 0;
+  if (d !== 0) {
+    if (max === r) h = ((g - b) / d) % 6;
+    else if (max === g) h = (b - r) / d + 2;
+    else h = (r - g) / d + 4;
+    h = Math.round(h * 60);
+    if (h < 0) h += 360;
+  }
+  const s = max === 0 ? 0 : Math.round((d / max) * 100);
+  const v = Math.round(max * 100);
+  return { h, s, v };
+}
+
+function hsvToHex(h: number, s: number, v: number): string {
+  const sNorm = Math.max(0, Math.min(100, s)) / 100;
+  const vNorm = Math.max(0, Math.min(100, v)) / 100;
+  const c = vNorm * sNorm;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = vNorm - c;
+  let r = 0, g = 0, b = 0;
+  if (h >= 0 && h < 60) { r = c; g = x; b = 0; }
+  else if (h >= 60 && h < 120) { r = x; g = c; b = 0; }
+  else if (h >= 120 && h < 180) { r = 0; g = c; b = x; }
+  else if (h >= 180 && h < 240) { r = 0; g = x; b = c; }
+  else if (h >= 240 && h < 300) { r = x; g = 0; b = c; }
+  else { r = c; g = 0; b = x; }
+  const toHex = (val: number) => Math.round((val + m) * 255).toString(16).padStart(2, "0").toUpperCase();
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+function CustomColorPicker({ value, onChange }: { value: string; onChange: (hex: string) => void }) {
+  const [hsv, setHsv] = useState(() => hexToHsv(value));
+  const [hexInput, setHexInput] = useState(value.toUpperCase());
+  const boxRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setHexInput(value.toUpperCase());
+    setHsv(hexToHsv(value));
+  }, [value]);
+
+  const updateFromHsv = (next: { h: number; s: number; v: number }) => {
+    setHsv(next);
+    const hex = hsvToHex(next.h, next.s, next.v);
+    setHexInput(hex);
+    onChange(hex);
+  };
+
+  const handlePointer = (clientX: number, clientY: number) => {
+    const el = boxRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const s = Math.round(Math.max(0, Math.min(1, (clientX - rect.left) / rect.width)) * 100);
+    const v = Math.round((1 - Math.max(0, Math.min(1, (clientY - rect.top) / rect.height))) * 100);
+    updateFromHsv({ ...hsv, s, v });
+  };
+
+  return (
+    <div className="cv-custom-color-card" data-testid="custom-color-picker">
+      <div className="cv-row" style={{ justifyContent: "space-between", marginBottom: 10 }}>
+        <span className="cv-label" style={{ fontSize: 13 }}>Custom color</span>
+        <span className="cv-chip" style={{ gap: 6, padding: "2px 9px" }}>
+          <span style={{ width: 11, height: 11, borderRadius: "50%", background: value, display: "inline-block", border: "1px solid rgba(255,255,255,0.35)" }} />
+          <span style={{ fontFamily: "monospace", fontSize: 11.5 }}>{value.toUpperCase()}</span>
+        </span>
+      </div>
+
+      {/* 2D Saturation / Value Gradient Canvas */}
+      <div
+        ref={boxRef}
+        role="slider"
+        aria-label="Color saturation and brightness"
+        aria-valuetext={value}
+        tabIndex={0}
+        className="cv-color-sv-box"
+        style={{ backgroundColor: `hsl(${hsv.h}, 100%, 50%)` }}
+        onMouseDown={(e) => {
+          handlePointer(e.clientX, e.clientY);
+          const onMove = (ev: MouseEvent) => handlePointer(ev.clientX, ev.clientY);
+          const onUp = () => {
+            window.removeEventListener("mousemove", onMove);
+            window.removeEventListener("mouseup", onUp);
+          };
+          window.addEventListener("mousemove", onMove);
+          window.addEventListener("mouseup", onUp);
+        }}
+      >
+        <div className="cv-color-sv-white" />
+        <div className="cv-color-sv-black" />
+        <span
+          className="cv-color-sv-thumb"
+          style={{
+            left: `${hsv.s}%`,
+            top: `${100 - hsv.v}%`,
+            backgroundColor: value,
+          }}
+        />
+      </div>
+
+      {/* Rainbow Hue Slider */}
+      <div style={{ marginTop: 12 }}>
+        <input
+          type="range"
+          min={0}
+          max={360}
+          value={hsv.h}
+          aria-label="Color hue"
+          className="cv-hue-slider"
+          onChange={(e) => updateFromHsv({ ...hsv, h: Number(e.target.value) })}
+        />
+      </div>
+
+      {/* HEX Input & Brightness Nudge Controls */}
+      <div className="cv-color-hex-row">
+        <span className="cv-eyebrow" style={{ fontSize: 10.5, letterSpacing: "0.08em" }}>HEX</span>
+        <div className="cv-row" style={{ gap: 8, marginTop: 4, flexWrap: "nowrap" }}>
+          <input
+            type="text"
+            aria-label="Custom color HEX code"
+            className="cv-input cv-color-hex-input"
+            maxLength={7}
+            value={hexInput}
+            onChange={(e) => {
+              const raw = e.target.value;
+              const formatted = raw.startsWith("#") ? raw : `#${raw}`;
+              setHexInput(formatted.toUpperCase());
+              if (/^#[0-9A-Fa-f]{6}$/.test(formatted)) {
+                setHsv(hexToHsv(formatted));
+                onChange(formatted.toUpperCase());
+              }
+            }}
+          />
+          <div className="cv-color-steppers">
+            <button
+              type="button"
+              aria-label="Brighten custom color"
+              title="Brighten"
+              onClick={() => updateFromHsv({ ...hsv, v: Math.min(100, hsv.v + 6) })}
+            >
+              ▲
+            </button>
+            <button
+              type="button"
+              aria-label="Darken custom color"
+              title="Darken"
+              onClick={() => updateFromHsv({ ...hsv, v: Math.max(10, hsv.v - 6) })}
+            >
+              ▼
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /**
  * The Finish tab: how the CV looks on the page, the order it is printed in,
  * and the files. Every choice here is one the template allows: the page stays
@@ -80,9 +245,11 @@ export function Finish({ onOverflow, say }: { onOverflow: () => void; say: (text
   const [problem, setProblem] = useState("");
   const [downloads, setDownloads] = useState(0);
   const design = cv.design;
+  const [showCustomColor, setShowCustomColor] = useState(Boolean(design.customAccent));
   const word = docWord(cv.region);
   const template = TEMPLATES[design.template];
   const accent = design.accent ?? template.accent;
+  const activeHex = design.customAccent ?? ACCENTS[accent].hex;
   const fonts = design.fonts ?? template.id;
   const fontChoice = FONT_CHOICES.find((c) => pairLabel(TEMPLATES[c.id].fonts) === pairLabel(TEMPLATES[fonts].fonts))?.id ?? template.id;
   const set = (changes: Partial<Design>) => update({ design: { ...design, ...changes } });
@@ -183,7 +350,7 @@ export function Finish({ onOverflow, say }: { onOverflow: () => void; say: (text
               return (
                 <label key={id} className="cv-choice cv-template">
                   <input type="radio" name="template" className="sr-only" checked={design.template === id} onChange={() => set({ template: id })} />
-                  <TemplateThumb def={t} accent={ACCENTS[design.accent ?? t.accent].hex} />
+                  <TemplateThumb def={t} accent={design.customAccent ?? ACCENTS[design.accent ?? t.accent].hex} />
                   <span className="min-w-0">
                     <b>
                       {design.template === id && <span aria-hidden="true">✓ </span>}
@@ -219,16 +386,59 @@ export function Finish({ onOverflow, say }: { onOverflow: () => void; say: (text
           </div>
           <fieldset>
             <legend className="cv-label">Colour</legend>
-            <div className="cv-row" style={{ gap: 8, marginTop: 6 }}>
+            <div className="cv-row" style={{ gap: 8, marginTop: 8 }}>
               {CV_ACCENTS.map((id: AccentId) => (
                 <label key={id} className="cv-swatch" title={ACCENTS[id].name}>
-                  <input type="radio" name="accent" className="sr-only" checked={accent === id} onChange={() => set({ accent: id })} />
+                  <input
+                    type="radio"
+                    name="accent"
+                    className="sr-only"
+                    checked={!design.customAccent && accent === id}
+                    onChange={() => {
+                      setShowCustomColor(false);
+                      set({ accent: id, customAccent: undefined });
+                    }}
+                  />
                   <span style={{ background: ACCENTS[id].hex }} aria-hidden="true" />
                   <span className="sr-only">{ACCENTS[id].name}</span>
                 </label>
               ))}
+              <button
+                type="button"
+                title="Choose a custom colour"
+                aria-label="Custom color"
+                aria-pressed={showCustomColor || Boolean(design.customAccent)}
+                onClick={() => {
+                  const nextOpen = !showCustomColor;
+                  setShowCustomColor(nextOpen);
+                  if (nextOpen && !design.customAccent) {
+                    set({ customAccent: activeHex });
+                  }
+                }}
+                className="cv-swatch cv-swatch-custom"
+                data-active={Boolean(design.customAccent) || undefined}
+              >
+                <span
+                  aria-hidden="true"
+                  style={
+                    design.customAccent
+                      ? { background: design.customAccent }
+                      : { background: "conic-gradient(from 90deg, #ff4d4d, #f9cb28, #22c55e, #06b6d4, #4f52f8, #d946ef, #ff4d4d)" }
+                  }
+                >
+                  {design.customAccent ? "✓" : "+"}
+                </span>
+              </button>
             </div>
-            <small style={{ display: "block", marginTop: 6 }}>{ACCENTS[accent].name}. Used for headings and rules only; body text stays black.</small>
+            {(showCustomColor || Boolean(design.customAccent)) && (
+              <CustomColorPicker
+                value={activeHex}
+                onChange={(hex) => set({ customAccent: hex })}
+              />
+            )}
+            <small style={{ display: "block", marginTop: 8 }}>
+              {design.customAccent ? `Custom (${design.customAccent.toUpperCase()})` : ACCENTS[accent].name}. Used for headings and rules only; body text stays black.
+            </small>
           </fieldset>
         </div>
       </Panel>

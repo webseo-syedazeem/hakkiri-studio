@@ -315,25 +315,48 @@ function Row({ cv, indent, onAction }: { cv: CvSummary; indent?: boolean; onActi
   const href = cv.pendingImportId ? `/cv/import/${cv.pendingImportId}` : indent && cv.fit !== undefined ? `/cv/v/${cv.id}/tailor` : `/cv/v/${cv.id}/edit/contact`;
   const target = [cv.targetTitle, cv.targetEmployer].filter(Boolean).join(" · ");
   return (
-    <div className="cv-pick cv-dashboard-row" data-child={indent || undefined} style={indent ? { paddingLeft: 44 } : undefined}>
-      <div className="cv-dashboard-top">
+    <div className="cv-pick cv-dashboard-row" data-child={indent || undefined} style={indent ? { paddingLeft: 48 } : undefined}>
+      <div className="cv-dashboard-main">
+        <div className="cv-doc-avatar" data-tailored={cv.kind === "tailored" || undefined} aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="8" y1="13" x2="16" y2="13" />
+            <line x1="8" y1="17" x2="13" y2="17" />
+          </svg>
+        </div>
         <div className="min-w-0 grow">
-          <Link href={href} className="cv-dashboard-title hover:underline" style={{ overflowWrap: "anywhere" }}>
-            {cv.name}
-          </Link>
-          <small style={{ display: "block", marginTop: 3 }}>
+          <div className="cv-row" style={{ gap: 10 }}>
+            <Link href={href} className="cv-dashboard-title hover:underline" style={{ overflowWrap: "anywhere" }}>
+              {cv.name}
+            </Link>
+            {cv.pendingImportId ? (
+              <span className="cv-chip cv-link" style={{ textDecoration: "none" }} data-testid="row-upload">
+                {cv.importFailed ? "Upload not read" : "Upload to check"}
+              </span>
+            ) : cv.empty ? (
+              <span className="cv-chip">Empty</span>
+            ) : null}
+            {cv.score !== undefined && !cv.pendingImportId && (
+              <span className="cv-chip cv-chip-score" data-testid="row-score">
+                Score {cv.score}
+              </span>
+            )}
+            {cv.fit !== undefined && (
+              <span className="cv-chip cv-chip-score" data-testid="row-fit">
+                Job fit {cv.fit}
+              </span>
+            )}
+          </div>
+          <small style={{ display: "block", marginTop: 4 }}>
             {cv.kind === "tailored" ? (indent ? "Tailored version" : `Tailored version (its base ${docWord(cv.region)} was deleted)`) : `Base ${docWord(cv.region)}`} · {LEVEL_LABELS[cv.level]} · {cv.region.toUpperCase()}
             {target ? ` · ${target}` : ""} · Edited {when(cv.updatedAt)}
           </small>
         </div>
-        <div className="cv-row" style={{ gap: 8 }}>
-          {cv.pendingImportId ? <span className="cv-chip cv-link" style={{ textDecoration: "none" }} data-testid="row-upload">{cv.importFailed ? "Upload not read" : "Upload to check"}</span> : cv.empty ? <span className="cv-chip">Empty</span> : null}
-          {cv.score !== undefined && !cv.pendingImportId && <span className="cv-chip cv-chip-score" data-testid="row-score">Score {cv.score}</span>}
-          {cv.fit !== undefined && <span className="cv-chip" data-testid="row-fit">Job fit {cv.fit}</span>}
-        </div>
       </div>
+
       <div className="cv-dashboard-actions">
-        <span className="cv-controls" style={{ marginLeft: 0, justifyContent: "flex-start" }}>
+        <span className="cv-controls" style={{ marginLeft: 0 }}>
           {!indent && !cv.empty && !cv.pendingImportId && (
             <Btn onClick={() => onAction("tailor")} aria-label={`Tailor ${cv.name} to a job`}>
               Tailor to a job
@@ -354,7 +377,7 @@ function Row({ cv, indent, onAction }: { cv: CvSummary; indent?: boolean; onActi
             Delete
           </Btn>
         </span>
-        <BtnLink href={href} className="cv-push">
+        <BtnLink kind="primary" href={href}>
           {cv.pendingImportId ? (cv.importFailed ? "Try again" : "Check upload") : "Open"}
         </BtnLink>
       </div>

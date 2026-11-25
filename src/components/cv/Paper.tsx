@@ -48,10 +48,74 @@ function termBoxes(layout: Layout, page: number, term: string): { x: number; y: 
   return out;
 }
 
-function Page({ layout, flow, page, margin, cv, focus, onPick, label, highlight, overlay }: { layout: Layout; flow: Flow; page: number; margin: number; cv: Pick<CvDoc, "sections">; focus: Locator | null; onPick?: (at: Locator) => void; label: string; highlight?: string; overlay?: (page: number) => ReactNode }) {
+function Page({
+  layout,
+  flow,
+  page,
+  margin,
+  cv,
+  accent,
+  titleAlign,
+  focus,
+  onPick,
+  label,
+  highlight,
+  overlay,
+}: {
+  layout: Layout;
+  flow: Flow;
+  page: number;
+  margin: number;
+  cv: Pick<CvDoc, "sections"> & { contact?: CvDoc["contact"] };
+  accent?: string;
+  titleAlign?: "left" | "center" | "right";
+  focus: Locator | null;
+  onPick?: (at: Locator) => void;
+  label: string;
+  highlight?: string;
+  overlay?: (page: number) => ReactNode;
+}) {
+  const photo = page === 0 ? cv.contact?.photo : undefined;
+  const photoShape = cv.contact?.photoShape ?? "circle";
+  const photoSize = 52;
+  const photoRx = photoShape === "circle" ? photoSize / 2 : photoShape === "rounded" ? 10 : 3;
+  const photoX = titleAlign === "right" ? margin : layout.width - margin - photoSize;
+  const photoY = 38;
   return (
     <svg className="cv-paper" viewBox={`0 0 ${layout.width} ${layout.height}`} role="img" aria-label={label} style={{ fontKerning: "none", fontVariantLigatures: "none" }}>
       <rect width={layout.width} height={layout.height} fill={PAPER} />
+      {photo && (
+        <g
+          className="cv-paper-photo"
+          style={{ cursor: onPick ? "pointer" : undefined }}
+          onClick={onPick && (() => onPick({ section: "contact", field: "fullName" }))}
+        >
+          <defs>
+            <clipPath id="cv-photo-clip">
+              <rect x={photoX} y={photoY} width={photoSize} height={photoSize} rx={photoRx} />
+            </clipPath>
+          </defs>
+          <image
+            href={photo}
+            x={photoX}
+            y={photoY}
+            width={photoSize}
+            height={photoSize}
+            preserveAspectRatio="xMidYMid slice"
+            clipPath="url(#cv-photo-clip)"
+          />
+          <rect
+            x={photoX}
+            y={photoY}
+            width={photoSize}
+            height={photoSize}
+            rx={photoRx}
+            fill="none"
+            stroke={accent || "#3D4BD8"}
+            strokeWidth={1.4}
+          />
+        </g>
+      )}
       {layout.rules.filter((r) => r.page === page).map((r, i) => (
         <rect key={i} x={r.x} y={r.y} width={r.width} height={r.height} fill={r.color} />
       ))}
@@ -140,7 +204,7 @@ export interface PaperViewProps {
   paper: Paper | null;
   state: "loading" | "ready" | "failed";
   retry: () => void;
-  cv: Pick<CvDoc, "sections" | "region">;
+  cv: Pick<CvDoc, "sections" | "region"> & { contact?: CvDoc["contact"] };
   focus: Locator | null;
   onPick?: (at: Locator) => void;
   /** What the document is called: "CV" or "resume". */
@@ -206,7 +270,7 @@ export function PaperView({ paper, state, retry, cv, focus, onPick, word, childr
       </div>
     );
 
-  const empty = paper.layout.blocks.length === 0;
+  const empty = paper.layout.blocks.length === 0 && !cv.contact?.photo;
   const zoomIndex = zoom === "fit" ? -1 : ZOOMS.indexOf(zoom);
   const widthPx = zoom === "fit" ? undefined : paper.layout.width * PX_PER_PT * zoom;
   return (
@@ -253,7 +317,20 @@ export function PaperView({ paper, state, retry, cv, focus, onPick, word, childr
         <>
           <div className="cv-paperscroll" data-state={state} data-zoom={zoom === "fit" ? "fit" : "zoomed"} tabIndex={0} role="region" aria-label={`Your ${word} on paper`}>
             <div className="cv-papersheet" style={{ width: widthPx ?? "100%" }}>
-              <Page layout={paper.layout} flow={paper.flow} page={current} margin={paper.style.page.marginX} cv={cv} focus={focus} onPick={onPick} highlight={highlight} overlay={overlay} label={empty ? `An empty page. Your ${word} will appear here as you fill it in.` : `Page ${current + 1} of ${pages} of your ${word}. Use Text view to read it.`} />
+              <Page
+                layout={paper.layout}
+                flow={paper.flow}
+                page={current}
+                margin={paper.style.page.marginX}
+                cv={cv}
+                accent={paper.style.accent}
+                titleAlign={paper.style.template.title.align}
+                focus={focus}
+                onPick={onPick}
+                highlight={highlight}
+                overlay={overlay}
+                label={empty ? `An empty page. Your ${word} will appear here as you fill it in.` : `Page ${current + 1} of ${pages} of your ${word}. Use Text view to read it.`}
+              />
               {empty && <p className="cv-paperhint">Your {word} will appear here as you fill it in.</p>}
             </div>
           </div>
