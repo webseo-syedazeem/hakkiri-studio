@@ -7,6 +7,9 @@ export const metadata: Metadata = {
     absolute: "Terms of Use · Hakkiri",
   },
   description: "The terms for using Hakkiri Studio.",
+  alternates: {
+    canonical: "https://hakkiri.studio/terms",
+  },
 };
 
 const DRAFT = false;

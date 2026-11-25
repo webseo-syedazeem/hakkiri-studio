@@ -14,9 +14,6 @@ export function generateMetadata(): Metadata {
 
   return {
     metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://hakkiri.studio"),
-    alternates: {
-      canonical: "https://hakkiri.studio/",
-    },
     title: {
       default: "Hakkiri · Practise for the interview you actually have",
       template: "%s",
@@ -77,7 +74,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className="overflow-x-clip">
       <head>
-        <link rel="canonical" href="https://hakkiri.studio/" />
         <meta
           name="google-site-verification"
           content={process.env.NEXT_PUBLIC_GSC_VERIFICATION || "XiNOBpixzNRt0PdX_ByqjV0fKCLDyejeIcFXB-TqRwY"}

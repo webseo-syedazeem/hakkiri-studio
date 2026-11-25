@@ -8,6 +8,9 @@ export const metadata: Metadata = {
   },
   description:
     "What Hakkiri Studio collects, why, who it shares it with, how long it keeps it, and your rights under UK GDPR.",
+  alternates: {
+    canonical: "https://hakkiri.studio/privacy",
+  },
 };
 
 const DRAFT = false;

@@ -23,7 +23,7 @@ export async function generateMetadata(
   const cleanMeta = metaTitle.replace(/\s*[|·-]\s*Hakkiri(\s*Blog)?$/i, "").trim();
   const finalTitle = `${cleanMeta} | Hakkiri Blog`;
   const metaDescription = post.seo.metaDescription || post.excerpt;
-  const canonicalUrl = post.seo.canonicalUrl || `https://hakkiri.com/blog/${post.slug}`;
+  const canonicalUrl = post.seo.canonicalUrl || `https://hakkiri.studio/blog/${post.slug}`;
   const ogImage = post.seo.ogImage || post.coverImage;
 
   return {

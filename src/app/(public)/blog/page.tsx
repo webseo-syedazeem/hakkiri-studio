@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     description: "Actionable guides to passing high-stakes interviews with realistic AI practice.",
   },
   alternates: {
-    canonical: "https://hakkiri.com/blog",
+    canonical: "https://hakkiri.studio/blog",
   },
 };
 

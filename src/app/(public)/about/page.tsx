@@ -8,6 +8,9 @@ export const metadata: Metadata = {
   },
   description:
     "Why we built Hakkiri: interview practice and career applications grounded in truth, evidence, and your authentic voice. No AI hallucinations, no accent scoring.",
+  alternates: {
+    canonical: "https://hakkiri.studio/about",
+  },
 };
 
 export default function AboutPage() {
