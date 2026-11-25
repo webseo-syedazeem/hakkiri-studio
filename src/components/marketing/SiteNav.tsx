@@ -26,11 +26,9 @@ export function SiteNav() {
   ];
 
   const secondaryLinks: [string, string, boolean][] = [
-    ["/about", "About", path === "/about"],
-    ["/blog", "Blog", path.startsWith("/blog")],
     [`${base}#how`, "How it works", false],
-    [`${base}#beta`, "Beta", false],
-    [`${base}#faq`, "Questions", false],
+    ["/blog", "Blog", path.startsWith("/blog")],
+    ["/about", "About", path === "/about"],
   ];
 
   const isUserAdmin = !!user?.isAdmin;
@@ -55,7 +53,7 @@ export function SiteNav() {
   }, [userMenuOpen, questionsMenuOpen]);
 
   return (
-    <nav aria-label="Main" className="flex items-center gap-1.5 text-[13px] sm:gap-2.5">
+    <nav aria-label="Main" className="flex items-center gap-1 sm:gap-2 text-[13px]">
       {/* Primary Navigation Links */}
       {interviewLinks.map(([href, label, current]) => (
         <Link
@@ -63,10 +61,10 @@ export function SiteNav() {
           href={href}
           aria-current={current ? "page" : undefined}
           className={clsx(
-            "hidden rounded-full px-3 py-1.5 transition-all duration-200 md:inline font-medium text-[13px]",
+            "hidden rounded-full px-3.5 py-1.5 transition-all duration-200 md:inline-flex items-center font-medium text-[13px] whitespace-nowrap leading-none",
             current
-              ? "text-mk-ink font-semibold bg-black/[0.05] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.04)]"
-              : "text-mk-ink/70 hover:text-mk-ink hover:bg-black/[0.03]"
+              ? "text-slate-900 font-semibold bg-black/[0.06] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.04)]"
+              : "text-slate-600 hover:text-slate-900 hover:bg-black/[0.04]"
           )}
         >
           {label}
@@ -84,19 +82,19 @@ export function SiteNav() {
           type="button"
           onClick={() => setQuestionsMenuOpen((prev) => !prev)}
           className={clsx(
-            "inline-flex items-center gap-1 rounded-full px-3 py-1.5 transition-all duration-200 font-medium text-[13px] cursor-pointer",
+            "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 transition-all duration-200 font-medium text-[13px] cursor-pointer whitespace-nowrap leading-none",
             isQuestionsActive
-              ? "text-mk-ink font-semibold bg-black/[0.05] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.04)]"
-              : "text-mk-ink/70 hover:text-mk-ink hover:bg-black/[0.03]"
+              ? "text-slate-900 font-semibold bg-black/[0.06] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.04)]"
+              : "text-slate-600 hover:text-slate-900 hover:bg-black/[0.04]"
           )}
           aria-expanded={questionsMenuOpen}
         >
           <span>Interview Questions</span>
-          <IconChevronDown className={clsx("h-3 w-3 text-slate-400 transition-transform duration-200", questionsMenuOpen && "rotate-180")} />
+          <IconChevronDown className={clsx("h-3.5 w-3.5 text-slate-400 transition-transform duration-200", questionsMenuOpen && "rotate-180 text-slate-700")} />
         </button>
 
         {questionsMenuOpen && (
-          <div className="absolute left-0 top-[calc(100%+6px)] z-50 w-72 rounded-2xl border border-black/10 bg-white/95 p-2 shadow-xl backdrop-blur-xl animate-dropdown">
+          <div className="absolute left-0 top-[calc(100%+8px)] z-50 w-76 rounded-2xl border border-black/10 bg-white/95 p-2 shadow-2xl backdrop-blur-xl animate-dropdown">
             <Link
               href="/interview-questions"
               onClick={() => setQuestionsMenuOpen(false)}
@@ -162,34 +160,34 @@ export function SiteNav() {
           href={href}
           aria-current={current ? "page" : undefined}
           className={clsx(
-            "hidden rounded-full px-3 py-1.5 transition-all duration-200 md:inline font-medium text-[13px]",
+            "hidden rounded-full px-3.5 py-1.5 transition-all duration-200 md:inline-flex items-center font-medium text-[13px] whitespace-nowrap leading-none",
             current
-              ? "text-mk-ink font-semibold bg-black/[0.05] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.04)]"
-              : "text-mk-ink/70 hover:text-mk-ink hover:bg-black/[0.03]"
+              ? "text-slate-900 font-semibold bg-black/[0.06] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.04)]"
+              : "text-slate-600 hover:text-slate-900 hover:bg-black/[0.04]"
           )}
         >
           {label}
         </Link>
       ))}
 
-      {/* Admin Quick Portal Badge (matching Screenshot 9) */}
+      {/* Admin Quick Portal Badge */}
       {isUserAdmin && (
         <Link
           href="/admin"
-          className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-purple-500/30 bg-purple-500/10 px-3 py-1.5 text-xs font-semibold text-purple-700 hover:bg-purple-500/20 transition-all hover:scale-[1.03] whitespace-nowrap shrink-0"
+          className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-purple-500/25 bg-purple-50 px-2.5 py-1 text-xs font-semibold text-purple-700 hover:bg-purple-100/80 transition-all hover:scale-[1.02] active:scale-[0.98] whitespace-nowrap shrink-0 shadow-sm"
         >
-          <span className="h-2 w-2 rounded-full bg-purple-600 animate-pulse"></span>
+          <span className="h-1.5 w-1.5 rounded-full bg-purple-600 animate-pulse"></span>
           <span>Admin</span>
         </Link>
       )}
 
       {/* Auth / Studio CTAs */}
       {user ? (
-        <div className="relative flex items-center gap-2 pl-1 shrink-0" ref={menuRef}>
+        <div className="relative flex items-center gap-2.5 pl-2 shrink-0" ref={menuRef}>
           {/* Main Open Studio CTA Button */}
           <Link
             href="/dashboard"
-            className="rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:shadow-md hover:shadow-blue-500/25 hover:scale-[1.03] active:scale-[0.98] transition-all whitespace-nowrap inline-flex items-center justify-center shrink-0"
+            className="rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:shadow-md hover:shadow-blue-500/25 hover:scale-[1.02] active:scale-[0.98] transition-all whitespace-nowrap inline-flex items-center justify-center shrink-0"
           >
             Open Studio
           </Link>
@@ -200,7 +198,7 @@ export function SiteNav() {
             onClick={() => setUserMenuOpen((prev) => !prev)}
             aria-label="User account menu"
             aria-expanded={userMenuOpen}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-tr from-slate-900 via-slate-800 to-indigo-950 text-[11px] font-bold tracking-tight text-white shadow-md ring-1 ring-black/10 hover:ring-2 hover:ring-blue-500/50 hover:scale-105 active:scale-95 transition-all cursor-pointer select-none shrink-0"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-tr from-slate-900 via-slate-800 to-indigo-950 text-[11px] font-bold tracking-tight text-white shadow-sm ring-1 ring-black/10 hover:ring-2 hover:ring-blue-500/40 hover:scale-105 active:scale-95 transition-all cursor-pointer select-none shrink-0"
             title={`${user.firstName || "User"} (${user.email || ""})`}
           >
             {user.initials || "U"}

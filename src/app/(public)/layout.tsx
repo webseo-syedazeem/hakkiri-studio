@@ -9,11 +9,11 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:shadow">
         Skip to content
       </a>
-      <header className="sticky top-0 z-30 border-b border-black/[0.06] bg-white/80 backdrop-blur-xl backdrop-saturate-150 w-full">
-        <div className="mx-auto flex h-14 w-full max-w-[1120px] items-center justify-between gap-4 px-4 sm:px-6">
-          <Link href="/" className="group flex items-center gap-2 text-[17px] font-semibold tracking-[-0.01em]">
+      <header className="sticky top-0 z-30 border-b border-black/[0.06] bg-white/85 backdrop-blur-xl backdrop-saturate-150 w-full">
+        <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+          <Link href="/" className="group flex items-center gap-2.5 text-[17px] font-semibold tracking-[-0.01em] shrink-0">
             <span className="transition-transform duration-300 group-hover:scale-110">
-              <Mark size={26} />
+              <Mark size={28} />
             </span>
             Hakkiri
           </Link>
