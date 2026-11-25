@@ -74,6 +74,15 @@ export async function initializeBlogStoreAsync(): Promise<BlogPost[]> {
           }
           memoryCache = [...SEED_BLOG_POSTS];
         } else {
+          // Check for any missing seed posts and upsert them
+          for (const post of SEED_BLOG_POSTS) {
+            await col.updateOne(
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              { id: post.id } as any,
+              { $setOnInsert: post },
+              { upsert: true }
+            );
+          }
           const docs = await col.find({}).sort({ publishedAt: -1 }).toArray();
           memoryCache = docs.map((d) => {
             // strip MongoDB _id if present
@@ -96,6 +105,19 @@ export async function initializeBlogStoreAsync(): Promise<BlogPost[]> {
     saveLocalPosts(SEED_BLOG_POSTS);
     memoryCache = [...SEED_BLOG_POSTS];
   } else {
+    // Merge any missing seed posts into existing disk cache
+    const existingIds = new Set(local.map((p) => p.id));
+    const existingSlugs = new Set(local.map((p) => p.slug.toLowerCase()));
+    let hasAdditions = false;
+    for (const seedPost of SEED_BLOG_POSTS) {
+      if (!existingIds.has(seedPost.id) && !existingSlugs.has(seedPost.slug.toLowerCase())) {
+        local.unshift(seedPost);
+        hasAdditions = true;
+      }
+    }
+    if (hasAdditions) {
+      saveLocalPosts(local);
+    }
     memoryCache = local;
   }
 

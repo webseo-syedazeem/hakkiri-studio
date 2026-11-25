@@ -40,6 +40,10 @@
   --muted: var(--text-muted);
   --subtle: var(--text-subtle);
   --accent-2: var(--accent-hover);
+  --cv-ink: var(--text);
+  --cv-muted: var(--text-muted);
+  --cv-card: var(--surface);
+  --cv-line: var(--border);
   --ok: var(--success);
   --ok-bg: var(--success-surface);
   --warn: var(--warning);

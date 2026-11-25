@@ -45,6 +45,10 @@ export const QUESTIONS_DATA: QuestionItem[] = [
     whatTheyWant: "What you are good at that helps this job.",
     howToAnswer: "Choose two strengths from the job description and prove each one.",
     example: "I'm good at explaining things simply. In my last job, I wrote a short guide for new customers, and support calls about setup went down.",
+    guideLink: {
+      href: "/blog/strengths-and-weaknesses-interview-question",
+      text: "Full guide with sample answers →",
+    },
   },
   {
     id: 4,
@@ -54,6 +58,10 @@ export const QUESTIONS_DATA: QuestionItem[] = [
     whatTheyWant: "If you are honest and can improve.",
     howToAnswer: "Name a real weakness that is not key to the job, and say what you are doing about it.",
     example: "I used to find public speaking hard, so I joined a speaking group and now present at our weekly team meeting.",
+    guideLink: {
+      href: "/blog/strengths-and-weaknesses-interview-question",
+      text: "Full guide with sample answers →",
+    },
   },
 
   // 5-8: Questions about your experience

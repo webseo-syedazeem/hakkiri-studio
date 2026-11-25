@@ -70,9 +70,9 @@ export function ExamplesGallery() {
                 fontSize: 13,
                 fontWeight: 600,
                 borderRadius: 9999,
-                background: selectedCategory === cat ? "#2563eb" : "var(--cv-card, #ffffff)",
-                color: selectedCategory === cat ? "#ffffff" : "var(--cv-ink, #0f172a)",
-                borderColor: selectedCategory === cat ? "#2563eb" : "var(--cv-line, #cbd5e1)",
+                background: selectedCategory === cat ? "var(--accent, #7b88ff)" : "var(--surface, #1c1d25)",
+                color: selectedCategory === cat ? "#ffffff" : "var(--text, #f1f1f4)",
+                borderColor: selectedCategory === cat ? "var(--accent, #7b88ff)" : "var(--border, rgba(255, 255, 255, 0.1))",
                 transition: "all 0.15s ease",
               }}
             >
@@ -88,24 +88,24 @@ export function ExamplesGallery() {
               <div className="cv-pad cv-stack" style={{ padding: 22, height: "100%", display: "flex", flexDirection: "column" }}>
                 <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8, marginBottom: 8 }}>
                   <div>
-                    <span className="cv-chip" style={{ fontSize: 11, fontWeight: 700, color: "#2563eb", background: "rgba(37, 99, 235, 0.08)", borderColor: "rgba(37, 99, 235, 0.2)" }}>
+                    <span className="cv-chip" style={{ fontSize: 11, fontWeight: 700, color: "var(--accent, #7b88ff)", background: "rgba(123, 136, 255, 0.12)", borderColor: "rgba(123, 136, 255, 0.25)" }}>
                       {tpl.badge}
                     </span>
-                    <h3 style={{ margin: "8px 0 2px", fontSize: 16, fontWeight: 700, color: "var(--cv-ink, #0f172a)" }}>
+                    <h3 style={{ margin: "8px 0 2px", fontSize: 16, fontWeight: 700, color: "var(--text, #f1f1f4)" }}>
                       {tpl.title}
                     </h3>
-                    <small style={{ color: "var(--cv-muted, #64748b)" }}>
+                    <small style={{ color: "var(--text-muted, #9a9ba7)" }}>
                       {tpl.category} · {tpl.level.toUpperCase()} · {tpl.region.toUpperCase()} Format
                     </small>
                   </div>
                 </div>
 
-                <p style={{ fontSize: 12, lineHeight: 1.5, color: "var(--cv-muted, #475569)", margin: "8px 0 14px", flexGrow: 1 }}>
+                <p style={{ fontSize: 12, lineHeight: 1.5, color: "var(--text-muted, #9a9ba7)", margin: "8px 0 14px", flexGrow: 1 }}>
                   {tpl.description}
                 </p>
 
                 {/* Metric stats */}
-                <div style={{ display: "flex", gap: 12, padding: "8px 12px", background: "var(--cv-bg, #f8fafc)", borderRadius: 8, border: "1px solid var(--cv-line, #e2e8f0)", marginBottom: 16, fontSize: 11, fontWeight: 600 }}>
+                <div style={{ display: "flex", gap: 12, padding: "8px 12px", background: "rgba(255, 255, 255, 0.03)", borderRadius: 8, border: "1px solid var(--border, rgba(255, 255, 255, 0.08))", marginBottom: 16, fontSize: 11, fontWeight: 600 }}>
                   <span>⏳ {tpl.stats.experienceYears}</span>
                   <span>💼 {tpl.stats.rolesCount} Roles</span>
                   <span>⚡ {tpl.stats.skillsCount} Key Skills</span>
@@ -151,56 +151,58 @@ export function ExamplesGallery() {
           >
             <div
               style={{
-                background: "#ffffff",
+                background: "var(--surface, #1c1d25)",
+                color: "var(--text, #f1f1f4)",
+                border: "1px solid var(--border, rgba(255, 255, 255, 0.12))",
                 borderRadius: 20,
                 maxWidth: 680,
                 width: "100%",
                 maxHeight: "85vh",
                 overflowY: "auto",
                 padding: 28,
-                boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+                boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
               }}
               onClick={(e) => e.stopPropagation()}
             >
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
                 <div>
-                  <span className="cv-chip" style={{ fontSize: 11, fontWeight: 700, color: "#2563eb" }}>
+                  <span className="cv-chip" style={{ fontSize: 11, fontWeight: 700, color: "var(--accent, #7b88ff)", background: "rgba(123, 136, 255, 0.12)", borderColor: "rgba(123, 136, 255, 0.25)" }}>
                     {previewTemplate.badge}
                   </span>
-                  <h2 style={{ fontSize: 20, fontWeight: 700, margin: "6px 0 2px" }}>{previewTemplate.title}</h2>
-                  <small style={{ color: "#64748b" }}>
+                  <h2 style={{ fontSize: 20, fontWeight: 700, margin: "6px 0 2px", color: "var(--text, #f1f1f4)" }}>{previewTemplate.title}</h2>
+                  <small style={{ color: "var(--text-muted, #9a9ba7)" }}>
                     {previewTemplate.category} · {previewTemplate.stats.experienceYears} experience
                   </small>
                 </div>
                 <button
                   type="button"
                   onClick={() => setPreviewTemplate(null)}
-                  style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "#94a3b8" }}
+                  style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "var(--text-muted, #9a9ba7)" }}
                 >
                   ✕
                 </button>
               </div>
 
-              <div style={{ borderTop: "1px solid #e2e8f0", paddingTop: 16, marginTop: 8 }}>
-                <h4 style={{ fontSize: 13, textTransform: "uppercase", letterSpacing: "0.05em", color: "#64748b", margin: "0 0 6px" }}>
+              <div style={{ borderTop: "1px solid var(--border, rgba(255, 255, 255, 0.1))", paddingTop: 16, marginTop: 8 }}>
+                <h4 style={{ fontSize: 13, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-muted, #9a9ba7)", margin: "0 0 6px" }}>
                   Summary Excerpt
                 </h4>
-                <p style={{ fontSize: 13, lineHeight: 1.6, color: "#334155", background: "#f8fafc", padding: 12, borderRadius: 8 }}>
+                <p style={{ fontSize: 13, lineHeight: 1.6, color: "var(--text, #f1f1f4)", background: "var(--surface-raised, #22232c)", padding: 12, borderRadius: 8, border: "1px solid var(--border, rgba(255, 255, 255, 0.08))" }}>
                   {previewTemplate.summary}
                 </p>
 
-                <h4 style={{ fontSize: 13, textTransform: "uppercase", letterSpacing: "0.05em", color: "#64748b", margin: "16px 0 8px" }}>
-                  Included Sections & Structure
+                <h4 style={{ fontSize: 13, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-muted, #9a9ba7)", margin: "16px 0 8px" }}>
+                  Included Sections &amp; Structure
                 </h4>
-                <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13, color: "#334155", lineHeight: 1.6 }}>
-                  <li><strong>Contact Information:</strong> Phone, email, UK/US location, and LinkedIn link.</li>
-                  <li><strong>Professional Experience:</strong> {previewTemplate.stats.rolesCount} chronologically structured roles with quantified ATS action bullets.</li>
-                  <li><strong>Education & Certifications:</strong> Degree, institution, and honors details.</li>
-                  <li><strong>Skills Breakdown:</strong> {previewTemplate.stats.skillsCount} industry-specific competencies and tooling proficiencies.</li>
+                <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13, color: "var(--text-muted, #9a9ba7)", lineHeight: 1.6 }}>
+                  <li><strong style={{ color: "var(--text, #f1f1f4)" }}>Contact Information:</strong> Phone, email, UK/US location, and LinkedIn link.</li>
+                  <li><strong style={{ color: "var(--text, #f1f1f4)" }}>Professional Experience:</strong> {previewTemplate.stats.rolesCount} chronologically structured roles with quantified ATS action bullets.</li>
+                  <li><strong style={{ color: "var(--text, #f1f1f4)" }}>Education &amp; Certifications:</strong> Degree, institution, and honors details.</li>
+                  <li><strong style={{ color: "var(--text, #f1f1f4)" }}>Skills Breakdown:</strong> {previewTemplate.stats.skillsCount} industry-specific competencies and tooling proficiencies.</li>
                 </ul>
               </div>
 
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 24, borderTop: "1px solid #e2e8f0", paddingTop: 16 }}>
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 24, borderTop: "1px solid var(--border, rgba(255, 255, 255, 0.1))", paddingTop: 16 }}>
                 <Btn kind="quiet" onClick={() => setPreviewTemplate(null)}>
                   Close
                 </Btn>

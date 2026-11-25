@@ -97,6 +97,27 @@ export function markdownToHtml(md: string): string {
     if (/^<li class="[^"]*list-decimal/i.test(trimmed)) {
       return `<ol class="my-4 space-y-1">${trimmed}</ol>`;
     }
+    // Markdown table support
+    if (trimmed.startsWith("|") && trimmed.includes("\n|")) {
+      const rows = trimmed.split("\n").filter((r) => r.trim().startsWith("|"));
+      if (rows.length >= 2) {
+        const headerCols = rows[0].split("|").slice(1, -1).map((c) => c.trim());
+        const bodyRows = rows.slice(2);
+        return `<div class="overflow-x-auto my-6 rounded-xl border border-slate-700/60 bg-[#0f1117]/80">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-white/5 border-b border-white/10 text-xs font-bold uppercase tracking-wider text-slate-300">
+              <tr>${headerCols.map((c) => `<th class="px-5 py-3">${c}</th>`).join("")}</tr>
+            </thead>
+            <tbody class="divide-y divide-white/5 text-slate-300">
+              ${bodyRows.map((row) => {
+                const cols = row.split("|").slice(1, -1).map((c) => c.trim());
+                return `<tr>${cols.map((c) => `<td class="px-5 py-3">${c}</td>`).join("")}</tr>`;
+              }).join("")}
+            </tbody>
+          </table>
+        </div>`;
+      }
+    }
     return `<p class="my-4 text-slate-300 leading-relaxed text-[16px]">${trimmed.replace(/\n/g, "<br />")}</p>`;
   });
 
