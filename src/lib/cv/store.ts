@@ -8,7 +8,7 @@ import { jobFit } from "./tailor/fit";
 import { fontsNeeded, layoutCv } from "./render/layout";
 import { loadFonts } from "./render/server";
 import { paperStyle } from "./render/templates";
-import { type Achievement, AchievementSchema, type CvDoc, type CvSummary, CvDocSchema, type ExportRecord, ExportRecordSchema, type FileCheckRecord, FileCheckRecordSchema, type StoredFileCheck, isEntrySection, summarise } from "./schema";
+import { type Achievement, AchievementSchema, type CvDoc, type CvSummary, CvDocSchema, type ExportRecord, ExportRecordSchema, type FileCheckRecord, FileCheckRecordSchema, type SavedStyle, SavedStyleSchema, type StoredFileCheck, isEntrySection, summarise } from "./schema";
 
 /**
  * Where CVs and uploads are kept. Every read takes the person's id and returns
@@ -16,7 +16,26 @@ import { type Achievement, AchievementSchema, type CvDoc, type CvSummary, CvDocS
  * same from here, so an address cannot be used to find out which is which.
  */
 
-export const CV_COLLECTIONS = { VERSIONS: "cv_versions", IMPORTS: "cv_imports", ACHIEVEMENTS: "cv_achievements", EXPORTS: "cv_exports", CHECKS: "cv_checks" } as const;
+export const CV_COLLECTIONS = { VERSIONS: "cv_versions", IMPORTS: "cv_imports", ACHIEVEMENTS: "cv_achievements", EXPORTS: "cv_exports", CHECKS: "cv_checks", STYLES: "cv_styles" } as const;
+
+/* ------------------------------------------------------------ saved styles */
+
+/** The most looks one person can keep. */
+export const MAX_STYLES = 20;
+export async function listOwnStyles(userId: string): Promise<SavedStyle[]> {
+  const raw = await queryDocsByUser<SavedStyle>(CV_COLLECTIONS.STYLES, userId);
+  return raw.map((r) => valid<SavedStyle>(SavedStyleSchema, r, "style")).filter((s): s is SavedStyle => !!s && s.userId === userId).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+}
+export async function getOwnStyle(id: string, userId: string): Promise<SavedStyle | null> {
+  const s = valid<SavedStyle>(SavedStyleSchema, await getDoc(CV_COLLECTIONS.STYLES, id), "style");
+  return s && s.userId === userId ? s : null;
+}
+export async function saveStyle(s: SavedStyle): Promise<SavedStyle> {
+  const clean = SavedStyleSchema.parse(s);
+  await saveDoc(CV_COLLECTIONS.STYLES, clean.id, clean);
+  return clean;
+}
+export const deleteStyle = (id: string) => deleteDoc(CV_COLLECTIONS.STYLES, id);
 
 /** The most CVs and versions one person can hold. Creating, copying, uploading and tailoring all count towards it. */
 export const MAX_CVS = 60;
@@ -260,20 +279,21 @@ export async function saveExport(record: ExportRecord): Promise<ExportRecord> {
 export const deleteExport = (id: string) => deleteDoc(CV_COLLECTIONS.EXPORTS, id);
 
 /** Everything held for one person in this section: for "Download my data". */
-export async function exportCvData(userId: string): Promise<{ cvs: CvDoc[]; uploads: CvImport[]; achievements: Achievement[]; exports: ExportRecord[]; fileChecks: FileCheckRecord[]; freeChecks: Audit[] }> {
+export async function exportCvData(userId: string): Promise<{ cvs: CvDoc[]; uploads: CvImport[]; achievements: Achievement[]; exports: ExportRecord[]; fileChecks: FileCheckRecord[]; freeChecks: Audit[]; styles: SavedStyle[] }> {
   // `freeChecks`: the free CV checks made or opened while signed in. Each holds the text that was pasted.
-  const [cvs, uploads, achievements, exports, fileChecks, freeChecks] = await Promise.all([listOwnCvs(userId), listOwnImports(userId), listOwnAchievements(userId), listOwnExports(userId), listOwnFileChecks(userId), listOwnChecks(userId)]);
-  return { cvs, uploads, achievements, exports, fileChecks, freeChecks };
+  const [cvs, uploads, achievements, exports, fileChecks, freeChecks, styles] = await Promise.all([listOwnCvs(userId), listOwnImports(userId), listOwnAchievements(userId), listOwnExports(userId), listOwnFileChecks(userId), listOwnChecks(userId), listOwnStyles(userId)]);
+  return { cvs, uploads, achievements, exports, fileChecks, freeChecks, styles };
 }
 
 /** Deletes everything held for one person in this section: for "Delete all my data". Returns how many records went. */
 export async function deleteCvData(userId: string): Promise<number> {
-  const { cvs, uploads, achievements, exports, fileChecks } = await exportCvData(userId);
+  const { cvs, uploads, achievements, exports, fileChecks, styles } = await exportCvData(userId);
+  for (const s of styles) await deleteStyle(s.id);
   for (const c of cvs) await deleteCv(c.id);
   for (const u of uploads) await deleteImport(u.id);
   for (const a of achievements) await deleteAchievement(a.id);
   for (const e of exports) await deleteExport(e.id);
   for (const f of fileChecks) await deleteFileChecks(f.id);
   const freeChecks = await deleteOwnChecks(userId);
-  return cvs.length + uploads.length + achievements.length + exports.length + fileChecks.length + freeChecks;
+  return cvs.length + uploads.length + achievements.length + exports.length + fileChecks.length + freeChecks + styles.length;
 }

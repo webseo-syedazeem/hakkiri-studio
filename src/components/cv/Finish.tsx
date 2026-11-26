@@ -7,7 +7,7 @@ import { paperOrder } from "@/lib/cv/render/flow";
 import { FAMILIES } from "@/lib/cv/render/fonts";
 import { fitToPages } from "@/lib/cv/render/layout";
 import { ACCENTS, PAIRINGS, TEMPLATES, type TemplateDef, contrastRatioOnWhite, templateLabel } from "@/lib/cv/render/templates";
-import { type AccentId, CV_ACCENTS, CV_DENSITIES, CV_TEMPLATES, type Design, type TemplateId, cvIsEmpty, sectionIsEmpty } from "@/lib/cv/schema";
+import { type AccentId, CHANGE_KEYS, CV_ACCENTS, CV_BULLETS, CV_DENSITIES, CV_FONT_FAMILIES, CV_SEPARATORS, CV_TEMPLATES, type Design, type FontFamilyId, type SavedStyle, type TemplateId, cvIsEmpty, sectionIsEmpty } from "@/lib/cv/schema";
 import { docWord, sectionHeading } from "@/lib/cv/sections";
 import { Grip, ItemControls, useDragOrder } from "./Arrange";
 import { ApiError, api, messageOf } from "./client";
@@ -262,6 +262,48 @@ export function Finish({ onOverflow, say }: { onOverflow: () => void; say: (text
   const fonts = design.fonts ?? template.id;
   const fontChoice = FONT_CHOICES.find((c) => pairLabel(TEMPLATES[c.id].fonts) === pairLabel(TEMPLATES[fonts].fonts))?.id ?? template.id;
   const set = (changes: Partial<Design>) => update({ design: { ...design, ...changes } });
+  const pairing = TEMPLATES[fonts]?.fonts ?? template.fonts;
+  const headingFont = design.headingFont ?? pairing.heading;
+  const bodyFont = design.bodyFont ?? pairing.body;
+  /** What the person has changed from the template's own look. */
+  // A value the same as the default is no change: the server fills these in when it saves.
+  const DEFAULTS: Partial<Record<(typeof CHANGE_KEYS)[number], unknown>> = { density: "default", dividerStyle: "solid", fontSize: 10.5, lineSpacing: 1, margin: "normal", indentation: 13 };
+  const changed = CHANGE_KEYS.filter((k) => design[k] !== undefined && design[k] !== DEFAULTS[k]);
+  const reset = () => update({ design: { ...design, ...Object.fromEntries(CHANGE_KEYS.map((k) => [k, DEFAULTS[k]])) } });
+  const [styles, setStyles] = useState<SavedStyle[] | null>(null);
+  const [styleName, setStyleName] = useState("");
+  const [styleProblem, setStyleProblem] = useState("");
+  useEffect(() => {
+    api<{ styles: SavedStyle[] }>("/api/cv/styles")
+      .then((r) => setStyles(r.styles))
+      .catch(() => setStyles([]));
+  }, []);
+  async function saveStyle() {
+    setStyleProblem("");
+    try {
+      const { style } = await api<{ style: SavedStyle }>("/api/cv/styles", { method: "POST", json: { name: styleName.trim(), design } });
+      setStyles((all) => [...(all ?? []), style]);
+      setStyleName("");
+      say(`Saved “${style.name}”. You can use it on any of your ${word}s.`);
+    } catch (err) {
+      setStyleProblem(messageOf(err));
+    }
+  }
+  async function deleteStyle(st: SavedStyle) {
+    setStyleProblem("");
+    try {
+      await api(`/api/cv/styles/${st.id}`, { method: "DELETE" });
+      setStyles((all) => (all ?? []).filter((x) => x.id !== st.id));
+      say(`Deleted “${st.name}”. ${word === "CV" ? "CVs" : "Resumes"} that use it keep their look.`);
+    } catch (err) {
+      setStyleProblem(messageOf(err));
+    }
+  }
+  function useStyle(st: SavedStyle) {
+    // The saved look replaces every change made here; the page size, page target, order and file name stay.
+    update({ design: { ...design, ...Object.fromEntries(CHANGE_KEYS.map((k) => [k, undefined])), ...st.design } });
+    say(`Now using “${st.name}”.`);
+  }
   const empty = cvIsEmpty(cv);
   const pages = paper?.layout.pages ?? 0;
   const target = design.pageTarget;
@@ -349,6 +391,17 @@ export function Finish({ onOverflow, say }: { onOverflow: () => void; say: (text
 
   return (
     <div className="cv-stack">
+      <div className="cv-note cv-row" role="status" data-testid="design-base">
+        <span>
+          Based on <b>{templateLabel(template)}</b>
+          {changed.length ? `, with ${changed.length === 1 ? "1 change" : `${changed.length} changes`} of your own` : ", as designed"}.
+        </span>
+        {changed.length > 0 && (
+          <Btn className="cv-push" onClick={reset}>
+            Reset to {templateLabel(template)}
+          </Btn>
+        )}
+      </div>
       <Panel title="Template">
         <fieldset>
           <legend className="sr-only">Template</legend>
@@ -380,18 +433,42 @@ export function Finish({ onOverflow, say }: { onOverflow: () => void; say: (text
         <div className="cv-pad cv-stack">
           <div>
             <label className="cv-label" htmlFor="cv-fonts">
-              Fonts
+              Font pairing
             </label>
             <CvSelect
               id="cv-fonts"
               value={fontChoice}
-              onChange={(val) => set({ fonts: val as TemplateId })}
+              onChange={(val) => set({ fonts: val as TemplateId, headingFont: undefined, bodyFont: undefined })}
               options={FONT_CHOICES.map((c) => ({
                 value: c.id,
                 label: c.label,
                 badge: c.id === template.id || pairLabel(TEMPLATES[c.id].fonts) === pairLabel(template.fonts) ? `${templateLabel(template)}’s own` : undefined,
               }))}
             />
+          </div>
+          <div className="cv-pair">
+            <div>
+              <label className="cv-label" htmlFor="cv-heading-font">
+                Name and headings
+              </label>
+              <CvSelect
+                id="cv-heading-font"
+                value={headingFont}
+                onChange={(val) => set({ headingFont: val as FontFamilyId })}
+                options={CV_FONT_FAMILIES.map((f) => ({ value: f, label: FAMILIES[f], badge: f === template.fonts.heading ? "template" : undefined }))}
+              />
+            </div>
+            <div>
+              <label className="cv-label" htmlFor="cv-body-font">
+                Body text
+              </label>
+              <CvSelect
+                id="cv-body-font"
+                value={bodyFont}
+                onChange={(val) => set({ bodyFont: val as FontFamilyId })}
+                options={CV_FONT_FAMILIES.filter((f) => f !== "mono").map((f) => ({ value: f, label: FAMILIES[f], badge: f === template.fonts.body ? "template" : undefined }))}
+              />
+            </div>
           </div>
 
           {/* Fine-grained Font Size Slider (Rezi audit: 6-16 pt) */}
@@ -495,7 +572,7 @@ export function Finish({ onOverflow, say }: { onOverflow: () => void; say: (text
                     fontSize: 11.5,
                   }}
                 >
-                  <span style={{ color: isPass ? "#83d5b4" : isHeadingPass ? "#93c5fd" : "#ff8588", fontWeight: 500 }}>
+                  <span style={{ color: isPass ? "var(--success)" : isHeadingPass ? "var(--accent)" : "var(--danger)", fontWeight: 500 }}>
                     {isPass
                       ? `✓ Contrast ${ratio}:1 on white paper (WCAG AA Compliant)`
                       : isHeadingPass
@@ -699,8 +776,76 @@ export function Finish({ onOverflow, say }: { onOverflow: () => void; say: (text
       </Panel>
 
       {/* Dividers, Icons and Indentation (Audit: Icons, indentation and section dividers missing on Finish tab) */}
-      <Panel title="Dividers, icons and indentation">
+      <Panel title="Name, headings and bullets">
         <div className="cv-pad cv-stack">
+          <fieldset>
+            <legend className="cv-label">Top of the page</legend>
+            <div className="cv-seg" style={{ marginTop: 6, display: "grid", gridTemplateColumns: "repeat(2, 1fr)" }}>
+              {(["plain", "band"] as const).map((h) => (
+                <label key={h}>
+                  <input type="radio" name="header" className="sr-only" checked={(design.header ?? template.header ?? "plain") === h} onChange={() => set({ header: h })} />
+                  <span>{h === "plain" ? "Plain" : "Colour band"}</span>
+                </label>
+              ))}
+            </div>
+            {(design.header ?? template.header) === "band" && contrastRatioOnWhite(activeHex) < 4.5 && (
+              <small className="cv-error-text" style={{ display: "block", marginTop: 6 }}>
+                This colour is too pale for white text, so the name is shown plain. Choose a darker colour to use the band.
+              </small>
+            )}
+          </fieldset>
+
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+              <label className="cv-label" htmlFor="cv-name-size" style={{ margin: 0 }}>
+                Name size
+              </label>
+              <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--accent, #7b88ff)" }}>{design.nameSize ?? template.title.size} pt</span>
+            </div>
+            <input id="cv-name-size" type="range" min="16" max="40" step="1" value={design.nameSize ?? template.title.size} onChange={(e) => set({ nameSize: Number(e.target.value) })} className="cv-slider" style={{ width: "100%" }} />
+          </div>
+
+          <label className="cv-choice" style={{ padding: "10px 14px" }}>
+            <input type="checkbox" checked={design.headingCaps ?? Boolean(template.heading.caps)} onChange={(e) => set({ headingCaps: e.target.checked })} />
+            <span>
+              <b style={{ display: "block", fontSize: 13, fontWeight: 600 }}>Section headings in capitals</b>
+              <small>Screening software reads headings the same either way.</small>
+            </span>
+          </label>
+
+          <fieldset>
+            <legend className="cv-label">Bullet mark</legend>
+            <div className="cv-seg" style={{ marginTop: 6, display: "grid", gridTemplateColumns: "repeat(4, 1fr)" }}>
+              {CV_BULLETS.map((b) => (
+                <label key={b}>
+                  <input type="radio" name="bullet" className="sr-only" checked={(design.bullet ?? template.bullet ?? "disc") === b} onChange={() => set({ bullet: b })} />
+                  <span>{b === "disc" ? "• Dot" : b === "dash" ? "– Dash" : b === "arrow" ? "› Arrow" : "None"}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend className="cv-label">Between contact details</legend>
+            <div className="cv-seg" style={{ marginTop: 6, display: "grid", gridTemplateColumns: "repeat(3, 1fr)" }}>
+              {CV_SEPARATORS.map((sep) => (
+                <label key={sep}>
+                  <input type="radio" name="separator" className="sr-only" checked={(design.contactSeparator ?? template.separator ?? "dot") === sep} onChange={() => set({ contactSeparator: sep })} />
+                  <span>{sep === "dot" ? "· Dot" : sep === "bar" ? "| Bar" : "• Bullet"}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+              <label className="cv-label" htmlFor="cv-entry-indent" style={{ margin: 0 }}>
+                Indent entries under headings
+              </label>
+              <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--accent, #7b88ff)" }}>{design.entryIndent ?? template.entryIndent ?? 0} pt</span>
+            </div>
+            <input id="cv-entry-indent" type="range" min="0" max="24" step="1" value={design.entryIndent ?? template.entryIndent ?? 0} onChange={(e) => set({ entryIndent: Number(e.target.value) })} className="cv-slider" style={{ width: "100%" }} />
+          </div>
           {/* Section divider style */}
           <fieldset>
             <legend className="cv-label">Section divider style</legend>
@@ -747,6 +892,42 @@ export function Finish({ onOverflow, say }: { onOverflow: () => void; say: (text
               <button type="button" onClick={() => set({ indentation: 20 })} className="cv-link" style={{ fontSize: "11px" }}>20 pt (Deep)</button>
             </div>
           </div>
+        </div>
+      </Panel>
+
+      <Panel title="Your styles">
+        <div className="cv-pad cv-stack">
+          <p className="cv-muted" style={{ margin: 0 }}>
+            Save this look (template, fonts, colour, sizes and spacing) to use it again on any {word}.
+          </p>
+          {styles && styles.length > 0 && (
+            <ul className="cv-plainlist" aria-label="Saved styles" style={{ display: "grid", gap: 8 }}>
+              {styles.map((st) => (
+                <li key={st.id} className="cv-row" style={{ gap: 8 }}>
+                  <span className="grow min-w-0">
+                    <b>{st.name}</b> <small className="cv-muted">· {templateLabel(TEMPLATES[st.design.template])}</small>
+                  </span>
+                  <Btn onClick={() => useStyle(st)}>Use</Btn>
+                  <Btn kind="quiet" onClick={() => void deleteStyle(st)} aria-label={`Delete ${st.name}`}>
+                    Delete
+                  </Btn>
+                </li>
+              ))}
+            </ul>
+          )}
+          <div className="cv-row" style={{ alignItems: "flex-end", gap: 8 }}>
+            <div className="grow min-w-0">
+              <Field label="Style name" value={styleName} onChange={setStyleName} maxLength={60} placeholder="For example: Two-page navy" />
+            </div>
+            <Btn onClick={() => void saveStyle()} disabled={!styleName.trim()}>
+              Save this style
+            </Btn>
+          </div>
+          {styleProblem && (
+            <p className="cv-error-text" role="alert">
+              {styleProblem}
+            </p>
+          )}
         </div>
       </Panel>
 

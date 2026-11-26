@@ -339,6 +339,25 @@ export const DesignSchema = z.object({
 });
 export type Design = z.infer<typeof DesignSchema>;
 
+/**
+ * The parts of a design that make up a look: the template and every change to it. Not the page size, page
+ * target, order of sections or file name, which belong to one CV.
+ */
+export const STYLE_KEYS = ["template", "fonts", "headingFont", "bodyFont", "accent", "customAccent", "density", "fontSize", "lineSpacing", "margin", "dividerStyle", "indentation", "bullet", "entryIndent", "contactSeparator", "nameSize", "headingCaps", "header"] as const;
+export type StyleKey = (typeof STYLE_KEYS)[number];
+/** The changes a person has made to their template's look (everything in STYLE_KEYS but the template). */
+export const CHANGE_KEYS = STYLE_KEYS.filter((k) => k !== "template");
+
+/** A look a person saved to use again on other CVs: "My style". */
+export const SavedStyleSchema = z.object({
+  id: z.string().regex(/^sty_[a-f0-9]{16}$/),
+  userId: z.string().min(1),
+  name: line(60),
+  design: DesignSchema.pick({ template: true, fonts: true, headingFont: true, bodyFont: true, accent: true, customAccent: true, density: true, fontSize: true, lineSpacing: true, margin: true, dividerStyle: true, indentation: true, bullet: true, entryIndent: true, contactSeparator: true, nameSize: true, headingCaps: true, header: true }),
+  createdAt: z.string(),
+});
+export type SavedStyle = z.infer<typeof SavedStyleSchema>;
+
 /* ------------------------------------------------------- pointing at a line */
 
 /**
