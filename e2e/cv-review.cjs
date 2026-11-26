@@ -122,6 +122,8 @@ run("CV review fixes", async (browser) => {
   check(report.isUnlocked === true && !("text" in report) && !("textHash" in report) && !("unlockedBy" in report) && !JSON.stringify(report).includes("07700 900123"), "the unlocked report does not carry the pasted text, its hash or who unlocked it");
   check(/Evidence \(45 points\)/.test(await v.locator("body").innerText()), "the report shows the real weights too");
   await v.screenshot({ path: path.join(OUT, "cv-review-report.png"), fullPage: true });
+  // The report sits on the white public page: everything on it must be readable there.
+  await a11y(v, "free check report");
 
   // "Open in CV Builder": not signed in, so sign-in comes first; then straight on, with the text.
   await v.getByTestId("open-in-builder").click();
