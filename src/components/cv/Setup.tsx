@@ -225,30 +225,54 @@ export function Setup() {
                     </a>
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 420, overflowY: "auto", paddingRight: 4 }}>
-                    {EXAMPLE_TEMPLATES.map((tpl) => (
-                      <div
-                        key={tpl.id}
-                        className="cv-tpl-card"
-                        data-selected={selectedTemplateId === tpl.id}
-                        onClick={() => {
-                          setSelectedTemplateId(tpl.id);
-                          if (!name.trim()) setName(tpl.title);
-                          if (!level) setLevel(tpl.level);
-                          if (!region) setRegion(tpl.region);
-                        }}
-                      >
-                        <div className="cv-tpl-card-header">
-                          <span className="cv-tpl-card-title">{tpl.title}</span>
-                          <span className="cv-chip">{tpl.badge}</span>
+                    {EXAMPLE_TEMPLATES.map((tpl) => {
+                      const isSelected = selectedTemplateId === tpl.id;
+                      return (
+                        <div
+                          key={tpl.id}
+                          className="cv-tpl-card"
+                          data-selected={isSelected}
+                          style={{
+                            background: isSelected
+                              ? "linear-gradient(135deg, rgba(74, 90, 240, 0.22) 0%, rgba(74, 90, 240, 0.08) 100%)"
+                              : "#181922",
+                            borderColor: isSelected ? "#7b88ff" : "rgba(255, 255, 255, 0.12)",
+                            color: "#f1f1f4",
+                            cursor: "pointer",
+                          }}
+                          onClick={() => {
+                            setSelectedTemplateId(tpl.id);
+                            if (!name.trim()) setName(tpl.title);
+                            if (!level) setLevel(tpl.level);
+                            if (!region) setRegion(tpl.region);
+                          }}
+                        >
+                          <div className="cv-tpl-card-header">
+                            <span className="cv-tpl-card-title" style={{ color: isSelected ? "#ffffff" : "#f1f1f4", fontWeight: isSelected ? 700 : 600 }}>
+                              {tpl.title}
+                            </span>
+                            <span
+                              className="cv-chip"
+                              style={{
+                                background: isSelected ? "rgba(123, 136, 255, 0.25)" : "rgba(255, 255, 255, 0.08)",
+                                color: "#ffffff",
+                                borderColor: isSelected ? "rgba(123, 136, 255, 0.5)" : "rgba(255, 255, 255, 0.15)",
+                              }}
+                            >
+                              {tpl.badge}
+                            </span>
+                          </div>
+                          <p className="cv-tpl-card-desc" style={{ color: isSelected ? "#c9ccd6" : "#9a9ba7" }}>
+                            {tpl.description}
+                          </p>
+                          <div className="cv-tpl-card-stats" style={{ color: isSelected ? "#bfdbfe" : "#93c5fd" }}>
+                            <span>⏱ {tpl.stats.experienceYears}</span>
+                            <span>• {tpl.stats.rolesCount} Roles</span>
+                            <span>• {tpl.stats.skillsCount} Skills</span>
+                          </div>
                         </div>
-                        <p className="cv-tpl-card-desc">{tpl.description}</p>
-                        <div className="cv-tpl-card-stats">
-                          <span>⏱ {tpl.stats.experienceYears}</span>
-                          <span>• {tpl.stats.rolesCount} Roles</span>
-                          <span>• {tpl.stats.skillsCount} Skills</span>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -262,28 +286,47 @@ export function Setup() {
               </label>
 
               {method === "linkedin" && (
-                <div data-field="linkedin" className="cv-linkedin-box">
+                <div
+                  data-field="linkedin"
+                  className="cv-linkedin-box"
+                  style={{
+                    background: "linear-gradient(180deg, rgba(10, 102, 194, 0.16) 0%, rgba(10, 102, 194, 0.05) 100%)",
+                    borderColor: "rgba(123, 136, 255, 0.35)",
+                    color: "#f1f1f4",
+                  }}
+                >
                   {/* LinkedIn Brand Header */}
-                  <div className="cv-linkedin-header">
+                  <div className="cv-linkedin-header" style={{ borderBottomColor: "rgba(255, 255, 255, 0.08)" }}>
                     <div className="cv-linkedin-brand">
-                      <div className="cv-linkedin-icon">
+                      <div className="cv-linkedin-icon" style={{ background: "#0a66c2", color: "#ffffff" }}>
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                           <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z" />
                         </svg>
                       </div>
                       <div>
-                        <h4>LinkedIn Profile Sync</h4>
-                        <p>Auto-extract your professional experience, education, and skills.</p>
+                        <h4 style={{ color: "#ffffff", fontWeight: 700 }}>LinkedIn Profile Sync</h4>
+                        <p style={{ color: "#9a9ba7" }}>Auto-extract your professional experience, education, and skills.</p>
                       </div>
                     </div>
-                    <span className="cv-linkedin-badge">Instant Import</span>
+                    <span
+                      className="cv-linkedin-badge"
+                      style={{
+                        background: "rgba(10, 102, 194, 0.35)",
+                        color: "#93c5fd",
+                        borderColor: "rgba(147, 197, 253, 0.4)",
+                      }}
+                    >
+                      Instant Import
+                    </span>
                   </div>
 
                   {/* Field 1: LinkedIn URL */}
                   <div className="cv-linkedin-field">
-                    <label htmlFor="linkedin-url-input">LinkedIn Profile URL or Handle</label>
-                    <p className="cv-linkedin-hint">
-                      Paste your public link, e.g. <code>linkedin.com/in/username</code> or your full web address.
+                    <label htmlFor="linkedin-url-input" style={{ color: "#f1f1f4", fontWeight: 600 }}>
+                      LinkedIn Profile URL or Handle
+                    </label>
+                    <p className="cv-linkedin-hint" style={{ color: "#9a9ba7" }}>
+                      Paste your public link, e.g. <code style={{ color: "#93c5fd", background: "rgba(255, 255, 255, 0.08)" }}>linkedin.com/in/username</code> or your full web address.
                     </p>
                     <input
                       id="linkedin-url-input"
@@ -292,6 +335,11 @@ export function Setup() {
                       onChange={(e) => setLinkedinUrl(e.target.value)}
                       placeholder="https://www.linkedin.com/in/yourname"
                       className="cv-input"
+                      style={{
+                        background: "#13141b",
+                        color: "#f1f1f4",
+                        borderColor: "rgba(255, 255, 255, 0.18)",
+                      }}
                     />
                     {errors.linkedin && (
                       <p className="cv-error-text" style={{ marginTop: "6px" }}>
@@ -303,10 +351,12 @@ export function Setup() {
                   {/* Field 2: Profile Content (Optional) */}
                   <div className="cv-linkedin-field">
                     <div className="cv-linkedin-label-row">
-                      <label htmlFor="linkedin-text-input">Profile Content &amp; Experience Text</label>
-                      <span className="cv-linkedin-optional">(Optional)</span>
+                      <label htmlFor="linkedin-text-input" style={{ color: "#f1f1f4", fontWeight: 600 }}>
+                        Profile Content &amp; Experience Text
+                      </label>
+                      <span className="cv-linkedin-optional" style={{ color: "#9a9ba7" }}>(Optional)</span>
                     </div>
-                    <p className="cv-linkedin-hint">
+                    <p className="cv-linkedin-hint" style={{ color: "#9a9ba7" }}>
                       If your LinkedIn profile requires a sign-in or has restricted visibility, copy &amp; paste your About, Experience, or Education sections here.
                     </p>
                     <textarea
@@ -316,14 +366,26 @@ export function Setup() {
                       onChange={(e) => setLinkedinText(e.target.value)}
                       placeholder="Paste your LinkedIn summary, job roles, or qualifications here..."
                       className="cv-input"
+                      style={{
+                        background: "#13141b",
+                        color: "#f1f1f4",
+                        borderColor: "rgba(255, 255, 255, 0.18)",
+                      }}
                     />
                   </div>
 
                   {/* Pro-Tip Box */}
-                  <div className="cv-linkedin-tip">
+                  <div
+                    className="cv-linkedin-tip"
+                    style={{
+                      background: "rgba(255, 255, 255, 0.035)",
+                      borderColor: "rgba(255, 255, 255, 0.18)",
+                      color: "#9a9ba7",
+                    }}
+                  >
                     <span>💡</span>
                     <span>
-                      <strong>Pro tip:</strong> You can also export your complete LinkedIn profile as a PDF (open LinkedIn &gt; <em>More</em> &gt; <em>Save to PDF</em>) and use the <strong>Upload a CV</strong> option above for 100% fidelity.
+                      <strong style={{ color: "#f1f1f4" }}>Pro tip:</strong> You can also export your complete LinkedIn profile as a PDF (open LinkedIn &gt; <em>More</em> &gt; <em>Save to PDF</em>) and use the <strong>Upload a CV</strong> option above for 100% fidelity.
                     </span>
                   </div>
                 </div>

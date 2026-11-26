@@ -1261,6 +1261,18 @@ select.cv-mini option,
   margin-top: 3px;
   accent-color: var(--color-blue-fill);
 }
+.cv-choice b {
+  color: var(--color-ink, #f1f1f4);
+}
+.cv-choice small {
+  color: var(--color-muted, #9a9ba7);
+}
+.cv-choice:has(input:checked) b {
+  color: #ffffff;
+}
+.cv-choice:has(input:checked) small {
+  color: #c9ccd6;
+}
 
 /* Custom range sliders in Finish tab */
 .cv-slider {
