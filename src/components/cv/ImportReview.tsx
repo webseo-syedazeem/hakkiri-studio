@@ -7,6 +7,7 @@ import { type CvImport, type ImportDraft, type ImportFlag, openFlags, reviewStep
 import { type Contact, type Entry, type Section, isEntrySection, newBullet, newId } from "@/lib/cv/schema";
 import { SECTION_DEFS, sectionHeading } from "@/lib/cv/sections";
 import { api, messageOf } from "./client";
+import { afterImport } from "./upload";
 import { Dialog, usePanel } from "./Dialog";
 import { stepName } from "./ImportHome";
 import { ReplaceFileDialog } from "./ReplaceFile";
@@ -273,7 +274,7 @@ export function ImportReview({ importId, stepKey }: { importId: string; stepKey:
     if (!isLast) return router.push(`/cv/import/${importId}/review/${steps[index + 1].key}${flaggedOnly ? "?flagged=true" : ""}`);
     try {
       const { versionId, next } = await api<{ versionId: string; next?: string }>(`/api/cv/imports/${importId}/confirm`, { method: "POST" });
-      router.push(next === "findings" ? `/cv/v/${versionId}/findings` : `/cv/v/${versionId}/edit/contact`);
+      router.push(afterImport(versionId, next));
     } catch (err) {
       setBusy(false);
       setProblem(messageOf(err));

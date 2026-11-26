@@ -19,8 +19,8 @@ const ICONS: Record<PathId, ReactNode> = {
 };
 
 export const PATHS: { id: PathId; title: string; line: string; href: string }[] = [
-  { id: "check", title: "Check my CV or cover letter", line: "Find the lines to fix first, with a score and software read-back.", href: "/cv-audit" },
-  { id: "job", title: "Check against a job", line: "See what the advert asks for and what your document shows.", href: "/cv-audit?job=1" },
+  { id: "check", title: "Check my CV or cover letter", line: "Find the lines to fix first, with a score and software read-back.", href: "/cv/check" },
+  { id: "job", title: "Check against a job", line: "See what the advert asks for and what your document shows.", href: "/cv/check?job=1" },
   { id: "assistant", title: "Build with the assistant", line: "Speak or type, one question at a time. See your page take shape.", href: "/cv/new?start=talk" },
   { id: "find", title: "Find an example or template", line: "Choose written content or a design, then make it your own.", href: "/cv/examples" },
 ];

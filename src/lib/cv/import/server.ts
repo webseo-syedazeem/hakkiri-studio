@@ -38,7 +38,7 @@ export async function readUpload(base: Pick<CvImport, "id" | "userId" | "version
 /** The most a request carrying an upload may hold: the 5 MB file and the form around it. */
 export const MAX_REQUEST_BYTES = MAX_UPLOAD_BYTES + 512 * 1024;
 /** Uploads are capped at 5 MB; a request that says it is far larger than that is refused before it is read. */
-export const tooLarge = (req: Request) => Number(req.headers.get("content-length") ?? 0) > MAX_REQUEST_BYTES;
+export const tooLarge = (req: Request, limit = MAX_REQUEST_BYTES) => Number(req.headers.get("content-length") ?? 0) > limit;
 
 /**
  * Reads the form a file or pasted text was sent in. The size a request claims
@@ -46,8 +46,8 @@ export const tooLarge = (req: Request) => Number(req.headers.get("content-length
  * they arrive, and reading stops as soon as there are more than an upload may
  * hold. Returns "too-big" for that, and null for a body that is not a form.
  */
-export async function readForm(req: Request): Promise<FormData | "too-big" | null> {
-  if (tooLarge(req)) return "too-big";
+export async function readForm(req: Request, limit = MAX_REQUEST_BYTES): Promise<FormData | "too-big" | null> {
+  if (tooLarge(req, limit)) return "too-big";
   if (!req.body) return null;
   const reader = req.body.getReader();
   const chunks: Uint8Array[] = [];
@@ -56,7 +56,7 @@ export async function readForm(req: Request): Promise<FormData | "too-big" | nul
     const { done, value } = await reader.read();
     if (done) break;
     size += value.byteLength;
-    if (size > MAX_REQUEST_BYTES) {
+    if (size > limit) {
       await reader.cancel().catch(() => {});
       return "too-big";
     }

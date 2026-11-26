@@ -2,6 +2,7 @@ import "server-only";
 import { deleteDoc, getDoc, queryDocsByUser, saveDoc } from "@/lib/apply/db";
 import { type CvImport, CvImportSchema } from "./import/record";
 import type { Audit } from "@/lib/apply/schema";
+import { type DocCheck, DocCheckSchema, docCheckExpired, isDocCheckId } from "./check/record";
 import { deleteOwnChecks, listOwnChecks } from "./score/publicCheck";
 import { scoreCv } from "./score/score";
 import { jobFit } from "./tailor/fit";
@@ -16,7 +17,37 @@ import { type Achievement, AchievementSchema, type CvDoc, type CvSummary, CvDocS
  * same from here, so an address cannot be used to find out which is which.
  */
 
-export const CV_COLLECTIONS = { VERSIONS: "cv_versions", IMPORTS: "cv_imports", ACHIEVEMENTS: "cv_achievements", EXPORTS: "cv_exports", CHECKS: "cv_checks", STYLES: "cv_styles" } as const;
+export const CV_COLLECTIONS = { VERSIONS: "cv_versions", IMPORTS: "cv_imports", ACHIEVEMENTS: "cv_achievements", EXPORTS: "cv_exports", CHECKS: "cv_checks", STYLES: "cv_styles", DOC_CHECKS: "cv_doc_checks" } as const;
+
+/* ------------------------------------------- "Check my CV or cover letter" */
+
+/** One check, if it is this person's and has not passed its date (it is then removed). */
+export async function getOwnDocCheck(id: string, userId: string, now = new Date()): Promise<DocCheck | null> {
+  if (!isDocCheckId(id)) return null;
+  const c = valid<DocCheck>(DocCheckSchema, await getDoc(CV_COLLECTIONS.DOC_CHECKS, id), "check");
+  if (!c || c.id !== id || c.userId !== userId) return null;
+  if (docCheckExpired(c, now)) {
+    await deleteDoc(CV_COLLECTIONS.DOC_CHECKS, id);
+    return null;
+  }
+  return c;
+}
+export async function saveDocCheck(c: DocCheck): Promise<DocCheck> {
+  const clean = DocCheckSchema.parse(c);
+  await saveDoc(CV_COLLECTIONS.DOC_CHECKS, clean.id, clean);
+  return clean;
+}
+export async function listOwnDocChecks(userId: string): Promise<DocCheck[]> {
+  const raw = await queryDocsByUser<DocCheck>(CV_COLLECTIONS.DOC_CHECKS, userId);
+  return raw.map((r) => valid<DocCheck>(DocCheckSchema, r, "check")).filter((c): c is DocCheck => !!c && c.userId === userId).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+export const deleteDocCheck = (id: string) => deleteDoc(CV_COLLECTIONS.DOC_CHECKS, id);
+/** Removes this person's checks that have passed their date: run each time they make a new one. */
+export async function purgeOwnDocChecks(userId: string, now = new Date()): Promise<number> {
+  const old = (await listOwnDocChecks(userId)).filter((c) => docCheckExpired(c, now));
+  for (const c of old) await deleteDocCheck(c.id);
+  return old.length;
+}
 
 /* ------------------------------------------------------------ saved styles */
 
@@ -279,15 +310,17 @@ export async function saveExport(record: ExportRecord): Promise<ExportRecord> {
 export const deleteExport = (id: string) => deleteDoc(CV_COLLECTIONS.EXPORTS, id);
 
 /** Everything held for one person in this section: for "Download my data". */
-export async function exportCvData(userId: string): Promise<{ cvs: CvDoc[]; uploads: CvImport[]; achievements: Achievement[]; exports: ExportRecord[]; fileChecks: FileCheckRecord[]; freeChecks: Audit[]; styles: SavedStyle[] }> {
+export async function exportCvData(userId: string): Promise<{ cvs: CvDoc[]; uploads: CvImport[]; achievements: Achievement[]; exports: ExportRecord[]; fileChecks: FileCheckRecord[]; freeChecks: Audit[]; styles: SavedStyle[]; documentChecks: DocCheck[] }> {
   // `freeChecks`: the free CV checks made or opened while signed in. Each holds the text that was pasted.
-  const [cvs, uploads, achievements, exports, fileChecks, freeChecks, styles] = await Promise.all([listOwnCvs(userId), listOwnImports(userId), listOwnAchievements(userId), listOwnExports(userId), listOwnFileChecks(userId), listOwnChecks(userId), listOwnStyles(userId)]);
-  return { cvs, uploads, achievements, exports, fileChecks, freeChecks, styles };
+  // `documentChecks`: "Check my CV or cover letter" while signed in, with the text of what was checked.
+  const [cvs, uploads, achievements, exports, fileChecks, freeChecks, styles, documentChecks] = await Promise.all([listOwnCvs(userId), listOwnImports(userId), listOwnAchievements(userId), listOwnExports(userId), listOwnFileChecks(userId), listOwnChecks(userId), listOwnStyles(userId), listOwnDocChecks(userId)]);
+  return { cvs, uploads, achievements, exports, fileChecks, freeChecks, styles, documentChecks };
 }
 
 /** Deletes everything held for one person in this section: for "Delete all my data". Returns how many records went. */
 export async function deleteCvData(userId: string): Promise<number> {
-  const { cvs, uploads, achievements, exports, fileChecks, styles } = await exportCvData(userId);
+  const { cvs, uploads, achievements, exports, fileChecks, styles, documentChecks } = await exportCvData(userId);
+  for (const c of documentChecks) await deleteDocCheck(c.id);
   for (const s of styles) await deleteStyle(s.id);
   for (const c of cvs) await deleteCv(c.id);
   for (const u of uploads) await deleteImport(u.id);
@@ -295,5 +328,5 @@ export async function deleteCvData(userId: string): Promise<number> {
   for (const e of exports) await deleteExport(e.id);
   for (const f of fileChecks) await deleteFileChecks(f.id);
   const freeChecks = await deleteOwnChecks(userId);
-  return cvs.length + uploads.length + achievements.length + exports.length + fileChecks.length + freeChecks + styles.length;
+  return cvs.length + uploads.length + achievements.length + exports.length + fileChecks.length + freeChecks + styles.length + documentChecks.length;
 }

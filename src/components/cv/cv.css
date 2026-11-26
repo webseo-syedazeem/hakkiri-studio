@@ -2821,3 +2821,48 @@ p.cv-talk-callout { display: flex; align-items: flex-start; gap: 7px; }
 .cv-chip-ok:disabled { cursor: default; }
 .cv-chip[data-status="missing"] { color: var(--color-red); }
 .cv-chip[data-status="partly"] { color: var(--warning, #80510d); }
+
+/* ------------------------------------------------ Check your document */
+.cv-checkgrid { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+.cv-checkform { display: grid; gap: 16px; padding: 20px; }
+.cv-checkstep { border: 0; margin: 0; padding: 0; display: grid; gap: 10px; min-width: 0; }
+.cv-checkstep > legend { font-weight: 600; font-size: 15px; padding: 0; margin-bottom: 10px; }
+.cv-checkstep .cv-seg { justify-self: start; }
+.cv-dropzone { display: grid; gap: 8px; justify-items: start; border: 1.5px dashed var(--cv-edge); border-radius: 11px; padding: 14px; margin-top: 6px; }
+.cv-dropzone input[type="file"] { max-width: 100%; font: inherit; font-size: 14px; }
+.cv-checkfile .cv-label { display: block; }
+.cv-ticklist { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; font-size: 14px; }
+.cv-ticklist li::before { content: "✓"; color: var(--color-blue); font-weight: 700; margin-right: 8px; }
+.cv-reportgrid { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 18px; align-items: start; margin-top: 16px; }
+.cv-jobmatch { margin-bottom: 4px; }
+.cv-fixlist { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.cv-fix { border: 1px solid var(--cv-edge); border-radius: 11px; padding: 12px 14px; display: grid; gap: 6px; justify-items: start; }
+.cv-fix p { margin: 0; font-size: 14px; }
+.cv-readback { margin: 0; display: grid; gap: 8px; }
+.cv-readback > div { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.4fr); gap: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--cv-edge); }
+.cv-readback dt { font-weight: 600; font-size: 13.5px; }
+.cv-readback dd { margin: 0; font-size: 13.5px; display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; justify-content: space-between; overflow-wrap: anywhere; }
+.cv-matchtable { width: 100%; border-collapse: collapse; font-size: 14px; }
+.cv-matchtable th { text-align: left; font-size: 12px; font-weight: 600; color: var(--color-muted); padding: 6px 8px; border-bottom: 1px solid var(--cv-edge); }
+.cv-matchtable td { padding: 9px 8px; border-bottom: 1px solid var(--cv-edge); vertical-align: top; overflow-wrap: anywhere; }
+.cv-matchtable td:last-child { white-space: nowrap; }
+.cv-lettercheck { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.cv-lettercheck > li { display: grid; gap: 4px; padding-bottom: 10px; border-bottom: 1px solid var(--cv-edge); }
+.cv-lettercheck ul { margin: 4px 0 0; padding-left: 18px; }
+@media (max-width: 900px) {
+  .cv-checkgrid, .cv-reportgrid { grid-template-columns: minmax(0, 1fr); }
+  /* On a phone the score and the next steps come first, then the details. */
+  .cv-report-side { order: -1; }
+}
+@media (max-width: 767px) {
+  .cv-checkform { padding: 15px; }
+  .cv-readback > div { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .cv-matchtable thead { display: none; }
+  .cv-matchtable, .cv-matchtable tbody, .cv-matchtable tr, .cv-matchtable td { display: block; width: 100%; }
+  .cv-matchtable tr { border: 1px solid var(--cv-edge); border-radius: 11px; padding: 10px 12px; margin-bottom: 10px; }
+  .cv-matchtable td { border: 0; padding: 3px 0; white-space: normal !important; }
+  .cv-matchtable td::before { content: attr(data-label); display: block; font-size: 12px; font-weight: 600; color: var(--color-muted); }
+  .cv-dropzone input[type="file"] { min-height: 44px; font-size: 16px; }
+  .cv-checkstep input[type="checkbox"] { width: 24px; height: 24px; }
+  .cv-checkstep label.cv-row { min-height: 44px; }
+}

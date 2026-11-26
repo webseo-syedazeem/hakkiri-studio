@@ -11,7 +11,7 @@ run("CV start", async (browser) => {
   await page.getByText("No CVs yet").waitFor({ timeout: 15000 });
   const paths = await page.locator("[data-testid^=path-]").allInnerTexts();
   check(paths.length === 4 && /Check my CV or cover letter/.test(paths[0]) && /Check against a job/.test(paths[1]) && /Build with the assistant/.test(paths[2]) && /Find an example or template/.test(paths[3]), "the CV home starts with the four ways in", paths.join(" | "));
-  check((await page.getByTestId("path-check").getAttribute("href")) === "/cv-audit", "“Check my CV or cover letter” leads to the check");
+  check((await page.getByTestId("path-check").getAttribute("href")) === "/cv/check" && (await page.getByTestId("path-job").getAttribute("href")) === "/cv/check?job=1", "“Check my CV or cover letter” and “Check against a job” lead to the check in the app");
   await bothThemes(page, "dashboard-empty");
   check(await page.getByRole("link", { name: "CVs and letters" }).first().isVisible(), "the rail has “CVs and letters”");
 

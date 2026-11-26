@@ -62,7 +62,9 @@ export const CvImportSchema = z.object({
   /** The review steps the person has confirmed, by step key. */
   reviewed: z.array(z.string().max(40)).max(40).default([]),
   /** The free public check this upload was started from, if it was: the person then lands on the score, where its findings are. */
-  checkId: z.string().regex(/^aud_[A-Za-z0-9_-]{8,40}$/).optional(),
+  checkId: z.string().regex(/^(?:aud|chk)_[A-Za-z0-9_-]{8,40}$/).optional(),
+  /** Where to go once it is confirmed, when it was started from a check: the score, tailoring, or the letter. */
+  then: z.enum(["findings", "tailor", "letter"]).optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });

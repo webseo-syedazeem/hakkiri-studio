@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { forgetCheck } from "@/lib/cv/carry";
 import { api, messageOf } from "./client";
+import { afterImport } from "./upload";
 import { Bar, BtnLink, CvScreen, Skeleton, Toolbar } from "./ui";
 
 /**
@@ -11,7 +12,7 @@ import { Bar, BtnLink, CvScreen, Skeleton, Toolbar } from "./ui";
  * text that was checked and moves straight on to the screen where the person
  * confirms what was read. Nothing is typed or pasted again.
  */
-export function FromCheck({ auditId }: { auditId: string }) {
+export function FromCheck({ auditId, then }: { auditId: string; then?: "findings" | "tailor" | "letter" }) {
   const router = useRouter();
   const [problem, setProblem] = useState("");
   const started = useRef(false);
@@ -20,19 +21,19 @@ export function FromCheck({ auditId }: { auditId: string }) {
     // Once only: the screen is drawn twice in development, and the server would answer the same both times anyway.
     if (started.current) return;
     started.current = true;
-    api<{ importId: string; versionId: string; status: string }>("/api/cv/imports/from-check", { method: "POST", json: { auditId } })
+    api<{ importId: string; versionId: string; status: string }>("/api/cv/imports/from-check", { method: "POST", json: then ? { auditId, then } : { auditId } })
       .then((made) => {
         forgetCheck();
         // Already checked and opened before: straight to the score. Otherwise to the check of what was read.
-        router.replace(made.status === "confirmed" ? `/cv/v/${made.versionId}/findings` : `/cv/import/${made.importId}`);
+        router.replace(made.status === "confirmed" ? afterImport(made.versionId, then ?? "findings") : `/cv/import/${made.importId}`);
       })
       .catch((err) => {
         forgetCheck();
         setProblem(messageOf(err));
       });
-  }, [auditId, router]);
+  }, [auditId, then, router]);
 
-  const crumbs = [{ label: "CVs and letters", href: "/cv" }, { label: "From your free check" }];
+  const crumbs = [{ label: "CVs and letters", href: "/cv" }, { label: auditId.startsWith("chk_") ? "From your check" : "From your free check" }];
   return (
     <CvScreen>
       <Bar crumbs={crumbs} />
