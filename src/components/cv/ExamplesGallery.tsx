@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { EXAMPLE_TEMPLATES, type ExampleTemplate } from "@/lib/cv/templates/examples";
+import type { CvRegion } from "@/lib/cv/schema";
+import { type ExampleTemplate, examplesFor } from "@/lib/cv/templates/examples";
 import { api, messageOf } from "./client";
 import { Bar, Btn, BtnLink, CvScreen, Panel, Toolbar } from "./ui";
 
@@ -12,13 +13,16 @@ export function ExamplesGallery() {
   const [previewTemplate, setPreviewTemplate] = useState<ExampleTemplate | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string>("");
+  /** Every example has a UK CV and a US resume: the toggle shows one or the other. */
+  const [region, setRegion] = useState<CvRegion>("uk");
+  // Starts on the visitor's likely region, once the page is in the browser (the server can't know it).
+  useEffect(() => {
+    if (/^en-US$/i.test(navigator.language)) setRegion("us");
+  }, []);
+  const all = examplesFor(region);
+  const categories = ["All", ...[...new Set(all.map((t) => t.category))].sort()];
 
-  const categories = ["All", "Technology", "Product", "Business", "Marketing", "Finance", "Healthcare", "Student"];
-
-  const filtered =
-    selectedCategory === "All"
-      ? EXAMPLE_TEMPLATES
-      : EXAMPLE_TEMPLATES.filter((t) => t.category === selectedCategory);
+  const filtered = selectedCategory === "All" || !categories.includes(selectedCategory) ? all : all.filter((t) => t.category === selectedCategory);
 
   async function useTemplate(t: ExampleTemplate) {
     setBusyId(t.id);
@@ -26,7 +30,7 @@ export function ExamplesGallery() {
     try {
       const res = await api<{ id: string }>("/api/cv/templates", {
         method: "POST",
-        json: { templateId: t.id, name: t.title },
+        json: { templateId: t.id, name: t.title, region },
       });
       router.push(`/cv/v/${res.id}/edit/contact`);
     } catch (err) {
@@ -55,6 +59,15 @@ export function ExamplesGallery() {
             <span>{error}</span>
           </div>
         )}
+
+        <div className="cv-seg" role="group" aria-label="Region" style={{ marginBottom: 14 }}>
+          <button type="button" aria-pressed={region === "uk"} onClick={() => setRegion("uk")}>
+            UK CV
+          </button>
+          <button type="button" aria-pressed={region === "us"} onClick={() => setRegion("us")}>
+            US resume
+          </button>
+        </div>
 
         {/* Category Pills */}
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20 }}>

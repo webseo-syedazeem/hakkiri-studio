@@ -66,7 +66,7 @@ export const presentLead = (t: string) => first(new RegExp(`^\\s*((?:${PRESENT})
 /** Spellings that differ between the UK and the US: UK form first. */
 const PAIRS: [string, string][] = [
   ["colour", "color"], ["favour", "favor"], ["behaviour", "behavior"], ["labour", "labor"], ["honour", "honor"], ["neighbour", "neighbor"], ["flavour", "flavor"],
-  ["centre", "center"], ["metre", "meter"], ["theatre", "theater"], ["litre", "liter"], ["fibre", "fiber"],
+  ["centre", "center"], ["centred", "centered"], ["metre", "meter"], ["theatre", "theater"], ["litre", "liter"], ["fibre", "fiber"],
   ["licence", "license"], ["defence", "defense"], ["offence", "offense"], ["practise", "practice"],
   ["catalogue", "catalog"], ["dialogue", "dialog"], ["analogue", "analog"], ["programme", "program"],
   ["travelled", "traveled"], ["travelling", "traveling"], ["modelled", "modeled"], ["modelling", "modeling"], ["cancelled", "canceled"], ["labelled", "labeled"], ["counselling", "counseling"],
@@ -81,7 +81,6 @@ const AMBIGUOUS = new Set(["practice", "practise", "program", "check", "tire", "
 const COMMON_TYPOS: Record<string, string> = {
   "microsoft ofice": "Microsoft Office",
   warehose: "warehouse",
-  warehouses: "warehouses",
   recieved: "received",
   recieving: "receiving",
   recieve: "receive",
@@ -101,7 +100,6 @@ const COMMON_TYPOS: Record<string, string> = {
   goverment: "government",
   publically: "publicly",
   occurance: "occurrence",
-  curriculum: "curriculum",
   calender: "calendar",
   tendancy: "tendency",
   tommorrow: "tomorrow",
@@ -137,7 +135,11 @@ export function wrongRegionSpelling(text: string, region: CvRegion, accepted: It
   }
   for (const m of text.matchAll(ISE_RE)) {
     const z = /z/i.test(m[1]);
-    if (region === "uk" ? z : !z) keep(m, m[0].toLowerCase().replace(m[1].toLowerCase(), m[1].toLowerCase().replace(region === "uk" ? "z" : "s", region === "uk" ? "s" : "z")));
+    // The ending is swapped where it is, at the end of the stem: "visualise" has an earlier "is" that must stay.
+    const word = m[0].toLowerCase();
+    const at = word.lastIndexOf(m[1].toLowerCase());
+    const swapped = m[1].toLowerCase().replace(region === "uk" ? "z" : "s", region === "uk" ? "s" : "z");
+    if (region === "uk" ? z : !z) keep(m, word.slice(0, at) + swapped + word.slice(at + 2));
   }
   return out.sort((a, b) => a.start - b.start);
 }

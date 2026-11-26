@@ -76,7 +76,7 @@ export function Setup() {
         setStage("creating");
         const res = await api<{ id: string }>("/api/cv/templates", {
           method: "POST",
-          json: { templateId: selectedTemplateId, name: name.trim() },
+          json: { templateId: selectedTemplateId, name: name.trim(), region },
         });
         router.push(`/cv/v/${res.id}/edit/contact`);
         return;

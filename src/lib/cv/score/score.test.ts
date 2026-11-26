@@ -644,3 +644,22 @@ describe("a CV with almost nothing in it", () => {
     });
   });
 });
+
+describe("common typos", () => {
+  it("never flags a correctly spelled word as its own typo", async () => {
+    const { wrongRegionSpelling } = await import("./detect");
+    for (const region of ["uk", "us"] as const) {
+      expect(wrongRegionSpelling("Ran three warehouses and taught the national curriculum", region)).toEqual([]);
+      expect(wrongRegionSpelling("Recieved stock", region).map((h) => h.suggest)).toEqual(["Received"]);
+    }
+  });
+});
+
+describe("UK and US spelling suggestions", () => {
+  it("swap the ending of the word, not an earlier letter pair", async () => {
+    const { wrongRegionSpelling } = await import("./detect");
+    expect(wrongRegionSpelling("data visualisation and visualised results", "us").map((h) => h.suggest)).toEqual(["visualization", "visualized"]);
+    expect(wrongRegionSpelling("Visualizing data", "uk").map((h) => h.suggest)).toEqual(["Visualising"]);
+    expect(wrongRegionSpelling("person-centred care", "us").map((h) => h.suggest)).toEqual(["centered"]);
+  });
+});
