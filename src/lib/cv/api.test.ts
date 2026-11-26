@@ -747,7 +747,7 @@ describe("your data, from Settings", () => {
     expect(held.uploads[0]).toMatchObject({ id: made.importId, fileName: "maya-chen.chrome.pdf" });
     expect(await zip.file("README.txt")!.async("string")).toContain("cvs.json");
     expect((await deleteRoute(json({ confirm: "delete" }))).status).toBe(200);
-    expect(await store.exportCvData(alice.id)).toEqual({ cvs: [], uploads: [], achievements: [], exports: [], fileChecks: [], freeChecks: [], styles: [], documentChecks: [] });
+    expect(await store.exportCvData(alice.id)).toEqual({ cvs: [], uploads: [], achievements: [], exports: [], fileChecks: [], freeChecks: [], styles: [], documentChecks: [], shareLinks: [] });
   });
 });
 
@@ -760,7 +760,7 @@ describe("your data", () => {
     const held = await store.exportCvData(alice.id);
     expect([held.cvs.length, held.uploads.length]).toEqual([2, 1]);
     expect(await store.deleteCvData(alice.id)).toBe(3);
-    expect(await store.exportCvData(alice.id)).toEqual({ cvs: [], uploads: [], achievements: [], exports: [], fileChecks: [], freeChecks: [], styles: [], documentChecks: [] });
+    expect(await store.exportCvData(alice.id)).toEqual({ cvs: [], uploads: [], achievements: [], exports: [], fileChecks: [], freeChecks: [], styles: [], documentChecks: [], shareLinks: [] });
     expect(await store.getOwnCv(bobs, bob.id)).not.toBeNull();
   });
 });

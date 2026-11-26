@@ -357,7 +357,7 @@ describe("the letter is part of its version", () => {
     expect(held.cvs[0].letter!.reason).toBe(REASON);
     expect(held.exports[0].cv.letter!.paragraphs).toHaveLength(4);
     await store.deleteCvData(alice.id);
-    expect(await store.exportCvData(alice.id)).toEqual({ cvs: [], uploads: [], achievements: [], exports: [], fileChecks: [], freeChecks: [], styles: [], documentChecks: [] });
+    expect(await store.exportCvData(alice.id)).toEqual({ cvs: [], uploads: [], achievements: [], exports: [], fileChecks: [], freeChecks: [], styles: [], documentChecks: [], shareLinks: [] });
   });
 
   it("a saved letter passes the same review on the server as on the screen", async () => {

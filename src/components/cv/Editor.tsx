@@ -14,7 +14,9 @@ import { api, messageOf } from "./client";
 import { Dialog, usePanel } from "./Dialog";
 import { scoreLabel } from "./Findings";
 import { Finish } from "./Finish";
+import { FilesPanel } from "./Files";
 import { FormatBar } from "./FormatBar";
+import { ShareDialog } from "./ShareDialog";
 import { JobPanel } from "./JobPanel";
 import { PaperView } from "./Paper";
 import { ScoreLine, ScorePanel } from "./ScorePanel";
@@ -303,6 +305,12 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
         <BtnLink href={`/cv/v/${cv.id}/letter`} onClick={() => void flush()} data-testid="letter-button">
           Cover letter
         </BtnLink>
+        <Btn onClick={() => openPanel("download")} data-testid="download-button">
+          Download
+        </Btn>
+        <Btn onClick={() => openPanel("share")} data-testid="share-button">
+          Share
+        </Btn>
         <small role="status" data-testid="save-state" data-save={save}>
           {SAVE_WORDS[save]}
         </small>
@@ -538,6 +546,13 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
         <Announce>{said || (save === "failed" || save === "device" || save === "conflict" ? SAVE_WORDS[save] : "")}</Announce>
       </div>
 
+      {panel === "download" && (
+        <Dialog title="Download" onClose={closePanel} wide>
+          <p style={{ marginTop: 0 }}>Download your current {word} as PDF or Word. Each file is read back and compared with your {word} before it is downloaded.</p>
+          <FilesPanel say={say} inDialog />
+        </Dialog>
+      )}
+      {panel === "share" && <ShareDialog cv={cv} word={word} saved={save === "saved"} flush={flush} onClose={closePanel} say={say} />}
       {panel === "design" && (
         <Dialog title="Design" onClose={closePanel} wide>
           <FormatBar cv={cv} paper={paper} update={update} base={base} say={say} />

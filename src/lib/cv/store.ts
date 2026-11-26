@@ -4,6 +4,7 @@ import { type CvImport, CvImportSchema } from "./import/record";
 import type { Audit } from "@/lib/apply/schema";
 import { type DocCheck, DocCheckSchema, docCheckExpired, isDocCheckId } from "./check/record";
 import { deleteOwnChecks, listOwnChecks } from "./score/publicCheck";
+import { type Share, ShareSchema, isShareToken } from "./share";
 import { scoreCv } from "./score/score";
 import { jobFit } from "./tailor/fit";
 import { fontsNeeded, layoutCv } from "./render/layout";
@@ -17,7 +18,36 @@ import { type Achievement, AchievementSchema, type CvDoc, type CvSummary, CvDocS
  * same from here, so an address cannot be used to find out which is which.
  */
 
-export const CV_COLLECTIONS = { VERSIONS: "cv_versions", IMPORTS: "cv_imports", ACHIEVEMENTS: "cv_achievements", EXPORTS: "cv_exports", CHECKS: "cv_checks", STYLES: "cv_styles", DOC_CHECKS: "cv_doc_checks" } as const;
+export const CV_COLLECTIONS = { VERSIONS: "cv_versions", IMPORTS: "cv_imports", ACHIEVEMENTS: "cv_achievements", EXPORTS: "cv_exports", CHECKS: "cv_checks", STYLES: "cv_styles", DOC_CHECKS: "cv_doc_checks", SHARES: "cv_shares" } as const;
+
+/* ------------------------------------------------------------ share links */
+
+/** A shared CV by its token, for anyone who has the link. Null when sharing is off or the CV is gone (the link is then removed). */
+export async function getShare(token: string): Promise<Share | null> {
+  if (!isShareToken(token)) return null;
+  const share = valid<Share>(ShareSchema, await getDoc(CV_COLLECTIONS.SHARES, token), "share");
+  if (!share || share.id !== token) return null;
+  // A link to a CV that has been deleted goes with it.
+  if (!(await getOwnCv(share.versionId, share.userId))) {
+    await deleteDoc(CV_COLLECTIONS.SHARES, token);
+    return null;
+  }
+  return share;
+}
+export async function listOwnShares(userId: string): Promise<Share[]> {
+  const raw = await queryDocsByUser<Share>(CV_COLLECTIONS.SHARES, userId);
+  return raw.map((r) => valid<Share>(ShareSchema, r, "share")).filter((x): x is Share => !!x && x.userId === userId);
+}
+/** The link for one of the person's CVs, if sharing is on. */
+export async function getOwnShareFor(versionId: string, userId: string): Promise<Share | null> {
+  return (await listOwnShares(userId)).find((x) => x.versionId === versionId) ?? null;
+}
+export async function saveShare(share: Share): Promise<Share> {
+  const clean = ShareSchema.parse(share);
+  await saveDoc(CV_COLLECTIONS.SHARES, clean.id, clean);
+  return clean;
+}
+export const deleteShare = (token: string) => deleteDoc(CV_COLLECTIONS.SHARES, token);
 
 /* ------------------------------------------- "Check my CV or cover letter" */
 
@@ -310,16 +340,18 @@ export async function saveExport(record: ExportRecord): Promise<ExportRecord> {
 export const deleteExport = (id: string) => deleteDoc(CV_COLLECTIONS.EXPORTS, id);
 
 /** Everything held for one person in this section: for "Download my data". */
-export async function exportCvData(userId: string): Promise<{ cvs: CvDoc[]; uploads: CvImport[]; achievements: Achievement[]; exports: ExportRecord[]; fileChecks: FileCheckRecord[]; freeChecks: Audit[]; styles: SavedStyle[]; documentChecks: DocCheck[] }> {
+export async function exportCvData(userId: string): Promise<{ cvs: CvDoc[]; uploads: CvImport[]; achievements: Achievement[]; exports: ExportRecord[]; fileChecks: FileCheckRecord[]; freeChecks: Audit[]; styles: SavedStyle[]; documentChecks: DocCheck[]; shareLinks: Share[] }> {
   // `freeChecks`: the free CV checks made or opened while signed in. Each holds the text that was pasted.
   // `documentChecks`: "Check my CV or cover letter" while signed in, with the text of what was checked.
-  const [cvs, uploads, achievements, exports, fileChecks, freeChecks, styles, documentChecks] = await Promise.all([listOwnCvs(userId), listOwnImports(userId), listOwnAchievements(userId), listOwnExports(userId), listOwnFileChecks(userId), listOwnChecks(userId), listOwnStyles(userId), listOwnDocChecks(userId)]);
-  return { cvs, uploads, achievements, exports, fileChecks, freeChecks, styles, documentChecks };
+  // `shareLinks`: the read-only links the person has turned on, each with the copy of the CV it shows.
+  const [cvs, uploads, achievements, exports, fileChecks, freeChecks, styles, documentChecks, shareLinks] = await Promise.all([listOwnCvs(userId), listOwnImports(userId), listOwnAchievements(userId), listOwnExports(userId), listOwnFileChecks(userId), listOwnChecks(userId), listOwnStyles(userId), listOwnDocChecks(userId), listOwnShares(userId)]);
+  return { cvs, uploads, achievements, exports, fileChecks, freeChecks, styles, documentChecks, shareLinks };
 }
 
 /** Deletes everything held for one person in this section: for "Delete all my data". Returns how many records went. */
 export async function deleteCvData(userId: string): Promise<number> {
-  const { cvs, uploads, achievements, exports, fileChecks, styles, documentChecks } = await exportCvData(userId);
+  const { cvs, uploads, achievements, exports, fileChecks, styles, documentChecks, shareLinks } = await exportCvData(userId);
+  for (const l of shareLinks) await deleteShare(l.id);
   for (const c of documentChecks) await deleteDocCheck(c.id);
   for (const s of styles) await deleteStyle(s.id);
   for (const c of cvs) await deleteCv(c.id);
@@ -328,5 +360,5 @@ export async function deleteCvData(userId: string): Promise<number> {
   for (const e of exports) await deleteExport(e.id);
   for (const f of fileChecks) await deleteFileChecks(f.id);
   const freeChecks = await deleteOwnChecks(userId);
-  return cvs.length + uploads.length + achievements.length + exports.length + fileChecks.length + freeChecks + styles.length + documentChecks.length;
+  return cvs.length + uploads.length + achievements.length + exports.length + fileChecks.length + freeChecks + styles.length + documentChecks.length + shareLinks.length;
 }

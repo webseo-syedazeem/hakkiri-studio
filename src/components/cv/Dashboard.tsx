@@ -421,7 +421,7 @@ function Row({ cv, indent, copies = 0, onAction }: { cv: CvSummary; indent?: boo
         </div>
         {!cv.empty && !cv.pendingImportId && (
           <div className="cv-slot-download">
-            <BtnLink href={`/cv/v/${cv.id}/export`} aria-label={`Download ${cv.name}`}>
+            <BtnLink href={`/cv/v/${cv.id}/edit/contact?panel=download`} aria-label={`Download ${cv.name}`}>
               Download
             </BtnLink>
           </div>

@@ -2866,3 +2866,8 @@ p.cv-talk-callout { display: flex; align-items: flex-start; gap: 7px; }
   .cv-checkstep input[type="checkbox"] { width: 24px; height: 24px; }
   .cv-checkstep label.cv-row { min-height: 44px; }
 }
+
+/* ------------------------------------------------ Share and download */
+.cv-sharetoggle { gap: 10px; font-weight: 600; min-height: 44px; cursor: pointer; }
+.cv-sharetoggle input { width: 20px; height: 20px; accent-color: var(--color-blue); }
+.cv-issue-box { border: 1px solid var(--cv-edge); border-left: 3px solid var(--color-red); border-radius: 11px; padding: 12px 14px; margin-top: 12px; }
