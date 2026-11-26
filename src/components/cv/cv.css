@@ -3164,3 +3164,5 @@ html:not(.dark):not([data-theme="dark"]) .cv .cv-bar.cv-bar-plain {
 
 /* v2 light: muted text is #48566a, which keeps 4.5:1 on tinted panels as well as on white. */
 html:not(.dark):not([data-theme="dark"]) .cv { --text-muted: #48566a; --color-muted: #48566a; }
+/* The fix-next instruction is read as much as the reason: full-strength text, so it stays readable behind an open dialog's scrim too. */
+.cv .cv-fixnext p.cv-muted { color: var(--color-ink); opacity: 0.9; }
