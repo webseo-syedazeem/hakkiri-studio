@@ -570,7 +570,7 @@ run("CV editor", async (browser) => {
   await page.getByTestId("page-count").waitFor({ state: "attached", timeout: 20000 });
   const seg = page.getByRole("group", { name: "Show" });
   check((await seg.isVisible()) && !(await page.locator("svg.cv-paper").isVisible()), "at tablet width there is one pane, with an Edit / Paper switch");
-  await seg.getByRole("button", { name: "Paper" }).click();
+  await seg.getByRole("button", { name: "Page" }).click();
   check((await page.locator("svg.cv-paper").isVisible()) && !(await page.getByRole("button", { name: "+ Add role" }).isVisible()), "Paper shows the page in place of the form");
   await onPaper(page, "Archive assistant · Paper Kite Archive").click();
   await page.waitForFunction(() => document.activeElement && document.activeElement.value === "Archive assistant", null, { timeout: 5000 });
@@ -613,7 +613,7 @@ run("CV editor", async (browser) => {
   await page.getByRole("button", { name: "Move up", exact: true }).click();
   check((await page.getByRole("textbox", { name: "Bullet 1" }).inputValue()) === "Cut stock loss by 12% in a year", "Move up reorders a bullet on a phone");
   await bothThemes(page, "builder-phone");
-  await page.getByRole("group", { name: "Show" }).getByRole("button", { name: "Paper" }).click();
+  await page.getByRole("group", { name: "Show" }).getByRole("button", { name: "Page", exact: true }).click();
   await onPaper(page, "Sam Example").waitFor();
   const sheet = await page.locator("svg.cv-paper").evaluate((e) => [e.getBoundingClientRect().width, window.innerWidth]);
   check(sheet[0] <= sheet[1] && sheet[0] > sheet[1] * 0.8, "on a phone the paper opens fitted to the width of the screen", sheet.join(" / "));

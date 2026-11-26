@@ -451,15 +451,17 @@ export function scoreCv(input: ScoreInput): Score {
   const mixed = work.some(({ e }) => /^\d{4}$/.test(e.start)) && work.some(({ e }) => /^\d{4}-\d{2}$/.test(e.start));
   out.dates = each(dated, "dated entries", ({ e, s }) => {
     const at = (field: string): Locator => ({ section: s.id, entry: e.id, field });
-    const name = e.title || e.org || "This entry";
+    // An entry with no title or employer is named by where it is, never "this entry". The quote names it in full.
+    const name = e.title || e.org || `Entry ${s.entries.indexOf(e) + 1} in ${s.title || SECTION_DEFS[s.kind].heading[cv.region]}`;
+    const quoted = [e.title, e.org].filter((x) => x && x.trim()).join(" · ") || name;
     const needsStart = s.kind === "experience" || s.kind === "volunteering";
-    if (!e.start && !e.end && !e.current) return needsStart || s.kind === "education" ? { severity: "issue", at: at(needsStart ? "start" : "end"), excerpt: name, reason: `${name} has no dates.`, action: "Add when it started and ended. A year is enough if you don’t remember the month." } : null;
-    if (needsStart && !e.start) return { severity: "issue", at: at("start"), excerpt: name, reason: `${name} has no start date.`, action: "Add when it started." };
-    if (e.start && e.end && monthOf(e.end) < monthOf(e.start)) return { severity: "issue", at: at("end"), excerpt: name, reason: `${name} ends before it starts.`, action: "Check the two dates." };
-    if (e.start && monthOf(e.start) > today + 1) return { severity: "issue", at: at("start"), excerpt: name, reason: `${name} starts in the future.`, action: "Check the start date." };
-    if (e.end && !e.current && monthOf(e.end) > today + 60) return { severity: "issue", at: at("end"), excerpt: name, reason: `${name} ends more than five years from now.`, action: "Check the end date." };
-    if ((e.start && Number(e.start.slice(0, 4)) < 1950) || (e.end && Number(e.end.slice(0, 4)) < 1950)) return { severity: "issue", at: at("start"), excerpt: name, reason: `${name} has a date before 1950.`, action: "Check the year." };
-    if (s.kind === "experience" && mixed && /^\d{4}$/.test(e.start)) return { severity: "suggestion", at: at("start"), excerpt: name, reason: `${name} gives only a year, and your other roles give the month.`, action: "Add the month if you know it, so every role is dated the same way." };
+    if (!e.start && !e.end && !e.current) return needsStart || s.kind === "education" ? { severity: "issue", at: at(needsStart ? "start" : "end"), excerpt: quoted, reason: `${name} has no dates.`, action: "Add when it started and ended. A year is enough if you don’t remember the month." } : null;
+    if (needsStart && !e.start) return { severity: "issue", at: at("start"), excerpt: quoted, reason: `${name} has no start date.`, action: "Add when it started." };
+    if (e.start && e.end && monthOf(e.end) < monthOf(e.start)) return { severity: "issue", at: at("end"), excerpt: quoted, reason: `${name} ends before it starts.`, action: "Check the two dates." };
+    if (e.start && monthOf(e.start) > today + 1) return { severity: "issue", at: at("start"), excerpt: quoted, reason: `${name} starts in the future.`, action: "Check the start date." };
+    if (e.end && !e.current && monthOf(e.end) > today + 60) return { severity: "issue", at: at("end"), excerpt: quoted, reason: `${name} ends more than five years from now.`, action: "Check the end date." };
+    if ((e.start && Number(e.start.slice(0, 4)) < 1950) || (e.end && Number(e.end.slice(0, 4)) < 1950)) return { severity: "issue", at: at("start"), excerpt: quoted, reason: `${name} has a date before 1950.`, action: "Check the year." };
+    if (s.kind === "experience" && mixed && /^\d{4}$/.test(e.start)) return { severity: "suggestion", at: at("start"), excerpt: quoted, reason: `${name} gives only a year, and your other roles give the month.`, action: "Add the month if you know it, so every role is dated the same way." };
     return null;
   });
   out["bullets-per-role"] = each(roles, "roles", ({ e, s }) => {

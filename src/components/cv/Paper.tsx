@@ -14,7 +14,7 @@ import { type Paper, cssFamily } from "./usePaper";
  * not on the page is ever exported.
  */
 
-const PAPER = "#fbfbfd";
+const PAPER = "#ffffff";
 const MARK = "#e6e8ff";
 /** A point is 1/72 inch; a CSS pixel 1/96. */
 const PX_PER_PT = 96 / 72;

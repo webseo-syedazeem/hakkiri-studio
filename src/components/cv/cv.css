@@ -84,10 +84,10 @@
   --color-booth: var(--background);
   --color-panel: var(--surface);
   --color-panel-2: var(--surface-raised);
-  --cv-input-bg: #13141b;
+  --cv-input-bg: #1a1b23;
   --color-line: rgba(255, 255, 255, 0.08);
   --cv-edge: rgba(255, 255, 255, 0.11);
-  --cv-input-edge: rgba(255, 255, 255, 0.18);
+  --cv-input-edge: #777d95;
   --color-ink: var(--text);
   --color-muted: var(--text-muted);
   --color-dim: var(--text-subtle);
@@ -209,10 +209,10 @@
   --color-booth: var(--background);
   --color-panel: var(--surface);
   --color-panel-2: var(--surface-raised);
-  --cv-input-bg: #13141b;
+  --cv-input-bg: #1a1b23;
   --color-line: rgba(255, 255, 255, 0.08);
   --cv-edge: rgba(255, 255, 255, 0.11);
-  --cv-input-edge: rgba(255, 255, 255, 0.18);
+  --cv-input-edge: #777d95;
   --color-ink: var(--text);
   --color-muted: var(--text-muted);
   --color-dim: var(--text-subtle);
@@ -2989,3 +2989,175 @@ p.cv-talk-callout { display: flex; align-items: flex-start; gap: 7px; }
 
 /* A column of actions with their note, each on its own line. */
 .cv-actions-col { display: grid; gap: 10px; justify-items: start; }
+
+/* ================================================================ Design v2: dark blue
+ * From DESIGN-SPEC-v2: flat blue primary with an accessible hover, tinted segmented
+ * controls, underlined tabs, a plain breadcrumb outside the editor, 9 px fields,
+ * 12 px panels, 14 px cards, 3 px focus rings and no decorative motion. */
+.cv { --primary: #4a5af0; --primary-hover: #5261ec; --selected-bg: #252842; --selected-ink: #f1f1f4; --control-edge: #777d95; }
+html:not(.dark):not([data-theme="dark"]) .cv { --primary: #414fd9; --primary-hover: #3542bc; --selected-bg: #eceefe; --selected-ink: #2f3bb5; --control-edge: #68758a; }
+
+/* Primary: one flat blue, white text; no glow, shimmer or lift. */
+.cv .cv-btn-primary, html:not(.dark):not([data-theme="dark"]) .cv .cv-btn-primary {
+  background: var(--primary) !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  color: #fff !important;
+}
+.cv .cv-btn-primary::after { display: none; }
+.cv .cv-btn-primary:hover:not(:disabled):not([aria-disabled="true"]),
+html:not(.dark):not([data-theme="dark"]) .cv .cv-btn-primary:hover:not(:disabled):not([aria-disabled="true"]) {
+  background: var(--primary-hover) !important;
+  box-shadow: none !important;
+  transform: none;
+}
+.cv .cv-btn-primary:active:not(:disabled):not([aria-disabled="true"]) { background: var(--primary-hover) !important; transform: none; }
+.cv .cv-btn { border-radius: 11px; }
+.cv .cv-btn:hover:not(:disabled) { transform: none; }
+.cv :focus-visible { outline: 3px solid var(--focus, var(--color-blue)); outline-offset: 2px; }
+
+/* Fields */
+.cv .cv-input { border-radius: 9px; }
+
+/* Segmented controls: the chosen one is tinted and outlined, not filled. */
+.cv .cv-seg { box-shadow: none; }
+.cv .cv-seg > button[aria-pressed="true"],
+.cv .cv-seg > label:has(input:checked) > span,
+.cv .cv-seg > a.cv-seg-on {
+  background: var(--selected-bg);
+  color: var(--selected-ink);
+  box-shadow: inset 0 0 0 1px var(--color-blue);
+  font-weight: 600;
+}
+
+/* Tabs: the current one is underlined, with no fill. */
+.cv .cv-tabs [aria-current="page"], .cv .cv-tabs [aria-selected="true"] { background: none; }
+.cv .cv-tabs a::after, .cv .cv-tabs button::after { background: var(--color-blue); height: 2px; bottom: -2px; }
+
+/* Outside the editor the bar is a plain breadcrumb line. */
+.cv .cv-bar.cv-bar-plain,
+html:not(.dark):not([data-theme="dark"]) .cv .cv-bar.cv-bar-plain {
+  background: none;
+  border: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  padding: 0;
+  min-height: 0;
+  margin-bottom: 18px;
+}
+.cv .cv-bar-plain .cv-crumb { font-size: 12.5px; }
+.cv .cv-bar-plain .cv-crumb a { color: var(--color-blue); text-decoration: none; }
+.cv .cv-bar-plain .cv-crumb a:hover { text-decoration: underline; }
+
+/* Type scale */
+.cv h1 { font-size: 28px; line-height: 34px; letter-spacing: -0.02em; }
+@media (max-width: 767px) { .cv h1 { font-size: 25px; line-height: 30px; } }
+.cv .cv-toolbar { margin-bottom: 20px; align-items: flex-start; }
+.cv .cv-area { padding-top: 22px; animation: none; }
+
+/* Panels and cards */
+.cv .cv-panel { border-radius: 12px; }
+.cv .cv-card, .cv .cv-path { border-radius: 14px; }
+
+/* No decorative motion */
+.cv .cv-ring-arc { animation: none; }
+
+/* v2: report rows */
+.cv .cv-fix { gap: 8px; border-radius: 11px; padding: 14px; }
+.cv-fix-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; }
+.cv-fix-head b { font-size: 14px; font-weight: 600; }
+.cv-fix-quote { display: block; width: 100%; box-sizing: border-box; background: var(--color-panel-2); border-left: 2px solid var(--color-blue); border-radius: 6px; padding: 8px 10px; font-size: 13px; color: var(--color-ink); overflow-wrap: anywhere; }
+.cv-fix-link { justify-self: center; font-size: 13.5px; }
+.cv-wide-btn { width: 100%; }
+.cv-readrows { list-style: none; margin: 0; padding: 0; display: grid; }
+.cv-readrows > li, .cv-readrow-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.cv-readrows > li { padding: 12px 0; border-top: 1px solid var(--cv-edge); }
+.cv-readrows > li:first-child { border-top: 0; padding-top: 2px; }
+.cv-readrows > li > span:first-child, .cv-readrow-head > span:first-child { display: grid; gap: 3px; min-width: 0; }
+.cv-readrows b, .cv-readrow-head b { font-size: 14px; font-weight: 600; }
+.cv .cv-chip[data-status="ok"] { color: var(--success); background: var(--success-surface, transparent); }
+.cv-matchbox { display: grid; gap: 2px; justify-items: start; padding: 10px 14px; min-width: 128px; border: 1px solid var(--cv-edge); border-radius: 11px; background: var(--color-panel-2); }
+.cv-matchbox b { font-size: 34px; line-height: 1.05; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.cv-matchbox b small { font-size: 14px; font-weight: 500; color: var(--color-muted); letter-spacing: 0; }
+.cv-req { display: block; font-weight: 600; }
+.cv .cv-nextsteps { display: grid; gap: 10px; justify-items: stretch; }
+.cv .cv-nextsteps .cv-btn { width: 100%; }
+.cv .cv-eyebrow { text-transform: uppercase; letter-spacing: 0.08em; font-size: 11px; font-weight: 600; color: var(--color-muted); }
+.cv .cv-ring-key { font-size: 12px; }
+.cv-ring-band { font-size: 19px; font-weight: 700; }
+.cv-score-panel-ring .cv-ring-band { font-size: 16px; }
+
+/* v2: the CV list's row actions are accent text links; Delete keeps its warning colour. */
+.cv .cv-dashboard-actions .cv-btn-quiet:not(.cv-btn-danger) { color: var(--color-blue); }
+.cv .cv-dashboard-action-slots > div { min-width: 0; }
+.cv .cv-dashboard-action-slots { gap: 2px; }
+
+/* v2: the editor's header. Name and state on the left; actions on the right. On a phone: Talk it through, Download, More. */
+.cv .cv-bar.cv-edhead { align-items: flex-start; padding: 12px 14px; gap: 12px 16px; flex-wrap: wrap; border-radius: 12px; margin-bottom: 18px; }
+.cv-edhead-id { display: grid; gap: 4px; min-width: 0; }
+.cv-edhead-name { margin: 0; font-size: 17px; line-height: 23px; font-weight: 600; color: var(--color-ink); overflow-wrap: anywhere; }
+.cv .cv-edhead .cv-crumb a { color: var(--color-blue); text-decoration: none; }
+.cv-edhead-meta { gap: 8px; }
+.cv-region-toggle { cursor: pointer; display: inline-flex; gap: 6px; align-items: center; font-weight: 600; border: 1px solid var(--control-edge); }
+.cv-edhead-actions { display: flex; flex-wrap: wrap; gap: 7px; justify-content: flex-end; align-items: center; margin-left: auto; }
+.cv .cv-edhead-actions .cv-btn { min-height: 36px; padding: 6px 12px; font-size: 13px; }
+.cv .cv-phone-only { display: none !important; }
+@media (max-width: 767px) {
+  .cv .cv-notphone { display: none !important; }
+  .cv .cv-phone-only { display: inline-flex !important; }
+  .cv .cv-bar.cv-edhead { flex-direction: column; align-items: stretch; }
+  .cv-edhead-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: 100%; margin-left: 0; }
+  .cv .cv-edhead-actions .cv-btn { min-height: 44px; width: 100%; padding: 8px; }
+}
+.cv-morelist { display: grid; gap: 8px; }
+.cv .cv-morelist .cv-btn { width: 100%; justify-content: flex-start; min-height: 44px; }
+
+/* v2: Page / Editing fields, and Design, under 1200 px. */
+.cv-viewbar { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; margin-bottom: 14px; align-items: center; }
+.cv .cv-viewbar .cv-seg { display: flex; }
+.cv .cv-viewbar .cv-seg > button { flex: 1; }
+
+/* v2: editor columns: fields 320, the page widest, score and job keywords 272. */
+@media (min-width: 1200px) {
+  .cv .cv-workbench { grid-template-columns: minmax(320px, 0.8fr) minmax(0, 1.2fr); gap: 16px; }
+}
+@media (min-width: 1440px) {
+  .cv .cv-workbench { grid-template-columns: 320px minmax(0, 1fr) 272px; gap: 16px; }
+  .cv .cv-area:has(.cv-workbench) { padding-left: 16px; padding-right: 16px; }
+}
+
+/* v2: the format bar is two rows of four, then the fit line. */
+.cv .cv-formatbar .cv-fb-wide { grid-column: auto; }
+.cv .cv-formatbar { padding: 9px; gap: 6px 8px; }
+.cv .cv-formatbar .cv-fb-label { font-size: 11px; }
+
+/* v2: Check your document */
+.cv .cv-checkstep > legend { font-size: 17px; line-height: 23px; font-weight: 600; }
+.cv .cv-checkstep .cv-seg { justify-self: stretch; display: flex; }
+.cv [data-testid="check-submit"] { width: 100%; min-height: 40px; }
+.cv .cv-checkform > .cv-row:has([data-testid="check-submit"]) { display: grid; gap: 8px; }
+
+/* v2: New CV: writing it yourself is a quieter choice under the imports, after a divider. */
+.cv-starts-self { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--cv-edge); font-size: 13.5px; }
+.cv .cv-starts-self .cv-btn-quiet { color: var(--color-blue); }
+.cv .cv-starts-self .cv-btn-quiet[aria-pressed="true"] { background: var(--selected-bg); }
+
+/* v2: catalogue cards hold the page inset, with a rounded surround. */
+.cv .cv-card { padding: 10px; gap: 10px; }
+.cv .cv-card > .cv-thumb { border-radius: 8px; }
+.cv .cv-card-body { padding: 0 4px 4px; }
+/* v2: example actions fill the panel's width. */
+.cv .cv-actions-col { justify-items: stretch; }
+.cv .cv-actions-col .cv-btn { width: 100%; }
+
+/* v2: CV screens sit on the app's own background, with no panel of their own behind them. */
+.cv.cv-screen, html:not(.dark):not([data-theme="dark"]) .cv.cv-screen { background: transparent; }
+
+/* v2: on a phone the report reads score, fixes, read-back, then next steps. */
+@media (max-width: 900px) {
+  .cv .cv-reportgrid { display: flex; flex-direction: column; gap: 14px; }
+  .cv .cv-report-main, .cv .cv-report-side { display: contents; }
+  .cv .cv-report-side > [data-testid$="-score"], .cv .cv-report-side > .cv-score-note { order: -1; }
+  .cv .cv-report-side > .cv-nextpanel { order: 10; }
+}

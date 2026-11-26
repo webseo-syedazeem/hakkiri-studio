@@ -172,17 +172,16 @@ export function Setup() {
                   Import from LinkedIn
                 </Btn>
               </div>
-            </div>
-          </Panel>
-          <Panel title="Prefer to write it yourself?">
-            <div className="cv-pad">
-              <div className="cv-starts-buttons" role="group" aria-label="Write it yourself">
-                <Btn aria-pressed={method === "empty"} onClick={() => pick("empty")}>
-                  Start with a blank page
-                </Btn>
-                <Btn aria-pressed={method === "notes"} onClick={() => pick("notes")}>
-                  Answer three questions about one job
-                </Btn>
+              <div className="cv-starts-self" role="group" aria-label="Write it yourself">
+                <span className="cv-muted">Prefer to write it yourself?</span>
+                <span className="cv-row" style={{ gap: 4 }}>
+                  <Btn kind="quiet" aria-pressed={method === "empty"} onClick={() => pick("empty")}>
+                    Start with a blank page
+                  </Btn>
+                  <Btn kind="quiet" aria-pressed={method === "notes"} onClick={() => pick("notes")}>
+                    Answer three questions about one job
+                  </Btn>
+                </span>
               </div>
             </div>
           </Panel>

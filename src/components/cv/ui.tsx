@@ -47,7 +47,7 @@ export function CvScreen({ children }: { children: ReactNode }) {
     }, 80);
     return () => clearInterval(timer);
   }, [pathname]);
-  return <div className="cv min-w-0 grow w-full">{children}</div>;
+  return <div className="cv cv-screen min-w-0 grow w-full">{children}</div>;
 }
 
 export interface Crumb {
@@ -55,18 +55,25 @@ export interface Crumb {
   href?: string;
 }
 
-/** The bar: where you are on the left, save state and actions on the right. */
+/** Where you are: the section, then the page. */
+export function Crumbs({ crumbs }: { crumbs: Crumb[] }) {
+  return (
+    <nav aria-label="Breadcrumb" className="cv-crumb">
+      {crumbs.map((c, i) => (
+        <span key={c.label + i} className="cv-row" style={{ gap: 8 }}>
+          {i > 0 && <span aria-hidden="true">/</span>}
+          {c.href && i < crumbs.length - 1 ? <Link href={c.href}>{c.label}</Link> : <b aria-current={i === crumbs.length - 1 ? "page" : undefined}>{c.label}</b>}
+        </span>
+      ))}
+    </nav>
+  );
+}
+
+/** The bar: where you are on the left, save state and actions on the right. With no actions, a plain breadcrumb line. */
 export function Bar({ crumbs, children }: { crumbs: Crumb[]; children?: ReactNode }) {
   return (
-    <header className="cv-bar">
-      <nav aria-label="Breadcrumb" className="cv-crumb">
-        {crumbs.map((c, i) => (
-          <span key={c.label + i} className="cv-row" style={{ gap: 8 }}>
-            {i > 0 && <span aria-hidden="true">/</span>}
-            {c.href && i < crumbs.length - 1 ? <Link href={c.href}>{c.label}</Link> : <b aria-current={i === crumbs.length - 1 ? "page" : undefined}>{c.label}</b>}
-          </span>
-        ))}
-      </nav>
+    <header className={children ? "cv-bar" : "cv-bar cv-bar-plain"}>
+      <Crumbs crumbs={crumbs} />
       {children && <div className="cv-row">{children}</div>}
     </header>
   );

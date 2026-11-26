@@ -55,7 +55,9 @@ export function ScorePanel({ score, word, base, onShow }: { score: Score | null;
   return (
     <Panel title={title} data-testid="score-panel">
       <div className="cv-pad cv-stack">
-        <ScoreRing score={score.shown} label={title} size={104} />
+        <div className="cv-score-panel-ring">
+          <ScoreRing score={score.shown} label={title} size={94} />
+        </div>
         <ul className="cv-score-parts">
           {score.groups.map((g) => {
             const unchecked = g.pending >= g.points;

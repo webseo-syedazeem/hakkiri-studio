@@ -24,7 +24,7 @@ import { ContactForm, type FieldHooks, SectionForm } from "./SectionForms";
 import { ACCEPT, STAGE_WORDS, type UploadStage, sendUpload } from "./upload";
 import { jobFit } from "@/lib/cv/tailor/fit";
 import { fitLabel } from "./Tailor";
-import { Announce, Bar, Btn, BtnLink, CvScreen, CvSelect, Field, Fixed, Note, Panel, Skeleton, Toolbar } from "./ui";
+import { Announce, Bar, Btn, BtnLink, Crumbs, CvScreen, CvSelect, Field, Fixed, Note, Panel, Skeleton, Toolbar } from "./ui";
 import { SAVE_WORDS } from "./useCv";
 import { useWorkspace } from "./Workspace";
 import { ChooseAchievement, ProfileChooser, SkillSuggestions } from "./Writing";
@@ -257,71 +257,68 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
 
   return (
     <CvScreen>
-      <Bar crumbs={crumbs}>
-        {w.fromFindings && (
-          <BtnLink href={`/cv/v/${cv.id}/findings`} onClick={() => void flush()}>
-            Back to findings
+      <header className="cv-bar cv-edhead">
+        <div className="cv-edhead-id min-w-0">
+          <Crumbs crumbs={crumbs} />
+          <p className="cv-edhead-name">{cv.name}</p>
+          <div className="cv-row cv-edhead-meta">
+            <span className="cv-chip">{cv.kind === "base" ? `Base ${word}` : cv.target?.employer || "Tailored copy"}</span>
+            <button
+              type="button"
+              onClick={() => {
+                const nextRegion = cv.region === "uk" ? "us" : "uk";
+                update({ region: nextRegion, design: { ...cv.design, pageSize: nextRegion === "uk" ? "a4" : "letter" } });
+                say(`Spelling switched to ${nextRegion === "uk" ? "UK English (A4)" : "US English (Letter)"}.`);
+              }}
+              className="cv-chip cv-region-toggle"
+              title={`Spelling format: ${cv.region === "uk" ? "UK (British)" : "US (American)"}. Click to toggle.`}
+              aria-label={`Toggle spelling between UK and US. Currently ${cv.region.toUpperCase()}`}
+              data-testid="spelling-toggle"
+            >
+              <span>{cv.region === "uk" ? "UK" : "US"}</span>
+              <span aria-hidden="true">⇄</span>
+            </button>
+            <small role="status" data-testid="save-state" data-save={save}>
+              {SAVE_WORDS[save]}
+            </small>
+            {(save === "failed" || save === "device") && <Btn onClick={retry}>Retry</Btn>}
+          </div>
+        </div>
+        <div className="cv-edhead-actions">
+          {w.fromFindings && (
+            <BtnLink className="cv-notphone" href={`/cv/v/${cv.id}/findings`} onClick={() => void flush()}>
+              Back to findings
+            </BtnLink>
+          )}
+          <BtnLink href={`/cv/v/${cv.id}/talk`} onClick={() => void flush()} data-testid="talk-button">
+            Talk it through
           </BtnLink>
-        )}
-        <span className="cv-chip">{cv.kind === "base" ? `Base ${word}` : cv.target?.employer || "Tailored version"}</span>
-        <button
-          type="button"
-          onClick={() => {
-            const nextRegion = cv.region === "uk" ? "us" : "uk";
-            update({
-              region: nextRegion,
-              design: {
-                ...cv.design,
-                pageSize: nextRegion === "uk" ? "a4" : "letter",
-              },
-            });
-            say(`Spelling switched to ${nextRegion === "uk" ? "UK English (A4)" : "US English (Letter)"}.`);
-          }}
-          className="cv-chip"
-          style={{
-            cursor: "pointer",
-            fontWeight: 600,
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 5,
-            border: "1px solid var(--cv-line, #cbd5e1)",
-          }}
-          title={`Spelling format: ${cv.region === "uk" ? "UK (British)" : "US (American)"}. Click to toggle.`}
-          aria-label={`Toggle spelling between UK and US. Currently ${cv.region.toUpperCase()}`}
-          data-testid="spelling-toggle"
-        >
-          <span>{cv.region === "uk" ? "🇬🇧 UK" : "🇺🇸 US"}</span>
-          <span style={{ fontSize: 10, opacity: 0.7 }}>⇄</span>
-        </button>
-        <BtnLink href={`/cv/v/${cv.id}/talk`} onClick={() => void flush()} data-testid="talk-button">
-          Talk it through
-        </BtnLink>
-        <BtnLink href={`/cv/v/${cv.id}/findings`} onClick={() => void flush()} data-testid="score-button">
-          {scoreLabel(w.score, word)}
-        </BtnLink>
-        <BtnLink href={`/cv/v/${cv.id}/tailor`} onClick={() => void flush()} data-testid="fit-button">
-          {fitLabel(cv.requirements.length ? jobFit(cv).score : null)}
-        </BtnLink>
-        <BtnLink href={`/cv/v/${cv.id}/letter`} onClick={() => void flush()} data-testid="letter-button">
-          Cover letter
-        </BtnLink>
-        <Btn onClick={() => openPanel("download")} data-testid="download-button">
-          Download
-        </Btn>
-        <Btn onClick={() => openPanel("share")} data-testid="share-button">
-          Share
-        </Btn>
-        <small role="status" data-testid="save-state" data-save={save}>
-          {SAVE_WORDS[save]}
-        </small>
-        {(save === "failed" || save === "device") && <Btn onClick={retry}>Retry</Btn>}
-        <Btn onClick={doUndo} disabled={!canUndo} aria-keyshortcuts="Control+Z Meta+Z">
-          Undo
-        </Btn>
-        <Btn onClick={doRedo} disabled={!canRedo} aria-keyshortcuts="Control+Shift+Z Meta+Shift+Z">
-          Redo
-        </Btn>
-      </Bar>
+          <BtnLink className="cv-notphone" href={`/cv/v/${cv.id}/findings`} onClick={() => void flush()} data-testid="score-button">
+            {scoreLabel(w.score, word)}
+          </BtnLink>
+          <BtnLink className="cv-notphone" href={`/cv/v/${cv.id}/tailor`} onClick={() => void flush()} data-testid="fit-button">
+            {fitLabel(cv.requirements.length ? jobFit(cv).score : null)}
+          </BtnLink>
+          <BtnLink className="cv-notphone" href={`/cv/v/${cv.id}/letter`} onClick={() => void flush()} data-testid="letter-button">
+            Cover letter
+          </BtnLink>
+          <Btn kind="primary" onClick={() => openPanel("download")} data-testid="download-button">
+            Download
+          </Btn>
+          <Btn className="cv-notphone" onClick={() => openPanel("share")} data-testid="share-button">
+            Share
+          </Btn>
+          <Btn className="cv-notphone" onClick={doUndo} disabled={!canUndo} aria-keyshortcuts="Control+Z Meta+Z">
+            Undo
+          </Btn>
+          <Btn className="cv-notphone" onClick={doRedo} disabled={!canRedo} aria-keyshortcuts="Control+Shift+Z Meta+Shift+Z">
+            Redo
+          </Btn>
+          <Btn className="cv-phone-only" onClick={() => openPanel("more")} data-testid="more-button">
+            More
+          </Btn>
+        </div>
+      </header>
       <div className="cv-area">
         <h1 className="sr-only">
           Edit {word}: {cv.name}
@@ -393,13 +390,13 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
         </div>
 
         <ScoreLine score={w.score} word={word} base={`/cv/v/${cv.id}`} />
-        <div className="cv-row cv-narrow" style={{ marginBottom: 14 }}>
+        <div className="cv-narrow cv-viewbar">
           <div className="cv-seg" role="group" aria-label="Show">
-            <button type="button" aria-pressed={view === "edit"} onClick={() => setView("edit")}>
-              Edit
-            </button>
             <button type="button" aria-pressed={view === "paper"} onClick={() => setView("paper")}>
-              Paper
+              Page
+            </button>
+            <button type="button" aria-pressed={view === "edit"} onClick={() => setView("edit")}>
+              Editing fields
             </button>
           </div>
           {!isFinish && (
@@ -550,6 +547,45 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
         <Dialog title="Download" onClose={closePanel} wide>
           <p style={{ marginTop: 0 }}>Download your current {word} as PDF or Word. Each file is read back and compared with your {word} before it is downloaded.</p>
           <FilesPanel say={say} inDialog />
+        </Dialog>
+      )}
+      {panel === "more" && (
+        <Dialog title="More actions" onClose={closePanel}>
+          <div className="cv-morelist">
+            {w.fromFindings && (
+              <BtnLink href={`/cv/v/${cv.id}/findings`} onClick={() => void flush()}>
+                Back to findings
+              </BtnLink>
+            )}
+            <BtnLink href={`/cv/v/${cv.id}/findings`} onClick={() => void flush()}>
+              {scoreLabel(w.score, word)}
+            </BtnLink>
+            <BtnLink href={`/cv/v/${cv.id}/tailor`} onClick={() => void flush()}>
+              {fitLabel(cv.requirements.length ? jobFit(cv).score : null)}
+            </BtnLink>
+            <BtnLink href={`/cv/v/${cv.id}/letter`} onClick={() => void flush()}>
+              Cover letter
+            </BtnLink>
+            <Btn onClick={() => openPanel("share")}>Share</Btn>
+            <Btn
+              onClick={() => {
+                closePanel();
+                doUndo();
+              }}
+              disabled={!canUndo}
+            >
+              Undo
+            </Btn>
+            <Btn
+              onClick={() => {
+                closePanel();
+                doRedo();
+              }}
+              disabled={!canRedo}
+            >
+              Redo
+            </Btn>
+          </div>
         </Dialog>
       )}
       {panel === "share" && <ShareDialog cv={cv} word={word} saved={save === "saved"} flush={flush} onClose={closePanel} say={say} />}

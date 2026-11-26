@@ -379,9 +379,8 @@ function Row({ cv, indent, copies = 0, onAction }: { cv: CvSummary; indent?: boo
               </span>
             )}
           </div>
-          <small style={{ display: "block", marginTop: 4 }}>
-            {cv.kind === "tailored" ? (indent ? "Tailored version" : `Tailored version (its base ${docWord(cv.region)} was deleted)`) : `Base ${docWord(cv.region)}`} · {LEVEL_LABELS[cv.level]} · {cv.region.toUpperCase()}
-            {target ? ` · ${target}` : ""} · Changed {when(cv.updatedAt)}
+          <small style={{ display: "block", marginTop: 4 }} title={[LEVEL_LABELS[cv.level], cv.region.toUpperCase(), target].filter(Boolean).join(" · ")}>
+            {cv.kind === "tailored" ? (indent ? `Tailored copy${target ? ` · ${target}` : ""}` : `Tailored copy (its base ${docWord(cv.region)} was deleted)`) : `Base ${docWord(cv.region)}`} · Changed {when(cv.updatedAt)}
             {copies > 0 ? ` · ${copies} tailored ${copies === 1 ? "copy" : "copies"}` : ""}
           </small>
         </div>
