@@ -9,6 +9,7 @@ import { pastedDocument, readDocument, type ReadDoc } from "./read-docs";
 import { CalendarPopup, TimePickerPopup } from "./DatePicker";
 import { DraftStorageModal } from "./DraftStorageModal";
 import { buildRequest, focusMix, hasDraftContent, mixLine, roundsSelected as existingRounds, setupProblems, type SetupForm } from "@/lib/interviews/setup-form";
+import { FOCUS_CATEGORIES, getSuggestedWeights, weightsLine, type FocusCategoryKey } from "@/lib/interviews/settings";
 import { formatStageDate } from "@/lib/format";
 
 /* ------------------------------------------------------------------ DocField (exported for RebuildFlow) */
@@ -174,9 +175,68 @@ export function InterviewSetup() {
   const [jobLinkError, setJobLinkError] = useState<string | null>(null);
   const [jobPastedText, setJobPastedText] = useState("");
 
-  // CV modes: "attach" | "paste"
-  const [cvMode, setCvMode] = useState<"attach" | "paste">("attach");
+  // CV modes: "attach" | "paste" | "my-cvs"
+  const [cvMode, setCvMode] = useState<"attach" | "paste" | "my-cvs">("attach");
   const [cvPastedText, setCvPastedText] = useState("");
+  const [myCvs, setMyCvs] = useState<Array<{ id: string; name: string; targetTitle?: string; targetEmployer?: string; score?: number; updatedAt: string }>>([]);
+  const [loadingMyCvs, setLoadingMyCvs] = useState(false);
+  const [selectedCvId, setSelectedCvId] = useState<string | null>(null);
+
+  const loadMyCvs = async () => {
+    setLoadingMyCvs(true);
+    try {
+      const res = await fetch("/api/cv/versions");
+      if (res.ok) {
+        const data = await res.json();
+        setMyCvs(data.cvs || []);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setLoadingMyCvs(false);
+    }
+  };
+
+  const selectCv = async (id: string) => {
+    setSelectedCvId(id);
+    try {
+      const res = await fetch(`/api/cv/versions/${id}`);
+      if (res.ok) {
+        const { cv } = await res.json();
+        let parts: string[] = [];
+        if (cv.contact?.fullName) parts.push(cv.contact.fullName);
+        if (cv.contact?.email || cv.contact?.phone) parts.push([cv.contact.email, cv.contact.phone].filter(Boolean).join(" | "));
+        if (cv.sections) {
+          for (const s of cv.sections) {
+            parts.push(`\n## ${s.title}`);
+            for (const e of s.entries || []) {
+              parts.push(`\n### ${e.title || ""} ${e.org ? `at ${e.org}` : ""} ${e.period ? `(${e.period})` : ""}`);
+              for (const b of e.bullets || []) {
+                if (b.text) parts.push(`• ${b.text}`);
+              }
+            }
+          }
+        }
+        const fullText = parts.join("\n");
+        setCvDoc({
+          name: cv.name || "Built CV",
+          uploaded: true,
+          text: fullText,
+          detail: `${cv.name} · Score ${cv.score !== undefined ? `${cv.score}/100` : "unscored"}`,
+        });
+        if (cv.target) {
+          if (cv.target.employer && !companyName) setCompanyName(cv.target.employer);
+          if (cv.target.title && !jobTitle) setJobTitle(cv.target.title);
+          if (cv.target.advert && !jobPastedText) {
+            setJobPastedText(cv.target.advert);
+            setJobMode("paste");
+          }
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const cvInputRef = useRef<HTMLInputElement>(null);
   const jobInputRef = useRef<HTMLInputElement>(null);
@@ -480,6 +540,10 @@ export function InterviewSetup() {
 
   // Step 3: Practice Setup State
   const [selectedRounds, setSelectedRounds] = useState<string[]>(["1"]); // the one stage a new form starts with
+  const [interviewStyle, setInterviewStyle] = useState<"recommended" | "custom">("recommended");
+  const [categoryWeights, setCategoryWeights] = useState<Record<FocusCategoryKey, number>>(() =>
+    getSuggestedWeights(jobTitle, jobDoc?.text || jobPastedText)
+  );
   const [techFocus, setTechFocus] = useState(50);
   const [skillsFocus, setSkillsFocus] = useState(30);
   const [expFocus, setExpFocus] = useState(20);
@@ -487,10 +551,19 @@ export function InterviewSetup() {
   const [duration, setDuration] = useState<10 | 20 | 30 | 45>(30);
   const [advancedOpen, setAdvancedOpen] = useState(false);
 
+  // Keep suggested categories in sync with job advert when on recommended style
+  useEffect(() => {
+    if (interviewStyle === "recommended") {
+      setCategoryWeights(getSuggestedWeights(jobTitle, jobDoc?.text || jobPastedText));
+    }
+  }, [jobTitle, jobDoc, jobPastedText, interviewStyle]);
+
   // Loading & Submission State
   const [isBuilding, setIsBuilding] = useState(false);
   /** Why the interview couldn't be built, from the form's own checks or from the server. */
   const [buildError, setBuildError] = useState<string | null>(null);
+  const [step1Errors, setStep1Errors] = useState<{ company?: string; title?: string; job?: string; cv?: string }>({});
+  const [showCancelModal, setShowCancelModal] = useState(false);
   /** True once a saved draft (if any) has been read back, so an empty form never overwrites it. */
   const [draftRead, setDraftRead] = useState(false);
   const [lastSavedTime, setLastSavedTime] = useState<string | null>(null);
@@ -519,6 +592,8 @@ export function InterviewSetup() {
         }
         if (parsed.stages && Array.isArray(parsed.stages) && parsed.stages.length > 0) setStages(parsed.stages);
         if (parsed.selectedRounds) setSelectedRounds(parsed.selectedRounds);
+        if (parsed.interviewStyle) setInterviewStyle(parsed.interviewStyle);
+        if (parsed.categoryWeights) setCategoryWeights(parsed.categoryWeights);
         if (parsed.techFocus !== undefined) setTechFocus(parsed.techFocus);
         if (parsed.skillsFocus !== undefined) setSkillsFocus(parsed.skillsFocus);
         if (parsed.expFocus !== undefined) setExpFocus(parsed.expFocus);
@@ -554,12 +629,70 @@ export function InterviewSetup() {
     stages,
     difficulty,
     minutes: duration,
-    focus: { technical: techFocus, skills: skillsFocus, experience: expFocus },
+    focus: { technical: techFocus, skills: skillsFocus, experience: expFocus, categories: categoryWeights },
   };
   const problems = setupProblems(form);
   const mixToSend = focusMix(form.focus);
   const rounds = existingRounds(selectedRounds, stages);
   const missing = (field: "company" | "job" | "cv") => problems.some((p) => p.field === field);
+
+  const totalCategoryWeight = Object.values(categoryWeights).reduce((a, b) => a + b, 0);
+
+  const toggleCategory = (key: FocusCategoryKey) => {
+    setCategoryWeights((prev) => {
+      const currentVal = prev[key] || 0;
+      if (currentVal > 0) {
+        return { ...prev, [key]: 0 };
+      }
+      const currentSum = Object.values(prev).reduce((a, b) => a + b, 0);
+      const remaining = Math.max(5, 100 - currentSum);
+      const add = Math.min(20, Math.max(5, remaining));
+      return { ...prev, [key]: add };
+    });
+    setInterviewStyle("custom");
+  };
+
+  const adjustCategory = (key: FocusCategoryKey, delta: number) => {
+    setCategoryWeights((prev) => {
+      const currentVal = prev[key] || 0;
+      const nextVal = Math.max(5, Math.min(100, currentVal + delta));
+      return { ...prev, [key]: nextVal };
+    });
+    setInterviewStyle("custom");
+  };
+
+  const validateStep1 = (): boolean => {
+    const errs: { company?: string; title?: string; job?: string; cv?: string } = {};
+    if (!companyName.trim()) {
+      errs.company = "Enter the employer or company name.";
+    }
+    if (!jobTitle.trim()) {
+      errs.title = "Enter the job title.";
+    }
+    const jobWords = (form.jobText || "").trim().split(/\s+/).filter(Boolean).length;
+    if (!form.jobText.trim() && !form.jobUrl.trim()) {
+      errs.job = "Add a job advert or description.";
+    } else if (!form.jobText.trim() && form.jobUrl.trim()) {
+      errs.job = "Job link hasn't been read yet. Click Read URL or paste description text.";
+    } else if (jobWords < 40) {
+      errs.job = "Job description needs at least 40 words to write relevant questions.";
+    }
+
+    const cvWords = (form.cvText || "").trim().split(/\s+/).filter(Boolean).length;
+    if (!form.cvText.trim()) {
+      errs.cv = "Upload your CV or paste its text.";
+    } else if (cvWords < 40) {
+      errs.cv = "Your CV needs at least 40 words to pull relevant experience.";
+    }
+
+    setStep1Errors(errs);
+    if (Object.keys(errs).length > 0) {
+      setBuildError("Please complete the required fields in Step 1 before continuing.");
+      return false;
+    }
+    setBuildError(null);
+    return true;
+  };
 
   /** Writes the draft to this browser. Returns the time it was saved, or null when it couldn't be. */
   const writeDraft = (): string | null => {
@@ -579,6 +712,8 @@ export function InterviewSetup() {
       stagesExpectation,
       stages,
       selectedRounds,
+      interviewStyle,
+      categoryWeights,
       techFocus,
       skillsFocus,
       expFocus,
@@ -598,7 +733,7 @@ export function InterviewSetup() {
 
   // The draft is saved as the person goes, once there is something to save, so a refresh brings it back.
   // "Draft saved" is only ever shown after it really has been.
-  const draftSnapshot = JSON.stringify([companyName, jobTitle, companyWebsite, cvDoc, jobDoc, coverDoc, jobMode, jobUrl, jobPastedText, cvMode, cvPastedText, stagesExpectation, stages, selectedRounds, techFocus, skillsFocus, expFocus, difficulty, duration, step]);
+  const draftSnapshot = JSON.stringify([companyName, jobTitle, companyWebsite, cvDoc, jobDoc, coverDoc, jobMode, jobUrl, jobPastedText, cvMode, cvPastedText, stagesExpectation, stages, selectedRounds, interviewStyle, categoryWeights, techFocus, skillsFocus, expFocus, difficulty, duration, step]);
   useEffect(() => {
     if (!draftRead || isBuilding || !hasDraftContent(form)) return;
     const timer = setTimeout(() => {
@@ -757,7 +892,10 @@ export function InterviewSetup() {
                   )}
                   <button
                     type="button"
-                    onClick={() => setStep(s.num as 1 | 2 | 3 | 4)}
+                    onClick={() => {
+                      if (s.num > 1 && !validateStep1()) return;
+                      setStep(s.num as 1 | 2 | 3 | 4);
+                    }}
                     className="group flex flex-col items-center gap-1.5 cursor-pointer transition-transform active:scale-95 px-1"
                   >
                     <div
@@ -851,30 +989,38 @@ export function InterviewSetup() {
                     <label className="mb-2 block text-xs font-semibold text-ink">
                       Company name <span className="text-red-soft">*</span>
                     </label>
-                    <div className="flex h-[46px] items-center gap-3 rounded-[12px] bg-panel-2 px-3.5 shadow-[inset_0_0_0_1px_var(--color-line-strong)] transition-all focus-within:shadow-[inset_0_0_0_1.5px_var(--color-blue)]">
+                    <div className={clsx("flex h-[46px] items-center gap-3 rounded-[12px] bg-panel-2 px-3.5 shadow-[inset_0_0_0_1px_var(--color-line-strong)] transition-all focus-within:shadow-[inset_0_0_0_1.5px_var(--color-blue)]", step1Errors.company && "border border-red-500/50")}>
                       <input
                         type="text"
                         value={companyName}
-                        onChange={(e) => setCompanyName(e.target.value)}
+                        onChange={(e) => {
+                          setCompanyName(e.target.value);
+                          if (step1Errors.company) setStep1Errors((prev) => ({ ...prev, company: undefined }));
+                        }}
                         placeholder="e.g. HMRC, Monzo, Google"
                         className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-dim"
                       />
                     </div>
+                    {step1Errors.company && <p className="mt-1.5 text-xs text-red-soft" role="alert">{step1Errors.company}</p>}
                   </div>
 
                   <div>
                     <label className="mb-2 block text-xs font-semibold text-ink">
                       Job title <span className="text-red-soft">*</span>
                     </label>
-                    <div className="flex h-[46px] items-center gap-3 rounded-[12px] bg-panel-2 px-3.5 shadow-[inset_0_0_0_1px_var(--color-line-strong)] transition-all focus-within:shadow-[inset_0_0_0_1.5px_var(--color-blue)]">
+                    <div className={clsx("flex h-[46px] items-center gap-3 rounded-[12px] bg-panel-2 px-3.5 shadow-[inset_0_0_0_1px_var(--color-line-strong)] transition-all focus-within:shadow-[inset_0_0_0_1.5px_var(--color-blue)]", step1Errors.title && "border border-red-500/50")}>
                       <input
                         type="text"
                         value={jobTitle}
-                        onChange={(e) => setJobTitle(e.target.value)}
+                        onChange={(e) => {
+                          setJobTitle(e.target.value);
+                          if (step1Errors.title) setStep1Errors((prev) => ({ ...prev, title: undefined }));
+                        }}
                         placeholder="e.g. Associate Product Manager"
                         className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-dim"
                       />
                     </div>
+                    {step1Errors.title && <p className="mt-1.5 text-xs text-red-soft" role="alert">{step1Errors.title}</p>}
                   </div>
                 </div>
 
@@ -1049,17 +1195,22 @@ export function InterviewSetup() {
                         </div>
                       </div>
                     )}
+                    {step1Errors.job && (
+                      <p className="mt-2.5 text-xs text-red-soft" role="alert">
+                        {step1Errors.job}
+                      </p>
+                    )}
                   </div>
 
                   {/* 2. CV & Optional Cover Letter Grid */}
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     {/* CV Card */}
-                    <div className="rounded-[16px] bg-panel-2/70 p-4 border border-line/80 shadow-sm">
+                    <div className={clsx("rounded-[16px] bg-panel-2/70 p-4 border shadow-sm", step1Errors.cv ? "border-red-500/50" : "border-line/80")}>
                       <div className="flex items-center justify-between gap-2 mb-3">
                         <div className="flex items-center gap-2 text-xs font-semibold text-ink">
                           <Icon name="doc" size={15} className="text-blue-soft" />
                           <span>Your CV</span>
-                          {cvDoc?.uploaded && (
+                          {cvDoc?.uploaded && cvDoc.text?.trim() && (
                             <span className="rounded-full bg-[#10b981]/15 px-2 py-0.5 text-[10px] font-semibold text-[#10b981] flex items-center gap-1">
                               <Icon name="check" size={11} strokeWidth={2.5} />
                               <span>{cvDoc.detail || "Ready"}</span>
@@ -1087,6 +1238,19 @@ export function InterviewSetup() {
                           >
                             Paste Text
                           </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCvMode("my-cvs");
+                              void loadMyCvs();
+                            }}
+                            className={clsx(
+                              "rounded-md px-2 py-0.5 text-[10px] font-medium transition-colors cursor-pointer",
+                              cvMode === "my-cvs" ? "bg-blue-fill text-white" : "text-muted hover:text-ink"
+                            )}
+                          >
+                            Use My CV
+                          </button>
                         </div>
                       </div>
 
@@ -1106,7 +1270,11 @@ export function InterviewSetup() {
                               <span className="text-[10px] text-muted">{cvDoc?.detail || "Click to upload / browse"}</span>
                             </div>
                           </div>
-                          <Icon name="check" size={14} strokeWidth={2.5} className="text-[#10b981] shrink-0" />
+                          {cvDoc?.uploaded && cvDoc.text?.trim() ? (
+                            <Icon name="check" size={14} strokeWidth={2.5} className="text-[#10b981] shrink-0" />
+                          ) : (
+                            <Icon name="cloudUpload" size={14} className="text-muted shrink-0" />
+                          )}
                           <input
                             ref={cvInputRef}
                             type="file"
@@ -1118,7 +1286,7 @@ export function InterviewSetup() {
                             }}
                           />
                         </div>
-                      ) : (
+                      ) : cvMode === "paste" ? (
                         <div className="space-y-1">
                           <textarea
                             rows={3}
@@ -1131,6 +1299,67 @@ export function InterviewSetup() {
                             {cvPastedText.split(/\s+/).filter(Boolean).length} words
                           </div>
                         </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {loadingMyCvs ? (
+                            <div className="p-3 text-center text-xs text-muted">Loading your CVs…</div>
+                          ) : myCvs.length === 0 ? (
+                            <div className="p-3 text-center text-xs text-muted bg-[#141620] rounded-[10px] border border-line/60">
+                              No saved CVs found. <Link href="/cv/new" className="text-blue-soft underline">Create a CV</Link> or attach a file above.
+                            </div>
+                          ) : (
+                            <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                              {myCvs.map((cv) => {
+                                const isSelected = selectedCvId === cv.id;
+                                return (
+                                  <div
+                                    key={cv.id}
+                                    onClick={() => void selectCv(cv.id)}
+                                    className={clsx(
+                                      "p-2.5 rounded-[10px] border cursor-pointer transition-all flex items-center justify-between text-xs",
+                                      isSelected
+                                        ? "bg-blue-fill/15 border-blue-soft text-white"
+                                        : "bg-[#141620] border-line/60 text-ink hover:border-line"
+                                    )}
+                                  >
+                                    <div className="min-w-0">
+                                      <div className="font-semibold truncate">{cv.name}</div>
+                                      <div className="text-[10px] text-muted flex items-center gap-2 mt-0.5">
+                                        <span>{cv.targetTitle || "General CV"}</span>
+                                        <span>•</span>
+                                        <span>{new Date(cv.updatedAt).toLocaleDateString()}</span>
+                                        {cv.score !== undefined && (
+                                          <span className="text-blue-soft font-semibold">Score: {cv.score}/100</span>
+                                        )}
+                                      </div>
+                                    </div>
+                                    {isSelected && (
+                                      <Icon name="check" size={14} className="text-[#10b981] shrink-0 ml-2" />
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                          {selectedCvId && (
+                            <div className="pt-1 text-right">
+                              <Link
+                                href={`/cv/${selectedCvId}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[11px] text-blue-soft hover:underline inline-flex items-center gap-1"
+                              >
+                                <span>Open this CV in the builder</span>
+                                <span>↗</span>
+                              </Link>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {step1Errors.cv && (
+                        <p className="mt-2 text-xs text-red-soft" role="alert">
+                          {step1Errors.cv}
+                        </p>
                       )}
                     </div>
 
@@ -1202,12 +1431,19 @@ export function InterviewSetup() {
 
                 {/* Step 1 Actions */}
                 <div className="mt-4 flex items-center justify-between border-t border-line pt-5">
-                  <Link
-                    href="/interviews"
-                    className="inline-flex h-[42px] items-center justify-center rounded-[11px] bg-panel-2 px-5 text-sm font-semibold text-muted shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:text-ink transition-all"
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (companyName || jobTitle || form.jobText || form.cvText) {
+                        setShowCancelModal(true);
+                      } else {
+                        router.push("/interviews");
+                      }
+                    }}
+                    className="inline-flex h-[42px] items-center justify-center rounded-[11px] bg-panel-2 px-5 text-sm font-semibold text-muted shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:text-ink transition-all cursor-pointer"
                   >
                     Cancel
-                  </Link>
+                  </button>
                   <div className="flex items-center gap-3">
                     <button
                       type="button"
@@ -1218,7 +1454,9 @@ export function InterviewSetup() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => setStep(2)}
+                      onClick={() => {
+                        if (validateStep1()) setStep(2);
+                      }}
                       className="group/btn relative overflow-hidden inline-flex h-[42px] items-center justify-center gap-2 rounded-[11px] bg-blue-fill px-6 text-sm font-semibold text-white shadow-[0_4px_16px_rgba(74,90,240,0.35)] hover:bg-blue-hover hover:shadow-[0_0_24px_rgba(90,105,255,0.6)] active:scale-95 transition-all cursor-pointer"
                     >
                       <span className="relative z-10">Continue to stages →</span>
@@ -1851,75 +2089,157 @@ export function InterviewSetup() {
                 </span>
               </div>
 
-              {/* Question Focus Sliders with Interactive Tracks */}
+              {/* Interview style (Client Image 6) */}
               <div className="mt-6 border-t border-line pt-5">
-                <h3 className="text-[14px] font-bold text-ink">Question focus</h3>
-                <p className="mt-0.5 text-xs text-muted">How much of each kind of question to write. The three are shared out of 100%.</p>
-                <p className="mt-1 text-xs text-ink" data-testid="mix-sent">
-                  Your questions will be: <b className="font-semibold">{mixLine(mixToSend)}</b>
-                </p>
-
-                <div className="mt-4 flex flex-col gap-4">
-                  {/* Technical Bar */}
-                  <div className="flex items-center gap-4">
-                    <span className="w-24 text-xs font-semibold text-ink shrink-0">Technical</span>
-                    <div className="relative h-3 grow rounded-full bg-[#171d32] overflow-hidden flex items-center">
-                      <div
-                        className="h-full rounded-full bg-[#6366f1] shadow-[0_0_10px_rgba(99,102,241,0.6)] transition-all duration-150"
-                        style={{ width: `${techFocus}%` }}
-                      />
-                      <input
-                        type="range"
-                        min={0}
-                        max={100}
-                        value={techFocus}
-                        onChange={(e) => setTechFocus(Number(e.target.value))}
-                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                      />
+                <h3 className="text-[14px] font-bold text-ink">Interview style</h3>
+                <div className="mt-3 flex flex-col gap-2">
+                  <label className="flex items-start gap-3 rounded-xl border border-white/[0.08] bg-panel-2/60 p-3.5 hover:border-white/20 transition-all cursor-pointer">
+                    <input
+                      type="radio"
+                      name="interviewStyle"
+                      value="recommended"
+                      checked={interviewStyle === "recommended"}
+                      onChange={() => {
+                        setInterviewStyle("recommended");
+                        setCategoryWeights(getSuggestedWeights(jobTitle, jobDoc?.text || jobPastedText));
+                      }}
+                      className="mt-0.5 h-4 w-4 text-indigo-500 accent-indigo-500 cursor-pointer"
+                    />
+                    <div>
+                      <span className="text-xs font-semibold text-ink">
+                        Recommended from job description
+                      </span>
+                      <span className="text-xs text-muted"> — Hakkiri chooses the relevant categories.</span>
                     </div>
-                    <span className="w-12 text-right text-xs font-bold text-ink num">{techFocus}%</span>
-                  </div>
+                  </label>
 
-                  {/* Skills Bar */}
-                  <div className="flex items-center gap-4">
-                    <span className="w-24 text-xs font-semibold text-ink shrink-0">Skills</span>
-                    <div className="relative h-3 grow rounded-full bg-[#171d32] overflow-hidden flex items-center">
-                      <div
-                        className="h-full rounded-full bg-[#6366f1] shadow-[0_0_10px_rgba(99,102,241,0.6)] transition-all duration-150"
-                        style={{ width: `${skillsFocus}%` }}
-                      />
-                      <input
-                        type="range"
-                        min={0}
-                        max={100}
-                        value={skillsFocus}
-                        onChange={(e) => setSkillsFocus(Number(e.target.value))}
-                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                      />
+                  <label className="flex items-start gap-3 rounded-xl border border-white/[0.08] bg-panel-2/60 p-3.5 hover:border-white/20 transition-all cursor-pointer">
+                    <input
+                      type="radio"
+                      name="interviewStyle"
+                      value="custom"
+                      checked={interviewStyle === "custom"}
+                      onChange={() => setInterviewStyle("custom")}
+                      className="mt-0.5 h-4 w-4 text-indigo-500 accent-indigo-500 cursor-pointer"
+                    />
+                    <div>
+                      <span className="text-xs font-semibold text-ink">Custom</span>
+                      <span className="text-xs text-muted"> — Choose your own categories and weighting.</span>
                     </div>
-                    <span className="w-12 text-right text-xs font-bold text-ink num">{skillsFocus}%</span>
-                  </div>
-
-                  {/* Experience Bar */}
-                  <div className="flex items-center gap-4">
-                    <span className="w-24 text-xs font-semibold text-ink shrink-0">Experience</span>
-                    <div className="relative h-3 grow rounded-full bg-[#171d32] overflow-hidden flex items-center">
-                      <div
-                        className="h-full rounded-full bg-[#6366f1] shadow-[0_0_10px_rgba(99,102,241,0.6)] transition-all duration-150"
-                        style={{ width: `${expFocus}%` }}
-                      />
-                      <input
-                        type="range"
-                        min={0}
-                        max={100}
-                        value={expFocus}
-                        onChange={(e) => setExpFocus(Number(e.target.value))}
-                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                      />
-                    </div>
-                    <span className="w-12 text-right text-xs font-bold text-ink num">{expFocus}%</span>
-                  </div>
+                  </label>
                 </div>
+              </div>
+
+              {/* Question Focus - 10 Categories with Checkboxes & Weighting (Client Image 7) */}
+              <div className="mt-6 border-t border-line pt-5">
+                <div className="flex flex-col gap-1">
+                  <h3 className="text-[14px] font-bold text-ink">Question focus</h3>
+                  <p className="text-xs text-muted">
+                    Choose the types of questions to include in your mock interview.
+                  </p>
+                </div>
+
+                <div className="mt-3 flex items-center justify-between gap-2 border-b border-white/[0.08] pb-3">
+                  <span className="text-xs text-muted truncate">
+                    {interviewStyle === "recommended"
+                      ? `Suggested for ${jobTitle.trim() || companyName.trim() || "Associate Product Manager"}`
+                      : "Customised question weighting"}
+                  </span>
+                  <span
+                    className={clsx(
+                      "shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-bold tracking-tight border transition-colors",
+                      totalCategoryWeight === 100
+                        ? "bg-emerald-950/80 border-emerald-500/40 text-emerald-400"
+                        : "bg-amber-950/80 border-amber-500/40 text-amber-300"
+                    )}
+                  >
+                    {totalCategoryWeight}% of 100%
+                  </span>
+                </div>
+
+                {/* 10 Category Checklist & Weighting Adjusters */}
+                <div className="mt-2 divide-y divide-white/[0.06]">
+                  {FOCUS_CATEGORIES.map((cat) => {
+                    const weight = categoryWeights[cat.key] || 0;
+                    const isChecked = weight > 0;
+                    return (
+                      <div key={cat.key} className="py-2.5 flex flex-col gap-1.5">
+                        <div className="flex items-center justify-between gap-3">
+                          {/* Round Checkbox + Category Name */}
+                          <button
+                            type="button"
+                            onClick={() => toggleCategory(cat.key)}
+                            className="flex items-center gap-3 text-left group cursor-pointer"
+                          >
+                            <div
+                              className={clsx(
+                                "h-5 w-5 rounded-full flex items-center justify-center border transition-all shrink-0",
+                                isChecked
+                                  ? "bg-white text-black border-white shadow-[0_0_8px_rgba(255,255,255,0.4)]"
+                                  : "border-white/30 bg-transparent group-hover:border-white/60"
+                              )}
+                            >
+                              {isChecked && (
+                                <Icon name="check" size={12} strokeWidth={3} className="text-slate-950" />
+                              )}
+                            </div>
+                            <span
+                              className={clsx(
+                                "text-xs font-semibold transition-colors",
+                                isChecked ? "text-ink" : "text-muted group-hover:text-ink"
+                              )}
+                            >
+                              {cat.label}
+                            </span>
+                          </button>
+
+                          {/* Adjuster [-] XX% [+] */}
+                          {isChecked ? (
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <button
+                                type="button"
+                                disabled={weight <= 5}
+                                onClick={() => adjustCategory(cat.key, -5)}
+                                aria-label={`Decrease ${cat.label} weighting`}
+                                className="h-6 w-6 rounded-full bg-white/[0.08] hover:bg-white/[0.18] active:scale-95 text-white disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center font-bold text-xs transition-all cursor-pointer"
+                              >
+                                −
+                              </button>
+                              <span className="w-9 text-center font-bold text-xs text-ink num">
+                                {weight}%
+                              </span>
+                              <button
+                                type="button"
+                                disabled={weight >= 100}
+                                onClick={() => adjustCategory(cat.key, 5)}
+                                aria-label={`Increase ${cat.label} weighting`}
+                                className="h-6 w-6 rounded-full bg-white/[0.08] hover:bg-white/[0.18] active:scale-95 text-white disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center font-bold text-xs transition-all cursor-pointer"
+                              >
+                                +
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-[11px] text-muted/60 select-none">Off</span>
+                          )}
+                        </div>
+
+                        {/* Progress Bar Track */}
+                        {isChecked && (
+                          <div className="h-1 w-full rounded-full bg-white/[0.06] overflow-hidden ml-8 max-w-[calc(100%-32px)]">
+                            <div
+                              className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-indigo-400 shadow-[0_0_8px_rgba(99,102,241,0.5)] transition-all duration-150"
+                              style={{ width: `${Math.min(100, weight)}%` }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <p className="mt-3 text-xs text-ink pt-2 border-t border-white/[0.06]" data-testid="mix-sent">
+                  Your questions will be: <b className="font-semibold">{weightsLine(categoryWeights)}</b>
+                </p>
               </div>
 
               {/* Controls Row: Difficulty & Duration */}
@@ -2146,7 +2466,7 @@ export function InterviewSetup() {
                           )}
                           {stg.status === "next" && (
                             <span className="text-muted font-medium">
-                              {formatStageDate(stg.date, stg.time) || "Scheduled"}
+                              {formatStageDate(stg.date, stg.time) || "No date yet"}
                             </span>
                           )}
                           {stg.status === "not_scheduled" && (
@@ -2308,7 +2628,11 @@ export function InterviewSetup() {
 
                 <div className="border-b border-line pb-2">
                   <span className="text-muted block mb-1">Question mix</span>
-                  <div className="text-[11px] text-ink">{mixLine(mixToSend)}</div>
+                  <div className="text-[11px] text-ink">
+                    {categoryWeights && Object.values(categoryWeights).some((v) => v > 0)
+                      ? weightsLine(categoryWeights)
+                      : mixLine(mixToSend)}
+                  </div>
                 </div>
 
                 <p className="text-[11px] text-muted">
@@ -2335,7 +2659,7 @@ export function InterviewSetup() {
                   {missing("cv") ? <span className="font-semibold text-red-soft">Missing</span> : <Icon name="check" size={13} strokeWidth={3} className="text-[#10b981]" />}
                 </div>
                 <div className="flex items-center justify-between py-1 text-ink">
-                  <span>{stages.length} interview stages</span>
+                  <span>{stages.length} interview stage{stages.length === 1 ? "" : "s"}</span>
                   <Icon name="check" size={13} strokeWidth={3} className="text-[#10b981]" />
                 </div>
                 <div className="flex items-center justify-between py-1 text-ink">
@@ -2539,6 +2863,51 @@ export function InterviewSetup() {
         }}
         onDraftDiscarded={handleDiscardDraft}
       />
+
+      {/* Cancel Confirmation Modal (UX-5) */}
+      {showCancelModal && (
+        <div role="dialog" aria-modal="true" aria-labelledby="cancel-draft-title" className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-md rounded-2xl bg-panel border border-white/15 p-6 shadow-2xl">
+            <h3 id="cancel-draft-title" className="text-lg font-bold text-white">Keep this draft?</h3>
+            <p className="mt-2 text-xs leading-relaxed text-muted">
+              You can keep your progress to carry on later, or discard it to start fresh.
+            </p>
+            <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  try {
+                    localStorage.removeItem("hk_interview_wizard_draft");
+                  } catch {}
+                  setShowCancelModal(false);
+                  router.push("/interviews");
+                }}
+                className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-xs font-semibold text-red-300 hover:bg-red-500/20 transition-all cursor-pointer"
+              >
+                Discard draft
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  saveDraft();
+                  setShowCancelModal(false);
+                  router.push("/interviews");
+                }}
+                className="rounded-xl bg-blue-fill px-4 py-2.5 text-xs font-semibold text-white shadow-md hover:bg-blue-hover transition-all cursor-pointer"
+              >
+                Keep draft
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowCancelModal(false)}
+                className="rounded-xl border border-line px-4 py-2.5 text-xs font-medium text-muted hover:text-white transition-all cursor-pointer"
+              >
+                Carry on
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

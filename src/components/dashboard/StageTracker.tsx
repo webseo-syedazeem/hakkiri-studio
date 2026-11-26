@@ -30,6 +30,7 @@ export interface StageTrackerInterview {
   company: string;
   companyInitial?: string;
   stages?: StageTrackerStage[];
+  outcome?: string;
 }
 
 /** The stage the person is on (1-based): the one marked "next", else the first that isn't completed, else the last. */
@@ -76,6 +77,7 @@ export interface ArchiveRequest {
   stageReached: string;
   /** The person's own note on the stage they reached, if they wrote one. */
   notes: string;
+  outcome?: "Offer" | "Unsuccessful" | "Withdrew";
 }
 
 export function StageTracker({
@@ -156,19 +158,27 @@ export function StageTracker({
 
   /** Marks the current stage as completed and the one after it as next, and saves that to the interview. */
   const handleMarkSuccessful = async () => {
-    if (!activeInterview?.stages || currentStage >= totalStages || saving) return;
+    if (!activeInterview?.stages || saving) return;
+    const isOffer = currentStage >= totalStages;
     const before = activeInterview;
     const stages = advanceStages(activeInterview.stages, currentStage);
-    const updated = { ...activeInterview, stages };
+    const updated = { ...activeInterview, stages, outcome: isOffer ? "Offer" : activeInterview.outcome };
     setSaving(true);
     setSaveError(null);
     setActiveInterview(updated);
     setInterviewsList((list) => list.map((it) => (it.id === updated.id ? updated : it)));
     try {
-      const res = await fetch(`/api/interviews/${updated.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ stages: stages.map(stageForSave) }) });
+      const payload: Record<string, unknown> = { stages: stages.map(stageForSave) };
+      if (isOffer) {
+        payload.outcome = "Offer";
+      }
+      const res = await fetch(`/api/interviews/${updated.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       if (!res.ok) throw new Error();
       setIsSuccessfulNotice(true);
       setTimeout(() => setIsSuccessfulNotice(false), 3000);
+      if (isOffer && onArchiveRole) {
+        onArchiveRole({ interviewId: activeInterview.id, role: activeInterview.role, company: activeInterview.company, stageReached: displayStages[currentStage - 1]?.title ?? "", notes: stageFeedback[currentStage] ?? "", outcome: "Offer" });
+      }
     } catch {
       // Not saved: the tracker goes back to how it was, and says so.
       setActiveInterview(before);
@@ -456,8 +466,8 @@ export function StageTracker({
           )}
           {confirmEnd ? (
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="text-ink">Move this application to your archive as unsuccessful?</span>
-              <span className="flex gap-2">
+              <span className="text-ink">Move this application to your archive?</span>
+              <span className="flex items-center gap-2">
                 <button type="button" onClick={() => setConfirmEnd(false)} className="rounded-lg px-2.5 py-1.5 text-muted hover:bg-panel-2 hover:text-ink transition-colors cursor-pointer">
                   Cancel
                 </button>
@@ -465,11 +475,21 @@ export function StageTracker({
                   type="button"
                   onClick={() => {
                     setConfirmEnd(false);
-                    onArchiveRole?.({ interviewId: activeInterview.id, role: activeInterview.role, company: activeInterview.company, stageReached: displayStages[currentStage - 1]?.title ?? "", notes: stageFeedback[currentStage] ?? "" });
+                    onArchiveRole?.({ interviewId: activeInterview.id, role: activeInterview.role, company: activeInterview.company, stageReached: displayStages[currentStage - 1]?.title ?? "", notes: stageFeedback[currentStage] ?? "", outcome: "Unsuccessful" });
                   }}
                   className="rounded-lg bg-red/15 px-2.5 py-1.5 font-semibold text-red-soft hover:bg-red/25 transition-colors cursor-pointer"
                 >
-                  Yes, archive it
+                  Not successful
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setConfirmEnd(false);
+                    onArchiveRole?.({ interviewId: activeInterview.id, role: activeInterview.role, company: activeInterview.company, stageReached: displayStages[currentStage - 1]?.title ?? "", notes: stageFeedback[currentStage] ?? "", outcome: "Withdrew" });
+                  }}
+                  className="rounded-lg bg-white/10 px-2.5 py-1.5 font-semibold text-muted hover:bg-white/20 hover:text-white transition-colors cursor-pointer"
+                >
+                  Withdrew
                 </button>
               </span>
             </div>
@@ -490,16 +510,16 @@ export function StageTracker({
               <button
                 type="button"
                 onClick={() => void handleMarkSuccessful()}
-                disabled={saving || currentStage >= totalStages}
+                disabled={saving || (currentStage > totalStages && (activeInterview.stages ?? []).every(s => s.status === "completed"))}
                 className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[#34d399] hover:bg-[#10b981]/15 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Icon name="check" size={13} strokeWidth={2.4} />
-                <span>{saving ? "Saving…" : "Mark successful"}</span>
+                <span>{saving ? "Saving…" : currentStage >= totalStages ? "Mark as Offer" : "Mark successful"}</span>
               </button>
 
               <button type="button" onClick={() => setConfirmEnd(true)} className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-red-soft hover:bg-red-soft/15 transition-colors cursor-pointer">
                 <Icon name="x" size={13} strokeWidth={2.4} />
-                <span>Mark unsuccessful</span>
+                <span>End application</span>
               </button>
             </div>
           )}

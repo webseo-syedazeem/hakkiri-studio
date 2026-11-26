@@ -37,8 +37,6 @@ const hook = (h: FieldHooks | undefined, entryId: string, field: string) => ({
 /* ------------------------------------------------------------------- contact */
 
 export function ContactForm({ value, onChange, hooks }: { value: Contact; onChange: (c: Contact) => void; hooks?: FieldHooks }) {
-  const [photoMode, setPhotoMode] = useState<"pc" | "url">("pc");
-  const [urlInput, setUrlInput] = useState(value.photo && !value.photo.startsWith("data:") ? value.photo : "");
   const [photoErr, setPhotoErr] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -85,25 +83,11 @@ export function ContactForm({ value, onChange, hooks }: { value: Contact; onChan
     reader.readAsDataURL(file);
   }
 
-  function applyPhotoUrl() {
-    setPhotoErr("");
-    const trimmed = urlInput.trim();
-    if (!trimmed) {
-      setPhotoErr("Paste a valid image URL first.");
-      return;
-    }
-    if (!/^(https?:\/\/|data:image\/)/i.test(trimmed)) {
-      setPhotoErr("Enter a full image URL starting with https://");
-      return;
-    }
-    onChange({ ...value, photo: trimmed, photoShape: value.photoShape ?? "circle" });
-  }
-
   const shape = value.photoShape ?? "circle";
   const links = [...value.links, ""].slice(0, 4);
   return (
     <div className="cv-stack">
-      {/* Profile Photo (From PC or URL) */}
+      {/* Profile Photo (Upload only from device) */}
       <div className="cv-photo-card">
         <div className="cv-photo-header">
           <div
@@ -126,14 +110,13 @@ export function ContactForm({ value, onChange, hooks }: { value: Contact; onChan
             <div className="cv-row" style={{ justifyContent: "space-between", gap: 8 }}>
               <div>
                 <span className="cv-label">Profile photo</span>
-                <span className="cv-rule">Optional. Upload from your PC or paste an image URL.</span>
+                <span className="cv-rule">Optional. Many UK and US employers prefer no photo to prevent hiring bias. Upload from computer if preferred for your region.</span>
               </div>
               {value.photo && (
                 <Btn
                   kind="quiet"
                   className="cv-btn-danger"
                   onClick={() => {
-                    setUrlInput("");
                     onChange({ ...value, photo: undefined });
                   }}
                 >
@@ -142,16 +125,28 @@ export function ContactForm({ value, onChange, hooks }: { value: Contact; onChan
               )}
             </div>
 
-            <div className="cv-row" style={{ gap: 8, marginTop: 10 }}>
-              <div className="cv-seg">
-                <button type="button" aria-pressed={photoMode === "pc"} onClick={() => { setPhotoMode("pc"); setPhotoErr(""); }}>
-                  From PC
-                </button>
-                <button type="button" aria-pressed={photoMode === "url"} onClick={() => { setPhotoMode("url"); setPhotoErr(""); }}>
-                  From URL
-                </button>
-              </div>
-
+            <div className="cv-row" style={{ gap: 10, marginTop: 10 }}>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                className="sr-only"
+                tabIndex={-1}
+                aria-label="Upload profile photo from computer"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) handlePcPhoto(f);
+                  e.target.value = "";
+                }}
+              />
+              <Btn onClick={() => fileInputRef.current?.click()}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="17 8 12 3 7 8" />
+                  <line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
+                {value.photo ? "Change photo" : "Upload photo from computer"}
+              </Btn>
               {value.photo && (
                 <div className="cv-seg" role="group" aria-label="Photo shape">
                   {(["circle", "rounded", "square"] as const).map((s) => (
@@ -167,55 +162,7 @@ export function ContactForm({ value, onChange, hooks }: { value: Contact; onChan
                 </div>
               )}
             </div>
-
-            {photoMode === "pc" ? (
-              <div className="cv-row" style={{ gap: 10, marginTop: 10 }}>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp,image/gif"
-                  className="sr-only"
-                  tabIndex={-1}
-                  aria-label="Upload profile photo from computer"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) handlePcPhoto(f);
-                    e.target.value = "";
-                  }}
-                />
-                <Btn onClick={() => fileInputRef.current?.click()}>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                    <polyline points="17 8 12 3 7 8" />
-                    <line x1="12" y1="3" x2="12" y2="15" />
-                  </svg>
-                  {value.photo ? "Change photo from PC" : "Choose photo from PC"}
-                </Btn>
-                <small>PNG, JPG or WebP · Auto-cropped square</small>
-              </div>
-            ) : (
-              <div className="cv-row" style={{ gap: 8, marginTop: 10, flexWrap: "nowrap" }}>
-                <input
-                  type="url"
-                  aria-label="Profile photo image URL"
-                  placeholder="https://example.com/your-photo.jpg"
-                  className="cv-input"
-                  style={{ marginTop: 0, minHeight: 38 }}
-                  value={urlInput}
-                  onChange={(e) => setUrlInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      applyPhotoUrl();
-                    }
-                  }}
-                />
-                <Btn kind="primary" onClick={applyPhotoUrl}>
-                  Apply URL
-                </Btn>
-              </div>
-            )}
-            {photoErr && <p className="cv-error-text">{photoErr}</p>}
+            {photoErr && <p className="cv-error-text" style={{ marginTop: 6 }}>{photoErr}</p>}
           </div>
         </div>
       </div>
@@ -225,7 +172,7 @@ export function ContactForm({ value, onChange, hooks }: { value: Contact; onChan
         <Field label="Email" type="email" autoComplete="email" inputMode="email" maxLength={LIMITS.email} value={value.email} onChange={(v) => set("email", v)} {...hook(hooks, "", "email")} />
         <Field label="Phone" rule="Optional." type="tel" autoComplete="tel" inputMode="tel" maxLength={LIMITS.phone} value={value.phone} onChange={(v) => set("phone", v)} {...hook(hooks, "", "phone")} />
       </div>
-      <Field label="Town or city" rule="Town or city only. No street address, photo or date of birth." autoComplete="address-level2" maxLength={LIMITS.location} value={value.location} onChange={(v) => set("location", v)} {...hook(hooks, "", "location")} />
+      <Field label="Town or city" rule="Town or city only. No street address or date of birth." autoComplete="address-level2" maxLength={LIMITS.location} value={value.location} onChange={(v) => set("location", v)} {...hook(hooks, "", "location")} />
       <div>
         <span className="cv-label">
           Links<span className="cv-rule">Optional: LinkedIn, a portfolio. Use short addresses and check each one opens.</span>

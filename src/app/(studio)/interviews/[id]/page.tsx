@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { londonToday } from "@/lib/dates";
 import { getInterview, getInterviewAsync } from "@/lib/interviews/store";
 import { understandingOf } from "@/lib/interviews/build";
-import { PRESETS, settingsOr } from "@/lib/interviews/settings";
+import { PRESETS, settingsOr, mixIsValid } from "@/lib/interviews/settings";
 import { interviewWhen, sessionTitle } from "@/lib/sessions/labels";
 import { DRILL_TOPICS, getTopicsForInterview } from "@/lib/sessions/topics";
 import { isFresh, listMocksAsync, rowsForAsync } from "@/lib/mocks/store";
@@ -54,7 +54,11 @@ export default async function InterviewOverview({
         const isPresetScreen = lName.includes("screen") || lName.includes("recruiter");
         const isPresetTech = lName.includes("tech") || lName.includes("case") || lName.includes("code");
         const isPresetFinal = lName.includes("final") || lName.includes("panel") || lName.includes("lead");
-        const preset = isPresetScreen ? "screening" : isPresetTech ? "technical" : isPresetFinal ? "final" : "balanced";
+        const savedMix = interview.settings?.mix && mixIsValid(interview.settings.mix) ? interview.settings.mix : null;
+        const preset = (interview.settings?.preset && interview.settings.preset !== "custom")
+          ? interview.settings.preset
+          : (isPresetScreen ? "screening" : isPresetTech ? "technical" : isPresetFinal ? "final" : "balanced");
+        const mix = savedMix ?? (PRESETS[preset]?.mix ?? PRESETS.balanced.mix);
 
         const hasExplicitNext = interview.stages?.some((x) => x.status === "next");
         const isNext = st.status === "next" || (!hasExplicitNext && idx === 0);
@@ -72,7 +76,7 @@ export default async function InterviewOverview({
           status,
           subtitle,
           preset,
-          mix: PRESETS[preset].mix,
+          mix,
         };
       })
     : [];

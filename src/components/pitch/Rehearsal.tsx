@@ -109,8 +109,15 @@ export function Rehearsal(p: RehearsalProps) {
     const form = new FormData();
     form.append("audio", rec.blob, "run.webm");
     form.append("meta", JSON.stringify({ mode: p.mode, from: p.from, to: p.to, startedAt: rec.startedAt, totalSec: rec.totalSec, marks: rec.marks }));
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4800);
     try {
-      const res = await fetch(`/api/presentations/${p.presentationId}/runs`, { method: "POST", body: form });
+      const res = await fetch(`/api/presentations/${p.presentationId}/runs`, {
+        method: "POST",
+        body: form,
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
       const json = (await res.json().catch(() => ({}))) as { id?: string; error?: string; message?: string };
       if (res.ok && json.id) {
         router.push(`/presentations/${p.presentationId}/runs/${json.id}`);
@@ -122,13 +129,20 @@ export function Rehearsal(p: RehearsalProps) {
         router.push(p.demoReportHref);
         return;
       }
-      setProblem({ message: json.message ?? "Something went wrong while scoring your run.", kind: json.error === "not-configured" ? "keys" : "score" });
+      setProblem({
+        message: "Your run is saved on this device, but we couldn’t upload it.",
+        kind: json.error === "not-configured" ? "keys" : "score",
+      });
     } catch {
+      clearTimeout(timeout);
       if (p.demoReportHref) {
         router.push(p.demoReportHref);
         return;
       }
-      setProblem({ message: "Couldn’t reach Hakkiri with your run. Check your connection and try again.", kind: "score" });
+      setProblem({
+        message: "Your run is saved on this device, but we couldn’t upload it.",
+        kind: "score",
+      });
     }
     setPhase("error");
   }, [p.mode, p.from, p.to, p.presentationId, p.demoReportHref, router]);
@@ -209,7 +223,12 @@ export function Rehearsal(p: RehearsalProps) {
 
   const live = phase === "running" || phase === "paused";
   const nextSlide = scope[index + 1];
-  const slideNotes = slide?.notes ? slide.notes.split("\n").filter(Boolean) : DEFAULT_SPEAKER_NOTES[slide?.n] ?? ["Deliver the key point with clear evidence.", "Stay within the allotted time."];
+  const isDemo = p.presentationId === "demo-pres" || p.presentationId.startsWith("demo-");
+  const slideNotes = slide?.notes?.trim()
+    ? slide.notes.split("\n").filter(Boolean)
+    : isDemo && DEFAULT_SPEAKER_NOTES[slide?.n]
+    ? DEFAULT_SPEAKER_NOTES[slide.n]
+    : [];
 
   const readNotesAloud = useCallback(() => {
     if (isSpeakingNotes) {
@@ -322,6 +341,40 @@ export function Rehearsal(p: RehearsalProps) {
           )}
         </div>
       </header>
+
+      {problem && (
+        <div role="alert" className="mx-6 lg:mx-10 mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-rose-500/15 border border-rose-500/30 p-4 text-xs text-rose-200">
+          <div className="flex items-center gap-2">
+            <Icon name="sparkle" size={16} className="text-rose-400 shrink-0" />
+            <span>{problem.message}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => void upload()}
+              className="rounded-lg bg-rose-600 px-3 py-1.5 font-semibold text-white hover:bg-rose-500 transition-colors cursor-pointer"
+            >
+              Try again
+            </button>
+            {recording.current?.blob && (
+              <button
+                type="button"
+                onClick={() => {
+                  const url = URL.createObjectURL(recording.current!.blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = `rehearsal-${p.presentationId}.webm`;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                }}
+                className="rounded-lg bg-white/10 px-3 py-1.5 font-semibold text-white hover:bg-white/20 transition-colors cursor-pointer"
+              >
+                Download recording
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* 2. MAIN LAYOUT (Slide area on Left, Cards on Right) */}
       <main className="grid min-h-0 grow grid-cols-1 xl:grid-cols-[1.65fr_0.85fr] gap-6 px-6 lg:px-10 py-6 w-full items-start">
@@ -590,14 +643,23 @@ export function Rehearsal(p: RehearsalProps) {
             </div>
 
             {speakerNotesOpen && (
-              <ul className="mt-3.5 space-y-2 text-xs text-[#c9cad3] leading-relaxed animate-rise">
-                {slideNotes.map((note, i) => (
-                  <li key={i} className="flex items-start gap-2">
-                    <span className="h-1.5 w-1.5 rounded-full bg-indigo-400 mt-1.5 shrink-0" />
-                    <span>{note}</span>
-                  </li>
-                ))}
-              </ul>
+              slideNotes.length > 0 ? (
+                <ul className="mt-3.5 space-y-2 text-xs text-[#c9cad3] leading-relaxed animate-rise">
+                  {slideNotes.map((note, i) => (
+                    <li key={i} className="flex items-start gap-2">
+                      <span className="h-1.5 w-1.5 rounded-full bg-indigo-400 mt-1.5 shrink-0" />
+                      <span>{note}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="mt-3.5 text-xs text-muted italic flex items-center gap-2">
+                  <span>Add notes</span>
+                  <Link href={`/presentations/${p.presentationId}/edit`} className="text-blue-soft hover:underline font-normal not-italic text-[11px]">
+                    (Edit in setup)
+                  </Link>
+                </div>
+              )
             )}
           </div>
 

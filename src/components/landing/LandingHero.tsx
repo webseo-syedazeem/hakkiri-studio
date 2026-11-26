@@ -1,14 +1,19 @@
+"use client";
+
 import Link from "next/link";
 import type { HomepageContent } from "@/lib/site/site-content";
+import { useAuth } from "@/lib/auth/AuthContext";
 
 export function LandingHero({ content }: { content?: Partial<HomepageContent> }) {
+  const { user } = useAuth();
+  const isLoggedIn = !!user?.id;
   const badgeText = content?.badgeText || "Beta · Free for everyone, for a limited time";
   const headline = content?.headline || "AI interview practice for the interview you actually have.";
   const subheadline =
     content?.subheadline ||
     "Hakkiri is a free AI mock interview platform. Add the job description and your CV or resume, and a live AI interviewer asks questions out loud, follows up on what you say, and shows you exactly what to fix.";
-  const primaryCtaText = content?.primaryCtaText || "Sign up free";
-  const primaryCtaLink = content?.primaryCtaLink || "/signup";
+  const primaryCtaText = isLoggedIn ? "Go to Studio" : (content?.primaryCtaText || "Sign up free");
+  const primaryCtaLink = isLoggedIn ? "/dashboard" : (content?.primaryCtaLink || "/signup");
   const secondaryCtaText = content?.secondaryCtaText || "See how it works";
   const secondaryCtaLink = content?.secondaryCtaLink || "#how";
   const subtext = content?.subtext || "Free for a limited time. No card. Takes about two minutes.";

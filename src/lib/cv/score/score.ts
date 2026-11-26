@@ -3,7 +3,34 @@ import { cannotDrawAdvice } from "../render/fonts";
 import { type Bullet, type CvDoc, type Entry, type Locator, type Section, cvIsEmpty, isEntrySection, isListSection, sectionIsEmpty } from "../schema";
 import { SECTION_DEFS, sectionHeading } from "../sections";
 import { figures, oneLine, stem, terms } from "../write/facts";
-import { type Hit, bigClaim, buzzwords, countSentences, countWords, dutyLead, filler, firstPerson, fragment, hasContext, hasOutcome, hasScale, passive, presentLead, unclearContribution, unexplainedAcronyms, validEmail, validLink, validPhone, weakLead, wrongRegionSpelling } from "./detect";
+import {
+  type Hit,
+  badOutcomeDirection,
+  bigClaim,
+  buzzwords,
+  countSentences,
+  countWords,
+  doubledWords,
+  dutyLead,
+  filler,
+  firstPerson,
+  fragment,
+  hasContext,
+  hasOutcome,
+  hasScale,
+  longBullet,
+  openingWord,
+  passive,
+  presentLead,
+  unclearContribution,
+  unexplainedAcronyms,
+  validEmail,
+  validLink,
+  validPhone,
+  weakLead,
+  wrongRegionSpelling,
+} from "./detect";
+import { jobFit } from "../tailor/fit";
 
 /**
  * The CV score: one number out of 100 in four groups, from 35 checks and one
@@ -99,6 +126,13 @@ export interface Score {
   gaps: Gap[];
   /** The score is high enough AND nothing a CV needs is missing. */
   goodEnough: boolean;
+  /** Score >= 85, nothing missing, and 0 open issues. */
+  wellWritten: boolean;
+  /** Well written + advert present + job fit >= 70 + all required items met or recorded as gap. */
+  readyForJob: boolean;
+  verdict: "well-written" | "ready-for-job" | "not-ready" | null;
+  verdictLabel: string;
+  verdictMessage: string;
   /** Set when the CV has fewer different lines than a CV needs: how many it has, and how many it needs. */
   thin: { have: number; need: number } | null;
   /** What a CV needs before it is sent that this one does not have yet, each said in a few words. Empty when nothing is. */
@@ -106,7 +140,9 @@ export interface Score {
 }
 
 export interface ScoreInput {
-  cv: Pick<CvDoc, "contact" | "sections" | "design" | "region" | "level" | "target" | "accepted">;
+  cv: Pick<CvDoc, "contact" | "sections" | "design" | "region" | "level" | "target" | "accepted"> & {
+    requirements?: CvDoc["requirements"];
+  };
   /** Pages in the laid-out CV, when known. */
   pages?: number;
   /** Characters the fonts cannot draw, when known. */
@@ -204,17 +240,21 @@ function sameWords(a: string[], b: string[]): boolean {
   return shared >= 3 && shared >= 0.8 * Math.max(a.length, b.length);
 }
 
+/** Pattern of a line with numbers stripped, for detecting near-duplicates with swapped numbers. */
+const patternOf = (text: string) => oneLine(text).toLowerCase().replace(/\b\d+(?:[.,]\d+)?%?\b/g, "#").replace(/[.!\s]+$/, "");
+
 /** Each line that repeats an earlier one, with the line it repeats and whether the two are word for word the same. */
 function repeatsIn(lines: Line[]): Map<Line, { before: Line; exact: boolean }> {
-  const firsts: { l: Line; words: string[]; figs: string; plain: string }[] = [];
+  const firsts: { l: Line; words: string[]; figs: string; plain: string; pattern: string }[] = [];
   const out = new Map<Line, { before: Line; exact: boolean }>();
   for (const l of lines) {
     const words = wordsOf(l.text);
     const figs = figures(l.text).map((f) => f.key).sort().join(" ");
     const plain = oneLine(l.text).toLowerCase().replace(/[.!\s]+$/, "");
-    const hit = firsts.find((f) => f.plain === plain || sameWords(words, f.words));
+    const pattern = patternOf(l.text);
+    const hit = firsts.find((f) => f.plain === plain || f.pattern === pattern || sameWords(words, f.words));
     if (hit) out.set(l, { before: hit.l, exact: hit.plain === plain || (hit.figs === figs && hit.words.join(" ") === words.join(" ")) });
-    else firsts.push({ l, words, figs, plain });
+    else firsts.push({ l, words, figs, plain, pattern });
   }
   return out;
 }
@@ -249,14 +289,66 @@ export function scoreCv(input: ScoreInput): Score {
   const visibleSections = cv.sections.filter((s) => s.visible && !sectionIsEmpty(s));
   const out: Record<string, Omit<Draft, "id" | "title">> = {};
 
+  // Identify compromised roles where >= 50% of bullets are near-duplicates
+  const nearDupCountByRole = new Map<Entry, number>();
+  for (const [l, r] of repeats) {
+    if (!r.exact) {
+      nearDupCountByRole.set(l.entry, (nearDupCountByRole.get(l.entry) ?? 0) + 1);
+    }
+  }
+  const compromisedRoles = new Set<Entry>();
+  for (const r of roles) {
+    const roleBullets = r.e.bullets.filter((b) => b.visible && b.text.trim());
+    const nearDups = nearDupCountByRole.get(r.e) ?? 0;
+    if (roleBullets.length >= 2 && nearDups >= roleBullets.length * 0.5) {
+      compromisedRoles.add(r.e);
+    }
+  }
+
+  // Consecutive same opening verbs within a role
+  const consecutiveSameVerb = new Set<Bullet>();
+  for (const r of roles) {
+    const roleBullets = r.e.bullets.filter((b) => b.visible && b.text.trim());
+    for (let i = 2; i < roleBullets.length; i++) {
+      const v1 = openingWord(roleBullets[i - 2].text);
+      const v2 = openingWord(roleBullets[i - 1].text);
+      const v3 = openingWord(roleBullets[i].text);
+      if (v1 && v1 === v2 && v2 === v3) {
+        consecutiveSameVerb.add(roleBullets[i]);
+      }
+    }
+  }
+
   /* ----------------------------------------------------------- evidence */
-  out.sources = each(lines, "bullets", (l) => (l.bullet.origin === "assisted" && l.bullet.sources.length === 0 ? { severity: "issue", at: l.at, excerpt: cut(l.text), reason: "This line was drafted for you and has no record of the words it came from.", action: "Rewrite it in your own words, or remove it." } : null));
+  out.sources = each(lines, "bullets", (l) => {
+    if (compromisedRoles.has(l.entry)) {
+      return { severity: "issue", at: l.at, excerpt: cut(l.text), reason: "This role contains templated near-duplicate bullets.", action: "Replace repeated patterns with unique achievements." };
+    }
+    return l.bullet.origin === "assisted" && l.bullet.sources.length === 0 ? { severity: "issue", at: l.at, excerpt: cut(l.text), reason: "This line was drafted for you and has no record of the words it came from.", action: "Rewrite it in your own words, or remove it." } : null;
+  });
   out.contribution = each(lines, "bullets", (l) => {
+    if (compromisedRoles.has(l.entry)) {
+      return { severity: "issue", at: l.at, excerpt: cut(l.text), reason: "This role contains templated near-duplicate bullets.", action: "Replace repeated patterns with unique achievements." };
+    }
     const h = unclearContribution(l.text);
     return h ? { severity: "suggestion", at: l.at, span: spanOf(h), excerpt: cut(l.text), reason: `“${h.text}” doesn’t say what your own part was.`, action: "Start with what you did yourself." } : null;
   });
-  out.outcome = each(lines, "bullets", (l) => (hasOutcome(l.text) ? null : { severity: "suggestion", at: l.at, excerpt: cut(l.text), reason: "This says what you did, but not what came of it.", action: "Add what changed, or what you produced." }));
-  out.scale = each(lines, "bullets", (l) => (hasScale(l.text) ? null : { severity: "suggestion", at: l.at, excerpt: cut(l.text), reason: "There is nothing here to show how big this was.", action: "Add the number, or say how far it reached (“every new starter”, “across the Leeds site”).", fix: "add-number" }));
+  out.outcome = each(lines, "bullets", (l) => {
+    if (compromisedRoles.has(l.entry)) {
+      return { severity: "issue", at: l.at, excerpt: cut(l.text), reason: "This role contains templated near-duplicate bullets.", action: "Replace repeated patterns with unique achievements." };
+    }
+    const bad = badOutcomeDirection(l.text);
+    if (bad) {
+      return { severity: "issue", at: l.at, span: spanOf(bad), excerpt: cut(l.text), reason: `“${bad.text}”: check this says what you meant.`, action: "Outcome should describe a positive result (e.g. reduced waste or increased revenue)." };
+    }
+    return hasOutcome(l.text) ? null : { severity: "suggestion", at: l.at, excerpt: cut(l.text), reason: "This says what you did, but not what came of it.", action: "Add what changed, or what you produced." };
+  });
+  out.scale = each(lines, "bullets", (l) => {
+    if (compromisedRoles.has(l.entry)) {
+      return { severity: "issue", at: l.at, excerpt: cut(l.text), reason: "This role contains templated near-duplicate bullets.", action: "Replace repeated patterns with unique achievements." };
+    }
+    return hasScale(l.text) ? null : { severity: "suggestion", at: l.at, excerpt: cut(l.text), reason: "There is nothing here to show how big this was.", action: "Add the number, or say how far it reached (“every new starter”, “across the Leeds site”).", fix: "add-number" };
+  });
   // The words of each line are worked out once, however many skills are listed.
   const proseWords = prose.map((p) => new Set(terms(p.text).map((t) => t.stem)));
   const proseText = prose.map((p) => p.text).join("\n");
@@ -268,7 +360,12 @@ export function scoreCv(input: ScoreInput): Score {
   out["skills-shown"] = each(skills, "skills", ({ k, g, s }) => (shown(k.name) ? null : { severity: "suggestion", at: { section: s.id, entry: g.id, field: k.id }, excerpt: k.name, reason: `Nothing else on your ${word} shows “${k.name}”.`, action: "Add a line that uses it, or leave it out. Only list what you could explain in an interview." }));
   const claims = lines.map((l) => ({ l, h: bigClaim(l.text) })).filter((x) => x.h);
   out.challenge = claims.length
-    ? each(claims, "claims", ({ l, h }) => (hasContext(l.text) || l.entry.orgInfo.trim() ? null : { severity: "suggestion", at: l.at, span: spanOf(h), excerpt: cut(l.text), reason: `An interviewer is likely to ask about “${h!.text}”.`, action: "Say how you did it, over what time, or compared with what." }))
+    ? each(claims, "claims", ({ l, h }) => {
+        if (compromisedRoles.has(l.entry)) {
+          return { severity: "issue", at: l.at, excerpt: cut(l.text), reason: "This role contains templated near-duplicate bullets.", action: "Replace repeated patterns with unique achievements." };
+        }
+        return hasContext(l.text) || l.entry.orgInfo.trim() ? null : { severity: "suggestion", at: l.at, span: spanOf(h), excerpt: cut(l.text), reason: `An interviewer is likely to ask about “${h!.text}”.`, action: "Say how you did it, over what time, or compared with what." };
+      })
     : notApplicable("claims");
   out.repeat = each(every, "bullets", (l) => {
     const r = repeats.get(l);
@@ -287,14 +384,44 @@ export function scoreCv(input: ScoreInput): Score {
       return h ? { severity: "suggestion", at: l.at, span: spanOf(h), excerpt: cut(l.text), reason: reason(h), action } : null;
     });
   };
-  phrase("weak-verb", weakLead, (h) => `“${h.text}” is a weak way to open.`, "Open with the verb for what you actually did.");
+  out["weak-verb"] = each(lines, "bullets", (l) => {
+    const h = weakLead(l.text);
+    if (h) return { severity: "suggestion", at: l.at, span: spanOf(h), excerpt: cut(l.text), reason: `“${h.text}” is a weak way to open.`, action: "Open with the verb for what you actually did." };
+    if (consecutiveSameVerb.has(l.bullet)) {
+      return { severity: "suggestion", at: l.at, excerpt: cut(l.text), reason: "This is the third bullet in this role opening with the same verb.", action: "Vary your opening verbs." };
+    }
+    return null;
+  });
   phrase("duty", dutyLead, (h) => `“${h.text}” describes the job, not what you did in it.`, "Say what you did and what came of it.");
   phrase("filler", filler, (h) => `“${h.text}” adds length without adding a fact.`, "Cut it.", prose);
   phrase("buzzword", buzzwords, (h) => `“${h.text}” is a phrase an interviewer can’t check.`, "Replace it with something you did that shows it.", prose);
   phrase("passive", passive, (h) => `“${h.text}” reads as if it happened to you.`, "Say who did it: start with your verb.");
-  out.fragment = each(lines, "bullets", (l) => (fragment(l.text) ? { severity: "suggestion", at: l.at, excerpt: cut(l.text), reason: "This is too short to say what you did.", action: "Finish the thought: what you did, and what came of it." } : null));
+  out.fragment = each(lines, "bullets", (l) => {
+    const d = doubledWords(l.text);
+    if (d) return { severity: "issue", at: l.at, span: spanOf(d), excerpt: cut(l.text), reason: `“${d.text}”: doubled word.`, action: "Remove the repeated word." };
+    const long = longBullet(l.text);
+    if (long) return { severity: "suggestion", at: l.at, excerpt: cut(l.text), reason: `This bullet is ${l.text.trim().length} characters. Aim for under 200 characters.`, action: "Split or shorten it." };
+    return fragment(l.text) ? { severity: "suggestion", at: l.at, excerpt: cut(l.text), reason: "This is too short to say what you did.", action: "Finish the thought: what you did, and what came of it." } : null;
+  });
   const misspelt = prose.flatMap((p) => wrongRegionSpelling(p.text, region, cv.accepted).map((h) => ({ p, h })));
-  out.spelling = prose.length ? { state: "scored", passed: misspelt.length ? 0 : 1, total: 1, unit: "", findings: misspelt.map(({ p, h }) => ({ severity: "suggestion" as const, at: p.at, span: spanOf(h), excerpt: h.text, reason: `“${h.text}” is the ${region === "uk" ? "US" : "UK"} spelling.`, action: `Use “${h.suggest}” in a ${region === "uk" ? "UK CV" : "US resume"}, or accept it if it is a name.`, fix: "accept" as const, word: h.text })) } : each([], "", () => null);
+  out.spelling = prose.length
+    ? {
+        state: "scored",
+        passed: misspelt.length ? 0 : 1,
+        total: 1,
+        unit: "",
+        findings: misspelt.map(({ p, h }) => ({
+          severity: (h.isTypo ? "issue" : "suggestion") as Severity,
+          at: p.at,
+          span: spanOf(h),
+          excerpt: h.text,
+          reason: h.isTypo ? `“${h.text}” is a spelling mistake.` : `“${h.text}” is the ${region === "uk" ? "US" : "UK"} spelling.`,
+          action: h.isTypo ? `Change to “${h.suggest}”.` : `Use “${h.suggest}” in a ${region === "uk" ? "UK CV" : "US resume"}, or accept it if it is a name.`,
+          fix: "accept" as const,
+          word: h.text,
+        })),
+      }
+    : each([], "", () => null);
   phrase("first-person", firstPerson, (h) => `“${h.text}”: a ${word} is written without it.`, "Drop it and start with the verb.", prose);
   const ended = lines.filter((l) => !l.entry.current && (l.entry.end || l.entry.start) && l.kind !== "education");
   out.tense = ended.length
@@ -449,6 +576,49 @@ export function scoreCv(input: ScoreInput): Score {
   const total = round(groups.reduce((n, g) => n + g.raw, 0));
   const findings = empty ? [] : groups.flatMap((g) => g.checks.flatMap((x) => x.findings)).sort((a, b) => (a.severity === b.severity ? b.points - a.points : a.severity === "issue" ? -1 : 1));
   const missing = empty ? [] : whatIsMissing(cv, lines.length);
+  const issues = findings.filter((f) => f.severity === "issue");
+  const wellWritten = !empty && Math.round(total) >= GOOD_ENOUGH && missing.length === 0 && issues.length === 0;
+
+  let readyForJob = false;
+  let verdict: "well-written" | "ready-for-job" | "not-ready" | null = null;
+  let verdictLabel = "";
+  let verdictMessage = "";
+
+  const hasAdvert = !!cv.target?.advert?.trim();
+  const fitResult = hasAdvert ? jobFit(cv as any) : null;
+  const fitScore = fitResult?.score ?? null;
+
+  if (!empty) {
+    if (hasAdvert && fitResult) {
+      const requiredRows = fitResult.rows.filter((r) => r.requirement.priority === "required");
+      const allRequiredMetOrGap = requiredRows.length > 0 && requiredRows.every((r) => r.status === "met" || r.requirement.gap);
+      if (wellWritten && (fitScore ?? 0) >= 70 && allRequiredMetOrGap) {
+        readyForJob = true;
+        verdict = "ready-for-job";
+        verdictLabel = "Ready for this job";
+        verdictMessage = "Your CV is well written and ready for this job.";
+      } else if (wellWritten) {
+        verdict = "well-written";
+        verdictLabel = "Well written";
+        verdictMessage = (fitScore ?? 0) < 70 ? `Well written, but job fit is ${fitScore ?? 0}/100. Tailor it to close open gaps.` : "Well written, but some required items have open gaps.";
+      } else {
+        verdict = "not-ready";
+        verdictLabel = "";
+        verdictMessage = issues.length > 0 ? `${issues.length} open issue${issues.length === 1 ? "" : "s"} must be resolved.` : "";
+      }
+    } else {
+      if (wellWritten) {
+        verdict = "well-written";
+        verdictLabel = "Well written";
+        verdictMessage = "Add the job advert to check it's ready for a specific job.";
+      } else {
+        verdict = "not-ready";
+        verdictLabel = "";
+        verdictMessage = issues.length > 0 ? `${issues.length} open issue${issues.length === 1 ? "" : "s"} must be resolved.` : "";
+      }
+    }
+  }
+
   return {
     empty,
     total,
@@ -457,7 +627,12 @@ export function scoreCv(input: ScoreInput): Score {
     groups: groups.map(({ raw: _raw, ...g }) => g),
     findings,
     gaps: empty ? [] : gapsIn(cv),
-    goodEnough: !empty && Math.round(total) >= GOOD_ENOUGH && missing.length === 0,
+    goodEnough: readyForJob || (wellWritten && !hasAdvert),
+    wellWritten,
+    readyForJob,
+    verdict,
+    verdictLabel,
+    verdictMessage,
     thin: !empty && share < 1 ? { have: lines.length, need } : null,
     missing,
   };

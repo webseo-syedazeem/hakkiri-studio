@@ -6,20 +6,26 @@ import clsx from "clsx";
 import { Icon, Panel } from "@/components/ui";
 import { Segmented } from "@/components/ui/Segmented";
 import { formatStageDate } from "@/lib/format";
+import { DeleteInterview } from "./DeleteInterview";
 import {
   DIFFICULTY_HINT,
   DIFFICULTY_LABEL,
   PRESETS,
   presetFor,
+  mixIsValid,
   totalQuestionCount,
+  weightsLine,
   type Difficulty,
+  type FocusCategoryKey,
   type Mix,
   type MixPreset,
   type SessionMinutes,
   type SessionSettings,
 } from "@/lib/interviews/settings";
+import { mixLine } from "@/lib/interviews/setup-form";
 
 export type FocusAreaPreset =
+  | "configured"
   | "strengths-competency"
   | "balanced"
   | "strengths"
@@ -31,6 +37,11 @@ export const FOCUS_PRESETS: Record<
   FocusAreaPreset,
   { label: string; description: string; mix: Mix; badge?: string }
 > = {
+  configured: {
+    label: "Selected Interview Focus",
+    description: "The custom question focus weighting selected during setup",
+    mix: { cv: 20, competency: 20, technical: 20, motivation: 20, curveball: 20 },
+  },
   "strengths-competency": {
     label: "Strengths & Competency (STAR)",
     description: "STAR behavioural competencies + spontaneous strengths questions",
@@ -295,7 +306,11 @@ export function InterviewOverviewClient({
               const isPresetScreen = lName.includes("screen") || lName.includes("recruiter");
               const isPresetTech = lName.includes("tech") || lName.includes("case") || lName.includes("code");
               const isPresetFinal = lName.includes("final") || lName.includes("panel") || lName.includes("lead");
-              const preset: SessionSettings["preset"] = isPresetScreen ? "screening" : isPresetTech ? "technical" : isPresetFinal ? "final" : "balanced";
+              const savedMix = (match.settings?.mix && mixIsValid(match.settings.mix)) ? match.settings.mix : null;
+              const preset: SessionSettings["preset"] = (match.settings?.preset && match.settings.preset !== "custom")
+                ? match.settings.preset
+                : isPresetScreen ? "screening" : isPresetTech ? "technical" : isPresetFinal ? "final" : "balanced";
+              const mix = savedMix ?? (preset !== "custom" && preset in PRESETS ? PRESETS[preset as Exclude<MixPreset, "custom">].mix : PRESETS.balanced.mix);
               const isNext = st.status === "next" || (idx === 0 && !match.stages.some((x: any) => x.status === "next"));
               const isCompleted = st.status === "completed";
               const formattedDate = formatStageDate(st.date, st.time);
@@ -308,7 +323,7 @@ export function InterviewOverviewClient({
                 status: isCompleted ? "completed" : isNext ? "next" : "upcoming",
                 subtitle: formattedDate || (isCompleted ? "Completed" : "Upcoming"),
                 preset,
-                mix: PRESETS[preset].mix,
+                mix,
               };
             });
             setActiveStages(mapped);
@@ -373,20 +388,25 @@ export function InterviewOverviewClient({
   const nextStage = activeStages.find((s) => s.status === "next") ?? activeStage;
   const estQuestions = Math.max(3, totalQuestionCount(minutes, difficulty));
 
-  const isCivilService = /\b(civil service|hmrc|gov|government|ministry|public sector)\b/i.test(`${companyName} ${roleTitle}`);
+  const userWeights = initialSettings.categoryWeights;
+  const userMixText =
+    userWeights && Object.values(userWeights).some((v) => (v ?? 0) > 0)
+      ? weightsLine(userWeights as Record<FocusCategoryKey, number>)
+      : mixLine(initialSettings.mix);
+
   const [focusPreset, setFocusPreset] = useState<FocusAreaPreset>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem(`hk_interview_${interviewId}_focus`) as FocusAreaPreset;
-      if (saved && FOCUS_PRESETS[saved]) return saved;
+      if (saved && (saved === "configured" || FOCUS_PRESETS[saved])) return saved;
     }
-    return isCivilService ? "strengths-competency" : "balanced";
+    return "configured";
   });
 
   const handleFocusChange = async (presetKey: FocusAreaPreset) => {
     setFocusPreset(presetKey);
     try {
       localStorage.setItem(`hk_interview_${interviewId}_focus`, presetKey);
-      const newMix = FOCUS_PRESETS[presetKey].mix;
+      const newMix = presetKey === "configured" ? initialSettings.mix : FOCUS_PRESETS[presetKey].mix;
       await fetch(`/api/interviews/${interviewId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -396,6 +416,9 @@ export function InterviewOverviewClient({
             preset: presetFor(newMix),
             difficulty,
             minutes,
+            ...(presetKey === "configured" && initialSettings.categoryWeights
+              ? { categoryWeights: initialSettings.categoryWeights }
+              : {}),
           },
         }),
       });
@@ -404,7 +427,10 @@ export function InterviewOverviewClient({
     }
   };
 
-  const activeMix = FOCUS_PRESETS[focusPreset]?.mix ?? activeStage.mix;
+  const activeMix =
+    focusPreset === "configured"
+      ? (initialSettings.mix || activeStage.mix)
+      : (FOCUS_PRESETS[focusPreset]?.mix ?? activeStage.mix);
   const currentSettings: SessionSettings = {
     difficulty,
     minutes,
@@ -489,6 +515,8 @@ export function InterviewOverviewClient({
               <Icon name="play" size={13} className="group-hover:translate-x-0.5 transition-transform duration-200" />
               <span>Practise interview</span>
             </StartButton>
+
+            <DeleteInterview id={interviewId} company={companyName} kind="interview" />
           </div>
         </div>
 
@@ -826,13 +854,15 @@ export function InterviewOverviewClient({
               <div className="flex items-center justify-between text-xs">
                 <span className="font-medium text-muted">Question focus</span>
                 <span className="font-semibold text-indigo-300">
-                  {FOCUS_PRESETS[focusPreset]?.label}
+                  {focusPreset === "configured" ? "Selected Interview Focus" : FOCUS_PRESETS[focusPreset]?.label}
                 </span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {(Object.keys(FOCUS_PRESETS) as FocusAreaPreset[]).map((key) => {
                   const opt = FOCUS_PRESETS[key];
                   const isSel = focusPreset === key;
+                  const label = key === "configured" ? "Selected Interview Focus" : opt.label;
+                  const desc = key === "configured" ? userMixText : opt.description;
                   return (
                     <button
                       key={key}
@@ -846,17 +876,24 @@ export function InterviewOverviewClient({
                       )}
                     >
                       <div className="flex items-center justify-between gap-1 w-full">
-                        <span className="font-semibold text-white truncate">{opt.label}</span>
+                        <span className="font-semibold text-white truncate">{label}</span>
                         {isSel && <Icon name="check" size={13} className="text-indigo-400 shrink-0" />}
                       </div>
-                      <span className="text-[10px] text-muted line-clamp-1">{opt.description}</span>
+                      <span className="text-[10px] text-muted line-clamp-1">{desc}</span>
                     </button>
                   );
                 })}
               </div>
-              <p className="text-[11px] text-muted pt-0.5">
-                {FOCUS_PRESETS[focusPreset]?.description}
-              </p>
+              <div className="text-[11px] text-muted pt-0.5">
+                {focusPreset === "configured" ? (
+                  <span className="inline-flex items-center gap-1.5 text-indigo-300 font-medium">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shrink-0" />
+                    <span>Your weighting: {userMixText}</span>
+                  </span>
+                ) : (
+                  FOCUS_PRESETS[focusPreset]?.description
+                )}
+              </div>
             </div>
 
             {/* Difficulty */}

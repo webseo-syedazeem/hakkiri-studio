@@ -1,4 +1,4 @@
-import { mixIsValid, presetFor, PRESETS, type Mix } from "./settings";
+import { mixIsValid, presetFor, PRESETS, type Mix, type FocusCategoryKey, weightsToMix } from "./settings";
 
 /**
  * The rules of the interview set-up form: what must be there before an
@@ -41,6 +41,7 @@ export interface Focus {
   technical: number;
   skills: number;
   experience: number;
+  categories?: Record<FocusCategoryKey, number>;
 }
 
 export interface SetupProblem {
@@ -66,12 +67,17 @@ export function setupProblems(f: SetupForm): SetupProblem[] {
 const STEP = 10;
 
 /**
- * The question mix for the three focus sliders. Each slider's share of the
- * three together, to the nearest 10, adding up to 100: Technical is the
- * technical questions, Skills the competency questions and Experience the
- * questions about the CV. With every slider at zero the mix is the balanced one.
+ * The question mix for the focus settings. If 10-category weighting is active,
+ * it compiles into the 5 core question groups. Otherwise it distributes
+ * the three legacy sliders to sum to 100.
  */
 export function focusMix(focus: Focus): Mix {
+  if (focus.categories) {
+    const totalCat = Object.values(focus.categories).reduce((a, b) => a + b, 0);
+    if (totalCat > 0) {
+      return weightsToMix(focus.categories);
+    }
+  }
   const raw = [Math.max(0, focus.technical), Math.max(0, focus.skills), Math.max(0, focus.experience)];
   const total = raw[0] + raw[1] + raw[2];
   if (!Number.isFinite(total) || total <= 0) return { ...PRESETS.balanced.mix };
@@ -143,6 +149,7 @@ export function buildRequest(f: SetupForm) {
       minutes: (MINUTES.includes(f.minutes) ? f.minutes : 30) as 10 | 20 | 30 | 45 | 60,
       preset: presetFor(mix),
       mix,
+      ...(f.focus.categories ? { categoryWeights: f.focus.categories } : {}),
     },
     stages,
   };

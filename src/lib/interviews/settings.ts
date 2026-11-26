@@ -18,11 +18,164 @@ export const LENGTHS = [10, 20, 30, 45, 60] as const;
 export type SessionMinutes = (typeof LENGTHS)[number];
 export type Mix = Record<QuestionGroup, number>;
 
+export type FocusCategoryKey =
+  | "competency"
+  | "strengths"
+  | "technical"
+  | "experience"
+  | "motivation"
+  | "situational"
+  | "caseStudy"
+  | "leadership"
+  | "curveball"
+  | "valuesCulture";
+
+export interface FocusCategory {
+  key: FocusCategoryKey;
+  label: string;
+  group: QuestionGroup;
+  description: string;
+}
+
+export const FOCUS_CATEGORIES: FocusCategory[] = [
+  { key: "competency", label: "Competency & Behavioural", group: "competency", description: "STAR behavioural competencies and structured examples" },
+  { key: "strengths", label: "Strengths", group: "competency", description: "Spontaneous strengths, values, engagement and personal motivations" },
+  { key: "technical", label: "Technical", group: "technical", description: "Domain knowledge, frameworks, technical architecture and execution" },
+  { key: "experience", label: "Experience", group: "cv", description: "Career trajectory, achievements, role responsibilities and CV walkthrough" },
+  { key: "motivation", label: "Motivational", group: "motivation", description: "Why this role, why this company, and long-term career drive" },
+  { key: "situational", label: "Situational", group: "curveball", description: "“What would you do if…” real-world scenarios and judgement" },
+  { key: "caseStudy", label: "Case Study & Problem-solving", group: "technical", description: "Structured analytical problem solving, trade-offs and root-cause analysis" },
+  { key: "leadership", label: "Leadership & Management", group: "competency", description: "Team leadership, cross-functional influence, coaching and delegation" },
+  { key: "curveball", label: "Challenging & Curveball", group: "curveball", description: "Unexpected high-pressure questions, critical thinking and adaptability" },
+  { key: "valuesCulture", label: "Values & Culture", group: "motivation", description: "Cultural alignment, workplace ethics, integrity and collaboration" },
+];
+
+export function getSuggestedWeights(title: string, jobText: string = ""): Record<FocusCategoryKey, number> {
+  const t = (title + " " + jobText).toLowerCase();
+  
+  // HMRC / Civil Service / Public sector (Matches client mockup screenshot exactly: 40/20/30/10)
+  if (t.includes("hmrc") || t.includes("civil service") || t.includes("success profiles") || t.includes("public sector") || t.includes("government")) {
+    return {
+      competency: 40,
+      strengths: 20,
+      technical: 30,
+      experience: 10,
+      motivation: 0,
+      situational: 0,
+      caseStudy: 0,
+      leadership: 0,
+      curveball: 0,
+      valuesCulture: 0,
+    };
+  }
+  
+  // Tech / Software / Data / Engineering
+  if (/\b(engineer|developer|software|full[- ]stack|backend|frontend|data|devops|sre|architect|tech lead|programmer)\b/i.test(t)) {
+    return {
+      technical: 35,
+      caseStudy: 25,
+      competency: 20,
+      experience: 20,
+      strengths: 0,
+      motivation: 0,
+      situational: 0,
+      leadership: 0,
+      curveball: 0,
+      valuesCulture: 0,
+    };
+  }
+
+  // Leadership / Management / Executive
+  if (/\b(director|head of|vp|chief|lead|manager|executive|principal)\b/i.test(t)) {
+    return {
+      leadership: 35,
+      competency: 25,
+      experience: 25,
+      situational: 15,
+      technical: 0,
+      strengths: 0,
+      motivation: 0,
+      caseStudy: 0,
+      curveball: 0,
+      valuesCulture: 0,
+    };
+  }
+
+  // Product / Design
+  if (/\b(product manager|product owner|ux|designer|product)\b/i.test(t)) {
+    return {
+      competency: 35,
+      technical: 25,
+      caseStudy: 20,
+      experience: 20,
+      strengths: 0,
+      motivation: 0,
+      situational: 0,
+      leadership: 0,
+      curveball: 0,
+      valuesCulture: 0,
+    };
+  }
+
+  // Default balanced
+  return {
+    competency: 30,
+    technical: 30,
+    experience: 20,
+    motivation: 20,
+    strengths: 0,
+    situational: 0,
+    caseStudy: 0,
+    leadership: 0,
+    curveball: 0,
+    valuesCulture: 0,
+  };
+}
+
+export function weightsToMix(weights: Record<FocusCategoryKey, number>): Mix {
+  const technical = (weights.technical || 0) + (weights.caseStudy || 0);
+  const competency = (weights.competency || 0) + (weights.strengths || 0) + (weights.leadership || 0);
+  const cv = weights.experience || 0;
+  const motivation = (weights.motivation || 0) + (weights.valuesCulture || 0);
+  const curveball = (weights.curveball || 0) + (weights.situational || 0);
+
+  const sum = technical + competency + cv + motivation + curveball;
+  if (sum <= 0) {
+    return { cv: 20, competency: 20, technical: 20, motivation: 20, curveball: 20 };
+  }
+  
+  const raw = [technical, competency, cv, motivation, curveball];
+  const STEP = 10;
+  const exact = raw.map((v) => (v / sum) * (100 / STEP));
+  const units = exact.map(Math.floor);
+  let left = 100 / STEP - units.reduce((a, b) => a + b, 0);
+  const order = exact.map((v, i) => ({ i, rest: v - Math.floor(v) })).sort((a, b) => b.rest - a.rest || a.i - b.i);
+  for (const { i } of order) {
+    if (left <= 0) break;
+    units[i] += 1;
+    left -= 1;
+  }
+  return {
+    technical: units[0] * STEP,
+    competency: units[1] * STEP,
+    cv: units[2] * STEP,
+    motivation: units[3] * STEP,
+    curveball: units[4] * STEP,
+  };
+}
+
+export function weightsLine(weights: Record<FocusCategoryKey, number>): string {
+  const active = FOCUS_CATEGORIES.filter((c) => (weights[c.key] || 0) > 0);
+  if (active.length === 0) return "Balanced across all areas";
+  return active.map((c) => `${c.label} ${weights[c.key]}%`).join(" · ");
+}
+
 export interface SessionSettings {
   difficulty: Difficulty;
   minutes: SessionMinutes;
   preset: MixPreset;
   mix: Mix;
+  categoryWeights?: Partial<Record<FocusCategoryKey, number>>;
 }
 
 /** The order categories are shown in. */

@@ -62,7 +62,7 @@ export const EXAMPLE_TEMPLATES: ExampleTemplate[] = [
             orgInfo: "B2B Payment Infrastructure",
             location: "London, UK",
             start: "2022",
-            end: "Present",
+            end: "",
             current: true,
             subject: "",
             grade: "",
@@ -201,7 +201,7 @@ export const EXAMPLE_TEMPLATES: ExampleTemplate[] = [
             orgInfo: "B2B SaaS Analytics",
             location: "London, UK",
             start: "2021",
-            end: "Present",
+            end: "",
             current: true,
             subject: "",
             grade: "",
@@ -318,7 +318,7 @@ export const EXAMPLE_TEMPLATES: ExampleTemplate[] = [
             orgInfo: "Acute Medical Assessment Unit",
             location: "London, UK",
             start: "2021",
-            end: "Present",
+            end: "",
             current: true,
             subject: "",
             grade: "",
@@ -437,7 +437,7 @@ export const EXAMPLE_TEMPLATES: ExampleTemplate[] = [
             orgInfo: "D2C & B2B Retail",
             location: "London, UK",
             start: "2021",
-            end: "Present",
+            end: "",
             current: true,
             subject: "",
             grade: "",
@@ -554,7 +554,7 @@ export const EXAMPLE_TEMPLATES: ExampleTemplate[] = [
             orgInfo: "Supply Chain & Logistics",
             location: "London, UK",
             start: "2022",
-            end: "Present",
+            end: "",
             current: true,
             subject: "",
             grade: "",
@@ -671,7 +671,7 @@ export const EXAMPLE_TEMPLATES: ExampleTemplate[] = [
             orgInfo: "FinTech & Risk Intelligence",
             location: "San Francisco, CA",
             start: "2021",
-            end: "Present",
+            end: "",
             current: true,
             subject: "",
             grade: "",
@@ -790,7 +790,7 @@ export const EXAMPLE_TEMPLATES: ExampleTemplate[] = [
             orgInfo: "Enterprise Cloud Engineering",
             location: "London, UK",
             start: "2021",
-            end: "Present",
+            end: "",
             current: true,
             subject: "",
             grade: "",
@@ -909,7 +909,7 @@ export const EXAMPLE_TEMPLATES: ExampleTemplate[] = [
             orgInfo: "Enterprise B2B Software",
             location: "Chicago, IL",
             start: "2020",
-            end: "Present",
+            end: "",
             current: true,
             subject: "",
             grade: "",
@@ -1028,7 +1028,7 @@ export const EXAMPLE_TEMPLATES: ExampleTemplate[] = [
             orgInfo: "Supply Chain & Freight Services",
             location: "Birmingham, UK",
             start: "2021",
-            end: "Present",
+            end: "",
             current: true,
             subject: "",
             grade: "",
@@ -1147,7 +1147,7 @@ export const EXAMPLE_TEMPLATES: ExampleTemplate[] = [
             orgInfo: "FinTech & Venture Capital",
             location: "London, UK",
             start: "2020",
-            end: "Present",
+            end: "",
             current: true,
             subject: "",
             grade: "",
@@ -1264,7 +1264,7 @@ export const EXAMPLE_TEMPLATES: ExampleTemplate[] = [
             orgInfo: "B2B SaaS Security Platform",
             location: "New York, NY",
             start: "2021",
-            end: "Present",
+            end: "",
             current: true,
             subject: "",
             grade: "",
@@ -1381,7 +1381,7 @@ export const EXAMPLE_TEMPLATES: ExampleTemplate[] = [
             orgInfo: "Managed Security Service Provider (MSSP)",
             location: "Manchester, UK",
             start: "2021",
-            end: "Present",
+            end: "",
             current: true,
             subject: "",
             grade: "",
@@ -1518,8 +1518,8 @@ export const EXAMPLE_TEMPLATES: ExampleTemplate[] = [
             org: "KiteTech Software",
             orgInfo: "Developer Tooling",
             location: "London, UK",
-            start: "Jun 2024",
-            end: "Sep 2024",
+            start: "2024-06",
+            end: "2024-09",
             current: false,
             subject: "",
             grade: "",
@@ -1583,12 +1583,44 @@ export const EXAMPLE_TEMPLATES: ExampleTemplate[] = [
   },
 ];
 
+function normalizePartialDate(d?: string): string {
+  if (!d) return "";
+  const s = d.trim();
+  if (s.toLowerCase() === "present") return "";
+  if (/^(|\d{4}|\d{4}-(0[1-9]|1[0-2]))$/.test(s)) return s;
+  const m = s.match(/^([A-Za-z]+)\s+(\d{4})$/);
+  if (m) {
+    const months: Record<string, string> = {
+      jan: "01", feb: "02", mar: "03", apr: "04", may: "05", jun: "06",
+      jul: "07", aug: "08", sep: "09", oct: "10", nov: "11", dec: "12",
+    };
+    const mm = months[m[1].slice(0, 3).toLowerCase()];
+    if (mm) return `${m[2]}-${mm}`;
+  }
+  const yearMatch = s.match(/\b(19\d\d|20\d\d)\b/);
+  return yearMatch ? yearMatch[1] : "";
+}
+
 export function instantiateTemplate(
   template: ExampleTemplate,
   userId: string,
   customName?: string
 ): CvDoc {
   const now = new Date().toISOString();
+  const rawSections = template.getSections();
+  const sanitizedSections = rawSections.map((sec) => ({
+    ...sec,
+    entries: (sec.entries || []).map((e) => {
+      const isCurrent = Boolean(e.current || (e.end && e.end.toLowerCase() === "present"));
+      return {
+        ...e,
+        start: normalizePartialDate(e.start),
+        end: isCurrent ? "" : normalizePartialDate(e.end),
+        current: isCurrent,
+      };
+    }),
+  }));
+
   return {
     id: newId("cv_"),
     userId,
@@ -1604,7 +1636,7 @@ export function instantiateTemplate(
       location: "London, UK",
       links: ["linkedin.com/in/alexmorgan-example"],
     },
-    sections: template.getSections(),
+    sections: sanitizedSections,
     accepted: [],
     requirements: [],
     changes: [],

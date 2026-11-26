@@ -82,7 +82,7 @@ export default async function WelcomePage() {
       <div className="mt-[22px] flex items-center justify-between rounded-xl bg-panel px-5 py-4 text-sm shadow-[inset_0_0_0_1px_var(--color-line)]">
         <span>
           <b className="font-semibold">Your free trial:</b>{" "}
-          <span className="text-muted">10 minutes of interview practice and 5 minutes of pitch rehearsal, with full feedback.</span>
+          <span className="text-muted">10 minutes of free practice across interviews, drills, rehearsals and Q&A, with full feedback.</span>
         </span>
         <span className="text-muted">We never judge your accent.</span>
       </div>

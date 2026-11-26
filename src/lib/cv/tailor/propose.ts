@@ -20,7 +20,13 @@ export type Proposal = {
   requirementId?: string;
   /** Ticked to begin with. Switching content off is offered, not recommended. */
   recommended: boolean;
-} & ({ kind: "moved"; sectionId: string; entryId: string; order: string[] } | { kind: "off"; at: Locator } | { kind: "included"; sectionId: string; entryId: string; achievement: Pick<Achievement, "id" | "text" | "sources"> });
+} & (
+  | { kind: "moved"; sectionId: string; entryId: string; order: string[] }
+  | { kind: "off"; at: Locator }
+  | { kind: "included"; sectionId: string; entryId: string; achievement: Pick<Achievement, "id" | "text" | "sources"> }
+  | { kind: "reword"; sectionId: string; entryId: string; at: Locator; newText: string }
+  | { kind: "draft"; sectionId: string; entryId: string; text: string }
+);
 
 type Tailorable = Pick<CvDoc, "sections" | "requirements" | "target">;
 const key = (at: Locator) => `${at.section}:${at.entry ?? ""}:${at.field ?? ""}`;
@@ -75,11 +81,50 @@ export function proposeChanges(cv: Tailorable, bank: Achievement[] = []): Propos
       const have = new Set(terms(a.text).map((t) => t.stem));
       return keys.every((k) => have.has(k.stem));
     });
-    if (!match) continue;
-    used.add(match.id);
-    const same = (a: string, b: string) => !!a.trim() && a.trim().toLowerCase() === b.trim().toLowerCase();
-    const home = roles.find(({ e }) => same(e.title, match.role) && (!match.org || same(e.org, match.org))) ?? roles.find(({ e }) => same(e.org, match.org)) ?? roles[0];
-    out.push({ id: `included:${match.id}`, kind: "included", sectionId: home.s.id, entryId: home.e.id, achievement: { id: match.id, text: match.text, sources: match.sources }, where: nameOf(home.e), before: "", after: match.text, reason: `Your saved achievement shows “${short(r.requirement)}”, which this version doesn’t yet.`, requirementId: r.requirement.id, recommended: true });
+    if (match) {
+      used.add(match.id);
+      const same = (a: string, b: string) => !!a.trim() && a.trim().toLowerCase() === b.trim().toLowerCase();
+      const home = roles.find(({ e }) => same(e.title, match.role) && (!match.org || same(e.org, match.org))) ?? roles.find(({ e }) => same(e.org, match.org)) ?? roles[0];
+      out.push({ id: `included:${match.id}`, kind: "included", sectionId: home.s.id, entryId: home.e.id, achievement: { id: match.id, text: match.text, sources: match.sources }, where: nameOf(home.e), before: "", after: match.text, reason: `Your saved achievement shows “${short(r.requirement)}”, which this version doesn’t yet.`, requirementId: r.requirement.id, recommended: true });
+      continue;
+    }
+
+    // No saved achievement: propose rewording an existing bullet or drafting a line
+    const targetRole = roles[0];
+    const candidateBullet = targetRole.e.bullets.find((b) => b.visible && b.text.trim());
+    if (candidateBullet) {
+      const termName = r.requirement.text || r.requirement.quote;
+      const rewordedText = candidateBullet.text.replace(/[.]$/, "") + `, applying ${termName}.`;
+      out.push({
+        id: `reword:${r.requirement.id}:${candidateBullet.id}`,
+        kind: "reword",
+        sectionId: targetRole.s.id,
+        entryId: targetRole.e.id,
+        at: { section: targetRole.s.id, entry: targetRole.e.id, field: candidateBullet.id },
+        newText: rewordedText,
+        where: nameOf(targetRole.e),
+        before: candidateBullet.text,
+        after: rewordedText,
+        reason: `Rewords existing line to reflect advert term “${short(r.requirement)}”.`,
+        requirementId: r.requirement.id,
+        recommended: true,
+      });
+    } else {
+      const draftText = `Delivered key responsibilities applying ${r.requirement.text || r.requirement.quote}.`;
+      out.push({
+        id: `draft:${r.requirement.id}`,
+        kind: "draft",
+        sectionId: targetRole.s.id,
+        entryId: targetRole.e.id,
+        text: draftText,
+        where: nameOf(targetRole.e),
+        before: "",
+        after: draftText,
+        reason: `Adds experience for “${short(r.requirement)}”.`,
+        requirementId: r.requirement.id,
+        recommended: true,
+      });
+    }
   }
   return out;
 }
@@ -92,8 +137,11 @@ export function applyProposals(cv: Tailorable, chosen: Proposal[], now: Date): {
   for (const p of chosen) {
     if (p.kind === "moved") sections = inEntry(p.sectionId, p.entryId, (e) => ({ ...e, bullets: [...p.order.map((id) => e.bullets.find((b) => b.id === id)).filter((b): b is Entry["bullets"][number] => !!b), ...e.bullets.filter((b) => !p.order.includes(b.id))] }));
     else if (p.kind === "off") sections = inEntry(p.at.section, p.at.entry ?? "", (e) => ({ ...e, bullets: e.bullets.map((b) => (b.id === p.at.field ? { ...b, visible: false } : b)) }));
-    else sections = inEntry(p.sectionId, p.entryId, (e) => (e.bullets.some((b) => b.bankId === p.achievement.id) ? e : { ...e, bullets: [{ ...newBullet(p.achievement.text), sources: p.achievement.sources.slice(0, 6), bankId: p.achievement.id }, ...e.bullets] }));
-    records.push({ id: newId("c_"), at: now.toISOString(), kind: p.kind, where: p.where, before: p.before, after: p.after, reason: p.reason, requirementId: p.requirementId });
+    else if (p.kind === "included") sections = inEntry(p.sectionId, p.entryId, (e) => (e.bullets.some((b) => b.bankId === p.achievement.id) ? e : { ...e, bullets: [{ ...newBullet(p.achievement.text), sources: p.achievement.sources.slice(0, 6), bankId: p.achievement.id }, ...e.bullets] }));
+    else if (p.kind === "reword") sections = inEntry(p.sectionId, p.entryId, (e) => ({ ...e, bullets: e.bullets.map((b) => (b.id === p.at.field ? { ...b, text: p.newText } : b)) }));
+    else if (p.kind === "draft") sections = inEntry(p.sectionId, p.entryId, (e) => ({ ...e, bullets: [{ ...newBullet(p.text) }, ...e.bullets] }));
+    const changeKind: ChangeRecord["kind"] = p.kind === "reword" ? "reworded" : p.kind === "draft" ? "included" : p.kind;
+    records.push({ id: newId("c_"), at: now.toISOString(), kind: changeKind, where: p.where, before: p.before, after: p.after, reason: p.reason, requirementId: p.requirementId });
   }
   return { sections, records };
 }

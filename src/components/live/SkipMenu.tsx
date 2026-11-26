@@ -5,11 +5,12 @@ import clsx from "clsx";
 import { Button } from "@/components/ui";
 import type { SkipReason } from "@/lib/mocks/store";
 
-const REASONS: { value: Exclude<SkipReason, "said-so" | "by-choice">; label: string }[] = [
+const REASONS: { value: Exclude<SkipReason, "said-so">; label: string }[] = [
   { value: "not-relevant", label: "Not relevant to the role" },
   { value: "not-true", label: "Not true about me" },
   { value: "already-asked", label: "Already asked" },
   { value: "wrong-level", label: "Wrong level" },
+  { value: "by-choice", label: "Just skip it" },
 ];
 
 /**

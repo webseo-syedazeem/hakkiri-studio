@@ -221,7 +221,8 @@ export default async function MockInterviewPage({
       if (type === "strengths") {
         targetQuestion = interview.questions.find((q) => q.type === "strengths" || (q.group === "curveball" && !q.slot)) ?? getTopic("civil-service-strengths")?.questions[0];
       } else {
-        targetQuestion = interview.questions[0];
+        const substantive = interview.questions.filter((q) => !q.slot);
+        targetQuestion = substantive[0] ?? interview.questions[0];
       }
     }
 

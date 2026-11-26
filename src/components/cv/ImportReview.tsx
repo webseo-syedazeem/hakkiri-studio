@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { whereKey } from "@/lib/cv/import/parse";
 import { type CvImport, type ImportDraft, type ImportFlag, openFlags, reviewSteps } from "@/lib/cv/import/record";
@@ -125,7 +125,10 @@ export function ImportReview({ importId, stepKey }: { importId: string; stepKey:
   const [problem, setProblem] = useState("");
   const fields = useRef<HTMLDivElement>(null);
 
-  const steps = imp ? reviewSteps(imp) : [];
+  const searchParams = useSearchParams();
+  const flaggedOnly = searchParams?.get("flagged") === "true";
+  const allSteps = imp ? reviewSteps(imp) : [];
+  const steps = imp && flaggedOnly ? allSteps.filter((s) => openFlags(imp, s) > 0 || s.key === stepKey) : allSteps;
   const index = steps.findIndex((s) => s.key === stepKey);
   const step = steps[index];
 
@@ -267,7 +270,7 @@ export function ImportReview({ importId, stepKey }: { importId: string; stepKey:
       setBusy(false);
       return setProblem("Your changes couldn’t be saved. Check you’re online and try again.");
     }
-    if (!isLast) return router.push(`/cv/import/${importId}/review/${steps[index + 1].key}`);
+    if (!isLast) return router.push(`/cv/import/${importId}/review/${steps[index + 1].key}${flaggedOnly ? "?flagged=true" : ""}`);
     try {
       const { versionId, next } = await api<{ versionId: string; next?: string }>(`/api/cv/imports/${importId}/confirm`, { method: "POST" });
       router.push(next === "findings" ? `/cv/v/${versionId}/findings` : `/cv/v/${versionId}/edit/contact`);

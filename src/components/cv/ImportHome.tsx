@@ -125,9 +125,39 @@ export function ImportHome({ importId }: { importId: string }) {
         ) : (
           <>
             <Toolbar eyebrow={cv.name} title="Check what we read" subtitle={`${imp.fileName || "Your file"} · ${SOURCE_WORDS[imp.source ?? "pdf"]}${imp.pages ? ` · ${imp.pages} page${imp.pages === 1 ? "" : "s"}` : ""}`}>
-              <BtnLink kind="primary" href={`/cv/import/${importId}/review/${next.key}`}>
-                {imp.reviewed.length ? "Carry on checking" : "Start checking"}
-              </BtnLink>
+              {toCheck === 0 ? (
+                <>
+                  <Btn
+                    kind="primary"
+                    busy={busy}
+                    onClick={async () => {
+                      setBusy(true);
+                      setProblem("");
+                      try {
+                        const { versionId, next } = await api<{ versionId: string; next?: string }>(`/api/cv/imports/${importId}/confirm`, { method: "POST" });
+                        router.push(next === "findings" ? `/cv/v/${versionId}/findings` : `/cv/v/${versionId}/edit/contact`);
+                      } catch (err) {
+                        setBusy(false);
+                        setProblem(messageOf(err));
+                      }
+                    }}
+                  >
+                    Open in builder
+                  </Btn>
+                  <BtnLink kind="quiet" href={`/cv/import/${importId}/review/${steps[0].key}`}>
+                    Review section by section
+                  </BtnLink>
+                </>
+              ) : (
+                <>
+                  <BtnLink kind="primary" href={`/cv/import/${importId}/review/${(steps.find((s) => openFlags(imp, s) > 0) ?? next).key}?flagged=true`}>
+                    {`Review flagged sections (${toCheck} to check)`}
+                  </BtnLink>
+                  <BtnLink kind="quiet" href={`/cv/import/${importId}/review/${steps[0].key}`}>
+                    Review all sections
+                  </BtnLink>
+                </>
+              )}
             </Toolbar>
             <div className="cv-layout" style={{ gridTemplateColumns: "minmax(0, 720fr) minmax(0, 448fr)" }}>
               <Panel title="Sections to confirm" aside={<small>{toCheck === 0 ? "Nothing flagged" : `${toCheck} thing${toCheck === 1 ? "" : "s"} to check`}</small>}>

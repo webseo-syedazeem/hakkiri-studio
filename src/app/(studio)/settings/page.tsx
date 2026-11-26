@@ -260,10 +260,10 @@ export default async function SettingsPage() {
         <div className="flex flex-col gap-5">
           <Section
             id="usage"
-            title={showCosts ? "Usage" : "Your practice"}
+            title="Plan and usage"
             intro={
               beta
-                ? "How much of this month’s beta allowance you’ve used. It resets on the 1st; hours count only while you practise."
+                ? "Your current plan is Free Beta. How much of this month’s allowance you’ve used. It resets on the 1st; minutes count only while you practise."
                 : showCosts
                   ? "What Hakkiri has used today and this month, against the limits set in the environment."
                   : "How long you’ve practised. There’s a limit so the service stays quick for everyone."
@@ -279,22 +279,19 @@ export default async function SettingsPage() {
               </div>
             )}
             <div className="flex flex-col gap-4">
-              {LIMITS.monthlyMinutes > 0 && (
-                <div>
-                  <div className="mb-1.5 flex justify-between text-sm">
-                    <span>Beta practice this month</span>
-                    <span className="num text-muted">
-                      {mins(standing.minutesMonth ?? 0)} of{" "}
-                      {mins(LIMITS.monthlyMinutes)}
-                    </span>
-                  </div>
-                  <Bar
-                    value={standing.minutesMonth ?? 0}
-                    max={LIMITS.monthlyMinutes}
-                    label="Minutes of practice this month, against your monthly beta allowance"
-                  />
+              <div>
+                <div className="mb-1.5 flex justify-between text-sm">
+                  <span>Free practice allowance</span>
+                  <span className="num text-muted">
+                    {Math.max(0, 10 - Math.round(standing.minutesMonth ?? standing.minutesToday))} of 10 min left this month (resets on the 1st)
+                  </span>
                 </div>
-              )}
+                <Bar
+                  value={Math.min(10, Math.round(standing.minutesMonth ?? standing.minutesToday))}
+                  max={10}
+                  label="Free practice allowance used this month, against 10 minutes free"
+                />
+              </div>
               <div>
                 <div className="mb-1.5 flex justify-between text-sm">
                   <span>Speaking today</span>

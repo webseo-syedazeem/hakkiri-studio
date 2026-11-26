@@ -111,13 +111,13 @@ export function limitReached(
   if (LIMITS.monthlyUsd && s.spentMonth >= LIMITS.monthlyUsd * grace) {
     return devOr(
       `This month’s spending limit ($${LIMITS.monthlyUsd}) is reached. Raise HAKKIRI_MONTHLY_SPEND_USD in .env.local to carry on.`,
-      "You’ve reached this month’s practice limit. It resets on the 1st.",
+      "Practice is paused for everyone for a short while.",
     );
   }
   if (LIMITS.dailyUsd && s.spentToday >= LIMITS.dailyUsd * grace) {
     return devOr(
       `Today’s spending limit ($${LIMITS.dailyUsd}) is reached. Raise HAKKIRI_DAILY_SPEND_USD in .env.local, or carry on tomorrow.`,
-      "You’ve reached today’s practice limit. It resets at midnight.",
+      "Practice is paused for everyone for a short while.",
     );
   }
   // One account's own ceiling: reached by that account only, and it stops that account only.
@@ -143,7 +143,7 @@ export function limitReached(
       return `You’ve practised for ${hm(s.minutesToday)} today, which is the daily cap during the beta. It resets at midnight.`;
     return devOr(
       `You’ve spoken for ${hm(s.minutesToday)} today, the daily limit (${hm(LIMITS.dailyMinutes)}). Raise HAKKIRI_DAILY_MINUTES in .env.local, or carry on tomorrow.`,
-      `You’ve practised for ${hm(s.minutesToday)} today, which is today’s limit. It resets at midnight. Good work.`,
+      `You’ve reached today’s practice limit for your account. It resets at midnight. Good work.`,
     );
   }
   return null;

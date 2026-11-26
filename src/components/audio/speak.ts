@@ -21,7 +21,7 @@ type Speech = { done: Promise<void>; cancel: () => void };
 let natural: "unknown" | "on" | "off" = "unknown";
 let failures = 0;
 /** Generous wait time so cloud voice synthesis completes reliably without prematurely aborting. */
-const NATURAL_WAIT_MS = 9000;
+const NATURAL_WAIT_MS = 14000;
 
 /** In-memory object URL cache for prefetched question audio. */
 const audioBlobCache = new Map<string, string>();
@@ -112,7 +112,7 @@ function getBestBrowserVoice(voiceType?: VoiceName): SpeechSynthesisVoice | null
   const voices = cachedBrowserVoices.length ? cachedBrowserVoices : window.speechSynthesis.getVoices();
   if (!voices.length) return null;
 
-  const isFemale = voiceType === "easy";
+  const isFemale = voiceType !== "hard";
 
   // 1. Natural / Neural UK English voice (Edge, Chrome, Safari)
   const naturalUK = voices.find((v) => {
@@ -166,8 +166,8 @@ function browserSpeak(text: string, opts: SpeakOptions, finish: () => void, setC
   u.onstart = () => opts.onStart?.();
   u.onend = () => finish();
   u.onerror = () => finish();
-  // Some browsers never fire onend if speech is blocked; don't hang the interview.
-  const fallback = setTimeout(finish, 2000 + 90 * text.length);
+  // Generous fallback so real speech is never prematurely cut off mid-sentence
+  const fallback = setTimeout(finish, 20000 + 200 * text.length);
   setCancel(() => {
     clearTimeout(fallback);
     synth.cancel();

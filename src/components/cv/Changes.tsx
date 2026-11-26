@@ -159,9 +159,28 @@ export function Changes({ mode }: { mode: "proposed" | "report" }) {
       </Bar>
       <div className="cv-area">
         <Toolbar title="Proposed changes" subtitle={`Arranging what you already have for this job, before any rewording. Nothing changes until you apply it, and your base ${word} is never touched.`}>
-          <Btn kind="primary" disabled={!picked.length} onClick={() => void apply()}>
-            Apply {picked.length || ""} selected {picked.length === 1 ? "change" : "changes"}
-          </Btn>
+          <div className="cv-row" style={{ gap: 8 }}>
+            <Btn kind="default" onClick={() => setChosen(new Set(list.map((p) => p.id)))}>
+              Select all
+            </Btn>
+            <Btn kind="quiet" onClick={() => setChosen((prev) => new Set([...(prev ?? [])].filter((id) => !id.startsWith("reword:"))))}>
+              Keep my wording
+            </Btn>
+            <Btn
+              kind="quiet"
+              onClick={async () => {
+                const selectedReqIds = new Set(picked.map((p) => p.requirementId).filter(Boolean));
+                const nextReqs = cv.requirements.map((r) => (selectedReqIds.has(r.id) ? r : { ...r, gap: true }));
+                update({ requirements: nextReqs });
+                await flush();
+              }}
+            >
+              Mark unselected as gaps
+            </Btn>
+            <Btn kind="primary" disabled={!picked.length} onClick={() => void apply()}>
+              Apply {picked.length || ""} selected {picked.length === 1 ? "change" : "changes"}
+            </Btn>
+          </div>
         </Toolbar>
 
         {list.length === 0 ? (

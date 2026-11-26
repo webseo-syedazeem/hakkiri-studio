@@ -11,7 +11,7 @@ export interface ArchivedItem {
   interviewId?: string;
   role: string;
   company: string;
-  outcome: "Unsuccessful" | "Offer declined" | "Withdrawn";
+  outcome: "Unsuccessful" | "Offer declined" | "Withdrawn" | "Withdrew" | "Offer";
   stageReached: string;
   date: string;
   feedbackNotes: string;

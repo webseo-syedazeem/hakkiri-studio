@@ -324,7 +324,10 @@ export function BulletHelp({ say, onEdit }: { say: (text: string) => void; onEdi
           </div>
           <p className="cv-small">Say your answer out loud before an interviewer asks. If you can’t back the line up, change the line.</p>
           <div className="cv-row">
-            <Link className="cv-btn cv-btn-primary" href="/practice">
+            <Link
+              className="cv-btn cv-btn-primary"
+              href={`/practice?claim=${encodeURIComponent(text)}&question=${encodeURIComponent(question)}&returnTo=${encodeURIComponent(`/cv/${cv.id}?inspect=${encodeURIComponent(JSON.stringify(inspect))}`)}`}
+            >
               Open the Practice Hub
             </Link>
             <Btn onClick={() => void navigator.clipboard?.writeText(question).then(() => say("Question copied."))} disabled={!question}>

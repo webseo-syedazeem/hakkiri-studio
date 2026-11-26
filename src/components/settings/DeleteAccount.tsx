@@ -40,7 +40,7 @@ export function DeleteAccount({ userId, hasPassword }: { userId?: string; hasPas
       // What this browser holds for the person goes too, then they are taken to the public home page, signed out.
       browserData.forget(userId);
       browserData.release(userId);
-      window.location.assign("/");
+      window.location.assign("/?deleted=1");
     } catch {
       setProblem("That didn’t work. Check your connection and try again.");
     } finally {
