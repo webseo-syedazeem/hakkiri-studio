@@ -129,11 +129,13 @@ export async function saveDoc<T extends { id?: string; userId?: string }>(
       const db = await getMongoDb();
       if (db) {
         const col = db.collection(collectionName);
+        // Exclude _id from doc to avoid MongoDB immutable field errors on upsert
+        const { _id, ...safeDoc } = (doc || {}) as Record<string, unknown>;
         await col.replaceOne(
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           { _id: docKey as any },
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          { _id: docKey as any, ...doc, updatedAt: new Date().toISOString() },
+          { _id: docKey as any, ...safeDoc, updatedAt: new Date().toISOString() },
           { upsert: true, ignoreUndefined: true },
         );
         return doc;

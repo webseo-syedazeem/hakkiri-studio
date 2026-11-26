@@ -33,15 +33,15 @@ export interface HomeRecentPractice {
 
 const CARD = "group relative overflow-hidden flex animate-rise items-center justify-between rounded-[20px] bg-panel p-5 text-left shadow-[inset_0_0_0_1px_var(--color-line)] transition-all duration-300 hover:-translate-y-1 hover:shadow-lg dark:hover:shadow-[0_16px_36px_-8px_rgba(0,0,0,0.7)] cursor-pointer";
 
-function Metric({ icon, tint, label, value, note, delay }: { icon: IconName; tint: string; label: string; value: number; note?: string; delay: string }) {
+function Metric({ icon, tint, label, value, note }: { icon: IconName; tint: string; label: string; value: number; note?: string; delay?: string }) {
   return (
     <>
-      <div className="relative z-10 flex items-center gap-4" style={{ animationDelay: delay }}>
+      <div className="relative z-10 flex items-center gap-4">
         <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] ${tint} transition-transform duration-300 group-hover:scale-110`}>
           <Icon name={icon} size={24} />
         </div>
         <div>
-          <div className="text-[13px] font-medium text-muted">{label}</div>
+          <div className="text-xs sm:text-[13px] font-medium text-muted leading-snug">{label}</div>
           <div className="mt-0.5 flex items-baseline gap-2 leading-none">
             <span className="text-[30px] font-bold text-ink">{value}</span>
             {note ? <span className="text-sm font-normal text-muted">{note}</span> : null}
@@ -155,7 +155,7 @@ export function DashboardClientView({
         </button>
       </div>
 
-      <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-3">
         <Panel className="flex animate-rise flex-col justify-between rounded-[22px] p-6" style={{ animationDelay: "0.3s" }}>
           <UpcomingAgenda events={agendaEvents} />
         </Panel>

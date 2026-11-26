@@ -42,15 +42,15 @@ export function UpcomingAgenda({ events }: { events: UpcomingEvent[] }) {
               Your own interviews and presentations that have a date.
             </p>
           </div>
-          <div className="inline-flex rounded-xl bg-panel-2 p-1 shadow-[inset_0_0_0_1px_var(--color-line)]">
+          <div className="inline-flex rounded-xl bg-panel-2 p-1 shadow-[inset_0_0_0_1px_var(--color-line)] shrink-0">
             <button
               type="button"
               aria-pressed={filter === "this-week"}
               onClick={() => setFilter("this-week")}
               className={clsx(
-                "rounded-lg px-3 py-1 text-xs font-semibold transition-all duration-300 cursor-pointer",
+                "rounded-lg px-3 py-1 text-xs font-semibold whitespace-nowrap transition-all duration-300 cursor-pointer",
                 filter === "this-week"
-                  ? "bg-panel text-ink shadow-sm border border-line scale-[1.02] dark:bg-[#28324a]"
+                  ? "bg-panel text-ink shadow-sm border border-line scale-[1.02]"
                   : "text-muted hover:text-ink"
               )}
             >
@@ -61,9 +61,9 @@ export function UpcomingAgenda({ events }: { events: UpcomingEvent[] }) {
               aria-pressed={filter === "all"}
               onClick={() => setFilter("all")}
               className={clsx(
-                "rounded-lg px-3 py-1 text-xs font-semibold transition-all duration-300 cursor-pointer",
+                "rounded-lg px-3 py-1 text-xs font-semibold whitespace-nowrap transition-all duration-300 cursor-pointer",
                 filter === "all"
-                  ? "bg-panel text-ink shadow-sm border border-line scale-[1.02] dark:bg-[#28324a]"
+                  ? "bg-panel text-ink shadow-sm border border-line scale-[1.02]"
                   : "text-muted hover:text-ink"
               )}
             >

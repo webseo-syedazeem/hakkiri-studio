@@ -27,7 +27,8 @@ export function failure(where: string, err: unknown, message: string) {
     return err as unknown as Response;
   }
   console.error(`[${where}]`, err);
-  return NextResponse.json({ error: "server_error", message }, { status: 500 });
+  const detail = err instanceof Error && err.message && !err.message.includes("database") ? err.message : message;
+  return NextResponse.json({ error: "server_error", message: detail }, { status: 500 });
 }
 
 const oneLine = (max: number) => z.string().max(max * 2).transform((s) => s.replace(/\s+/g, " ").trim().slice(0, max));

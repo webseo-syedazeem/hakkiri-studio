@@ -72,7 +72,7 @@ export default async function HomePage() {
 
   return (
     <div className="flex w-full grow flex-col gap-6">
-      <header className="flex flex-col sm:flex-row animate-rise sm:items-end justify-between gap-4 sm:gap-6" style={{ animationDelay: "0.05s" }}>
+      <header className="flex flex-col sm:flex-row animate-rise sm:items-center justify-between gap-4 sm:gap-6" style={{ animationDelay: "0.05s" }}>
         <div>
           <div className="flex items-center gap-2 text-sm font-medium text-muted">
             <Icon name="cal" size={14} className="text-blue-soft" />

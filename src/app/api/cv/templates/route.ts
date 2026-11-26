@@ -38,11 +38,18 @@ export async function POST(req: Request) {
     const saved = await saveCv(doc);
 
     return NextResponse.json({ id: saved.id, name: saved.name }, { status: 201 });
-  } catch (err) {
-    if (err instanceof z.ZodError) {
-      console.error("[api/cv/templates POST] Schema validation error:", err.format());
-      return badInput(`Template validation failed: ${err.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join(", ")}`);
+  } catch (err: unknown) {
+    if (err instanceof z.ZodError || (Boolean(err) && typeof err === "object" && "issues" in (err as Record<string, unknown>))) {
+      const issues = ((err as Record<string, unknown>).issues || []) as z.ZodIssue[];
+      console.error("[api/cv/templates POST] Schema validation error:", issues);
+      return badInput(`Template validation failed: ${issues.map((i) => `${i.path.join(".")}: ${i.message}`).join(", ")}`);
     }
-    return failure("api/cv/templates POST", err, "Failed to create CV from template.");
+    if (err instanceof Response) return err;
+    if (err && typeof err === "object" && "status" in err && (err as { status: unknown }).status === 401) {
+      return NextResponse.json({ error: "unauthorised", message: "You must be signed in to perform this action." }, { status: 401 });
+    }
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[api/cv/templates POST] Internal error:", message, err);
+    return failure("api/cv/templates POST", err, message || "Failed to create CV from template.");
   }
 }

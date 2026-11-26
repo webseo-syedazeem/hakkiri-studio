@@ -225,12 +225,12 @@ export function Rail({
       )}
 
       {/* Desktop spacer to preserve layout flow alongside fixed sidebar */}
-      <div className="hidden md:block print:hidden w-[200px] shrink-0" aria-hidden="true" />
+      <div className="hidden md:block print:hidden w-[216px] shrink-0" aria-hidden="true" />
 
       {/* Desktop Navigation Sidebar (>= md) */}
       <nav
         aria-label="Main"
-        className="print-hide fixed top-0 bottom-0 left-0 z-30 hidden md:flex h-screen w-[200px] shrink-0 flex-col border-r border-line bg-booth py-5 px-3 overflow-y-auto overflow-x-hidden [scrollbar-width:none] transition-colors duration-250"
+        className="print-hide fixed top-0 bottom-0 left-0 z-30 hidden md:flex h-screen w-[216px] shrink-0 flex-col border-r border-line bg-booth py-5 px-3 overflow-y-auto overflow-x-hidden [scrollbar-width:none] transition-colors duration-250"
       >
         {/* Brand Header */}
         <Link
@@ -280,27 +280,27 @@ export function Rail({
             onClick={toggleTheme}
             aria-label="Change theme"
             title={isDark ? "Switch to Apple light theme" : "Switch to dark theme"}
-            className="group flex w-full items-center justify-between rounded-xl px-2.5 py-2 text-[13px] font-medium text-muted hover:bg-panel-2 hover:text-ink transition-all cursor-pointer"
+            className="group flex w-full items-center justify-between rounded-xl px-2.5 py-2 text-[13px] font-medium text-ink hover:bg-panel-2 transition-all cursor-pointer"
           >
-            <div className="flex items-center gap-3 min-w-0">
+            <div className="flex items-center gap-2.5 min-w-0">
               <svg
                 aria-hidden="true"
-                width="18"
-                height="18"
+                width="17"
+                height="17"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="1.75"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className={clsx("shrink-0 transition-transform duration-300 group-hover:rotate-45", isDark ? "text-amber-400" : "text-slate-700")}
+                className={clsx("shrink-0 transition-transform duration-300 group-hover:rotate-45", isDark ? "text-amber-400" : "text-blue-600")}
               >
                 <circle cx="12" cy="12" r="4" />
                 <path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l2 2m10 10 2 2M19 5l-2 2M7 17l-2 2" />
               </svg>
-              <span className="truncate">Appearance</span>
+              <span className="font-medium whitespace-nowrap text-ink">Appearance</span>
             </div>
-            <span className="text-[10px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded-md bg-panel-2 text-muted border border-line">
+            <span className="shrink-0 text-[10px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-md bg-panel-2 text-ink border border-line">
               {isDark ? "Dark" : "Light"}
             </span>
           </button>

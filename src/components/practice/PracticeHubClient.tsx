@@ -435,7 +435,7 @@ export function PracticeHubClient({
     : `/interviews/new`;
 
   return (
-    <div className="flex grow flex-col w-full pb-20 animate-rise text-ink">
+    <div className="flex grow flex-col w-full max-w-[1080px] mx-auto pb-20 animate-rise text-ink">
       {/* CV Claim banner if arrived from CV */}
       {claim && (
         <div className="mb-6 rounded-2xl bg-blue-fill/5 border border-blue-fill/30 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm dark:bg-[#1a1738] dark:border-indigo-500/40">

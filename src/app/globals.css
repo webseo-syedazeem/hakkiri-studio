@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *, .dark, .dark *));
+
 /*
   Hakkiri Studio design tokens (Direction B, "Booth").
   Every colour, radius and animation used by the designs lives here,

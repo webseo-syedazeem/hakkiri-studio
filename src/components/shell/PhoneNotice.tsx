@@ -31,13 +31,13 @@ export function PhoneNotice() {
     <div
       role="region"
       aria-label="Mobile viewing advisory"
-      className="print-hide fixed bottom-4 left-4 right-4 z-40 flex items-center justify-between gap-3 rounded-2xl bg-[#14151f]/95 backdrop-blur-xl border border-white/15 p-3.5 shadow-2xl md:hidden animate-fade-in text-left"
+      className="print-hide fixed bottom-4 left-4 right-4 z-40 flex items-center justify-between gap-3 rounded-2xl bg-panel/95 backdrop-blur-xl border border-line p-3.5 shadow-2xl md:hidden animate-fade-in text-left"
     >
       <div className="flex items-center gap-3 min-w-0">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue/15 text-blue-soft border border-blue/25">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-fill/15 text-blue-fill border border-blue-fill/25">
           <Icon name="sparkle" size={16} />
         </div>
-        <p className="text-xs leading-relaxed text-muted line-clamp-2">
+        <p className="text-xs leading-relaxed text-ink line-clamp-2">
           Live interview mic sessions work best on a laptop or desktop. Dashboard, reports and review are fully supported on mobile.
         </p>
       </div>
