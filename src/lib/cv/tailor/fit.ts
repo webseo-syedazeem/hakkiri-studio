@@ -17,9 +17,10 @@ export interface CvLine {
   text: string;
   at: Locator;
   /** A listed skill names a thing without showing it being used. */
-  kind: "bullet" | "skill" | "profile" | "item";
+  kind: "bullet" | "skill" | "profile" | "item" | "title" | "contact";
   /** Words the line stands for without saying: "BSc (Hons) Marine Biology" is a degree. Used for matching, never shown. */
   also?: string;
+  role?: any;
 }
 
 export interface Assessed {
@@ -47,8 +48,34 @@ export interface JobFit {
 
 /** Words every advert uses that say nothing about what is being asked for. */
 const GENERIC = new Set(
-  "experience experienced ability able knowledge strong excellent proven good great solid demonstrable demonstrated skill skills work working worked year years understanding track record including relevant similar role team teams environment high level levels excellent essential desirable required preferred must have ideally proficient proficiency familiar familiarity comfortable confident competent competence background expertise new least plus etc candidate successful someone related subject equivalent field discipline area full valid current".split(" ").map(stem),
+  "experience experienced ability able knowledge strong excellent proven good great solid demonstrable demonstrated skill skills work working worked year years understanding track record including relevant similar role team teams environment high level levels excellent essential desirable required preferred must have ideally proficient proficiency familiar familiarity comfortable confident competent competence background expertise new least plus etc candidate successful someone related subject equivalent field discipline area full valid current you you'll you're we we'll nice with the a an and or to in of for on at by from also your our will need about looking criteria".split(" ").map(stem),
 );
+
+export const SYNONYMS: Record<string, string[]> = {
+  ga4: ["google analytics 4", "google analytics", "ga"],
+  "google analytics 4": ["ga4", "google analytics", "ga"],
+  ppc: ["paid search", "pay per click", "paid ads", "sem", "google ads"],
+  "paid search": ["ppc", "pay per click", "paid ads", "sem", "google ads"],
+  excel: ["microsoft excel", "ms excel", "spreadsheets"],
+  "microsoft excel": ["excel", "ms excel", "spreadsheets"],
+  js: ["javascript"],
+  javascript: ["js"],
+  ts: ["typescript"],
+  typescript: ["ts"],
+  sql: ["relational database", "postgres", "mysql", "sql server"],
+  tableau: ["data visualisation", "bi tool", "power bi"],
+};
+
+function expandSynonyms(text: string): string {
+  const lower = text.toLowerCase();
+  const extra: string[] = [];
+  for (const [k, syns] of Object.entries(SYNONYMS)) {
+    if (new RegExp(`\\b${k}\\b`, "i").test(lower)) {
+      extra.push(...syns);
+    }
+  }
+  return extra.join(" ");
+}
 
 type Printable = Pick<CvDoc, "sections" | "requirements" | "target">;
 
@@ -71,7 +98,10 @@ export function cvLines(cv: Pick<CvDoc, "sections">): CvLine[] {
         if (head.trim() && (s.kind === "education" || s.kind === "certificates" || s.kind === "courses")) {
           out.push({ text: head, at: { section: s.id, entry: e.id, field: "title" }, kind: "item", also: s.kind === "education" && DEGREE.test(e.title) ? "degree graduate qualification" : s.kind === "education" ? "qualification" : "certificate certification qualification" });
         }
-        for (const b of e.bullets) if (b.visible && b.text.trim()) out.push({ text: b.text, at: { section: s.id, entry: e.id, field: b.id }, kind: "bullet" });
+        if (s.kind === "experience" && e.title.trim()) {
+          out.push({ text: e.title, at: { section: s.id, entry: e.id, field: "title" }, kind: "title", role: e });
+        }
+        for (const b of e.bullets) if (b.visible && b.text.trim()) out.push({ text: b.text, at: { section: s.id, entry: e.id, field: b.id }, kind: "bullet", role: e });
       }
     }
   }
@@ -111,7 +141,7 @@ function choices(text: string): { head: string[]; any: string[][] } | null {
 export function assess(cv: Printable): Assessed[] {
   const lines = cvLines(cv);
   // A line that says the person does NOT have something ("No experience of cataloguing…") shows nothing.
-  const stems = lines.map((l) => (negated(l.text) ? new Set<string>() : new Set(terms(`${l.text} ${l.also ?? ""}`).map((t) => t.stem))));
+  const stems = lines.map((l) => (negated(l.text) ? new Set<string>() : new Set(terms(`${l.text} ${l.also ?? ""} ${expandSynonyms(l.text)}`).map((t) => t.stem))));
   return cv.requirements.map((r) => {
     const weight = r.priority === "required" ? 2 : 1;
     const row = (status: FitStatus, more: Partial<Assessed>): Assessed => ({ requirement: r, status, weight, earned: status === "met" ? weight : status === "partly" ? weight / 2 : 0, lines: [], covered: [], uncovered: [], note: "", ...more });
@@ -124,6 +154,44 @@ export function assess(cv: Printable): Assessed[] {
       return row(r.judged, { lines: linked.map((l) => ({ ...l, by: "you" as const })), covered: keys.map((k) => k.text), uncovered: r.judged === "partly" && r.uncovered ? [r.uncovered] : [], note: r.judged === "partly" ? `Not covered: ${r.uncovered || "part of this"}` : "" });
     }
     if (!keys.length) return row("missing", { note: "No evidence in this version" });
+
+    // "N+ years of X": check role dates where title or bullets name X
+    const yearsMatch = (r.text || r.quote).match(/(\d+)\+?\s*years?(?:\s+(?:of|in))?\s+(.+)/i);
+    if (yearsMatch) {
+      const wantYears = parseInt(yearsMatch[1], 10);
+      const skillWords = keyTerms(yearsMatch[2]).map((k) => k.stem);
+      if (skillWords.length) {
+        let totalMonths = 0;
+        const matchingLines: CvLine[] = [];
+        for (const s of cv.sections) {
+          if (!s.visible || !isEntrySection(s) || s.kind !== "experience") continue;
+          for (const e of s.entries) {
+            if (!e.visible || !e.start) continue;
+            const fullText = `${e.title} ${e.bullets.map((b) => b.text).join(" ")} ${expandSynonyms(e.title)}`;
+            const eStems = new Set(terms(fullText).map((t) => t.stem));
+            if (skillWords.every((w) => eStems.has(w))) {
+              const startY = parseInt(e.start.slice(0, 4), 10);
+              const startM = e.start.length > 4 ? parseInt(e.start.slice(5, 7), 10) - 1 : 0;
+              const now = new Date();
+              const endY = e.current || !e.end ? now.getFullYear() : parseInt(e.end.slice(0, 4), 10);
+              const endM = e.current || !e.end ? now.getMonth() : e.end.length > 4 ? parseInt(e.end.slice(5, 7), 10) - 1 : 11;
+              const dur = Math.max(1, (endY - startY) * 12 + (endM - startM));
+              totalMonths += dur;
+              const tLine = lines.find((l) => l.at.section === s.id && l.at.entry === e.id);
+              if (tLine) matchingLines.push(tLine);
+            }
+          }
+        }
+        if (totalMonths >= wantYears * 12) {
+          return row("met", {
+            lines: matchingLines.map((l) => ({ ...l, by: "match" as const })),
+            covered: keys.map((k) => k.text),
+            uncovered: [],
+            note: `Met from ${Math.round(totalMonths / 12)}+ years across ${matchingLines.length} roles.`,
+          });
+        }
+      }
+    }
 
     const hits = lines.map((l, i) => ({ l, n: keys.filter((k) => stems[i].has(k.stem)).length })).filter((h) => h.n > 0).sort((a, b) => b.n - a.n || (a.l.kind === "bullet" ? -1 : 1));
     const coveredStems = new Set(lines.flatMap((_, i) => keys.filter((k) => stems[i].has(k.stem)).map((k) => k.stem)));
@@ -140,7 +208,14 @@ export function assess(cv: Printable): Assessed[] {
     // For a met requirement, only the lines that show the whole of it are named as showing it.
     if (whole.length) return row("met", { lines: [...linked.map((l) => ({ ...l, by: "you" as const })), ...whole.filter((x) => !linked.includes(x.l)).slice(0, 2).map((x) => ({ ...x.l, by: "match" as const }))], covered, uncovered: [] });
     const said = wholly.find((x) => !shows(x.l.kind));
-    if (said) return row("partly", { lines: [{ ...said.l, by: "match" as const }, ...support.filter((l) => l.text !== said.l.text)].slice(0, 3), covered, uncovered: [], note: said.l.kind === "skill" ? "Listed as a skill. No line shows where you used it." : "Said in your profile. No line shows where you did it." });
+    if (said) {
+      const note = said.l.kind === "title"
+        ? "Named in your job title. No line shows where you used it."
+        : said.l.kind === "skill"
+        ? "Listed as a skill. No line shows where you used it."
+        : "Said in your profile. No line shows where you did it.";
+      return row("partly", { lines: [{ ...said.l, by: "match" as const }, ...support.filter((l) => l.text !== said.l.text)].slice(0, 3), covered, uncovered: [], note });
+    }
     if (covered.length * 2 >= keys.length) return row("partly", { lines: support, covered, uncovered, note: uncovered.length ? `Not covered: ${uncovered.join(", ")}` : "No single line shows all of this." });
     return row("missing", { lines: [], covered, uncovered, note: "No evidence in this version" });
   });

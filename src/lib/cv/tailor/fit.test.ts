@@ -220,4 +220,82 @@ describe("the advert's own terms", () => {
   it("is empty with no advert", () => {
     expect(keywords({ ...base(), target: undefined })).toEqual([]);
   });
+
+  describe("CV-1: accurate advert extraction, priorities, and evidence ladder", () => {
+    it("extracts 4 requirements from 'Essential: Google Ads, Tableau. Desirable: SQL, French' and fit is not 100 without Tableau", () => {
+      const advert = "Essential: Google Ads, Tableau. Desirable: SQL, French";
+      const reqs = extractRequirements(advert);
+      expect(reqs).toHaveLength(4);
+      expect(reqs.map((r) => r.text)).toEqual(["Google Ads", "Tableau", "SQL", "French"]);
+      expect(reqs.filter((r) => r.priority === "required")).toHaveLength(2);
+      expect(reqs.filter((r) => r.priority === "preferred")).toHaveLength(2);
+
+      // CV has Google Ads, SQL, French, but NO Tableau
+      const cv = base(reqs);
+      exp(cv).entries[0].bullets = [
+        newBullet("Managed Google Ads accounts driving £200k ARR"),
+        newBullet("Wrote complex SQL queries to analyse relational datasets"),
+        newBullet("Fluent French speaker handling EMEA partner discussions"),
+      ];
+      const fit = jobFit(cv);
+      expect(fit.score).toBeLessThan(100);
+      expect(fit.rows.find((r) => r.requirement.text === "Tableau")?.status).toBe("missing");
+    });
+
+    it("meets '3+ years of PPC' from role titles and dates using synonyms (Paid Search)", () => {
+      const reqs = extractRequirements("Must have 3+ years of PPC experience.");
+      expect(reqs.length).toBeGreaterThanOrEqual(1);
+
+      const cv = base(reqs);
+      // Maya's experience: 2 roles totalling 4 years
+      exp(cv).entries = [
+        {
+          id: "e1",
+          visible: true,
+          title: "Paid Search Manager",
+          org: "Agency A",
+          orgInfo: "",
+          location: "",
+          subject: "",
+          grade: "",
+          link: "",
+          start: "2022-01",
+          end: "2024-01",
+          current: false,
+          bullets: [newBullet("Led client search strategy across Google Ads")],
+        },
+        {
+          id: "e2",
+          visible: true,
+          title: "PPC Specialist",
+          org: "Agency B",
+          orgInfo: "",
+          location: "",
+          subject: "",
+          grade: "",
+          link: "",
+          start: "2020-01",
+          end: "2022-01",
+          current: false,
+          bullets: [newBullet("Managed search campaigns")],
+        },
+      ];
+      const fit = jobFit(cv);
+      expect(fit.score).toBeGreaterThanOrEqual(60);
+      const ppcRow = fit.rows.find((r) => r.requirement.text.toLowerCase().includes("ppc"));
+      expect(ppcRow?.status).toBe("met");
+    });
+
+    it("never shows stop words under uncovered", () => {
+      const reqs = extractRequirements("You will have experience with nice clean code and solid testing.");
+      const cv = base(reqs);
+      const fit = jobFit(cv);
+      for (const row of fit.rows) {
+        expect(row.uncovered).not.toContain("you");
+        expect(row.uncovered).not.toContain("you'll");
+        expect(row.uncovered).not.toContain("nice");
+        expect(row.uncovered).not.toContain("have");
+      }
+    });
+  });
 });
