@@ -83,7 +83,8 @@ run("CV share and download", async (browser) => {
   // A change is shared only when the person chooses.
   await page.getByRole("dialog", { name: "Share a link" }).getByRole("button", { name: "Close" }).first().click();
   await patch(page, id, `(cv) => ({ contact: { ...cv.contact, fullName: "Chloe B. Bennett" } })`);
-  await page.reload();
+  await page.goto(`${BASE}/cv/v/${id}/edit/experience`);
+  await page.locator("svg.cv-paper").first().waitFor({ timeout: 20000 });
   await page.getByTestId("share-button").click();
   const d2 = page.getByRole("dialog", { name: "Share a link" });
   await d2.getByTestId("share-version").waitFor();
