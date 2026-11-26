@@ -76,13 +76,33 @@ run("Template galleries", async (browser) => {
   await page.goto(`${BASE}/cv-templates/07-harbour`);
   check((await page.getByRole("link", { name: "See the matching cover letter" }).getAttribute("href")) === "/cover-letter-templates/07-harbour", "a CV template links to its matching cover letter");
 
+  // The example CVs with their cover letters, by industry, for the UK and the US.
+  await page.goto(`${BASE}/cv-examples`);
+  await page.getByRole("heading", { level: 1, name: "CV examples" }).waitFor();
+  check((await page.getByRole("heading", { level: 2, name: "Marketing and advertising" }).count()) === 1, "the examples are grouped by industry");
+  await a11y(page, "CV examples");
+  await page.getByRole("link", { name: /Marketing Manager CV/ }).click();
+  await page.waitForURL(/\/cv-examples\/marketing-lead$/);
+  text = await page.locator("main").innerText();
+  check(/Marketing Manager CV example/.test(text) && /Chloe Bennett/.test(text) && /Grew qualified leads by 52%/.test(text) && /Dear Ms Patel,/.test(text) && /Yours sincerely,/.test(text), "an example page shows the CV and its cover letter in full");
+  check(/Words adverts use/.test(text) && /£1\.5 million/.test(text) && !/\$/.test(text), "with what employers in the industry look for, and UK money only");
+  check((await page.getByRole("link", { name: "Start from this example" }).getAttribute("href")) === "/cv/examples?example=marketing-lead&region=uk", "Start from this example opens it in the app");
+  await a11y(page, "CV example page");
+  await page.getByRole("link", { name: "See the US resume version" }).click();
+  await page.waitForURL(/\/resume-examples\/marketing-lead$/);
+  text = await page.locator("main").innerText();
+  check(/Marketing Manager resume example/.test(text) && /Dear Ms\. Patel,/.test(text) && /\$1\.9 million/.test(text) && !/£|programme/.test(text), "the US page is the US resume and letter");
+  await a11y(page, "Resume example page");
+  const noExample = await page.goto(`${BASE}/cv-examples/not-an-example`);
+  check(noExample.status() === 404, "an unknown example address is not found", String(noExample.status()));
+
   // An address that is not a template is not found.
   const missing = await page.goto(`${BASE}/cv-templates/99-nothing`);
   check(missing.status() === 404, "an unknown template address is not found", String(missing.status()));
 
   // The sitemap lists the galleries and each template's page.
   const map = await (await page.request.get(`${BASE}/sitemap.xml`)).text();
-  check(map.includes("/cv-templates/07-harbour") && map.includes("/resume-templates/45-palette") && map.includes("/cover-letter-templates/01-hallmark"), "the sitemap lists every template page");
+  check(map.includes("/cv-templates/07-harbour") && map.includes("/resume-templates/45-palette") && map.includes("/cover-letter-templates/01-hallmark") && map.includes("/resume-examples/marketing-lead"), "the sitemap lists every template and example page");
 
   // On a phone.
   const phone = await browser.newContext({ ...PHONE });
@@ -123,6 +143,12 @@ run("Template galleries", async (browser) => {
   const id2 = a.page.url().match(/cv_[a-f0-9]+/)[0];
   cv = await a.page.evaluate(async (cvId) => (await (await fetch(`/api/cv/versions/${cvId}`)).json()).cv, id2);
   check(cv.design.template === "standard", "without it, the CV starts in the usual design", cv.design.template);
+
+  // A link from a public example page opens that example in the app.
+  await a.page.goto(`${BASE}/cv/examples?example=staff-nurse&region=us`);
+  await a.page.getByRole("dialog", { name: /Registered Nurse: example resume/ }).waitFor();
+  check(true, "a link from an example page opens that example, in the region it was read in");
+  await a.page.getByRole("dialog").getByRole("button", { name: "Close", exact: true }).first().click();
 
   // The example CVs and their cover letters, in the app.
   await a.page.goto(`${BASE}/cv/examples`);

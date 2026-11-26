@@ -55,8 +55,14 @@ export function ExamplesGallery() {
   const [error, setError] = useState("");
   const [region, setRegion] = useState<CvRegion>("uk");
   // Starts on the visitor's likely region, once the page is in the browser (the server can't know it).
+  // A link from a public example page (?example=chef&region=us) opens that example.
   useEffect(() => {
-    if (/^en-US$/i.test(navigator.language)) setRegion("us");
+    const q = new URLSearchParams(window.location.search);
+    const r = q.get("region");
+    const start: CvRegion = r === "us" || r === "uk" ? r : /^en-US$/i.test(navigator.language) ? "us" : "uk";
+    setRegion(start);
+    const asked = examplesFor(start).find((t) => t.id === q.get("example"));
+    if (asked) setOpen(asked);
   }, []);
   const all = useMemo(() => examplesFor(region), [region]);
   const categories = ["All", ...[...new Set(all.map((t) => t.category))].sort()];

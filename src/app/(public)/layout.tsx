@@ -38,6 +38,15 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
             <Link href="/present" className="hover:text-mk-ink transition-colors font-medium">
               For presenters
             </Link>
+            <Link href="/cv-templates" className="hover:text-mk-ink transition-colors font-medium">
+              CV templates
+            </Link>
+            <Link href="/cv-examples" className="hover:text-mk-ink transition-colors font-medium">
+              CV examples
+            </Link>
+            <Link href="/cover-letter-templates" className="hover:text-mk-ink transition-colors font-medium">
+              Cover letters
+            </Link>
             <Link href="/about" className="hover:text-mk-ink transition-colors font-medium">
               About us
             </Link>

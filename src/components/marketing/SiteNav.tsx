@@ -34,6 +34,7 @@ export function SiteNav() {
   ];
 
   const secondaryLinks: [string, string, boolean][] = [
+    ["/cv-templates", "CVs", /^\/(cv|resume|cover-letter)-(templates|examples)/.test(path)],
     [`${base}#how`, "How it works", false],
     ["/blog", "Blog", path.startsWith("/blog")],
     ["/about", "About", path === "/about"],

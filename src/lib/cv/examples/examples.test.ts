@@ -4,6 +4,7 @@ import { auditLetter } from "@/test/letter-quality";
 import { CvDocSchema } from "../schema";
 import { exampleCv, pick } from "./build";
 import { EXAMPLES } from "./index";
+import { industryById } from "./industries";
 import { REGIONS, type Regional } from "./types";
 
 /**
@@ -79,6 +80,23 @@ describe("the examples as a set", () => {
         const text = JSON.stringify(exampleCv(spec, region, "u").sections);
         expect(text.includes(region === "uk" ? "$" : "£"), `${spec.id} ${region}`).toBe(false);
       }
+  });
+
+  it("each come with a cover letter", () => {
+    expect(EXAMPLES.filter((e) => !e.letter).map((e) => e.id)).toEqual([]);
+  });
+
+  it("give each person their own phone numbers and email", () => {
+    for (const region of REGIONS) {
+      const phones = EXAMPLES.map((e) => pick(e.person.phone as Regional<string>, region));
+      expect(phones.filter((p, i) => phones.indexOf(p) !== i), region).toEqual([]);
+    }
+    const emails = EXAMPLES.map((e) => e.person.email);
+    expect(emails.filter((m, i) => emails.indexOf(m) !== i)).toEqual([]);
+  });
+
+  it("are each for a role their industry lists", () => {
+    for (const spec of EXAMPLES) expect(industryById(spec.industry).roles.map((r) => r.id), spec.id).toContain(spec.id);
   });
 
   it("give each person contact details for the region", () => {
