@@ -74,7 +74,8 @@ run("CV share and download", async (browser) => {
   check(shown.includes(cv.contact.fullName), "the link shows the CV's page, to someone who isn't signed in");
   check(!shown.includes("A private line that is switched off") && !(await v.content()).includes("A private line that is switched off"), "a line that is switched off is not shared");
   check(!(await v.content()).includes(advertLine), "the job advert is not shared");
-  check((await v.locator('meta[name="robots"]').first().getAttribute("content")).includes("noindex"), "the shared page is kept out of search results");
+  const viewed = await v.request.get(link);
+  check((await v.locator('meta[name="robots"]').first().getAttribute("content")).includes("noindex") && /noindex/.test(viewed.headers()["x-robots-tag"] ?? ""), "the shared page is kept out of search results");
   await a11y(v, "shared CV");
   check((await v.getByRole("link", { name: /edit|builder|sign in|log in/i }).count()) === 0 && (await v.locator("input, textarea").count()) === 0, "the shared page has nothing to edit and no way into the account");
   check((await v.evaluate(() => fetch(`/api/cv/versions/${location.pathname.split("/").pop()}`).then((r) => r.status))) !== 200, "the token opens nothing in the API");

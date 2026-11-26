@@ -43,6 +43,13 @@ export function proxy(req: NextRequest) {
     return NextResponse.next();
   }
 
+  // 2a. A shared CV link is open to whoever has it, and never indexed by search engines.
+  if (pathname.startsWith("/s/")) {
+    const res = NextResponse.next();
+    res.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive");
+    return res;
+  }
+
   // 2. Allow public pages, blog, free audits, and static files. The admin console is NOT public:
   //    a request for it with no session goes to sign in, and the pages check for an administrator themselves.
   if (
