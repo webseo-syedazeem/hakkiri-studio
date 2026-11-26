@@ -84,18 +84,18 @@ export function getConversationalBridge(
   slot?: "opening" | "closing" | null,
 ): string {
   if (slot === "closing") {
-    return "Right, we're coming towards the end of our time today, so I have one final question for you: ";
+    return "Right, we're coming towards the end of our time today, so I have one final question for you. ";
   }
 
   const realisticBridges = [
     "Thanks for walking through that. Moving on to our next question, ",
-    "Great, thank you. That makes complete sense. Turning to another area now: ",
-    "Understood, that gives really helpful context. Let's explore something a bit different: ",
+    "Great, thank you. That makes complete sense. Turning to another area now, ",
+    "Understood, that gives really helpful context. Let's explore something a bit different. ",
     "Thanks for breaking that down. Next up, ",
-    "Right, thank you. Looking at our next question here: ",
+    "Right, thank you. Looking at our next question here, ",
     "Got it, that's very clear. Moving forward to our next scenario, ",
-    "Fair enough, appreciate you sharing that. Turning now to: ",
-    "Understood. Thanks for talking through that experience. Let's move on: ",
+    "Fair enough, appreciate you sharing that. Turning now to the next area, ",
+    "Understood. Thanks for talking through that experience. Let's move on. ",
     "Right, that's very helpful background. Now, looking at the next area, ",
     "Thanks for that thorough answer. Turning to our next topic, ",
     "Thank you. Following on from that, ",
@@ -103,22 +103,22 @@ export function getConversationalBridge(
   ];
 
   const friendlyBridges = [
-    "Brilliant, thank you! That was really insightful. Let's move on to our next question: ",
+    "Brilliant, thank you! That was really insightful. Let's move on to our next question, ",
     "Great, thanks for walking me through that! Looking at another part of the role, ",
     "Lovely, thank you. That really highlights your approach. Moving on to our next question, ",
-    "Right, thanks so much for sharing that! Let's touch on our next topic: ",
+    "Right, thanks so much for sharing that! Let's touch on our next topic, ",
     "Understood, that's super helpful. Exploring our next area now, ",
-    "Wonderful, thank you. That's very clear. Turning now to: ",
+    "Wonderful, thank you. That's very clear. Turning now to our next scenario, ",
     "Thanks a lot for that detail! Moving forward to our next question, ",
   ];
 
   const toughBridges = [
-    "Right, understood. Moving directly to the next scenario: ",
-    "Okay. Let's look at the next challenge: ",
-    "Understood. Turning now to our next question: ",
-    "Right. Let's examine another area: ",
-    "Moving along to our next evaluation point: ",
-    "Understood. Shifting focus now: ",
+    "Right, understood. Moving directly to the next scenario, ",
+    "Okay. Let's look at the next challenge. ",
+    "Understood. Turning now to our next question, ",
+    "Right. Let's examine another area, ",
+    "Moving along to our next evaluation point, ",
+    "Understood. Shifting focus now, ",
   ];
 
   const pool = style === "friendly" ? friendlyBridges : style === "tough" ? toughBridges : realisticBridges;
@@ -141,28 +141,28 @@ export function humaniseFollowUp(
   }
 
   const openersRealistic = [
-    "Right, understood. Just following up on that: ",
+    "Right, understood. Just following up on that, ",
     "Got it. Digging into that a little deeper, ",
     "Understood. Probing slightly further on that, ",
     "Thanks for that context. To explore that further, ",
-    "Interesting point. Could you say a bit more about ",
+    "Interesting point. Could you say a bit more about that, ",
     "Right, thank you. Looking closely at that, ",
   ];
 
   const openersFriendly = [
     "Right, thank you! Following up on that, ",
-    "Interesting! Could you expand a little on ",
+    "Interesting! Could you expand a little on that, ",
     "Got it. Digging into that a bit more, ",
     "Thanks for walking me through that. Exploring slightly deeper, ",
     "Understood, that's really helpful. Looking further into that, ",
   ];
 
   const openersTough = [
-    "Understood. Probing further on that decision: ",
-    "Right. To be clear on that: ",
+    "Understood. Probing further on that decision, ",
+    "Right, to be clear on that, ",
     "Looking closely at the reasoning there, ",
     "Digging into the specific trade-offs there, ",
-    "Right. And what was the measurable outcome of that, ",
+    "Right, and what was the measurable outcome of that, ",
   ];
 
   const pool = style === "friendly" ? openersFriendly : style === "tough" ? openersTough : openersRealistic;
@@ -241,7 +241,7 @@ export function getFullInterviewIntro(params: FullInterviewIntroParams): FullInt
   }
 
   // Natural bridge to question 1
-  const bridge = "To kick things off: ";
+  const bridge = "To kick things off, ";
 
   // Combine spoken text smoothly without synthetic pause artifacts
   const spoken = `${greeting} ${agenda} ${bridge}${firstQuestionText}`;

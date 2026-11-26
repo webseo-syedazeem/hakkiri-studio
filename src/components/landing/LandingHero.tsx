@@ -4,9 +4,9 @@ import Link from "next/link";
 import type { HomepageContent } from "@/lib/site/site-content";
 import { useAuth } from "@/lib/auth/AuthContext";
 
-export function LandingHero({ content }: { content?: Partial<HomepageContent> }) {
+export function LandingHero({ content, isLoggedIn: initialIsLoggedIn }: { content?: Partial<HomepageContent>; isLoggedIn?: boolean }) {
   const { user } = useAuth();
-  const isLoggedIn = !!user?.id;
+  const isLoggedIn = initialIsLoggedIn ?? !!user?.id;
   const badgeText = content?.badgeText || "Beta · Free for everyone, for a limited time";
   const headline = content?.headline || "AI interview practice for the interview you actually have.";
   const subheadline =

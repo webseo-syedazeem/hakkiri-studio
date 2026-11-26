@@ -10,11 +10,14 @@ import { DeleteInterview } from "./DeleteInterview";
 import {
   DIFFICULTY_HINT,
   DIFFICULTY_LABEL,
+  FOCUS_CATEGORIES,
   PRESETS,
+  getSuggestedWeights,
   presetFor,
   mixIsValid,
   totalQuestionCount,
   weightsLine,
+  weightsToMix,
   type Difficulty,
   type FocusCategoryKey,
   type Mix,
@@ -24,55 +27,30 @@ import {
 } from "@/lib/interviews/settings";
 import { mixLine } from "@/lib/interviews/setup-form";
 
-export type FocusAreaPreset =
-  | "configured"
-  | "strengths-competency"
-  | "balanced"
-  | "strengths"
-  | "competency"
-  | "technical"
-  | "motivation";
+export type FocusAreaPreset = string;
 
-export const FOCUS_PRESETS: Record<
-  FocusAreaPreset,
-  { label: string; description: string; mix: Mix; badge?: string }
-> = {
-  configured: {
-    label: "Selected Interview Focus",
-    description: "The custom question focus weighting selected during setup",
-    mix: { cv: 20, competency: 20, technical: 20, motivation: 20, curveball: 20 },
-  },
-  "strengths-competency": {
-    label: "Strengths & Competency (STAR)",
-    description: "STAR behavioural competencies + spontaneous strengths questions",
-    mix: { competency: 40, technical: 20, curveball: 20, motivation: 20, cv: 0 },
-  },
-  balanced: {
-    label: "Balanced (All areas)",
-    description: "Even coverage across Experience, Skills, Technical, Motivation & Situational",
-    mix: { cv: 20, competency: 20, technical: 20, motivation: 20, curveball: 20 },
-  },
-  strengths: {
-    label: "Strengths focus",
-    description: "Focus on spontaneous strengths, values, motivation and pressure reactions",
-    mix: { curveball: 80, competency: 20, cv: 0, technical: 0, motivation: 0 },
-  },
-  competency: {
-    label: "Competency focus (STAR)",
-    description: "Deep dive on structured behavioural examples and delivering outcomes",
-    mix: { competency: 80, curveball: 20, cv: 0, technical: 0, motivation: 0 },
-  },
-  technical: {
-    label: "Role Knowledge & Technical",
-    description: "The methods, standards and technical detail this job asks for",
-    mix: { technical: 60, competency: 20, motivation: 20, cv: 0, curveball: 0 },
-  },
-  motivation: {
-    label: "Motivation & why this role",
-    description: "Why you want this role and this organisation",
-    mix: { motivation: 60, cv: 20, competency: 20, technical: 0, curveball: 0 },
-  },
-};
+function mixForCategory(catKey: FocusCategoryKey): Mix {
+  switch (catKey) {
+    case "technical":
+    case "caseStudy":
+      return { technical: 80, competency: 20, cv: 0, motivation: 0, curveball: 0 };
+    case "competency":
+    case "leadership":
+      return { competency: 80, cv: 20, technical: 0, motivation: 0, curveball: 0 };
+    case "strengths":
+      return { curveball: 40, competency: 60, cv: 0, technical: 0, motivation: 0 };
+    case "experience":
+      return { cv: 80, competency: 20, technical: 0, motivation: 0, curveball: 0 };
+    case "motivation":
+    case "valuesCulture":
+      return { motivation: 80, cv: 20, competency: 0, technical: 0, curveball: 0 };
+    case "situational":
+    case "curveball":
+      return { curveball: 80, competency: 20, cv: 0, technical: 0, motivation: 0 };
+    default:
+      return { cv: 20, competency: 20, technical: 20, motivation: 20, curveball: 20 };
+  }
+}
 import { InterviewTabs } from "./InterviewTabs";
 import { StartButton } from "./StartSession";
 import { updateClientInterviewStages } from "@/lib/interviews/client-store";
@@ -388,25 +366,41 @@ export function InterviewOverviewClient({
   const nextStage = activeStages.find((s) => s.status === "next") ?? activeStage;
   const estQuestions = Math.max(3, totalQuestionCount(minutes, difficulty));
 
-  const userWeights = initialSettings.categoryWeights;
+  const userWeights: Record<FocusCategoryKey, number> =
+    (initialSettings.categoryWeights && Object.values(initialSettings.categoryWeights).some((v) => (v ?? 0) > 0))
+      ? (initialSettings.categoryWeights as Record<FocusCategoryKey, number>)
+      : getSuggestedWeights(roleTitle, inputsSummary);
+
+  const activeCategories = FOCUS_CATEGORIES.filter((cat) => (userWeights[cat.key] || 0) > 0);
+  const categoriesToShow = activeCategories.length > 0 ? activeCategories : FOCUS_CATEGORIES.slice(0, 4);
+
   const userMixText =
     userWeights && Object.values(userWeights).some((v) => (v ?? 0) > 0)
-      ? weightsLine(userWeights as Record<FocusCategoryKey, number>)
+      ? weightsLine(userWeights)
       : mixLine(initialSettings.mix);
 
   const [focusPreset, setFocusPreset] = useState<FocusAreaPreset>(() => {
     if (typeof window !== "undefined") {
-      const saved = localStorage.getItem(`hk_interview_${interviewId}_focus`) as FocusAreaPreset;
-      if (saved && (saved === "configured" || FOCUS_PRESETS[saved])) return saved;
+      const saved = localStorage.getItem(`hk_interview_${interviewId}_focus`);
+      if (saved && (saved === "configured" || FOCUS_CATEGORIES.some((c) => c.key === saved))) return saved;
     }
     return "configured";
   });
+
+  const activeMix =
+    focusPreset === "configured"
+      ? (initialSettings.mix && mixIsValid(initialSettings.mix)
+          ? initialSettings.mix
+          : weightsToMix(userWeights))
+      : mixForCategory(focusPreset as FocusCategoryKey);
 
   const handleFocusChange = async (presetKey: FocusAreaPreset) => {
     setFocusPreset(presetKey);
     try {
       localStorage.setItem(`hk_interview_${interviewId}_focus`, presetKey);
-      const newMix = presetKey === "configured" ? initialSettings.mix : FOCUS_PRESETS[presetKey].mix;
+      const newMix = presetKey === "configured"
+        ? (initialSettings.mix && mixIsValid(initialSettings.mix) ? initialSettings.mix : weightsToMix(userWeights))
+        : mixForCategory(presetKey as FocusCategoryKey);
       await fetch(`/api/interviews/${interviewId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -416,8 +410,8 @@ export function InterviewOverviewClient({
             preset: presetFor(newMix),
             difficulty,
             minutes,
-            ...(presetKey === "configured" && initialSettings.categoryWeights
-              ? { categoryWeights: initialSettings.categoryWeights }
+            ...(presetKey === "configured" && userWeights
+              ? { categoryWeights: userWeights }
               : {}),
           },
         }),
@@ -427,10 +421,6 @@ export function InterviewOverviewClient({
     }
   };
 
-  const activeMix =
-    focusPreset === "configured"
-      ? (initialSettings.mix || activeStage.mix)
-      : (FOCUS_PRESETS[focusPreset]?.mix ?? activeStage.mix);
   const currentSettings: SessionSettings = {
     difficulty,
     minutes,
@@ -558,10 +548,12 @@ export function InterviewOverviewClient({
                     Recommended Next
                   </span>
                   <h2 className="text-base font-bold text-white tracking-tight">
-                    Practise {focusPreset === "strengths-competency" ? "Strengths & Competency" : focusPreset === "strengths" ? "Strengths" : focusPreset === "competency" ? "Competency" : activeStage.titlePhrase} questions
+                    Practise {focusPreset === "configured" ? "configured assessment" : (FOCUS_CATEGORIES.find((c) => c.key === focusPreset)?.label ?? activeStage.titlePhrase)} questions
                   </h2>
                   <p className="text-xs text-muted max-w-[490px] leading-relaxed">
-                    {FOCUS_PRESETS[focusPreset]?.description || activeStage.description}
+                    {focusPreset === "configured"
+                      ? `Questions tailored to your configured weighting: ${userMixText}`
+                      : (FOCUS_CATEGORIES.find((c) => c.key === focusPreset)?.description ?? activeStage.description)}
                   </p>
                   <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] text-muted">
                     <span className="inline-flex items-center gap-1.5 rounded-md bg-white/[0.06] px-2.5 py-1 border border-white/10 text-ink">
@@ -850,49 +842,89 @@ export function InterviewOverviewClient({
             </div>
 
             {/* Question focus / Focus area */}
-            <div className="space-y-2">
+            <div className="space-y-3">
               <div className="flex items-center justify-between text-xs">
                 <span className="font-medium text-muted">Question focus</span>
                 <span className="font-semibold text-indigo-300">
-                  {focusPreset === "configured" ? "Selected Interview Focus" : FOCUS_PRESETS[focusPreset]?.label}
+                  {focusPreset === "configured"
+                    ? "Assessment weighting (Full mix)"
+                    : (FOCUS_CATEGORIES.find((c) => c.key === focusPreset)?.label ?? "Targeted focus")}
                 </span>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {(Object.keys(FOCUS_PRESETS) as FocusAreaPreset[]).map((key) => {
-                  const opt = FOCUS_PRESETS[key];
-                  const isSel = focusPreset === key;
-                  const label = key === "configured" ? "Selected Interview Focus" : opt.label;
-                  const desc = key === "configured" ? userMixText : opt.description;
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => void handleFocusChange(key)}
-                      className={clsx(
-                        "p-2.5 rounded-xl text-left border transition-all flex flex-col justify-between gap-1 cursor-pointer text-xs",
-                        isSel
-                          ? "border-indigo-500 bg-indigo-500/20 text-white shadow-[0_0_12px_rgba(99,102,241,0.25)]"
-                          : "border-white/10 bg-white/[0.03] hover:border-white/20 text-[#c9cad4] hover:text-white"
-                      )}
-                    >
-                      <div className="flex items-center justify-between gap-1 w-full">
-                        <span className="font-semibold text-white truncate">{label}</span>
-                        {isSel && <Icon name="check" size={13} className="text-indigo-400 shrink-0" />}
-                      </div>
-                      <span className="text-[10px] text-muted line-clamp-1">{desc}</span>
-                    </button>
-                  );
-                })}
-              </div>
-              <div className="text-[11px] text-muted pt-0.5">
-                {focusPreset === "configured" ? (
-                  <span className="inline-flex items-center gap-1.5 text-indigo-300 font-medium">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shrink-0" />
-                    <span>Your weighting: {userMixText}</span>
-                  </span>
-                ) : (
-                  FOCUS_PRESETS[focusPreset]?.description
+
+              {/* 1. Main Assessment Mix Card */}
+              <button
+                type="button"
+                onClick={() => void handleFocusChange("configured")}
+                className={clsx(
+                  "w-full p-3.5 rounded-xl text-left border transition-all flex flex-col gap-2.5 cursor-pointer",
+                  focusPreset === "configured"
+                    ? "border-indigo-500 bg-indigo-500/15 text-white shadow-[0_0_16px_rgba(99,102,241,0.25)] ring-1 ring-indigo-500/50"
+                    : "border-white/10 bg-white/[0.03] hover:border-white/20 text-[#c9cad4] hover:text-white"
                 )}
+              >
+                <div className="flex items-center justify-between gap-2 w-full">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-xs text-white">Full assessment weighting</span>
+                    <span className="rounded bg-indigo-500/25 px-1.5 py-0.5 text-[10px] font-bold text-indigo-300">Active</span>
+                  </div>
+                  {focusPreset === "configured" && <Icon name="check" size={14} className="text-indigo-400 shrink-0" />}
+                </div>
+
+                <div className="text-[11px] text-muted">
+                  Questions balanced directly to the weighting configured during setup:
+                </div>
+
+                {/* Categories progress bars */}
+                <div className="space-y-2 pt-1">
+                  {categoriesToShow.map((cat) => {
+                    const weight = userWeights[cat.key] || 0;
+                    return (
+                      <div key={cat.key} className="space-y-1">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-white/80 font-medium">{cat.label}</span>
+                          <span className="font-bold text-indigo-300 num">{weight}%</span>
+                        </div>
+                        <div className="h-1.5 w-full rounded-full bg-white/[0.08] overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-indigo-400 shadow-[0_0_8px_rgba(99,102,241,0.4)]"
+                            style={{ width: `${Math.min(100, weight)}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </button>
+
+              {/* 2. Category Drilldown Chips */}
+              <div className="pt-1 space-y-1.5">
+                <span className="text-[11px] text-muted block">Or practise a single area:</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {categoriesToShow.map((cat) => {
+                    const isSel = focusPreset === cat.key;
+                    const weight = userWeights[cat.key] || 0;
+                    return (
+                      <button
+                        key={cat.key}
+                        type="button"
+                        onClick={() => void handleFocusChange(cat.key)}
+                        className={clsx(
+                          "p-2.5 rounded-xl text-left border transition-all flex flex-col justify-between gap-1 cursor-pointer text-xs",
+                          isSel
+                            ? "border-indigo-500 bg-indigo-500/25 text-white shadow-[0_0_12px_rgba(99,102,241,0.25)] ring-1 ring-indigo-500/40"
+                            : "border-white/10 bg-white/[0.03] hover:border-white/20 text-[#c9cad4] hover:text-white"
+                        )}
+                      >
+                        <div className="flex items-center justify-between gap-1 w-full">
+                          <span className="font-semibold text-white text-[11px] truncate">{cat.label}</span>
+                          {isSel && <Icon name="check" size={12} className="text-indigo-400 shrink-0" />}
+                        </div>
+                        <span className="text-[10px] text-muted">{weight > 0 ? `${weight}% of assessment` : "Targeted drill"}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
 

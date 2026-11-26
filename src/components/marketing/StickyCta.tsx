@@ -9,7 +9,7 @@ import clsx from "clsx";
  * stays in reach at the bottom of the screen. Hidden while the hero's own
  * button is on screen, so it never shows twice.
  */
-export function StickyCta({ label }: { label: string }) {
+export function StickyCta({ label, href = "/signup" }: { label: string; href?: string }) {
   const [show, setShow] = useState(false);
   useEffect(() => {
     const hero = document.getElementById("hero-h")?.closest("section");
@@ -29,7 +29,7 @@ export function StickyCta({ label }: { label: string }) {
         aria-hidden={!show}
       >
         <Link
-          href="/signup"
+          href={href}
           tabIndex={show ? 0 : -1}
           className="inline-flex w-full items-center justify-center rounded-full bg-mk-cta px-5 py-3 text-[16px] font-medium text-white transition-all duration-200 active:scale-[0.98] hover:bg-mk-cta-hover hover:shadow-lg hover:shadow-mk-cta/25"
         >

@@ -32,7 +32,7 @@ describe("POST /api/voice", () => {
     expect(res.status).toBe(200);
     expect(res.headers.get("content-type")).toBe("audio/mpeg");
     const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
-    expect(url).toContain("api.deepgram.com/v1/speak?model=aura-helios-en");
+    expect(url).toContain("api.deepgram.com/v1/speak?model=aura-athena-en");
     expect((init.headers as Record<string, string>)["Authorization"]).toBe("Token dg-test-key");
   });
 

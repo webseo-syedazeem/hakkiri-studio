@@ -9,16 +9,16 @@ const PREVIEW: { voice: VoiceName; label: string; who: string; role: string; lin
   {
     voice: "easy",
     label: "Easy",
-    who: "Sarah",
+    who: "Sarah (Friendly)",
     role: "Supportive HR Lead",
     line: "Hi, thanks for coming in today. To start us off, tell me a little about yourself and what drew you to this role.",
   },
   {
     voice: "medium",
     label: "Medium",
-    who: "George",
-    role: "Senior Engineering Manager",
-    line: "Tell me about a time you had to win round someone who strongly disagreed with your technical decision.",
+    who: "Sarah (Realistic)",
+    role: "Senior Hiring Manager",
+    line: "Tell me about a time you had to win round someone who strongly disagreed with your decision.",
   },
   {
     voice: "hard",

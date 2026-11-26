@@ -12,6 +12,7 @@ import { LandingFaq } from "@/components/landing/LandingFaq";
 import { LandingFinalCta } from "@/components/landing/LandingFinalCta";
 import { StickyCta } from "@/components/marketing/StickyCta";
 import { getHomepageContentAsync } from "@/lib/site/site-content";
+import { getCurrentUser } from "@/lib/auth/require";
 
 export async function generateMetadata(): Promise<Metadata> {
   const content = await getHomepageContentAsync();
@@ -54,6 +55,8 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function LandingPage({ searchParams }: { searchParams?: Promise<{ deleted?: string }> }) {
   const content = await getHomepageContentAsync();
   const deleted = (await searchParams)?.deleted === "1";
+  const user = await getCurrentUser();
+  const isLoggedIn = !!user?.id;
 
   const faqSchemaItems = [
     {
@@ -197,18 +200,21 @@ export default async function LandingPage({ searchParams }: { searchParams?: Pro
         </div>
       )}
 
-      <LandingHero content={content} />
+      <LandingHero content={content} isLoggedIn={isLoggedIn} />
       <LandingLiveSection />
-      <LandingSteps />
+      <LandingSteps isLoggedIn={isLoggedIn} />
       <LandingWalkthrough />
       <LandingBento />
       <LandingPresentations />
       <LandingCompare />
-      <LandingBeta />
+      <LandingBeta isLoggedIn={isLoggedIn} />
       <LandingPrivacy />
       <LandingFaq />
       <LandingFinalCta />
-      <StickyCta label={content.primaryCtaText || "Sign up free"} />
+      <StickyCta
+        label={isLoggedIn ? "Go to Studio" : (content.primaryCtaText || "Sign up free")}
+        href={isLoggedIn ? "/dashboard" : "/signup"}
+      />
     </div>
   );
 }

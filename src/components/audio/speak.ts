@@ -114,28 +114,43 @@ function getBestBrowserVoice(voiceType?: VoiceName): SpeechSynthesisVoice | null
 
   const isFemale = voiceType !== "hard";
 
-  // 1. Natural / Neural UK English voice (Edge, Chrome, Safari)
-  const naturalUK = voices.find((v) => {
+  const isExplicitMale = (name: string) =>
+    /male|david|george|mark|ryan|daniel|oliver|guy|richard|james|arthur|zeus|helios/i.test(name);
+  const isExplicitFemale = (name: string) =>
+    /female|woman|sarah|sonia|serena|stephanie|hazel|susan|zira|samantha|karen|victoria|fiona|moira|tessa|jenny/i.test(name);
+
+  // Filter out opposing gender completely
+  const candidates = voices.filter((v) => {
+    if (!v.lang.startsWith("en")) return false;
+    return isFemale ? !isExplicitMale(v.name) : !isExplicitFemale(v.name);
+  });
+  const pool = candidates.length ? candidates : voices;
+
+  // 1. Natural / Neural UK voice matching gender
+  const naturalUK = pool.find((v) => {
     const isUK = v.lang === "en-GB" || v.lang === "en_GB";
-    const isNatural = /natural|neural|online|google|siri|enhanced/i.test(v.name);
-    const genderMatch = isFemale ? /female|sonia|serena|stephanie/i.test(v.name) : /male|ryan|daniel|oliver|george/i.test(v.name);
-    return isUK && isNatural && genderMatch;
-  }) ?? voices.find((v) => (v.lang === "en-GB" || v.lang === "en_GB") && /natural|neural|online|google|siri|enhanced/i.test(v.name));
+    const isNatural = /natural|neural|online|enhanced/i.test(v.name);
+    return isUK && isNatural && (isFemale ? isExplicitFemale(v.name) : isExplicitMale(v.name));
+  });
   if (naturalUK) return naturalUK;
 
-  // 2. Standard UK voice with gender preference
-  const standardUK = voices.find((v) => {
+  // 2. Any UK voice matching gender
+  const standardUK = pool.find((v) => {
     const isUK = v.lang === "en-GB" || v.lang === "en_GB";
-    return isUK && (isFemale ? /female|hazel|susan/i.test(v.name) : /male|daniel|george|arthur/i.test(v.name));
-  }) ?? voices.find((v) => v.lang === "en-GB" || v.lang === "en_GB");
+    return isUK && (isFemale ? isExplicitFemale(v.name) : isExplicitMale(v.name));
+  });
   if (standardUK) return standardUK;
 
-  // 3. Any Natural English voice
-  const anyNatural = voices.find((v) => v.lang.startsWith("en") && /natural|neural|online|google/i.test(v.name));
-  if (anyNatural) return anyNatural;
+  // 3. Any UK voice in candidate pool
+  const anyUK = pool.find((v) => v.lang === "en-GB" || v.lang === "en_GB");
+  if (anyUK) return anyUK;
 
-  // 4. Any English voice
-  return voices.find((v) => v.lang.startsWith("en")) ?? null;
+  // 4. Any Natural English voice in candidate pool
+  const naturalEnglish = pool.find((v) => /natural|neural|online|google|siri|enhanced/i.test(v.name));
+  if (naturalEnglish) return naturalEnglish;
+
+  // 5. Any English voice in candidate pool
+  return pool.find((v) => v.lang.startsWith("en")) ?? pool[0] ?? null;
 }
 
 function browserSpeak(text: string, opts: SpeakOptions, finish: () => void, setCancel: (c: () => void) => void) {
@@ -199,7 +214,11 @@ export function speak(text: string, opts: SpeakOptions = {}): Speech {
   if (preloadedUrl) {
     const audio = sharedPlayer();
     audio.pause();
+    try {
+      audio.currentTime = 0;
+    } catch {}
     audio.src = preloadedUrl;
+    audio.load();
     audio.playbackRate = opts.rate ?? 1;
     let stuck: ReturnType<typeof setTimeout> | undefined;
     const resetWatchdog = () => {
@@ -231,7 +250,8 @@ export function speak(text: string, opts: SpeakOptions = {}): Speech {
       audio.pause();
       end();
     });
-    void audio.play().catch(() => {
+    void audio.play().catch((err: any) => {
+      if (err?.name === "AbortError") return;
       browserSpeak(spoken, opts, finish, setCancel);
     });
     return { done, cancel: () => cancel() };
@@ -244,7 +264,11 @@ export function speak(text: string, opts: SpeakOptions = {}): Speech {
       if (url) {
         const audio = sharedPlayer();
         audio.pause();
+        try {
+          audio.currentTime = 0;
+        } catch {}
         audio.src = url;
+        audio.load();
         audio.playbackRate = opts.rate ?? 1;
         let stuck: ReturnType<typeof setTimeout> | undefined;
         const resetWatchdog = () => {
@@ -274,7 +298,8 @@ export function speak(text: string, opts: SpeakOptions = {}): Speech {
           audio.pause();
           end();
         });
-        void audio.play().catch(() => {
+        void audio.play().catch((err: any) => {
+          if (err?.name === "AbortError") return;
           browserSpeak(spoken, opts, finish, setCancel);
         });
       } else {
@@ -305,7 +330,11 @@ export function speak(text: string, opts: SpeakOptions = {}): Speech {
       failures = 0;
       const audio = sharedPlayer();
       audio.pause();
+      try {
+        audio.currentTime = 0;
+      } catch {}
       audio.src = url;
+      audio.load();
       audio.playbackRate = opts.rate ?? 1;
       let stuck: ReturnType<typeof setTimeout> | undefined;
       const resetWatchdog = () => {
@@ -337,9 +366,9 @@ export function speak(text: string, opts: SpeakOptions = {}): Speech {
         end();
       });
       await audio.play();
-    } catch {
+    } catch (err: any) {
       clearTimeout(slow);
-      if (cancelled) return;
+      if (cancelled || err?.name === "AbortError") return;
       // If natural voice was delayed or failed for this single line, smoothly fallback to browser voice for this line
       // without permanently muting the natural interviewer for the entire session.
       if (!finished) browserSpeak(spoken, opts, finish, setCancel);

@@ -1,4 +1,11 @@
-export function LandingSteps() {
+"use client";
+
+import Link from "next/link";
+import { useAuth } from "@/lib/auth/AuthContext";
+
+export function LandingSteps({ isLoggedIn: initialIsLoggedIn }: { isLoggedIn?: boolean }) {
+  const { user } = useAuth();
+  const isLoggedIn = initialIsLoggedIn ?? !!user?.id;
   return (
     <section aria-labelledby="how-h" className="scroll-mt-14 py-10 sm:py-14" id="how">
       <div className="mx-auto w-full max-w-[1120px] px-4 sm:px-6">
@@ -38,13 +45,12 @@ export function LandingSteps() {
           </li>
         </ol>
         <div className="mt-14 flex flex-col items-center gap-3">
-          <a
+          <Link
             className="inline-flex items-center justify-center rounded-full bg-mk-cta font-medium text-white transition-all duration-200 hover:scale-[1.03] active:scale-[0.98] hover:bg-mk-cta-hover hover:shadow-lg hover:shadow-mk-cta/25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mk-cta px-7 py-3.5 text-[17px]"
-            href="/signup"
-            title="Not part of this preview"
+            href={isLoggedIn ? "/dashboard" : "/signup"}
           >
-            Sign up free
-          </a>
+            {isLoggedIn ? "Go to Studio" : "Sign up free"}
+          </Link>
           <p className="text-[14px] text-mk-slate">Free for a limited time. No card. Takes about two minutes.</p>
         </div>
       </div>

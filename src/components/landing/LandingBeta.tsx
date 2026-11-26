@@ -1,6 +1,11 @@
-import Link from "next/link";
+"use client";
 
-export function LandingBeta() {
+import Link from "next/link";
+import { useAuth } from "@/lib/auth/AuthContext";
+
+export function LandingBeta({ isLoggedIn: initialIsLoggedIn }: { isLoggedIn?: boolean }) {
+  const { user } = useAuth();
+  const isLoggedIn = initialIsLoggedIn ?? !!user?.id;
   return (
     <section aria-labelledby="beta-h" className="scroll-mt-14 bg-mk-mist py-10 sm:py-14" id="beta">
       <div className="mx-auto w-full max-w-[1120px] px-4 sm:px-6">
@@ -40,9 +45,9 @@ export function LandingBeta() {
             </p>
             <Link
               className="inline-flex items-center justify-center rounded-full bg-mk-cta font-medium text-white transition-all duration-200 hover:scale-[1.03] active:scale-[0.98] hover:bg-mk-cta-hover hover:shadow-lg hover:shadow-mk-cta/25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mk-cta px-7 py-3.5 text-[17px] mt-5 w-full"
-              href="/signup"
+              href={isLoggedIn ? "/dashboard" : "/signup"}
             >
-              Sign up free
+              {isLoggedIn ? "Go to Studio" : "Sign up free"}
             </Link>
             <p className="mt-4 text-center text-[14px] text-mk-slate">
               No card. Nothing to cancel. Already have an account?{" "}

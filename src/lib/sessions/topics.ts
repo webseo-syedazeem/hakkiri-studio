@@ -1288,12 +1288,13 @@ export function getTopicsForInterview(interview?: {
   if (isCivilService) {
     if (DRILL_TOPICS["civil-service-competencies"]) list.push(DRILL_TOPICS["civil-service-competencies"]);
     if (DRILL_TOPICS["civil-service-strengths"]) list.push(DRILL_TOPICS["civil-service-strengths"]);
-    list.push(DRILL_TOPICS["motivation"]);
+    if (isPM && DRILL_TOPICS["product-metrics"]) list.push(DRILL_TOPICS["product-metrics"]);
+    if (DRILL_TOPICS["technical"]) list.push(DRILL_TOPICS["technical"]);
     list.push(DRILL_TOPICS["experience"]);
+    list.push(DRILL_TOPICS["motivation"]);
     list.push(DRILL_TOPICS["stakeholder-management"]);
     list.push(DRILL_TOPICS["star"]);
     list.push(DRILL_TOPICS["commercial-judgement"]);
-    if (isPM && DRILL_TOPICS["product-metrics"]) list.push(DRILL_TOPICS["product-metrics"]);
     list.push(DRILL_TOPICS["curveball"]);
     return list;
   }

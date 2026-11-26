@@ -66,8 +66,8 @@ export class DeepgramSpeechToText implements SpeechToText {
 
 export const DEEPGRAM_VOICES: Record<"easy" | "medium" | "hard", { id: string; name: string }> = {
   easy: { id: process.env.DEEPGRAM_VOICE_EASY || "aura-athena-en", name: "Athena" },
-  medium: { id: process.env.DEEPGRAM_VOICE_MEDIUM || "aura-helios-en", name: "Helios" },
-  hard: { id: process.env.DEEPGRAM_VOICE_HARD || "aura-zeus-en", name: "Zeus" },
+  medium: { id: process.env.DEEPGRAM_VOICE_MEDIUM || "aura-athena-en", name: "Athena" },
+  hard: { id: process.env.DEEPGRAM_VOICE_HARD || "aura-helios-en", name: "Helios" },
 };
 
 /**

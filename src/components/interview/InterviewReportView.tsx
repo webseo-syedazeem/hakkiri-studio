@@ -434,7 +434,7 @@ export function InterviewReportView(p: InterviewReportViewProps) {
                 href="/practice#hub-playbooks"
                 className="text-xs font-semibold text-blue-soft hover:text-white flex items-center justify-between gap-2 transition-colors group"
               >
-                <span>Question Playbooks moved to Practice Hub</span>
+                <span>Answering guides in Practice Hub</span>
                 <span className="text-[11px] text-indigo-400 group-hover:translate-x-0.5 transition-transform">Explore →</span>
               </Link>
             </div>
