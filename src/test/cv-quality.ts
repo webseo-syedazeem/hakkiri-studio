@@ -89,8 +89,9 @@ export function grammarSlips(texts: string[]): string[] {
     if (d) out.push(`doubled word “${d.text}” in “${t.slice(0, 60)}”`);
     for (const m of t.matchAll(/\b(a|an)\s+([\p{L}\d][\p{L}\d'’-]*)/giu)) {
       const [, article, next] = m;
-      const acronym = /^[A-Z0-9]{2,}$/.test(next);
-      const vowelSound = acronym ? VOWEL_SOUND_LETTERS.test(next) : (/^[aeiou]/i.test(next) && !A_EXCEPTIONS.test(next)) || AN_EXCEPTIONS.test(next);
+      const acronym = /^[A-Z0-9]{2,}$/.test(next) && !/^\d/.test(next);
+      // A figure goes by how it is said: "an 8-week" (eight), "an 11-month" (eleven), "an 18-month", "a 100-day".
+      const vowelSound = /^\d/.test(next) ? /^8|^1[18](?![\d.])/.test(next) : acronym ? VOWEL_SOUND_LETTERS.test(next) : (/^[aeiou]/i.test(next) && !A_EXCEPTIONS.test(next)) || AN_EXCEPTIONS.test(next);
       if (article.toLowerCase() === "a" && vowelSound) out.push(`“a ${next}” should be “an ${next}”`);
       if (article.toLowerCase() === "an" && !vowelSound) out.push(`“an ${next}” should be “a ${next}”`);
     }

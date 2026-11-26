@@ -662,4 +662,37 @@ describe("UK and US spelling suggestions", () => {
     expect(wrongRegionSpelling("Visualizing data", "uk").map((h) => h.suggest)).toEqual(["Visualising"]);
     expect(wrongRegionSpelling("person-centred care", "us").map((h) => h.suggest)).toEqual(["centered"]);
   });
+
+  it("leave “analyses” alone in a US resume, where it is the plural of “analysis”", () => {
+    expect(wrongRegionSpelling("Wrote 20 bill analyses a session", "us")).toEqual([]);
+    expect(wrongRegionSpelling("Analyses sales data", "us").map((h) => h.suggest)).toEqual([]);
+    expect(wrongRegionSpelling("Analyzes sales data", "uk").map((h) => h.suggest)).toEqual(["Analyses"]);
+    expect(wrongRegionSpelling("Analysed sales data", "us").map((h) => h.suggest)).toEqual(["Analyzed"]);
+  });
+});
+
+describe("words that look like a rule but are not", () => {
+  it("“record” is a claim only as one: “a record month”, “broke the record”", () => {
+    expect(bigClaim("Record every result in the laboratory system")).toBeNull();
+    expect(bigClaim("Kept a full record for each handover")).toBeNull();
+    expect(bigClaim("Hit record sales in December")!.text).toBe("record sales");
+    expect(bigClaim("Broke the store record for weekend takings")!.text).toBe("Broke the store record");
+  });
+
+  it("“first” and “top” in the name of a thing are not claims: first aid, first officer, first-time buyers, top-ups", () => {
+    for (const t of ["Hold a first aid certificate", "Flew 2,900 hours as first officer", "Advised 40 first-time buyers a month", "Processed top-ups for 300 customers"]) expect(bigClaim(t), t).toBeNull();
+    expect(bigClaim("First in the region for sales")!.text).toBe("First");
+  });
+
+  it("“Form I-9” is a form, not the person", () => {
+    expect(firstPerson("Checked Form I-9 documents for 40 new hires")).toBeNull();
+    expect(firstPerson("I checked documents for 40 new hires")!.text).toBe("I");
+  });
+
+  it("an abbreviation joined by a hyphen is read as one: “SHRM-CP”", () => {
+    expect(unexplainedAcronyms(["Holds the Society for Human Resource Management Certified Professional (SHRM-CP) credential", "Renewed SHRM-CP in 2025"])).toEqual([]);
+    expect(unexplainedAcronyms(["Renewed SHRM-CP in 2025"]).map((a) => a.hit.text)).toEqual(["SHRM-CP"]);
+    // Each part explained is enough.
+    expect(unexplainedAcronyms(["Society for Human Resource Management (SHRM) and certified professional (CP)", "SHRM-CP"])).toEqual([]);
+  });
 });
