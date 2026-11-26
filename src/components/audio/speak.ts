@@ -119,7 +119,7 @@ function getBestBrowserVoice(voiceType?: VoiceName): SpeechSynthesisVoice | null
   const isExplicitFemale = (name: string) =>
     /female|woman|sarah|sonia|serena|stephanie|hazel|susan|zira|samantha|karen|victoria|fiona|moira|tessa|jenny|athena|emma/i.test(name);
 
-  // Filter out opposing gender completely
+  // Filter candidate pool strictly matching the target gender
   const candidates = voices.filter((v) => {
     if (!v.lang.startsWith("en")) return false;
     return isFemale ? !isExplicitMale(v.name) : !isExplicitFemale(v.name);
@@ -141,15 +141,23 @@ function getBestBrowserVoice(voiceType?: VoiceName): SpeechSynthesisVoice | null
   });
   if (standardUK) return standardUK;
 
-  // 3. Any UK voice in candidate pool
+  // 3. For male: look for ANY English male voice across regions before falling back to UK female
+  if (!isFemale) {
+    const anyEnglishMale = voices.find((v) => v.lang.startsWith("en") && isExplicitMale(v.name));
+    if (anyEnglishMale) return anyEnglishMale;
+    const nonFemaleEnglish = voices.find((v) => v.lang.startsWith("en") && !isExplicitFemale(v.name));
+    if (nonFemaleEnglish) return nonFemaleEnglish;
+  }
+
+  // 4. Any UK voice in candidate pool
   const anyUK = pool.find((v) => v.lang === "en-GB" || v.lang === "en_GB");
   if (anyUK) return anyUK;
 
-  // 4. Any Natural English voice in candidate pool
+  // 5. Any Natural English voice in candidate pool
   const naturalEnglish = pool.find((v) => /natural|neural|online|google|siri|enhanced/i.test(v.name));
   if (naturalEnglish) return naturalEnglish;
 
-  // 5. Any English voice in candidate pool
+  // 6. Any English voice in candidate pool
   return pool.find((v) => v.lang.startsWith("en")) ?? pool[0] ?? null;
 }
 
@@ -213,6 +221,13 @@ export function speak(text: string, opts: SpeakOptions = {}): Speech {
   const preloadedUrl = audioBlobCache.get(voiceKey);
   if (preloadedUrl) {
     const audio = sharedPlayer();
+    // Cleanly detach previous event handlers to prevent old errors/ends from firing
+    audio.onplay = null;
+    audio.ontimeupdate = null;
+    audio.onpause = null;
+    audio.onended = null;
+    audio.onerror = null;
+    audio.onloadedmetadata = null;
     audio.pause();
     try {
       audio.currentTime = 0;
@@ -228,6 +243,12 @@ export function speak(text: string, opts: SpeakOptions = {}): Speech {
     };
     const end = () => {
       clearTimeout(stuck);
+      audio.onplay = null;
+      audio.ontimeupdate = null;
+      audio.onpause = null;
+      audio.onended = null;
+      audio.onerror = null;
+      audio.onloadedmetadata = null;
       finish();
     };
     audio.onplay = () => {
@@ -242,7 +263,11 @@ export function speak(text: string, opts: SpeakOptions = {}): Speech {
       clearTimeout(stuck);
     };
     audio.onended = end;
-    audio.onerror = end;
+    audio.onerror = () => {
+      // Ignore abort errors from loading a new audio source
+      if (audio.error && audio.error.code === 1) return;
+      end();
+    };
     audio.onloadedmetadata = () => {
       resetWatchdog();
     };
@@ -329,6 +354,13 @@ export function speak(text: string, opts: SpeakOptions = {}): Speech {
       natural = "on";
       failures = 0;
       const audio = sharedPlayer();
+      // Cleanly detach previous event handlers to prevent old errors/ends from firing
+      audio.onplay = null;
+      audio.ontimeupdate = null;
+      audio.onpause = null;
+      audio.onended = null;
+      audio.onerror = null;
+      audio.onloadedmetadata = null;
       audio.pause();
       try {
         audio.currentTime = 0;
@@ -343,6 +375,12 @@ export function speak(text: string, opts: SpeakOptions = {}): Speech {
       };
       const end = () => {
         clearTimeout(stuck);
+        audio.onplay = null;
+        audio.ontimeupdate = null;
+        audio.onpause = null;
+        audio.onended = null;
+        audio.onerror = null;
+        audio.onloadedmetadata = null;
         URL.revokeObjectURL(url);
         finish();
       };
@@ -357,7 +395,11 @@ export function speak(text: string, opts: SpeakOptions = {}): Speech {
         clearTimeout(stuck);
       };
       audio.onended = end;
-      audio.onerror = end;
+      audio.onerror = () => {
+        // Ignore abort errors from loading a new audio source
+        if (audio.error && audio.error.code === 1) return;
+        end();
+      };
       audio.onloadedmetadata = () => {
         resetWatchdog();
       };

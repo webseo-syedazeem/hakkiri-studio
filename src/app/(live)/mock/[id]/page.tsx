@@ -93,12 +93,20 @@ export default async function MockInterviewPage({
     } as unknown as import("@/lib/mocks/store").MockRecord);
     if (m.status === "done") redirect(`/interviews/${interview.id}/mocks/${m.id}`);
     if (m.status === "stopped") redirect(`/interviews/${interview.id}`);
-    const questions = (m.questionIds ?? []).flatMap((qid) => byId(qid) ?? []);
+    const questions = (m.questionIds ?? [])
+      .flatMap((qid) => byId(qid) ?? [])
+      .filter((q) => q.slot !== "closing" && q.type !== "questions-for-us" && !/what questions do you have for/i.test(q.text));
     if (!questions.length) redirect(`/interviews/${interview.id}`);
     const u = understandingOf(interview);
     const shortOf = (qid: string) => byId(qid)?.short ?? "this question";
     const mode = m.kind === "rerun" ? "rerun" : m.kind === "drill" ? "drill" : "interview";
-    const live: LiveSession = { id: m.id, mode, spares: (m.spareIds ?? []).flatMap((qid) => (byId(qid) ? [toLive(byId(qid)!, 0)] : [])) };
+    const live: LiveSession = {
+      id: m.id,
+      mode,
+      spares: (m.spareIds ?? [])
+        .flatMap((qid) => (byId(qid) ? [toLive(byId(qid)!, 0)] : []))
+        .filter((q) => q.slot !== "closing" && q.type !== "questions-for-us" && !/what questions do you have for/i.test(q.text)),
+    };
 
     if (mode === "interview" && m.settings) {
       live.minutes = m.settings.minutes;
@@ -253,7 +261,7 @@ export default async function MockInterviewPage({
         return false;
       });
       const otherSpares = interview.questions.filter(
-        (item) => item.id !== targetQuestion?.id && !matchingSpares.some((s) => s.id === item.id)
+        (item) => item.id !== targetQuestion?.id && item.slot !== "closing" && item.type !== "questions-for-us" && !matchingSpares.some((s) => s.id === item.id)
       );
       const orderedSpares = [...matchingSpares, ...otherSpares];
 

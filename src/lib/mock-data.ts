@@ -87,7 +87,7 @@ export const halden: Interview = {
     { id: "m1", group: "motivation", type: "why-us", text: "Why do you want to work at Halden?", short: "Why Halden", lastScore: 4.6, difficulty: "medium" },
     { id: "m2", group: "motivation", type: "why-us", text: "Why this role, and why now?", short: "Why this role, why now", lastScore: 4.3, difficulty: "medium" },
     { id: "m3", group: "motivation", type: "why-us", text: "What do you know about our payments product?", short: "Halden’s payments product", lastScore: 4.2, difficulty: "medium" },
-    { id: "m4", group: "motivation", type: "tell-me-about-yourself", text: "Where do you want to be in three years?", short: "Three years from now", difficulty: "medium" },
+    { id: "m4", group: "motivation", type: "why-us", text: "Where do you want to be in three years?", short: "Three years from now", difficulty: "medium" },
     { id: "c1", group: "competency", type: "competency", text: "Tell me about a time you changed a roadmap because of something you learned late.", short: "Changing the roadmap", lastScore: 3.7, difficulty: "medium" },
     { id: "c2", group: "competency", type: "competency", text: "Tell me about a disagreement with an engineer.", short: "Disagreeing with an engineer", lastScore: 3.4, difficulty: "medium" },
     { id: "c3", group: "competency", type: "competency", text: "How do you prioritise competing requests?", short: "Competing requests", lastScore: 3.8, difficulty: "medium" },

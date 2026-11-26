@@ -4,6 +4,8 @@ import { badInput, failure, requireUserId } from "@/lib/cv/access";
 import { EXAMPLE_TEMPLATES, instantiateTemplate } from "@/lib/cv/templates/examples";
 import { atCvLimit, saveCv, TOO_MANY_CVS } from "@/lib/cv/store";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const summaries = EXAMPLE_TEMPLATES.map((t) => ({
     id: t.id,

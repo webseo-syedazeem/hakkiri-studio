@@ -238,7 +238,7 @@ export function templateBank(company: string, role: string, difficulty: Difficul
       ["why-us", "Why this role, and why now?"],
       ["why-us", `What do you know about ${c} and what we do?`],
       ["why-us", `Who do you see as ${c}’s main competitors, and why would a customer pick us?`],
-      ["tell-me-about-yourself", "Where do you want to be in three years?"],
+      ["why-us", "Where do you want to be in three years?"],
       ["why-us", `What would make you turn down an offer from ${c}?`],
       ["why-us", "What are you looking for in your next manager?"],
     ],

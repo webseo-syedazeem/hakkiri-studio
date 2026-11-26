@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
@@ -189,6 +189,141 @@ function getTargetCount(duration: number, focus: "mix" | CategoryKey): number {
   // Recommended mix
   const table: Record<number, number> = { 5: 1, 10: 3, 20: 5, 30: 8, 45: 11 };
   return table[duration] || 8;
+}
+
+interface CustomSelectOption {
+  value: string;
+  label: string;
+  subtitle?: string;
+}
+
+interface CustomSelectProps {
+  id?: string;
+  label?: string;
+  value: string;
+  options: CustomSelectOption[];
+  disabled?: boolean;
+  placeholder?: string;
+  onChange: (value: string) => void;
+}
+
+/** Professional styled dropdown with glassmorphism, chevron rotation, and click-outside dismissal. */
+function CustomSelect({
+  id,
+  label,
+  value,
+  options,
+  disabled = false,
+  placeholder = "Select...",
+  onChange,
+}: CustomSelectProps) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const selected = options.find((o) => o.value === value);
+
+  useEffect(() => {
+    if (!open) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [open]);
+
+  return (
+    <div className="relative w-full" ref={containerRef}>
+      {label && (
+        <label className="block text-xs font-semibold text-[#b9c0d2] mb-1.5">
+          {label}
+        </label>
+      )}
+      <button
+        type="button"
+        id={id}
+        disabled={disabled}
+        onClick={() => setOpen(!open)}
+        className={clsx(
+          "w-full flex items-center justify-between gap-3 px-4 py-2.5 rounded-xl border text-xs font-medium transition-all text-left cursor-pointer",
+          disabled
+            ? "opacity-40 cursor-not-allowed bg-[#141829] border-white/[0.06] text-muted"
+            : open
+            ? "bg-[#1c2238] border-indigo-500 ring-2 ring-indigo-500/25 text-white shadow-lg shadow-indigo-500/10"
+            : "bg-[#141829] border-white/10 hover:border-indigo-400/50 text-white hover:bg-[#191f33]"
+        )}
+      >
+        <span className="truncate font-semibold">
+          {selected ? selected.label : placeholder}
+        </span>
+        <svg
+          className={clsx(
+            "w-4 h-4 text-[#8a8d9f] shrink-0 transition-transform duration-200",
+            open && "rotate-180 text-indigo-400"
+          )}
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {open && !disabled && (
+        <div className="absolute left-0 right-0 top-full mt-1.5 z-50 rounded-xl bg-[#111424]/98 backdrop-blur-2xl border border-white/15 p-1.5 shadow-2xl shadow-black/80 max-h-64 overflow-y-auto space-y-1 animate-in fade-in-0 zoom-in-95 duration-150">
+          {options.map((opt) => {
+            const isSelected = opt.value === value;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => {
+                  onChange(opt.value);
+                  setOpen(false);
+                }}
+                className={clsx(
+                  "w-full flex items-center justify-between gap-2.5 px-3.5 py-2.5 rounded-lg text-xs transition-all text-left cursor-pointer",
+                  isSelected
+                    ? "bg-gradient-to-r from-indigo-600/30 to-purple-600/20 text-indigo-200 font-bold border border-indigo-500/30"
+                    : "text-[#d6d9e4] hover:bg-white/[0.08] hover:text-white"
+                )}
+              >
+                <div className="min-w-0">
+                  <div className="truncate font-semibold">{opt.label}</div>
+                  {opt.subtitle && (
+                    <div className="text-[11px] text-muted truncate mt-0.5">{opt.subtitle}</div>
+                  )}
+                </div>
+                {isSelected && (
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-500/30 text-indigo-300 font-bold shrink-0 text-xs">
+                    ✓
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RadioDot({ selected }: { selected: boolean }) {
+  return (
+    <span
+      className={clsx(
+        "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-all duration-200",
+        selected
+          ? "border-indigo-400 bg-indigo-600/30 shadow-[0_0_10px_rgba(99,102,241,0.5)]"
+          : "border-white/20 bg-transparent group-hover:border-white/40"
+      )}
+    >
+      {selected && (
+        <span className="h-2 w-2 rounded-full bg-white shadow-sm" />
+      )}
+    </span>
+  );
 }
 
 export function PracticeHubClient({
@@ -419,33 +554,34 @@ export function PracticeHubClient({
         </div>
       )}
 
-      {/* 3. INTERVIEW PRACTICE BUILDER */}
-      <div className="mt-8 flex flex-col gap-6 max-w-4xl">
+      {/* 3. INTERVIEW PRACTICE BUILDER (Full width, balanced spacing, modern glassmorphism) */}
+      <div className="mt-8 flex flex-col gap-6 w-full">
         {/* Mode Selector Card */}
-        <div className="rounded-2xl bg-[#131724] border border-[#262c40] p-6 shadow-xl">
+        <div className="rounded-2xl bg-[#0f1220] border border-[#23293e] p-6 sm:p-7 shadow-xl">
           <h2 className="text-base font-bold text-white tracking-tight">How would you like to practise?</h2>
           <p className="mt-1 text-xs text-[#a3abc3]">Start with an industry or prepare against an exact job application.</p>
 
-          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <button
               type="button"
               onClick={() => setMode("general")}
               className={clsx(
-                "text-left p-4 rounded-xl border transition-all cursor-pointer flex flex-col justify-between min-h-[110px]",
+                "text-left p-5 rounded-2xl border transition-all duration-200 cursor-pointer flex flex-col justify-between min-h-[120px] relative overflow-hidden group",
                 mode === "general"
-                  ? "bg-gradient-to-br from-[#242646] to-[#1c1d32] border-[#7474f3] shadow-[0_0_20px_rgba(116,116,243,0.25)]"
-                  : "bg-[#191e2e] border-[#30384f] hover:border-[#4b5577] text-white"
+                  ? "bg-gradient-to-br from-[#242646] to-[#17192a] border-[#7474f3] shadow-[0_0_25px_rgba(116,116,243,0.25)] ring-1 ring-[#7474f3]/50"
+                  : "bg-[#131726] border-[#262c42] hover:border-[#424c6e] hover:bg-[#171c2e] text-white hover:-translate-y-0.5"
               )}
             >
               <div className="flex items-center justify-between w-full">
-                <span className="font-bold text-sm text-white flex items-center gap-2">
-                  <span className="text-base text-indigo-400">◉</span> General practice
+                <span className="font-bold text-sm text-white flex items-center gap-2.5">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-500/20 text-indigo-400 text-sm font-bold">
+                    ◉
+                  </span>
+                  General practice
                 </span>
-                <span className={clsx("text-sm", mode === "general" ? "text-indigo-400 font-bold" : "text-muted")}>
-                  {mode === "general" ? "●" : "○"}
-                </span>
+                <RadioDot selected={mode === "general"} />
               </div>
-              <p className="mt-2 text-xs text-[#b5bcd0] leading-relaxed">
+              <p className="mt-3 text-xs text-[#b5bcd0] leading-relaxed">
                 Common questions tailored by industry and profession. No CV needed.
               </p>
             </button>
@@ -454,21 +590,22 @@ export function PracticeHubClient({
               type="button"
               onClick={() => setMode("tailored")}
               className={clsx(
-                "text-left p-4 rounded-xl border transition-all cursor-pointer flex flex-col justify-between min-h-[110px]",
+                "text-left p-5 rounded-2xl border transition-all duration-200 cursor-pointer flex flex-col justify-between min-h-[120px] relative overflow-hidden group",
                 mode === "tailored"
-                  ? "bg-gradient-to-br from-[#242646] to-[#1c1d32] border-[#7474f3] shadow-[0_0_20px_rgba(116,116,243,0.25)]"
-                  : "bg-[#191e2e] border-[#30384f] hover:border-[#4b5577] text-white"
+                  ? "bg-gradient-to-br from-[#242646] to-[#17192a] border-[#7474f3] shadow-[0_0_25px_rgba(116,116,243,0.25)] ring-1 ring-[#7474f3]/50"
+                  : "bg-[#131726] border-[#262c42] hover:border-[#424c6e] hover:bg-[#171c2e] text-white hover:-translate-y-0.5"
               )}
             >
               <div className="flex items-center justify-between w-full">
-                <span className="font-bold text-sm text-white flex items-center gap-2">
-                  <span className="text-base text-indigo-400">▣</span> Tailored to a job
+                <span className="font-bold text-sm text-white flex items-center gap-2.5">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-500/20 text-indigo-400 text-sm font-bold">
+                    ▣
+                  </span>
+                  Tailored to a job
                 </span>
-                <span className={clsx("text-sm", mode === "tailored" ? "text-indigo-400 font-bold" : "text-muted")}>
-                  {mode === "tailored" ? "●" : "○"}
-                </span>
+                <RadioDot selected={mode === "tailored"} />
               </div>
-              <p className="mt-2 text-xs text-[#b5bcd0] leading-relaxed">
+              <p className="mt-3 text-xs text-[#b5bcd0] leading-relaxed">
                 Practice against a saved job description and assessment criteria.
               </p>
             </button>
@@ -476,8 +613,8 @@ export function PracticeHubClient({
         </div>
 
         {/* Step 1: Context */}
-        <div className="rounded-2xl bg-[#131724] border border-[#262c40] p-6 shadow-xl">
-          <div className="flex items-center gap-2.5 mb-4">
+        <div className="rounded-2xl bg-[#0f1220] border border-[#23293e] p-6 sm:p-7 shadow-xl">
+          <div className="flex items-center gap-2.5 mb-5">
             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#42478a] text-[#dddaff] text-xs font-bold">
               1
             </span>
@@ -489,50 +626,39 @@ export function PracticeHubClient({
           {mode === "general" ? (
             <div className="flex flex-col gap-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="industry-select" className="block text-xs font-semibold text-[#b9c0d2] mb-1.5">
-                    Industry
-                  </label>
-                  <select
-                    id="industry-select"
-                    value={industry}
-                    onChange={(e) => {
-                      setIndustry(e.target.value);
-                      setRole("");
-                    }}
-                    className="w-full bg-[#1e2335] border border-[#37405a] rounded-lg px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500 transition-colors"
-                  >
-                    <option value="any">Any industry</option>
-                    <option value="government">Government &amp; Public Services</option>
-                    <option value="healthcare">Healthcare &amp; Social Care</option>
-                    <option value="technology">Technology &amp; Digital</option>
-                    <option value="finance">Banking &amp; Finance</option>
-                    <option value="education">Education &amp; Training</option>
-                  </select>
-                </div>
+                <CustomSelect
+                  id="industry-select"
+                  label="Industry"
+                  value={industry}
+                  onChange={(val) => {
+                    setIndustry(val);
+                    setRole("");
+                  }}
+                  options={[
+                    { value: "any", label: "Any industry" },
+                    { value: "government", label: "Government & Public Services" },
+                    { value: "healthcare", label: "Healthcare & Social Care" },
+                    { value: "technology", label: "Technology & Digital" },
+                    { value: "finance", label: "Banking & Finance" },
+                    { value: "education", label: "Education & Training" },
+                  ]}
+                />
 
-                <div>
-                  <label htmlFor="profession-select" className="block text-xs font-semibold text-[#b9c0d2] mb-1.5">
-                    Profession (optional)
-                  </label>
-                  <select
-                    id="profession-select"
-                    value={role}
-                    disabled={activeSector.roles.length === 0}
-                    onChange={(e) => setRole(e.target.value)}
-                    className="w-full bg-[#1e2335] border border-[#37405a] rounded-lg px-3.5 py-2.5 text-xs text-white disabled:opacity-50 focus:outline-none focus:border-indigo-500 transition-colors"
-                  >
-                    <option value="">Any profession</option>
-                    {activeSector.roles.map((r) => (
-                      <option key={r} value={r}>
-                        {r}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <CustomSelect
+                  id="profession-select"
+                  label="Profession (optional)"
+                  value={role}
+                  disabled={activeSector.roles.length === 0}
+                  placeholder={activeSector.roles.length === 0 ? "Select an industry first" : "Any profession"}
+                  onChange={(val) => setRole(val)}
+                  options={[
+                    { value: "", label: "Any profession" },
+                    ...activeSector.roles.map((r) => ({ value: r, label: r })),
+                  ]}
+                />
               </div>
 
-              <div className="flex items-center gap-2 pt-2">
+              <div className="flex items-center gap-2 pt-1">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 text-xs font-semibold">
                   <span>✓</span> No job description or CV required
                 </span>
@@ -542,55 +668,47 @@ export function PracticeHubClient({
             <div className="flex flex-col gap-4">
               {interviews.length > 0 ? (
                 <>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="sm:col-span-2">
-                      <label htmlFor="job-select" className="block text-xs font-semibold text-[#b9c0d2] mb-1.5">
-                        Saved job application
-                      </label>
-                      <select
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+                    <div className="md:col-span-7">
+                      <CustomSelect
                         id="job-select"
-                        value={selectedId}
-                        onChange={(e) => setSelectedId(e.target.value)}
-                        className="w-full bg-[#1e2335] border border-[#37405a] rounded-lg px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500 transition-colors"
-                      >
-                        {interviews.map((iv) => (
-                          <option key={iv.id} value={iv.id}>
-                            {iv.role} — {iv.company}
-                          </option>
-                        ))}
-                      </select>
+                        label="Saved job application"
+                        value={selectedId || ""}
+                        onChange={(val) => setSelectedId(val)}
+                        options={interviews.map((iv) => ({
+                          value: iv.id,
+                          label: `${iv.role} — ${iv.company}`,
+                          subtitle: iv.stage || "Standard Round",
+                        }))}
+                      />
                     </div>
 
-                    <div>
-                      <label htmlFor="stage-select" className="block text-xs font-semibold text-[#b9c0d2] mb-1.5">
-                        Interview stage
-                      </label>
-                      <select
+                    <div className="md:col-span-3">
+                      <CustomSelect
                         id="stage-select"
+                        label="Interview stage"
                         value={stage}
-                        onChange={(e) => setStage(e.target.value)}
-                        className="w-full bg-[#1e2335] border border-[#37405a] rounded-lg px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500 transition-colors"
-                      >
-                        <option value={current?.stage || "Panel interview"}>
-                          {current?.stage || "Panel interview"}
-                        </option>
-                        <option value="Technical interview">Technical interview</option>
-                        <option value="Screening call">Screening call</option>
-                        <option value="Final round">Final round</option>
-                      </select>
+                        onChange={(val) => setStage(val)}
+                        options={[
+                          { value: current?.stage || "Panel interview", label: current?.stage || "Panel interview" },
+                          { value: "Technical interview", label: "Technical interview" },
+                          { value: "Screening call", label: "Screening call" },
+                          { value: "Final round", label: "Final round" },
+                        ]}
+                      />
                     </div>
 
-                    <div className="flex items-end justify-end">
+                    <div className="md:col-span-2">
                       <Link
                         href="/interviews/new"
-                        className="px-4 py-2.5 rounded-lg bg-[#262c40] border border-[#37405a] hover:border-indigo-400 text-xs font-semibold text-white transition-all hover:-translate-y-0.5 inline-flex items-center gap-1.5"
+                        className="w-full h-[40px] flex items-center justify-center px-4 rounded-xl bg-[#1e2438] border border-white/10 hover:border-indigo-400 hover:bg-[#252c44] text-xs font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 shadow-md shadow-black/20"
                       >
-                        <span>+ Add another job</span>
+                        + Add another job
                       </Link>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 pt-2">
+                  <div className="flex items-center gap-2 pt-1">
                     <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 text-xs font-semibold">
                       <span>✓</span> Job spec supplied
                     </span>
@@ -600,7 +718,7 @@ export function PracticeHubClient({
                   </div>
                 </>
               ) : (
-                <div className="p-4 rounded-xl bg-[#1c1d2e] border border-white/10 text-center">
+                <div className="p-5 rounded-xl bg-[#181d2e] border border-white/10 text-center">
                   <p className="text-xs text-muted mb-3">No saved jobs found.</p>
                   <Link
                     href="/interviews/new"
@@ -615,8 +733,8 @@ export function PracticeHubClient({
         </div>
 
         {/* Step 2: What would you like to practise? */}
-        <div className="rounded-2xl bg-[#131724] border border-[#262c40] p-6 shadow-xl">
-          <div className="flex items-center gap-2.5 mb-1.5">
+        <div className="rounded-2xl bg-[#0f1220] border border-[#23293e] p-6 sm:p-7 shadow-xl">
+          <div className="flex items-center gap-2.5 mb-2">
             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#42478a] text-[#dddaff] text-xs font-bold">
               2
             </span>
@@ -632,38 +750,36 @@ export function PracticeHubClient({
               type="button"
               onClick={() => setFocus("mix")}
               className={clsx(
-                "w-full text-left p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-4",
+                "w-full text-left p-5 rounded-2xl border transition-all duration-200 cursor-pointer flex items-center justify-between gap-4 group",
                 focus === "mix"
-                  ? "bg-gradient-to-r from-[#2c2d58] via-[#24254b] to-[#1c1d38] border-[#7474f3] shadow-[0_0_20px_rgba(116,116,243,0.3)]"
-                  : "bg-[#191e2e] border-[#30384f] hover:border-[#4b5577] text-white"
+                  ? "bg-gradient-to-r from-[#2c2d58] via-[#24254b] to-[#1c1d38] border-[#7474f3] shadow-[0_0_25px_rgba(116,116,243,0.3)] ring-1 ring-[#7474f3]/50"
+                  : "bg-[#131726] border-[#262c42] hover:border-[#424c6e] hover:bg-[#171c2e] text-white hover:-translate-y-0.5"
               )}
             >
-              <div className="flex items-center gap-3.5">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-lg font-bold">
+              <div className="flex items-center gap-4">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-lg font-bold">
                   ✧
                 </span>
                 <div>
                   <div className="flex items-center gap-2.5">
                     <span className="font-bold text-sm text-white">Recommended Mix</span>
-                    <span className="px-2 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-400/40 text-[10px] font-bold text-indigo-300 uppercase tracking-wider">
+                    <span className="px-2.5 py-0.5 rounded-full bg-indigo-500/20 border border-indigo-400/40 text-[10px] font-bold text-indigo-300 uppercase tracking-wider">
                       {mode === "tailored" ? "By job description" : "By industry"}
                     </span>
                   </div>
                   <p className="mt-1 text-xs text-[#b5bcd0] font-medium">{mixLabel}</p>
                 </div>
               </div>
-              <span className={clsx("text-base font-bold", focus === "mix" ? "text-indigo-400" : "text-muted")}>
-                {focus === "mix" ? "●" : "○"}
-              </span>
+              <RadioDot selected={focus === "mix"} />
             </button>
           </div>
 
-          <p className="mt-6 mb-3 text-xs font-semibold text-[#8a8d9f] uppercase tracking-wider">
+          <p className="mt-7 mb-3 text-xs font-semibold text-[#8a8d9f] uppercase tracking-wider">
             Or focus on one question type
           </p>
 
-          {/* 10-Category Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          {/* 10-Category Grid (Clean, balanced 2-column layout) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {CATEGORIES.map((cat) => {
               const active = focus === cat.key;
               return (
@@ -672,21 +788,19 @@ export function PracticeHubClient({
                   type="button"
                   onClick={() => setFocus(cat.key)}
                   className={clsx(
-                    "text-left px-3.5 py-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between gap-2.5",
+                    "text-left px-4 py-3.5 rounded-xl border transition-all duration-200 cursor-pointer flex items-center justify-between gap-3 group",
                     active
-                      ? "bg-gradient-to-r from-[#2b2b52] to-[#1e1f3a] border-[#7474f3] shadow-[0_0_15px_rgba(116,116,243,0.25)] text-white"
-                      : "bg-[#191e2e] border-[#2b3248] hover:border-[#444e70] text-[#d6d9e4]"
+                      ? "bg-gradient-to-r from-[#2c2c54] to-[#1e1f3a] border-[#7474f3] shadow-[0_0_15px_rgba(116,116,243,0.25)] text-white ring-1 ring-[#7474f3]/40"
+                      : "bg-[#131726] border-[#23293d] hover:border-indigo-500/40 hover:bg-[#181d30] text-[#d6d9e4] hover:-translate-y-0.5"
                   )}
                 >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/[0.05] text-indigo-300 text-xs font-semibold">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/[0.05] text-indigo-300 text-xs font-semibold group-hover:bg-indigo-500/20 transition-colors">
                       {cat.icon}
                     </span>
                     <span className="text-xs font-semibold truncate">{cat.name}</span>
                   </div>
-                  <span className={clsx("text-xs font-bold shrink-0", active ? "text-indigo-400" : "text-muted")}>
-                    {active ? "●" : "○"}
-                  </span>
+                  <RadioDot selected={active} />
                 </button>
               );
             })}
@@ -694,8 +808,8 @@ export function PracticeHubClient({
         </div>
 
         {/* Step 3: Session settings */}
-        <div className="rounded-2xl bg-[#131724] border border-[#262c40] p-6 shadow-xl">
-          <div className="flex items-center gap-2.5 mb-4">
+        <div className="rounded-2xl bg-[#0f1220] border border-[#23293e] p-6 sm:p-7 shadow-xl">
+          <div className="flex items-center gap-2.5 mb-5">
             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#42478a] text-[#dddaff] text-xs font-bold">
               3
             </span>
@@ -706,17 +820,17 @@ export function PracticeHubClient({
             {/* Duration */}
             <div>
               <label className="block text-xs font-semibold text-[#b9c0d2] mb-2.5">Duration</label>
-              <div className="grid grid-cols-5 gap-1.5">
+              <div className="grid grid-cols-5 gap-2">
                 {([5, 10, 20, 30, 45] as const).map((m) => (
                   <button
                     key={m}
                     type="button"
                     onClick={() => setDuration(m)}
                     className={clsx(
-                      "py-2 rounded-lg text-xs font-semibold transition-all border text-center cursor-pointer",
+                      "py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 border text-center cursor-pointer",
                       duration === m
-                        ? "bg-gradient-to-r from-[#5053f5] to-[#686bf8] border-[#7f82fb] text-white shadow-md shadow-indigo-500/20"
-                        : "bg-[#1e2335] border-[#30384f] text-[#a8aec2] hover:border-[#4b5577] hover:text-white"
+                        ? "bg-gradient-to-r from-[#5053f5] to-[#686bf8] border-[#7f82fb] text-white shadow-md shadow-indigo-500/20 ring-1 ring-indigo-400/40"
+                        : "bg-[#141829] border-white/10 text-[#a8aec2] hover:border-white/20 hover:text-white hover:bg-[#181d30]"
                     )}
                   >
                     {m} min
@@ -728,17 +842,17 @@ export function PracticeHubClient({
             {/* Difficulty */}
             <div>
               <label className="block text-xs font-semibold text-[#b9c0d2] mb-2.5">Difficulty</label>
-              <div className="grid grid-cols-3 gap-1.5">
+              <div className="grid grid-cols-3 gap-2">
                 {(["easy", "medium", "hard"] as const).map((d) => (
                   <button
                     key={d}
                     type="button"
                     onClick={() => setDifficulty(d)}
                     className={clsx(
-                      "py-2 rounded-lg text-xs font-semibold capitalize transition-all border text-center cursor-pointer",
+                      "py-2.5 rounded-xl text-xs font-semibold capitalize transition-all duration-200 border text-center cursor-pointer",
                       difficulty === d
-                        ? "bg-gradient-to-r from-[#5053f5] to-[#686bf8] border-[#7f82fb] text-white shadow-md shadow-indigo-500/20"
-                        : "bg-[#1e2335] border-[#30384f] text-[#a8aec2] hover:border-[#4b5577] hover:text-white"
+                        ? "bg-gradient-to-r from-[#5053f5] to-[#686bf8] border-[#7f82fb] text-white shadow-md shadow-indigo-500/20 ring-1 ring-indigo-400/40"
+                        : "bg-[#141829] border-white/10 text-[#a8aec2] hover:border-white/20 hover:text-white hover:bg-[#181d30]"
                     )}
                   >
                     {d}
@@ -750,55 +864,55 @@ export function PracticeHubClient({
         </div>
 
         {/* 4. SESSION PREVIEW (AC18: Rendered BELOW Step 3) */}
-        <div className="rounded-2xl bg-gradient-to-b from-[#181a2e] to-[#111322] border border-[#6366f1]/40 p-6 sm:p-7 shadow-2xl relative overflow-hidden">
-          <div className="h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 absolute top-0 left-0 right-0" />
+        <div className="rounded-2xl bg-gradient-to-b from-[#181b30] to-[#101322] border border-[#6366f1]/40 p-6 sm:p-8 shadow-2xl relative overflow-hidden">
+          <div className="h-1.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 absolute top-0 left-0 right-0" />
 
-          <div className="flex items-center justify-between gap-4 mb-3">
-            <h2 className="text-base font-bold text-white tracking-tight">Your session preview</h2>
+          <div className="flex items-center justify-between gap-4 mb-4">
+            <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">Your session preview</h2>
             <span className="px-3 py-1 rounded-full bg-indigo-500/15 border border-indigo-400/30 text-xs font-bold text-indigo-300">
               {mode === "tailored" ? "Job-specific" : "General practice"}
             </span>
           </div>
 
-          <div className="h-[1px] bg-white/[0.08] my-3.5" />
+          <div className="h-[1px] bg-white/[0.08] my-4" />
 
           {/* Eyebrow & Preview Question */}
-          <div className="mb-4">
+          <div className="mb-5">
             <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-300">
               {mode === "tailored" && current
                 ? `${current.role} · ${current.company}`
                 : `${activeSector.name} · ${role || "General"}`}
             </span>
-            <h3 className="mt-1 text-base sm:text-lg font-bold text-white leading-snug">
+            <h3 className="mt-2 text-lg sm:text-xl font-bold text-white leading-relaxed">
               “{previewQuestionText}”
             </h3>
           </div>
 
           {/* Facts Pills */}
-          <div className="flex flex-wrap items-center gap-2.5 mb-4">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#22283b] border border-white/10 text-xs font-semibold text-white">
-              <Icon name="clock" size={13} /> {duration} min
+          <div className="flex flex-wrap items-center gap-3 mb-5">
+            <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[#1c2238] border border-white/10 text-xs font-semibold text-white">
+              <Icon name="clock" size={14} /> {duration} min
             </span>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#22283b] border border-white/10 text-xs font-semibold capitalize text-white">
-              <Icon name="target" size={13} /> {difficulty}
+            <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[#1c2238] border border-white/10 text-xs font-semibold capitalize text-white">
+              <Icon name="target" size={14} /> {difficulty}
             </span>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#22283b] border border-white/10 text-xs font-semibold text-indigo-300">
-              <Icon name="layers" size={13} /> ~{count} main questions
+            <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[#1c2238] border border-white/10 text-xs font-semibold text-indigo-300">
+              <Icon name="layers" size={14} /> ~{count} main questions
             </span>
           </div>
 
-          <div className="h-[1px] bg-white/[0.08] my-3.5" />
+          <div className="h-[1px] bg-white/[0.08] my-4" />
 
           {/* Planned question types */}
-          <div className="mb-4">
-            <span className="text-xs font-semibold text-[#8a8d9f] uppercase tracking-wider block mb-2">
+          <div className="mb-5">
+            <span className="text-xs font-semibold text-[#8a8d9f] uppercase tracking-wider block mb-2.5">
               Planned question types
             </span>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2.5">
               {plannedBreakdown.map((item) => (
                 <span
                   key={item.name}
-                  className="px-3 py-1 rounded-lg bg-[#262c40] border border-white/10 text-xs font-semibold text-white"
+                  className="px-3.5 py-1.5 rounded-xl bg-[#1e2438] border border-white/10 text-xs font-semibold text-white shadow-sm"
                 >
                   {item.name} × {item.count}
                 </span>
@@ -807,31 +921,31 @@ export function PracticeHubClient({
           </div>
 
           {/* Context note */}
-          <p className="text-xs text-[#a3abc3] leading-relaxed mb-3">
+          <p className="text-xs text-[#a3abc3] leading-relaxed mb-4">
             {mode === "tailored"
               ? "Suggested from the available job context; the interview questions are grounded in your saved role."
               : "Common questions tailored by sector and profession. No CV or job spec required."}
           </p>
 
           {/* Availability note */}
-          <div className="flex items-center gap-2 text-xs font-semibold text-emerald-400 mb-5">
+          <div className="flex items-center gap-2 text-xs font-semibold text-emerald-400 mb-6">
             <span>✓</span> Fresh questions are available for this session.
           </div>
 
           {/* Action buttons */}
-          <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex flex-col sm:flex-row gap-3.5">
             <Link
               href={startHref}
-              className="pro-btn-glow flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-[#4f52f8] via-[#5c5ffc] to-[#6d5eff] text-sm font-bold text-white shadow-lg shadow-indigo-500/25 hover:brightness-110 transition-all flex-1"
+              className="pro-btn-glow flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-xl bg-gradient-to-r from-[#4f52f8] via-[#5c5ffc] to-[#6d5eff] text-sm font-bold text-white shadow-lg shadow-indigo-500/25 hover:brightness-110 transition-all flex-1 cursor-pointer"
             >
-              <Icon name="play" size={15} />
+              <Icon name="play" size={16} />
               <span>▶ Start practice</span>
             </Link>
 
             <button
               type="button"
               onClick={() => setShowPlanPreview(!showPlanPreview)}
-              className="px-5 py-3 rounded-xl bg-[#22283b] border border-white/10 hover:border-white/20 text-xs font-semibold text-white transition-all text-center cursor-pointer"
+              className="px-6 py-3.5 rounded-xl bg-[#1e2438] border border-white/10 hover:border-white/25 text-xs font-semibold text-white transition-all text-center cursor-pointer hover:bg-[#252c44]"
             >
               {showPlanPreview ? "Hide question plan" : "Preview question plan"}
             </button>
@@ -839,11 +953,11 @@ export function PracticeHubClient({
 
           {/* Expandable Plan Preview */}
           {showPlanPreview && (
-            <div className="mt-5 p-4 rounded-xl bg-[#0e101b] border border-white/10 animate-rise">
-              <span className="text-xs font-bold uppercase tracking-wider text-indigo-300 block mb-2">
+            <div className="mt-6 p-5 rounded-xl bg-[#0c0e18] border border-white/10 animate-rise">
+              <span className="text-xs font-bold uppercase tracking-wider text-indigo-300 block mb-3">
                 Estimated Question Sequence
               </span>
-              <div className="space-y-2">
+              <div className="space-y-2.5">
                 {Array.from({ length: count }).map((_, idx) => {
                   const catKey =
                     focus !== "mix"
@@ -853,12 +967,12 @@ export function PracticeHubClient({
                   return (
                     <div
                       key={idx}
-                      className="flex items-center justify-between text-xs py-1.5 border-b border-white/[0.05] last:border-0"
+                      className="flex items-center justify-between text-xs py-2 border-b border-white/[0.05] last:border-0"
                     >
-                      <span className="text-white font-medium">
-                        Q{idx + 1}: {cat?.name}
+                      <span className="text-white font-medium flex items-center gap-2">
+                        <span className="text-indigo-400 font-bold">Q{idx + 1}:</span> {cat?.name}
                       </span>
-                      <span className="text-muted text-[11px]">
+                      <span className="text-muted text-[11px] bg-white/[0.04] px-2.5 py-1 rounded-md">
                         Target ~{catKey === "strengths" ? "1-2 min" : "3-4 min"}
                       </span>
                     </div>
@@ -871,7 +985,7 @@ export function PracticeHubClient({
       </div>
 
       {/* 5. PRESENTATIONS: THE PERSON'S OWN, WHEN THEY HAVE ONE */}
-      <div className="mt-12" data-testid="hub-presentation">
+      <div className="mt-14" data-testid="hub-presentation">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-lg font-bold text-white tracking-tight">Presentation rehearsals</h2>
@@ -922,7 +1036,7 @@ export function PracticeHubClient({
         )}
       </div>
 
-      <div id="hub-playbooks" className="mt-12 pt-8 border-t border-white/[0.08]" data-testid="hub-answering-guides">
+      <div id="hub-playbooks" className="mt-14 pt-8 border-t border-white/[0.08]" data-testid="hub-answering-guides">
         <AnsweringGuides />
       </div>
     </div>
