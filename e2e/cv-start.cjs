@@ -114,7 +114,7 @@ run("CV start", async (browser) => {
   await page.goto(`${BASE}/cv`);
   await page.getByRole("link", { name: "Fern Example – Collections Officer", exact: true }).waitFor();
   const row = await page.locator(".cv-pick").first().innerText();
-  check(/Collections officer · Lantern Atlas/.test(row) && /Early career/.test(row), "the dashboard row shows the level and the target role and employer", row.replace(/\n/g, " / "));
+  check(/Collections officer · Lantern Atlas/.test(row) && /Base CV/.test(row), "the dashboard row shows it is the base CV, with the target role and employer", row.replace(/\n/g, " / "));
   check((await page.locator(".cv-pick").count()) === 1, "the dashboard lists her one CV and nothing else");
   await bothThemes(page, "dashboard");
 
