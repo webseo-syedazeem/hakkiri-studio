@@ -133,4 +133,30 @@ describe("job fit moves with the version", () => {
     b.visible = false;
     expect(jobFit(cv).score).toBe(0);
   });
+
+  describe("CV-4: tailoring without dead ends", () => {
+    it("offers at least one proposal for every missing requirement even with empty bank", () => {
+      const missingReqs = [
+        req("Experience with Tableau"),
+        req("Knowledge of Google Analytics 4"),
+        req("Experience with paid search campaigns"),
+      ];
+      const cv = cvWith(["Answered enquiries phone daily."], missingReqs);
+      const proposals = proposeChanges(cv, []);
+      expect(proposals.length).toBeGreaterThanOrEqual(missingReqs.length);
+      for (const r of missingReqs) {
+        expect(proposals.some((p) => p.requirementId === r.id)).toBe(true);
+      }
+    });
+
+    it("accepts all proposals in one click and applies them", () => {
+      const missingReqs = [req("Experience with Tableau")];
+      const cv = cvWith(["Answered enquiries phone daily."], missingReqs);
+      const proposals = proposeChanges(cv, []);
+      const applied = applyProposals(cv, proposals, NOW);
+      expect(applied.records.length).toBe(proposals.length);
+      const fit = jobFit({ ...cv, sections: applied.sections });
+      expect(fit.score).toBeGreaterThan(0);
+    });
+  });
 });
