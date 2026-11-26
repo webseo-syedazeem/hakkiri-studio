@@ -288,6 +288,9 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
           <span>{cv.region === "uk" ? "🇬🇧 UK" : "🇺🇸 US"}</span>
           <span style={{ fontSize: 10, opacity: 0.7 }}>⇄</span>
         </button>
+        <BtnLink href={`/cv/v/${cv.id}/talk`} onClick={() => void flush()} data-testid="talk-button">
+          Talk it through
+        </BtnLink>
         <BtnLink href={`/cv/v/${cv.id}/findings`} onClick={() => void flush()} data-testid="score-button">
           {scoreLabel(w.score, word)}
         </BtnLink>
@@ -394,8 +397,12 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
                 <div className="cv-pad cv-stack">
                   <h2>Your {word} is empty</h2>
                   <p className="cv-muted">Start with your contact details. You can add work, education or projects in any order.</p>
+                  <p className="cv-muted">Or talk it through: tell the assistant about your work, and it fills this in as you go.</p>
                   <input ref={fileRef} type="file" accept={ACCEPT} className="sr-only" tabIndex={-1} aria-label="CV file" onChange={(e) => e.target.files?.[0] && void upload(e.target.files[0])} />
                   <div className="cv-row">
+                    <BtnLink kind="primary" href={`/cv/v/${cv.id}/talk`} onClick={() => void flush()}>
+                      Talk it through
+                    </BtnLink>
                     {tab.key !== "contact" && <Btn onClick={() => go("contact")}>Add contact details</Btn>}
                     <Btn busy={!!stage} onClick={() => fileRef.current?.click()}>
                       {stage ? "Working…" : `Upload a ${word}`}
@@ -445,7 +452,10 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
                     <BtnLink href={`/cv/v/${cv.id}/capture/new`} onClick={() => void flush()}>
                       Start a role from notes
                     </BtnLink>
-                    <small>Answer three questions in your own words, typed or spoken, and choose which lines to keep.</small>
+                    <BtnLink href={`/cv/v/${cv.id}/talk`} onClick={() => void flush()}>
+                      Talk it through
+                    </BtnLink>
+                    <small>Answer three questions about one role, or talk through all of your work with the assistant. Typed or spoken.</small>
                   </div>
                 )}
                 {tab.section.kind === "summary" && <ProfileChooser section={tab.section} say={say} />}

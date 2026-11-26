@@ -2246,3 +2246,86 @@ select.cv-mini option,
   background: var(--surface-hover);
   color: var(--color-ink);
 }
+
+/* ------------------------------------------------- Talk it through (CV assistant) */
+.cv-talk {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-control);
+  padding: 18px 20px;
+}
+.cv-talk-head { display: flex; gap: 12px; align-items: flex-start; justify-content: space-between; }
+.cv-talk-head h2 { font-size: 18px; font-weight: 650; margin: 0 0 4px; }
+.cv-talk-head p { font-size: 13px; margin: 0; }
+.cv-talk-log {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: min(62vh, 640px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.cv-msg {
+  max-width: 92%;
+  padding: 11px 14px;
+  border-radius: 14px;
+  font-size: 14.5px;
+  line-height: 1.5;
+}
+/* Only the newest message rises in: showing the conversation again (Chat after Paper) doesn't replay every one. */
+.cv-msg:last-child { animation: cv-rise 0.2s ease-out both; }
+.cv-msg p { margin: 0; }
+.cv-msg p + p, .cv-msg ul + p, .cv-msg details + p, .cv-msg p + ul { margin-top: 8px; }
+.cv-msg[data-who="you"] {
+  align-self: flex-end;
+  background: var(--color-blue-fill);
+  color: #ffffff;
+  border-bottom-right-radius: 4px;
+}
+.cv-msg[data-who="assistant"] {
+  align-self: flex-start;
+  background: var(--color-panel-2);
+  color: var(--color-ink);
+  border: 1px solid var(--color-line);
+  border-bottom-left-radius: 4px;
+}
+.cv-msg .cv-row { margin-top: 8px; }
+.cv-msg .cv-row:empty { display: none; }
+.cv-msg-tag { opacity: 0.8; font-size: 12px; }
+.cv-msg-ask { font-weight: 600; }
+.cv-msg-note { font-size: 13px; color: var(--color-muted); }
+.cv-msg-busy { color: var(--color-muted); font-style: italic; }
+.cv-msg-changes {
+  margin: 8px 0 0;
+  padding: 8px 10px 8px 26px;
+  border-left: 3px solid var(--success);
+  background: var(--success-surface);
+  border-radius: 8px;
+  font-size: 13px;
+}
+.cv-msg-changes[data-undone="true"] { opacity: 0.55; text-decoration: line-through; border-left-color: var(--color-line); background: transparent; }
+.cv-msg-changes li + li { margin-top: 4px; }
+.cv-msg-changes .cv-link { text-align: left; color: var(--color-ink); }
+.cv-msg-left { margin-top: 8px; font-size: 13px; color: var(--color-muted); }
+.cv-msg-left summary { cursor: pointer; color: var(--warning); }
+.cv-msg-left ul { margin: 6px 0 0; padding-left: 18px; }
+.cv-talk-compose { display: flex; flex-direction: column; gap: 10px; border-top: 1px solid var(--color-line); padding-top: 14px; }
+.cv-talk-compose textarea { resize: vertical; min-height: 76px; }
+.cv-talk-compose .cv-check { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--color-muted); cursor: pointer; }
+.cv-level { width: 72px; height: 6px; border-radius: 3px; background: var(--color-line); overflow: hidden; display: inline-block; }
+.cv-level > span { display: block; height: 100%; background: var(--success); transform-origin: left center; transition: transform 0.08s linear; }
+@media (max-width: 767px) {
+  .cv-talk { padding: 14px 14px; }
+  .cv-msg { max-width: 100%; }
+  .cv-talk-log { max-height: none; }
+  .cv-talk-compose .cv-check { margin-left: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cv-msg:last-child { animation: none; }
+}

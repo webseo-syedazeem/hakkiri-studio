@@ -15,7 +15,7 @@ const LEVEL_HELP: Record<CvLevel, string> = {
   senior: "Leading a function, a department or an organisation.",
 };
 
-type Method = "empty" | "example" | "linkedin" | "upload" | "paste" | "notes";
+type Method = "empty" | "example" | "linkedin" | "upload" | "paste" | "notes" | "talk";
 
 /**
  * Set-up: four questions before any CV exists. What it is called, the level,
@@ -81,11 +81,11 @@ export function Setup() {
         router.push(`/cv/v/${res.id}/edit/contact`);
         return;
       }
-      if (method === "empty" || method === "notes") {
+      if (method === "empty" || method === "notes" || method === "talk") {
         setStage("creating");
         const { id } = await api<{ id: string }>("/api/cv/versions", { method: "POST", json: setup });
-        // From notes: straight to the three questions about one role. The CV itself still starts empty.
-        router.push(method === "notes" ? `/cv/v/${id}/capture/new` : `/cv/v/${id}/edit/contact`);
+        // From notes: straight to the three questions about one role. Talking: straight to the assistant. The CV itself still starts empty.
+        router.push(method === "notes" ? `/cv/v/${id}/capture/new` : method === "talk" ? `/cv/v/${id}/talk` : `/cv/v/${id}/edit/contact`);
         return;
       }
       const form = new FormData();
@@ -114,6 +114,8 @@ export function Setup() {
       ? "Import from LinkedIn"
       : method === "notes"
       ? "Start with notes"
+      : method === "talk"
+      ? "Start talking"
       : method === "paste"
       ? "Read this text"
       : file
@@ -443,15 +445,21 @@ export function Setup() {
               </label>
 
               <label className="cv-choice">
-                <input type="radio" name="method" checked={method === "notes"} onChange={() => setMethod("notes")} />
+                <input type="radio" name="method" checked={method === "talk"} onChange={() => setMethod("talk")} data-testid="method-talk" />
                 <span>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <b style={{ display: "block", fontWeight: 600 }}>Speak to build (AI Voice Interview)</b>
-                    <span className="cv-chip" style={{ fontSize: 10, fontWeight: 700, color: "#83d5b4", background: "rgba(131, 213, 180, 0.12)", borderColor: "rgba(131, 213, 180, 0.3)" }}>
-                      🎙️ Voice AI
-                    </span>
+                    <b style={{ display: "block", fontWeight: 600 }}>Talk it through with the CV assistant</b>
+                    <span className="cv-chip">Chat or speak</span>
                   </div>
-                  <small>Answer questions about your work in your own spoken words. AI automatically drafts high-impact, verified bullets for your CV.</small>
+                  <small>Tell it about your work, typed or spoken. It writes your CV beside you as you go, in plain words that screening software and recruiters read well, and asks for a number rather than guessing one.</small>
+                </span>
+              </label>
+
+              <label className="cv-choice">
+                <input type="radio" name="method" checked={method === "notes"} onChange={() => setMethod("notes")} />
+                <span>
+                  <b style={{ display: "block", fontWeight: 600 }}>Answer three questions about one job</b>
+                  <small>Say or type what you did, what changed and a number you stand behind. You choose which of the drafted lines to keep.</small>
                 </span>
               </label>
 

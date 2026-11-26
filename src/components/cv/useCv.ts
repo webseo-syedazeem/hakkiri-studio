@@ -228,12 +228,16 @@ export function useCv(id: string) {
     [schedule],
   );
 
-  /** Changes the CV. The screen updates at once; the save follows. Each change is a step that can be undone. */
+  /**
+   * Changes the CV. The screen updates at once; the save follows. Each change is a step that can be undone.
+   * `step: true` makes it a step of its own even while a field has the cursor (the assistant's edits, made
+   * while the person's cursor is still in the message box).
+   */
   const update = useCallback(
-    (changes: Partial<Editable>) => {
+    (changes: Partial<Editable>, opts?: { step?: boolean }) => {
       const doc = latest.current;
       if (!doc) return;
-      setHistory(record(history.current, doc, typingKey(), Date.now()));
+      setHistory(record(history.current, doc, opts?.step ? "" : typingKey(), Date.now()));
       put(changes);
     },
     [put],
@@ -332,7 +336,10 @@ export function useCv(id: string) {
     };
   }, [flush]);
 
-  return { cv, load, save, saveError, saveNote, troubled, files, update, flush, settle, retry: () => schedule(0), undo, redo, canUndo: steps.undo > 0, canRedo: steps.redo > 0, other, keepMine, takeTheirs, saveSeparate };
+  /** The CV with every change made so far, including ones made since the screen was last drawn. */
+  const current = useCallback(() => latest.current, []);
+
+  return { cv, load, save, saveError, saveNote, troubled, files, update, flush, settle, current, retry: () => schedule(0), undo, redo, canUndo: steps.undo > 0, canRedo: steps.redo > 0, other, keepMine, takeTheirs, saveSeparate };
 }
 
 export const SAVE_WORDS: Record<SaveState, string> = {
