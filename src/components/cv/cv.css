@@ -3161,3 +3161,6 @@ html:not(.dark):not([data-theme="dark"]) .cv .cv-bar.cv-bar-plain {
   .cv .cv-report-side > [data-testid$="-score"], .cv .cv-report-side > .cv-score-note { order: -1; }
   .cv .cv-report-side > .cv-nextpanel { order: 10; }
 }
+
+/* v2 light: muted text is #48566a, which keeps 4.5:1 on tinted panels as well as on white. */
+html:not(.dark):not([data-theme="dark"]) .cv { --text-muted: #48566a; --color-muted: #48566a; }

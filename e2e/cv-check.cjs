@@ -81,7 +81,7 @@ run("CV check", async (browser) => {
   check(/Responsible for social media/.test(await fixes.innerText()), "a fix quotes the exact words it is about");
   const readBack = page.getByTestId("read-back");
   check(/Not checked/.test(await readBack.innerText()) && (await readBack.getByRole("link", { name: "Check file" }).isVisible()), "pasted text: how software reads the file is “Not checked”, with a way to check a file");
-  check(await page.getByRole("link", { name: "Fix this in the builder" }).isVisible(), "“Fix this in the builder” is the main action");
+  check(await page.getByRole("link", { name: "Fix this in the builder" }).first().isVisible() && (await page.getByRole("link", { name: "Fix this in the builder" }).first().getAttribute("class")).includes("cv-btn-primary"), "“Fix this in the builder” is the main action");
   await bothThemes(page, "check-report");
 
   // Against a job.
