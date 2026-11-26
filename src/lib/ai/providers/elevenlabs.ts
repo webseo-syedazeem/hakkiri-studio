@@ -12,20 +12,21 @@ export type VoiceName = "easy" | "medium" | "hard";
 
 export const ELEVENLABS_MODEL = process.env.ELEVENLABS_MODEL || "eleven_flash_v2_5";
 
-/** ElevenLabs' premade voices: Sarah (soft, friendly), George (warm, British), Daniel (steady, British). */
+/** ElevenLabs' premade voices: Sarah (warm, articulate British female - default), Daniel (steady British male). */
 export const VOICES: Record<VoiceName, { id: string; name: string }> = {
   easy: { id: process.env.ELEVENLABS_VOICE_EASY || "EXAVITQu4vr4xnSDxMaL", name: "Sarah" },
-  medium: { id: process.env.ELEVENLABS_VOICE_MEDIUM || "JBFqnCBsd6RMkjVDRZzb", name: "George" },
+  medium: { id: process.env.ELEVENLABS_VOICE_MEDIUM || "EXAVITQu4vr4xnSDxMaL", name: "Sarah" },
   hard: { id: process.env.ELEVENLABS_VOICE_HARD || "onwK4e9ZLuTAKqWW03F9", name: "Daniel" },
 };
 
-/** Conversational settings with natural inflection, dynamic prosody, and micro-pause sensitivity.
- * Lower stability (0.30-0.35) enables natural breathing, pitch variations, and human-like pauses.
+/** Conversational settings with natural prosody and stable vocal delivery.
+ * Optimal stability (0.55-0.65) and zero style exaggeration eliminate voice cracking,
+ * audio cuts, and mid-sentence syllable loss.
  */
 const SETTINGS: Record<VoiceName, { stability: number; similarity_boost: number; style: number; use_speaker_boost: boolean }> = {
-  easy: { stability: 0.35, similarity_boost: 0.72, style: 0.32, use_speaker_boost: true },
-  medium: { stability: 0.32, similarity_boost: 0.70, style: 0.30, use_speaker_boost: true },
-  hard: { stability: 0.38, similarity_boost: 0.75, style: 0.25, use_speaker_boost: true },
+  easy: { stability: 0.55, similarity_boost: 0.80, style: 0.0, use_speaker_boost: true },
+  medium: { stability: 0.58, similarity_boost: 0.80, style: 0.0, use_speaker_boost: true },
+  hard: { stability: 0.65, similarity_boost: 0.85, style: 0.0, use_speaker_boost: true },
 };
 
 export const elevenLabsKey = () => process.env.ELEVENLABS_API_KEY ?? "";
@@ -38,7 +39,7 @@ export async function synthesise(text: string, voice: VoiceName, apiKey: string)
     method: "POST",
     headers: { "xi-api-key": apiKey, "content-type": "application/json", accept: "audio/mpeg" },
     body: JSON.stringify({ text, model_id: ELEVENLABS_MODEL, voice_settings: SETTINGS[voice] }),
-    signal: AbortSignal.timeout(10_000),
+    signal: AbortSignal.timeout(20_000),
   });
   if (!res.ok) throw new ProviderError("elevenlabs", res.status, (await res.text().catch(() => "")).slice(0, 300));
   return res.arrayBuffer();

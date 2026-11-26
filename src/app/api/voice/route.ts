@@ -71,7 +71,7 @@ export async function POST(req: Request) {
     // Generous timeout so cloud voice synthesis completes reliably and caches
     const audio = await Promise.race([
       synthPromise,
-      new Promise<ArrayBuffer>((_, reject) => setTimeout(() => reject(new Error("Voice synthesis timed out")), 9000)),
+      new Promise<ArrayBuffer>((_, reject) => setTimeout(() => reject(new Error("Voice synthesis timed out")), 20000)),
     ]);
     memVoiceCache.set(hash, audio);
     saveFile(file, audio);

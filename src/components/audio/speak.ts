@@ -21,7 +21,7 @@ type Speech = { done: Promise<void>; cancel: () => void };
 let natural: "unknown" | "on" | "off" = "unknown";
 let failures = 0;
 /** Generous wait time so cloud voice synthesis completes reliably without prematurely aborting. */
-const NATURAL_WAIT_MS = 14000;
+const NATURAL_WAIT_MS = 22000;
 
 /** In-memory object URL cache for prefetched question audio. */
 const audioBlobCache = new Map<string, string>();
@@ -202,15 +202,30 @@ export function speak(text: string, opts: SpeakOptions = {}): Speech {
     audio.src = preloadedUrl;
     audio.playbackRate = opts.rate ?? 1;
     let stuck: ReturnType<typeof setTimeout> | undefined;
+    const resetWatchdog = () => {
+      clearTimeout(stuck);
+      // Generous watchdog: only triggers if audio has completely frozen/stalled for 30 seconds
+      stuck = setTimeout(end, 30000);
+    };
     const end = () => {
       clearTimeout(stuck);
       finish();
     };
-    audio.onplay = () => opts.onStart?.();
+    audio.onplay = () => {
+      opts.onStart?.();
+      resetWatchdog();
+    };
+    audio.ontimeupdate = () => {
+      // Actively advancing playback: never cut off mid-speech
+      resetWatchdog();
+    };
+    audio.onpause = () => {
+      clearTimeout(stuck);
+    };
     audio.onended = end;
     audio.onerror = end;
     audio.onloadedmetadata = () => {
-      if (Number.isFinite(audio.duration)) stuck = setTimeout(end, (audio.duration / audio.playbackRate) * 1000 + 3000);
+      resetWatchdog();
     };
     setCancel(() => {
       audio.pause();
@@ -232,15 +247,28 @@ export function speak(text: string, opts: SpeakOptions = {}): Speech {
         audio.src = url;
         audio.playbackRate = opts.rate ?? 1;
         let stuck: ReturnType<typeof setTimeout> | undefined;
+        const resetWatchdog = () => {
+          clearTimeout(stuck);
+          stuck = setTimeout(end, 30000);
+        };
         const end = () => {
           clearTimeout(stuck);
           finish();
         };
-        audio.onplay = () => opts.onStart?.();
+        audio.onplay = () => {
+          opts.onStart?.();
+          resetWatchdog();
+        };
+        audio.ontimeupdate = () => {
+          resetWatchdog();
+        };
+        audio.onpause = () => {
+          clearTimeout(stuck);
+        };
         audio.onended = end;
         audio.onerror = end;
         audio.onloadedmetadata = () => {
-          if (Number.isFinite(audio.duration)) stuck = setTimeout(end, (audio.duration / audio.playbackRate) * 1000 + 3000);
+          resetWatchdog();
         };
         setCancel(() => {
           audio.pause();
@@ -280,17 +308,29 @@ export function speak(text: string, opts: SpeakOptions = {}): Speech {
       audio.src = url;
       audio.playbackRate = opts.rate ?? 1;
       let stuck: ReturnType<typeof setTimeout> | undefined;
+      const resetWatchdog = () => {
+        clearTimeout(stuck);
+        stuck = setTimeout(end, 30000);
+      };
       const end = () => {
         clearTimeout(stuck);
         URL.revokeObjectURL(url);
         finish();
       };
-      audio.onplay = () => opts.onStart?.();
+      audio.onplay = () => {
+        opts.onStart?.();
+        resetWatchdog();
+      };
+      audio.ontimeupdate = () => {
+        resetWatchdog();
+      };
+      audio.onpause = () => {
+        clearTimeout(stuck);
+      };
       audio.onended = end;
       audio.onerror = end;
-      // If playback stalls and never ends, don't hang the interview.
       audio.onloadedmetadata = () => {
-        if (Number.isFinite(audio.duration)) stuck = setTimeout(end, (audio.duration / audio.playbackRate) * 1000 + 3000);
+        resetWatchdog();
       };
       setCancel(() => {
         audio.pause();

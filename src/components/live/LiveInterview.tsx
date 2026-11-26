@@ -184,14 +184,18 @@ export function LiveInterview(p: LiveInterviewProps) {
       }
     }
   };
-  /** The interviewer's voice follows the difficulty (a firmer voice when it gets tougher), with female personas mapped to Athena/Sarah. */
-  const isFemale = (n: string) => {
+  /** The interviewer's voice: consistent female persona (Sarah) by default, or steady male persona (Daniel) if explicitly male. */
+  const isExplicitlyMale = (n: string) => {
     const s = (n || "").toLowerCase();
-    return s.includes("dana") || s.includes("sarah") || s.includes("athena") || s.includes("alex") || s.includes("emily") || s.includes("rachel") || s.includes("claire") || s.includes("lisa") || s.includes("anna");
+    return s.includes("daniel") || s.includes("george") || s.includes("david") || s.includes("james") || s.includes("michael") || s.includes("john") || s.includes("robert") || s.includes("william") || s.includes("richard") || s.includes("thomas") || s.includes("charles") || s.includes("mark");
   };
-  const voiceName = useRef<VoiceName>(isFemale(p.interviewer.name) ? "easy" : voiceFor(p.interviewer.style));
+  const resolveInterviewerVoice = (n: string, s: InterviewerStyle): VoiceName => {
+    if (isExplicitlyMale(n)) return s === "friendly" ? "easy" : "hard";
+    return "medium";
+  };
+  const voiceName = useRef<VoiceName>(resolveInterviewerVoice(p.interviewer.name, p.interviewer.style));
   useEffect(() => {
-    voiceName.current = isFemale(p.interviewer.name) ? "easy" : voiceFor(style);
+    voiceName.current = resolveInterviewerVoice(p.interviewer.name, style);
   }, [style, p.interviewer.name]);
   const [scoredCount, setScoredCount] = useState(0);
   const [feedback, setFeedback] = useState<{ result: Scored; question: typeof q; last: boolean } | null>(null);

@@ -77,14 +77,12 @@ export const DEEPGRAM_VOICES: Record<"easy" | "medium" | "hard", { id: string; n
  */
 export function paceTextForSpeech(text: string): string {
   let paced = text.trim();
-  // Natural pause after conversational openers (e.g. "Right...", "Okay...")
-  paced = paced.replace(/^(Right|Okay|So|Now|Well|Great|Sure),?\s+/i, "$1... ");
-  // Natural pause between distinct sentences (period or question mark followed by capital letter)
-  paced = paced.replace(/([.?!])\s+(?=[A-Z])/g, "$1 ... ");
+  // Natural pause after conversational openers
+  paced = paced.replace(/^(Right|Okay|So|Now|Well|Great|Sure),?\s+/i, "$1, ");
   // Breathing space around em-dashes
-  paced = paced.replace(/\s*—\s*/g, " — ");
+  paced = paced.replace(/\s*—\s*/g, ", ");
   // Clean up any double/excessive punctuation
-  paced = paced.replace(/\.{4,}/g, "...").replace(/(\.\.\.\s*){2,}/g, "... ");
+  paced = paced.replace(/\.{2,}/g, ".");
   return paced;
 }
 

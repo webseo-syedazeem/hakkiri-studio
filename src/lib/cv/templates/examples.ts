@@ -4,6 +4,7 @@ import {
   type CvRegion,
   type Entry,
   type Section,
+  isEntrySection,
   newBullet,
   newId,
 } from "@/lib/cv/schema";
@@ -1608,18 +1609,23 @@ export function instantiateTemplate(
 ): CvDoc {
   const now = new Date().toISOString();
   const rawSections = template.getSections();
-  const sanitizedSections = rawSections.map((sec) => ({
-    ...sec,
-    entries: (sec.entries || []).map((e) => {
-      const isCurrent = Boolean(e.current || (e.end && e.end.toLowerCase() === "present"));
+  const sanitizedSections: Section[] = rawSections.map((sec) => {
+    if (isEntrySection(sec)) {
       return {
-        ...e,
-        start: normalizePartialDate(e.start),
-        end: isCurrent ? "" : normalizePartialDate(e.end),
-        current: isCurrent,
+        ...sec,
+        entries: sec.entries.map((e) => {
+          const isCurrent = Boolean(e.current || (e.end && e.end.toLowerCase() === "present"));
+          return {
+            ...e,
+            start: normalizePartialDate(e.start),
+            end: isCurrent ? "" : normalizePartialDate(e.end),
+            current: isCurrent,
+          };
+        }),
       };
-    }),
-  }));
+    }
+    return sec;
+  });
 
   return {
     id: newId("cv_"),
