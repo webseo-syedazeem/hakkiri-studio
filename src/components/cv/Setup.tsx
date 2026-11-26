@@ -216,10 +216,15 @@ export function Setup() {
 
               {method === "example" && (
                 <div className="cv-stack" style={{ padding: "12px 0" }}>
-                  <span className="cv-label" style={{ marginBottom: 6, color: "#f1f1f4" }}>
-                    Choose an industry template
-                  </span>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                    <span className="cv-label" style={{ margin: 0, color: "#f1f1f4" }}>
+                      Choose an industry template ({EXAMPLE_TEMPLATES.length} ATS templates available)
+                    </span>
+                    <a href="/cv/examples" target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: "#93c5fd", textDecoration: "underline" }}>
+                      View all in gallery ↗
+                    </a>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 420, overflowY: "auto", paddingRight: 4 }}>
                     {EXAMPLE_TEMPLATES.map((tpl) => (
                       <div
                         key={tpl.id}
@@ -440,8 +445,13 @@ export function Setup() {
               <label className="cv-choice">
                 <input type="radio" name="method" checked={method === "notes"} onChange={() => setMethod("notes")} />
                 <span>
-                  <b style={{ display: "block", fontWeight: 600 }}>Speak or type</b>
-                  <small>Answer three questions about a role in your own words. Your bullets are written from what you say.</small>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <b style={{ display: "block", fontWeight: 600 }}>Speak to build (AI Voice Interview)</b>
+                    <span className="cv-chip" style={{ fontSize: 10, fontWeight: 700, color: "#83d5b4", background: "rgba(131, 213, 180, 0.12)", borderColor: "rgba(131, 213, 180, 0.3)" }}>
+                      🎙️ Voice AI
+                    </span>
+                  </div>
+                  <small>Answer questions about your work in your own spoken words. AI automatically drafts high-impact, verified bullets for your CV.</small>
                 </span>
               </label>
 

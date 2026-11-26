@@ -178,9 +178,9 @@ export function Dashboard() {
               </p>
               <div className="cv-row" style={{ justifyContent: "center", marginTop: 18 }}>
                 <BtnLink kind="primary" href="/cv/new">
-                  New CV
+                  + New CV
                 </BtnLink>
-                <BtnLink href="/cv/examples">Browse Example Resumes</BtnLink>
+                <BtnLink href="/cv/examples">Browse 13+ Example Resumes</BtnLink>
                 <BtnLink href="/cv-audit">Free CV audit</BtnLink>
               </div>
             </div>

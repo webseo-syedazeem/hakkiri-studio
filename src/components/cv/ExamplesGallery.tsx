@@ -13,7 +13,7 @@ export function ExamplesGallery() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string>("");
 
-  const categories = ["All", "Technology", "Product", "Healthcare", "Marketing", "Finance"];
+  const categories = ["All", "Technology", "Product", "Business", "Marketing", "Finance", "Healthcare", "Student"];
 
   const filtered =
     selectedCategory === "All"
