@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import type { CheckReport as Report, CvFinding, CvReport, JobReport } from "@/lib/cv/check/report";
+import type { Band, CheckReport as Report, CvFinding, CvReport, JobReport } from "@/lib/cv/check/report";
 import type { LetterCheck } from "@/lib/cv/letter/score";
 import { api, messageOf } from "./client";
+import { ScoreRing } from "./ScoreRing";
 import { Bar, Btn, BtnLink, CvScreen, Panel, Skeleton, Toolbar } from "./ui";
 
 interface Loaded {
@@ -18,14 +19,11 @@ interface Loaded {
 const STATE_WORDS: Record<LetterCheck["state"], string> = { ok: "OK", review: "To review", "not-checked": "Not checked" };
 const dateWords = (iso: string) => new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
 
-function ScoreBox({ title, shown, band, parts, testId }: { title: string; shown: number; band: string; parts: { id: string; name: string; points: number; earned: number; pending: number }[]; testId: string }) {
+function ScoreBox({ title, shown, band, parts, testId }: { title: string; shown: number; band: Band; parts: { id: string; name: string; points: number; earned: number; pending: number }[]; testId: string }) {
   return (
     <Panel title={title} aside={<span className="cv-chip">{band}</span>} data-testid={testId}>
       <div className="cv-pad cv-stack">
-        <p className="cv-score-number" aria-label={`${title}: ${shown} out of 100, ${band}`}>
-          {shown}
-          <small> / 100</small>
-        </p>
+        <ScoreRing score={shown} band={band} label={title} />
         <ul className="cv-score-parts">
           {parts.map((p) => {
             const unchecked = p.pending >= p.points;
@@ -402,7 +400,7 @@ export function CheckReport({ id }: { id: string }) {
 function NextSteps({ hasJob, docType }: { hasJob: boolean; docType: Report["docType"] }) {
   return (
     <Panel title="Next steps">
-      <div className="cv-pad cv-stack">
+      <div className="cv-pad cv-nextsteps">
         {!hasJob && (
           <Link className="cv-link" href={`/cv/check?job=1${docType === "cv" ? "" : `&type=${docType}`}`}>
             Check against a job

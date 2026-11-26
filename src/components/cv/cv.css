@@ -2871,3 +2871,22 @@ p.cv-talk-callout { display: flex; align-items: flex-start; gap: 7px; }
 .cv-sharetoggle { gap: 10px; font-weight: 600; min-height: 44px; cursor: pointer; }
 .cv-sharetoggle input { width: 20px; height: 20px; accent-color: var(--color-blue); }
 .cv-issue-box { border: 1px solid var(--cv-edge); border-left: 3px solid var(--color-red); border-radius: 11px; padding: 12px 14px; margin-top: 12px; }
+
+/* ------------------------------------------------ The score ring */
+.cv-scorering { --ring: var(--color-blue); display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.cv-scorering[data-band="strong"] { --ring: var(--success); }
+.cv-scorering[data-band="low"] { --ring: var(--warning); }
+.cv-ring { position: relative; flex: none; }
+.cv-ring svg { display: block; }
+.cv-ring-track { stroke: var(--cv-edge); }
+.cv-ring-arc { stroke: var(--ring); animation: cv-ring-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.cv-ring-mark { stroke: var(--color-muted); opacity: 0.7; }
+.cv-ring-number { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; }
+.cv-ring-number b { font-size: 38px; font-weight: 700; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.cv-ring-number small { font-size: 13px; color: var(--color-muted); margin-top: 4px; }
+.cv-ring-words { display: grid; gap: 4px; min-width: 0; }
+.cv-ring-band { font-size: 18px; font-weight: 650; color: var(--ring); }
+.cv-ring-band::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--ring); margin-right: 8px; vertical-align: 2px; }
+@keyframes cv-ring-in { from { stroke-dasharray: 0 var(--ring-length); } }
+@media (prefers-reduced-motion: reduce) { .cv-ring-arc { animation: none; } }
+.cv-nextsteps { display: grid; gap: 10px; justify-items: start; }
