@@ -30,7 +30,7 @@ export function ExamplesGallery() {
       });
       router.push(`/cv/v/${res.id}/edit/contact`);
     } catch (err) {
-      if (err instanceof ApiError && err.status === 401) {
+      if (err instanceof ApiError && (err.status === 401 || err.code === "unauthorised")) {
         router.push("/login?next=/cv/examples");
         return;
       }

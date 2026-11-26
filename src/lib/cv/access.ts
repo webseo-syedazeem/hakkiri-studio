@@ -19,6 +19,13 @@ export const badInput = (message: string, fields: Record<string, string> = {}) =
 /** Turns a thrown value into a response: the 401 from requireUser passes through; anything else is logged and hidden. */
 export function failure(where: string, err: unknown, message: string) {
   if (err instanceof Response) return err;
+  if (err && typeof err === "object" && "status" in err && typeof (err as { status: unknown }).status === "number") {
+    const status = (err as { status: number }).status;
+    if (status === 401) {
+      return NextResponse.json({ error: "unauthorised", message: "You must be signed in to perform this action." }, { status: 401 });
+    }
+    return err as unknown as Response;
+  }
   console.error(`[${where}]`, err);
   return NextResponse.json({ error: "server_error", message }, { status: 500 });
 }
