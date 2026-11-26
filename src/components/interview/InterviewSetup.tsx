@@ -9,6 +9,7 @@ import { pastedDocument, readDocument, type ReadDoc } from "./read-docs";
 import { CalendarPopup, TimePickerPopup } from "./DatePicker";
 import { DraftStorageModal } from "./DraftStorageModal";
 import { buildRequest, focusMix, hasDraftContent, mixLine, roundsSelected as existingRounds, setupProblems, type SetupForm } from "@/lib/interviews/setup-form";
+import { FOCUS_CATEGORIES, getSuggestedWeights, weightsLine, type FocusCategoryKey } from "@/lib/interviews/settings";
 import { formatStageDate } from "@/lib/format";
 
 /* ------------------------------------------------------------------ DocField (exported for RebuildFlow) */
@@ -539,12 +540,23 @@ export function InterviewSetup() {
 
   // Step 3: Practice Setup State
   const [selectedRounds, setSelectedRounds] = useState<string[]>(["1"]); // the one stage a new form starts with
+  const [interviewStyle, setInterviewStyle] = useState<"recommended" | "custom">("recommended");
+  const [categoryWeights, setCategoryWeights] = useState<Record<FocusCategoryKey, number>>(() =>
+    getSuggestedWeights(jobTitle, jobDoc?.text || jobPastedText)
+  );
   const [techFocus, setTechFocus] = useState(50);
   const [skillsFocus, setSkillsFocus] = useState(30);
   const [expFocus, setExpFocus] = useState(20);
   const [difficulty, setDifficulty] = useState<"Easy" | "Medium" | "Hard">("Medium");
   const [duration, setDuration] = useState<10 | 20 | 30 | 45>(30);
   const [advancedOpen, setAdvancedOpen] = useState(false);
+
+  // Keep suggested categories in sync with job advert when on recommended style
+  useEffect(() => {
+    if (interviewStyle === "recommended") {
+      setCategoryWeights(getSuggestedWeights(jobTitle, jobDoc?.text || jobPastedText));
+    }
+  }, [jobTitle, jobDoc, jobPastedText, interviewStyle]);
 
   // Loading & Submission State
   const [isBuilding, setIsBuilding] = useState(false);
@@ -580,6 +592,8 @@ export function InterviewSetup() {
         }
         if (parsed.stages && Array.isArray(parsed.stages) && parsed.stages.length > 0) setStages(parsed.stages);
         if (parsed.selectedRounds) setSelectedRounds(parsed.selectedRounds);
+        if (parsed.interviewStyle) setInterviewStyle(parsed.interviewStyle);
+        if (parsed.categoryWeights) setCategoryWeights(parsed.categoryWeights);
         if (parsed.techFocus !== undefined) setTechFocus(parsed.techFocus);
         if (parsed.skillsFocus !== undefined) setSkillsFocus(parsed.skillsFocus);
         if (parsed.expFocus !== undefined) setExpFocus(parsed.expFocus);
@@ -615,12 +629,37 @@ export function InterviewSetup() {
     stages,
     difficulty,
     minutes: duration,
-    focus: { technical: techFocus, skills: skillsFocus, experience: expFocus },
+    focus: { technical: techFocus, skills: skillsFocus, experience: expFocus, categories: categoryWeights },
   };
   const problems = setupProblems(form);
   const mixToSend = focusMix(form.focus);
   const rounds = existingRounds(selectedRounds, stages);
   const missing = (field: "company" | "job" | "cv") => problems.some((p) => p.field === field);
+
+  const totalCategoryWeight = Object.values(categoryWeights).reduce((a, b) => a + b, 0);
+
+  const toggleCategory = (key: FocusCategoryKey) => {
+    setCategoryWeights((prev) => {
+      const currentVal = prev[key] || 0;
+      if (currentVal > 0) {
+        return { ...prev, [key]: 0 };
+      }
+      const currentSum = Object.values(prev).reduce((a, b) => a + b, 0);
+      const remaining = Math.max(5, 100 - currentSum);
+      const add = Math.min(20, Math.max(5, remaining));
+      return { ...prev, [key]: add };
+    });
+    setInterviewStyle("custom");
+  };
+
+  const adjustCategory = (key: FocusCategoryKey, delta: number) => {
+    setCategoryWeights((prev) => {
+      const currentVal = prev[key] || 0;
+      const nextVal = Math.max(5, Math.min(100, currentVal + delta));
+      return { ...prev, [key]: nextVal };
+    });
+    setInterviewStyle("custom");
+  };
 
   const validateStep1 = (): boolean => {
     const errs: { company?: string; title?: string; job?: string; cv?: string } = {};
@@ -673,6 +712,8 @@ export function InterviewSetup() {
       stagesExpectation,
       stages,
       selectedRounds,
+      interviewStyle,
+      categoryWeights,
       techFocus,
       skillsFocus,
       expFocus,
@@ -692,7 +733,7 @@ export function InterviewSetup() {
 
   // The draft is saved as the person goes, once there is something to save, so a refresh brings it back.
   // "Draft saved" is only ever shown after it really has been.
-  const draftSnapshot = JSON.stringify([companyName, jobTitle, companyWebsite, cvDoc, jobDoc, coverDoc, jobMode, jobUrl, jobPastedText, cvMode, cvPastedText, stagesExpectation, stages, selectedRounds, techFocus, skillsFocus, expFocus, difficulty, duration, step]);
+  const draftSnapshot = JSON.stringify([companyName, jobTitle, companyWebsite, cvDoc, jobDoc, coverDoc, jobMode, jobUrl, jobPastedText, cvMode, cvPastedText, stagesExpectation, stages, selectedRounds, interviewStyle, categoryWeights, techFocus, skillsFocus, expFocus, difficulty, duration, step]);
   useEffect(() => {
     if (!draftRead || isBuilding || !hasDraftContent(form)) return;
     const timer = setTimeout(() => {
@@ -2048,75 +2089,157 @@ export function InterviewSetup() {
                 </span>
               </div>
 
-              {/* Question Focus Sliders with Interactive Tracks */}
+              {/* Interview style (Client Image 6) */}
               <div className="mt-6 border-t border-line pt-5">
-                <h3 className="text-[14px] font-bold text-ink">Question focus</h3>
-                <p className="mt-0.5 text-xs text-muted">How much of each kind of question to write. The three are shared out of 100%.</p>
-                <p className="mt-1 text-xs text-ink" data-testid="mix-sent">
-                  Your questions will be: <b className="font-semibold">{mixLine(mixToSend)}</b>
-                </p>
-
-                <div className="mt-4 flex flex-col gap-4">
-                  {/* Technical Bar */}
-                  <div className="flex items-center gap-4">
-                    <span className="w-24 text-xs font-semibold text-ink shrink-0">Technical</span>
-                    <div className="relative h-3 grow rounded-full bg-[#171d32] overflow-hidden flex items-center">
-                      <div
-                        className="h-full rounded-full bg-[#6366f1] shadow-[0_0_10px_rgba(99,102,241,0.6)] transition-all duration-150"
-                        style={{ width: `${techFocus}%` }}
-                      />
-                      <input
-                        type="range"
-                        min={0}
-                        max={100}
-                        value={techFocus}
-                        onChange={(e) => setTechFocus(Number(e.target.value))}
-                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                      />
+                <h3 className="text-[14px] font-bold text-ink">Interview style</h3>
+                <div className="mt-3 flex flex-col gap-2">
+                  <label className="flex items-start gap-3 rounded-xl border border-white/[0.08] bg-panel-2/60 p-3.5 hover:border-white/20 transition-all cursor-pointer">
+                    <input
+                      type="radio"
+                      name="interviewStyle"
+                      value="recommended"
+                      checked={interviewStyle === "recommended"}
+                      onChange={() => {
+                        setInterviewStyle("recommended");
+                        setCategoryWeights(getSuggestedWeights(jobTitle, jobDoc?.text || jobPastedText));
+                      }}
+                      className="mt-0.5 h-4 w-4 text-indigo-500 accent-indigo-500 cursor-pointer"
+                    />
+                    <div>
+                      <span className="text-xs font-semibold text-ink">
+                        Recommended from job description
+                      </span>
+                      <span className="text-xs text-muted"> — Hakkiri chooses the relevant categories.</span>
                     </div>
-                    <span className="w-12 text-right text-xs font-bold text-ink num">{techFocus}%</span>
-                  </div>
+                  </label>
 
-                  {/* Skills Bar */}
-                  <div className="flex items-center gap-4">
-                    <span className="w-24 text-xs font-semibold text-ink shrink-0">Skills</span>
-                    <div className="relative h-3 grow rounded-full bg-[#171d32] overflow-hidden flex items-center">
-                      <div
-                        className="h-full rounded-full bg-[#6366f1] shadow-[0_0_10px_rgba(99,102,241,0.6)] transition-all duration-150"
-                        style={{ width: `${skillsFocus}%` }}
-                      />
-                      <input
-                        type="range"
-                        min={0}
-                        max={100}
-                        value={skillsFocus}
-                        onChange={(e) => setSkillsFocus(Number(e.target.value))}
-                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                      />
+                  <label className="flex items-start gap-3 rounded-xl border border-white/[0.08] bg-panel-2/60 p-3.5 hover:border-white/20 transition-all cursor-pointer">
+                    <input
+                      type="radio"
+                      name="interviewStyle"
+                      value="custom"
+                      checked={interviewStyle === "custom"}
+                      onChange={() => setInterviewStyle("custom")}
+                      className="mt-0.5 h-4 w-4 text-indigo-500 accent-indigo-500 cursor-pointer"
+                    />
+                    <div>
+                      <span className="text-xs font-semibold text-ink">Custom</span>
+                      <span className="text-xs text-muted"> — Choose your own categories and weighting.</span>
                     </div>
-                    <span className="w-12 text-right text-xs font-bold text-ink num">{skillsFocus}%</span>
-                  </div>
-
-                  {/* Experience Bar */}
-                  <div className="flex items-center gap-4">
-                    <span className="w-24 text-xs font-semibold text-ink shrink-0">Experience</span>
-                    <div className="relative h-3 grow rounded-full bg-[#171d32] overflow-hidden flex items-center">
-                      <div
-                        className="h-full rounded-full bg-[#6366f1] shadow-[0_0_10px_rgba(99,102,241,0.6)] transition-all duration-150"
-                        style={{ width: `${expFocus}%` }}
-                      />
-                      <input
-                        type="range"
-                        min={0}
-                        max={100}
-                        value={expFocus}
-                        onChange={(e) => setExpFocus(Number(e.target.value))}
-                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                      />
-                    </div>
-                    <span className="w-12 text-right text-xs font-bold text-ink num">{expFocus}%</span>
-                  </div>
+                  </label>
                 </div>
+              </div>
+
+              {/* Question Focus - 10 Categories with Checkboxes & Weighting (Client Image 7) */}
+              <div className="mt-6 border-t border-line pt-5">
+                <div className="flex flex-col gap-1">
+                  <h3 className="text-[14px] font-bold text-ink">Question focus</h3>
+                  <p className="text-xs text-muted">
+                    Choose the types of questions to include in your mock interview.
+                  </p>
+                </div>
+
+                <div className="mt-3 flex items-center justify-between gap-2 border-b border-white/[0.08] pb-3">
+                  <span className="text-xs text-muted truncate">
+                    {interviewStyle === "recommended"
+                      ? `Suggested for ${jobTitle.trim() || companyName.trim() || "Associate Product Manager"}`
+                      : "Customised question weighting"}
+                  </span>
+                  <span
+                    className={clsx(
+                      "shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-bold tracking-tight border transition-colors",
+                      totalCategoryWeight === 100
+                        ? "bg-emerald-950/80 border-emerald-500/40 text-emerald-400"
+                        : "bg-amber-950/80 border-amber-500/40 text-amber-300"
+                    )}
+                  >
+                    {totalCategoryWeight}% of 100%
+                  </span>
+                </div>
+
+                {/* 10 Category Checklist & Weighting Adjusters */}
+                <div className="mt-2 divide-y divide-white/[0.06]">
+                  {FOCUS_CATEGORIES.map((cat) => {
+                    const weight = categoryWeights[cat.key] || 0;
+                    const isChecked = weight > 0;
+                    return (
+                      <div key={cat.key} className="py-2.5 flex flex-col gap-1.5">
+                        <div className="flex items-center justify-between gap-3">
+                          {/* Round Checkbox + Category Name */}
+                          <button
+                            type="button"
+                            onClick={() => toggleCategory(cat.key)}
+                            className="flex items-center gap-3 text-left group cursor-pointer"
+                          >
+                            <div
+                              className={clsx(
+                                "h-5 w-5 rounded-full flex items-center justify-center border transition-all shrink-0",
+                                isChecked
+                                  ? "bg-white text-black border-white shadow-[0_0_8px_rgba(255,255,255,0.4)]"
+                                  : "border-white/30 bg-transparent group-hover:border-white/60"
+                              )}
+                            >
+                              {isChecked && (
+                                <Icon name="check" size={12} strokeWidth={3} className="text-slate-950" />
+                              )}
+                            </div>
+                            <span
+                              className={clsx(
+                                "text-xs font-semibold transition-colors",
+                                isChecked ? "text-ink" : "text-muted group-hover:text-ink"
+                              )}
+                            >
+                              {cat.label}
+                            </span>
+                          </button>
+
+                          {/* Adjuster [-] XX% [+] */}
+                          {isChecked ? (
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <button
+                                type="button"
+                                disabled={weight <= 5}
+                                onClick={() => adjustCategory(cat.key, -5)}
+                                aria-label={`Decrease ${cat.label} weighting`}
+                                className="h-6 w-6 rounded-full bg-white/[0.08] hover:bg-white/[0.18] active:scale-95 text-white disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center font-bold text-xs transition-all cursor-pointer"
+                              >
+                                −
+                              </button>
+                              <span className="w-9 text-center font-bold text-xs text-ink num">
+                                {weight}%
+                              </span>
+                              <button
+                                type="button"
+                                disabled={weight >= 100}
+                                onClick={() => adjustCategory(cat.key, 5)}
+                                aria-label={`Increase ${cat.label} weighting`}
+                                className="h-6 w-6 rounded-full bg-white/[0.08] hover:bg-white/[0.18] active:scale-95 text-white disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center font-bold text-xs transition-all cursor-pointer"
+                              >
+                                +
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-[11px] text-muted/60 select-none">Off</span>
+                          )}
+                        </div>
+
+                        {/* Progress Bar Track */}
+                        {isChecked && (
+                          <div className="h-1 w-full rounded-full bg-white/[0.06] overflow-hidden ml-8 max-w-[calc(100%-32px)]">
+                            <div
+                              className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-indigo-400 shadow-[0_0_8px_rgba(99,102,241,0.5)] transition-all duration-150"
+                              style={{ width: `${Math.min(100, weight)}%` }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <p className="mt-3 text-xs text-ink pt-2 border-t border-white/[0.06]" data-testid="mix-sent">
+                  Your questions will be: <b className="font-semibold">{weightsLine(categoryWeights)}</b>
+                </p>
               </div>
 
               {/* Controls Row: Difficulty & Duration */}
@@ -2505,7 +2628,11 @@ export function InterviewSetup() {
 
                 <div className="border-b border-line pb-2">
                   <span className="text-muted block mb-1">Question mix</span>
-                  <div className="text-[11px] text-ink">{mixLine(mixToSend)}</div>
+                  <div className="text-[11px] text-ink">
+                    {categoryWeights && Object.values(categoryWeights).some((v) => v > 0)
+                      ? weightsLine(categoryWeights)
+                      : mixLine(mixToSend)}
+                  </div>
                 </div>
 
                 <p className="text-[11px] text-muted">

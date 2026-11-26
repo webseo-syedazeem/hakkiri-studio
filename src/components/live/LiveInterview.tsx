@@ -454,7 +454,7 @@ export function LiveInterview(p: LiveInterviewProps) {
         } else next = queue.length;
       }
       const nextQ = queue[next];
-      if (!nextQ) {
+      if (!nextQ || nextQ.slot === "closing") {
         const signOff = style === "friendly"
           ? "Right, that brings us to the end of our session today! Thank you so much for your time and thoughtful answers — it was an absolute pleasure speaking with you."
           : "Right, that brings us to the end of our interview today. Thank you so much for your time and your answers — it was great speaking with you.";

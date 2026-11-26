@@ -464,11 +464,7 @@ export function PracticeHubClient({ interviews, initialInterviewId, initialType,
         )}
       </div>
 
-      <div className="mt-12 pt-8 border-t border-white/[0.08]" data-testid="hub-playbooks">
-        <QuestionPlaybooks role={current.role} company={current.company} />
-      </div>
-
-      <div className="mt-12 pt-8 border-t border-white/[0.08]">
+      <div id="hub-playbooks" className="mt-12 pt-8 border-t border-white/[0.08]" data-testid="hub-answering-guides">
         <AnsweringGuides />
       </div>
     </div>

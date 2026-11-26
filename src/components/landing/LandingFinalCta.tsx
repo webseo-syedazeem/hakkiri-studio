@@ -1,6 +1,11 @@
+"use client";
+
 import Link from "next/link";
+import { useAuth } from "@/lib/auth/AuthContext";
 
 export function LandingFinalCta() {
+  const { user } = useAuth();
+  const isLoggedIn = !!user?.id;
   return (
     <section aria-labelledby="final-h" className="py-12 sm:py-16">
       <div className="mx-auto w-full max-w-[1120px] px-4 sm:px-6 flex flex-col items-center text-center">
@@ -29,9 +34,9 @@ export function LandingFinalCta() {
         </p>
         <Link
           className="inline-flex items-center justify-center rounded-full bg-mk-cta font-medium text-white transition-all duration-200 hover:scale-[1.03] active:scale-[0.98] hover:bg-mk-cta-hover hover:shadow-lg hover:shadow-mk-cta/25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-mk-cta px-6 py-2.5 text-[15px] font-semibold mt-5"
-          href="/signup"
+          href={isLoggedIn ? "/dashboard" : "/signup"}
         >
-          Sign up free
+          {isLoggedIn ? "Go to Studio" : "Sign up free"}
         </Link>
         <p className="text-[14px] text-mk-slate mt-4">
           Free AI interview practice for a limited time. No card. Takes about two minutes.

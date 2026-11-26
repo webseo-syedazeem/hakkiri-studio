@@ -130,29 +130,35 @@ export function getConversationalBridge(
   }
 
   const realisticBridges = [
-    "Right, okay... thanks for sharing that. So, moving on to our next area — ",
-    "Great, thank you. That's really clear. Now... turning to another aspect of the role — ",
-    "Hmm, okay... understood. Um, let's touch on something a bit different now — ",
-    "Thanks for walking through that. So, next up — ",
-    "Right, lovely... looking at the next question here — ",
-    "Understood, thank you. Now... moving forward to our next scenario — ",
-    "Thanks for that thorough answer. So, turning now to — ",
+    "Right, okay... thanks for walking through that. So, moving on to our next question — ",
+    "Great, thank you. That makes complete sense. Now... turning to another aspect of the role — ",
+    "Understood, that gives really helpful context. Um, let's explore something a bit different now — ",
+    "Thanks for breaking that down. So... next up — ",
+    "Right, lovely... looking at our next question here — ",
+    "Got it, thank you. That's very clear. Now... moving forward to our next scenario — ",
+    "Fair enough, appreciate you sharing that. So... turning now to — ",
+    "Understood. Thanks for talking through that experience. Let's move on to — ",
+    "Right, okay... that's very helpful. Now... looking at the next area — ",
+    "Thanks for that thorough answer. So... turning to our next topic — ",
   ];
 
   const friendlyBridges = [
     "Brilliant, thank you! That was really insightful. So, let's move on to our next question — ",
     "Great, thanks for walking me through that! Now... looking at another part of the role — ",
-    "Lovely, thank you. Let's move on to the next question now — ",
+    "Lovely, thank you. That really highlights your approach. Let's move on to the next question now — ",
     "Right, thanks so much for sharing that! So, let's touch on our next topic — ",
-    "Understood, thank you. Um, exploring our next area now — ",
+    "Understood, that's super helpful! Um, exploring our next area now — ",
+    "Wonderful, thank you. That's very encouraging. Now... turning to — ",
+    "Thanks a lot for that detail! So, moving forward to — ",
   ];
 
   const toughBridges = [
     "Right, understood. Moving directly to the next scenario — ",
     "Okay. Let's move on to the next challenge — ",
-    "Understood. Turning now to the next question — ",
+    "Understood. Turning now to our next question — ",
     "Right. Let's look at another area — ",
     "Moving along to our next evaluation point — ",
+    "Understood. Shifting focus now to — ",
   ];
 
   const pool = style === "friendly" ? friendlyBridges : style === "tough" ? toughBridges : realisticBridges;
