@@ -1,6 +1,10 @@
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { wrongRegionSpelling } from "../score/detect";
 import { CV_TEMPLATES } from "../schema";
-import { BODY_SIZE, FAMILY_NAMES, TEMPLATES, TEMPLATE_FAMILIES, type TemplateDef, templateLabel } from "./templates";
+import { galleryItems } from "../templates/gallery";
+import { BODY_SIZE, FAMILY_NAMES, TEMPLATES, TEMPLATE_FAMILIES, type TemplateDef, catalogue, templateBySlug, templateLabel, templateMeta, templatePreview, templateSlug } from "./templates";
 
 const all = Object.values(TEMPLATES) as TemplateDef[];
 
@@ -42,5 +46,33 @@ describe("the template catalogue", () => {
       expect(t.order, t.name).not.toContain("custom");
       expect(t.tags.length, t.name).toBeGreaterThan(0);
     }
+  });
+
+  it("gives each a web address from its number and name, and finds it again", () => {
+    expect(templateSlug(TEMPLATES.harbour)).toBe("07-harbour");
+    expect(templateSlug(TEMPLATES["first-light"])).toBe("28-first-light");
+    const slugs = all.map(templateSlug);
+    expect(new Set(slugs).size).toBe(all.length);
+    for (const t of all) expect(templateBySlug(templateSlug(t))?.id).toBe(t.id);
+    expect(templateBySlug("07-hallmark")).toBeUndefined();
+    expect(catalogue().map((t) => t.no)).toEqual(Array.from({ length: all.length }, (_, i) => i + 1));
+  });
+
+  it("has a preview image for every template (scripts/template-previews.cjs)", () => {
+    for (const t of all) for (const size of ["large", "small"] as const) expect(existsSync(join(process.cwd(), "public", templatePreview(t, size))), templatePreview(t, size)).toBe(true);
+  });
+
+  it("words each template in the region's spelling for the UK and US galleries", () => {
+    for (const region of ["uk", "us"] as const) {
+      for (const item of galleryItems(region)) {
+        for (const text of [item.suits, ...item.tags]) expect(wrongRegionSpelling(text, region).filter((h) => !h.isTypo), `${region}: ${text}`).toEqual([]);
+      }
+      for (const t of all) {
+        const meta = templateMeta(t, region);
+        expect(wrongRegionSpelling(meta.description, region).filter((h) => !h.isTypo), meta.description).toEqual([]);
+        expect(meta.title).toContain(region === "us" ? "resume template" : "CV template");
+      }
+    }
+    expect(galleryItems("us").find((t) => t.id === "harbour")?.tags.join(" ")).not.toMatch(/colour|centred/);
   });
 });

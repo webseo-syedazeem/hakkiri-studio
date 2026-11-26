@@ -1,12 +1,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { type FormEvent, useRef, useState } from "react";
-import { CV_LEVELS, type CvLevel, type CvRegion, LEVEL_LABELS } from "@/lib/cv/schema";
+import { type FormEvent, useEffect, useRef, useState } from "react";
+import { TEMPLATES, templateLabel } from "@/lib/cv/render/templates";
+import { CV_LEVELS, CV_TEMPLATES, type CvLevel, type CvRegion, LEVEL_LABELS, type TemplateId } from "@/lib/cv/schema";
 import { EXAMPLE_TEMPLATES } from "@/lib/cv/templates/examples";
 import { ApiError, api, messageOf } from "./client";
 import { ACCEPT, STAGE_WORDS, UPLOAD_HELP, type UploadStage, sendUpload } from "./upload";
-import { Announce, Bar, Btn, CvScreen, Field, Panel, Toolbar } from "./ui";
+import { Announce, Bar, Btn, CvScreen, Field, Note, Panel, Toolbar } from "./ui";
 
 const LEVEL_HELP: Record<CvLevel, string> = {
   student: "Studying, or looking for a first professional role.",
@@ -42,6 +43,12 @@ export function Setup() {
   const [stage, setStage] = useState<UploadStage | "creating" | "">("");
   const formRef = useRef<HTMLFormElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  // A design chosen in the template gallery (/cv/new?template=harbour) comes along; it can be dropped here or changed later.
+  const [design, setDesign] = useState<TemplateId | null>(null);
+  useEffect(() => {
+    const t = new URLSearchParams(window.location.search).get("template");
+    if (t && (CV_TEMPLATES as readonly string[]).includes(t)) setDesign(t as TemplateId);
+  }, []);
 
   function check(): Record<string, string> {
     const e: Record<string, string> = {};
@@ -70,13 +77,13 @@ export function Setup() {
     setProblem("");
     if (Object.keys(found).length) return showErrors(found);
     setErrors({});
-    const setup = { name: name.trim(), level, region, targetTitle, targetEmployer, targetAdvert };
+    const setup = { name: name.trim(), level, region, targetTitle, targetEmployer, targetAdvert, ...(design ? { template: design } : {}) };
     try {
       if (method === "example") {
         setStage("creating");
         const res = await api<{ id: string }>("/api/cv/templates", {
           method: "POST",
-          json: { templateId: selectedTemplateId, name: name.trim(), region },
+          json: { templateId: selectedTemplateId, name: name.trim(), region, ...(design ? { template: design } : {}) },
         });
         router.push(`/cv/v/${res.id}/edit/contact`);
         return;
@@ -136,6 +143,11 @@ export function Setup() {
         <div className="cv-layout" style={{ gridTemplateColumns: "minmax(0, 640fr) minmax(0, 528fr)" }}>
           <Panel title="About this CV">
             <div className="cv-pad cv-stack">
+              {design && (
+                <Note label={`Design: ${templateLabel(TEMPLATES[design])}`} actions={<Btn onClick={() => setDesign(null)}>Don’t use this design</Btn>}>
+                  Chosen in the template gallery. Your CV starts in it, and you can change it at any time on the Finish step.
+                </Note>
+              )}
               <div data-field="name">
                 <Field label="CV name" rule="For you, so you can tell versions apart. Your name and the job you’re aiming for works well." value={name} onChange={setName} error={errors.name} maxLength={120} />
               </div>

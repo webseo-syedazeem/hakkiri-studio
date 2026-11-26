@@ -55,7 +55,7 @@ export async function POST(req: Request) {
       if (!cv) return notFound();
       if (!cvIsEmpty(cv)) return NextResponse.json({ error: "not_empty", message: "This CV already has content. Start a new CV to upload a file." }, { status: 409 });
     } else {
-      const setup = SetupSchema.safeParse(Object.fromEntries(["name", "level", "region", "targetTitle", "targetEmployer", "targetAdvert"].map((k) => [k, form.get(k) ?? undefined])));
+      const setup = SetupSchema.safeParse(Object.fromEntries(["name", "level", "region", "targetTitle", "targetEmployer", "targetAdvert", "template"].map((k) => [k, form.get(k) ?? undefined])));
       if (!setup.success) return badInput("Check the highlighted answers.", fieldErrors(setup.error));
       if (await atCvLimit(userId)) return badInput(TOO_MANY_CVS);
       const fast = makingTooFast(userId);

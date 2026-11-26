@@ -56,6 +56,8 @@ export function proxy(req: NextRequest) {
     pathname === "/terms" ||
     pathname.startsWith("/interview-questions") ||
     pathname.startsWith("/cv-audit") ||
+    pathname.startsWith("/cv-templates") ||
+    pathname.startsWith("/resume-templates") ||
     pathname.startsWith("/cover-letter-audit") ||
     pathname.startsWith("/audit") ||
     pathname.startsWith("/blog") ||

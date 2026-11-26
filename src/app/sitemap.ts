@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { getBlogPostsAsync } from "@/lib/blog/store";
+import { catalogue, templateSlug } from "@/lib/cv/render/templates";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const domain = process.env.NEXT_PUBLIC_APP_URL || "https://hakkiri.studio";
@@ -18,6 +19,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "daily",
       priority: 0.9,
     },
+    ...["cv-templates", "resume-templates"].flatMap((base) => [
+      { url: `${domain}/${base}`, lastModified: now, changeFrequency: "monthly" as const, priority: 0.9 },
+      ...catalogue().map((t) => ({ url: `${domain}/${base}/${templateSlug(t)}`, lastModified: now, changeFrequency: "monthly" as const, priority: 0.7 })),
+    ]),
     {
       url: `${domain}/cv-audit`,
       lastModified: now,

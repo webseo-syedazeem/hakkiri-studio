@@ -87,6 +87,27 @@ export interface TemplateDef {
 /** "No. 07 · Harbour": how a template is named everywhere it is shown. */
 export const templateLabel = (t: Pick<TemplateDef, "no" | "name">) => `No. ${String(t.no).padStart(2, "0")} · ${t.name}`;
 
+/** The template's web address part: "07-harbour". */
+export const templateSlug = (t: Pick<TemplateDef, "no" | "name">) => `${String(t.no).padStart(2, "0")}-${t.name.toLowerCase().replace(/\s+/g, "-")}`;
+/** The template's preview image, drawn by the renderer with an example CV (scripts/template-previews.cjs): 1098 by 1552 pixels, or 550 wide when small. */
+export const templatePreview = (t: Pick<TemplateDef, "no" | "id">, size: "large" | "small" = "large") => `/cv-templates/${String(t.no).padStart(2, "0")}-${t.id}${size === "small" ? "-small" : ""}.webp`;
+/** Every template, by number. */
+export const catalogue = (): TemplateDef[] => (Object.values(TEMPLATES) as TemplateDef[]).sort((a, b) => a.no - b.no);
+export const templateBySlug = (slug: string): TemplateDef | undefined => catalogue().find((t) => templateSlug(t) === slug);
+
+/** The page title, description and addresses for a template's page in the UK (CV) or US (resume) gallery. */
+export function templateMeta(t: TemplateDef, region: "uk" | "us") {
+  const word = region === "us" ? "resume" : "CV";
+  const slug = templateSlug(t);
+  const suits = t.suits.charAt(0).toLowerCase() + t.suits.slice(1);
+  // Suits lines are written to read the same in both regions (checked in catalogue.test.ts).
+  return {
+    title: `${templateLabel(t)} ${word} template | Hakkiri`,
+    description: `${templateLabel(t)}: an ATS-friendly ${word} template for ${suits}. One column of real text, PDF and Word downloads, and every font, ${region === "us" ? "color" : "colour"} and spacing yours to change.`,
+    alternates: { canonical: `/${region === "us" ? "resume" : "cv"}-templates/${slug}`, languages: { "en-GB": `/cv-templates/${slug}`, "en-US": `/resume-templates/${slug}` } },
+  };
+}
+
 export const TEMPLATES: Record<TemplateId, TemplateDef> = {
   standard: {
     id: "standard",

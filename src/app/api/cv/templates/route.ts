@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { badInput, failure, requireUserId } from "@/lib/cv/access";
+import { CV_TEMPLATES, type TemplateId } from "@/lib/cv/schema";
 import { EXAMPLE_TEMPLATES, examplesFor, instantiateTemplate } from "@/lib/cv/templates/examples";
 import { atCvLimit, saveCv, TOO_MANY_CVS } from "@/lib/cv/store";
 
@@ -25,7 +26,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const userId = await requireUserId();
-    const body = (await req.json().catch(() => ({}))) as { templateId?: string; name?: string; region?: string };
+    const body = (await req.json().catch(() => ({}))) as { templateId?: string; name?: string; region?: string; template?: string };
     const { templateId, name } = body;
     if (body.region !== undefined && body.region !== "uk" && body.region !== "us") return badInput("Choose UK or US.");
 
@@ -36,6 +37,9 @@ export async function POST(req: Request) {
     if (await atCvLimit(userId)) return badInput(TOO_MANY_CVS);
 
     const doc = instantiateTemplate(template, userId, name, body.region as "uk" | "us" | undefined);
+    // A design chosen in the template gallery replaces the one the example is shown in.
+    const design = (CV_TEMPLATES as readonly string[]).includes(body.template ?? "") ? (body.template as TemplateId) : undefined;
+    if (design) doc.design = { ...doc.design, template: design };
     const saved = await saveCv(doc);
 
     return NextResponse.json({ id: saved.id, name: saved.name }, { status: 201 });

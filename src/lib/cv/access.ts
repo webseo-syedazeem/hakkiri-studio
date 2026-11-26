@@ -3,7 +3,7 @@ import { rateLimited } from "@/lib/usage/limits";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth/require";
-import { type CvDoc, CV_LEVELS, CV_REGIONS, ChangeRecordSchema, ContactSchema, DesignSchema, ExcerptSchema, LIMITS, LetterSchema, RequirementSchema, type Section, SectionSchema, TargetSchema, coreSections, emptyContact, newId } from "./schema";
+import { type CvDoc, CV_LEVELS, CV_REGIONS, CV_TEMPLATES, ChangeRecordSchema, ContactSchema, DesignSchema, ExcerptSchema, LIMITS, LetterSchema, RequirementSchema, type Section, SectionSchema, TargetSchema, coreSections, emptyContact, newId } from "./schema";
 
 /** The signed-in person's id. Throws the same 401 response as requireUser when signed out. */
 export async function requireUserId(): Promise<string> {
@@ -33,6 +33,8 @@ export const SetupSchema = z.object({
   targetTitle: oneLine(160).default(""),
   targetEmployer: oneLine(160).default(""),
   targetAdvert: z.string().max(40000).default("").transform((s) => s.replace(/\r/g, "").trim().slice(0, 20000)),
+  /** A template chosen in the gallery before the CV existed. Anything unknown is ignored rather than refused. */
+  template: z.enum(CV_TEMPLATES).optional().catch(undefined),
 });
 export type Setup = z.infer<typeof SetupSchema>;
 
@@ -162,7 +164,7 @@ export function newCv(userId: string, setup: Setup, now: string): CvDoc {
     requirements: [],
     changes: [],
     // One page for students, graduates and early career; up to two for experienced and senior.
-    design: { template: setup.level === "student" ? "graduate" : "standard", pageSize: setup.region === "us" ? "letter" : "a4", density: "default", pageTarget: setup.level === "student" || setup.level === "early" ? 1 : 2 },
+    design: { template: setup.template ?? (setup.level === "student" ? "graduate" : "standard"), pageSize: setup.region === "us" ? "letter" : "a4", density: "default", pageTarget: setup.level === "student" || setup.level === "early" ? 1 : 2 },
     createdAt: now,
     updatedAt: now,
   };
