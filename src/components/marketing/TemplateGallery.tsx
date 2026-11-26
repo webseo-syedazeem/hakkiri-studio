@@ -46,7 +46,7 @@ export function TemplateGallery({ items, kind }: { items: GalleryItem[]; kind: G
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search: Harbour, 07, serif…"
+              placeholder="Search: header band, 07, serif, healthcare…"
               className="h-12 w-full rounded-full border border-slate-300 bg-white px-5 text-base text-slate-800 placeholder-slate-500 shadow-sm focus:border-[#3d4bd8] focus:outline-none focus:ring-2 focus:ring-[#3d4bd8]/30"
             />
           </label>
@@ -79,7 +79,7 @@ export function TemplateGallery({ items, kind }: { items: GalleryItem[]; kind: G
                   <img src={templatePreview(t, "small", kind)} srcSet={`${templatePreview(t, "small", kind)} 550w, ${templatePreview(t, "large", kind)} 1098w`} sizes="(min-width: 1024px) 340px, (min-width: 640px) 45vw, 92vw" alt={`${templateLabel(t)}: the first page of an example ${word}`} width={550} height={777} loading="lazy" className="block h-auto w-full" />
                 </span>
                 <span className="mt-3 block text-base font-semibold text-slate-900">{templateLabel(t)}</span>
-                <span className="block text-sm text-slate-600">{t.suits}</span>
+                <span className="block text-sm text-slate-600">Good for: {t.suits.charAt(0).toLowerCase() + t.suits.slice(1)}</span>
                 <span className="mt-2 flex flex-wrap gap-1.5">
                   <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-700">{FAMILY_NAMES[t.family]}</span>
                   {t.tags.map((g) => (

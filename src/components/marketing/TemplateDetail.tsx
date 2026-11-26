@@ -31,7 +31,7 @@ export function TemplateDetail({ t, kind }: { t: TemplateDef; kind: GalleryKind 
               <h1 className="mt-1 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
                 {templateLabel(t)} {word} template
               </h1>
-              <p className="mt-3 text-base leading-relaxed text-slate-700">Suits: {words.suits.charAt(0).toLowerCase() + words.suits.slice(1)}.</p>
+              <p className="mt-3 text-base leading-relaxed text-slate-700">Good for: {words.suits.charAt(0).toLowerCase() + words.suits.slice(1)}.</p>
             </div>
             <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
               <dt className="font-semibold text-slate-900">Fonts</dt>

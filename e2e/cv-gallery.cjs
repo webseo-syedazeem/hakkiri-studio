@@ -16,7 +16,7 @@ run("Template galleries", async (browser) => {
   await page.goto(`${BASE}/cv-templates`);
   await page.getByRole("heading", { level: 1, name: "CV templates" }).waitFor();
   const labels = await page.locator("main ul li a > span.font-semibold").allInnerTexts();
-  check(labels.length === 45 && labels[0] === "No. 01 · Hallmark" && labels[44] === "No. 45 · Palette", "the CV gallery lists all 45 templates by number", `${labels.length}: ${labels.slice(0, 2).join(", ")}`);
+  check(labels.length === 45 && labels[0] === "No. 01 · Clean Sans" && labels[44] === "No. 45 · Bold Band", "the CV gallery lists all 45 templates by number", `${labels.length}: ${labels.slice(0, 2).join(", ")}`);
   await page.locator("main img").first().scrollIntoViewIfNeeded();
   await page.waitForFunction(() => [...document.querySelectorAll("main img")].slice(0, 3).every((i) => i.complete && i.naturalWidth > 0));
   check(true, "the preview images load");
@@ -29,7 +29,7 @@ run("Template galleries", async (browser) => {
   check((await cards(page).count()) === 5 && (await page.getByRole("status").innerText()).includes("5 of 45"), "a family filter shows its five templates");
   await page.getByRole("button", { name: "All", exact: true }).click();
   await page.getByLabel("Search templates by name, number or style").fill("07");
-  check((await cards(page).count()) === 1 && (await cards(page).first().innerText()).includes("No. 07 · Harbour"), "searching by number finds that template");
+  check((await cards(page).count()) === 1 && (await cards(page).first().innerText()).includes("No. 07 · Header Band"), "searching by number finds that template");
   await page.getByLabel("Search templates by name, number or style").fill("serif");
   check((await cards(page).count()) > 3, "searching by style finds the templates with it");
   await page.getByLabel("Search templates by name, number or style").fill("zzzz");
@@ -37,11 +37,11 @@ run("Template galleries", async (browser) => {
   check(true, "a search that finds nothing says so");
 
   // One template's page.
-  await page.getByLabel("Search templates by name, number or style").fill("harbour");
+  await page.getByLabel("Search templates by name, number or style").fill("header band");
   await cards(page).first().click();
-  await page.waitForURL(/\/cv-templates\/07-harbour$/);
-  await page.getByRole("heading", { level: 1, name: "No. 07 · Harbour CV template" }).waitFor();
-  check((await page.title()).startsWith("No. 07 · Harbour CV template"), "the template's page has its own title", await page.title());
+  await page.waitForURL(/\/cv-templates\/07-header-band$/);
+  await page.getByRole("heading", { level: 1, name: "No. 07 · Header Band CV template" }).waitFor();
+  check((await page.title()).startsWith("No. 07 · Header Band CV template"), "the template's page has its own title", await page.title());
   const use = page.getByRole("link", { name: "Use this template" });
   check((await use.getAttribute("href")) === "/cv/new?template=harbour", "Use this template goes to a new CV with the design chosen");
   await a11y(page, "CV template page");
@@ -57,9 +57,9 @@ run("Template galleries", async (browser) => {
   await page.getByRole("heading", { level: 1, name: "Resume templates" }).waitFor();
   let text = await page.locator("main").innerText();
   check(!/colour|centred/i.test(text) && /color band/i.test(text), "the resume gallery is in US spelling", (text.match(/colour|centred/gi) || []).join(", "));
-  await page.goto(`${BASE}/resume-templates/07-harbour`);
+  await page.goto(`${BASE}/resume-templates/07-header-band`);
   text = await page.locator("main").innerText();
-  check(/No\. 07 · Harbour resume template/.test(text) && /US Letter/.test(text) && !/colour|centred/i.test(text), "the resume template page says resume, US Letter and color");
+  check(/No\. 07 · Header Band resume template/.test(text) && /US Letter/.test(text) && !/colour|centred/i.test(text), "the resume template page says resume, US Letter and color");
   await a11y(page, "Resume template page");
 
   // The cover letter gallery: the same 45 designs, each drawn as a letter, linked to its matching CV.
@@ -67,14 +67,14 @@ run("Template galleries", async (browser) => {
   await page.getByRole("heading", { level: 1, name: "Cover letter templates" }).waitFor();
   check((await cards(page).count()) === 45, "the cover letter gallery lists all 45 designs");
   await a11y(page, "Cover letter gallery");
-  await page.goto(`${BASE}/cover-letter-templates/07-harbour`);
-  await page.getByRole("heading", { level: 1, name: "No. 07 · Harbour cover letter template" }).waitFor();
-  check((await page.getByRole("link", { name: "See the matching CV" }).getAttribute("href")) === "/cv-templates/07-harbour", "a letter design links to its matching CV template");
+  await page.goto(`${BASE}/cover-letter-templates/07-header-band`);
+  await page.getByRole("heading", { level: 1, name: "No. 07 · Header Band cover letter template" }).waitFor();
+  check((await page.getByRole("link", { name: "See the matching CV" }).getAttribute("href")) === "/cv-templates/07-header-band", "a letter design links to its matching CV template");
   await page.waitForFunction(() => [...document.querySelectorAll("main img")].slice(0, 1).every((i) => i.complete && i.naturalWidth > 0));
   check(true, "the letter preview loads");
   await a11y(page, "Cover letter template page");
-  await page.goto(`${BASE}/cv-templates/07-harbour`);
-  check((await page.getByRole("link", { name: "See the matching cover letter" }).getAttribute("href")) === "/cover-letter-templates/07-harbour", "a CV template links to its matching cover letter");
+  await page.goto(`${BASE}/cv-templates/07-header-band`);
+  check((await page.getByRole("link", { name: "See the matching cover letter" }).getAttribute("href")) === "/cover-letter-templates/07-header-band", "a CV template links to its matching cover letter");
 
   // The example CVs with their cover letters, by industry, for the UK and the US.
   await page.goto(`${BASE}/cv-examples`);
@@ -102,7 +102,7 @@ run("Template galleries", async (browser) => {
 
   // The sitemap lists the galleries and each template's page.
   const map = await (await page.request.get(`${BASE}/sitemap.xml`)).text();
-  check(map.includes("/cv-templates/07-harbour") && map.includes("/resume-templates/45-palette") && map.includes("/cover-letter-templates/01-hallmark") && map.includes("/resume-examples/marketing-lead"), "the sitemap lists every template and example page");
+  check(map.includes("/cv-templates/07-header-band") && map.includes("/resume-templates/45-bold-band") && map.includes("/cover-letter-templates/01-clean-sans") && map.includes("/resume-examples/marketing-lead"), "the sitemap lists every template and example page");
 
   // On a phone.
   const phone = await browser.newContext({ ...PHONE });
@@ -111,7 +111,7 @@ run("Template galleries", async (browser) => {
   await small.getByRole("heading", { level: 1, name: "CV templates" }).waitFor();
   await fitsWidth(small, "CV gallery on a phone");
   await small.screenshot({ path: path.join(OUT, "cv-gallery-phone.png") });
-  await small.goto(`${BASE}/cv-templates/28-first-light`);
+  await small.goto(`${BASE}/cv-templates/28-graduate-band`);
   await fitsWidth(small, "template page on a phone");
   await phone.close();
   check(errors.length === 0, "no errors on the public pages", errors.join(" | "));
@@ -120,7 +120,7 @@ run("Template galleries", async (browser) => {
   // Signed in: the chosen design is shown on the form and the new CV starts in it.
   const a = await newUser(browser, "gallery");
   await a.page.goto(`${BASE}/cv/new?template=harbour`);
-  await a.page.getByText("Design: No. 07 · Harbour").waitFor();
+  await a.page.getByText("Design: No. 07 · Header Band").waitFor();
   check(true, "the New CV form shows the design chosen in the gallery");
   await a.page.getByLabel("CV name").fill("Gallery test");
   await a.page.getByText("Experienced", { exact: true }).click();
@@ -134,7 +134,7 @@ run("Template galleries", async (browser) => {
   // Dropping it gives the usual starting design.
   await a.page.goto(`${BASE}/cv/new?template=harbour`);
   await a.page.getByRole("button", { name: "Don’t use this design" }).click();
-  check((await a.page.getByText("Design: No. 07 · Harbour").count()) === 0, "the chosen design can be dropped");
+  check((await a.page.getByText("Design: No. 07 · Header Band").count()) === 0, "the chosen design can be dropped");
   await a.page.getByLabel("CV name").fill("Gallery test two");
   await a.page.getByText("Experienced", { exact: true }).click();
   await a.page.getByText("UK", { exact: true }).click();

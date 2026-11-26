@@ -28,8 +28,8 @@ describe("the template catalogue", () => {
   });
 
   it("labels each by number and name", () => {
-    expect(templateLabel(TEMPLATES.harbour)).toBe("No. 07 · Harbour");
-    expect(templateLabel(TEMPLATES.standard)).toBe("No. 01 · Hallmark");
+    expect(templateLabel(TEMPLATES.harbour)).toBe("No. 07 · Header Band");
+    expect(templateLabel(TEMPLATES.standard)).toBe("No. 01 · Clean Sans");
   });
 
   it("keeps letter-spacing under a tenth of the type size, so PDF readers keep letters together as words", () => {
@@ -49,12 +49,13 @@ describe("the template catalogue", () => {
   });
 
   it("gives each a web address from its number and name, and finds it again", () => {
-    expect(templateSlug(TEMPLATES.harbour)).toBe("07-harbour");
-    expect(templateSlug(TEMPLATES["first-light"])).toBe("28-first-light");
+    expect(templateSlug(TEMPLATES.harbour)).toBe("07-header-band");
+    expect(templateSlug(TEMPLATES["first-light"])).toBe("28-graduate-band");
+    expect(templateSlug(TEMPLATES.tally)).toBe("17-compact-two-page");
     const slugs = all.map(templateSlug);
     expect(new Set(slugs).size).toBe(all.length);
     for (const t of all) expect(templateBySlug(templateSlug(t))?.id).toBe(t.id);
-    expect(templateBySlug("07-hallmark")).toBeUndefined();
+    expect(templateBySlug("07-clean-sans")).toBeUndefined();
     expect(catalogue().map((t) => t.no)).toEqual(Array.from({ length: all.length }, (_, i) => i + 1));
   });
 

@@ -418,7 +418,7 @@ export function Finish({ onOverflow, say }: { onOverflow: () => void; say: (text
                       {design.template === id && <span aria-hidden="true">✓ </span>}
                       {templateLabel(t)}
                     </b>
-                    <small style={{ display: "block" }}>{t.suits}</small>
+                    <small style={{ display: "block" }}>Good for: {t.suits.charAt(0).toLowerCase() + t.suits.slice(1)}</small>
                   </span>
                 </label>
               );
