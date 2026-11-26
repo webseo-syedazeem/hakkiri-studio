@@ -495,7 +495,7 @@ export function PracticeHubClient({
       {/* 2. FIGURES FROM THE PERSON'S OWN SESSIONS */}
       {current && (
         <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-5" data-testid="hub-stats">
-          <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-5 shadow-xl flex items-center gap-4">
+          <div className="rounded-2xl bg-[#0f1220] border border-[#23293e] p-6 shadow-xl flex items-center gap-4 hover:border-[#3b4566] transition-all">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-indigo-500/15 text-indigo-300 border border-indigo-500/25">
               <Icon name="clock" size={22} />
             </div>
@@ -510,7 +510,7 @@ export function PracticeHubClient({
             </div>
           </div>
 
-          <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-5 shadow-xl flex items-center gap-4">
+          <div className="rounded-2xl bg-[#0f1220] border border-[#23293e] p-6 shadow-xl flex items-center gap-4 hover:border-[#3b4566] transition-all">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-300 border border-emerald-500/25">
               <Icon name="check" size={22} />
             </div>
@@ -536,7 +536,7 @@ export function PracticeHubClient({
             </div>
           </div>
 
-          <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-5 shadow-xl flex items-center gap-4">
+          <div className="rounded-2xl bg-[#0f1220] border border-[#23293e] p-6 shadow-xl flex items-center gap-4 hover:border-[#3b4566] transition-all">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-purple-500/15 text-purple-300 border border-purple-500/25">
               <Icon name="sparkle" size={22} />
             </div>
@@ -1008,7 +1008,7 @@ export function PracticeHubClient({
                 { icon: "chat", tone: "bg-emerald-500/15 text-emerald-300", title: "Practise the Q&A", text: "Answer the questions an audience is likely to ask afterwards.", href: `/qa/${presentation.id}`, action: "Start Q&A" },
               ] as const
             ).map((c) => (
-              <div key={c.title} className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-5 shadow-xl flex flex-col justify-between hover:border-white/20 transition-all">
+              <div key={c.title} className="rounded-2xl bg-[#0f1220] border border-[#23293e] p-6 shadow-xl flex flex-col justify-between hover:border-[#3b4566] transition-all">
                 <div>
                   <div className="flex items-center gap-2.5 mb-2">
                     <div className={clsx("flex h-8 w-8 items-center justify-center rounded-lg", c.tone)}>
@@ -1027,7 +1027,7 @@ export function PracticeHubClient({
             ))}
           </div>
         ) : (
-          <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-6 text-xs text-muted">
+          <div className="rounded-2xl bg-[#0f1220] border border-[#23293e] p-6 shadow-xl text-xs text-muted">
             <p>You haven’t added a presentation yet.</p>
             <Link href="/presentations" className="mt-2 inline-block font-semibold text-blue-soft hover:underline">
               Add a presentation →
