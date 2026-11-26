@@ -21,12 +21,14 @@ export default async function PresentationWorkspace({ params }: { params: Promis
   const qa = listQa(p.id, user.id);
   const days = daysBetween(londonToday(), p.date);
 
-  const demoRecentRuns = [
-    { label: "Run 4: full run", time: "2:37", score: "1.6", note: "Too short, needs more depth.", href: `/presentations/${p.id}/runs/demo-run-4` },
-    { label: "Run 3: full run", time: "11:20", score: "3.6", note: "Closer, timing slightly over.", href: `/presentations/${p.id}/runs/demo-run-3` },
-    { label: "Run 2: full run", time: "12:10", score: "3.4", note: "Good structure, over time.", href: `/presentations/${p.id}/runs/demo-run-2` },
-    { label: "Run 1: full run", time: "13:05", score: "3.0", note: "Clear, but too long.", href: `/presentations/${p.id}/runs/demo-run-1` },
-  ];
+  const hasRuns = runs.length > 0;
+  const fullRuns = runs.filter((r) => r.mode === "full");
+  const isReady =
+    fullRuns.length >= 2 &&
+    (fullRuns[0].overall ?? 0) >= 4 &&
+    fullRuns[0].totalSec <= p.timeLimitSec &&
+    (fullRuns[1].overall ?? 0) >= 4 &&
+    fullRuns[1].totalSec <= p.timeLimitSec;
 
   return (
     <div className="flex grow flex-col w-full pb-20 animate-rise text-white">
@@ -85,29 +87,62 @@ export default async function PresentationWorkspace({ params }: { params: Promis
               Use your rehearsals to improve each part of the presentation before the real session.
             </p>
 
-            {/* Warning Box */}
-            <div className="mt-4 p-4 rounded-xl bg-rose-500/10 border border-rose-500/25 flex items-start gap-3">
-              <Icon name="alertCircle" size={17} className="text-rose-400 shrink-0 mt-0.5" />
-              <div>
-                <div className="text-xs font-bold text-rose-300">Not ready yet</div>
-                <div className="text-[11px] text-[#e8c8ce] mt-0.5 leading-relaxed">
-                  Ready when two full runs in a row score 4 or more and finish inside 10:00.
+            {/* Readiness Box */}
+            {!hasRuns ? (
+              <div className="mt-4 p-4 rounded-xl bg-white/[0.04] border border-white/10 flex items-start gap-3">
+                <Icon name="info" size={17} className="text-muted shrink-0 mt-0.5" />
+                <div>
+                  <div className="text-xs font-bold text-white">No runs yet</div>
+                  <div className="text-[11px] text-muted mt-0.5 leading-relaxed">
+                    Start your first rehearsal to measure timing, slide coverage, and delivery.
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : isReady ? (
+              <div className="mt-4 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-start gap-3">
+                <Icon name="checkCircle" size={17} className="text-emerald-400 shrink-0 mt-0.5" />
+                <div>
+                  <div className="text-xs font-bold text-emerald-300">Ready for this presentation</div>
+                  <div className="text-[11px] text-[#c4f0db] mt-0.5 leading-relaxed">
+                    Two full runs in a row scored 4 or more and finished inside {mmss(p.timeLimitSec)}.
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-4 p-4 rounded-xl bg-rose-500/10 border border-rose-500/25 flex items-start gap-3">
+                <Icon name="alertCircle" size={17} className="text-rose-400 shrink-0 mt-0.5" />
+                <div>
+                  <div className="text-xs font-bold text-rose-300">Not ready yet</div>
+                  <div className="text-[11px] text-[#e8c8ce] mt-0.5 leading-relaxed">
+                    Ready when two full runs in a row score 4 or more and finish inside {mmss(p.timeLimitSec)}.
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Past runs badges */}
-          <div className="mt-4 flex flex-wrap gap-2 pt-2 border-t border-white/[0.06]">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-rose-500/15 text-rose-300 border border-rose-500/20">
-              <Icon name="x" size={12} strokeWidth={2.4} />
-              Run 2: 3.4, 12:10
-            </span>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-rose-500/15 text-rose-300 border border-rose-500/20">
-              <Icon name="x" size={12} strokeWidth={2.4} />
-              Run 3: 3.6, 11:20
-            </span>
-          </div>
+          {hasRuns && (
+            <div className="mt-4 flex flex-wrap gap-2 pt-2 border-t border-white/[0.06]">
+              {runs.slice(0, 2).map((r) => {
+                const passed = (r.overall ?? 0) >= 4 && r.totalSec <= p.timeLimitSec;
+                return (
+                  <span
+                    key={r.id}
+                    className={clsx(
+                      "inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold border",
+                      passed
+                        ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/20"
+                        : "bg-rose-500/15 text-rose-300 border-rose-500/20"
+                    )}
+                  >
+                    <Icon name={passed ? "check" : "x"} size={12} strokeWidth={2.4} />
+                    Run {r.number}: {r.overall ? r.overall.toFixed(1) : "—"}, {mmss(r.totalSec)}
+                  </span>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Right: Performance by area */}
@@ -330,23 +365,42 @@ export default async function PresentationWorkspace({ params }: { params: Promis
             <p className="text-xs text-muted mb-3 border-b border-white/[0.07] pb-3">Your latest rehearsals, with time, score and a quick note.</p>
 
             <div className="space-y-2">
-              {demoRecentRuns.map((r, i) => (
-                <Link
-                  key={i}
-                  href={r.href}
-                  className="p-2.5 rounded-xl bg-[#141326] border border-white/10 hover:border-white/20 flex items-center justify-between text-xs transition-all group"
-                >
-                  <div>
-                    <div className="font-semibold text-white group-hover:text-blue-soft transition-colors">{r.label}</div>
-                    <div className="text-[11px] text-muted mt-0.5">{r.note}</div>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <span className="num font-semibold text-white">{r.time}</span>
-                    <span className="mx-1.5 text-muted">·</span>
-                    <span className={clsx("num font-bold", Number(r.score) < 3.2 ? "text-rose-400" : "text-white")}>{r.score}</span>
-                  </div>
-                </Link>
-              ))}
+              {hasRuns ? (
+                runs.map((r) => {
+                  const reached = r.slides.length;
+                  const isCompleted = reached >= p.slides.length;
+                  const note = isCompleted
+                    ? r.overall && r.overall >= 4
+                      ? "Target met."
+                      : "Completed run."
+                    : `Delivered ${mmss(r.totalSec)}, reached slide ${reached} of ${p.slides.length}.`;
+                  return (
+                    <Link
+                      key={r.id}
+                      href={`/presentations/${p.id}/runs/${r.id}`}
+                      className="p-2.5 rounded-xl bg-[#141326] border border-white/10 hover:border-white/20 flex items-center justify-between text-xs transition-all group"
+                    >
+                      <div>
+                        <div className="font-semibold text-white group-hover:text-blue-soft transition-colors">
+                          Run {r.number}: {r.mode === "full" ? "full run" : r.mode}
+                        </div>
+                        <div className="text-[11px] text-muted mt-0.5">{note}</div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <span className="num font-semibold text-white">{mmss(r.totalSec)}</span>
+                        <span className="mx-1.5 text-muted">·</span>
+                        <span className={clsx("num font-bold", r.overall && r.overall < 3.2 ? "text-rose-400" : "text-white")}>
+                          {r.overall ? r.overall.toFixed(1) : "—"}
+                        </span>
+                      </div>
+                    </Link>
+                  );
+                })
+              ) : (
+                <div className="p-4 rounded-xl bg-[#141326] border border-white/10 text-xs text-muted text-center">
+                  No runs yet. Start your first rehearsal.
+                </div>
+              )}
             </div>
           </div>
 
@@ -360,22 +414,48 @@ export default async function PresentationWorkspace({ params }: { params: Promis
             </div>
             <p className="text-xs text-muted mb-3 border-b border-white/[0.07] pb-3">Questions based on your chosen audience.</p>
 
-            <Link
-              href={`/qa/${p.id}`}
-              className="p-3 rounded-xl bg-[#141326] border border-white/10 hover:border-white/20 flex items-center justify-between text-xs transition-all group"
-            >
-              <div>
-                <div className="font-semibold text-white group-hover:text-blue-soft transition-colors">Dana, finance director</div>
-                <div className="text-[11px] text-muted mt-0.5">Sceptical, 4 questions</div>
+            {qa.length > 0 ? (
+              <div className="space-y-2">
+                {qa.map((q) => (
+                  <Link
+                    key={q.id}
+                    href={`/presentations/${p.id}/qa/${q.id}`}
+                    className="p-3 rounded-xl bg-[#141326] border border-white/10 hover:border-white/20 flex items-center justify-between text-xs transition-all group"
+                  >
+                    <div>
+                      <div className="font-semibold text-white group-hover:text-blue-soft transition-colors">
+                        {q.persona.name}, {q.persona.title}
+                      </div>
+                      <div className="text-[11px] text-muted mt-0.5">
+                        {QA_STYLE_LABEL[q.style] || q.style}, {q.questions?.length ?? 4} questions
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="text-right">
+                        <span className="num font-bold text-white">{q.overall ? q.overall.toFixed(1) : "—"}</span>
+                        <span className="text-[11px] text-muted block">
+                          {q.overall && q.overall >= 4 ? "Effective" : q.overall ? "Solid" : "Completed"}
+                        </span>
+                      </div>
+                      <Icon name="chevronRight" size={13} className="text-muted group-hover:text-white transition-colors" />
+                    </div>
+                  </Link>
+                ))}
               </div>
-              <div className="flex items-center gap-2">
-                <div className="text-right">
-                  <span className="num font-bold text-white">3.7</span>
-                  <span className="text-[11px] text-muted block">Effective</span>
+            ) : (
+              <div className="p-3.5 rounded-xl bg-[#141326] border border-white/10 flex items-center justify-between text-xs">
+                <div>
+                  <div className="font-semibold text-white">No Q&A sessions yet</div>
+                  <div className="text-[11px] text-muted mt-0.5">Practise answering tough questions for this talk.</div>
                 </div>
-                <Icon name="chevronRight" size={13} className="text-muted group-hover:text-white transition-colors" />
+                <Link
+                  href={`/qa/${p.id}`}
+                  className="px-3 py-1.5 rounded-lg bg-blue hover:bg-blue-600 text-white font-semibold text-xs transition-colors shrink-0"
+                >
+                  Start Q&A
+                </Link>
               </div>
-            </Link>
+            )}
           </div>
         </div>
       </div>

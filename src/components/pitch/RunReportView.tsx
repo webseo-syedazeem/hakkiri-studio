@@ -81,28 +81,36 @@ const DEFAULT_COACHING_DATA: Record<
 
 export function RunReportView({ presentation, run, whenFormatted }: RunReportViewProps) {
   const [activeTab, setActiveTab] = useState<"coaching" | "overall" | "transcript" | "compare">("coaching");
-  const [selectedSlideNum, setSelectedSlideNum] = useState<number>(2);
+  const [selectedSlideNum, setSelectedSlideNum] = useState<number>(1);
   const [notDeliveredOpen, setNotDeliveredOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const totalSlides = presentation.slides.length || 12;
-  const deliveredSlidesCount = Math.min(totalSlides, Math.max(1, run.slides.length || 4));
+  const totalSlides = presentation.slides.length || 1;
+  const deliveredSlidesCount = Math.min(totalSlides, Math.max(0, run.slides?.length || 0));
   const isComplete = deliveredSlidesCount >= totalSlides;
 
   const deliveredSlides = presentation.slides.slice(0, deliveredSlidesCount);
   const notDeliveredSlides = presentation.slides.slice(deliveredSlidesCount);
 
-  const activeCoaching = DEFAULT_COACHING_DATA[selectedSlideNum] ?? {
-    subtitle: `Slide ${selectedSlideNum} delivery`,
-    status: "Partly covered",
-    whatDidWell: ["Addressed the core subject clearly.", "Stayed close to the target speaking duration."],
-    whatToImprove: ["Make the key take-away even more explicit at the start of the slide."],
-    structure: [
-      { step: 1, name: "Point", detail: "Deliver the main insight in one clear headline." },
-      { step: 2, name: "Evidence", detail: "Support with specific figures or customer facts." },
-    ],
-    suggestedOpening: "“The key takeaway here is simple: focused execution delivers measurable conversion improvements.”",
-  };
+  const isDemo = presentation.id === "demo-pres" || presentation.id.startsWith("demo-") || run.id.startsWith("demo-");
+  const hasAiCoaching = Boolean(run.fix?.body || (run.evidence && Object.keys(run.evidence).length > 0));
+
+  const activeCoaching = isDemo
+    ? DEFAULT_COACHING_DATA[selectedSlideNum] ?? {
+        subtitle: `Slide ${selectedSlideNum} delivery`,
+        status: "Partly covered" as const,
+        whatDidWell: ["Addressed the core subject clearly.", "Stayed close to the target speaking duration."],
+        whatToImprove: ["Make the key take-away even more explicit at the start of the slide."],
+        structure: [
+          { step: 1, name: "Point", detail: "Deliver the main insight in one clear headline." },
+          { step: 2, name: "Evidence", detail: "Support with specific figures or customer facts." },
+        ],
+        suggestedOpening: "“The key takeaway here is simple: focused execution delivers measurable improvements.”",
+      }
+    : null;
+
+  const scoreVal = run.overall != null ? run.overall : null;
+  const timeVerdict = `Delivered ${mmss(run.totalSec || 0)} of ${mmss(presentation.timeLimitSec)}, reached slide ${deliveredSlidesCount} of ${totalSlides}.`;
 
   const handleShare = () => {
     if (typeof window !== "undefined") {
@@ -180,7 +188,7 @@ export function RunReportView({ presentation, run, whenFormatted }: RunReportVie
                 stroke="url(#rehearsalGradient)"
                 strokeWidth="10"
                 strokeDasharray={`${2 * Math.PI * 40}`}
-                strokeDashoffset={`${2 * Math.PI * 40 * (1 - (run.overall ?? 3.4) / 5)}`}
+                strokeDashoffset={`${2 * Math.PI * 40 * (1 - (scoreVal ?? 0) / 5)}`}
                 strokeLinecap="round"
                 fill="transparent"
                 className="transition-all duration-1000 ease-out"
@@ -193,19 +201,30 @@ export function RunReportView({ presentation, run, whenFormatted }: RunReportVie
               </defs>
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-              <span className="num text-2xl font-bold text-white tracking-tight leading-none">{run.overall ? run.overall.toFixed(1) : "3.4"}</span>
-              <span className="text-[11px] text-muted font-medium mt-0.5">/ 5</span>
+              <span className="num text-2xl font-bold text-white tracking-tight leading-none">
+                {scoreVal != null ? scoreVal.toFixed(1) : "—"}
+              </span>
+              <span className="text-[11px] text-muted font-medium mt-0.5">
+                {scoreVal != null ? "/ 5" : "Not scored"}
+              </span>
             </div>
           </div>
 
           <div>
             <h2 className="text-xl font-bold text-white tracking-tight">
-              {!isComplete ? "A solid start, but incomplete" : (run.overall ?? 3.4) >= 4 ? "An outstanding rehearsal" : "A solid performance"}
+              {scoreVal != null
+                ? scoreVal >= 4
+                  ? "An outstanding rehearsal"
+                  : "A solid performance"
+                : !isComplete
+                ? "A solid start, but incomplete"
+                : "Rehearsal finished"}
             </h2>
             <p className="mt-2 text-xs text-[#c9cad3] leading-relaxed max-w-md">
-              {!isComplete
-                ? `You delivered a clear opening and explained the problem well. The rehearsal ended early, so the later slides (${deliveredSlidesCount + 1}–${totalSlides}) weren't assessed.`
-                : "You covered all slides within the time target. Continue refining pacing and emphasis on your core ask."}
+              {timeVerdict}{" "}
+              {!isComplete && totalSlides > deliveredSlidesCount
+                ? `The rehearsal ended early, so the later slides (${deliveredSlidesCount + 1}–${totalSlides}) weren't assessed.`
+                : "Continue refining pacing and emphasis on your core ask."}
             </p>
           </div>
         </div>
@@ -219,7 +238,7 @@ export function RunReportView({ presentation, run, whenFormatted }: RunReportVie
                 <span>Time delivered</span>
               </div>
               <div className="mt-1 text-lg font-bold text-white num">
-                {mmss(run.totalSec || 157)} <span className="text-muted text-xs font-normal">/ {mmss(presentation.timeLimitSec)}</span>
+                {mmss(run.totalSec || 0)} <span className="text-muted text-xs font-normal">/ {mmss(presentation.timeLimitSec)}</span>
               </div>
             </div>
 
@@ -301,18 +320,39 @@ export function RunReportView({ presentation, run, whenFormatted }: RunReportVie
                   <span>What went well</span>
                 </div>
                 <ul className="space-y-2 text-xs text-[#d1d2dc] leading-relaxed">
-                  <li className="flex items-start gap-2">
-                    <span className="text-emerald-400 mt-0.5">•</span>
-                    <span>Clear and confident opening that set the context.</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-emerald-400 mt-0.5">•</span>
-                    <span>Explained the performance improvement with a relevant business example.</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-emerald-400 mt-0.5">•</span>
-                    <span>Spoke at a good pace with minimal filler words.</span>
-                  </li>
+                  {isDemo ? (
+                    <>
+                      <li className="flex items-start gap-2">
+                        <span className="text-emerald-400 mt-0.5">•</span>
+                        <span>Clear and confident opening that set the context.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-emerald-400 mt-0.5">•</span>
+                        <span>Explained the performance improvement with a relevant business example.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-emerald-400 mt-0.5">•</span>
+                        <span>Spoke at a good pace with minimal filler words.</span>
+                      </li>
+                    </>
+                  ) : (
+                    <>
+                      <li className="flex items-start gap-2">
+                        <span className="text-emerald-400 mt-0.5">•</span>
+                        <span>
+                          {run.delivery?.fillersPerMinute != null && run.delivery.fillersPerMinute < 3
+                            ? `Spoke cleanly with only ${run.delivery.fillerCount} filler words (${run.delivery.fillersPerMinute.toFixed(1)}/min).`
+                            : `Delivered ${deliveredSlidesCount} slides of your presentation.`}
+                        </span>
+                      </li>
+                      {run.fix?.title && (
+                        <li className="flex items-start gap-2">
+                          <span className="text-emerald-400 mt-0.5">•</span>
+                          <span>{run.fix.title}</span>
+                        </li>
+                      )}
+                    </>
+                  )}
                 </ul>
               </div>
 
@@ -323,14 +363,38 @@ export function RunReportView({ presentation, run, whenFormatted }: RunReportVie
                   <span>Main areas to improve</span>
                 </div>
                 <ul className="space-y-2 text-xs text-[#d1d2dc] leading-relaxed">
-                  <li className="flex items-start gap-2">
-                    <span className="text-amber-400 mt-0.5">•</span>
-                    <span>Complete the full presentation, including the recommendation and final ask.</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-amber-400 mt-0.5">•</span>
-                    <span>Be more concise on key results (e.g. payment completion).</span>
-                  </li>
+                  {isDemo ? (
+                    <>
+                      <li className="flex items-start gap-2">
+                        <span className="text-amber-400 mt-0.5">•</span>
+                        <span>Complete the full presentation, including the recommendation and final ask.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-amber-400 mt-0.5">•</span>
+                        <span>Be more concise on key results (e.g. payment completion).</span>
+                      </li>
+                    </>
+                  ) : (
+                    <>
+                      {!isComplete && (
+                        <li className="flex items-start gap-2">
+                          <span className="text-amber-400 mt-0.5">•</span>
+                          <span>Complete the full presentation, including the final ask.</span>
+                        </li>
+                      )}
+                      {run.fix?.body ? (
+                        <li className="flex items-start gap-2">
+                          <span className="text-amber-400 mt-0.5">•</span>
+                          <span>{run.fix.body}</span>
+                        </li>
+                      ) : (
+                        <li className="flex items-start gap-2">
+                          <span className="text-amber-400 mt-0.5">•</span>
+                          <span>Review per-slide timings below to optimize your delivery.</span>
+                        </li>
+                      )}
+                    </>
+                  )}
                 </ul>
               </div>
             </div>
@@ -347,21 +411,34 @@ export function RunReportView({ presentation, run, whenFormatted }: RunReportVie
               <h3 className="text-sm font-semibold text-white">Recommended next step</h3>
             </div>
             <div className="mt-3">
-              <h4 className="text-base font-bold text-white tracking-tight">Continue the full presentation</h4>
-              <p className="mt-1 text-xs text-muted leading-relaxed">
-                Rehearse from slide {deliveredSlidesCount + 1} to complete the roadmap, cover the remaining bets, and finish with a clear ask.
-              </p>
+              {deliveredSlidesCount < totalSlides ? (
+                <>
+                  <h4 className="text-base font-bold text-white tracking-tight">Continue the presentation</h4>
+                  <p className="mt-1 text-xs text-muted leading-relaxed">
+                    Rehearse from slide {deliveredSlidesCount + 1} to complete the deck, cover the remaining points, and finish with a clear ask.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h4 className="text-base font-bold text-white tracking-tight">Full presentation delivered</h4>
+                  <p className="mt-1 text-xs text-muted leading-relaxed">
+                    You covered all slides. Rehearse again to sharpen your timing, or practise tough audience questions.
+                  </p>
+                </>
+              )}
             </div>
           </div>
 
           <div className="space-y-2 pt-4">
-            <Link
-              href={`/rehearse/${presentation.id}?from=${deliveredSlidesCount + 1}&to=${totalSlides}`}
-              className="pro-btn-glow w-full bg-blue hover:bg-blue-600 text-white flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold shadow-lg transition-all"
-            >
-              <Icon name="play" size={13} />
-              <span>Continue from slide {deliveredSlidesCount + 1} →</span>
-            </Link>
+            {deliveredSlidesCount < totalSlides && (
+              <Link
+                href={`/rehearse/${presentation.id}?from=${deliveredSlidesCount + 1}&to=${totalSlides}`}
+                className="pro-btn-glow w-full bg-blue hover:bg-blue-600 text-white flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold shadow-lg transition-all"
+              >
+                <Icon name="play" size={13} />
+                <span>Continue from slide {deliveredSlidesCount + 1} →</span>
+              </Link>
+            )}
 
             <Link
               href={`/rehearse/${presentation.id}`}
@@ -424,9 +501,12 @@ export function RunReportView({ presentation, run, whenFormatted }: RunReportVie
         <div className="mt-6 grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 items-start">
           {/* Left: Slide Selector List */}
           <div className="space-y-2">
-            {deliveredSlides.map((s, idx) => {
+            {deliveredSlides.map((s) => {
               const active = s.n === selectedSlideNum;
-              const timingFormatted = idx === 0 ? "0:12 / 0:15" : idx === 1 ? "0:44 / 1:00" : idx === 2 ? "0:45 / 1:00" : "0:56 / 1:00";
+              const runSlide = run.slides?.find((rs) => rs.n === s.n);
+              const timingFormatted = runSlide
+                ? `${mmss(runSlide.seconds)} / ${mmss(s.plannedSec)}`
+                : `— / ${mmss(s.plannedSec)}`;
               return (
                 <button
                   key={s.n}
@@ -496,116 +576,148 @@ export function RunReportView({ presentation, run, whenFormatted }: RunReportVie
                 <div>
                   <div className="flex items-center gap-2">
                     <h3 className="text-base font-bold text-white">Slide {selectedSlideNum}: {presentation.slides.find((s) => s.n === selectedSlideNum)?.title}</h3>
-                    <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/20">
-                      {activeCoaching.status}
-                    </span>
+                    {activeCoaching && (
+                      <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/20">
+                        {activeCoaching.status}
+                      </span>
+                    )}
                   </div>
-                  <div className="text-xs text-muted mt-0.5">{activeCoaching.subtitle}</div>
+                  {activeCoaching && <div className="text-xs text-muted mt-0.5">{activeCoaching.subtitle}</div>}
                 </div>
               </div>
 
               {/* Timing stats & navigation */}
-              <div className="flex items-center gap-3 shrink-0">
-                <div className="text-right text-xs text-muted">
-                  <span className="num font-semibold text-white">Time: 0:44</span> · Planned: 1:00 · <span className="text-emerald-400">0:16 under</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedSlideNum((n) => Math.max(1, n - 1))}
-                    disabled={selectedSlideNum === 1}
-                    className="p-1 rounded text-muted hover:text-white disabled:opacity-30"
-                  >
-                    <Icon name="chevronRight" size={14} className="rotate-180" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedSlideNum((n) => Math.min(deliveredSlidesCount, n + 1))}
-                    disabled={selectedSlideNum >= deliveredSlidesCount}
-                    className="p-1 rounded text-muted hover:text-white disabled:opacity-30"
-                  >
-                    <Icon name="chevronRight" size={14} />
-                  </button>
-                </div>
-              </div>
+              {(() => {
+                const activeSlideDef = presentation.slides.find((s) => s.n === selectedSlideNum);
+                const activeSlideRun = run.slides?.find((s) => s.n === selectedSlideNum);
+                const activePlanned = activeSlideDef?.plannedSec ?? 60;
+                const activeActual = activeSlideRun?.seconds ?? 0;
+                const diff = activeActual - activePlanned;
+                const diffText = diff > 0 ? `${mmss(diff)} over` : diff < 0 ? `${mmss(Math.abs(diff))} under` : "on plan";
+                const diffColor = diff > 0 ? "text-amber-400" : "text-emerald-400";
+                return (
+                  <div className="flex items-center gap-3 shrink-0">
+                    <div className="text-right text-xs text-muted">
+                      <span className="num font-semibold text-white">Time: {mmss(activeActual)}</span> · Planned: {mmss(activePlanned)} · <span className={diffColor}>{diffText}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedSlideNum((n) => Math.max(1, n - 1))}
+                        disabled={selectedSlideNum === 1}
+                        className="p-1 rounded text-muted hover:text-white disabled:opacity-30 cursor-pointer"
+                      >
+                        <Icon name="chevronRight" size={14} className="rotate-180" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedSlideNum((n) => Math.min(Math.max(1, deliveredSlidesCount), n + 1))}
+                        disabled={selectedSlideNum >= deliveredSlidesCount}
+                        className="p-1 rounded text-muted hover:text-white disabled:opacity-30 cursor-pointer"
+                      >
+                        <Icon name="chevronRight" size={14} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
-            {/* Coaching Details (Two columns: Feedback on left, Structure on right) */}
-            <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-              {/* Left Column: What you did well & What to improve */}
-              <div className="space-y-4">
-                {/* What you did well */}
-                <div>
-                  <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400 mb-2">
-                    <Icon name="checkCircle" size={14} />
-                    <span>What you did well</span>
+            {/* Coaching Details */}
+            {activeCoaching ? (
+              <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                {/* Left Column: What you did well & What to improve */}
+                <div className="space-y-4">
+                  {/* What you did well */}
+                  <div>
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400 mb-2">
+                      <Icon name="checkCircle" size={14} />
+                      <span>What you did well</span>
+                    </div>
+                    <ul className="space-y-2 text-xs text-[#d1d2dc] leading-relaxed">
+                      {activeCoaching.whatDidWell.map((w, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <span className="text-emerald-400 mt-0.5">•</span>
+                          <span>{w}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                  <ul className="space-y-2 text-xs text-[#d1d2dc] leading-relaxed">
-                    {activeCoaching.whatDidWell.map((w, i) => (
-                      <li key={i} className="flex items-start gap-2">
-                        <span className="text-emerald-400 mt-0.5">•</span>
-                        <span>{w}</span>
-                      </li>
-                    ))}
-                  </ul>
+
+                  {/* What to improve */}
+                  <div className="pt-3 border-t border-white/[0.08]">
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-400 mb-2">
+                      <Icon name="alertCircle" size={14} />
+                      <span>What to improve</span>
+                    </div>
+                    <ul className="space-y-2 text-xs text-[#d1d2dc] leading-relaxed">
+                      {activeCoaching.whatToImprove.map((imp, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <span className="text-amber-400 mt-0.5">•</span>
+                          <span>{imp}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
 
-                {/* What to improve */}
-                <div className="pt-3 border-t border-white/[0.08]">
-                  <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-400 mb-2">
-                    <Icon name="alertCircle" size={14} />
-                    <span>What to improve</span>
+                {/* Right Column: Recommended structure & Suggested opening */}
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-indigo-300 mb-2.5">
+                      <Icon name="layers" size={14} />
+                      <span>Recommended structure: Result → Evidence → Significance</span>
+                    </div>
+                    <div className="space-y-2 text-xs text-[#c9cad3]">
+                      {activeCoaching.structure.map((item) => (
+                        <div key={item.step} className="flex items-start gap-2.5">
+                          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue text-[10px] font-bold text-white mt-0.5">
+                            {item.step}
+                          </span>
+                          <div>
+                            <strong className="text-white font-medium">{item.name}</strong> — {item.detail}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <ul className="space-y-2 text-xs text-[#d1d2dc] leading-relaxed">
-                    {activeCoaching.whatToImprove.map((imp, i) => (
-                      <li key={i} className="flex items-start gap-2">
-                        <span className="text-amber-400 mt-0.5">•</span>
-                        <span>{imp}</span>
-                      </li>
-                    ))}
-                  </ul>
+
+                  {/* Suggested Opening */}
+                  <div className="p-3.5 rounded-xl bg-[#0d0c1c] border border-white/10">
+                    <div className="text-xs font-semibold text-white uppercase tracking-wider mb-1.5">Suggested opening</div>
+                    <p className="text-xs text-[#d1d2dc] italic leading-relaxed">{activeCoaching.suggestedOpening}</p>
+                  </div>
+
+                  {/* Practise this slide button */}
+                  <div className="pt-1">
+                    <Link
+                      href={`/rehearse/${presentation.id}?from=${selectedSlideNum}&to=${selectedSlideNum}`}
+                      className="pro-btn-glow w-full bg-blue hover:bg-blue-600 text-white flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold shadow-lg transition-all"
+                    >
+                      <Icon name="play" size={13} />
+                      <span>Practise this slide →</span>
+                    </Link>
+                  </div>
                 </div>
               </div>
-
-              {/* Right Column: Recommended structure & Suggested opening */}
-              <div className="space-y-4">
-                <div>
-                  <div className="flex items-center gap-1.5 text-xs font-semibold text-indigo-300 mb-2.5">
-                    <Icon name="layers" size={14} />
-                    <span>Recommended structure: Result → Evidence → Significance</span>
-                  </div>
-                  <div className="space-y-2 text-xs text-[#c9cad3]">
-                    {activeCoaching.structure.map((item) => (
-                      <div key={item.step} className="flex items-start gap-2.5">
-                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue text-[10px] font-bold text-white mt-0.5">
-                          {item.step}
-                        </span>
-                        <div>
-                          <strong className="text-white font-medium">{item.name}</strong> — {item.detail}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Suggested Opening */}
-                <div className="p-3.5 rounded-xl bg-[#0d0c1c] border border-white/10">
-                  <div className="text-xs font-semibold text-white uppercase tracking-wider mb-1.5">Suggested opening</div>
-                  <p className="text-xs text-[#d1d2dc] italic leading-relaxed">{activeCoaching.suggestedOpening}</p>
-                </div>
-
-                {/* Practise this slide button */}
-                <div className="pt-1">
+            ) : (
+              <div className="mt-5 p-8 rounded-xl bg-[#0d0c1c] border border-white/[0.08] text-center">
+                <Icon name="info" size={24} className="mx-auto mb-2 text-indigo-400 opacity-80" />
+                <p className="text-sm font-semibold text-white">Coaching needs the AI service; your timings are below.</p>
+                <p className="mt-1 text-xs text-muted max-w-sm mx-auto">
+                  Slide timing and coverage have been measured and recorded from your live rehearsal.
+                </p>
+                <div className="mt-4 inline-block">
                   <Link
                     href={`/rehearse/${presentation.id}?from=${selectedSlideNum}&to=${selectedSlideNum}`}
-                    className="pro-btn-glow w-full bg-blue hover:bg-blue-600 text-white flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold shadow-lg transition-all"
+                    className="pro-btn-glow bg-blue hover:bg-blue-600 text-white inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold shadow-lg transition-all"
                   >
                     <Icon name="play" size={13} />
-                    <span>Practise this slide →</span>
+                    <span>Practise slide {selectedSlideNum} again</span>
                   </Link>
                 </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
