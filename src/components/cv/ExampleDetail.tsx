@@ -139,7 +139,7 @@ export function ExampleDetail({ id }: { id: string }) {
 
           <div className="cv-stack">
             <Panel title="Make it your own">
-              <div className="cv-pad cv-stack">
+              <div className="cv-pad cv-actions-col">
                 <p style={{ margin: 0 }}>Every word and every part of the design can be changed.</p>
                 {problem && (
                   <p className="cv-error-text" role="alert" style={{ margin: 0 }}>
