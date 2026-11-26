@@ -51,25 +51,63 @@ export function humaniseSpeechText(text: string): string {
     // Convert slashes between words to " or " (e.g. "product/service" -> "product or service")
     .replace(/([a-zA-Z])\/([a-zA-Z])/g, "$1 or ");
 
-  // 2. Micro-pauses for common interview prompts and cadence boundaries
+  // 2. Micro-pauses and conversational pacing for common interview prompts
   s = s
     .replace(/\bTell me about yourself and\b/gi, "Tell me about yourself... and")
+    .replace(/\bTell me about yourself\b/gi, "Tell me about yourself... ")
     .replace(/\bTell me about a time when\b/gi, "Tell me about a time... when")
+    .replace(/\bTell me about a time you\b/gi, "Tell me about a time... you")
+    .replace(/\bTell me about a time\b/gi, "Tell me about a time... ")
     .replace(/\bTell us about a time when\b/gi, "Tell us about a time... when")
+    .replace(/\bTell us about a time\b/gi, "Tell us about a time... ")
     .replace(/\bCan you give me an example of a time when\b/gi, "Can you give me an example... of a time when")
+    .replace(/\bCan you give me an example of\b/gi, "Can you give me an example... of")
+    .replace(/\bCan you give an example of\b/gi, "Can you give an example... of")
     .replace(/\bCan you describe a situation where\b/gi, "Can you describe a situation... where")
+    .replace(/\bCan you describe a situation\b/gi, "Can you describe a situation... ")
+    .replace(/\bDescribe a situation where\b/gi, "Describe a situation... where")
+    .replace(/\bDescribe a situation in which\b/gi, "Describe a situation... in which")
+    .replace(/\bDescribe a time when\b/gi, "Describe a time... when")
+    .replace(/\bDescribe a time you\b/gi, "Describe a time... you")
+    .replace(/\bWalk me through your experience with\b/gi, "Walk me through your experience... with")
+    .replace(/\bWalk me through\b/gi, "Walk me through... ")
     .replace(/\bWhat would you say is\b/gi, "What would you say... is")
+    .replace(/\bWhat would you say are\b/gi, "What would you say... are")
+    .replace(/\bWhat would you do if\b/gi, "What would you do... if")
     .replace(/\bHow would you approach\b/gi, "How would you approach... ")
+    .replace(/\bHow would you handle\b/gi, "How would you handle... ")
+    .replace(/\bHow do you prioritize\b/gi, "How do you prioritize... ")
+    .replace(/\bHow do you approach\b/gi, "How do you approach... ")
     .replace(/\bWhat motivates you to\b/gi, "What motivates you... to")
-    .replace(/\bWhy do you want to join\b/gi, "Why do you want to join... ");
+    .replace(/\bWhy do you want to join\b/gi, "Why do you want to join... ")
+    .replace(/\bWhy are you interested in\b/gi, "Why are you interested in... ")
+    .replace(/\bWhat is your biggest\b/gi, "What is your biggest... ")
+    .replace(/\bWhat are your biggest\b/gi, "What are your biggest... ");
 
-  // Natural pause after conversational openers (e.g. "Right...", "Okay...")
-  s = s.replace(/^(Right|Okay|So|Now|Well|Great|Sure|Lovely),?\s+/i, "$1... ");
+  // 3. Clause boundary pauses for natural breath rhythm
+  s = s
+    .replace(/,\s+and how you\b/gi, " — and how you")
+    .replace(/,\s+and what you\b/gi, " — and what you")
+    .replace(/,\s+and why you\b/gi, " — and why you")
+    .replace(/\band what the outcome was\b/gi, " — and what the outcome was")
+    .replace(/\band what was the outcome\b/gi, " — and what was the outcome")
+    .replace(/\band how did you resolve it\b/gi, " — and how did you resolve it")
+    .replace(/\band what did you learn\b/gi, " — and what did you learn")
+    .replace(/\s+when you had to\b/gi, "... when you had to")
+    .replace(/\s+where you had to\b/gi, "... where you had to")
+    .replace(/\s+where you were faced with\b/gi, "... where you were faced with")
+    .replace(/\s+in order to\b/gi, ", in order to")
+    .replace(/\s+especially when\b/gi, ", especially when")
+    .replace(/\s+rather than\b/gi, ", rather than")
+    .replace(/\s+instead of\b/gi, ", instead of");
 
-  // Breathing space between distinct sentences
+  // 4. Natural pause after conversational openers (e.g. "Right...", "Okay...")
+  s = s.replace(/^(Right|Okay|So|Now|Well|Great|Sure|Lovely|Hmm),?\s+/i, "$1... ");
+
+  // 5. Breathing space between distinct sentences
   s = s.replace(/([.?!])\s+(?=[A-Z0-9])/g, "$1 ... ");
 
-  // Breathing space around em-dashes
+  // 6. Breathing space around em-dashes
   s = s.replace(/\s*—\s*/g, " — ");
 
   // Clean up excessive punctuation clusters
@@ -92,21 +130,21 @@ export function getConversationalBridge(
   }
 
   const realisticBridges = [
-    "Right, okay... thanks for sharing that. Moving on to our next area — ",
-    "Great, thank you. That's really clear. Now, turning to another aspect of the role — ",
-    "Hmm, okay... understood. Let's touch on something a bit different now — ",
-    "Thanks for walking through that. Next up — ",
+    "Right, okay... thanks for sharing that. So, moving on to our next area — ",
+    "Great, thank you. That's really clear. Now... turning to another aspect of the role — ",
+    "Hmm, okay... understood. Um, let's touch on something a bit different now — ",
+    "Thanks for walking through that. So, next up — ",
     "Right, lovely... looking at the next question here — ",
-    "Understood, thank you. Moving forward to our next scenario — ",
-    "Thanks for that thorough answer. Turning now to — ",
+    "Understood, thank you. Now... moving forward to our next scenario — ",
+    "Thanks for that thorough answer. So, turning now to — ",
   ];
 
   const friendlyBridges = [
-    "Brilliant, thank you! That was really insightful. Let's move on to our next question — ",
-    "Great, thanks for walking me through that! Now, looking at another part of the role — ",
-    "Lovely, thank you. Let's move on to the next question — ",
-    "Right, thanks so much for sharing that! Let's touch on our next topic — ",
-    "Understood, thank you. Exploring our next area now — ",
+    "Brilliant, thank you! That was really insightful. So, let's move on to our next question — ",
+    "Great, thanks for walking me through that! Now... looking at another part of the role — ",
+    "Lovely, thank you. Let's move on to the next question now — ",
+    "Right, thanks so much for sharing that! So, let's touch on our next topic — ",
+    "Understood, thank you. Um, exploring our next area now — ",
   ];
 
   const toughBridges = [
@@ -139,10 +177,10 @@ export function humaniseFollowUp(
   const openersRealistic = [
     "Right, okay... ",
     "Hmm, so looking at that — ",
-    "Got it. Digging into that a little deeper — ",
-    "Understood. Just following up on that — ",
-    "Thanks for that context. To explore that further — ",
-    "Interesting point. Could you say a bit more about that — ",
+    "Got it. Um, digging into that a little deeper — ",
+    "Understood. So, just following up on that — ",
+    "Thanks for that context. Now, to explore that further — ",
+    "Interesting point. Um, could you say a bit more about that — ",
   ];
 
   const openersFriendly = [

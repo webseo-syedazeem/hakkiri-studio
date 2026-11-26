@@ -19,11 +19,13 @@ export const VOICES: Record<VoiceName, { id: string; name: string }> = {
   hard: { id: process.env.ELEVENLABS_VOICE_HARD || "onwK4e9ZLuTAKqWW03F9", name: "Daniel" },
 };
 
-/** Conversational settings with natural inflection, dynamic prosody, and micro-pause sensitivity. */
-const SETTINGS: Record<VoiceName, { stability: number; similarity_boost: number; style: number }> = {
-  easy: { stability: 0.45, similarity_boost: 0.78, style: 0.2 },
-  medium: { stability: 0.45, similarity_boost: 0.75, style: 0.18 },
-  hard: { stability: 0.55, similarity_boost: 0.8, style: 0.12 },
+/** Conversational settings with natural inflection, dynamic prosody, and micro-pause sensitivity.
+ * Lower stability (0.30-0.35) enables natural breathing, pitch variations, and human-like pauses.
+ */
+const SETTINGS: Record<VoiceName, { stability: number; similarity_boost: number; style: number; use_speaker_boost: boolean }> = {
+  easy: { stability: 0.35, similarity_boost: 0.72, style: 0.32, use_speaker_boost: true },
+  medium: { stability: 0.32, similarity_boost: 0.70, style: 0.30, use_speaker_boost: true },
+  hard: { stability: 0.38, similarity_boost: 0.75, style: 0.25, use_speaker_boost: true },
 };
 
 export const elevenLabsKey = () => process.env.ELEVENLABS_API_KEY ?? "";

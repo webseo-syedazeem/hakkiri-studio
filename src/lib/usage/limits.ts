@@ -122,7 +122,7 @@ export function limitReached(
   }
   // One account's own ceiling: reached by that account only, and it stops that account only.
   if (LIMITS.userMonthlyUsd && (s.mySpentMonth ?? 0) >= LIMITS.userMonthlyUsd * grace) {
-    return "You’ve used this month’s free practice. It resets on the 1st. If you need more before then, say so with the Feedback button.";
+    return "You’ve reached this month’s practice limit for your account. It resets on the 1st. If you need more before then, say so with the Feedback button.";
   }
   if (LIMITS.userDailyUsd && (s.mySpentToday ?? 0) >= LIMITS.userDailyUsd * grace) {
     return "You’ve reached today’s practice limit for your account. It resets at midnight.";
@@ -132,7 +132,7 @@ export function limitReached(
     LIMITS.monthlyMinutes &&
     (s.minutesMonth ?? 0) >= LIMITS.monthlyMinutes * grace
   ) {
-    return `You’ve used this month’s ${hm(LIMITS.monthlyMinutes)} of free practice. It resets on the 1st. If you need more before then, say so with the Feedback button.`;
+    return `You’ve used this month’s ${hm(LIMITS.monthlyMinutes)} of beta practice. It resets on the 1st. If you need more before then, say so with the Feedback button.`;
   }
   if (
     opts.practice &&
@@ -143,7 +143,7 @@ export function limitReached(
       return `You’ve practised for ${hm(s.minutesToday)} today, which is the daily cap during the beta. It resets at midnight.`;
     return devOr(
       `You’ve spoken for ${hm(s.minutesToday)} today, the daily limit (${hm(LIMITS.dailyMinutes)}). Raise HAKKIRI_DAILY_MINUTES in .env.local, or carry on tomorrow.`,
-      `You’ve used this month’s free practice. It resets on the 1st. Good work.`,
+      `You’ve reached today’s practice limit for your account. It resets at midnight. Good work.`,
     );
   }
   return null;

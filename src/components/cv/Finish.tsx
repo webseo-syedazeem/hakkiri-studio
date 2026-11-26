@@ -525,6 +525,67 @@ export function Finish({ onOverflow, say }: { onOverflow: () => void; say: (text
 
       <Panel title="Pages, spacing and margins">
         <div className="cv-pad cv-stack">
+          {/* Region and Level controls (CV-6: Set-up choices can be changed on Finish) */}
+          <fieldset>
+            <legend className="cv-label">Where you’re applying</legend>
+            <span className="cv-rule" style={{ display: "block", marginBottom: 6 }}>
+              Sets “CV” or “resume”, standard paper size, spelling rules and how grades are presented.
+            </span>
+            <div className="cv-seg">
+              <label>
+                <input
+                  type="radio"
+                  name="cvRegion"
+                  className="sr-only"
+                  checked={cv.region === "uk"}
+                  onChange={() => {
+                    update({ region: "uk", design: { ...design, pageSize: "a4" } });
+                    say("Switched to UK: A4 paper, UK spelling, and CV headings.");
+                  }}
+                />
+                <span>UK (A4 · UK spelling)</span>
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="cvRegion"
+                  className="sr-only"
+                  checked={cv.region === "us"}
+                  onChange={() => {
+                    update({ region: "us", design: { ...design, pageSize: "letter" } });
+                    say("Switched to US: Letter paper, US spelling, and resume headings.");
+                  }}
+                />
+                <span>US (Letter · US spelling)</span>
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend className="cv-label">Career level</legend>
+            <span className="cv-rule" style={{ display: "block", marginBottom: 6 }}>
+              Adjusts the page target and lines needed for your stage of work. Keeps all your words.
+            </span>
+            <div className="cv-seg">
+              {(["student", "early", "experienced", "senior"] as const).map((l) => (
+                <label key={l}>
+                  <input
+                    type="radio"
+                    name="cvLevel"
+                    className="sr-only"
+                    checked={cv.level === l}
+                    onChange={() => {
+                      const newTarget = l === "student" || l === "early" ? 1 : 2;
+                      update({ level: l, design: { ...design, pageTarget: newTarget } });
+                      say(`Updated level to ${l}. Target set to ${newTarget} page${newTarget === 1 ? "" : "s"}.`);
+                    }}
+                  />
+                  <span style={{ textTransform: "capitalize" }}>{l}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+
           <fieldset>
             <legend className="cv-label">Paper</legend>
             <div className="cv-seg" style={{ marginTop: 6 }}>

@@ -18,7 +18,7 @@ import { followUpLimit } from "@/lib/followups";
 import { STYLE_HINT } from "@/lib/labels";
 import { scoreLabel } from "@/lib/scoring/combine";
 import { habitLine, rowHabit, HABIT_LABEL, type DrillKind, type Habit } from "@/lib/sessions/drills";
-import { DIFFICULTY_HINT, DIFFICULTY_LABEL, difficultyFor, styleFor, type Difficulty, type SessionSettings } from "@/lib/interviews/settings";
+import { DIFFICULTY_HINT, DIFFICULTY_LABEL, CATEGORY_LABEL, difficultyFor, styleFor, type Difficulty, type SessionSettings } from "@/lib/interviews/settings";
 import type { PayCheck } from "@/lib/sessions/pay";
 import type { MockRow } from "@/lib/mocks/report";
 import type { SkipReason, SkipRecord } from "@/lib/mocks/store";
@@ -758,12 +758,18 @@ export function LiveInterview(p: LiveInterviewProps) {
     if (phase === "asking") {
       pausedDuringAsking.current = true;
       voice.current?.cancel();
+      if (!clock.current.pausedAt) clock.current.pausedAt = Date.now();
       setPhase("paused");
     } else if (phase === "answering") {
       pausedDuringAsking.current = false;
       mic.pause();
+      if (!clock.current.pausedAt) clock.current.pausedAt = Date.now();
       setPhase("paused");
     } else if (phase === "paused") {
+      if (clock.current.pausedAt) {
+        clock.current.paused += Date.now() - clock.current.pausedAt;
+        clock.current.pausedAt = null;
+      }
       if (pausedDuringAsking.current) {
         pausedDuringAsking.current = false;
         void ask(asked, "resume");
@@ -1471,6 +1477,9 @@ export function LiveInterview(p: LiveInterviewProps) {
                   {queue.map((item, idx) => {
                     const isCurrent = idx === qIndex;
                     const isDone = idx < qIndex;
+                    const label = (isDone || isCurrent || session?.mode === "drill") 
+                      ? item.short 
+                      : (item.group ? (CATEGORY_LABEL[item.group] || `Question ${idx + 1}`) : `Question ${idx + 1}`);
                     return (
                       <div
                         key={item.id}
@@ -1485,7 +1494,7 @@ export function LiveInterview(p: LiveInterviewProps) {
                       >
                         <div className="flex flex-col text-left min-w-0 flex-1">
                           <span className="num text-[11px] font-bold text-white/70">{idx + 1}</span>
-                          <span className="text-xs truncate max-w-full font-medium text-white/90">{item.short}</span>
+                          <span className="text-xs truncate max-w-full font-medium text-white/90">{label}</span>
                         </div>
                         {isDone && (
                           <div className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-black text-[10px] font-bold ml-2">
@@ -1535,7 +1544,9 @@ export function LiveInterview(p: LiveInterviewProps) {
                 <div className="border-t border-white/[0.06] pt-3 text-xs text-muted flex items-start gap-1.5">
                   <span className="text-white font-medium shrink-0">→ Next:</span>
                   <span className="truncate text-[#c9cad3]">
-                    {queue[qIndex + 1]?.short || "Final report & analysis"}
+                    {session?.mode === "drill"
+                      ? (queue[qIndex + 1]?.short || "Final report & analysis")
+                      : (queue[qIndex + 1]?.group ? `Question ${qIndex + 2} · ${CATEGORY_LABEL[queue[qIndex + 1].group] || queue[qIndex + 1].short}` : queue[qIndex + 1] ? `Question ${qIndex + 2}` : "Final report & analysis")}
                   </span>
                 </div>
               </div>
@@ -1650,8 +1661,8 @@ export function LiveInterview(p: LiveInterviewProps) {
               </div>
             </div>
 
-            {/* Controls Row */}
-            <div className="flex flex-wrap items-center justify-between gap-4 pt-1">
+            {/* Controls Row - Sticky bottom for desktop & mobile (UX-1) */}
+            <div className="sticky bottom-0 z-40 -mx-4 -mb-4 px-4 py-3 bg-[#13141b]/95 backdrop-blur-md border-t border-white/10 sm:static sm:bg-transparent sm:border-0 sm:p-0 flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2 text-xs text-muted">
                 <kbd className="rounded bg-[#19182d] border border-white/15 px-2.5 py-1 font-mono text-xs font-semibold text-white shadow-sm">
                   Space
@@ -1660,6 +1671,13 @@ export function LiveInterview(p: LiveInterviewProps) {
               </div>
 
               <div className="flex flex-wrap items-center gap-2.5">
+                {/* Single Skip Control (UX-3) */}
+                {Boolean(session) && turn.kind === "follow-up" && (phase === "asking" || phase === "answering" || phase === "paused") && (
+                  <Button onClick={() => void handleSkipQuestion()} className="rounded-xl text-xs hover:border-amber-500/40 hover:text-amber-300">
+                    <Icon name="fastForward" size={14} />
+                    Skip follow-up
+                  </Button>
+                )}
                 {canSkip && <SkipMenu simple={Boolean(q.slot)} onSkip={(r) => void skip(r)} />}
                 
                 {phase === "feedback" ? (
@@ -1728,10 +1746,6 @@ export function LiveInterview(p: LiveInterviewProps) {
                       <Icon name="pause" size={14} />
                       Pause
                     </Button>
-                    <Button onClick={() => void handleSkipQuestion()} className="rounded-xl text-xs hover:border-amber-500/40 hover:text-amber-300">
-                      <Icon name="fastForward" size={14} />
-                      Skip question
-                    </Button>
                     <button
                       type="button"
                       onClick={() => voice.current?.cancel()}
@@ -1754,10 +1768,6 @@ export function LiveInterview(p: LiveInterviewProps) {
                     <Button onClick={togglePause} className="rounded-xl text-xs">
                       <Icon name={phase === "paused" ? "play" : "pause"} size={14} />
                       {phase === "paused" ? "Resume" : "Pause"}
-                    </Button>
-                    <Button onClick={() => void handleSkipQuestion()} className="rounded-xl text-xs hover:border-amber-500/40 hover:text-amber-300">
-                      <Icon name="fastForward" size={14} />
-                      Skip question
                     </Button>
                     <button
                       type="button"

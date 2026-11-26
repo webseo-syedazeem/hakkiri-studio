@@ -22,9 +22,9 @@ const TYPES: PracticeType[] = ["strengths", "competency", "technical", "situatio
  * figures from their own finished sessions, and the practice topics the app
  * matches to that job. Nothing is filled in from a sample.
  */
-export default async function PracticeHubPage({ searchParams }: { searchParams: Promise<{ interview?: string; type?: string }> }) {
+export default async function PracticeHubPage({ searchParams }: { searchParams: Promise<{ interview?: string; type?: string; claim?: string; question?: string; returnTo?: string }> }) {
   const user = await requirePageUser();
-  const { interview: wantedId, type } = await searchParams;
+  const { interview: wantedId, type, claim, question, returnTo } = await searchParams;
   const today = londonToday();
   const now = new Date();
   const list = await listInterviewsAsync(today, user.id);
@@ -61,6 +61,9 @@ export default async function PracticeHubPage({ searchParams }: { searchParams: 
       initialInterviewId={chosen?.id}
       initialType={TYPES.includes(type as PracticeType) ? (type as PracticeType) : undefined}
       presentation={own ? { id: own.id, title: own.title } : null}
+      claim={claim}
+      question={question}
+      returnTo={returnTo}
     />
   );
 }

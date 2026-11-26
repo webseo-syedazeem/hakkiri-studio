@@ -11,6 +11,7 @@ import {
   DIFFICULTY_LABEL,
   PRESETS,
   presetFor,
+  mixIsValid,
   totalQuestionCount,
   type Difficulty,
   type Mix,
@@ -295,7 +296,11 @@ export function InterviewOverviewClient({
               const isPresetScreen = lName.includes("screen") || lName.includes("recruiter");
               const isPresetTech = lName.includes("tech") || lName.includes("case") || lName.includes("code");
               const isPresetFinal = lName.includes("final") || lName.includes("panel") || lName.includes("lead");
-              const preset: SessionSettings["preset"] = isPresetScreen ? "screening" : isPresetTech ? "technical" : isPresetFinal ? "final" : "balanced";
+              const savedMix = (match.settings?.mix && mixIsValid(match.settings.mix)) ? match.settings.mix : null;
+              const preset: SessionSettings["preset"] = (match.settings?.preset && match.settings.preset !== "custom")
+                ? match.settings.preset
+                : isPresetScreen ? "screening" : isPresetTech ? "technical" : isPresetFinal ? "final" : "balanced";
+              const mix = savedMix ?? (preset !== "custom" && preset in PRESETS ? PRESETS[preset as Exclude<MixPreset, "custom">].mix : PRESETS.balanced.mix);
               const isNext = st.status === "next" || (idx === 0 && !match.stages.some((x: any) => x.status === "next"));
               const isCompleted = st.status === "completed";
               const formattedDate = formatStageDate(st.date, st.time);
@@ -308,7 +313,7 @@ export function InterviewOverviewClient({
                 status: isCompleted ? "completed" : isNext ? "next" : "upcoming",
                 subtitle: formattedDate || (isCompleted ? "Completed" : "Upcoming"),
                 preset,
-                mix: PRESETS[preset].mix,
+                mix,
               };
             });
             setActiveStages(mapped);

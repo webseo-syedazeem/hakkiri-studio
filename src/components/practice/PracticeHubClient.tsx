@@ -37,6 +37,9 @@ export interface PracticeHubClientProps {
   initialType?: PracticeType;
   /** One of the person's own presentations, when they have added one. */
   presentation: { id: string; title: string } | null;
+  claim?: string;
+  question?: string;
+  returnTo?: string;
 }
 
 const TYPES: { id: PracticeType; label: string; icon: IconName; color: string }[] = [
@@ -49,7 +52,7 @@ const TYPES: { id: PracticeType; label: string; icon: IconName; color: string }[
 ];
 const typeOf = (id: PracticeType) => TYPES.find((t) => t.id === id) ?? TYPES[1];
 
-export function PracticeHubClient({ interviews, initialInterviewId, initialType, presentation }: PracticeHubClientProps) {
+export function PracticeHubClient({ interviews, initialInterviewId, initialType, presentation, claim, question, returnTo }: PracticeHubClientProps) {
   const router = useRouter();
   const [selectedId, setSelectedId] = useState<string | undefined>(initialInterviewId ?? interviews[0]?.id);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -101,6 +104,29 @@ export function PracticeHubClient({ interviews, initialInterviewId, initialType,
 
   return (
     <div className="flex grow flex-col w-full pb-20 animate-rise text-white">
+      {claim && (
+        <div className="mb-6 rounded-2xl bg-[#1a1738] border border-indigo-500/40 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-lg">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-indigo-400" />
+              <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-300">Practising CV Claim</span>
+            </div>
+            <p className="mt-1 text-sm font-semibold text-white">“{claim}”</p>
+            {question && (
+              <p className="mt-1 text-xs text-indigo-200/80">Anticipated question: {question}</p>
+            )}
+          </div>
+          {returnTo && (
+            <Link
+              href={returnTo}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 px-3 py-1.5 text-xs font-medium text-white transition-all shrink-0 hover:-translate-y-0.5"
+            >
+              ← Return to CV
+            </Link>
+          )}
+        </div>
+      )}
+
       {/* 1. HEADER */}
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-5 border-b border-white/[0.08] pb-6">
         <div>

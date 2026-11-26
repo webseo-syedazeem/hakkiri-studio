@@ -134,8 +134,7 @@ function processLine(line: string, mood: Mood, add: (quote: string, priority: "r
     const asked = CUE.test(part);
     const duty = !asked && DUTY.test(part);
     if (mood !== "duty" && !bullet && !asked && !duty) {
-      // In prose adverts, check if the sentence names known technical/skill terms
-      if (!namedTerms(part).length && !askedFor(part).length) continue;
+      continue;
     }
     const lighter = PREFERRED.test(part) || mood === "preferred" || mood === "duty" || duty || (bullet && !mood && !asked);
     add(part, lighter ? "preferred" : "required");
