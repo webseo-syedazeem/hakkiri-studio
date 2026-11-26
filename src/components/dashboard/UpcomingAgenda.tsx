@@ -50,7 +50,7 @@ export function UpcomingAgenda({ events }: { events: UpcomingEvent[] }) {
               className={clsx(
                 "rounded-lg px-3 py-1 text-xs font-semibold transition-all duration-300 cursor-pointer",
                 filter === "this-week"
-                  ? "bg-[#28324a] text-ink shadow-[0_2px_8px_rgba(0,0,0,0.4)] scale-[1.02]"
+                  ? "bg-panel text-ink shadow-sm border border-line scale-[1.02] dark:bg-[#28324a]"
                   : "text-muted hover:text-ink"
               )}
             >
@@ -63,7 +63,7 @@ export function UpcomingAgenda({ events }: { events: UpcomingEvent[] }) {
               className={clsx(
                 "rounded-lg px-3 py-1 text-xs font-semibold transition-all duration-300 cursor-pointer",
                 filter === "all"
-                  ? "bg-[#28324a] text-ink shadow-[0_2px_8px_rgba(0,0,0,0.4)] scale-[1.02]"
+                  ? "bg-panel text-ink shadow-sm border border-line scale-[1.02] dark:bg-[#28324a]"
                   : "text-muted hover:text-ink"
               )}
             >
@@ -101,8 +101,8 @@ export function UpcomingAgenda({ events }: { events: UpcomingEvent[] }) {
                     className={clsx(
                       "flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] shadow-sm transition-transform duration-300 group-hover:scale-105",
                       item.type === "interview"
-                        ? "bg-[#1a2238] text-[#818cf8]"
-                        : "bg-[#142825] text-[#34d399]"
+                        ? "bg-blue-500/10 text-blue-600 dark:bg-[#1a2238] dark:text-[#818cf8]"
+                        : "bg-emerald-500/10 text-emerald-600 dark:bg-[#142825] dark:text-[#34d399]"
                     )}
                   >
                     <Icon name={item.type === "interview" ? "cal" : "present"} size={20} />
@@ -113,8 +113,8 @@ export function UpcomingAgenda({ events }: { events: UpcomingEvent[] }) {
                       className={clsx(
                         "inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold mt-0.5",
                         item.type === "interview"
-                          ? "bg-[#1e2544] text-[#818cf8]"
-                          : "bg-[#162a26] text-[#34d399]"
+                          ? "bg-blue-500/15 text-blue-600 dark:bg-[#1e2544] dark:text-[#818cf8]"
+                          : "bg-emerald-500/15 text-emerald-600 dark:bg-[#162a26] dark:text-[#34d399]"
                       )}
                     >
                       {item.type === "interview" ? "Interview" : "Presentation"}

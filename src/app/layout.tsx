@@ -72,11 +72,29 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const gaId = process.env.NEXT_PUBLIC_GA_ID || process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 
   return (
-    <html lang="en" className="overflow-x-clip">
+    <html lang="en" className="overflow-x-clip" data-theme="light" suppressHydrationWarning>
       <head>
         <meta
           name="google-site-verification"
           content={process.env.NEXT_PUBLIC_GSC_VERIFICATION || "XiNOBpixzNRt0PdX_ByqjV0fKCLDyejeIcFXB-TqRwY"}
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var saved = localStorage.getItem("hk_theme");
+                  if (saved === "dark") {
+                    document.documentElement.classList.add("dark");
+                    document.documentElement.dataset.theme = "dark";
+                  } else {
+                    document.documentElement.classList.remove("dark");
+                    document.documentElement.dataset.theme = "light";
+                  }
+                } catch (e) {}
+              })();
+            `,
+          }}
         />
       </head>
       <body className="min-h-screen bg-booth text-ink antialiased overflow-x-clip w-full max-w-full">

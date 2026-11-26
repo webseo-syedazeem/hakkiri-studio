@@ -259,10 +259,10 @@ export function StageTracker({
                 setIsDropdownOpen(!isDropdownOpen);
               } else if (e.key === "Escape") setIsDropdownOpen(false);
             }}
-            className="flex items-center justify-between rounded-[14px] bg-panel-2 p-3.5 shadow-[inset_0_0_0_1px_var(--color-line)] transition-all hover:shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-[#1a1f33] cursor-pointer group select-none"
+            className="flex items-center justify-between rounded-[14px] bg-panel-2 p-3.5 shadow-[inset_0_0_0_1px_var(--color-line)] transition-all hover:shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel cursor-pointer group select-none"
           >
             <div className="flex items-center gap-3.5 min-w-0">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-[#143029] text-[18px] font-bold text-[#34d399] shadow-sm">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-emerald-500/15 text-[18px] font-bold text-emerald-600 dark:text-[#34d399] shadow-sm">
                 {displayCompanyInitial}
               </span>
               <div className="min-w-0 grow">
@@ -272,7 +272,7 @@ export function StageTracker({
                 <div className="flex items-center gap-2 text-xs text-muted mt-0.5">
                   <span>{displayCompany}</span>
                   <span>·</span>
-                  <span className="inline-flex items-center rounded-full bg-blue-fill/20 px-2 py-0.5 text-[10px] font-semibold text-blue-soft">
+                  <span className="inline-flex items-center rounded-full bg-blue-fill/15 px-2 py-0.5 text-[10px] font-semibold text-blue-fill">
                     In progress
                   </span>
                 </div>
@@ -290,7 +290,7 @@ export function StageTracker({
                 className="fixed inset-0 z-40"
                 onClick={() => setIsDropdownOpen(false)}
               />
-              <div className="absolute top-full left-0 right-0 mt-2 z-50 rounded-xl bg-[#141829] border border-white/15 shadow-2xl overflow-hidden py-1.5 backdrop-blur-xl animate-fade-in divide-y divide-white/[0.06]">
+              <div className="absolute top-full left-0 right-0 mt-2 z-50 rounded-xl bg-panel border border-line shadow-2xl overflow-hidden py-1.5 backdrop-blur-xl animate-dropdown divide-y divide-line">
                 <div className="px-3.5 py-2 text-[11px] font-bold uppercase tracking-wider text-muted">
                   Switch multi-stage interview
                 </div>
@@ -367,7 +367,7 @@ export function StageTracker({
             if (isCurrent) {
               return (
                 <div key={s.num} className="my-1">
-                  <div className="rounded-[13px] p-3 transition-all duration-300 bg-[#1c2237] shadow-[0_0_20px_rgba(99,102,241,0.15),inset_0_0_0_1.5px_#6366f1]">
+                  <div className="rounded-[13px] p-3 transition-all duration-300 bg-blue-fill/5 border border-blue-fill/30 shadow-sm dark:bg-[#1c2237] dark:shadow-[0_0_20px_rgba(99,102,241,0.15),inset_0_0_0_1.5px_#6366f1]">
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-start gap-3 min-w-0">
                         <div className="relative flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-[#818cf8] bg-panel-2 mt-0.5">

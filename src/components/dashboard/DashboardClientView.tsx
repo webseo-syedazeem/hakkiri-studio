@@ -31,7 +31,7 @@ export interface HomeRecentPractice {
   href: string;
 }
 
-const CARD = "group relative overflow-hidden flex animate-rise items-center justify-between rounded-[20px] bg-panel p-5 text-left shadow-[inset_0_0_0_1px_var(--color-line)] transition-all duration-300 hover:-translate-y-1.5 hover:shadow-[0_16px_36px_-8px_rgba(0,0,0,0.7)] cursor-pointer";
+const CARD = "group relative overflow-hidden flex animate-rise items-center justify-between rounded-[20px] bg-panel p-5 text-left shadow-[inset_0_0_0_1px_var(--color-line)] transition-all duration-300 hover:-translate-y-1 hover:shadow-lg dark:hover:shadow-[0_16px_36px_-8px_rgba(0,0,0,0.7)] cursor-pointer";
 
 function Metric({ icon, tint, label, value, note, delay }: { icon: IconName; tint: string; label: string; value: number; note?: string; delay: string }) {
   return (
@@ -133,17 +133,17 @@ export function DashboardClientView({
     <>
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4" data-testid="home-metrics">
         <Link href="/interviews" className={CARD} style={{ animationDelay: "0.1s" }} data-testid="home-interviews">
-          <Metric icon="cal" tint="bg-[#1a2238] text-[#a5b4fc]" label="Your interviews" value={interviewsCount} delay="0.1s" />
+          <Metric icon="cal" tint="bg-blue-500/10 text-blue-600 dark:bg-[#1a2238] dark:text-[#a5b4fc]" label="Your interviews" value={interviewsCount} delay="0.1s" />
         </Link>
         <Link href="/presentations" className={CARD} style={{ animationDelay: "0.15s" }} data-testid="home-presentations">
-          <Metric icon="present" tint="bg-[#142825] text-[#6ee7b7]" label="Your presentations" value={presentationsCount} delay="0.15s" />
+          <Metric icon="present" tint="bg-emerald-500/10 text-emerald-600 dark:bg-[#142825] dark:text-[#6ee7b7]" label="Your presentations" value={presentationsCount} delay="0.15s" />
         </Link>
         <Link href="/interviews" className={CARD} style={{ animationDelay: "0.2s" }} data-testid="home-sessions">
-          <Metric icon="zap" tint="bg-[#221c38] text-[#d8b4fe]" label="Practice sessions completed" value={sessionsCount} note="in all" delay="0.2s" />
+          <Metric icon="zap" tint="bg-purple-500/10 text-purple-600 dark:bg-[#221c38] dark:text-[#d8b4fe]" label="Practice sessions completed" value={sessionsCount} note="in all" delay="0.2s" />
         </Link>
         <button type="button" onClick={() => setIsArchiveOpen(true)} className={CARD} style={{ animationDelay: "0.25s" }} data-testid="home-archive">
           <div className="relative z-10 flex items-center gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-[#1a2238] text-[#a5b4fc] transition-transform duration-300 group-hover:scale-110">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-blue-500/10 text-blue-600 dark:bg-[#1a2238] dark:text-[#a5b4fc] transition-transform duration-300 group-hover:scale-110">
               <Icon name="archive" size={24} />
             </div>
             <div>
@@ -185,7 +185,7 @@ export function DashboardClientView({
                 {nextSteps.map((step) => (
                   <li key={`${step.kind}-${step.id}`} className="flex items-center justify-between gap-3.5 rounded-[14px] p-2 transition-colors duration-200 hover:bg-panel-2/60">
                     <div className="flex items-center gap-3.5 min-w-0 grow">
-                      <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] ${step.kind === "interview" ? "bg-[#1c2338] text-[#93c5fd]" : "bg-[#142825] text-[#6ee7b7]"}`}>
+                      <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] ${step.kind === "interview" ? "bg-blue-500/10 text-blue-600 dark:bg-[#1c2338] dark:text-[#93c5fd]" : "bg-emerald-500/10 text-emerald-600 dark:bg-[#142825] dark:text-[#6ee7b7]"}`}>
                         <Icon name={step.kind === "interview" ? "chat" : "present"} size={20} />
                       </div>
                       <div className="min-w-0 grow">
@@ -233,7 +233,7 @@ export function DashboardClientView({
                       </div>
                       <div className="flex items-center gap-2.5 shrink-0">
                         <span className="text-xs text-muted">{rp.dateText}</span>
-                        <span className="inline-flex items-center rounded-full bg-[#1e2544] px-2.5 py-0.5 text-[11px] font-semibold text-[#c7d2fe]">{rp.score != null ? `${rp.score.toFixed(1)} / 5` : "Not scored"}</span>
+                        <span className="inline-flex items-center rounded-full bg-blue-500/10 dark:bg-[#1e2544] px-2.5 py-0.5 text-[11px] font-semibold text-blue-600 dark:text-[#c7d2fe]">{rp.score != null ? `${rp.score.toFixed(1)} / 5` : "Not scored"}</span>
                       </div>
                     </Link>
                   </li>

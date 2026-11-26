@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
@@ -76,14 +76,34 @@ export function Rail({
   const { user: authUser, logout } = useAuth();
   const [showMenu, setShowMenu] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [lightTheme, setLightTheme] = useState(false);
+  const [isDark, setIsDark] = useState(false);
   const displayInitials = authUser?.initials || initials || "SA";
 
+  useEffect(() => {
+    const darkActive =
+      typeof document !== "undefined" &&
+      (document.documentElement.classList.contains("dark") ||
+        document.documentElement.dataset.theme === "dark");
+    setIsDark(Boolean(darkActive));
+  }, []);
+
   const toggleTheme = () => {
-    const next = !document.documentElement.classList.contains("mk");
-    document.documentElement.classList.toggle("mk", next);
-    document.documentElement.dataset.theme = next ? "light" : "dark";
-    setLightTheme(next);
+    const willBeDark = !isDark;
+    setIsDark(willBeDark);
+    if (willBeDark) {
+      document.documentElement.classList.add("dark");
+      document.documentElement.classList.remove("mk");
+      document.documentElement.dataset.theme = "dark";
+      try {
+        localStorage.setItem("hk_theme", "dark");
+      } catch {}
+    } else {
+      document.documentElement.classList.remove("dark");
+      document.documentElement.dataset.theme = "light";
+      try {
+        localStorage.setItem("hk_theme", "light");
+      } catch {}
+    }
   };
 
   const isUserAdmin = !!authUser?.isAdmin;
@@ -101,7 +121,7 @@ export function Rail({
           className="flex items-center gap-2.5 text-ink hover:opacity-90 transition-opacity"
         >
           <Mark size={24} badge />
-          <span className="text-[17px] font-bold tracking-tight text-white">Hakkiri</span>
+          <span className="text-[17px] font-bold tracking-tight text-ink">Hakkiri</span>
         </Link>
 
         <div className="flex items-center gap-2">
@@ -137,7 +157,7 @@ export function Rail({
                   className={clsx(
                     "flex items-center gap-3 rounded-xl px-4 py-3 text-[15px] font-medium transition-all duration-200",
                     on
-                      ? "bg-[#1c2237] text-white shadow-[inset_0_0_0_1px_#374268]"
+                      ? "bg-white text-ink shadow-[0_1px_3px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)] border border-black/[0.06] font-semibold dark:bg-[#1c2237] dark:text-white dark:border-[#374268]"
                       : "text-muted hover:bg-panel-2 hover:text-ink"
                   )}
                 >
@@ -151,10 +171,28 @@ export function Rail({
               );
             })}
 
+            <button
+              type="button"
+              onClick={toggleTheme}
+              aria-label="Change theme"
+              className="flex items-center justify-between rounded-xl px-4 py-3 text-[15px] font-medium text-muted hover:bg-panel-2 hover:text-ink transition-all mt-2 cursor-pointer"
+            >
+              <div className="flex items-center gap-3">
+                <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+                  <circle cx="12" cy="12" r="4" />
+                  <path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l2 2m10 10 2 2M19 5l-2 2M7 17l-2 2" />
+                </svg>
+                <span>Appearance</span>
+              </div>
+              <span className="text-xs uppercase font-semibold text-muted px-2 py-0.5 rounded bg-panel-2 border border-line">
+                {isDark ? "Dark" : "Light"}
+              </span>
+            </button>
+
             <Link
               href="/settings"
               onClick={() => setMobileOpen(false)}
-              className="flex items-center gap-3 rounded-xl px-4 py-3 text-[15px] font-medium text-muted hover:bg-panel-2 hover:text-ink transition-all mt-2"
+              className="flex items-center gap-3 rounded-xl px-4 py-3 text-[15px] font-medium text-muted hover:bg-panel-2 hover:text-ink transition-all"
             >
               <Icon name="gear" size={20} className="text-muted" />
               <span>Settings</span>
@@ -192,7 +230,7 @@ export function Rail({
       {/* Desktop Navigation Sidebar (>= md) */}
       <nav
         aria-label="Main"
-        className="print-hide fixed top-0 bottom-0 left-0 z-30 hidden md:flex h-screen w-[200px] shrink-0 flex-col border-r border-line bg-booth py-5 px-3 overflow-y-auto overflow-x-hidden [scrollbar-width:none]"
+        className="print-hide fixed top-0 bottom-0 left-0 z-30 hidden md:flex h-screen w-[200px] shrink-0 flex-col border-r border-line bg-booth py-5 px-3 overflow-y-auto overflow-x-hidden [scrollbar-width:none] transition-colors duration-250"
       >
         {/* Brand Header */}
         <Link
@@ -201,7 +239,7 @@ export function Rail({
           className="mb-6 flex items-center gap-3 px-2 text-ink hover:opacity-90 transition-opacity"
         >
           <Mark size={28} badge />
-          <span className="text-[18px] font-bold tracking-tight text-white">Hakkiri</span>
+          <span className="text-[18px] font-bold tracking-tight text-ink">Hakkiri</span>
         </Link>
 
         {/* Navigation Items with labels matching mockup */}
@@ -216,7 +254,7 @@ export function Rail({
                 className={clsx(
                   "flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all duration-200",
                   on
-                    ? "bg-[#1c2237] text-white shadow-[inset_0_0_0_1px_#374268]"
+                    ? "bg-white text-ink shadow-[0_1px_3px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)] border border-black/[0.06] font-semibold dark:bg-[#1c2237] dark:text-white dark:border-[#374268]"
                     : "text-muted hover:bg-panel-2 hover:text-ink"
                 )}
               >
@@ -226,7 +264,7 @@ export function Rail({
                   className={clsx("shrink-0 transition-colors", on ? "text-blue-soft" : "text-muted")}
                 />
                 <span className="truncate">{it.label}</span>
-                {on && <span className="ml-auto h-4 w-[3px] shrink-0 rounded-full bg-[#AAB8FF]" aria-hidden="true" />}
+                {on && <span className="ml-auto h-4 w-[3px] shrink-0 rounded-full bg-blue-fill" aria-hidden="true" />}
               </Link>
             );
           })}
@@ -241,14 +279,30 @@ export function Rail({
             type="button"
             onClick={toggleTheme}
             aria-label="Change theme"
-            title={lightTheme ? "Switch to dark theme" : "Switch to light theme"}
-            className="flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-[13px] font-medium text-muted hover:bg-panel-2 hover:text-ink transition-colors cursor-pointer"
+            title={isDark ? "Switch to Apple light theme" : "Switch to dark theme"}
+            className="group flex w-full items-center justify-between rounded-xl px-2.5 py-2 text-[13px] font-medium text-muted hover:bg-panel-2 hover:text-ink transition-all cursor-pointer"
           >
-            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
-              <circle cx="12" cy="12" r="4" />
-              <path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l2 2m10 10 2 2M19 5l-2 2M7 17l-2 2" />
-            </svg>
-            <span className="truncate">Appearance</span>
+            <div className="flex items-center gap-3 min-w-0">
+              <svg
+                aria-hidden="true"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.75"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className={clsx("shrink-0 transition-transform duration-300 group-hover:rotate-45", isDark ? "text-amber-400" : "text-slate-700")}
+              >
+                <circle cx="12" cy="12" r="4" />
+                <path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l2 2m10 10 2 2M19 5l-2 2M7 17l-2 2" />
+              </svg>
+              <span className="truncate">Appearance</span>
+            </div>
+            <span className="text-[10px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded-md bg-panel-2 text-muted border border-line">
+              {isDark ? "Dark" : "Light"}
+            </span>
           </button>
 
           <div className="relative">

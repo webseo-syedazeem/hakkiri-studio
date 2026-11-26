@@ -248,15 +248,15 @@ export function AnsweringGuides({ className }: { className?: string }) {
     ANSWERING_GUIDES_DATA.find((g) => g.id === activeGuideId) ?? ANSWERING_GUIDES_DATA[0];
 
   return (
-    <div className={clsx("rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-6 sm:p-7 shadow-xl", className)}>
+    <div className={clsx("rounded-2xl bg-panel border border-line p-6 sm:p-7 shadow-sm", className)}>
       {/* Top Header */}
       <div className="flex items-center gap-3.5 mb-6">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#241e4b] border border-[#7c3aed]/40 text-[#c084fc] shadow-[0_0_15px_rgba(124,58,237,0.25)]">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-fill/10 border border-blue-fill/25 text-blue-fill">
           <Icon name="book" size={20} strokeWidth={2} />
         </div>
         <div>
-          <h3 className="text-lg font-bold text-white tracking-tight">Answering guides</h3>
-          <p className="text-xs text-[#8c8d9e]">
+          <h3 className="text-lg font-bold text-ink tracking-tight">Answering guides</h3>
+          <p className="text-xs text-muted">
             Learn how to structure different types of interview answers, with when to use each approach.
           </p>
         </div>
@@ -276,8 +276,8 @@ export function AnsweringGuides({ className }: { className?: string }) {
                 className={clsx(
                   "w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-left text-xs transition-all cursor-pointer group",
                   isActive
-                    ? "bg-gradient-to-r from-[#282156] to-[#1c173e] border border-[#7c3aed] text-white shadow-[0_0_15px_rgba(124,58,237,0.25)] font-semibold ring-1 ring-[#7c3aed]/40"
-                    : "bg-transparent hover:bg-white/[0.03] text-[#8c8d9e] hover:text-white border border-transparent"
+                    ? "bg-blue-fill/10 border border-blue-fill/40 text-blue-fill font-semibold shadow-sm dark:bg-gradient-to-r dark:from-[#282156] dark:to-[#1c173e] dark:border-[#7c3aed] dark:text-white"
+                    : "bg-transparent hover:bg-panel-2 text-muted hover:text-ink border border-transparent"
                 )}
               >
                 <div className="flex items-center gap-3 min-w-0">
@@ -286,27 +286,27 @@ export function AnsweringGuides({ className }: { className?: string }) {
                     size={15}
                     className={clsx(
                       "shrink-0 transition-colors",
-                      isActive ? "text-[#c084fc]" : "text-[#8c8d9e] group-hover:text-white"
+                      isActive ? "text-blue-fill dark:text-[#c084fc]" : "text-muted group-hover:text-ink"
                     )}
                   />
                   <span className="truncate">{guide.name}</span>
                 </div>
                 {isActive && (
-                  <Icon name="chevronRight" size={14} className="text-[#c084fc] shrink-0" />
+                  <Icon name="chevronRight" size={14} className="text-blue-fill dark:text-[#c084fc] shrink-0" />
                 )}
               </button>
             );
           })}
         </div>
 
-        {/* Right: Active Guide Details (Exact Match to Screenshot) */}
+        {/* Right: Active Guide Details */}
         <div className="min-w-0">
-          <h4 className="text-lg font-bold text-white tracking-tight">{activeGuide.name}</h4>
-          <p className="text-xs text-[#8c8d9e] mt-1 mb-5 leading-relaxed">{activeGuide.subtitle}</p>
+          <h4 className="text-lg font-bold text-ink tracking-tight">{activeGuide.name}</h4>
+          <p className="text-xs text-muted mt-1 mb-5 leading-relaxed">{activeGuide.subtitle}</p>
 
           {/* Recommended Approach Container with Flowchart Steps */}
-          <div className="rounded-xl bg-[#141328] border border-white/[0.06] p-4 mb-4 shadow-sm">
-            <h5 className="text-xs font-semibold text-[#a5a1ff] mb-4">
+          <div className="rounded-xl bg-panel-2 border border-line p-4 mb-4 shadow-sm">
+            <h5 className="text-xs font-semibold text-blue-fill mb-4">
               Recommended approach: {activeGuide.approachName}
             </h5>
 
@@ -317,17 +317,17 @@ export function AnsweringGuides({ className }: { className?: string }) {
                   <div key={step.num} className="flex items-center flex-1 min-w-[140px]">
                     <div className="flex flex-col flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#5c64f7] text-[10px] font-bold text-white">
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-fill text-[10px] font-bold text-white">
                           {step.num}
                         </span>
-                        <span className="text-xs font-bold text-white">{step.title}</span>
+                        <span className="text-xs font-bold text-ink">{step.title}</span>
                       </div>
-                      <p className="text-[11px] text-[#8c8d9e] mt-1 pl-7 leading-snug">
+                      <p className="text-[11px] text-muted mt-1 pl-7 leading-snug">
                         {step.desc}
                       </p>
                     </div>
                     {!isLast && (
-                      <span className="hidden xl:inline-block mx-2 text-[#5c64f7]/70 font-bold select-none">
+                      <span className="hidden xl:inline-block mx-2 text-blue-fill/60 font-bold select-none">
                         →
                       </span>
                     )}
@@ -340,57 +340,57 @@ export function AnsweringGuides({ className }: { className?: string }) {
           {/* Example Question & Key Tip Side-by-Side */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {/* Left: Example Question */}
-            <div className="rounded-xl bg-[#141328] border border-white/[0.06] p-4 flex items-start gap-3 shadow-sm">
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#232044] text-[#a5a1ff] mt-0.5">
+            <div className="rounded-xl bg-panel-2 border border-line p-4 flex items-start gap-3 shadow-sm">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-fill/10 text-blue-fill mt-0.5">
                 <Icon name="chat" size={14} />
               </div>
               <div className="min-w-0">
-                <h6 className="text-xs font-bold text-white mb-1">Example question</h6>
-                <p className="text-xs text-[#8c8d9e] italic leading-relaxed">
+                <h6 className="text-xs font-bold text-ink mb-1">Example question</h6>
+                <p className="text-xs text-muted italic leading-relaxed">
                   “{activeGuide.exampleQuestion}”
                 </p>
               </div>
             </div>
 
             {/* Right: Key Tip */}
-            <div className="rounded-xl bg-[#141328] border border-white/[0.06] p-4 flex items-start gap-3 shadow-sm">
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-amber-500/15 text-amber-300 mt-0.5">
+            <div className="rounded-xl bg-panel-2 border border-line p-4 flex items-start gap-3 shadow-sm">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-300 mt-0.5">
                 <Icon name="sparkle" size={14} />
               </div>
               <div className="min-w-0">
-                <h6 className="text-xs font-bold text-white mb-1">Key tip</h6>
-                <p className="text-xs text-[#8c8d9e] leading-relaxed">{activeGuide.keyTip}</p>
+                <h6 className="text-xs font-bold text-ink mb-1">Key tip</h6>
+                <p className="text-xs text-muted leading-relaxed">{activeGuide.keyTip}</p>
               </div>
             </div>
           </div>
 
-          {/* Card: What a good answer looks like (Exact Match to Screenshot Image 7) */}
-          <div className="mt-4 rounded-xl bg-[#141328] border border-white/[0.06] p-5 shadow-sm">
+          {/* Card: What a good answer looks like */}
+          <div className="mt-4 rounded-xl bg-panel-2 border border-line p-5 shadow-sm">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-white/[0.06]">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-line">
               <div className="flex items-center gap-3">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#5c64f7] text-white shadow-[0_0_12px_rgba(92,100,247,0.4)]">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-blue-fill text-white shadow-sm">
                   <Icon name="star" size={15} />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h5 className="text-sm font-bold text-white tracking-tight">What a good answer looks like</h5>
-                    <span className="rounded-full bg-[#5c64f7]/20 border border-[#5c64f7]/40 px-2 py-0.5 text-[10px] font-semibold text-[#a5a1ff]">
+                    <h5 className="text-sm font-bold text-ink tracking-tight">What a good answer looks like</h5>
+                    <span className="rounded-full bg-blue-fill/15 border border-blue-fill/30 px-2 py-0.5 text-[10px] font-semibold text-blue-fill">
                       Example answer
                     </span>
                   </div>
-                  <p className="text-xs text-[#8c8d9e] mt-0.5">{activeGuide.goodAnswerSummary}</p>
+                  <p className="text-xs text-muted mt-0.5">{activeGuide.goodAnswerSummary}</p>
                 </div>
               </div>
 
               {/* View Toggle: Full example vs By step */}
-              <div className="flex items-center gap-1 self-start sm:self-auto rounded-lg bg-[#0d0c1c] p-1 border border-white/[0.06]">
+              <div className="flex items-center gap-1 self-start sm:self-auto rounded-lg bg-panel p-1 border border-line">
                 <button
                   type="button"
                   onClick={() => setExampleView("full")}
                   className={clsx(
                     "px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer",
-                    exampleView === "full" ? "bg-[#5c64f7] text-white shadow-sm" : "text-[#8c8d9e] hover:text-white"
+                    exampleView === "full" ? "bg-blue-fill text-white shadow-sm" : "text-muted hover:text-ink"
                   )}
                 >
                   Full example
@@ -400,7 +400,7 @@ export function AnsweringGuides({ className }: { className?: string }) {
                   onClick={() => setExampleView("steps")}
                   className={clsx(
                     "px-3 py-1 rounded-md text-xs font-semibold transition-all cursor-pointer",
-                    exampleView === "steps" ? "bg-[#5c64f7] text-white shadow-sm" : "text-[#8c8d9e] hover:text-white"
+                    exampleView === "steps" ? "bg-blue-fill text-white shadow-sm" : "text-muted hover:text-ink"
                   )}
                 >
                   {activeGuide.approachName === "STAR" ? "By STAR step" : "By step"}
@@ -411,8 +411,8 @@ export function AnsweringGuides({ className }: { className?: string }) {
             {/* Content: Left Answer Box + Right Why It Works Box */}
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_310px] gap-4 items-stretch">
               {/* Left: Example Answer Content */}
-              <div className="rounded-xl bg-[#0d0c1c] border border-white/[0.06] p-4 text-xs text-[#c5c6d5] leading-relaxed relative flex flex-col justify-center">
-                <span className="text-2xl text-[#5c64f7]/50 font-serif leading-none select-none mb-1">“</span>
+              <div className="rounded-xl bg-panel border border-line p-4 text-xs text-ink leading-relaxed relative flex flex-col justify-center">
+                <span className="text-2xl text-blue-fill/50 font-serif leading-none select-none mb-1">“</span>
                 {exampleView === "full" ? (
                   <p className="italic pl-2 pr-1">
                     {renderWithBadges(activeGuide.goodAnswerFull)}
@@ -421,31 +421,31 @@ export function AnsweringGuides({ className }: { className?: string }) {
                   <div className="space-y-2.5 pl-2">
                     {activeGuide.goodAnswerSteps.map((st, i) => (
                       <div key={i} className="flex items-start gap-2 text-xs">
-                        <span className="shrink-0 px-2 py-0.5 rounded bg-indigo-500/25 border border-indigo-500/40 text-[10px] font-bold text-indigo-300">
+                        <span className="shrink-0 px-2 py-0.5 rounded bg-blue-fill/15 border border-blue-fill/30 text-[10px] font-bold text-blue-fill">
                           {st.step}
                         </span>
-                        <span className="text-[#d8d9e8]">{st.text}</span>
+                        <span className="text-ink">{st.text}</span>
                       </div>
                     ))}
                   </div>
                 )}
-                <span className="text-2xl text-[#5c64f7]/50 font-serif leading-none select-none self-end mt-1">”</span>
+                <span className="text-2xl text-blue-fill/50 font-serif leading-none select-none self-end mt-1">”</span>
               </div>
 
               {/* Right: Why it works */}
-              <div className="rounded-xl bg-[#0d0c1c] border border-white/[0.06] p-4 flex flex-col justify-between">
+              <div className="rounded-xl bg-panel border border-line p-4 flex flex-col justify-between">
                 <div>
-                  <div className="flex items-center gap-2 text-xs font-bold text-white mb-3">
-                    <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-bold">
+                  <div className="flex items-center gap-2 text-xs font-bold text-ink mb-3">
+                    <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold">
                       ✓
                     </span>
                     <span>Why it works</span>
                   </div>
-                  <ul className="space-y-2.5 text-xs text-[#a5a7b8]">
+                  <ul className="space-y-2.5 text-xs text-muted">
                     {activeGuide.whyItWorks.map((item, idx) => (
                       <li key={idx} className="flex items-start gap-2">
-                        <span className="text-emerald-400 font-bold shrink-0 mt-0.5">✓</span>
-                        <span className="leading-snug">{item}</span>
+                        <span className="text-emerald-600 dark:text-emerald-400 font-bold shrink-0 mt-0.5">✓</span>
+                        <span className="leading-snug text-ink">{item}</span>
                       </li>
                     ))}
                   </ul>
