@@ -2873,7 +2873,7 @@ p.cv-talk-callout { display: flex; align-items: flex-start; gap: 7px; }
 .cv-issue-box { border: 1px solid var(--cv-edge); border-left: 3px solid var(--color-red); border-radius: 11px; padding: 12px 14px; margin-top: 12px; }
 
 /* ------------------------------------------------ The score ring */
-.cv-scorering { --ring: var(--color-blue); display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.cv-scorering { --ring: var(--color-blue); display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-bottom: 14px; }
 .cv-scorering[data-band="strong"] { --ring: var(--success); }
 .cv-scorering[data-band="low"] { --ring: var(--warning); }
 .cv-ring { position: relative; flex: none; }
@@ -2884,7 +2884,7 @@ p.cv-talk-callout { display: flex; align-items: flex-start; gap: 7px; }
 .cv-ring-number { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; }
 .cv-ring-number b { font-size: 38px; font-weight: 700; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
 .cv-ring-number small { font-size: 13px; color: var(--color-muted); margin-top: 4px; }
-.cv-ring-words { display: grid; gap: 4px; min-width: 0; }
+.cv-ring-words { display: grid; gap: 4px; min-width: 0; flex: 1 1 140px; }
 .cv-ring-band { font-size: 18px; font-weight: 650; color: var(--ring); }
 .cv-ring-band::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--ring); margin-right: 8px; vertical-align: 2px; }
 @keyframes cv-ring-in { from { stroke-dasharray: 0 var(--ring-length); } }

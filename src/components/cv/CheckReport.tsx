@@ -21,7 +21,7 @@ const dateWords = (iso: string) => new Date(iso).toLocaleDateString("en-GB", { d
 
 function ScoreBox({ title, shown, band, parts, testId }: { title: string; shown: number; band: Band; parts: { id: string; name: string; points: number; earned: number; pending: number }[]; testId: string }) {
   return (
-    <Panel title={title} aside={<span className="cv-chip">{band}</span>} data-testid={testId}>
+    <Panel title={title} data-testid={testId}>
       <div className="cv-pad cv-stack">
         <ScoreRing score={shown} band={band} label={title} />
         <ul className="cv-score-parts">
