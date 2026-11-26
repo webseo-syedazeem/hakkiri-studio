@@ -12,6 +12,7 @@ import {
   IconUserCheck,
   IconTarget,
   IconGraduationCap,
+  IconSparkles,
 } from "@/components/interview-questions/Icons";
 
 /** The public site's top links matching the modern executive navigation. */
@@ -39,7 +40,9 @@ export function SiteNav() {
   ];
 
   const isUserAdmin = !!user?.isAdmin;
-  const isQuestionsActive = path.startsWith("/interview-questions");
+  const isQuestionsActive =
+    path.startsWith("/interview-questions") ||
+    path.startsWith("/blog/strengths-and-weaknesses");
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -224,6 +227,32 @@ export function SiteNav() {
                     </div>
                     <span className="text-[11px] text-slate-500 leading-normal line-clamp-1">
                       Formula for zero experience & 7 project examples
+                    </span>
+                  </div>
+                </Link>
+
+                <Link
+                  href="/blog/strengths-and-weaknesses-interview-question"
+                  onClick={() => setQuestionsMenuOpen(false)}
+                  className="group flex items-center gap-3 rounded-2xl p-2.5 transition-all duration-200 hover:bg-slate-50/90 hover:shadow-sm"
+                >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-50 to-amber-100/70 text-amber-600 border border-amber-200/50 shadow-sm transition-all group-hover:from-amber-600 group-hover:to-orange-600 group-hover:text-white group-hover:border-transparent">
+                    <IconSparkles className="h-5 w-5" />
+                  </div>
+                  <div className="flex flex-col min-w-0 flex-1">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[13px] font-semibold text-slate-900 group-hover:text-amber-600 transition-colors">
+                          Strengths &amp; Weaknesses
+                        </span>
+                        <span className="text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-200/60 px-1.5 py-0.2 rounded-full">
+                          Formula
+                        </span>
+                      </div>
+                      <IconChevronRight className="h-4 w-4 text-slate-300 opacity-0 -translate-x-1.5 transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-0 group-hover:text-amber-600" />
+                    </div>
+                    <span className="text-[11px] text-slate-500 leading-normal line-clamp-1">
+                      Simple formula, good vs bad lists &amp; 10 sample answers
                     </span>
                   </div>
                 </Link>
