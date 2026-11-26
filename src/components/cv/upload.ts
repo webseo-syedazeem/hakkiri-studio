@@ -32,3 +32,9 @@ export const STAGE_WORDS: Record<UploadStage, string> = {
 
 export const ACCEPT = ".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 export const UPLOAD_HELP = "A PDF or Word (.docx) file, up to 5 MB. LinkedIn’s “Save to PDF” file works too. We read the text and don’t keep the file.";
+
+/** Where a confirmed upload opens: the score, tailoring, the letter, or the builder. */
+export function afterImport(versionId: string, next?: string): string {
+  if (next === "findings" || next === "tailor" || next === "letter") return `/cv/v/${versionId}/${next}`;
+  return `/cv/v/${versionId}/edit/contact`;
+}

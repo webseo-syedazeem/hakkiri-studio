@@ -2,11 +2,13 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { POST, GET } from "./route";
 import { EXAMPLE_TEMPLATES } from "@/lib/cv/templates/examples";
 
+let testUserSeq = 0;
+
 vi.mock("@/lib/cv/access", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/lib/cv/access")>();
   return {
     ...actual,
-    requireUserId: vi.fn(async () => "usr_test_template"),
+    requireUserId: vi.fn(async () => `usr_test_template_${++testUserSeq}`),
   };
 });
 

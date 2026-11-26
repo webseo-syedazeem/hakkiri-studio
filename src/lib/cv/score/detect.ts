@@ -50,7 +50,7 @@ const PARTICIPLE = "\\p{L}{3,}ed|built|made|done|given|taken|written|run|led|hel
 export const passive = (t: string) => first(new RegExp(`(?<![\\p{L}])(?:was|were|been|being|is|are|got)\\s+(?:\\p{L}+ly\\s+)?(?:${PARTICIPLE})(?![\\p{L}])`, "iu"), t);
 
 /** "I", "my", "we", "our": a CV is written without them. */
-export const firstPerson = (t: string) => first(/(?<![\p{L}'’])(I|I[’']m|I[’']ve|I[’']d|my|me|myself|we|our|us)(?![\p{L}'’])/u, t, 1);
+export const firstPerson = (t: string) => first(/(?<![\p{L}'’])(I(?!-\d)|I[’']m|I[’']ve|I[’']d|my|me|myself|we|our|us)(?![\p{L}'’])/u, t, 1);
 
 /** A bullet too short to say what was done. */
 export const fragment = (t: string) => terms(t).length + figures(t).length < 3;
@@ -66,7 +66,7 @@ export const presentLead = (t: string) => first(new RegExp(`^\\s*((?:${PRESENT})
 /** Spellings that differ between the UK and the US: UK form first. */
 const PAIRS: [string, string][] = [
   ["colour", "color"], ["favour", "favor"], ["behaviour", "behavior"], ["labour", "labor"], ["honour", "honor"], ["neighbour", "neighbor"], ["flavour", "flavor"],
-  ["centre", "center"], ["metre", "meter"], ["theatre", "theater"], ["litre", "liter"], ["fibre", "fiber"],
+  ["centre", "center"], ["centred", "centered"], ["metre", "meter"], ["theatre", "theater"], ["litre", "liter"], ["fibre", "fiber"],
   ["licence", "license"], ["defence", "defense"], ["offence", "offense"], ["practise", "practice"],
   ["catalogue", "catalog"], ["dialogue", "dialog"], ["analogue", "analog"], ["programme", "program"],
   ["travelled", "traveled"], ["travelling", "traveling"], ["modelled", "modeled"], ["modelling", "modeling"], ["cancelled", "canceled"], ["labelled", "labeled"], ["counselling", "counseling"],
@@ -81,7 +81,6 @@ const AMBIGUOUS = new Set(["practice", "practise", "program", "check", "tire", "
 const COMMON_TYPOS: Record<string, string> = {
   "microsoft ofice": "Microsoft Office",
   warehose: "warehouse",
-  warehouses: "warehouses",
   recieved: "received",
   recieving: "receiving",
   recieve: "receive",
@@ -101,7 +100,6 @@ const COMMON_TYPOS: Record<string, string> = {
   goverment: "government",
   publically: "publicly",
   occurance: "occurrence",
-  curriculum: "curriculum",
   calender: "calendar",
   tendancy: "tendency",
   tommorrow: "tomorrow",
@@ -137,7 +135,13 @@ export function wrongRegionSpelling(text: string, region: CvRegion, accepted: It
   }
   for (const m of text.matchAll(ISE_RE)) {
     const z = /z/i.test(m[1]);
-    if (region === "uk" ? z : !z) keep(m, m[0].toLowerCase().replace(m[1].toLowerCase(), m[1].toLowerCase().replace(region === "uk" ? "z" : "s", region === "uk" ? "s" : "z")));
+    // The ending is swapped where it is, at the end of the stem: "visualise" has an earlier "is" that must stay.
+    const word = m[0].toLowerCase();
+    const at = word.lastIndexOf(m[1].toLowerCase());
+    const swapped = m[1].toLowerCase().replace(region === "uk" ? "z" : "s", region === "uk" ? "s" : "z");
+    // "Analyses" is also the plural of "analysis", spelt the same in the US: not a UK spelling there.
+    if (region === "us" && word === "analyses") continue;
+    if (region === "uk" ? z : !z) keep(m, word.slice(0, at) + swapped + word.slice(at + 2));
   }
   return out.sort((a, b) => a.start - b.start);
 }
@@ -156,12 +160,16 @@ export function unexplainedAcronyms(texts: string[], accepted: Iterable<string> 
   const out: { at: number; hit: Hit }[] = [];
   const everything = texts.join("\n");
   texts.forEach((text, at) => {
-    for (const m of text.matchAll(/(?<![\p{L}\p{N}])[A-Z][A-Z0-9&]{1,5}(?![\p{L}\p{N}])/gu)) {
+    // Abbreviations joined by a hyphen are read as one: "SHRM-CP" is a credential, not "SHRM" and "CP".
+    for (const m of text.matchAll(/(?<![\p{L}\p{N}-])[A-Z][A-Z0-9&]{1,5}(?:-[A-Z][A-Z0-9&]{0,5})*(?![\p{L}\p{N}])/gu)) {
       const a = m[0];
       if (seen.has(a) || KNOWN.has(a) || ok.has(a) || /^\d|^[IVX]+$/.test(a)) continue;
       seen.add(a);
       // Spelt out beside it somewhere: "pay per click (PPC)" or "PPC (pay per click)".
-      const explained = new RegExp(`\\(\\s*${a}\\s*\\)|${a}\\s*\\([^)]{4,}\\)`).test(everything);
+      const spelt = (x: string) => new RegExp(`\\(\\s*${x}\\s*\\)|${x}\\s*\\([^)]{4,}\\)`).test(everything);
+      const parts = a.split("-");
+      // A joined one is explained as a whole, or when each of its parts is known or explained.
+      const explained = spelt(a) || (parts.length > 1 && parts.every((x) => KNOWN.has(x) || ok.has(x) || spelt(x)));
       if (!explained) out.push({ at, hit: { start: m.index!, end: m.index! + a.length, text: a } });
     }
   });
@@ -192,9 +200,16 @@ const BOUNDED = "each (?:day|week|month|year|term|shift|morning)|every (?:day|we
 /** How big the work was: a number, or a description with clear edges ("every new starter", "across the Leeds site"). */
 export const hasScale = (t: string) => figures(t).length > 0 || new RegExp(`(?<![\\p{L}])(?:${BOUNDED})(?![\\p{L}])`, "iu").test(t);
 
-const BIG = "first|best|top|only|leading|award|awarded|record|number one|#1|100%|doubled|tripled|quadrupled|significant(?:ly)?|dramatic(?:ally)?|transformed|revolutionised|revolutionized|expert|world[- ]class|outstanding|exceptional|unprecedented|highest|fastest|largest|biggest|every|always|never|all";
+// "Record" is a claim as "a record month" or "broke the record", not as "keep a record of" or "record every result".
+const RECORD = "record[- ](?:high|low|breaking|sales|year|month|quarter|week|day|number|levels?|results?|profits?|revenue|growth|turnover|figures?|time|attendance|takings)|(?:set|sets|setting|broke|breaks|breaking|beat|beats|beating)\\s+(?:a|the|our|its|their)?\\s*(?:\\p{L}+\\s+)?record";
+const BIG = "first|best|top|only|leading|award|awarded|" + RECORD + "|number one|#1|100%|doubled|tripled|quadrupled|significant(?:ly)?|dramatic(?:ally)?|transformed|revolutionised|revolutionized|expert|world[- ]class|outstanding|exceptional|unprecedented|highest|fastest|largest|biggest|every|always|never|all";
+// Names of things that start with "first" or "top" and claim nothing: "first aid", "first officer", "a first-time buyer", "top-ups".
+const NOT_A_CLAIM = /(?<![\p{L}])(?:first[- ](?:aid|aider|aiders|officer|officers|time|line|year|years|floor|class|responder|responders|response|draft|drafts|round|stage|half|quarter|week|day|month|degree|language|name|contact|aid-trained)|top[- ](?:up|ups|floor|tier|coat|soil))(?![\p{L}])/giu;
+
 /** A claim an interviewer is likely to push on: a superlative, an absolute, or a large change. */
-export function bigClaim(t: string): Hit | null {
+export function bigClaim(text: string): Hit | null {
+  // Masked with spaces, so what is found keeps its place in the line.
+  const t = text.replace(NOT_A_CLAIM, (m) => " ".repeat(m.length));
   const word = first(new RegExp(`(?<![\\p{L}#])(${BIG})(?![\\p{L}])`, "iu"), t, 1);
   if (word && !/^(every|all|only|first|top)$/i.test(word.text)) return word;
   for (const f of figures(t)) {

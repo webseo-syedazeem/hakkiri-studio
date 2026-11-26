@@ -1,23 +1,17 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { fileBaseName, fileName } from "@/lib/cv/render/filename";
-import { cannotDrawAdvice } from "@/lib/cv/render/fonts";
 import { paperOrder } from "@/lib/cv/render/flow";
 import { FAMILIES } from "@/lib/cv/render/fonts";
 import { fitToPages } from "@/lib/cv/render/layout";
-import { ACCENTS, PAIRINGS, TEMPLATES, type TemplateDef, contrastRatioOnWhite } from "@/lib/cv/render/templates";
-import { type AccentId, CV_ACCENTS, CV_DENSITIES, CV_TEMPLATES, type Design, type TemplateId, cvIsEmpty, sectionIsEmpty } from "@/lib/cv/schema";
+import { ACCENTS, PAIRINGS, TEMPLATES, type TemplateDef, contrastRatioOnWhite, templateLabel } from "@/lib/cv/render/templates";
+import { type AccentId, CHANGE_KEYS, CV_ACCENTS, CV_BULLETS, CV_DENSITIES, CV_FONT_FAMILIES, CV_SEPARATORS, CV_TEMPLATES, type Design, type FontFamilyId, type SavedStyle, type TemplateId, cvIsEmpty, sectionIsEmpty } from "@/lib/cv/schema";
 import { docWord, sectionHeading } from "@/lib/cv/sections";
 import { Grip, ItemControls, useDragOrder } from "./Arrange";
-import { ApiError, api, messageOf } from "./client";
-import { Dialog, usePanel } from "./Dialog";
-import { Downloads } from "./Software";
+import { api, messageOf } from "./client";
+import { FilesPanel } from "./Files";
 import { Btn, BtnLink, CvSelect, Field, Panel } from "./ui";
-import { type FileCheck, type FileChecks, useWorkspace } from "./Workspace";
-
-type Format = "pdf" | "docx";
-const FORMAT_NAME: Record<Format, string> = { pdf: "PDF", docx: "Word" };
+import { useWorkspace } from "./Workspace";
 
 const pairLabel = (f: TemplateDef["fonts"]) => (f.heading === f.body ? FAMILIES[f.heading] : `${FAMILIES[f.heading]} headings, ${FAMILIES[f.body]} text`);
 /** The font pairings on offer: each template's own, without repeats. */
@@ -54,16 +48,6 @@ function TemplateThumb({ def, accent }: { def: TemplateDef; accent: string }) {
       })}
     </svg>
   );
-}
-
-/** What a file's line says: the truth about the last check, and whether it still applies. */
-function statusOf(check: FileCheck | undefined, checks: FileChecks | null, current: boolean, busy: boolean): { word: string; tone: "good" | "bad" | "plain" } {
-  if (busy) return { word: "Checking…", tone: "plain" };
-  if (!checks || !check) return { word: "Unchecked", tone: "plain" };
-  if (!current) return { word: "Out of date", tone: "plain" };
-  if (check.status === "checked") return { word: "Checked", tone: "good" };
-  if (check.status === "loss") return { word: "Loss found", tone: "bad" };
-  return { word: "Check failed", tone: "bad" };
 }
 
 function hexToHsv(hex: string): { h: number; s: number; v: number } {
@@ -247,12 +231,8 @@ function CustomColorPicker({ value, onChange }: { value: string; onChange: (hex:
  */
 export function Finish({ onOverflow, say }: { onOverflow: () => void; say: (text: string) => void }) {
   const w = useWorkspace();
-  const { update, settle, save, paper, checks, setChecks } = w;
+  const { update, paper } = w;
   const cv = w.cv!;
-  const { panel, item, open, close } = usePanel();
-  const [busy, setBusy] = useState<"" | "check" | Format>("");
-  const [problem, setProblem] = useState("");
-  const [downloads, setDownloads] = useState(0);
   const design = cv.design;
   const [showCustomColor, setShowCustomColor] = useState(Boolean(design.customAccent));
   const word = docWord(cv.region);
@@ -262,6 +242,48 @@ export function Finish({ onOverflow, say }: { onOverflow: () => void; say: (text
   const fonts = design.fonts ?? template.id;
   const fontChoice = FONT_CHOICES.find((c) => pairLabel(TEMPLATES[c.id].fonts) === pairLabel(TEMPLATES[fonts].fonts))?.id ?? template.id;
   const set = (changes: Partial<Design>) => update({ design: { ...design, ...changes } });
+  const pairing = TEMPLATES[fonts]?.fonts ?? template.fonts;
+  const headingFont = design.headingFont ?? pairing.heading;
+  const bodyFont = design.bodyFont ?? pairing.body;
+  /** What the person has changed from the template's own look. */
+  // A value the same as the default is no change: the server fills these in when it saves.
+  const DEFAULTS: Partial<Record<(typeof CHANGE_KEYS)[number], unknown>> = { density: "default", dividerStyle: "solid", fontSize: 10.5, lineSpacing: 1, margin: "normal", indentation: 13 };
+  const changed = CHANGE_KEYS.filter((k) => design[k] !== undefined && design[k] !== DEFAULTS[k]);
+  const reset = () => update({ design: { ...design, ...Object.fromEntries(CHANGE_KEYS.map((k) => [k, DEFAULTS[k]])) } });
+  const [styles, setStyles] = useState<SavedStyle[] | null>(null);
+  const [styleName, setStyleName] = useState("");
+  const [styleProblem, setStyleProblem] = useState("");
+  useEffect(() => {
+    api<{ styles: SavedStyle[] }>("/api/cv/styles")
+      .then((r) => setStyles(r.styles))
+      .catch(() => setStyles([]));
+  }, []);
+  async function saveStyle() {
+    setStyleProblem("");
+    try {
+      const { style } = await api<{ style: SavedStyle }>("/api/cv/styles", { method: "POST", json: { name: styleName.trim(), design } });
+      setStyles((all) => [...(all ?? []), style]);
+      setStyleName("");
+      say(`Saved “${style.name}”. You can use it on any of your ${word}s.`);
+    } catch (err) {
+      setStyleProblem(messageOf(err));
+    }
+  }
+  async function deleteStyle(st: SavedStyle) {
+    setStyleProblem("");
+    try {
+      await api(`/api/cv/styles/${st.id}`, { method: "DELETE" });
+      setStyles((all) => (all ?? []).filter((x) => x.id !== st.id));
+      say(`Deleted “${st.name}”. ${word === "CV" ? "CVs" : "Resumes"} that use it keep their look.`);
+    } catch (err) {
+      setStyleProblem(messageOf(err));
+    }
+  }
+  function useStyle(st: SavedStyle) {
+    // The saved look replaces every change made here; the page size, page target, order and file name stay.
+    update({ design: { ...design, ...Object.fromEntries(CHANGE_KEYS.map((k) => [k, undefined])), ...st.design } });
+    say(`Now using “${st.name}”.`);
+  }
   const empty = cvIsEmpty(cv);
   const pages = paper?.layout.pages ?? 0;
   const target = design.pageTarget;
@@ -278,83 +300,25 @@ export function Finish({ onOverflow, say }: { onOverflow: () => void; say: (text
     say(`Fits on ${f.pages === 1 ? "one page" : `${f.pages} pages`} with ${f.density} spacing.`);
   }
 
-  const current = !!checks && checks.rev === cv.rev && save === "saved";
-
-  async function check() {
-    setProblem("");
-    setBusy("check");
-    try {
-      if (!(await settle())) throw new Error("Your latest changes haven’t been saved yet, so a file can’t be made from them. Check the save status at the top, then try again.");
-      const result = await api<FileChecks>(`/api/cv/versions/${cv.id}/check`, { method: "POST", json: {} });
-      setChecks({ rev: result.rev, pdf: result.pdf, docx: result.docx });
-      const bad = (["pdf", "docx"] as const).filter((f) => result[f]?.status !== "checked");
-      say(bad.length ? `${bad.map((f) => FORMAT_NAME[f]).join(" and ")}: the check found a problem.` : "Both files checked. Each reads back the same as your CV.");
-    } catch (err) {
-      setProblem(messageOf(err));
-    } finally {
-      setBusy("");
-    }
-  }
-
-  async function download(format: Format, unchecked = false) {
-    setProblem("");
-    setBusy(format);
-    try {
-      if (!(await settle())) throw new Error("Your latest changes haven’t been saved yet, so a file can’t be made from them. Check the save status at the top, then try again.");
-      let res: Response;
-      try {
-        res = await fetch(`/api/cv/versions/${cv.id}/export?format=${format}${unchecked ? "&unchecked=1" : ""}`);
-      } catch {
-        throw new ApiError(0, "No connection. Check you’re online and try again.");
-      }
-      const rev = Number(res.headers.get("x-cv-rev")) || cv.rev;
-      const keep = (c: FileChecks | null, mine: FileCheck): FileChecks => ({ ...(c && c.rev === rev ? c : {}), rev, [format]: mine });
-      if (res.ok) {
-        // The bytes saved are the bytes that were read back and matched.
-        const blob = await res.blob();
-        const named = /filename\*=UTF-8''([^;]+)/.exec(res.headers.get("content-disposition") ?? "");
-        const name = named ? decodeURIComponent(named[1]) : fileName(cv, format);
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = name;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 30000);
-        setDownloads((n) => n + 1);
-        if (res.headers.get("x-cv-check") === "checked") {
-          setChecks((c) => keep(c, { status: "checked", name, pages: Number(res.headers.get("x-cv-pages")) || undefined, size: blob.size }));
-          say(`${name} downloaded. It was checked first: it reads back the same as your ${word}.`);
-        } else say(`${name} downloaded without a check. Open it and read it through before you send it.`);
-        return;
-      }
-      const body = (await res.json().catch(() => ({}))) as { error?: string; message?: string; check?: { missing?: string[]; unexpected?: string[] }; unsupported?: string[] };
-      if (body.error === "loss") {
-        setChecks((c) => keep(c, { status: "loss", missing: body.check?.missing ?? [], unexpected: body.check?.unexpected ?? [], unsupported: body.unsupported ?? [] }));
-        open("file-loss", { item: format });
-        return;
-      }
-      if (res.status !== 409) setChecks((c) => keep(c, { status: "failed", made: body.error === "check_failed" }));
-      setProblem(body.error === "check_failed" ? `The ${FORMAT_NAME[format]} file was made, but we couldn’t read it back to check it. You can try again, or download it unchecked and read it through yourself.` : (body.message ?? "The file could not be made."));
-    } catch (err) {
-      setProblem(messageOf(err));
-    } finally {
-      setBusy("");
-    }
-  }
-
-  const lost = panel === "file-loss" && (item === "pdf" || item === "docx") ? checks?.[item] : undefined;
-  const other: Format = item === "pdf" ? "docx" : "pdf";
-
   return (
     <div className="cv-stack">
+      <div className="cv-note cv-row" role="status" data-testid="design-base">
+        <span>
+          Based on <b>{templateLabel(template)}</b>
+          {changed.length ? `, with ${changed.length === 1 ? "1 change" : `${changed.length} changes`} of your own` : ", as designed"}.
+        </span>
+        {changed.length > 0 && (
+          <Btn className="cv-push" onClick={reset}>
+            Reset to {templateLabel(template)}
+          </Btn>
+        )}
+      </div>
       <Panel title="Template">
         <fieldset>
           <legend className="sr-only">Template</legend>
           <div className="cv-pad">
           <div className="cv-templates">
-            {CV_TEMPLATES.map((id) => {
+            {[...CV_TEMPLATES].sort((a, b) => TEMPLATES[a].no - TEMPLATES[b].no).map((id) => {
               const t = TEMPLATES[id];
               return (
                 <label key={id} className="cv-choice cv-template">
@@ -363,9 +327,9 @@ export function Finish({ onOverflow, say }: { onOverflow: () => void; say: (text
                   <span className="min-w-0">
                     <b>
                       {design.template === id && <span aria-hidden="true">✓ </span>}
-                      {t.name}
+                      {templateLabel(t)}
                     </b>
-                    <small style={{ display: "block" }}>{t.suits}</small>
+                    <small style={{ display: "block" }}>Good for: {t.suits.charAt(0).toLowerCase() + t.suits.slice(1)}</small>
                   </span>
                 </label>
               );
@@ -380,18 +344,42 @@ export function Finish({ onOverflow, say }: { onOverflow: () => void; say: (text
         <div className="cv-pad cv-stack">
           <div>
             <label className="cv-label" htmlFor="cv-fonts">
-              Fonts
+              Font pairing
             </label>
             <CvSelect
               id="cv-fonts"
               value={fontChoice}
-              onChange={(val) => set({ fonts: val as TemplateId })}
+              onChange={(val) => set({ fonts: val as TemplateId, headingFont: undefined, bodyFont: undefined })}
               options={FONT_CHOICES.map((c) => ({
                 value: c.id,
                 label: c.label,
-                badge: c.id === template.id || pairLabel(TEMPLATES[c.id].fonts) === pairLabel(template.fonts) ? `${template.name}’s own` : undefined,
+                badge: c.id === template.id || pairLabel(TEMPLATES[c.id].fonts) === pairLabel(template.fonts) ? `${templateLabel(template)}’s own` : undefined,
               }))}
             />
+          </div>
+          <div className="cv-pair">
+            <div>
+              <label className="cv-label" htmlFor="cv-heading-font">
+                Name and headings
+              </label>
+              <CvSelect
+                id="cv-heading-font"
+                value={headingFont}
+                onChange={(val) => set({ headingFont: val as FontFamilyId })}
+                options={CV_FONT_FAMILIES.map((f) => ({ value: f, label: FAMILIES[f], badge: f === template.fonts.heading ? "template" : undefined }))}
+              />
+            </div>
+            <div>
+              <label className="cv-label" htmlFor="cv-body-font">
+                Body text
+              </label>
+              <CvSelect
+                id="cv-body-font"
+                value={bodyFont}
+                onChange={(val) => set({ bodyFont: val as FontFamilyId })}
+                options={CV_FONT_FAMILIES.filter((f) => f !== "mono").map((f) => ({ value: f, label: FAMILIES[f], badge: f === template.fonts.body ? "template" : undefined }))}
+              />
+            </div>
           </div>
 
           {/* Fine-grained Font Size Slider (Rezi audit: 6-16 pt) */}
@@ -495,7 +483,7 @@ export function Finish({ onOverflow, say }: { onOverflow: () => void; say: (text
                     fontSize: 11.5,
                   }}
                 >
-                  <span style={{ color: isPass ? "#83d5b4" : isHeadingPass ? "#93c5fd" : "#ff8588", fontWeight: 500 }}>
+                  <span style={{ color: isPass ? "var(--success)" : isHeadingPass ? "var(--accent)" : "var(--danger)", fontWeight: 500 }}>
                     {isPass
                       ? `✓ Contrast ${ratio}:1 on white paper (WCAG AA Compliant)`
                       : isHeadingPass
@@ -699,8 +687,76 @@ export function Finish({ onOverflow, say }: { onOverflow: () => void; say: (text
       </Panel>
 
       {/* Dividers, Icons and Indentation (Audit: Icons, indentation and section dividers missing on Finish tab) */}
-      <Panel title="Dividers, icons and indentation">
+      <Panel title="Name, headings and bullets">
         <div className="cv-pad cv-stack">
+          <fieldset>
+            <legend className="cv-label">Top of the page</legend>
+            <div className="cv-seg" style={{ marginTop: 6, display: "grid", gridTemplateColumns: "repeat(2, 1fr)" }}>
+              {(["plain", "band"] as const).map((h) => (
+                <label key={h}>
+                  <input type="radio" name="header" className="sr-only" checked={(design.header ?? template.header ?? "plain") === h} onChange={() => set({ header: h })} />
+                  <span>{h === "plain" ? "Plain" : "Colour band"}</span>
+                </label>
+              ))}
+            </div>
+            {(design.header ?? template.header) === "band" && contrastRatioOnWhite(activeHex) < 4.5 && (
+              <small className="cv-error-text" style={{ display: "block", marginTop: 6 }}>
+                This colour is too pale for white text, so the name is shown plain. Choose a darker colour to use the band.
+              </small>
+            )}
+          </fieldset>
+
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+              <label className="cv-label" htmlFor="cv-name-size" style={{ margin: 0 }}>
+                Name size
+              </label>
+              <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--accent, #7b88ff)" }}>{design.nameSize ?? template.title.size} pt</span>
+            </div>
+            <input id="cv-name-size" type="range" min="16" max="40" step="1" value={design.nameSize ?? template.title.size} onChange={(e) => set({ nameSize: Number(e.target.value) })} className="cv-slider" style={{ width: "100%" }} />
+          </div>
+
+          <label className="cv-choice" style={{ padding: "10px 14px" }}>
+            <input type="checkbox" checked={design.headingCaps ?? Boolean(template.heading.caps)} onChange={(e) => set({ headingCaps: e.target.checked })} />
+            <span>
+              <b style={{ display: "block", fontSize: 13, fontWeight: 600 }}>Section headings in capitals</b>
+              <small>Screening software reads headings the same either way.</small>
+            </span>
+          </label>
+
+          <fieldset>
+            <legend className="cv-label">Bullet mark</legend>
+            <div className="cv-seg" style={{ marginTop: 6, display: "grid", gridTemplateColumns: "repeat(4, 1fr)" }}>
+              {CV_BULLETS.map((b) => (
+                <label key={b}>
+                  <input type="radio" name="bullet" className="sr-only" checked={(design.bullet ?? template.bullet ?? "disc") === b} onChange={() => set({ bullet: b })} />
+                  <span>{b === "disc" ? "• Dot" : b === "dash" ? "– Dash" : b === "arrow" ? "› Arrow" : "None"}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend className="cv-label">Between contact details</legend>
+            <div className="cv-seg" style={{ marginTop: 6, display: "grid", gridTemplateColumns: "repeat(3, 1fr)" }}>
+              {CV_SEPARATORS.map((sep) => (
+                <label key={sep}>
+                  <input type="radio" name="separator" className="sr-only" checked={(design.contactSeparator ?? template.separator ?? "dot") === sep} onChange={() => set({ contactSeparator: sep })} />
+                  <span>{sep === "dot" ? "· Dot" : sep === "bar" ? "| Bar" : "• Bullet"}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+              <label className="cv-label" htmlFor="cv-entry-indent" style={{ margin: 0 }}>
+                Indent entries under headings
+              </label>
+              <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--accent, #7b88ff)" }}>{design.entryIndent ?? template.entryIndent ?? 0} pt</span>
+            </div>
+            <input id="cv-entry-indent" type="range" min="0" max="24" step="1" value={design.entryIndent ?? template.entryIndent ?? 0} onChange={(e) => set({ entryIndent: Number(e.target.value) })} className="cv-slider" style={{ width: "100%" }} />
+          </div>
           {/* Section divider style */}
           <fieldset>
             <legend className="cv-label">Section divider style</legend>
@@ -719,21 +775,6 @@ export function Finish({ onOverflow, say }: { onOverflow: () => void; say: (text
               ))}
             </div>
           </fieldset>
-
-          {/* Section heading icons */}
-          <div>
-            <label className="cv-choice" style={{ padding: "10px 14px" }}>
-              <input
-                type="checkbox"
-                checked={Boolean(design.sectionIcons)}
-                onChange={(e) => set({ sectionIcons: e.target.checked })}
-              />
-              <span>
-                <b style={{ display: "block", fontSize: 13, fontWeight: 600 }}>Show section icons on headings</b>
-                <small>Adds clean visual icons (e.g. briefcase, graduation cap, star) alongside major section headings.</small>
-              </span>
-            </label>
-          </div>
 
           {/* Bullet indentation */}
           <div>
@@ -765,12 +806,48 @@ export function Finish({ onOverflow, say }: { onOverflow: () => void; say: (text
         </div>
       </Panel>
 
+      <Panel title="Your styles">
+        <div className="cv-pad cv-stack">
+          <p className="cv-muted" style={{ margin: 0 }}>
+            Save this look (template, fonts, colour, sizes and spacing) to use it again on any {word}.
+          </p>
+          {styles && styles.length > 0 && (
+            <ul className="cv-plainlist" aria-label="Saved styles" style={{ display: "grid", gap: 8 }}>
+              {styles.map((st) => (
+                <li key={st.id} className="cv-row" style={{ gap: 8 }}>
+                  <span className="grow min-w-0">
+                    <b>{st.name}</b> <small className="cv-muted">· {templateLabel(TEMPLATES[st.design.template])}</small>
+                  </span>
+                  <Btn onClick={() => useStyle(st)}>Use</Btn>
+                  <Btn kind="quiet" onClick={() => void deleteStyle(st)} aria-label={`Delete ${st.name}`}>
+                    Delete
+                  </Btn>
+                </li>
+              ))}
+            </ul>
+          )}
+          <div className="cv-row" style={{ alignItems: "flex-end", gap: 8 }}>
+            <div className="grow min-w-0">
+              <Field label="Style name" value={styleName} onChange={setStyleName} maxLength={60} placeholder="For example: Two-page navy" />
+            </div>
+            <Btn onClick={() => void saveStyle()} disabled={!styleName.trim()}>
+              Save this style
+            </Btn>
+          </div>
+          {styleProblem && (
+            <p className="cv-error-text" role="alert">
+              {styleProblem}
+            </p>
+          )}
+        </div>
+      </Panel>
+
       <Panel
         title="Order on the page"
         aside={
           design.order?.length ? (
             <Btn kind="quiet" onClick={() => set({ order: undefined })}>
-              Use {template.name}’s order
+              Use {templateLabel(template)}’s order
             </Btn>
           ) : undefined
         }
@@ -795,119 +872,7 @@ export function Finish({ onOverflow, say }: { onOverflow: () => void; say: (text
         </p>
       </Panel>
 
-      <Panel title="Files" id="files">
-        <div className="cv-pad cv-stack">
-          <Field label="File name" rule="Without the ending. Leave empty for the standard name." placeholder={fileBaseName({ ...cv, design: { ...design, fileName: "" } })} maxLength={120} value={design.fileName ?? ""} onChange={(v) => set({ fileName: v })} />
-          {empty ? (
-            <p className="cv-muted">There is nothing to download yet. Add your details first.</p>
-          ) : (
-            <>
-              <ul className="cv-filelist">
-                {(["pdf", "docx"] as const).map((format) => {
-                  const st = statusOf(checks?.[format], checks, current, busy === "check" || busy === format);
-                  const c = checks?.[format];
-                  return (
-                    <li key={format} data-format={format}>
-                      <span className="min-w-0 grow">
-                        <b style={{ overflowWrap: "anywhere" }}>{fileName(cv, format)}</b>
-                        <small style={{ display: "block" }} data-testid={`status-${format}`} className={st.tone === "good" ? "cv-good" : st.tone === "bad" ? "cv-warn" : undefined}>
-                          {st.tone === "good" ? "✓ " : ""}
-                          {st.word}
-                          {st.word === "Checked" && c ? `: reads back the same as your ${word}${c.pages && format === "pdf" ? `, ${c.pages === 1 ? "one page" : `${c.pages} pages`}` : ""}` : ""}
-                          {st.word === "Out of date" ? `: your ${word} has changed since the check` : ""}
-                        </small>
-                      </span>
-                      {st.word === "Loss found" && <Btn onClick={() => open("file-loss", { item: format })}>See what was lost</Btn>}
-                      {st.word === "Check failed" && c?.made && (
-                        <Btn disabled={!!busy} onClick={() => void download(format, true)}>
-                          Download unchecked file
-                        </Btn>
-                      )}
-                      <Btn kind={format === "pdf" ? "primary" : "default"} busy={busy === format} disabled={!!busy} onClick={() => void download(format)}>
-                        Download {FORMAT_NAME[format]}
-                      </Btn>
-                    </li>
-                  );
-                })}
-              </ul>
-              <div className="cv-row">
-                <Btn busy={busy === "check"} disabled={!!busy} onClick={() => void check()}>
-                  Check both files
-                </Btn>
-                <BtnLink href={`/cv/v/${cv.id}/software/pdf`}>See what software reads</BtnLink>
-              </div>
-              <small style={{ display: "block" }}>Each file is made, then read back and compared with your {word} word for word. A file that doesn’t match is not sent. The Word file names its fonts instead of carrying them, so its page breaks can differ on a computer without them.</small>
-            </>
-          )}
-          {problem && (
-            <p className="cv-error-text" role="alert">
-              {problem}
-            </p>
-          )}
-          <Downloads versionId={cv.id} refresh={downloads} />
-        </div>
-      </Panel>
-
-      {panel === "file-loss" && (item === "pdf" || item === "docx") && (
-        <Dialog
-          title={`The ${FORMAT_NAME[item]} file doesn’t match your ${word}`}
-          onClose={close}
-          wide
-          actions={
-            <>
-              <Btn
-                onClick={() => {
-                  close();
-                  void download(item);
-                }}
-              >
-                Rebuild the {FORMAT_NAME[item]} file
-              </Btn>
-              <Btn
-                kind="primary"
-                onClick={() => {
-                  close();
-                  void download(other);
-                }}
-              >
-                Use the {FORMAT_NAME[other]} file instead
-              </Btn>
-            </>
-          }
-        >
-          {!lost || lost.status !== "loss" ? (
-            <p>This file hasn’t been checked since your last change. Download it again to check it.</p>
-          ) : (
-            <>
-              <p>The file was made and read back, and it does not say exactly what your {word} says, so it has not been sent.</p>
-              {!!lost.unsupported?.length && (
-                <div className="cv-issue" style={{ display: "block" }}>
-                  <strong>Characters these fonts can’t draw:</strong> <span data-testid="unsupported">{lost.unsupported.join(" ")}</span>
-                  <p style={{ marginTop: 6 }} data-testid="unsupported-advice">
-                    {cannotDrawAdvice(lost.unsupported)}
-                  </p>
-                </div>
-              )}
-              {!!lost.missing?.length && (
-                <div>
-                  <h3>In your {word}, not read back from the file</h3>
-                  <ul className="cv-plainlist">
-                    {lost.missing.slice(0, 12).map((m, i) => (
-                      <li key={i}>{m}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {!!lost.unexpected?.length && (
-                <div>
-                  <h3>In the file, not in your {word}</h3>
-                  <p className="cv-quote">{lost.unexpected.slice(0, 60).join(" ")}</p>
-                </div>
-              )}
-            </>
-          )}
-        </Dialog>
-      )}
+      <FilesPanel say={say} />
     </div>
   );
 }

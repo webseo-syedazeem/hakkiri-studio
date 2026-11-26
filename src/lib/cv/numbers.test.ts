@@ -199,6 +199,17 @@ describe("how many CVs, and how fast", () => {
 });
 
 describe("small promises kept", () => {
+  it("a design chosen in the template gallery is the one the new CV starts in; anything unknown falls back to the usual", async () => {
+    const make = async (body: Record<string, string>) => {
+      const res = await versions.POST(json({ name: "From the gallery", level: "experienced", region: "uk", ...body }));
+      expect(res.status).toBe(201);
+      return (await store.getOwnCv((await res.json()).id, alice.id))!.design.template;
+    };
+    expect(await make({ template: "harbour" })).toBe("harbour");
+    expect(await make({ template: "not-a-template" })).toBe("standard");
+    expect(await make({})).toBe("standard");
+  });
+
   it("a tailored version's name always says which job it is for, however long the base name", async () => {
     const cv = await filled("N".repeat(120));
     const made = await (await tailor.POST(json({ title: "Collections Assistant", employer: "Harbour Museum", advert: ADVERT }), ctx(cv.id))).json();

@@ -14,6 +14,7 @@ import { layoutCv } from "./layout";
 import { PDF_PRODUCER, writePdf } from "./pdf";
 import { compareText, readBackDocx, readBackPdf, wordsOf } from "./readback";
 import { exportCv } from "./server";
+import { FAMILIES } from "./fonts";
 import { TEMPLATES } from "./templates";
 import { fernCv, loadAllFonts, longCv } from "./testing";
 
@@ -177,7 +178,7 @@ describe.each(CV_TEMPLATES)("Word, %s template", (template: TemplateId) => {
     expect(core).toContain("<dc:language>en-GB</dc:language>");
     expect(core).not.toMatch(/creator|lastModifiedBy|keywords|subject/i);
     const fontNames = [...new Set([...xml.matchAll(/w:ascii="([^"]+)"/g)].map((m) => m[1]))].sort();
-    const want = [...new Set([TEMPLATES[template].fonts.body, TEMPLATES[template].fonts.heading].map((f) => ({ inter: "Inter", lora: "Lora", plex: "IBM Plex Sans", serif: "Source Serif 4" })[f]))].sort();
+    const want = [...new Set([TEMPLATES[template].fonts.body, TEMPLATES[template].fonts.heading].map((f) => FAMILIES[f]))].sort();
     expect(fontNames).toEqual(want);
   });
 

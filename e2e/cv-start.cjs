@@ -8,14 +8,18 @@ run("CV start", async (browser) => {
 
   // --- The dashboard of a new account ---
   await page.goto(`${BASE}/cv`);
-  await page.getByText("You have no CVs yet").waitFor({ timeout: 15000 });
-  check(await page.getByRole("link", { name: "Free CV audit" }).isVisible(), "an empty dashboard offers New CV and the free CV audit");
+  await page.getByText("No CVs yet").waitFor({ timeout: 15000 });
+  const paths = await page.locator("[data-testid^=path-]").allInnerTexts();
+  check(paths.length === 4 && /Check my CV or cover letter/.test(paths[0]) && /Check against a job/.test(paths[1]) && /Build with the assistant/.test(paths[2]) && /Find an example or template/.test(paths[3]), "the CV home starts with the four ways in", paths.join(" | "));
+  check((await page.getByTestId("path-check").getAttribute("href")) === "/cv/check" && (await page.getByTestId("path-job").getAttribute("href")) === "/cv/check?job=1", "“Check my CV or cover letter” and “Check against a job” lead to the check in the app");
   await bothThemes(page, "dashboard-empty");
   check(await page.getByRole("link", { name: "CVs and letters" }).first().isVisible(), "the rail has “CVs and letters”");
 
   // --- Set-up asks its questions and says what is missing ---
   await page.getByRole("link", { name: "New CV" }).first().click();
   await page.waitForURL(/\/cv\/new/);
+  check((await page.getByLabel("CV name").count()) === 0 && (await page.locator("[data-testid^=path-]").count()) === 4, "New CV asks how to start first, with the same four ways in");
+  await page.getByRole("button", { name: "Start with a blank page", exact: true }).click();
   check((await page.getByLabel("CV name").inputValue()) === "", "the CV name starts blank");
   check((await page.locator("input[type=radio][name=level]:checked, input[type=radio][name=region]:checked").count()) === 0, "level and region are not chosen for you");
   await page.getByRole("button", { name: "Create CV" }).click();
@@ -127,7 +131,7 @@ run("CV start", async (browser) => {
   }, id);
   check(statuses.join(",") === "404,404,404", "his attempts to read, change and delete it are all refused", statuses.join(","));
   await b.page.goto(`${BASE}/cv`);
-  await b.page.getByText("You have no CVs yet").waitFor();
+  await b.page.getByText("No CVs yet").waitFor();
   check(true, "her CV is not in his list");
   const still = await page.evaluate(async (cvId) => (await (await fetch(`/api/cv/versions/${cvId}`)).json()).cv.name, id);
   check(still === "Fern Example – Collections Officer", "her CV is unchanged");
@@ -165,7 +169,8 @@ run("CV start", async (browser) => {
   await p.page.getByText("Your resume is empty").waitFor();
   check(true, "a US CV is called a resume");
   await fitsWidth(p.page, "editor on a phone");
-  const sizes = await p.page.locator(".cv .cv-input").evaluateAll((els) => els.map((e) => [parseFloat(getComputedStyle(e).fontSize), e.getBoundingClientRect().height]));
+  const sizes = await p.page.locator(".cv .cv-input").evaluateAll((els) => els.filter((e) => e.offsetParent).map((e) => [parseFloat(getComputedStyle(e).fontSize), e.offsetHeight]));
+  // offsetHeight: the field's own height, not as drawn mid-way through the panel's opening animation.
   check(sizes.every(([font, height]) => font >= 16 && height >= 44), "on a phone, inputs are at least 16px text and 44px tall", JSON.stringify(sizes.slice(0, 4)));
   // On a phone the tabs are a picker.
   const order = await p.page.getByLabel("Section", { exact: true }).locator("option").allInnerTexts();

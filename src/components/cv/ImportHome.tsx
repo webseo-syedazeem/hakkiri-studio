@@ -8,6 +8,7 @@ import { type CvImport, openFlags, reviewSteps } from "@/lib/cv/import/record";
 import type { CvDoc } from "@/lib/cv/schema";
 import { SECTION_DEFS, sectionHeading } from "@/lib/cv/sections";
 import { api, messageOf } from "./client";
+import { afterImport } from "./upload";
 import { Dialog, usePanel } from "./Dialog";
 import { ReplaceFileDialog } from "./ReplaceFile";
 import { Bar, Btn, BtnLink, CvScreen, Panel, Skeleton, Toolbar } from "./ui";
@@ -135,7 +136,7 @@ export function ImportHome({ importId }: { importId: string }) {
                       setProblem("");
                       try {
                         const { versionId, next } = await api<{ versionId: string; next?: string }>(`/api/cv/imports/${importId}/confirm`, { method: "POST" });
-                        router.push(next === "findings" ? `/cv/v/${versionId}/findings` : `/cv/v/${versionId}/edit/contact`);
+                        router.push(afterImport(versionId, next));
                       } catch (err) {
                         setBusy(false);
                         setProblem(messageOf(err));

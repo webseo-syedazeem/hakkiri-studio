@@ -34,6 +34,7 @@ export function SiteNav() {
   ];
 
   const secondaryLinks: [string, string, boolean][] = [
+    ["/cv-templates", "CVs", /^\/(cv|resume|cover-letter)-(templates|examples)/.test(path)],
     [`${base}#how`, "How it works", false],
     ["/blog", "Blog", path.startsWith("/blog")],
     ["/about", "About", path === "/about"],
@@ -65,7 +66,8 @@ export function SiteNav() {
   return (
     <nav aria-label="Main" className="flex items-center gap-3 text-[13px]">
       {/* Central Segmented Navigation Capsule (Mac / Linear Style) */}
-      <div className="hidden md:flex items-center gap-0.5 rounded-full bg-slate-100/80 p-1 border border-slate-200/60 shadow-[inset_0_1px_2px_rgba(0,0,0,0.03)] backdrop-blur-sm">
+      {/* From 1024px: below that the links don't fit beside the sign-in buttons, and the footer carries them. */}
+      <div className="hidden lg:flex items-center gap-0.5 rounded-full bg-slate-100/80 p-1 border border-slate-200/60 shadow-[inset_0_1px_2px_rgba(0,0,0,0.03)] backdrop-blur-sm">
         {interviewLinks.map(([href, label, current]) => (
           <Link
             key={label}
@@ -283,7 +285,9 @@ export function SiteNav() {
             href={href}
             aria-current={current ? "page" : undefined}
             className={clsx(
-              "inline-flex items-center rounded-full px-3.5 py-1.5 text-[13px] whitespace-nowrap leading-none transition-all duration-200 select-none",
+              // "How it works" is a part of the home page: it gives way first when the bar is short of room.
+              label === "How it works" ? "hidden xl:inline-flex" : "inline-flex",
+              "items-center rounded-full px-3.5 py-1.5 text-[13px] whitespace-nowrap leading-none transition-all duration-200 select-none",
               current
                 ? "bg-white text-slate-900 font-semibold shadow-[0_1px_3px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)]"
                 : "text-slate-600 font-medium hover:text-slate-950 hover:bg-white/70 hover:shadow-sm"

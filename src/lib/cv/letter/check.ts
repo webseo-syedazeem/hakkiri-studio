@@ -207,6 +207,23 @@ function indexOf(pool: Pool) {
 }
 
 /** Checks one sentence against what the letter may rest on. */
+/**
+ * Whether a line says the person has NOT done what a clause claims from it:
+ * its "not" comes before the last of the claimed words ("Have not used
+ * Spectrum"). A "no" after them is about something else ("Prepared 1,200
+ * records for an audit, which found no issues").
+ */
+function deniesClaims(line: string, claims: Set<string>): boolean {
+  if (!negated(line)) return false;
+  const words = line.match(/[\p{L}\p{N}'’]+/gu) ?? [];
+  const firstNot = words.findIndex((w) => negated(w));
+  let lastClaim = -1;
+  words.forEach((w, i) => {
+    if (claims.has(stem(w.toLowerCase()))) lastClaim = i;
+  });
+  return firstNot >= 0 && firstNot < lastClaim;
+}
+
 export function checkSentence(sentence: string, pool: Pool): Checked {
   const text = oneLine(sentence);
   const problems: Problem[] = [];
@@ -245,7 +262,7 @@ export function checkSentence(sentence: string, pool: Pool): Checked {
       const overlap = (a: Indexed) => [...wordsIn(a.source.text)].filter((w) => mineWords.has(w)).length;
       const holding = near.filter((a) => [...claims].every((c) => a.stems.has(c)));
       const best = Math.max(0, ...holding.map(overlap));
-      const denied = holding.find((a) => overlap(a) === best && negated(a.source.text));
+      const denied = holding.find((a) => overlap(a) === best && deniesClaims(a.source.text, claims));
       if (denied) {
         problems.push({ kind: "negation", original: denied.source.text, say: `${KIND_SAYS[denied.source.kind]} ${q(denied.source.text)} This sentence leaves out the “not”.` });
         continue;

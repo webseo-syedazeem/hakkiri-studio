@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
@@ -66,6 +66,10 @@ export default function CvAuditPage() {
   const [text, setText] = useState("");
   const [jobText, setJobText] = useState("");
   const [showJobInput, setShowJobInput] = useState(false);
+  // "Check against a job" (/cv-audit?job=1) opens with the job advert box out.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("job") === "1") setShowJobInput(true);
+  }, []);
   const [region, setRegion] = useState<"uk" | "us">("uk");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

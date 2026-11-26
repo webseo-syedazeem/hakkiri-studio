@@ -184,6 +184,14 @@ describe("honest sentences pass", () => {
     expect(status("I catalogued over 1,200 objects.")).toBe("unsupported");
   });
 
+  it("a line with a “no” about something else is not a denial: “found no issues” is about the audit", () => {
+    const audit = poolOf(cvWith(["Prepared 1,200 customer records for a regulatory audit, which found no issues", "Have not used Spectrum"], "I like museums."), NOW);
+    expect(says("I also prepared 1,200 customer records for a regulatory audit, which found no issues.", audit)).toBe("");
+    expect(says("I prepared 1,200 customer records for a regulatory audit.", audit)).toBe("");
+    // A "not" before what is claimed is still a denial.
+    expect(says("I have used Spectrum.", audit)).toContain("leaves out the “not”");
+  });
+
   it("when the person can start is theirs to say, and only that", () => {
     expect(status("I am available from 3 March.")).toBe("plain");
     // A date is not a way in for a claim.

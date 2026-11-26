@@ -16,7 +16,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     const cv = await getOwnCv(imp.versionId, userId);
     if (!cv) return notFound();
     // A CV started from a free check opens on its score, where the findings the person saw are; any other on the builder.
-    const next = imp.checkId ? "findings" : "edit";
+    const next = imp.then ?? (imp.checkId ? "findings" : "edit");
     if (imp.status === "confirmed") return NextResponse.json({ versionId: cv.id, next });
     if (imp.status !== "needs-review") return NextResponse.json({ error: "not_ready", message: "This file could not be read. Choose another file or paste the text first." }, { status: 409 });
     // The CV was made for this upload and should still be empty. If the person has typed into it since, keep their typing.
