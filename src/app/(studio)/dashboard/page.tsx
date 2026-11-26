@@ -27,23 +27,20 @@ export default async function HomePage() {
   const interviews = await listInterviewsAsync(today, user.id);
   const presentations = listPresentations(user.id);
 
-  // User-created or active workspace interviews
-  const own = interviews.filter((iv) => !isDemoInterview(iv.id));
+  // Own items only: demo/sample content is never mixed into user counts, agenda, or trackers
+  const ownInterviews = interviews.filter((iv) => !isDemoInterview(iv.id));
   const ownPresentations = presentations.filter((p) => !isDemoPresentation(p.id));
-  const activeInterviews = own.length > 0 ? own : interviews;
-  const activePresentations = ownPresentations.length > 0 ? ownPresentations : presentations;
   const demo = interviews.find((iv) => isDemoInterview(iv.id));
 
   const events = agenda(
-    activeInterviews.map((iv) => ({ id: iv.id, role: iv.role, company: iv.company, isDemo: false, date: iv.date, stages: iv.stages })),
-    activePresentations.map((p) => ({ id: p.id, title: p.title, isDemo: false, date: p.date, minutes: Math.round(p.timeLimitSec / 60) })),
+    ownInterviews.map((iv) => ({ id: iv.id, role: iv.role, company: iv.company, isDemo: false, date: iv.date, stages: iv.stages })),
+    ownPresentations.map((p) => ({ id: p.id, title: p.title, isDemo: false, date: p.date, minutes: Math.round(p.timeLimitSec / 60) })),
     today,
   );
 
-  // Every practice session the person has finished, on any of their interviews (their copy of the example
-  // included: those sessions are theirs). The example's own built-in session is not one of them.
+  // Every practice session the person has finished on their own interviews
   const finished = (
-    await Promise.all(interviews.map(async (iv) => (await listMocksAsync(iv.id, user.id)).filter((m) => m.userId === user.id && m.status === "done").map((m) => ({ m, iv }))))
+    await Promise.all(ownInterviews.map(async (iv) => (await listMocksAsync(iv.id, user.id)).filter((m) => m.userId === user.id && m.status === "done").map((m) => ({ m, iv }))))
   )
     .flat()
     .sort((a, b) => Date.parse(b.m.startedAt) - Date.parse(a.m.startedAt));
@@ -64,14 +61,14 @@ export default async function HomePage() {
 
   // What to do next on each of the person's interviews, worked out from their own sessions.
   const nextSteps: HomeNextStep[] = [
-    ...activeInterviews.slice(0, 3).map((iv): HomeNextStep => {
+    ...ownInterviews.slice(0, 3).map((iv): HomeNextStep => {
       const step = interviewNextStep(iv, standing(iv, user.id));
       return { id: iv.id, kind: "interview", title: iv.role || "Interview", subtitle: [iv.company, step.label].filter(Boolean).join(" · "), chip: step.detail, href: `/interviews/${iv.id}`, actionLabel: "Open" };
     }),
-    ...activePresentations.slice(0, 2).map((p): HomeNextStep => ({ id: p.id, kind: "presentation", title: p.title || "Presentation", subtitle: "Presentation", chip: `${Math.round(p.timeLimitSec / 60)} min`, href: `/presentations/${p.id}`, actionLabel: "Rehearse" })),
+    ...ownPresentations.slice(0, 2).map((p): HomeNextStep => ({ id: p.id, kind: "presentation", title: p.title || "Presentation", subtitle: "Presentation", chip: `${Math.round(p.timeLimitSec / 60)} min`, href: `/presentations/${p.id}`, actionLabel: "Rehearse" })),
   ];
 
-  const tracker = activeInterviews.map((iv) => ({ id: iv.id, role: iv.role, company: iv.company, companyInitial: iv.companyInitial || (iv.company ? iv.company[0].toUpperCase() : "?"), stages: iv.stages }));
+  const tracker = ownInterviews.map((iv) => ({ id: iv.id, role: iv.role, company: iv.company, companyInitial: iv.companyInitial || (iv.company ? iv.company[0].toUpperCase() : "?"), stages: iv.stages }));
 
   return (
     <div className="flex w-full grow flex-col gap-6">
@@ -82,15 +79,15 @@ export default async function HomePage() {
             <span>{longDay(`${today}T12:00:00Z`)}</span>
           </div>
           <h1 className="mt-1 text-[24px] sm:text-[28px] md:text-[34px] font-bold tracking-[-0.025em] text-ink break-words" data-testid="home-headline">
-            {homeHeadline(events, activeInterviews.length, activePresentations.length)}
+            {homeHeadline(events, ownInterviews.length, ownPresentations.length)}
           </h1>
         </div>
         <HomeHeaderActions />
       </header>
 
       <DashboardClientView
-        interviewsCount={interviews.length}
-        presentationsCount={presentations.length}
+        interviewsCount={ownInterviews.length}
+        presentationsCount={ownPresentations.length}
         sessionsCount={finished.length}
         agendaEvents={events}
         activeInterview={tracker[0] ?? null}

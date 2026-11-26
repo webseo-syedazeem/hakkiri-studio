@@ -1,12 +1,8 @@
-import Link from "next/link";
-import clsx from "clsx";
 import { ButtonLink, Icon, Panel } from "@/components/ui";
-import { SlideView } from "@/components/pitch/SlideView";
-import { listPresentations, listQa, listRuns } from "@/lib/pitch/store";
+import { PresentationsGrid, type SerializedPresentation } from "@/components/pitch/PresentationsGrid";
+import { isDemoPresentation, listPresentations, listQa, listRuns } from "@/lib/pitch/store";
 import { pitchReadiness } from "@/lib/pitch/plan";
-import { AUDIENCE_LABEL } from "@/lib/pitch/labels";
 import { londonToday } from "@/lib/dates";
-import { clock, daysBetween, longDay } from "@/lib/format";
 import { requirePageUser } from "@/lib/auth/require";
 
 export const dynamic = "force-dynamic";
@@ -15,6 +11,24 @@ export const dynamic = "force-dynamic";
 export default async function PresentationsPage() {
   const user = await requirePageUser();
   const all = listPresentations(user.id);
+  const today = londonToday();
+
+  const own = all.filter((p) => !isDemoPresentation(p.id));
+
+  const serialized: SerializedPresentation[] = all.map((p) => {
+    const runs = listRuns(p.id, user.id);
+    const r = pitchReadiness(p, runs, listQa(p.id, user.id));
+    return {
+      presentation: p,
+      runsCount: runs.length,
+      readiness: {
+        status: r.status,
+        statusTone: r.statusTone,
+      },
+      isDemo: isDemoPresentation(p.id),
+    };
+  });
+
   return (
     <div className="flex grow flex-col">
       <header className="flex animate-rise items-end justify-between gap-6">
@@ -28,7 +42,7 @@ export default async function PresentationsPage() {
         </ButtonLink>
       </header>
 
-      {all.length === 0 && (
+      {own.length === 0 && (
         <Panel className="mt-6 max-w-[620px] animate-rise px-6 py-6">
           <h2 className="text-[15px] font-semibold">No presentations yet</h2>
           <p className="mt-1.5 text-sm text-muted">Add your slides and how long you have. Rehearse slide by slide, then take questions from the audience you’ll face.</p>
@@ -38,34 +52,7 @@ export default async function PresentationsPage() {
         </Panel>
       )}
 
-      <div className="mt-6 grid grid-cols-[repeat(auto-fill,minmax(400px,1fr))] gap-5">
-        {all.map((p, i) => {
-          const runs = listRuns(p.id, user.id);
-          const r = pitchReadiness(p, runs, listQa(p.id, user.id));
-          const days = daysBetween(londonToday(), p.date);
-          return (
-            <Link key={p.id} href={`/presentations/${p.id}`} className="group block animate-rise" style={{ animationDelay: `${0.05 * i}s` }}>
-              <Panel className="flex gap-5 p-5 transition-shadow group-hover:shadow-[inset_0_0_0_1px_var(--color-line-strong)]">
-                <SlideView slide={p.slides[0]} presentationId={p.id} className="w-[168px] shrink-0 self-start rounded-[6px] shadow-[0_0_0_1px_var(--color-line-strong)]" showNumber={false} />
-                <div className="min-w-0">
-                  <h2 className="truncate text-lg font-semibold tracking-[-0.01em]">{p.title}</h2>
-                  <div className="mt-0.5 whitespace-nowrap text-[13px] text-muted">
-                    {AUDIENCE_LABEL[p.audience]} · {Math.round(p.timeLimitSec / 60)} min · {p.slides.length} slides
-                  </div>
-                  <div className="mt-3 text-sm">
-                    {longDay(p.date)}, {clock(p.date)}{" "}
-                    <span className="text-muted">{days < 0 ? "(done)" : days === 0 ? "(today)" : days === 1 ? "(tomorrow)" : `(in ${days} days)`}</span>
-                  </div>
-                  <div className={clsx("mt-2 text-[13px] font-semibold", r.statusTone === "red" ? "text-red-soft" : "text-lilac")}>
-                    {r.status}
-                    {runs.length > 0 && <span className="font-normal text-muted"> · {runs.length} run{runs.length === 1 ? "" : "s"}</span>}
-                  </div>
-                </div>
-              </Panel>
-            </Link>
-          );
-        })}
-      </div>
+      <PresentationsGrid initialPresentations={serialized} today={today} />
     </div>
   );
 }

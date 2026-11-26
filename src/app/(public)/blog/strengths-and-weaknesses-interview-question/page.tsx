@@ -10,17 +10,14 @@ import {
   IconHelpCircle,
   IconCompass,
   IconTarget,
+  IconCheck,
 } from "@/components/interview-questions/Icons";
 import {
   StrengthsWeaknessesBuilder,
-  SampleCard,
+  SampleAnswersTabs,
   StrengthsWeaknessesFaqAccordion,
 } from "@/components/blog/StrengthsWeaknessesClient";
-import {
-  STRENGTH_SAMPLES,
-  WEAKNESS_SAMPLES,
-  FAQ_LIST,
-} from "@/lib/blog/strengths-weaknesses-data";
+import { FAQ_LIST } from "@/lib/blog/strengths-weaknesses-data";
 
 export const metadata: Metadata = {
   title: {
@@ -109,7 +106,7 @@ export default function StrengthsAndWeaknessesPage() {
   };
 
   return (
-    <div className="w-full bg-white text-slate-900">
+    <div className="w-full bg-[#fafbfc] text-slate-900 min-h-screen">
       {/* Article + FAQPage Structured Data */}
       <script
         type="application/ld+json"
@@ -121,7 +118,7 @@ export default function StrengthsAndWeaknessesPage() {
       />
 
       {/* BREADCRUMB */}
-      <nav aria-label="Breadcrumb" className="border-b border-slate-100 bg-slate-50/50 py-3 text-xs text-slate-500">
+      <nav aria-label="Breadcrumb" className="border-b border-slate-100 bg-white/80 backdrop-blur-md py-3 text-xs text-slate-500 sticky top-0 z-20">
         <div className="mx-auto max-w-[1040px] px-4 sm:px-6 flex items-center gap-2">
           <Link href="/" className="hover:text-slate-900 transition-colors">Home</Link>
           <IconChevronRight className="h-3 w-3 text-slate-400" />
@@ -132,10 +129,10 @@ export default function StrengthsAndWeaknessesPage() {
       </nav>
 
       {/* SECTION 1: HERO */}
-      <section className="relative overflow-hidden border-b border-slate-200/80 bg-gradient-to-b from-blue-50/40 via-white to-white py-14 sm:py-20">
+      <section className="relative overflow-hidden border-b border-slate-200/80 bg-gradient-to-b from-white via-white to-slate-50/50 py-14 sm:py-20">
         <div className="mx-auto max-w-[1040px] px-4 sm:px-6">
-          <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50/80 px-3.5 py-1 text-xs font-semibold text-blue-700 shadow-xs">
-            <span className="h-1.5 w-1.5 rounded-full bg-blue-600 animate-pulse" />
+          <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50/90 px-3.5 py-1 text-xs font-semibold text-blue-700 shadow-2xs">
+            <span className="h-2 w-2 rounded-full bg-blue-600 animate-pulse" />
             INTERVIEW QUESTION GUIDE
           </div>
 
@@ -143,8 +140,8 @@ export default function StrengthsAndWeaknessesPage() {
             How to Answer &ldquo;What Are Your Strengths and Weaknesses?&rdquo; (With Examples)
           </h1>
 
-          <div className="mt-6 rounded-2xl border-l-4 border-blue-600 bg-slate-50 p-5 sm:p-6 text-sm sm:text-base text-slate-700 leading-relaxed max-w-3xl">
-            To answer <strong className="text-slate-900">&ldquo;What are your strengths and weaknesses?&rdquo;</strong>, pick one or two strengths the job actually needs and prove each with a short example. For your weakness, choose a real but fixable skill gap that is not essential for the role, explain what you are doing to improve it, and show the progress you have made. Keep the whole answer under two minutes.
+          <div className="mt-6 rounded-2xl border-l-4 border-blue-600 bg-white p-5 sm:p-6 text-sm sm:text-base text-slate-700 leading-relaxed max-w-3xl border border-slate-200/80 shadow-xs">
+            To answer <strong className="text-slate-950 font-bold">&ldquo;What are your strengths and weaknesses?&rdquo;</strong>, pick one or two strengths the job actually needs and prove each with a short example. For your weakness, choose a real but fixable skill gap that is not essential for the role, explain what you are doing to improve it, and show the progress you have made. Keep the whole answer under two minutes.
           </div>
 
           <p className="mt-5 text-sm sm:text-base text-slate-600 leading-relaxed max-w-3xl">
@@ -154,447 +151,356 @@ export default function StrengthsAndWeaknessesPage() {
           <div className="mt-8 flex flex-col sm:flex-row sm:items-center gap-4">
             <Link
               href="/signup"
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3.5 text-sm font-semibold text-white shadow-md shadow-blue-500/20 hover:from-blue-700 hover:to-indigo-700 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-blue-600 via-blue-600 to-indigo-600 px-7 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-500/25 hover:from-blue-700 hover:to-indigo-700 transition-all hover:scale-[1.02] active:scale-[0.98]"
             >
               <IconSparkles className="h-4 w-4" />
-              Practice with Free AI Mock Interview
+              Practice this question with an AI interviewer
+              <IconArrowRight className="h-4 w-4" />
             </Link>
-            <a
-              href="#formula"
-              className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-300 bg-white px-6 py-3.5 text-sm font-semibold text-slate-700 hover:border-slate-400 hover:bg-slate-50 transition-all"
-            >
-              The Quick Answer Formula
-              <IconArrowRight className="h-4 w-4 text-slate-500" />
-            </a>
+            <span className="text-xs text-slate-500 font-medium">
+              Free during beta. Speak your answer out loud and get a score.
+            </span>
           </div>
         </div>
       </section>
 
-      {/* SECTION 2: THE QUICK ANSWER FORMULA */}
-      <section id="formula" className="py-14 sm:py-20 border-b border-slate-100">
+      {/* SECTION 2: AT A GLANCE (3 SIGNATURE STAT CARDS) */}
+      <section className="py-12 sm:py-16 border-b border-slate-200/80 bg-white">
         <div className="mx-auto max-w-[1040px] px-4 sm:px-6">
-          <div className="max-w-2xl">
-            <span className="text-xs font-bold uppercase tracking-wider text-blue-600">Framework</span>
-            <h2 className="mt-1 text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-              The Quick Answer Formula
+          <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mb-8">
+            &ldquo;Strengths &amp; Weaknesses&rdquo; at a glance
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Card 1 */}
+            <div className="rounded-3xl border border-slate-200/90 bg-white p-6 sm:p-7 shadow-sm transition-all duration-300 hover:shadow-md hover:border-blue-300">
+              <div className="text-3xl sm:text-4xl font-black text-blue-600 tracking-tight">
+                60–120 sec
+              </div>
+              <div className="mt-2 text-xs sm:text-sm text-slate-600 font-medium leading-relaxed">
+                How long your total combined answer should be.
+              </div>
+            </div>
+
+            {/* Card 2 */}
+            <div className="rounded-3xl border border-slate-200/90 bg-white p-6 sm:p-7 shadow-sm transition-all duration-300 hover:shadow-md hover:border-purple-300">
+              <div className="text-3xl sm:text-4xl font-black text-purple-600 tracking-tight">
+                50 / 50 split
+              </div>
+              <div className="mt-2 text-xs sm:text-sm text-slate-600 font-medium leading-relaxed">
+                Equal balance between proof of strength and proactive fix.
+              </div>
+            </div>
+
+            {/* Card 3 */}
+            <div className="rounded-3xl border border-slate-200/90 bg-white p-6 sm:p-7 shadow-sm transition-all duration-300 hover:shadow-md hover:border-emerald-300">
+              <div className="text-3xl sm:text-4xl font-black text-emerald-600 tracking-tight">
+                100% Real
+              </div>
+              <div className="mt-2 text-xs sm:text-sm text-slate-600 font-medium leading-relaxed">
+                Zero clichés like &ldquo;perfectionist&rdquo; or &ldquo;work too hard&rdquo;.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 3: THE PROVEN FRAMEWORK (3 STEP CARDS) */}
+      <section id="formula" className="py-14 sm:py-20 border-b border-slate-200/80 bg-slate-50/50">
+        <div className="mx-auto max-w-[1040px] px-4 sm:px-6">
+          <div className="max-w-2xl mb-10">
+            <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-blue-600 mb-2">
+              <IconCompass className="h-4 w-4" /> PROVEN FRAMEWORK
+            </div>
+            <h2 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">
+              The 3-Step Answer Formula
             </h2>
             <p className="mt-3 text-sm sm:text-base text-slate-600">
-              Break your response into two distinct, balanced halves. Spend equal time proving your strength and demonstrating self-correction on your weakness.
+              This is the simplest way to structure your answer. Both halves take just three clean sentences.
             </p>
           </div>
 
-          {/* Formula Table */}
-          <div className="mt-8 overflow-hidden rounded-2xl border border-slate-200/90 shadow-xs">
+          {/* 3 Formula Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Step 1 */}
+            <div className="rounded-3xl border border-slate-200/90 bg-white p-6 sm:p-7 shadow-sm flex flex-col justify-between hover:shadow-md hover:border-blue-300 transition-all">
+              <div>
+                <span className="inline-block rounded-full bg-blue-100 px-3 py-1 text-xs font-black text-blue-800 mb-3">
+                  1. Match
+                </span>
+                <h3 className="text-lg font-black text-slate-900">
+                  Name the core skill
+                </h3>
+                <p className="mt-2 text-xs text-slate-600 leading-relaxed font-medium">
+                  Choose a primary strength the job description asks for, and a real weakness that is not fatal to the position.
+                </p>
+              </div>
+              <div className="mt-6 rounded-2xl bg-blue-50/70 p-4 border border-blue-100 text-xs text-slate-700 italic font-serif leading-relaxed">
+                &ldquo;My biggest strength is staying calm under pressure with upset clients...&rdquo;
+              </div>
+            </div>
+
+            {/* Step 2 */}
+            <div className="rounded-3xl border border-slate-200/90 bg-white p-6 sm:p-7 shadow-sm flex flex-col justify-between hover:shadow-md hover:border-purple-300 transition-all">
+              <div>
+                <span className="inline-block rounded-full bg-purple-100 px-3 py-1 text-xs font-black text-purple-800 mb-3">
+                  2. Prove
+                </span>
+                <h3 className="text-lg font-black text-slate-900">
+                  Provide concrete evidence
+                </h3>
+                <p className="mt-2 text-xs text-slate-600 leading-relaxed font-medium">
+                  Give a specific story with numbers or metrics for your strength, and a realistic example of how the weakness showed up.
+                </p>
+              </div>
+              <div className="mt-6 rounded-2xl bg-purple-50/70 p-4 border border-purple-100 text-xs text-slate-700 italic font-serif leading-relaxed">
+                &ldquo;Last year I turned 85% of escalated complaints into repeat customers...&rdquo;
+              </div>
+            </div>
+
+            {/* Step 3 */}
+            <div className="rounded-3xl border border-slate-200/90 bg-white p-6 sm:p-7 shadow-sm flex flex-col justify-between hover:shadow-md hover:border-emerald-300 transition-all">
+              <div>
+                <span className="inline-block rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-800 mb-3">
+                  3. Action
+                </span>
+                <h3 className="text-lg font-black text-slate-900">
+                  Show future impact &amp; the fix
+                </h3>
+                <p className="mt-2 text-xs text-slate-600 leading-relaxed font-medium">
+                  Explain how your strength benefits their team, and clearly outline the proactive action you are taking to fix the weakness.
+                </p>
+              </div>
+              <div className="mt-6 rounded-2xl bg-emerald-50/70 p-4 border border-emerald-100 text-xs text-slate-700 italic font-serif leading-relaxed">
+                &ldquo;I now time-block my deliverables and hit 100% of my deadlines this quarter.&rdquo;
+              </div>
+            </div>
+          </div>
+
+          {/* Interactive Answer Builder Component */}
+          <div className="mt-12">
+            <StrengthsWeaknessesBuilder />
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 4: INTERACTIVE SAMPLE ANSWERS (TABBED SYSTEM) */}
+      <section className="py-14 sm:py-20 border-b border-slate-200/80 bg-white">
+        <div className="mx-auto max-w-[1040px] px-4 sm:px-6">
+          <div className="max-w-2xl mb-8">
+            <h2 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">
+              &ldquo;Strengths &amp; Weaknesses&rdquo; sample answers
+            </h2>
+            <p className="mt-2 text-sm text-slate-600">
+              Pick the scenario closest to your target role and adapt with your own metrics. Never memorize word-for-word.
+            </p>
+          </div>
+
+          <SampleAnswersTabs />
+        </div>
+      </section>
+
+      {/* SECTION 5: WHAT TO SAY AND WHAT TO LEAVE OUT (DO'S AND DON'TS) */}
+      <section className="py-14 sm:py-20 border-b border-slate-200/80 bg-slate-50/50">
+        <div className="mx-auto max-w-[1040px] px-4 sm:px-6">
+          <div className="max-w-2xl mb-10">
+            <h2 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">
+              What to say and what to leave out
+            </h2>
+            <p className="mt-2 text-sm text-slate-600">
+              Essential guidelines to score maximum marks with hiring managers and avoid immediate red flags.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* DO CARD */}
+            <div className="rounded-3xl border-2 border-emerald-200 bg-emerald-50/30 p-7 sm:p-8 shadow-sm flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-2 text-emerald-800 font-black text-lg mb-6">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-600 text-white">
+                    <IconCheck className="h-4 w-4" />
+                  </span>
+                  Do
+                </div>
+
+                <ul className="space-y-4 text-xs sm:text-sm text-slate-700 font-medium">
+                  <li className="flex items-start gap-3">
+                    <IconCheckCircle className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                    <span><strong>Match the job description:</strong> Pick 1 or 2 strengths that directly support their core daily challenges.</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <IconCheckCircle className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                    <span><strong>Back it with a number:</strong> Time saved, complaints resolved, revenue grown, or turnaround accelerated.</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <IconCheckCircle className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                    <span><strong>Name a real, fixable gap:</strong> Public speaking, advanced tooling, delegating, or saying no too rarely.</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <IconCheckCircle className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                    <span><strong>Show active, ongoing progress:</strong> Highlight courses completed, weekly habits built, or mentor check-ins.</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <IconCheckCircle className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                    <span><strong>Keep it under 90 seconds:</strong> Keep the cadence crisp, positive, and forward-looking.</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* DON'T CARD */}
+            <div className="rounded-3xl border-2 border-rose-200 bg-rose-50/30 p-7 sm:p-8 shadow-sm flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-2 text-rose-800 font-black text-lg mb-6">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-rose-600 text-white">
+                    <IconXCircle className="h-4 w-4" />
+                  </span>
+                  Don&apos;t
+                </div>
+
+                <ul className="space-y-4 text-xs sm:text-sm text-slate-700 font-medium">
+                  <li className="flex items-start gap-3">
+                    <IconXCircle className="h-4 w-4 text-rose-600 shrink-0 mt-0.5" />
+                    <span><strong>Use fake humblebrag clichés:</strong> Never say &ldquo;I&apos;m a perfectionist&rdquo; or &ldquo;I work too hard.&rdquo;</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <IconXCircle className="h-4 w-4 text-rose-600 shrink-0 mt-0.5" />
+                    <span><strong>Disqualify yourself:</strong> Don&apos;t pick a weakness that is an absolute requirement on the job posting.</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <IconXCircle className="h-4 w-4 text-rose-600 shrink-0 mt-0.5" />
+                    <span><strong>Rambling without proof:</strong> Listing 5 adjectives without a story scores zero on recruiter rubrics.</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <IconXCircle className="h-4 w-4 text-rose-600 shrink-0 mt-0.5" />
+                    <span><strong>Dwelling on the flaw:</strong> Spending 80% of your time defending the weakness makes you look defensive.</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <IconXCircle className="h-4 w-4 text-rose-600 shrink-0 mt-0.5" />
+                    <span><strong>Share personal problems:</strong> Keep all answers strictly focused on workplace skills and workflow habits.</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 6: STRENGTHS TO CHOOSE FROM TABLE */}
+      <section className="py-14 sm:py-20 border-b border-slate-200/80 bg-white">
+        <div className="mx-auto max-w-[1040px] px-4 sm:px-6">
+          <div className="max-w-2xl mb-8">
+            <h2 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">
+              Strengths to Choose From
+            </h2>
+            <p className="mt-2 text-sm text-slate-600">
+              Select strengths that map directly to your role level and industry requirements:
+            </p>
+          </div>
+
+          <div className="overflow-hidden rounded-3xl border border-slate-200/90 bg-white shadow-md">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead className="bg-slate-50 border-b border-slate-200/90 text-xs font-bold uppercase tracking-wider text-slate-600">
                   <tr>
-                    <th scope="col" className="px-6 py-4 w-28">Step</th>
-                    <th scope="col" className="px-6 py-4">Strength</th>
-                    <th scope="col" className="px-6 py-4">Weakness</th>
+                    <th scope="col" className="px-6 py-4 w-44">Skill Category</th>
+                    <th scope="col" className="px-6 py-4">High-Scoring Examples</th>
+                    <th scope="col" className="px-6 py-4">Best Suited For</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 bg-white">
-                  <tr>
-                    <td className="px-6 py-4 font-bold text-slate-900 bg-slate-50/40">Step 1</td>
-                    <td className="px-6 py-4 text-slate-800">
-                      <strong className="text-slate-900">Name a strength the job needs</strong>
-                    </td>
-                    <td className="px-6 py-4 text-slate-800">
-                      <strong className="text-slate-900">Name a real weakness that is not core to the job</strong>
-                    </td>
+                <tbody className="divide-y divide-slate-100">
+                  <tr className="hover:bg-slate-50/50 transition-colors">
+                    <td className="px-6 py-4 font-bold text-slate-900">People skills</td>
+                    <td className="px-6 py-4 text-slate-700">Communication, active listening, empathy, conflict resolution</td>
+                    <td className="px-6 py-4 text-slate-600">Customer service, healthcare, sales, management</td>
                   </tr>
-                  <tr>
-                    <td className="px-6 py-4 font-bold text-slate-900 bg-slate-50/40">Step 2</td>
-                    <td className="px-6 py-4 text-slate-800">
-                      <strong className="text-slate-900">Prove it with one specific example</strong>
-                    </td>
-                    <td className="px-6 py-4 text-slate-800">
-                      <strong className="text-slate-900">Give a short example of how it affected your work</strong>
-                    </td>
+                  <tr className="hover:bg-slate-50/50 transition-colors">
+                    <td className="px-6 py-4 font-bold text-slate-900">Work habits</td>
+                    <td className="px-6 py-4 text-slate-700">Workflow automation, organization, meticulous QA, time-blocking</td>
+                    <td className="px-6 py-4 text-slate-600">Operations, admin, finance, engineering</td>
                   </tr>
-                  <tr>
-                    <td className="px-6 py-4 font-bold text-slate-900 bg-slate-50/40">Step 3</td>
-                    <td className="px-6 py-4 text-slate-800">
-                      <strong className="text-slate-900">Say how it will help in this role</strong>
-                    </td>
-                    <td className="px-6 py-4 text-slate-800">
-                      <strong className="text-slate-900">Explain what you are doing to fix it, and the progress so far</strong>
-                    </td>
+                  <tr className="hover:bg-slate-50/50 transition-colors">
+                    <td className="px-6 py-4 font-bold text-slate-900">Thinking skills</td>
+                    <td className="px-6 py-4 text-slate-700">Root-cause analysis, data interpretation, system architecture</td>
+                    <td className="px-6 py-4 text-slate-600">Software engineering, product strategy, analytics</td>
                   </tr>
-                  <tr className="bg-blue-50/30">
-                    <td className="px-6 py-4 font-bold text-blue-900 bg-blue-100/50">Length</td>
-                    <td className="px-6 py-4 font-semibold text-blue-900">30 to 60 seconds</td>
-                    <td className="px-6 py-4 font-semibold text-blue-900">30 to 60 seconds</td>
+                  <tr className="hover:bg-slate-50/50 transition-colors">
+                    <td className="px-6 py-4 font-bold text-slate-900">Leadership</td>
+                    <td className="px-6 py-4 text-slate-700">Mentoring junior colleagues, proactive ownership, decisive trade-offs</td>
+                    <td className="px-6 py-4 text-slate-600">Team leads, managers, directors, executives</td>
+                  </tr>
+                  <tr className="hover:bg-slate-50/50 transition-colors">
+                    <td className="px-6 py-4 font-bold text-slate-900">Adaptability</td>
+                    <td className="px-6 py-4 text-slate-700">Rapid tool adoption, calm under pressure, cross-functional agility</td>
+                    <td className="px-6 py-4 text-slate-600">Startups, agile teams, career pivots, internships</td>
                   </tr>
                 </tbody>
               </table>
             </div>
           </div>
-
-          {/* Interactive Answer Builder Component */}
-          <StrengthsWeaknessesBuilder />
         </div>
       </section>
 
-      {/* SECTION 3: HOW TO ANSWER STRENGTHS */}
-      <section className="py-14 sm:py-20 bg-slate-50/50 border-b border-slate-200/80">
+      {/* SECTION 7: QUESTIONS THAT OFTEN COME NEXT */}
+      <section className="py-14 sm:py-20 border-b border-slate-200/80 bg-slate-50/50">
         <div className="mx-auto max-w-[1040px] px-4 sm:px-6">
-          <div className="max-w-3xl">
-            <span className="text-xs font-bold uppercase tracking-wider text-blue-600">Part 1</span>
-            <h2 className="mt-1 text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-              How to Answer &ldquo;What Are Your Strengths?&rdquo;
+          <div className="max-w-2xl mb-8">
+            <h2 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">
+              Questions that often come next
             </h2>
-            <p className="mt-3 text-sm sm:text-base text-slate-600 leading-relaxed">
-              The mistake most people make is listing adjectives: <em className="text-slate-800">&ldquo;I&apos;m hardworking, a team player and a quick learner.&rdquo;</em> Every candidate says that. What makes your answer stand out is <strong className="text-slate-900">proof</strong>.
+            <p className="mt-2 text-sm text-slate-600">
+              Your answer sets up the rest of the interview. Be ready for these immediate follow-up questions:
             </p>
           </div>
 
-          {/* 3-Step Proof Method Box */}
-          <div className="mt-8 rounded-2xl bg-white p-6 sm:p-8 border border-slate-200/90 shadow-xs">
-            <h3 className="text-base sm:text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-              <IconTarget className="h-5 w-5 text-blue-600" />
-              The 3-Step Proof Method
-            </h3>
-            <ol className="space-y-4 text-sm sm:text-base text-slate-700">
-              <li className="flex items-start gap-3">
-                <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700">1</span>
-                <div>
-                  <strong className="text-slate-900">Read the job description</strong> and circle the 3 or 4 skills that come up most.
-                </div>
-              </li>
-              <li className="flex items-start gap-3">
-                <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700">2</span>
-                <div>
-                  <strong className="text-slate-900">Pick the one or two</strong> you can prove with a real story.
-                </div>
-              </li>
-              <li className="flex items-start gap-3">
-                <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700">3</span>
-                <div>
-                  <strong className="text-slate-900">Add a number if you can</strong>: time saved, sales made, customers helped, grades improved.
-                </div>
-              </li>
-            </ol>
-          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            <Link
+              href="/interview-questions"
+              className="group rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm transition-all hover:border-blue-400 hover:shadow-md"
+            >
+              <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Follow-up 1</div>
+              <h3 className="mt-1 text-sm font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                &ldquo;Tell me more about that project.&rdquo;
+              </h3>
+              <p className="mt-1 text-xs text-slate-500">Have specific metrics and your exact personal role ready.</p>
+              <span className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-blue-600 group-hover:translate-x-0.5 transition-transform">
+                View STAR answer framework →
+              </span>
+            </Link>
 
-          {/* Strength Sample Answers */}
-          <div className="mt-12">
-            <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-6">
-              Strength Sample Answers
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {STRENGTH_SAMPLES.map((s) => (
-                <SampleCard
-                  key={s.id}
-                  title={s.role}
-                  badge={s.badge}
-                  quote={s.text}
-                  note={s.whyItWorks}
-                />
-              ))}
-            </div>
-          </div>
+            <Link
+              href="/interview-questions/why-should-we-hire-you"
+              className="group rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm transition-all hover:border-blue-400 hover:shadow-md"
+            >
+              <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Follow-up 2</div>
+              <h3 className="mt-1 text-sm font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                &ldquo;Why should we hire you?&rdquo;
+              </h3>
+              <p className="mt-1 text-xs text-slate-500">Connect your proven strengths directly to their 90-day targets.</p>
+              <span className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-blue-600 group-hover:translate-x-0.5 transition-transform">
+                View 3-sentence pitch formula →
+              </span>
+            </Link>
 
-          {/* Strengths to Choose From Table */}
-          <div className="mt-12">
-            <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-4">
-              Strengths to Choose From
-            </h3>
-            <p className="text-sm text-slate-600 mb-6">
-              Choose strengths that align directly with the category of role you are interviewing for:
-            </p>
-            <div className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-xs">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50 border-b border-slate-200/90 text-xs font-bold uppercase tracking-wider text-slate-600">
-                    <tr>
-                      <th scope="col" className="px-6 py-4 w-40">Type</th>
-                      <th scope="col" className="px-6 py-4">Examples</th>
-                      <th scope="col" className="px-6 py-4">Good For</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    <tr>
-                      <td className="px-6 py-4 font-bold text-slate-900">People skills</td>
-                      <td className="px-6 py-4 text-slate-700">Communication, empathy, teamwork, patience</td>
-                      <td className="px-6 py-4 text-slate-600">Customer service, healthcare, teaching, sales</td>
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-4 font-bold text-slate-900">Work habits</td>
-                      <td className="px-6 py-4 text-slate-700">Organization, reliability, attention to detail, time management</td>
-                      <td className="px-6 py-4 text-slate-600">Admin, finance, operations, any first job</td>
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-4 font-bold text-slate-900">Thinking skills</td>
-                      <td className="px-6 py-4 text-slate-700">Problem solving, analytical thinking, creativity</td>
-                      <td className="px-6 py-4 text-slate-600">Tech, marketing, product, engineering</td>
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-4 font-bold text-slate-900">Leadership</td>
-                      <td className="px-6 py-4 text-slate-700">Taking initiative, coaching others, making decisions</td>
-                      <td className="px-6 py-4 text-slate-600">Supervisor and manager roles</td>
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-4 font-bold text-slate-900">Adaptability</td>
-                      <td className="px-6 py-4 text-slate-700">Learning fast, staying calm under pressure, flexibility</td>
-                      <td className="px-6 py-4 text-slate-600">Fast-paced jobs, startups, career changers</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* SECTION 4: HOW TO ANSWER WEAKNESSES */}
-      <section className="py-14 sm:py-20 border-b border-slate-100">
-        <div className="mx-auto max-w-[1040px] px-4 sm:px-6">
-          <div className="max-w-3xl">
-            <span className="text-xs font-bold uppercase tracking-wider text-purple-600">Part 2</span>
-            <h2 className="mt-1 text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-              How to Answer &ldquo;What Is Your Greatest Weakness?&rdquo;
-            </h2>
-            <p className="mt-3 text-sm sm:text-base text-slate-600 leading-relaxed">
-              This is the half that makes people nervous. The interviewer is not trying to catch you out. They want to know three things: <strong className="text-slate-900">are you honest, do you know yourself, and are you working on it?</strong>
-            </p>
-          </div>
-
-          {/* 3 Rules for a Good Weakness */}
-          <div className="mt-8 rounded-2xl bg-gradient-to-br from-purple-50/60 to-indigo-50/40 p-6 sm:p-8 border border-purple-200/80">
-            <h3 className="text-base sm:text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-              <IconCompass className="h-5 w-5 text-purple-600" />
-              A Good Weakness Is:
-            </h3>
-            <ul className="space-y-3 text-sm sm:text-base text-slate-800">
-              <li className="flex items-start gap-3">
-                <IconCheckCircle className="h-5 w-5 text-purple-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <strong className="text-slate-950">Real.</strong> Not a strength in disguise, like &ldquo;I&apos;m a perfectionist&rdquo; or &ldquo;I work too hard.&rdquo;
-                </div>
-              </li>
-              <li className="flex items-start gap-3">
-                <IconCheckCircle className="h-5 w-5 text-purple-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <strong className="text-slate-950">Not essential for the job.</strong> Don&apos;t tell a sales interviewer you struggle to talk to strangers.
-                </div>
-              </li>
-              <li className="flex items-start gap-3">
-                <IconCheckCircle className="h-5 w-5 text-purple-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <strong className="text-slate-950">Something you are fixing.</strong> The improvement is the most important part of the answer.
-                </div>
-              </li>
-            </ul>
-          </div>
-
-          {/* Weakness Sample Answers Grid */}
-          <div className="mt-12">
-            <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-6">
-              Weakness Sample Answers
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {WEAKNESS_SAMPLES.map((w) => (
-                <SampleCard
-                  key={w.id}
-                  title={w.title}
-                  badge={w.badge}
-                  quote={w.text}
-                  note={w.whyItWorks}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Weaknesses to Choose From vs Avoid Table */}
-          <div className="mt-12">
-            <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mb-4">
-              Weaknesses to Choose From (and Ones to Avoid)
-            </h3>
-            <p className="text-sm text-slate-600 mb-6">
-              Compare acceptable, constructive weaknesses with answers that immediately raise red flags with hiring managers:
-            </p>
-            <div className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-xs">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-50 border-b border-slate-200/90 text-xs font-bold uppercase tracking-wider">
-                    <tr>
-                      <th scope="col" className="px-6 py-4 text-emerald-700 bg-emerald-50/50 w-1/2">
-                        <span className="inline-flex items-center gap-1.5">
-                          <IconCheckCircle className="h-4 w-4 text-emerald-600" />
-                          Good Weaknesses to Use
-                        </span>
-                      </th>
-                      <th scope="col" className="px-6 py-4 text-rose-700 bg-rose-50/50 w-1/2">
-                        <span className="inline-flex items-center gap-1.5">
-                          <IconXCircle className="h-4 w-4 text-rose-600" />
-                          Weaknesses to Avoid
-                        </span>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    <tr>
-                      <td className="px-6 py-3.5 text-slate-800">Public speaking or presenting</td>
-                      <td className="px-6 py-3.5 text-slate-700 font-medium">
-                        &ldquo;I&apos;m a perfectionist&rdquo; <span className="text-xs text-rose-600 font-normal">(sounds rehearsed)</span>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-3.5 text-slate-800">Delegating tasks</td>
-                      <td className="px-6 py-3.5 text-slate-700 font-medium">
-                        &ldquo;I work too hard&rdquo; <span className="text-xs text-rose-600 font-normal">(not believable)</span>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-3.5 text-slate-800">Saying no to extra work</td>
-                      <td className="px-6 py-3.5 text-slate-700 font-medium">Being late or missing deadlines</td>
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-3.5 text-slate-800">Being too critical of your own work</td>
-                      <td className="px-6 py-3.5 text-slate-700 font-medium">A core skill the job needs</td>
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-3.5 text-slate-800">A specific software or technical skill</td>
-                      <td className="px-6 py-3.5 text-slate-700 font-medium">&ldquo;I don&apos;t have any weaknesses&rdquo;</td>
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-3.5 text-slate-800">Asking for help too late</td>
-                      <td className="px-6 py-3.5 text-slate-700 font-medium">Personal problems or anything about your health</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* SECTION 5: WHEN THEY ASK BOTH IN ONE QUESTION */}
-      <section className="py-14 sm:py-20 bg-slate-50/50 border-b border-slate-200/80">
-        <div className="mx-auto max-w-[1040px] px-4 sm:px-6">
-          <div className="max-w-3xl">
-            <span className="text-xs font-bold uppercase tracking-wider text-blue-600">Combined Question</span>
-            <h2 className="mt-1 text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-              When They Ask Both in One Question
-            </h2>
-            <p className="mt-3 text-sm sm:text-base text-slate-600 leading-relaxed">
-              Some interviewers ask <em className="text-slate-800">&ldquo;What are your strengths and weaknesses?&rdquo;</em> as one question. Keep it short and balanced: <strong className="text-slate-900">one strength with proof, one weakness with the fix, and finish on a positive note</strong>.
-            </p>
-          </div>
-
-          <div className="mt-8 rounded-2xl bg-white p-6 sm:p-8 border border-slate-200/90 shadow-xs max-w-3xl">
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-blue-700 mb-3">
-              <IconSparkles className="h-4 w-4" />
-              Full Balanced Sample Answer
-            </div>
-            <blockquote className="rounded-xl border-l-4 border-blue-600 bg-blue-50/40 p-5 text-sm sm:text-base text-slate-800 italic leading-relaxed">
-              &ldquo;My biggest strength is problem solving. When our ordering system kept double-booking, I found the cause and built a simple check that stopped it. My weakness is that I used to say yes to every request, which overloaded me. I now plan my week and agree realistic deadlines up front, and I&apos;ve hit every deadline this quarter.&rdquo;
-            </blockquote>
-          </div>
-        </div>
-      </section>
-
-      {/* SECTION 6: COMMON MISTAKES */}
-      <section className="py-14 sm:py-20 border-b border-slate-100">
-        <div className="mx-auto max-w-[1040px] px-4 sm:px-6">
-          <div className="max-w-3xl">
-            <span className="text-xs font-bold uppercase tracking-wider text-rose-600">Pitfalls</span>
-            <h2 className="mt-1 text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-              5 Common Mistakes to Avoid
-            </h2>
-            <p className="mt-3 text-sm sm:text-base text-slate-600">
-              Steer clear of these five habits that cost candidates marks during interview evaluations:
-            </p>
-          </div>
-
-          <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-5 max-w-4xl">
-            <div className="flex items-start gap-4 rounded-2xl border border-rose-200 bg-rose-50/40 p-5">
-              <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-rose-600 text-xs font-bold text-white">1</span>
-              <div>
-                <h4 className="text-sm font-bold text-slate-900">Listing strengths with no examples</h4>
-                <p className="mt-1 text-xs sm:text-sm text-slate-600">Proof beats adjectives every time. Always ground strengths in real stories.</p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-4 rounded-2xl border border-rose-200 bg-rose-50/40 p-5">
-              <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-rose-600 text-xs font-bold text-white">2</span>
-              <div>
-                <h4 className="text-sm font-bold text-slate-900">Using a fake weakness</h4>
-                <p className="mt-1 text-xs sm:text-sm text-slate-600">Interviewers have heard &ldquo;perfectionist&rdquo; thousands of times. It signals insincerity.</p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-4 rounded-2xl border border-rose-200 bg-rose-50/40 p-5">
-              <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-rose-600 text-xs font-bold text-white">3</span>
-              <div>
-                <h4 className="text-sm font-bold text-slate-900">Choosing a weakness that rules you out</h4>
-                <p className="mt-1 text-xs sm:text-sm text-slate-600">Check it against the essential requirements in the job description before speaking.</p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-4 rounded-2xl border border-rose-200 bg-rose-50/40 p-5">
-              <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-rose-600 text-xs font-bold text-white">4</span>
-              <div>
-                <h4 className="text-sm font-bold text-slate-900">Talking too long about the weakness</h4>
-                <p className="mt-1 text-xs sm:text-sm text-slate-600">Spend 80% of your time on how you are actively fixing it, not dwelling on the flaw.</p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-4 rounded-2xl border border-rose-200 bg-rose-50/40 p-5 md:col-span-2">
-              <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-rose-600 text-xs font-bold text-white">5</span>
-              <div>
-                <h4 className="text-sm font-bold text-slate-900">Memorizing word for word</h4>
-                <p className="mt-1 text-xs sm:text-sm text-slate-600">Learn your bullet-point stories, not a rigid script, so you sound conversational and natural under pressure.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* SECTION 7: PRACTICE IT OUT LOUD & CTA */}
-      <section className="py-14 sm:py-20 bg-gradient-to-br from-blue-600 to-indigo-700 text-white">
-        <div className="mx-auto max-w-[1040px] px-4 sm:px-6">
-          <div className="max-w-3xl">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-blue-100">
-              <IconSparkles className="h-3.5 w-3.5" />
-              Verbal Delivery Check
-            </span>
-            <h2 className="mt-4 text-3xl sm:text-5xl font-black tracking-tight text-white leading-tight">
-              Practice It Out Loud
-            </h2>
-            <p className="mt-4 text-base sm:text-lg text-blue-100 leading-relaxed">
-              This question is easy to answer in your head and hard to answer out loud, especially when the interviewer follows up with <em className="text-white">&ldquo;Can you give me another example?&rdquo;</em> or <em className="text-white">&ldquo;How do you know you&apos;ve improved?&rdquo;</em>. Practice saying it until it takes under two minutes and feels natural.
-            </p>
-            <p className="mt-4 text-sm sm:text-base text-blue-100 leading-relaxed">
-              You can <Link href="/signup" className="underline font-bold text-white hover:text-blue-200 transition-colors">practice with a free AI mock interview on Hakkiri</Link>: it asks questions from the job you applied for, listens to your answer out loud and asks a follow-up, just like a real interviewer.
-            </p>
-            <p className="mt-2 text-sm sm:text-base text-blue-100 leading-relaxed">
-              For the other questions that usually come up, see our list of the <Link href="/interview-questions" className="underline font-bold text-white hover:text-blue-200 transition-colors">20 most common interview questions</Link> and how to answer <Link href="/interview-questions/tell-me-about-yourself" className="underline font-bold text-white hover:text-blue-200 transition-colors">&ldquo;Tell me about yourself&rdquo;</Link>.
-            </p>
-
-            <div className="mt-8 flex flex-wrap items-center gap-4">
-              <Link
-                href="/signup"
-                className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-bold text-blue-700 shadow-lg hover:bg-blue-50 transition-all hover:scale-105 active:scale-95"
-              >
-                Start Free AI Mock Interview
-                <IconArrowRight className="h-4 w-4" />
-              </Link>
-              <Link
-                href="/interview-questions"
-                className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-6 py-3.5 text-sm font-semibold text-white hover:bg-white/20 transition-all"
-              >
-                Browse All 20 Questions
-              </Link>
-            </div>
+            <Link
+              href="/interview-questions/tell-me-about-yourself"
+              className="group rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm transition-all hover:border-blue-400 hover:shadow-md"
+            >
+              <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Follow-up 3</div>
+              <h3 className="mt-1 text-sm font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
+                &ldquo;Tell me about yourself.&rdquo;
+              </h3>
+              <p className="mt-1 text-xs text-slate-500">The 60 to 90-second present, past, future elevator pitch.</p>
+              <span className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-blue-600 group-hover:translate-x-0.5 transition-transform">
+                View 60s pitch guide →
+              </span>
+            </Link>
           </div>
         </div>
       </section>
 
       {/* SECTION 8: FREQUENTLY ASKED QUESTIONS */}
-      <section className="py-14 sm:py-20 border-b border-slate-100">
+      <section className="py-14 sm:py-20 border-b border-slate-200/80 bg-white">
         <div className="mx-auto max-w-[1040px] px-4 sm:px-6">
           <div className="max-w-2xl mb-8">
             <span className="text-xs font-bold uppercase tracking-wider text-blue-600">FAQ</span>
@@ -608,6 +514,41 @@ export default function StrengthsAndWeaknessesPage() {
 
           <div className="max-w-3xl">
             <StrengthsWeaknessesFaqAccordion />
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 9: PRACTICE IT OUT LOUD & BOTTOM CTA */}
+      <section className="py-16 sm:py-24 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 text-white relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.15),transparent_50%)] pointer-events-none" />
+        <div className="mx-auto max-w-[1040px] px-4 sm:px-6 relative">
+          <div className="max-w-3xl">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 border border-white/20 px-3.5 py-1 text-xs font-bold text-blue-100">
+              <IconSparkles className="h-3.5 w-3.5 text-blue-200" />
+              Free Real-Time Voice Simulation
+            </span>
+            <h2 className="mt-4 text-3xl sm:text-5xl font-black tracking-tight text-white leading-tight">
+              Practice this answer out loud with AI
+            </h2>
+            <p className="mt-4 text-base sm:text-lg text-blue-100 leading-relaxed font-medium">
+              This question is easy in your head and hard out loud, especially when an interviewer asks: <em className="text-white font-semibold">&ldquo;Can you give me another example?&rdquo;</em>. Hakkiri listens to your microphone, grades your tone and pacing, and asks real follow-ups.
+            </p>
+
+            <div className="mt-8 flex flex-wrap items-center gap-4">
+              <Link
+                href="/signup"
+                className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-4 text-sm font-bold text-blue-700 shadow-xl shadow-blue-900/30 hover:bg-blue-50 transition-all hover:scale-105 active:scale-95"
+              >
+                Start Free Practice Session
+                <IconArrowRight className="h-4 w-4" />
+              </Link>
+              <Link
+                href="/interview-questions"
+                className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-7 py-4 text-sm font-bold text-white hover:bg-white/20 transition-all"
+              >
+                Browse All 20 Questions
+              </Link>
+            </div>
           </div>
         </div>
       </section>
