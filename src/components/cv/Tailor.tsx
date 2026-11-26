@@ -2,11 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { addBullets } from "@/lib/cv/edit";
-import { type Locator, type Requirement, newBullet, newId } from "@/lib/cv/schema";
+import { type Locator, type Requirement } from "@/lib/cv/schema";
 import { docWord } from "@/lib/cv/sections";
 import { type Assessed, cvLines, fitMaths, jobFit, keywords } from "@/lib/cv/tailor/fit";
 import { bestRoleFor, mergeRequirements } from "@/lib/cv/tailor/propose";
+import { confirmExperience as confirm } from "@/lib/cv/tailor/confirm";
 import { extractRequirements, manualRequirement, readingNote } from "@/lib/cv/tailor/requirements";
 import { asBullet } from "@/lib/cv/write/draft";
 import { api, messageOf } from "./client";
@@ -155,18 +155,9 @@ export function Tailor() {
 
   function confirmExperience() {
     if (!req) return;
-    const text = asBullet(line);
-    if (text.split(" ").length < 3) return setProblem("Say what you did and where, in one line. “Yes” alone can’t go on a CV.");
-    // The list shows its first entry as chosen until another is picked: that is the one used.
-    const home = roles.find((r) => r.e.id === roleId) ?? roles[0];
-    if (!home) return setProblem("Add a role, a project or a qualification to your CV first, so this line has somewhere to go. What you typed is kept here until you close this.");
-    const bullet = { ...newBullet(text), sources: [{ kind: "typed" as const, ref: "requirement", text: line.trim() }] };
-    const out = addBullets(cv!.sections, home.s.id, home.e.id, [bullet]);
-    update({
-      sections: out.sections,
-      requirements: cv!.requirements.map((r) => (r.id === req.id ? { ...r, evidence: [{ section: home.s.id, entry: home.e.id, field: bullet.id }], judged: "met" as const, uncovered: "", gap: false } : r)),
-      changes: [...cv!.changes, { id: newId("c_"), at: new Date().toISOString(), kind: "included" as const, where: [home.e.title, home.e.org].filter(Boolean).join(" · "), before: "", after: text, reason: `You said you have this, and where: “${(req.text || req.quote).slice(0, 120)}”.`, requirementId: req.id }].slice(-200),
-    });
+    const done = confirm(cv!, req.id, line, roleId);
+    if (!done.ok) return setProblem(done.problem);
+    update(done.patch);
     close();
   }
 

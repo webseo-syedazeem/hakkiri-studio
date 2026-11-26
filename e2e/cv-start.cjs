@@ -169,7 +169,7 @@ run("CV start", async (browser) => {
   await p.page.getByText("Your resume is empty").waitFor();
   check(true, "a US CV is called a resume");
   await fitsWidth(p.page, "editor on a phone");
-  const sizes = await p.page.locator(".cv .cv-input").evaluateAll((els) => els.map((e) => [parseFloat(getComputedStyle(e).fontSize), e.offsetHeight]));
+  const sizes = await p.page.locator(".cv .cv-input").evaluateAll((els) => els.filter((e) => e.offsetParent).map((e) => [parseFloat(getComputedStyle(e).fontSize), e.offsetHeight]));
   // offsetHeight: the field's own height, not as drawn mid-way through the panel's opening animation.
   check(sizes.every(([font, height]) => font >= 16 && height >= 44), "on a phone, inputs are at least 16px text and 44px tall", JSON.stringify(sizes.slice(0, 4)));
   // On a phone the tabs are a picker.

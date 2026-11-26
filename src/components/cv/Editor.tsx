@@ -14,7 +14,10 @@ import { api, messageOf } from "./client";
 import { Dialog, usePanel } from "./Dialog";
 import { scoreLabel } from "./Findings";
 import { Finish } from "./Finish";
+import { FormatBar } from "./FormatBar";
+import { JobPanel } from "./JobPanel";
 import { PaperView } from "./Paper";
+import { ScoreLine, ScorePanel } from "./ScorePanel";
 import { ContactForm, type FieldHooks, SectionForm } from "./SectionForms";
 import { ACCEPT, STAGE_WORDS, type UploadStage, sendUpload } from "./upload";
 import { jobFit } from "@/lib/cv/tailor/fit";
@@ -381,16 +384,24 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
           <Btn onClick={() => openPanel("add-section")}>+ Add section</Btn>
         </div>
 
-        <div className="cv-seg cv-narrow" role="group" aria-label="Show">
-          <button type="button" aria-pressed={view === "edit"} onClick={() => setView("edit")}>
-            Edit
-          </button>
-          <button type="button" aria-pressed={view === "paper"} onClick={() => setView("paper")}>
-            Paper
-          </button>
+        <ScoreLine score={w.score} word={word} base={`/cv/v/${cv.id}`} />
+        <div className="cv-row cv-narrow" style={{ marginBottom: 14 }}>
+          <div className="cv-seg" role="group" aria-label="Show">
+            <button type="button" aria-pressed={view === "edit"} onClick={() => setView("edit")}>
+              Edit
+            </button>
+            <button type="button" aria-pressed={view === "paper"} onClick={() => setView("paper")}>
+              Paper
+            </button>
+          </div>
+          {!isFinish && (
+            <Btn onClick={() => openPanel("design")} data-testid="design-button">
+              Design
+            </Btn>
+          )}
         </div>
 
-        <div className="cv-layout" style={{ gridTemplateColumns: isFinish ? "minmax(0, 0.94fr) minmax(0, 1.16fr)" : "minmax(0, 552fr) minmax(0, 616fr)" }}>
+        <div className={isFinish ? "cv-layout" : "cv-layout cv-workbench"} style={isFinish ? { gridTemplateColumns: "minmax(0, 0.94fr) minmax(0, 1.16fr)" } : undefined}>
           <div key={tab.key} className={view === "edit" ? "min-w-0 cv-tab-content" : "min-w-0 cv-wide cv-tab-content"} onBlur={() => void flush()}>
             {empty && !pending && !isFinish && (
               <Panel style={{ marginBottom: 18 }}>
@@ -491,6 +502,12 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
                 }}
               />
             ) : (
+            <>
+            {!isFinish && (
+              <div className="cv-notnarrow">
+                <FormatBar cv={cv} paper={paper} update={update} base={base} say={say} />
+              </div>
+            )}
             <PaperView paper={paper} state={w.state} retry={w.retryPaper} cv={cv} focus={isFinish ? null : focus} onPick={pick} word={word}>
               {w.previewProfile !== null && (
                 <div className="cv-note" style={{ marginBottom: 10 }} data-testid="profile-preview">
@@ -508,12 +525,24 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
                 </div>
               )}
             </PaperView>
+            </>
             )}
           </aside>
+          {!isFinish && (
+            <aside className={view === "paper" ? "cv-insights min-w-0" : "cv-insights min-w-0 cv-wide"} aria-label="Score and job keywords">
+              <ScorePanel score={w.score} word={word} base={`/cv/v/${cv.id}`} onShow={pick} />
+              <JobPanel cv={cv} update={update} word={word} onShow={pick} say={say} />
+            </aside>
+          )}
         </div>
         <Announce>{said || (save === "failed" || save === "device" || save === "conflict" ? SAVE_WORDS[save] : "")}</Announce>
       </div>
 
+      {panel === "design" && (
+        <Dialog title="Design" onClose={closePanel} wide>
+          <FormatBar cv={cv} paper={paper} update={update} base={base} say={say} />
+        </Dialog>
+      )}
       {panel === "add-section" && (
         <Dialog title="Add a section" onClose={closePanel}>
           <p className="cv-muted">Add only what helps this application. A section with nothing in it is left off the page.</p>

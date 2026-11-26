@@ -47,7 +47,7 @@ function run(script, extraEnv = {}) {
     await waitForServer();
     // Every script signs up its own account(s) and makes what it needs through the app, so none depends on
     // another or on built-in demo content. audit and a11y-page come last: they look at every page.
-    for (const s of ["accounts", "data", "honest", "honest-screens", "phone", "stories", "pitch", "flow", "slots", "pay", "cv-cleanup", "cv-start", "cv-upload", "cv-editor", "cv-writing", "cv-score", "cv-tailor", "cv-letter", "cv-review", "cv-talk", "cv-design", "cv-gallery"]) ok = run(s) && ok;
+    for (const s of ["accounts", "data", "honest", "honest-screens", "phone", "stories", "pitch", "flow", "slots", "pay", "cv-cleanup", "cv-start", "cv-upload", "cv-editor", "cv-writing", "cv-score", "cv-tailor", "cv-letter", "cv-review", "cv-talk", "cv-design", "cv-gallery", "cv-workbench"]) ok = run(s) && ok;
     // EXTRA: old addresses or landing pages which should still lead somewhere cleanly.
     ok = run("audit", { EXTRA: "/settings,/landing,/present,/privacy,/terms,/story-bank" }) && ok;
     ok = run("a11y-page", {}) && ok;

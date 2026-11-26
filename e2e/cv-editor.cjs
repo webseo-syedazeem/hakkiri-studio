@@ -581,11 +581,11 @@ run("CV editor", async (browser) => {
   await page.getByTestId("page-count").waitFor({ timeout: 20000 });
   check((await page.locator("svg.cv-paper").isVisible()) && (await page.getByRole("button", { name: "+ Add role" }).isVisible()) && !(await seg.isVisible()), "at desktop width the form and the paper sit side by side");
   const box = await page.locator(".cv-layout").evaluate((el) => [...el.children].map((c) => Math.round(c.getBoundingClientRect().width)));
-  check(Math.abs(box[0] - 552) <= 2 && Math.abs(box[1] - 616) <= 2, "at 1440 the form is 552px and the paper pane 616px, as designed", box.join(" / "));
+  check(box.length === 3 && box[0] >= 318 && box[1] > box[0] && Math.abs(box[2] - 272) <= 2, "at 1440 the fields, the page and the score sit side by side, the page the widest", box.join(" / "));
   await tab(page, "Finish");
   await page.getByRole("heading", { name: "Files" }).waitFor();
   const fbox = await page.locator(".cv-layout").evaluate((el) => [...el.children].map((c) => Math.round(c.getBoundingClientRect().width)));
-  check(Math.abs(fbox[0] - 352) <= 2 && Math.abs(fbox[1] - 816) <= 2, "on Finish the settings are 352px and the paper 816px", fbox.join(" / "));
+  check(fbox.length === 2 && fbox[0] < fbox[1] && Math.abs(fbox[0] / fbox[1] - 0.94 / 1.16) < 0.02, "on Finish the settings and the paper share the width, the paper the wider", fbox.join(" / "));
 
   const ph = await newUser(browser, "phone", PHONE);
   page = ph.page;

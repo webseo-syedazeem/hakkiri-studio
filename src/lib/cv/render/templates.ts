@@ -960,10 +960,10 @@ export function paperStyle(design: {
     marginY = 58;
   }
 
-  // Spacing density multiplier
-  const densityMultiplier = design.lineSpacing
-    ? design.lineSpacing
-    : DENSITY_FACTOR[design.density] ?? 1;
+  // Section spacing (the space between sections and entries) comes from the density; the line spacing
+  // sets the height of each line. They are separate, so "Fit to one page" can tighten the spacing
+  // whatever line spacing has been chosen.
+  const densityMultiplier = DENSITY_FACTOR[design.density] ?? 1;
 
   const pairing = TEMPLATES[design.fonts ?? base.id]?.fonts ?? base.fonts;
   const accentHex = customHex ?? ACCENTS[design.accent ?? template.accent].hex;

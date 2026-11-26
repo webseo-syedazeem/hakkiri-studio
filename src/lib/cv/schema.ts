@@ -396,6 +396,8 @@ export const RequirementSchema = z.object({
   uncovered: line(300),
   /** "No, I don't have this." It stays in the total and earns nothing. */
   gap: z.boolean().default(false),
+  /** "Not relevant": put aside from the list to review. It stays in the total; the advert still asks for it. */
+  dismissed: z.boolean().optional(),
 });
 export type Requirement = z.infer<typeof RequirementSchema>;
 
