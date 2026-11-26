@@ -75,7 +75,7 @@ run("CV check", async (browser) => {
   await page.getByRole("heading", { name: "Audit report" }).waitFor({ timeout: 20000 });
   const score = page.getByTestId("cv-score");
   const scoreText = await score.innerText();
-  check(/\d+\s*\/ 100/.test(scoreText) && /Needs work|Good|Strong/.test(scoreText) && /Evidence/.test(scoreText) && /Readable by software/.test(scoreText), "the report gives the CV score with a plain label and its four parts", scoreText.slice(0, 160));
+  check(/\d+\s*\/ 100/.test(scoreText) && /Poor|Average|Good|Strong/.test(scoreText) && /Evidence/.test(scoreText) && /Readable by software/.test(scoreText), "the report gives the CV score with a plain label and its four parts", scoreText.slice(0, 160));
   const fixes = page.getByTestId("cv-fixes");
   check((await fixes.getByTestId("finding").count()) > 0 && /Why:/.test(await fixes.innerText()) && /What to do:/.test(await fixes.innerText()), "the top fixes each say why and what to do");
   check(/Responsible for social media/.test(await fixes.innerText()), "a fix quotes the exact words it is about");

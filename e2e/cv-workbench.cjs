@@ -45,7 +45,7 @@ run("CV workbench", async (browser) => {
   const score = page.getByTestId("score-panel");
   await score.waitFor();
   const scoreText = await score.innerText();
-  check(/\d+\s*\/ 100/.test(scoreText) && /Needs work|Good|Strong/.test(scoreText) && /Evidence/.test(scoreText) && /Readable by software/.test(scoreText), "the score is beside the page, with a plain label and its four parts", scoreText.slice(0, 160));
+  check(/\d+\s*\/ 100/.test(scoreText) && /Poor|Average|Good|Strong/.test(scoreText) && /Evidence/.test(scoreText) && /Readable by software/.test(scoreText), "the score is beside the page, with a plain label and its four parts", scoreText.slice(0, 160));
   // Make something to fix, and the score says so.
   await page.evaluate(async (cvId) => {
     const cv = (await (await fetch(`/api/cv/versions/${cvId}`)).json()).cv;

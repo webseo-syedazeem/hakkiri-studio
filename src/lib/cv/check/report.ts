@@ -1,5 +1,6 @@
 import { type LetterScore, scoreLetter } from "../letter/score";
 import type { CvDoc, CvRegion } from "../schema";
+import { type Band, band } from "../score/band";
 import { type GroupId, scoreCv } from "../score/score";
 import { jobFit } from "../tailor/fit";
 import { extractRequirements } from "../tailor/requirements";
@@ -12,8 +13,7 @@ import type { DocCheck, FileRead, LetterRead } from "./record";
  * the report is opened: nothing in it is stored text that could go stale.
  */
 
-export type Band = "Needs work" | "Good" | "Strong";
-export const band = (n: number): Band => (n >= 80 ? "Strong" : n >= 60 ? "Good" : "Needs work");
+export type { Band } from "../score/band";
 
 export interface CvFinding {
   id: string;

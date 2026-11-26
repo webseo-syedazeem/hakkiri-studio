@@ -23,7 +23,7 @@ function ScoreBox({ title, shown, band, parts, testId }: { title: string; shown:
   return (
     <Panel title={title} data-testid={testId}>
       <div className="cv-pad cv-stack">
-        <ScoreRing score={shown} band={band} label={title} />
+        <ScoreRing score={shown} label={title} />
         <ul className="cv-score-parts">
           {parts.map((p) => {
             const unchecked = p.pending >= p.points;

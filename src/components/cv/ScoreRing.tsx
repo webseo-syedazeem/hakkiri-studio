@@ -1,46 +1,48 @@
 import type { CSSProperties } from "react";
+import { BANDS, bandOf } from "@/lib/cv/score/band";
 
-type Band = "Needs work" | "Good" | "Strong";
-const BAND_KEY: Record<Band, "low" | "good" | "strong"> = { "Needs work": "low", Good: "good", Strong: "strong" };
-/** Where each label starts, marked on the ring so the label can be read off it. */
-const MARKS = [60, 80];
+/** The gap between the scale's coloured parts, as a share of the ring. */
+const GAP = 0.012;
 
 /**
- * The score as a ring: the arc is the score out of 100, coloured by its label,
- * with small marks where "Good" (60) and "Strong" (80) begin. Beside it, the
- * label and how far it is to the next one. The number is text, so it can be
- * read, copied and enlarged; the ring itself is a picture of it.
+ * The score as a ring. Faintly around it, the whole scale in its colours:
+ * Poor in red, Average in orange, Good in lime, Strong in green. Over it, the
+ * score itself in the colour of its label. Beside it, the label, how far it is
+ * to the next one, and the key. The number is text, so it can be read, copied
+ * and enlarged; the ring is a picture of it.
  */
-export function ScoreRing({ score, band, label, size = 132 }: { score: number; band: Band; label: string; size?: number }) {
-  const stroke = 9;
-  const r = (size - stroke) / 2 - 2;
+export function ScoreRing({ score, label, size = 132 }: { score: number; label: string; size?: number }) {
+  const stroke = 10;
+  const r = (size - stroke) / 2 - 1;
   const c = 2 * Math.PI * r;
   const shown = Math.max(0, Math.min(100, Math.round(score)));
   const centre = size / 2;
-  const next = shown < 60 ? { name: "Good", at: 60 } : shown < 80 ? { name: "Strong", at: 80 } : null;
+  const current = bandOf(shown);
+  const at = BANDS.findIndex((b) => b.key === current.key);
+  const next = BANDS[at + 1];
+  const segment = (from: number, to: number) => ({ dash: `${Math.max(0, (to - from) / 100 - GAP) * c} ${c}`, turn: (from / 100) * 360 - 90 + (GAP / 2) * 360 });
   return (
-    <div className="cv-scorering" data-band={BAND_KEY[band]} role="img" aria-label={`${label}: ${shown} out of 100, ${band}`}>
-      <div className="cv-ring" style={{ width: size, height: size } as CSSProperties}>
+    <div className="cv-scorering" data-band={current.key} role="img" aria-label={`${label}: ${shown} out of 100, ${current.name}`}>
+      <div className="cv-ring" style={{ width: size, height: size }}>
         <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size} aria-hidden="true">
-          <circle className="cv-ring-track" cx={centre} cy={centre} r={r} fill="none" strokeWidth={stroke} />
-          <circle
-            className="cv-ring-arc"
-            cx={centre}
-            cy={centre}
-            r={r}
-            fill="none"
-            strokeWidth={stroke}
-            strokeLinecap="round"
-            strokeDasharray={`${(shown / 100) * c} ${c}`}
-            transform={`rotate(-90 ${centre} ${centre})`}
-            style={{ "--ring-length": `${c}` } as CSSProperties}
-          />
-          {MARKS.map((m) => {
-            const a = (m / 100) * 2 * Math.PI - Math.PI / 2;
-            const inner = r - stroke / 2 - 3;
-            const outer = r + stroke / 2 + 3;
-            return <line key={m} className="cv-ring-mark" x1={centre + inner * Math.cos(a)} y1={centre + inner * Math.sin(a)} x2={centre + outer * Math.cos(a)} y2={centre + outer * Math.sin(a)} strokeWidth={2} strokeLinecap="round" />;
+          {BANDS.map((b, i) => {
+            const s = segment(b.from, BANDS[i + 1]?.from ?? 100);
+            return <circle key={b.key} className="cv-ring-scale" data-band={b.key} cx={centre} cy={centre} r={r} fill="none" strokeWidth={stroke} strokeDasharray={s.dash} transform={`rotate(${s.turn} ${centre} ${centre})`} />;
           })}
+          {shown > 0 && (
+            <circle
+              className="cv-ring-arc"
+              cx={centre}
+              cy={centre}
+              r={r}
+              fill="none"
+              strokeWidth={stroke}
+              strokeLinecap="round"
+              strokeDasharray={`${(shown / 100) * c} ${c}`}
+              transform={`rotate(-90 ${centre} ${centre})`}
+              style={{ "--ring-length": `${c}` } as CSSProperties}
+            />
+          )}
         </svg>
         <span className="cv-ring-number" aria-hidden="true">
           <b>{shown}</b>
@@ -48,9 +50,16 @@ export function ScoreRing({ score, band, label, size = 132 }: { score: number; b
         </span>
       </div>
       <div className="cv-ring-words" aria-hidden="true">
-        <b className="cv-ring-band">{band}</b>
-        <span className="cv-small">{next ? `${next.at - shown} ${next.at - shown === 1 ? "point" : "points"} to ${next.name}` : "Top band"}</span>
-        <span className="cv-small cv-muted">Good from 60 · Strong from 80</span>
+        <b className="cv-ring-band">{current.name}</b>
+        <span className="cv-small">{next ? `${next.from - shown} ${next.from - shown === 1 ? "point" : "points"} to ${next.name}` : "The top band"}</span>
+        <span className="cv-ring-key">
+          {BANDS.map((b, i) => (
+            <span key={b.key} data-band={b.key}>
+              {b.name} {b.from}
+              {BANDS[i + 1] ? `–${BANDS[i + 1].from - 1}` : "+"}
+            </span>
+          ))}
+        </span>
       </div>
     </div>
   );

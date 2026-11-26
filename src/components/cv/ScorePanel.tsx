@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import type { Locator } from "@/lib/cv/schema";
+import { band, bandOf } from "@/lib/cv/score/band";
 import type { Score } from "@/lib/cv/score/score";
+import { ScoreRing } from "./ScoreRing";
 import { Btn, Panel } from "./ui";
 
 /** The plain label beside a score: always with the number and its reasons, never instead of them. */
-export function scoreBand(shown: number): "Needs work" | "Good" | "Strong" {
-  return shown >= 80 ? "Strong" : shown >= 60 ? "Good" : "Needs work";
-}
+export const scoreBand = (shown: number) => band(shown);
 
 /**
  * The next thing to fix: the first problem in the words, else the first
@@ -53,12 +53,9 @@ export function ScorePanel({ score, word, base, onShow }: { score: Score | null;
   }
   const next = fixNext(score);
   return (
-    <Panel title={title} aside={<span className="cv-chip">{scoreBand(score.shown)}</span>} data-testid="score-panel">
+    <Panel title={title} data-testid="score-panel">
       <div className="cv-pad cv-stack">
-        <p className="cv-score-number" aria-label={`${title}: ${score.shown} out of 100, ${scoreBand(score.shown)}`}>
-          {score.shown}
-          <small> / 100</small>
-        </p>
+        <ScoreRing score={score.shown} label={title} size={104} />
         <ul className="cv-score-parts">
           {score.groups.map((g) => {
             const unchecked = g.pending >= g.points;
@@ -109,7 +106,9 @@ export function ScoreLine({ score, word, base }: { score: Score | null; word: st
       <b>
         {word === "CV" ? "CV" : "Resume"} score {score.shown}/100
       </b>
-      <span className="cv-muted">{scoreBand(score.shown)}</span>
+      <span className="cv-ring-inline" data-band={bandOf(score.shown).key}>
+        {scoreBand(score.shown)}
+      </span>
       <Link className="cv-link cv-push" href={`${base}/findings`}>
         See findings
       </Link>
