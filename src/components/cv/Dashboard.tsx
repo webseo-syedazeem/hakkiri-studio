@@ -8,12 +8,14 @@ import { type CvDoc, type CvSummary, LEVEL_LABELS } from "@/lib/cv/schema";
 import { docWord } from "@/lib/cv/sections";
 import { ApiError, api, messageOf } from "./client";
 import { Dialog, usePanel } from "./Dialog";
+import { StartPaths } from "./StartPaths";
 import { Announce, Bar, Btn, BtnLink, CvScreen, Field, Panel, Skeleton, Toolbar } from "./ui";
 
 const when = (iso: string) => new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 
 /**
- * The person's CVs: each base CV with its tailored versions beneath it. A new
+ * The CV home: the four ways in first ("Start here"), then the person's CVs,
+ * each base CV with its tailored versions and cover letters beneath it. A new
  * account sees no rows at all, only how to start. Nothing here is an example.
  */
 export function Dashboard() {
@@ -110,8 +112,7 @@ export function Dashboard() {
   return (
     <CvScreen>
       <div className="cv-area">
-        <Toolbar title="CVs and letters" subtitle="Build a CV from your own words, check it, and tailor a version for each job.">
-          <BtnLink href="/cv/examples">Example Resumes</BtnLink>
+        <Toolbar title="CVs and letters" subtitle="Create, check and tailor your documents for your next job.">
           <BtnLink href="/cv/bank">Achievements</BtnLink>
           <BtnLink kind="primary" href="/cv/new">
             New CV
@@ -137,9 +138,12 @@ export function Dashboard() {
             </div>
           </div>
         )}
+        <StartPaths />
+
+        <h2 className="cv-section-title">Your CVs and letters</h2>
         {error && (
           <div className="cv-issue" role="alert" style={{ marginBottom: 18 }}>
-            <strong>Couldn’t load your CVs</strong>
+            <strong>We couldn’t load your documents</strong>
             <span>
               {error}
               {cvs && synced ? ` Showing what was loaded at ${synced}.` : ""}
@@ -165,23 +169,15 @@ export function Dashboard() {
 
         {cvs?.length === 0 && (
           <Panel>
-            <div className="cv-pad cv-stack" style={{ padding: "36px 24px", textAlign: "center" }}>
-              <div className="cv-empty-symbol" aria-hidden="true">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                  <path d="M14 2v6h6M8 13h8m-8 4h6" />
-                </svg>
-              </div>
-              <h2>You have no CVs yet</h2>
-              <p className="cv-muted" style={{ maxWidth: "52ch", margin: "8px auto 0" }}>
-                Start a new CV, or upload the one you have. A new CV starts empty: everything on it will be what you put there.
+            <div className="cv-pad cv-stack" style={{ padding: "30px 24px", textAlign: "center" }}>
+              <h3>No CVs yet</h3>
+              <p className="cv-muted" style={{ maxWidth: "52ch", margin: "6px auto 0" }}>
+                Choose a starting point above to create or check your first CV.
               </p>
-              <div className="cv-row" style={{ justifyContent: "center", marginTop: 18 }}>
+              <div className="cv-row" style={{ justifyContent: "center", marginTop: 14 }}>
                 <BtnLink kind="primary" href="/cv/new">
-                  + New CV
+                  New CV
                 </BtnLink>
-                <BtnLink href="/cv/examples">Browse 13+ Example Resumes</BtnLink>
-                <BtnLink href="/cv-audit">Free CV audit</BtnLink>
               </div>
             </div>
           </Panel>
@@ -192,9 +188,13 @@ export function Dashboard() {
             <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
               {bases.map((cv) => (
                 <li key={cv.id}>
-                  <Row cv={cv} onAction={(what) => open(what, { item: cv.id })} />
+                  <Row cv={cv} copies={tailored(cv.id).length} onAction={(what) => open(what, { item: cv.id })} />
+                  {cv.letter && <LetterRow cv={cv} />}
                   {tailored(cv.id).map((t) => (
-                    <Row key={t.id} cv={t} indent onAction={(what) => open(what, { item: t.id })} />
+                    <div key={t.id}>
+                      <Row cv={t} indent onAction={(what) => open(what, { item: t.id })} />
+                      {t.letter && <LetterRow cv={t} />}
+                    </div>
                   ))}
                 </li>
               ))}
@@ -312,7 +312,37 @@ export function Dashboard() {
   );
 }
 
-function Row({ cv, indent, onAction }: { cv: CvSummary; indent?: boolean; onAction: (what: "rename" | "duplicate" | "delete-version" | "tailor") => void }) {
+/** A cover letter, listed under the version it was written for. */
+function LetterRow({ cv }: { cv: CvSummary }) {
+  const href = `/cv/v/${cv.id}/letter`;
+  return (
+    <div className="cv-pick cv-dashboard-row" data-child data-letter style={{ paddingLeft: 48 }}>
+      <div className="cv-dashboard-main">
+        <div className="cv-doc-avatar" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 6h16v12H4z" />
+            <path d="M4 7l8 6 8-6" />
+          </svg>
+        </div>
+        <div className="min-w-0 grow">
+          <Link href={href} className="cv-dashboard-title hover:underline" style={{ overflowWrap: "anywhere" }}>
+            Cover letter{cv.targetEmployer ? ` · ${cv.targetEmployer}` : ""}
+          </Link>
+          <small style={{ display: "block", marginTop: 4 }}>For {cv.name}</small>
+        </div>
+      </div>
+      <div className="cv-dashboard-actions">
+        <div className="cv-slot-open">
+          <BtnLink href={href} aria-label={`Open the cover letter for ${cv.name}`}>
+            Open
+          </BtnLink>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Row({ cv, indent, copies = 0, onAction }: { cv: CvSummary; indent?: boolean; copies?: number; onAction: (what: "rename" | "duplicate" | "delete-version" | "tailor") => void }) {
   const href = cv.pendingImportId ? `/cv/import/${cv.pendingImportId}` : indent && cv.fit !== undefined ? `/cv/v/${cv.id}/tailor` : `/cv/v/${cv.id}/edit/contact`;
   const target = [cv.targetTitle, cv.targetEmployer].filter(Boolean).join(" · ");
   return (
@@ -340,7 +370,7 @@ function Row({ cv, indent, onAction }: { cv: CvSummary; indent?: boolean; onActi
             ) : null}
             {cv.score !== undefined && !cv.pendingImportId && (
               <span className="cv-chip cv-chip-score" data-testid="row-score">
-                Score {cv.score}
+                Score {cv.score}/100
               </span>
             )}
             {cv.fit !== undefined && (
@@ -351,7 +381,8 @@ function Row({ cv, indent, onAction }: { cv: CvSummary; indent?: boolean; onActi
           </div>
           <small style={{ display: "block", marginTop: 4 }}>
             {cv.kind === "tailored" ? (indent ? "Tailored version" : `Tailored version (its base ${docWord(cv.region)} was deleted)`) : `Base ${docWord(cv.region)}`} · {LEVEL_LABELS[cv.level]} · {cv.region.toUpperCase()}
-            {target ? ` · ${target}` : ""} · Edited {when(cv.updatedAt)}
+            {target ? ` · ${target}` : ""} · Changed {when(cv.updatedAt)}
+            {copies > 0 ? ` · ${copies} tailored ${copies === 1 ? "copy" : "copies"}` : ""}
           </small>
         </div>
       </div>
@@ -388,6 +419,13 @@ function Row({ cv, indent, onAction }: { cv: CvSummary; indent?: boolean; onActi
             </Btn>
           </div>
         </div>
+        {!cv.empty && !cv.pendingImportId && (
+          <div className="cv-slot-download">
+            <BtnLink href={`/cv/v/${cv.id}/export`} aria-label={`Download ${cv.name}`}>
+              Download
+            </BtnLink>
+          </div>
+        )}
         <div className="cv-slot-open">
           <BtnLink kind="primary" href={href}>
             {cv.pendingImportId ? (cv.importFailed ? "Try again" : "Check upload") : "Open"}

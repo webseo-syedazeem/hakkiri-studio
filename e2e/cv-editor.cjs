@@ -273,17 +273,17 @@ run("CV editor", async (browser) => {
   /* -------------------------------- Finish: every template, and their files */
   await tab(page, "Finish");
   await page.getByRole("heading", { name: "Files" }).waitFor();
-  check((await page.getByRole("radio").count()) >= 8 && (await page.locator(".cv-template").count()) === 8, "eight templates are offered");
-  const templates = ["Standard", "Graduate", "Compact", "Executive", "Portfolio", "Research", "Career Change", "Technical"];
+  check((await page.locator(".cv-template").count()) === 45, "all 45 templates are offered");
+  // One from each kind of layout: classic, graduate, compact, executive, projects first, research, skills-led and technical.
+  const templates = [["No. 01 · Clean Sans", "standard"], ["No. 26 · Graduate Serif", "graduate"], ["No. 16 · Compact Classic", "compact"], ["No. 21 · Executive Serif", "executive"], ["No. 42 · Portfolio", "portfolio"], ["No. 36 · Academic Serif", "research"], ["No. 38 · Career Change", "career-change"], ["No. 31 · Skills First", "technical"]];
   const sizes = new Set();
-  for (const name of templates) {
+  for (const [name, key] of templates) {
     await page.locator(".cv-template", { hasText: name }).click();
     await paperReady(page);
     await saved(page);
     const shown = (await page.locator('svg.cv-paper g[data-kind="heading"]').allTextContents()).map((h) => h.toLowerCase());
     const pages = await pagesShown(page);
     const out = await downloadAndReadBack(page, mayaId, `${name} template`);
-    const key = name.toLowerCase().replace(" ", "-");
     check(out.cv.design.template === key, `${name}: the choice is saved`, out.cv.design.template);
     const wordHeads = out.docx.paragraphs.filter((p) => p.style === "Heading2").map((p) => p.text.toLowerCase());
     check(wordHeads.join(",") === shown.join(","), `${name}: the Word file's sections are in the order shown on the paper (${shown.join(", ")})`, wordHeads.join(","));
@@ -292,15 +292,15 @@ run("CV editor", async (browser) => {
     check(out.docx.tables === 0 && out.docx.paragraphs[0].style === "Heading1", `${name}: the Word file starts with the name as a real heading and has no tables`);
     sizes.add(fs.statSync(out.pdf.file).size);
   }
-  check(sizes.size === templates.length, "the eight templates give eight different PDFs", [...sizes].join(","));
+  check(sizes.size === templates.length, "eight different templates give eight different PDFs", [...sizes].join(","));
 
   // Fonts, colour, paper size, spacing.
-  await page.locator(".cv-template", { hasText: "Standard" }).click();
+  await page.locator(".cv-template", { hasText: "No. 01 · Clean Sans" }).click();
   await paperReady(page);
   const fontOf = () => page.locator('svg.cv-paper g[data-kind="heading"] text').first().getAttribute("font-family");
   const fillOf = () => page.locator('svg.cv-paper g[data-kind="heading"] text').first().getAttribute("fill");
   check((await fontOf()).includes("inter") && (await fillOf()).toUpperCase() === "#3D4BD8", "Standard starts with Inter headings in indigo", `${await fontOf()} ${await fillOf()}`);
-  await page.getByLabel("Fonts").selectOption({ label: "Lora headings, Inter text" });
+  await page.getByLabel("Font pairing").selectOption({ label: "Lora headings, Inter text" });
   await page.waitForFunction(() => document.querySelector('svg.cv-paper g[data-kind="heading"] text').getAttribute("font-family").includes("lora"), null, { timeout: 15000 });
   check(true, "choosing another font pairing redraws the headings in it");
   await page.locator(".cv-swatch", { hasText: "Plum" }).click();
@@ -310,10 +310,10 @@ run("CV editor", async (browser) => {
   check((await bodySizes()) === "10.5", "body text is 10.5 point", await bodySizes());
   const gapOf = () => page.evaluate(() => { const g = [...document.querySelectorAll('svg.cv-paper g[data-kind="heading"] text')]; return Number(g[1].getAttribute("y")) - Number(g[0].getAttribute("y")); });
   const normal = await gapOf();
-  await page.locator(".cv-seg label", { hasText: "Tighter" }).click();
+  await page.getByRole("button", { name: "0.85× (Tight)" }).click();
   await page.waitForFunction((was) => { const g = [...document.querySelectorAll('svg.cv-paper g[data-kind="heading"] text')]; return Number(g[1].getAttribute("y")) - Number(g[0].getAttribute("y")) < was - 0.5; }, normal);
   check((await bodySizes()) === "10.5", "Tighter spacing closes the gaps and leaves the type the same size", `${normal} → ${await gapOf()}, sizes ${await bodySizes()}`);
-  await page.locator(".cv-seg label", { hasText: "Looser" }).click();
+  await page.getByRole("button", { name: "1.15× (Relaxed)" }).click();
   await page.waitForFunction((was) => { const g = [...document.querySelectorAll('svg.cv-paper g[data-kind="heading"] text')]; return Number(g[1].getAttribute("y")) - Number(g[0].getAttribute("y")) > was + 0.5; }, normal);
   check((await bodySizes()) === "10.5", "Looser spacing opens them, type unchanged");
   await page.locator(".cv-seg label", { hasText: "US Letter" }).click();
@@ -322,7 +322,7 @@ run("CV editor", async (browser) => {
   const letter = await downloadAndReadBack(page, mayaId, "US Letter, Lora and plum");
   check(Math.round(letter.pdf.size[0]) === 612 && Math.round(letter.pdf.size[1]) === 792 && Math.round(letter.docx.size[0]) === 612, "on US Letter, the PDF and the Word file are both Letter size", `${letter.pdf.size} ${letter.docx.size}`);
   await page.locator(".cv-seg label", { hasText: "A4" }).click();
-  await page.locator(".cv-seg label", { hasText: "Default" }).click();
+  await page.getByRole("button", { name: "1.00× (Default)" }).click();
 
   // The order on the page, separate from the form's tabs.
   const paperHeads = () => page.locator('svg.cv-paper g[data-kind="heading"]').allTextContents();

@@ -25,10 +25,10 @@ run("CV writing help", async (browser) => {
   const a = await newUser(browser, "notes");
   let page = a.page;
   await page.goto(`${BASE}/cv/new`);
+  await page.getByRole("button", { name: "Answer three questions about one job", exact: true }).click();
   await page.getByLabel("CV name").fill("Lee CV");
   await page.getByText("Experienced", { exact: true }).click();
   await page.getByText("UK", { exact: true }).click();
-  await page.getByText("Speak or type", { exact: true }).click();
   await page.getByRole("button", { name: "Start with notes" }).click();
   await page.waitForURL(/\/cv\/v\/cv_[a-f0-9]+\/capture\/new/, { timeout: 30000 });
   const leeId = idOf(page);

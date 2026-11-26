@@ -8,7 +8,7 @@ run("CV clean-up", async (browser) => {
   // --- The old addresses lead to the new section ---
   await a.page.goto(`${BASE}/apply/cvs`);
   await a.page.waitForURL(/\/cv$/);
-  await a.page.getByText("You have no CVs yet").waitFor({ timeout: 15000 });
+  await a.page.getByText("No CVs yet").waitFor({ timeout: 15000 });
   check(true, "/apply/cvs goes to /cv, and a new account sees no CVs");
   await noForbidden(a.page, "CV dashboard");
   check((await a.page.locator(".cv-pick").count()) === 0, "the dashboard shows no example rows");
@@ -16,7 +16,7 @@ run("CV clean-up", async (browser) => {
   await a.page.getByText("CV not found").waitFor({ timeout: 15000 });
   check(true, "an old CV address that matches nothing says “CV not found” (and invents nothing)");
   await a.page.goto(`${BASE}/cv`);
-  await a.page.getByText("You have no CVs yet").waitFor();
+  await a.page.getByText("No CVs yet").waitFor();
   check(true, "opening that address created no CV");
 
   // --- The public check makes no claims it can't support ---

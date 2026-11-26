@@ -46,7 +46,7 @@ run("CV tailoring", async (browser) => {
   /* ------------------------------------------- a tailored version, made first */
   await page.goto(`${BASE}/cv`);
   await page.getByTestId("row-score").first().waitFor({ timeout: 15000 });
-  check(/^Score \d+$/.test((await page.getByTestId("row-score").first().innerText()).trim()) && (await page.getByTestId("row-fit").count()) === 0, "the list shows the base CV's score, and no job fit: it has no advert");
+  check(/^Score \d+\/100$/.test((await page.getByTestId("row-score").first().innerText()).trim()) && (await page.getByTestId("row-fit").count()) === 0, "the list shows the base CV's score, and no job fit: it has no advert");
   await page.getByRole("button", { name: "Tailor Maya base CV to a job" }).click();
   let dialog = page.getByRole("dialog", { name: "Tailor to a job" });
   await dialog.waitFor();
@@ -210,7 +210,7 @@ run("CV tailoring", async (browser) => {
   await page.goto(`${BASE}/cv`);
   await page.getByTestId("row-fit").waitFor({ timeout: 15000 });
   const rows = await page.locator(".cv-pick").evaluateAll((els) => els.map((e) => [e.innerText.replace(/\s+/g, " "), e.style.paddingLeft]));
-  check(rows.length === 2 && /Maya base CV – Example Travel/.test(rows[1][0]) && rows[1][1] === "44px" && new RegExp(`Job fit ${to}`).test(rows[1][0]), "the list shows the tailored version under its base, with its job fit", JSON.stringify(rows));
+  check(rows.length === 2 && /Maya base CV – Example Travel/.test(rows[1][0]) && rows[1][1] === "48px" && new RegExp(`Job fit ${to}`).test(rows[1][0]), "the list shows the tailored version under its base, with its job fit", JSON.stringify(rows));
   await bothThemes(page, "tailor-list");
   await page.getByRole("link", { name: "Maya base CV – Example Travel", exact: true }).click();
   await page.waitForURL(/\/tailor/);

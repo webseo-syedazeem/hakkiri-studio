@@ -43,15 +43,15 @@ async function newUser(browser, label, opts = {}) {
 /** Fills in the set-up form. `method` is "empty", or a file name from the fixtures to upload. */
 async function setUp(page, { name = "Test CV", level = "Experienced", region = "UK", file, paste } = {}) {
   await page.goto(`${BASE}/cv/new`);
+  // First how to start, then the questions about the CV.
+  await page.getByRole("button", { name: file ? "Upload PDF or Word" : paste ? "Paste text" : "Start with a blank page", exact: true }).click();
   await page.getByLabel("CV name").fill(name);
   await page.getByText(level, { exact: true }).click();
   await page.getByText(region, { exact: true }).click();
-  if (file || paste) await page.getByText("Upload a CV", { exact: true }).click();
   if (file) {
     await page.getByLabel("CV file").setInputFiles(path.join(FIXTURES, file));
     await page.waitForURL(/\/cv\/import\/imp_/, { timeout: 45000 });
   } else if (paste) {
-    await page.getByRole("button", { name: "Paste the text instead" }).click();
     await page.getByLabel("The text of your CV").fill(paste);
     await page.getByRole("button", { name: "Read this text" }).click();
     await page.waitForURL(/\/cv\/import\/imp_/, { timeout: 45000 });
