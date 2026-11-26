@@ -342,3 +342,8 @@ export function PaperView({ paper, state, retry, cv, focus, onPick, word, childr
     </div>
   );
 }
+
+/** One page drawn small, with nothing around it: for a thumbnail of the same CV in another design. */
+export function PaperPage({ paper, cv, page = 0, label }: { paper: Paper; cv: PaperViewProps["cv"]; page?: number; label: string }) {
+  return <Page layout={paper.layout} flow={paper.flow} page={page} margin={paper.style.page.marginX} cv={cv} accent={paper.style.accent} titleAlign={paper.style.template.title.align} focus={null} label={label} />;
+}

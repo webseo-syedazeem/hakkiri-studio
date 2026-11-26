@@ -107,7 +107,7 @@ export function ExamplePage({ spec, region }: { spec: ExampleSpec; region: CvReg
             {pick(spec.blurb, region)} The person and employers are made up. The {word} and its cover letter pass every check the app runs on your own: spelling, plain wording, a clean read by screening software, and every sentence of the letter traced back to the {word}.
           </p>
           <div className="mt-5 flex flex-wrap gap-3">
-            <Link href={`/cv/examples?example=${spec.id}&region=${region}`} className="inline-flex min-h-[48px] items-center rounded-full bg-[#3d4bd8] px-6 text-base font-semibold text-white hover:bg-[#2e3ab8] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#3d4bd8]">
+            <Link href={`/cv/examples/${spec.id}?region=${region}`} className="inline-flex min-h-[48px] items-center rounded-full bg-[#3d4bd8] px-6 text-base font-semibold text-white hover:bg-[#2e3ab8] focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#3d4bd8]">
               Start from this example
             </Link>
             <Link href={`${other}/${spec.id}`} className="inline-flex min-h-[48px] items-center rounded-full border border-slate-300 bg-white px-6 text-base font-semibold text-slate-800 hover:border-slate-400">

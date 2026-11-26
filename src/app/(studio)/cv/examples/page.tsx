@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { ExamplesGallery } from "@/components/cv/ExamplesGallery";
+import { Catalogue } from "@/components/cv/Catalogue";
 
 export const metadata: Metadata = {
-  title: "Example CVs and cover letters",
-  description: "Example CVs, resumes and cover letters by industry, for the UK and the US, to read or start from.",
+  title: "Find an example or template",
+  description: "Example CVs, resumes and cover letters by job and industry, for the UK and the US, and 45 designs to put them in.",
 };
 
 export default function ExamplesPage() {
-  return <ExamplesGallery />;
+  return <Catalogue />;
 }

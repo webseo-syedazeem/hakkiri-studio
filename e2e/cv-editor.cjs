@@ -321,7 +321,7 @@ run("CV editor", async (browser) => {
   await saved(page);
   const letter = await downloadAndReadBack(page, mayaId, "US Letter, Lora and plum");
   check(Math.round(letter.pdf.size[0]) === 612 && Math.round(letter.pdf.size[1]) === 792 && Math.round(letter.docx.size[0]) === 612, "on US Letter, the PDF and the Word file are both Letter size", `${letter.pdf.size} ${letter.docx.size}`);
-  await page.locator(".cv-seg label", { hasText: "A4" }).click();
+  await page.locator(".cv-seg label", { hasText: /^A4$/ }).click();
   await page.getByRole("button", { name: "1.00× (Default)" }).click();
 
   // The order on the page, separate from the form's tabs.
@@ -338,7 +338,7 @@ run("CV editor", async (browser) => {
   const eduAt = squash(reordered.pdf.text).indexOf("Education");
   check(eduAt >= 0 && eduAt < squash(reordered.pdf.text).indexOf("Profile"), "the PDF follows the new order: Education comes before Profile");
   check(reordered.docx.paragraphs.filter((p) => p.style === "Heading2").map((p) => p.text).join(",") === "Education,Profile,Experience,Skills,Languages", "the Word file's headings follow it too", reordered.docx.paragraphs.filter((p) => p.style === "Heading2").map((p) => p.text).join(","));
-  await page.getByRole("button", { name: "Use Standard’s order" }).click();
+  await page.getByRole("button", { name: "Use No. 01 · Clean Sans’s order" }).click();
   await page.waitForFunction(() => document.querySelector('svg.cv-paper g[data-kind="heading"]').textContent === "Profile");
   check(true, "“Use Standard’s order” puts the template's order back");
 

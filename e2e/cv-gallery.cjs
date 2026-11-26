@@ -86,7 +86,7 @@ run("Template galleries", async (browser) => {
   text = await page.locator("main").innerText();
   check(/Marketing Manager CV example/.test(text) && /Chloe Bennett/.test(text) && /Grew qualified leads by 52%/.test(text) && /Dear Ms Patel,/.test(text) && /Yours sincerely,/.test(text), "an example page shows the CV and its cover letter in full");
   check(/Words adverts use/.test(text) && /£1\.5 million/.test(text) && !/\$/.test(text), "with what employers in the industry look for, and UK money only");
-  check((await page.getByRole("link", { name: "Start from this example" }).getAttribute("href")) === "/cv/examples?example=marketing-lead&region=uk", "Start from this example opens it in the app");
+  check((await page.getByRole("link", { name: "Start from this example" }).getAttribute("href")) === "/cv/examples/marketing-lead?region=uk", "Start from this example opens it in the app");
   await a11y(page, "CV example page");
   await page.getByRole("link", { name: "See the US resume version" }).click();
   await page.waitForURL(/\/resume-examples\/marketing-lead$/);
@@ -144,41 +144,75 @@ run("Template galleries", async (browser) => {
   cv = await a.page.evaluate(async (cvId) => (await (await fetch(`/api/cv/versions/${cvId}`)).json()).cv, id2);
   check(cv.design.template === "standard", "without it, the CV starts in the usual design", cv.design.template);
 
-  // A link from a public example page opens that example in the app.
+  // An old link to one example opens that example's own page, in the region it was read in.
   await a.page.goto(`${BASE}/cv/examples?example=staff-nurse&region=us`);
-  await a.page.getByRole("dialog", { name: /Registered Nurse: example resume/ }).waitFor();
-  check(true, "a link from an example page opens that example, in the region it was read in");
-  await a.page.getByRole("dialog").getByRole("button", { name: "Close", exact: true }).first().click();
+  await a.page.waitForURL(/\/cv\/examples\/staff-nurse\?region=us$/);
+  await a.page.getByRole("heading", { level: 1, name: "Registered Nurse example" }).waitFor();
+  check(true, "a link to an example opens its own page, in the region it was read in");
 
-  // The example CVs and their cover letters, in the app.
-  await a.page.goto(`${BASE}/cv/examples`);
-  await a.page.getByRole("button", { name: "UK CV" }).click();
-  await a.page.getByRole("button", { name: "Read the Marketing Manager example" }).click();
-  const dialog = a.page.getByRole("dialog");
-  // The example is drawn as its printed page, white, in its own template.
+  // Find an example or template: one search by job.
+  await a.page.goto(`${BASE}/cv/examples?region=uk`);
+  await a.page.getByRole("heading", { level: 1, name: "Find an example or template" }).waitFor();
+  check((await a.page.getByTestId("example-card").count()) >= 33 && (await a.page.getByTestId("template-card").count()) === 45, "with nothing asked, every example and all 45 templates are listed");
+  await a.page.getByLabel("Search by job or industry").fill("pilot");
+  check(/First Officer/.test(await a.page.getByTestId("example-card").first().innerText()), "searching “pilot” finds the First Officer example first");
+  await a.page.getByLabel("Search by job or industry").fill("nurse");
+  check(/No\. 39 · Healthcare/.test(await a.page.getByTestId("template-card").first().innerText()), "searching “nurse” puts the healthcare design first");
+  await a.page.waitForFunction(() => [...document.querySelectorAll("[data-testid=example-card] img")].slice(0, 1).every((i) => i.complete && i.naturalWidth > 0));
+  check(true, "example cards show the example's first page");
+  await bothThemes(a.page, "find");
+  await a.page.getByLabel("Search by job or industry").fill("zzzz");
+  await a.page.getByText("No examples found").waitFor();
+  await a.page.getByRole("button", { name: "Clear filters" }).first().click();
+  check((await a.page.getByLabel("Search by job or industry").inputValue()) === "", "a search that finds nothing says so, and Clear filters starts again");
+
+  // One example, as its printed page.
+  await a.page.getByLabel("Search by job or industry").fill("marketing manager");
+  await a.page.getByTestId("example-card").first().click();
+  await a.page.waitForURL(/\/cv\/examples\/marketing-lead\?region=uk/);
   const pageText = async (id) => {
-    const svg = dialog.getByTestId(id).locator("svg.cv-paper").first();
+    const svg = a.page.getByTestId(id).locator("svg.cv-paper").first();
     await svg.waitFor({ timeout: 20000 });
     return svg.evaluate((el) => [...el.querySelectorAll("text")].map((t) => t.textContent).join("\n"));
   };
   check((await pageText("example-cv")).includes("Grew qualified leads by 52%"), "an example opens as its printed page");
-  const fill = await dialog.getByTestId("example-cv").locator("svg.cv-paper rect").first().getAttribute("fill");
+  const fill = await a.page.getByTestId("example-cv").locator("svg.cv-paper rect").first().getAttribute("fill");
   check(/^#f[0-9a-f]{5}$|^#fff/i.test(fill || ""), "the page is white, not dark", fill);
-  check(true, "an example can be read in full");
-  await dialog.getByRole("button", { name: "Cover letter" }).click();
+  const choices = a.page.locator(".cv-design-choice");
+  check((await choices.count()) === 4, "it offers its own design and three others");
+  await choices.nth(1).click();
+  await a.page.waitForTimeout(800);
+  check(/Now showing No\. \d\d/.test(await a.page.locator("main").innerText()) && (await pageText("example-cv")).includes("Grew qualified leads by 52%"), "another design shows the same content in a different layout");
+  await bothThemes(a.page, "example-detail");
+  await a.page.getByRole("button", { name: "Cover letter" }).click();
   const letterText = await pageText("example-letter");
   check(/Dear Ms Patel,/.test(letterText) && /Yours sincerely,/.test(letterText) && /Fernbrook Outdoor/.test(letterText), "its cover letter can be read, with a UK greeting and sign-off");
-  await bothThemes(a.page, "examples-letter");
-  await dialog.getByRole("button", { name: "US", exact: true }).click();
+  await a.page.getByRole("button", { name: "US · Letter" }).click();
   await a.page.waitForTimeout(500);
   const usText = await pageText("example-letter");
   check(/Dear Ms\. Patel,/.test(usText) && /Sincerely,/.test(usText) && /\$480,000/.test(usText) && !/£|programme/.test(usText), "the US version is the US letter: dollars, US spelling, US sign-off");
-  await dialog.getByRole("button", { name: "Start from this, with the letter" }).click();
+  await a.page.getByRole("button", { name: "Start from this, with the letter" }).click();
   await a.page.waitForURL(/\/cv\/v\/cv_[a-f0-9]+\/letter/, { timeout: 30000 });
   const id3 = a.page.url().match(/cv_[a-f0-9]+/)[0];
   cv = await a.page.evaluate(async (cvId) => (await (await fetch(`/api/cv/versions/${cvId}`)).json()).cv, id3);
-  check(cv.region === "us" && cv.target?.employer === "Fernbrook Outdoor" && cv.letter?.paragraphs?.length === 5, "starting from it with the letter gives a US resume with its letter and the job it is for", JSON.stringify({ region: cv.region, target: cv.target?.employer, paras: cv.letter?.paragraphs?.length }));
+  check(cv.region === "us" && cv.target?.employer === "Fernbrook Outdoor" && cv.letter?.paragraphs?.length === 5 && cv.design.template !== "modern", "starting from it gives a US resume with its letter, in the design chosen", JSON.stringify({ region: cv.region, target: cv.target?.employer, paras: cv.letter?.paragraphs?.length, template: cv.design.template }));
   await a.page.getByTestId("letter-fit").waitFor({ timeout: 30000 });
   check(true, "the letter opens on the letter screen and fits one page");
+
+  // A template, with the person's own CV in it; using it changes the design only.
+  await a.page.goto(`${BASE}/cv/templates/07-header-band?cv=${id3}`);
+  await a.page.getByRole("heading", { level: 1, name: "No. 07 · Header Band" }).waitFor();
+  await a.page.locator("svg.cv-paper").first().waitFor({ timeout: 20000 });
+  check(/Preview with your current content/.test(await a.page.locator("main").innerText()) && (await a.page.locator("svg.cv-paper").first().textContent()).includes("Chloe Bennett"), "a template is shown with the person's own CV in it");
+  await bothThemes(a.page, "template-picker");
+  const before = JSON.stringify(cv.sections);
+  await a.page.getByRole("button", { name: "Use this design" }).click();
+  await a.page.waitForURL(new RegExp(`/cv/v/${id3}/edit/finish`), { timeout: 30000 });
+  cv = await a.page.evaluate(async (cvId) => (await (await fetch(`/api/cv/versions/${cvId}`)).json()).cv, id3);
+  check(cv.design.template === "harbour" && JSON.stringify(cv.sections) === before, "Use this design changes the design and nothing else", cv.design.template);
+  await a.page.goto(`${BASE}/cv/templates/39-healthcare?region=uk`);
+  await a.page.getByRole("button", { name: "Use this design" }).click();
+  await a.page.waitForURL(/\/cv\/new\?template=ward/);
+  check(true, "without a CV, Use this design starts a new CV in it");
   check(a.errors.length === 0, "no errors on the CV screens", a.errors.join(" | "));
 });
