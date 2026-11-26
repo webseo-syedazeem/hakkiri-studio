@@ -270,8 +270,12 @@ export function writePdf(layout: Layout, flow: Flow, fonts: Fonts, info: PdfInfo
     flush();
   }
 
-  // Decoration: drawn lines and bars, marked so that software skips them.
-  for (const r of layout.rules) content[r.page] += `/Artifact << /Type /Layout >> BDC\n${rgb(r.color)} rg\n${num(r.x)} ${num(H - r.y - r.height)} ${num(r.width)} ${num(r.height)} re\nf\nEMC\n`;
+  // Decoration: drawn lines and bars, marked so that software skips them. A band behind the name is drawn first, under the text.
+  const artifact = (r: (typeof layout.rules)[number]) => `/Artifact << /Type /Layout >> BDC\n${rgb(r.color)} rg\n${num(r.x)} ${num(H - r.y - r.height)} ${num(r.width)} ${num(r.height)} re\nf\nEMC\n`;
+  for (const r of layout.rules) {
+    if (r.under) content[r.page] = artifact(r) + content[r.page];
+    else content[r.page] += artifact(r);
+  }
 
   // Write the tag tree.
   const treeRoot = w.reserve();

@@ -1,5 +1,5 @@
 /**
- * The fonts a CV can be set in. All four families are under the SIL Open Font
+ * The fonts a CV can be set in. Every family is under the SIL Open Font
  * Licence (the licence texts sit beside the font files), which allows them to
  * be embedded in the files people download.
  */
@@ -18,17 +18,55 @@ export const FONT_FILES = {
   "serif-400i": { file: "SourceSerif4_400Regular_Italic.ttf", family: "Source Serif 4", weight: 400, italic: true, post: "SourceSerif4-Italic" },
   "serif-600": { file: "SourceSerif4_600SemiBold.ttf", family: "Source Serif 4", weight: 600, italic: false, post: "SourceSerif4-SemiBold" },
   "serif-700": { file: "SourceSerif4_700Bold.ttf", family: "Source Serif 4", weight: 700, italic: false, post: "SourceSerif4-Bold" },
+  "sans3-400": { file: "SourceSans3_400Regular.ttf", family: "Source Sans 3", weight: 400, italic: false, post: "SourceSans3-Regular" },
+  "sans3-600": { file: "SourceSans3_600SemiBold.ttf", family: "Source Sans 3", weight: 600, italic: false, post: "SourceSans3-SemiBold" },
+  "sans3-700": { file: "SourceSans3_700Bold.ttf", family: "Source Sans 3", weight: 700, italic: false, post: "SourceSans3-Bold" },
+  "work-400": { file: "WorkSans_400Regular.ttf", family: "Work Sans", weight: 400, italic: false, post: "WorkSans-Regular" },
+  "work-600": { file: "WorkSans_600SemiBold.ttf", family: "Work Sans", weight: 600, italic: false, post: "WorkSans-SemiBold" },
+  "work-700": { file: "WorkSans_700Bold.ttf", family: "Work Sans", weight: 700, italic: false, post: "WorkSans-Bold" },
+  "franklin-400": { file: "LibreFranklin_400Regular.ttf", family: "Libre Franklin", weight: 400, italic: false, post: "LibreFranklin-Regular" },
+  "franklin-600": { file: "LibreFranklin_600SemiBold.ttf", family: "Libre Franklin", weight: 600, italic: false, post: "LibreFranklin-SemiBold" },
+  "franklin-700": { file: "LibreFranklin_700Bold.ttf", family: "Libre Franklin", weight: 700, italic: false, post: "LibreFranklin-Bold" },
+  "manrope-400": { file: "Manrope_400Regular.ttf", family: "Manrope", weight: 400, italic: false, post: "Manrope-Regular" },
+  "manrope-600": { file: "Manrope_600SemiBold.ttf", family: "Manrope", weight: 600, italic: false, post: "Manrope-SemiBold" },
+  "manrope-700": { file: "Manrope_700Bold.ttf", family: "Manrope", weight: 700, italic: false, post: "Manrope-Bold" },
+  "garamond-400": { file: "EBGaramond_400Regular.ttf", family: "EB Garamond", weight: 400, italic: false, post: "EBGaramond-Regular" },
+  "garamond-400i": { file: "EBGaramond_400Regular_Italic.ttf", family: "EB Garamond", weight: 400, italic: true, post: "EBGaramond-Italic" },
+  "garamond-600": { file: "EBGaramond_600SemiBold.ttf", family: "EB Garamond", weight: 600, italic: false, post: "EBGaramond-SemiBold" },
+  "garamond-700": { file: "EBGaramond_700Bold.ttf", family: "EB Garamond", weight: 700, italic: false, post: "EBGaramond-Bold" },
+  "crimson-400": { file: "CrimsonPro_400Regular.ttf", family: "Crimson Pro", weight: 400, italic: false, post: "CrimsonPro-Regular" },
+  "crimson-400i": { file: "CrimsonPro_400Regular_Italic.ttf", family: "Crimson Pro", weight: 400, italic: true, post: "CrimsonPro-Italic" },
+  "crimson-600": { file: "CrimsonPro_600SemiBold.ttf", family: "Crimson Pro", weight: 600, italic: false, post: "CrimsonPro-SemiBold" },
+  "crimson-700": { file: "CrimsonPro_700Bold.ttf", family: "Crimson Pro", weight: 700, italic: false, post: "CrimsonPro-Bold" },
+  "mono-400": { file: "IBMPlexMono_400Regular.ttf", family: "IBM Plex Mono", weight: 400, italic: false, post: "IBMPlexMono-Regular" },
+  "mono-600": { file: "IBMPlexMono_600SemiBold.ttf", family: "IBM Plex Mono", weight: 600, italic: false, post: "IBMPlexMono-SemiBold" },
+  "mono-700": { file: "IBMPlexMono_700Bold.ttf", family: "IBM Plex Mono", weight: 700, italic: false, post: "IBMPlexMono-Bold" },
 } as const;
 
 export type FontKey = keyof typeof FONT_FILES;
 export const FONT_KEYS = Object.keys(FONT_FILES) as FontKey[];
 
 /** The families, by the short name used in font keys. */
-export const FAMILIES = { inter: "Inter", lora: "Lora", plex: "IBM Plex Sans", serif: "Source Serif 4" } as const;
+export const FAMILIES = {
+  inter: "Inter",
+  lora: "Lora",
+  plex: "IBM Plex Sans",
+  serif: "Source Serif 4",
+  sans3: "Source Sans 3",
+  work: "Work Sans",
+  franklin: "Libre Franklin",
+  manrope: "Manrope",
+  garamond: "EB Garamond",
+  crimson: "Crimson Pro",
+  mono: "IBM Plex Mono",
+} as const;
 export type FamilyId = keyof typeof FAMILIES;
 
 /** What Word should fall back to on a computer that does not have the font. */
-export const WORD_FALLBACK: Record<FamilyId, string> = { inter: "Arial", lora: "Georgia", plex: "Arial", serif: "Georgia" };
+export const WORD_FALLBACK: Record<FamilyId, string> = { inter: "Arial", lora: "Georgia", plex: "Arial", serif: "Georgia", sans3: "Calibri", work: "Arial", franklin: "Arial", manrope: "Arial", garamond: "Garamond", crimson: "Georgia", mono: "Consolas" };
+
+/** How Word groups a family when it has to choose a substitute: sans serif, serif or fixed width. */
+export const WORD_KIND: Record<FamilyId, "swiss" | "roman" | "modern"> = { inter: "swiss", lora: "roman", plex: "swiss", serif: "roman", sans3: "swiss", work: "swiss", franklin: "swiss", manrope: "swiss", garamond: "roman", crimson: "roman", mono: "modern" };
 
 /** The font for a family at a weight, falling back to the nearest weight the family ships. */
 export function fontKey(family: FamilyId, weight: 400 | 600 | 700, italic = false): FontKey {

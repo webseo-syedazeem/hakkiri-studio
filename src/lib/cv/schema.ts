@@ -265,11 +265,31 @@ export const TargetSchema = z.object({
 });
 export type Target = z.infer<typeof TargetSchema>;
 
-export const CV_TEMPLATES = ["standard", "graduate", "compact", "executive", "portfolio", "research", "career-change", "technical", "modern", "minimal", "creative", "consulting"] as const;
+export const CV_TEMPLATES = [
+  "standard", "graduate", "compact", "executive", "portfolio", "research", "career-change", "technical", "modern", "minimal", "creative", "consulting",
+  "ledger", "linen", "chancery", "meridian", "harbour", "slate", "quartz", "arcadia", "vellum", "hairline", "tern", "clearwater",
+  "tally", "docket", "index", "marginalia", "boardroom", "crest", "regent", "atlas", "campus", "first-light", "ladder", "sapling",
+  "terminal", "circuit", "lattice", "kernel", "ward", "chalkboard", "canvas", "atelier", "palette",
+] as const;
 export type TemplateId = (typeof CV_TEMPLATES)[number];
 export const CV_ACCENTS = ["indigo", "navy", "teal", "copper", "plum", "slate", "emerald", "crimson", "royal", "forest", "burgundy", "charcoal"] as const;
 export type AccentId = (typeof CV_ACCENTS)[number];
 export const CV_DENSITIES = ["tighter", "default", "looser"] as const;
+/** The font families a CV can be set in (see render/fonts.ts, which holds the files). */
+export const CV_FONT_FAMILIES = ["inter", "lora", "plex", "serif", "sans3", "work", "franklin", "manrope", "garamond", "crimson", "mono"] as const;
+export type FontFamilyId = (typeof CV_FONT_FAMILIES)[number];
+/** The mark before each bullet: •, –, › or none (the line is still indented as a list item). */
+export const CV_BULLETS = ["disc", "dash", "arrow", "none"] as const;
+export type BulletStyle = (typeof CV_BULLETS)[number];
+/**
+ * What goes between the contact details: “·”, “|” or “•”. Always a visible mark: with only spaces between them,
+ * software reading the file can't tell where the town ends and the phone number begins.
+ */
+export const CV_SEPARATORS = ["dot", "bar", "bullet"] as const;
+export type ContactSeparator = (typeof CV_SEPARATORS)[number];
+/** The top of the page: the name as text, or the name on a band of the accent colour. */
+export const CV_HEADERS = ["plain", "band"] as const;
+export type HeaderStyle = (typeof CV_HEADERS)[number];
 export type Density = (typeof CV_DENSITIES)[number];
 
 export const DesignSchema = z.object({
@@ -297,8 +317,23 @@ export const DesignSchema = z.object({
   margin: z.union([z.enum(["compact", "normal", "relaxed"]), z.number().min(15).max(72)]).default("normal").optional(),
   /** Section divider line style ("solid", "dashed", "dots", "none", "accent-bar"). */
   dividerStyle: z.enum(["solid", "dashed", "dots", "none", "accent-bar"]).default("solid").optional(),
-  /** Whether to show modern section divider icons on headings. */
+  /** Kept for CVs saved with it; icons are not drawn (they can be read as stray characters by screening software). */
   sectionIcons: z.boolean().default(false).optional(),
+  /** Fonts chosen one at a time, in place of the pairing: for headings and the name, and for everything else. */
+  headingFont: z.enum(CV_FONT_FAMILIES).optional(),
+  bodyFont: z.enum(CV_FONT_FAMILIES).optional(),
+  /** The mark before each bullet, when changed from the template's own. */
+  bullet: z.enum(CV_BULLETS).optional(),
+  /** How far each entry's lines sit in from its section heading, in points (0 to 24). */
+  entryIndent: z.number().min(0).max(24).optional(),
+  /** What goes between the contact details, when changed from the template's own. */
+  contactSeparator: z.enum(CV_SEPARATORS).optional(),
+  /** The size of the name in points (16 to 40), when changed from the template's own. */
+  nameSize: z.number().min(16).max(40).optional(),
+  /** Section headings in capitals, when changed from the template's own. */
+  headingCaps: z.boolean().optional(),
+  /** The top of the page, when changed from the template's own. */
+  header: z.enum(CV_HEADERS).optional(),
   /** Bullet indentation in points (range 0 to 24, default 13). */
   indentation: z.number().min(0).max(24).default(13).optional(),
 });

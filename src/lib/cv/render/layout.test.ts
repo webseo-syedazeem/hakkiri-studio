@@ -108,7 +108,11 @@ describe("the page", () => {
       }
     }
     expect(layout.missing).toEqual([]);
-    for (const r of layout.rules) expect(r.x + r.width).toBeLessThanOrEqual(width - marginX + 0.5);
+    // Lines and bars stay inside the margins. A band of colour behind the name runs to the edges of the page, by design.
+    for (const r of layout.rules) {
+      if (r.under) expect({ x: r.x, y: r.y, width: r.width }).toEqual({ x: 0, y: 0, width });
+      else expect(r.x + r.width).toBeLessThanOrEqual(width - marginX + 0.5);
+    }
   });
 
   it("wraps long text, keeping every word once and in order", () => {

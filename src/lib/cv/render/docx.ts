@@ -1,6 +1,6 @@
 import JSZip from "jszip";
 import type { Flow } from "./flow";
-import { FAMILIES, FONT_FILES, type FamilyId, WORD_FALLBACK } from "./fonts";
+import { FAMILIES, FONT_FILES, type FamilyId, WORD_FALLBACK, WORD_KIND } from "./fonts";
 import { type ParaSpec, describeFlow } from "./layout";
 import type { PaperStyle } from "./templates";
 
@@ -62,7 +62,8 @@ export async function writeDocx(flow: Flow, style: PaperStyle, info: DocxInfo): 
   };
 
   const paragraph = (s: ParaSpec) => {
-    const border = (side: string, color: string, size: number, space: number) => `<w:${side} w:val="single" w:sz="${size}" w:space="${space}" w:color="${hex(color)}"/>`;
+    const line = style.dash === "dashed" ? "dashed" : style.dash === "dots" ? "dotted" : "single";
+    const border = (side: string, color: string, size: number, space: number) => `<w:${side} w:val="${side === "left" ? "single" : line}" w:sz="${size}" w:space="${space}" w:color="${hex(color)}"/>`;
     // Decoration that Word can draw as a paragraph border is kept; short rules have no equivalent and are left out.
     const borders =
       s.rule?.type === "hairline-below" || s.rule?.type === "title-below" || s.rule?.type === "contact-below"
@@ -78,8 +79,14 @@ export async function writeDocx(flow: Flow, style: PaperStyle, info: DocxInfo): 
       s.pageBreak ? "<w:pageBreakBefore/>" : "",
       s.tag === "LI" ? '<w:numPr><w:ilvl w:val="0"/><w:numId w:val="1"/></w:numPr>' : "",
       borders,
+      // A band behind the name: the paragraph shaded in the accent colour, with the name in white.
+      s.rule?.type === "band" ? `<w:shd w:val="clear" w:color="auto" w:fill="${hex(s.rule.color)}"/>` : "",
       `<w:spacing w:before="${twips(s.before)}" w:after="${twips(s.after)}" w:line="${twips(s.lineHeight)}" w:lineRule="exact"/>`,
-      s.tag === "LI" ? `<w:ind w:left="${twips(s.indent)}" w:hanging="${twips(s.indent - 2.5)}"/>` : s.rule?.type === "bar-before" ? "" : "",
+      s.tag === "LI"
+        ? `<w:ind w:left="${twips(s.indent)}" w:hanging="${twips(s.indent - (s.markIndent ?? 0) - 2.5)}"/>`
+        : s.indent && s.rule?.type !== "bar-before"
+          ? `<w:ind w:left="${twips(s.indent)}"/>`
+          : "",
       `<w:jc w:val="${s.align}"/>`,
     ].join("");
     return `<w:p><w:pPr>${props}</w:pPr>${s.pieces.map(run).join("")}</w:p>`;
@@ -95,9 +102,9 @@ export async function writeDocx(flow: Flow, style: PaperStyle, info: DocxInfo): 
   const heading = (id: string, name: string, level: number, family: string) =>
     `<w:style w:type="paragraph" w:styleId="${id}"><w:name w:val="${name}"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:qFormat/><w:pPr><w:keepNext/><w:keepLines/><w:outlineLvl w:val="${level}"/></w:pPr><w:rPr><w:rFonts w:ascii="${x(family)}" w:hAnsi="${x(family)}" w:cs="${x(family)}"/></w:rPr></w:style>`;
   const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles ${NS}><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="${x(bodyFamily)}" w:hAnsi="${x(bodyFamily)}" w:cs="${x(bodyFamily)}"/><w:sz w:val="21"/><w:szCs w:val="21"/><w:lang w:val="${x(info.lang)}"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="0"/></w:pPr></w:pPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style>${heading("Heading1", "heading 1", 0, headFamily)}${heading("Heading2", "heading 2", 1, headFamily)}${heading("Heading3", "heading 3", 2, bodyFamily)}<w:style w:type="paragraph" w:styleId="ListBullet"><w:name w:val="List Bullet"/><w:basedOn w:val="Normal"/><w:qFormat/><w:pPr><w:numPr><w:numId w:val="1"/></w:numPr><w:contextualSpacing/></w:pPr></w:style></w:styles>`;
-  const numbering = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:numbering ${NS}><w:abstractNum w:abstractNumId="0"><w:multiLevelType w:val="hybridMultilevel"/><w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="•"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="260" w:hanging="210"/></w:pPr><w:rPr><w:rFonts w:ascii="${x(bodyFamily)}" w:hAnsi="${x(bodyFamily)}" w:cs="${x(bodyFamily)}" w:hint="default"/></w:rPr></w:lvl></w:abstractNum><w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num></w:numbering>`;
+  const numbering = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:numbering ${NS}><w:abstractNum w:abstractNumId="0"><w:multiLevelType w:val="hybridMultilevel"/><w:lvl w:ilvl="0"><w:start w:val="1"/>${style.bullet ? `<w:numFmt w:val="bullet"/><w:lvlText w:val="${x(style.bullet)}"/>` : '<w:numFmt w:val="none"/><w:lvlText w:val=""/>'}<w:lvlJc w:val="left"/><w:pPr><w:ind w:left="260" w:hanging="210"/></w:pPr><w:rPr><w:rFonts w:ascii="${x(bodyFamily)}" w:hAnsi="${x(bodyFamily)}" w:cs="${x(bodyFamily)}" w:hint="default"/></w:rPr></w:lvl></w:abstractNum><w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num></w:numbering>`;
   const families = [...new Set([style.fonts.body, style.fonts.heading])] as FamilyId[];
-  const fontTable = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:fonts ${NS}>${families.map((f) => `<w:font w:name="${x(FAMILIES[f])}"><w:altName w:val="${WORD_FALLBACK[f]}"/><w:family w:val="${f === "inter" || f === "plex" ? "swiss" : "roman"}"/><w:pitch w:val="variable"/></w:font>`).join("")}</w:fonts>`;
+  const fontTable = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:fonts ${NS}>${families.map((f) => `<w:font w:name="${x(FAMILIES[f])}"><w:altName w:val="${WORD_FALLBACK[f]}"/><w:family w:val="${WORD_KIND[f]}"/><w:pitch w:val="${WORD_KIND[f] === "modern" ? "fixed" : "variable"}"/></w:font>`).join("")}</w:fonts>`;
   const settings = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:settings ${NS}><w:themeFontLang w:val="${x(info.lang)}"/></w:settings>`;
   const REL = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
   const rels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdStyles" Type="${REL}/styles" Target="styles.xml"/><Relationship Id="rIdNumbering" Type="${REL}/numbering" Target="numbering.xml"/><Relationship Id="rIdFonts" Type="${REL}/fontTable" Target="fontTable.xml"/><Relationship Id="rIdSettings" Type="${REL}/settings" Target="settings.xml"/>${links.map((url, i) => `<Relationship Id="rIdLink${i + 1}" Type="${REL}/hyperlink" Target="${x(url)}" TargetMode="External"/>`).join("")}</Relationships>`;

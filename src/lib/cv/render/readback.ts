@@ -33,7 +33,9 @@ export function wordsOf(text: string): string[] {
     // Curly and straight quotes are the same words; the readers tidy one into the other.
     .replace(/[\u2018\u2019\u201a\u201b]/g, "'")
     .replace(/[\u201c\u201d\u201e\u201f]/g, '"')
-    .replace(/[•·\t]/g, " ")
+    // Bullet marks and separators the templates draw (•, –, ›, ·, |) are marks, not words; a dash between two dates is
+    // put aside on both sides of the comparison alike.
+    .replace(/[•·|\u2013\u203a\t]/g, " ")
     .split(/\s+/)
     .filter(Boolean);
 }

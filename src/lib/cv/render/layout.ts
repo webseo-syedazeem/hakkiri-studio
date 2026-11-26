@@ -61,6 +61,8 @@ export interface Rule {
   width: number;
   height: number;
   color: string;
+  /** Drawn before the text, behind it (a band of colour under the name). */
+  under?: boolean;
 }
 
 export interface Layout {
@@ -212,7 +214,7 @@ function wrap(pieces: Piece[], max: number, m: Measurer): Omit<Run, "x">[][] {
 }
 
 /** What decoration a paragraph carries. It is drawn, not typed, and never counts as content. */
-export type RuleSpec = { type: "title-below" | "contact-below" | "hairline-below" | "short-below" | "short-above" | "bar-before"; color: string };
+export type RuleSpec = { type: "title-below" | "contact-below" | "hairline-below" | "short-below" | "short-above" | "bar-before" | "band"; color: string };
 
 /**
  * One paragraph of the CV with everything about how it is set: its text and
@@ -237,6 +239,8 @@ export interface ParaSpec {
   keepWithNext: boolean;
   mark?: { text: string; font: FontKey; size: number; color: string };
   rule?: RuleSpec;
+  /** For a bullet: how far its mark sits in from the margin (the entry's own indent). */
+  markIndent?: number;
   /** Starts a new page. */
   pageBreak?: boolean;
 }
@@ -251,6 +255,8 @@ export function describeFlow(flow: Flow, style: PaperStyle): ParaSpec[] {
   const bold = fontKey(style.fonts.body, 600);
   const titleFont = fontKey(style.fonts.heading, t.title.weight);
   const headFont = fontKey(style.fonts.heading, t.heading.weight, t.heading.italic);
+  const entryIndent = style.entryIndent ?? 0;
+  const band = style.header === "band";
   const specs: ParaSpec[] = [];
   const nodes = flow.nodes;
 
@@ -263,21 +269,21 @@ export function describeFlow(flow: Flow, style: PaperStyle): ParaSpec[] {
       specs.push({
         ...base,
         tag: "H1",
-        pieces: [{ text: n.text, font: titleFont, size, color: t.title.accent ? accent : INK }],
+        pieces: [{ text: n.text, font: titleFont, size, color: band ? "#FFFFFF" : t.title.accent ? accent : INK }],
         lineHeight: size * 1.16,
         size,
         font: titleFont,
         align: t.title.align,
         before: 0,
-        after: t.title.ruleBelow ? 9 : 2,
+        after: band ? 14 : t.title.ruleBelow ? 9 : 2,
         keepWithNext: true,
-        rule: t.title.ruleBelow ? { type: "title-below", color: accent } : undefined,
+        rule: band ? { type: "band", color: accent } : t.title.ruleBelow ? { type: "title-below", color: accent } : undefined,
       });
     } else if (n.kind === "contact") {
       const size = t.contact.tight ? 9.5 : 10;
       const pieces: Piece[] = [];
       n.items.forEach((item, k) => {
-        if (k) pieces.push({ text: " · ", font: body, size, color: MUTED, separator: true });
+        if (k) pieces.push({ text: style.separator ?? " · ", font: body, size, color: MUTED, separator: true });
         pieces.push({ text: item.text, font: body, size, color: MUTED, link: item.link, item: k, whole: true });
       });
       specs.push({
@@ -323,6 +329,7 @@ export function describeFlow(flow: Flow, style: PaperStyle): ParaSpec[] {
         lineHeight: bodySize * 1.38 * lineSpacingFactor,
         size: bodySize,
         font: bold,
+        indent: entryIndent,
         before: prev?.kind === "heading" ? 0 : t.space.entry * d,
         keepWithNext: !!next && "entryId" in next && next.entryId === n.entryId,
       });
@@ -340,6 +347,8 @@ export function describeFlow(flow: Flow, style: PaperStyle): ParaSpec[] {
         lineHeight: size * 1.38 * lineSpacingFactor,
         size,
         font: body,
+        // The dates and the line about the employer sit under the entry they belong to.
+        indent: n.role !== "body" && n.entryId ? entryIndent : 0,
         before,
         keepWithNext: n.keep ? !!next : n.role !== "body" && !!next && "entryId" in next && next.entryId === n.entryId,
       });
@@ -355,10 +364,11 @@ export function describeFlow(flow: Flow, style: PaperStyle): ParaSpec[] {
         lineHeight: bodySize * 1.38 * lineSpacingFactor,
         size: bodySize,
         font: body,
-        indent: bulletIndent,
+        indent: entryIndent + bulletIndent,
+        markIndent: entryIndent,
         before: prev?.kind === "heading" ? 0 : !sameEntryBefore ? t.space.entry * d : firstOfEntry ? 3.5 * d : 2.2 * d,
         keepWithNext: false,
-        mark: { text: "•", font: body, size: bodySize, color: INK },
+        mark: style.bullet === "" ? undefined : { text: style.bullet ?? "•", font: body, size: bodySize, color: INK },
       });
     }
   });
@@ -380,12 +390,23 @@ export function layoutFlow(flow: Flow, style: PaperStyle, fonts: Fonts): Layout 
 
   /** Where a paragraph's decoration is drawn. */
   const drawRule = (r: RuleSpec, b: ParaSpec, pg: number, topY: number, bottomY: number, baseline: number, textX: number): Rule => {
+    // A band of colour from the top edge of the page to just below the name, behind it.
+    if (r.type === "band") return { page: pg, x: 0, y: 0, width: page.width, height: bottomY + 10, color: r.color, under: true };
     if (r.type === "title-below") return { page: pg, x: left, y: bottomY + 5, width, height: 1.4, color: r.color };
     if (r.type === "contact-below") return { page: pg, x: left, y: bottomY + 6, width, height: 0.7, color: r.color };
     if (r.type === "hairline-below") return { page: pg, x: left, y: bottomY + 2.2, width, height: 0.6, color: r.color };
     if (r.type === "short-below") return { page: pg, x: b.align === "center" ? left + width / 2 - 15 : textX, y: bottomY + 3, width: 30, height: 1.3, color: r.color };
     if (r.type === "short-above") return { page: pg, x: textX, y: topY - 4.5, width: 26, height: 1.7, color: r.color };
     return { page: pg, x: left, y: baseline - b.size * 0.74, width: 3.2, height: b.size * 0.78, color: r.color };
+  };
+
+  /** A horizontal line as dashes or dots, when the person chose them. Bars and bands are always solid. */
+  const dashed = (r: Rule): Rule[] => {
+    if (style.dash === "solid" || r.under || r.height > 2.5 || r.width < 12) return [r];
+    const [on, off] = style.dash === "dashed" ? [4, 2.5] : [Math.max(1, r.height * 1.4), 2];
+    const out: Rule[] = [];
+    for (let x = r.x; x < r.x + r.width - 0.5; x += on + off) out.push({ ...r, x, width: Math.min(on, r.x + r.width - x) });
+    return out;
   };
 
   // Place the lines on pages. A heading stays with what follows it; an entry's first line stays with its dates and first bullet.
@@ -457,8 +478,8 @@ export function layoutFlow(flow: Flow, style: PaperStyle, fonts: Fonts): Layout 
       });
       const first = placed[0];
       const last = placed[placed.length - 1];
-      if (b.rule && first) rules.push(drawRule(b.rule, b, last.page, first.top, last.top + last.height, first.baseline, first.runs[0]?.x ?? left));
-      blocks.push({ node: b.node, tag: b.tag, kind: b.kind, at: b.at, sectionId: b.sectionId, entryId: b.entryId, lines: placed, mark: b.mark ? { ...b.mark, x: left + 2.5 } : undefined });
+      if (b.rule && first) rules.push(...dashed(drawRule(b.rule, b, last.page, first.top, last.top + last.height, first.baseline, first.runs[0]?.x ?? left)));
+      blocks.push({ node: b.node, tag: b.tag, kind: b.kind, at: b.at, sectionId: b.sectionId, entryId: b.entryId, lines: placed, mark: b.mark ? { ...b.mark, x: left + (b.markIndent ?? 0) + 2.5 } : undefined });
       y += b.after;
     }
     i = end + 1;

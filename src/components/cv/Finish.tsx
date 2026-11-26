@@ -6,7 +6,7 @@ import { cannotDrawAdvice } from "@/lib/cv/render/fonts";
 import { paperOrder } from "@/lib/cv/render/flow";
 import { FAMILIES } from "@/lib/cv/render/fonts";
 import { fitToPages } from "@/lib/cv/render/layout";
-import { ACCENTS, PAIRINGS, TEMPLATES, type TemplateDef, contrastRatioOnWhite } from "@/lib/cv/render/templates";
+import { ACCENTS, PAIRINGS, TEMPLATES, type TemplateDef, contrastRatioOnWhite, templateLabel } from "@/lib/cv/render/templates";
 import { type AccentId, CV_ACCENTS, CV_DENSITIES, CV_TEMPLATES, type Design, type TemplateId, cvIsEmpty, sectionIsEmpty } from "@/lib/cv/schema";
 import { docWord, sectionHeading } from "@/lib/cv/sections";
 import { Grip, ItemControls, useDragOrder } from "./Arrange";
@@ -354,7 +354,7 @@ export function Finish({ onOverflow, say }: { onOverflow: () => void; say: (text
           <legend className="sr-only">Template</legend>
           <div className="cv-pad">
           <div className="cv-templates">
-            {CV_TEMPLATES.map((id) => {
+            {[...CV_TEMPLATES].sort((a, b) => TEMPLATES[a].no - TEMPLATES[b].no).map((id) => {
               const t = TEMPLATES[id];
               return (
                 <label key={id} className="cv-choice cv-template">
@@ -363,7 +363,7 @@ export function Finish({ onOverflow, say }: { onOverflow: () => void; say: (text
                   <span className="min-w-0">
                     <b>
                       {design.template === id && <span aria-hidden="true">✓ </span>}
-                      {t.name}
+                      {templateLabel(t)}
                     </b>
                     <small style={{ display: "block" }}>{t.suits}</small>
                   </span>
@@ -389,7 +389,7 @@ export function Finish({ onOverflow, say }: { onOverflow: () => void; say: (text
               options={FONT_CHOICES.map((c) => ({
                 value: c.id,
                 label: c.label,
-                badge: c.id === template.id || pairLabel(TEMPLATES[c.id].fonts) === pairLabel(template.fonts) ? `${template.name}’s own` : undefined,
+                badge: c.id === template.id || pairLabel(TEMPLATES[c.id].fonts) === pairLabel(template.fonts) ? `${templateLabel(template)}’s own` : undefined,
               }))}
             />
           </div>
@@ -720,21 +720,6 @@ export function Finish({ onOverflow, say }: { onOverflow: () => void; say: (text
             </div>
           </fieldset>
 
-          {/* Section heading icons */}
-          <div>
-            <label className="cv-choice" style={{ padding: "10px 14px" }}>
-              <input
-                type="checkbox"
-                checked={Boolean(design.sectionIcons)}
-                onChange={(e) => set({ sectionIcons: e.target.checked })}
-              />
-              <span>
-                <b style={{ display: "block", fontSize: 13, fontWeight: 600 }}>Show section icons on headings</b>
-                <small>Adds clean visual icons (e.g. briefcase, graduation cap, star) alongside major section headings.</small>
-              </span>
-            </label>
-          </div>
-
           {/* Bullet indentation */}
           <div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
@@ -770,7 +755,7 @@ export function Finish({ onOverflow, say }: { onOverflow: () => void; say: (text
         aside={
           design.order?.length ? (
             <Btn kind="quiet" onClick={() => set({ order: undefined })}>
-              Use {template.name}’s order
+              Use {templateLabel(template)}’s order
             </Btn>
           ) : undefined
         }
