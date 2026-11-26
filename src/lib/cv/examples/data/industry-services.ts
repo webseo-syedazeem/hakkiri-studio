@@ -80,7 +80,7 @@ export const INDUSTRY_SERVICES: ExampleSpec[] = [
         bullets: [
           "Taught 30 student pilots in the aircraft and on the ground, logging 750 hours of flight instruction",
           {
-            uk: "Prepared 18 students for the Private Pilot Licence (PPL) skills test over 2 years, with 16 passing at the first attempt",
+            uk: "Prepared 18 students for the Private Pilot Licence (PPL) skill test over 2 years, with 16 passing at the first attempt",
             us: "Prepared 18 students for the private pilot practical test over 2 years, with 16 passing on the first attempt",
           },
           {
@@ -193,8 +193,8 @@ What we are looking for
     },
     person: { name: "Megan Lloyd", email: "megan.lloyd@example.com", phone: { uk: "07700 900302", us: "(214) 555-0117" }, location: { uk: "Crawley", us: "Dallas, TX" } },
     profile: {
-      uk: "Cabin crew member with 2 and a half years flying from London Gatwick on the Airbus A321, after nearly 3 years in customer service at a busy airport hotel. Holds a cabin crew attestation and passes yearly safety and emergency procedures training. Gave first aid to 9 passengers and calmed 6 disruptive passengers in 2025. Speaks conversational Spanish.",
-      us: "Flight attendant with 2 and a half years flying from Dallas on the Airbus A321, after nearly 3 years in customer service at a busy airport hotel. Holds a Federal Aviation Administration (FAA) Certificate of Demonstrated Proficiency and passes yearly safety and emergency procedures training. Gave first aid to 9 passengers and calmed 6 disruptive passengers in 2025. Speaks conversational Spanish.",
+      uk: "Cabin crew member with two and a half years flying from London Gatwick on the Airbus A321, after nearly 3 years in customer service at a busy airport hotel. Holds a cabin crew attestation and passes yearly safety and emergency procedures training. Gave first aid to 9 passengers and calmed 6 disruptive passengers in 2025. Speaks conversational Spanish.",
+      us: "Flight attendant with two and a half years flying from Dallas on the Airbus A321, after nearly 3 years in customer service at a busy airport hotel. Holds a Federal Aviation Administration (FAA) Certificate of Demonstrated Proficiency and passes yearly safety and emergency procedures training. Gave first aid to 9 passengers and calmed 6 disruptive passengers in 2025. Speaks conversational Spanish.",
     },
     experience: [
       {
@@ -326,11 +326,11 @@ What we are looking for
         "Your advert asks for calm, friendly customer service and the ability to handle conflict. I calmed 6 disruptive passengers in 2025 using conflict resolution training, with only 1 needing police on arrival. At Harlow Grange Hotel I resolved around 15 guest complaints a week at the desk, keeping the hotel's review score at 4.5 out of 5.",
         {
           uk: "Your advert asks for confidence with onboard sales. I average £1,400 of onboard sales a month in food, drinks and duty-free goods, placing in the top 10% of 300 crew at the base for 5 months.",
-          us: "Your advert asks for first aid skills. I gave first aid to 9 passengers in 2025, including a passenger with chest pain on a flight that diverted to Memphis. I also took 70 credit card applications from passengers in 2025, in the top 10% of 300 flight attendants at the Dallas base.",
+          us: "Your advert asks for first aid skills. I gave first aid to 9 passengers in 2025, including a passenger with chest pain on a flight that diverted to Memphis.",
         },
         {
-          uk: "I also gave first aid to 9 passengers in 2025, including a passenger with chest pain on a flight that diverted to Lyon. Your advert says a second language is a bonus. I speak conversational Spanish.",
-          us: "Your advert says a second language is a plus. I speak conversational Spanish.",
+          uk: "Your advert asks for first aid skills. I gave first aid to 9 passengers in 2025, including a passenger with chest pain on a flight that diverted to Lyon. Your advert also says a second language is a bonus. I speak conversational Spanish.",
+          us: "I also took 70 credit card applications from passengers in 2025, in the top 10% of 300 flight attendants at the Dallas base. Your advert also says a second language is a plus. I speak conversational Spanish.",
         },
         CLOSE,
       ],
@@ -580,7 +580,7 @@ What we are looking for
             us: "Ran quarterly first-time home buyer seminars in 3 branches, each drawing around 40 members",
           },
           {
-            uk: "Moved around 140 members a year whose fixed rates were ending onto new deals, keeping 85% of them with the society",
+            uk: "Moved around 140 members a year onto new deals as their fixed rates ended, keeping 85% of them with the society",
             us: "Refinanced around 140 members a year out of adjustable-rate loans, keeping 85% of them with the credit union",
           },
         ],
@@ -716,7 +716,7 @@ What we are looking for
         },
         {
           uk: "Your advert asks for protection advice as part of every case. I arrange life, critical illness and income protection insurance for 60% of mortgage clients, against a firm average of 35%.",
-          us: "I am licensed through the Nationwide Multistate Licensing System (NMLS) in Arizona and California.",
+          us: "Your advert asks for an active Arizona mortgage loan originator license through NMLS. I am licensed through the Nationwide Multistate Licensing System (NMLS) in Arizona and California.",
         },
         CLOSE,
       ],
@@ -759,15 +759,15 @@ What we are looking for
           },
           {
             uk: "Conduct around 25 viewings a week, sending feedback to sellers within 24 hours",
-            us: "Show around 25 homes a week to buyers, sending feedback to sellers within 24 hours",
+            us: "Show around 25 homes a week to buyer clients, sending each a written summary within 24 hours",
           },
           {
             uk: "Run sales progression from offer to completion with solicitors and lenders, cutting the share of sales that fall through from 28% to 17% in 2 years",
-            us: "Guide buyers and sellers from contract to closing with lenders, inspectors and settlement attorneys, cutting the share of contracts that fall through from 12% to 7%",
+            us: "Guide buyers and sellers from contract to closing with lenders, inspectors and settlement attorneys, cutting the share of contracts that fall through from 12% to 7% in 2 years",
           },
           {
             uk: "Check identity and source of funds for every buyer and seller under anti-money laundering (AML) rules, with no findings in 2 audits",
-            us: "Hold 3 open houses a month, meeting around 40 buyers a month and turning 6 into clients in 2025",
+            us: "Hold 3 open houses a month, meeting around 40 buyers each month and turning 6 into clients in 2025",
           },
         ],
       },
@@ -845,7 +845,10 @@ What we are looking for
     ],
     certificates: [
       { title: { uk: "Level 3 Award in Residential Estate Agency", us: "Real estate salesperson license" }, org: { uk: "Propertymark Qualifications", us: "Virginia Real Estate Board" }, end: "2021" },
-      { title: { uk: "Full UK driving licence", us: "Driver's license" }, org: { uk: "Driver and Vehicle Licensing Agency", us: "Virginia Department of Motor Vehicles" } },
+      {
+        title: { uk: "Full UK driving licence", us: "Fair housing and ethics continuing education (16 hours)" },
+        org: { uk: "Driver and Vehicle Licensing Agency", us: "Virginia Real Estate Board" },
+      },
     ],
     skills: [
       { uk: "Valuations", us: "Listing appointments" },
@@ -907,15 +910,15 @@ What we are looking for
         },
         {
           uk: "Your advert asks for at least 3 years in residential sales. I agreed 58 sales worth £21 million in 2025 by negotiating offers between buyers and sellers, the most of 4 negotiators in the branch. At Penfold Estates I agreed 32 sales in 2021 against a target of 25.",
-          us: "Your advert asks for experience guiding transactions to closing. I closed 34 transactions worth $14 million in 2025 as listing and buyer's agent, negotiating offers and repairs for each client.",
+          us: "Your advert asks for experience guiding transactions to closing. I closed 34 transactions worth $14 million in 2025 as listing and buyer's agent, negotiating offers and repairs for each client. I guide buyers and sellers from contract to closing with lenders, inspectors and settlement attorneys, cutting the share of contracts that fall through from 12% to 7% in 2 years.",
         },
         {
           uk: "Your advert asks for experience progressing sales to completion. I run sales progression from offer to completion with solicitors and lenders, cutting the share of sales that fall through from 28% to 17% in 2 years.",
-          us: "I guide buyers and sellers from contract to closing with lenders, inspectors and settlement attorneys, cutting the share of contracts that fall through from 12% to 7%. I hold a Virginia real estate salesperson license.",
+          us: "I also hold 3 open houses a month, meeting around 40 buyers each month and turning 6 into clients in 2025. At Penfold Residential I showed around 30 apartments a week at a 320-unit community, signing 18 new leases a month.",
         },
         {
           uk: "I also check identity and source of funds for every buyer and seller under anti-money laundering (AML) rules, with no findings in 2 audits. I hold the Propertymark Level 3 Award in Residential Estate Agency and a full UK driving licence.",
-          us: "I also hold 3 open houses a month, meeting around 40 buyers a month and turning 6 into clients in 2025. Before that, I showed around 30 apartments a week at a 320-unit community as a leasing consultant, signing 18 new leases a month.",
+          us: "Your advert asks for an active Virginia real estate salesperson license. I hold a Virginia real estate salesperson license.",
         },
         CLOSE,
       ],
