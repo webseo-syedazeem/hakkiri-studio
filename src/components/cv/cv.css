@@ -2248,84 +2248,246 @@ select.cv-mini option,
 }
 
 /* ------------------------------------------------- Talk it through (CV assistant) */
-.cv-talk {
+/* Layout from the design handoff: conversation and page side by side, each scrolling on its own, the message box
+   always at the bottom; Chat and Paper tabs below 1100px; a compact title bar and no gutters on a phone. */
+.cv-talk-page {
+  --talk-control: #707382;
   display: flex;
   flex-direction: column;
   gap: 14px;
-  background: var(--color-panel);
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-control);
-  padding: 18px 20px;
+  min-height: 0;
 }
-.cv-talk-head { display: flex; gap: 12px; align-items: flex-start; justify-content: space-between; }
-.cv-talk-head h2 { font-size: 18px; font-weight: 650; margin: 0 0 4px; }
-.cv-talk-head p { font-size: 13px; margin: 0; }
-.cv-talk-log {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  max-height: min(62vh, 640px);
-  overflow-y: auto;
-  overscroll-behavior: contain;
+.mk .cv .cv-talk-page,
+.cv.mk .cv-talk-page,
+[data-theme="light"] .cv .cv-talk-page,
+.cv[data-theme="light"] .cv-talk-page { --talk-control: #758297; }
+.cv-talk-page .cv-bar { margin-bottom: 0; }
+.cv .cv-ico { width: 19px; height: 19px; flex: none; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.cv-talk-subtle { color: var(--text-muted); font-size: 12px; font-weight: 400; }
+.cv-talk-saved { display: inline-flex; align-items: center; gap: 5px; color: var(--success); font-size: 12px; white-space: nowrap; }
+.cv-talk-saved .cv-ico { width: 15px; height: 15px; }
+.cv .cv-talk-score { color: var(--accent); font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+.cv-talk-iconbtn {
+  width: 44px; height: 44px; display: inline-grid; place-items: center; flex: none;
+  border-radius: 11px; border: 1px solid transparent; background: none; color: var(--text); cursor: pointer;
 }
-.cv-msg {
-  max-width: 92%;
-  padding: 11px 14px;
-  border-radius: 14px;
-  font-size: 14.5px;
-  line-height: 1.5;
+.cv-talk-iconbtn:hover { background: var(--surface-raised); }
+.cv-talk-more .cv-talk-iconbtn .cv-ico { stroke-width: 2.8; }
+.cv-talk-more { position: relative; }
+.cv-talk-menu {
+  position: absolute; right: 0; top: 50px; z-index: 30; min-width: 250px; padding: 6px;
+  background: var(--surface); border: 1px solid var(--talk-control); border-radius: 11px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28); display: grid;
 }
-/* Only the newest message rises in: showing the conversation again (Chat after Paper) doesn't replay every one. */
-.cv-msg:last-child { animation: cv-rise 0.2s ease-out both; }
-.cv-msg p { margin: 0; }
-.cv-msg p + p, .cv-msg ul + p, .cv-msg details + p, .cv-msg p + ul { margin-top: 8px; }
-.cv-msg[data-who="you"] {
-  align-self: flex-end;
-  background: var(--color-blue-fill);
-  color: #ffffff;
-  border-bottom-right-radius: 4px;
+.cv-talk-menu a, .cv-talk-menu button {
+  display: flex; align-items: center; min-height: 44px; padding: 0 12px; border-radius: 8px;
+  color: var(--text); font: inherit; font-size: 14px; text-align: left; background: none; border: 0; cursor: pointer; text-decoration: none;
 }
-.cv-msg[data-who="assistant"] {
-  align-self: flex-start;
-  background: var(--color-panel-2);
-  color: var(--color-ink);
-  border: 1px solid var(--color-line);
-  border-bottom-left-radius: 4px;
+.cv-talk-menu a:hover, .cv-talk-menu button:hover { background: var(--surface-raised); }
+.cv-talk-phonebar, .cv-talk-tabs { display: none; }
+
+.cv-talk-split { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 46fr) minmax(0, 54fr); gap: 16px; }
+.cv-talk-chat, .cv-talk-preview {
+  min-height: 0; min-width: 0; position: relative; overflow: hidden;
+  border: 1px solid var(--border); border-radius: 11px; background: var(--surface);
 }
-.cv-msg .cv-row { margin-top: 8px; }
-.cv-msg .cv-row:empty { display: none; }
-.cv-msg-tag { opacity: 0.8; font-size: 12px; }
-.cv-msg-ask { font-weight: 600; }
-.cv-msg-note { font-size: 13px; color: var(--color-muted); }
-.cv-msg-busy { color: var(--color-muted); font-style: italic; }
-.cv-msg-changes {
-  margin: 8px 0 0;
-  padding: 8px 10px 8px 26px;
-  border-left: 3px solid var(--success);
-  background: var(--success-surface);
-  border-radius: 8px;
-  font-size: 13px;
+.cv-talk-chat { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; }
+.cv-talk-preview { display: grid; grid-template-rows: auto minmax(0, 1fr); background: var(--background); }
+
+/* The head: who this is, Start again, and where in the conversation you are. */
+.cv-talk-head { padding: 16px 18px 13px; border-bottom: 1px solid var(--border); display: grid; gap: 12px; }
+.cv-talk-headrow { display: flex; align-items: center; gap: 10px; }
+.cv-talk-headrow h2 { font-size: 19px; font-weight: 650; letter-spacing: -0.4px; margin: 0; }
+.cv-talk-headrow p { margin: 2px 0 0; }
+.cv-talk-mark { width: 34px; height: 34px; border-radius: 11px; background: var(--cv-note-bg); color: var(--accent); display: grid; place-items: center; flex: none; }
+.cv-talk-step { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--text-muted); }
+.cv-talk-step b { color: var(--text); font-weight: 600; white-space: nowrap; }
+.cv-talk-step > span:first-child { white-space: nowrap; }
+.cv-talk-progress { display: flex; gap: 4px; flex: 1; min-width: 40px; }
+.cv-talk-progress span { height: 4px; border-radius: 3px; background: var(--surface-raised); flex: 1; }
+.cv-talk-progress span[data-done="true"] { background: var(--accent); }
+
+/* The conversation. */
+.cv-talk-thread { min-height: 0; overflow: auto; overscroll-behavior: contain; padding: 18px; scrollbar-width: thin; }
+.cv-talk-thread:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.cv-talk-thread > ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+.cv-talk-thread > ol > li { flex-shrink: 0; }
+.cv-talk-newreply {
+  position: sticky; bottom: 8px; margin: 10px 0 0 auto; display: flex; align-items: center; gap: 6px;
+  min-height: 44px; padding: 0 14px; border-radius: 22px; border: 1px solid var(--talk-control);
+  background: var(--surface); color: var(--text); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
 }
-.cv-msg-changes[data-undone="true"] { opacity: 0.55; text-decoration: line-through; border-left-color: var(--color-line); background: transparent; }
-.cv-msg-changes li + li { margin-top: 4px; }
-.cv-msg-changes .cv-link { text-align: left; color: var(--color-ink); }
-.cv-msg-left { margin-top: 8px; font-size: 13px; color: var(--color-muted); }
-.cv-msg-left summary { cursor: pointer; color: var(--warning); }
-.cv-msg-left ul { margin: 6px 0 0; padding-left: 18px; }
-.cv-talk-compose { display: flex; flex-direction: column; gap: 10px; border-top: 1px solid var(--color-line); padding-top: 14px; }
-.cv-talk-compose textarea { resize: vertical; min-height: 76px; }
-.cv-talk-compose .cv-check { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--color-muted); cursor: pointer; }
-.cv-level { width: 72px; height: 6px; border-radius: 3px; background: var(--color-line); overflow: hidden; display: inline-block; }
-.cv-level > span { display: block; height: 100%; background: var(--success); transform-origin: left center; transition: transform 0.08s linear; }
+.cv-talk-newreply .cv-ico { width: 16px; height: 16px; }
+.cv-talk-person {
+  align-self: flex-end; max-width: 88%; padding: 11px 14px; border-radius: 14px 14px 4px 14px;
+  background: var(--accent-fill); color: #ffffff; font-size: 14px; line-height: 1.45; overflow-wrap: anywhere;
+}
+.cv-talk-person small { font-size: 12px; }
+.cv-talk-assistant { align-self: stretch; display: grid; gap: 8px; }
+.cv-talk-label { display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600; color: var(--text-muted); }
+.cv-talk-label .cv-ico { width: 16px; height: 16px; color: var(--accent); }
+.cv-talk-intro { border: 1px solid var(--border); border-radius: 11px; padding: 16px; background: var(--surface-raised); display: grid; gap: 10px; }
+.cv-talk-intro h3 { font-size: 20px; font-weight: 650; letter-spacing: -0.5px; line-height: 1.25; margin: 0; }
+.cv-talk-intro p { margin: 0; color: var(--text-muted); font-size: 14px; }
+.cv-talk-intro ul { list-style: none; margin: 2px 0 0; padding: 0; display: grid; gap: 8px; }
+.cv-talk-intro li { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; line-height: 1.4; }
+.cv-talk-intro li .cv-ico { width: 17px; height: 17px; color: var(--success); margin-top: 1px; }
+.cv-talk-reply {
+  background: var(--surface-raised); border: 1px solid var(--border); border-radius: 4px 14px 14px 14px;
+  padding: 12px; display: grid; gap: 10px; font-size: 14px; line-height: 1.45;
+}
+.cv-talk-reply > p { margin: 0; }
+.cv-talk-changeshead { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 13px; font-weight: 650; }
+.cv-talk-changeshead > span:first-child { display: flex; align-items: center; gap: 6px; color: var(--success); }
+.cv-talk-changeshead .cv-ico { width: 17px; height: 17px; }
+.cv-talk-changes { list-style: none; margin: 0; padding: 0; border: 1px solid var(--border); border-radius: 11px; overflow: hidden; background: var(--surface); }
+.cv-talk-changes li + li { border-top: 1px solid var(--border); }
+.cv-talk-change {
+  width: 100%; min-height: 54px; display: flex; align-items: center; gap: 9px; padding: 9px 10px;
+  background: none; border: 0; color: var(--text); font: inherit; text-align: left; cursor: pointer;
+}
+.cv-talk-change:hover:not(:disabled) { background: var(--surface-raised); }
+.cv-talk-change:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.cv-talk-change[aria-current="true"] { background: var(--cv-note-bg); box-shadow: inset 3px 0 var(--accent); }
+.cv-talk-change:disabled { cursor: default; }
+.cv-talk-kind { color: var(--success); }
+.cv-talk-chev { color: var(--accent); width: 16px !important; height: 16px !important; margin-left: auto; }
+.cv-talk-changetext { min-width: 0; flex: 1; display: grid; gap: 2px; line-height: 1.35; }
+.cv-talk-changetext b { font-size: 11px; font-weight: 650; color: var(--text-muted); }
+.cv-talk-changetext span { font-size: 13px; overflow-wrap: anywhere; }
+.cv-talk-reply[data-undone="true"] .cv-talk-changetext span { text-decoration: line-through; color: var(--text-muted); }
+.cv-talk-reply[data-undone="true"] .cv-talk-kind,
+.cv-talk-reply[data-undone="true"] .cv-talk-changeshead > span:first-child { color: var(--text-muted); }
+.cv-talk-callout { margin: 0; border-radius: 8px; padding: 10px 11px; display: grid; gap: 6px; font-size: 12.5px; line-height: 1.45; }
+p.cv-talk-callout { display: flex; align-items: flex-start; gap: 7px; }
+.cv-talk-callout strong { display: flex; align-items: center; gap: 6px; font-size: 12.5px; }
+.cv-talk-callout .cv-ico { width: 16px; height: 16px; flex: none; }
+.cv-talk-callout ul { margin: 0; padding-left: 18px; }
+.cv-talk-callout[data-tone="warn"] { background: var(--warning-surface); color: var(--warning); }
+.cv-talk-callout[data-tone="note"] { background: var(--cv-note-bg); color: var(--cv-note-ink); }
+.cv-talk-callout .cv-btn { min-height: 44px; }
+.cv-talk-replyfoot { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.cv-talk-replyfoot p { margin: 0; display: flex; align-items: center; gap: 6px; }
+.cv-talk-replyfoot .cv-ico { width: 16px; height: 16px; }
+.cv-talk-replyfoot .cv-btn { min-height: 44px; }
+.cv-talk-question { border-left: 3px solid var(--accent); background: var(--cv-note-bg); padding: 12px 14px; border-radius: 0 11px 11px 0; display: grid; gap: 5px; }
+.cv-talk-qlabel { font-size: 11px; letter-spacing: 0.07em; text-transform: uppercase; font-weight: 650; color: var(--cv-note-ink); }
+.cv-talk-q { margin: 0; font-size: 15px; font-weight: 650; line-height: 1.4; color: var(--text); }
+.cv-talk-hint { margin: 0; font-size: 13px; color: var(--text-muted); line-height: 1.45; }
+.cv-talk-working { display: flex; align-items: center; gap: 8px; background: var(--surface-raised); padding: 12px; border-radius: 11px; color: var(--text-muted); font-size: 13px; }
+.cv-talk-dots { display: flex; gap: 4px; }
+.cv-talk-dots i { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+.cv-talk-failed { align-self: flex-end; max-width: 92%; display: grid; gap: 6px; color: var(--danger); font-size: 13px; }
+.cv-talk-failed p { margin: 0; }
+.cv .cv-talk-retry { justify-self: end; color: var(--danger); border-color: var(--danger); min-height: 44px; }
+
+/* The composer: the voice dock, the message box and Send. Never scrolls away. */
+.cv-talk-composer { background: var(--surface); border-top: 1px solid var(--border); padding: 12px 16px 14px; display: grid; gap: 9px; }
+.cv-talk-queued { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 8px 10px; border-radius: 8px; background: var(--cv-note-bg); color: var(--cv-note-ink); overflow-wrap: anywhere; }
+.cv-talk-queued .cv-ico { width: 16px; height: 16px; }
+.cv-talk-voice { display: flex; align-items: center; gap: 10px; background: var(--surface-raised); border: 1px solid var(--border); padding: 9px 10px; border-radius: 11px; min-height: 67px; }
+.cv-talk-mic {
+  width: 46px; height: 46px; flex: none; display: grid; place-items: center; border-radius: 11px; cursor: pointer;
+  background: var(--accent-fill); color: #ffffff; border: 1px solid transparent;
+}
+.cv-talk-mic:hover:not(:disabled) { filter: brightness(0.92); }
+.cv-talk-mic:focus-visible, .cv-talk-send:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.cv-talk-mic:disabled { opacity: 0.55; cursor: not-allowed; }
+.cv-talk-voice[data-tone="on"] .cv-talk-mic { background: var(--success-surface); color: var(--success); border-color: var(--success); }
+.cv-talk-voice[data-tone="warn"] .cv-talk-mic { background: var(--warning-surface); color: var(--warning); border-color: var(--warning); }
+.cv-talk-voicecopy { display: grid; gap: 2px; flex: 1; min-width: 0; }
+.cv-talk-voicecopy b { font-size: 13px; }
+.cv-talk-voicecopy span { font-size: 12px; color: var(--text-muted); line-height: 1.3; }
+.cv-talk-voicestatus { font-size: 11px; font-weight: 650; color: var(--text-muted); }
+.cv-talk-voice[data-tone="on"] .cv-talk-voicestatus { color: var(--success); }
+.cv-talk-voice[data-tone="warn"] .cv-talk-voicestatus { color: var(--warning); }
+.cv-talk-meter { display: flex; gap: 3px; align-items: center; height: 27px; margin-right: 4px; }
+.cv-talk-meter i { width: 3px; border-radius: 4px; background: var(--success); transition: height 0.08s linear; }
+.cv-talk-inputrow { display: flex; align-items: stretch; gap: 8px; }
+.cv-talk-inputrow textarea {
+  resize: none; min-height: 52px; max-height: 112px; flex: 1; min-width: 0; padding: 14px 12px;
+  border: 1px solid var(--talk-control); border-radius: 11px; background: var(--background); color: var(--text);
+  font: inherit; font-size: 14px; line-height: 1.4;
+}
+.cv-talk-inputrow textarea::placeholder { color: var(--text-muted); }
+.cv-talk-inputrow textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.cv-talk-send {
+  width: 48px; flex: none; display: grid; place-items: center; border-radius: 11px; border: 0; cursor: pointer;
+  background: var(--accent-fill); color: #ffffff;
+}
+.cv-talk-send:disabled { opacity: 0.55; cursor: not-allowed; }
+.cv-talk-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--text-muted); }
+.cv-talk-check { display: inline-flex; align-items: center; gap: 7px; min-height: 44px; cursor: pointer; white-space: nowrap; color: var(--text-muted); }
+.cv-talk-check input { width: 16px; height: 16px; margin: 0; accent-color: var(--accent-fill); }
+
+/* The page. */
+.cv-talk-previewhead { background: var(--surface); border-bottom: 1px solid var(--border); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.cv-talk-previewhead h2 { display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 650; margin: 0; }
+.cv-talk-previewhead h2 .cv-ico { color: var(--accent); }
+.cv-talk-paper { overflow: auto; min-height: 0; padding: 12px 16px 20px; scrollbar-width: thin; }
+
+/* Narrower: Chat and Paper are tabs, one at a time. */
+@media (max-width: 1099px) {
+  .cv-talk-tabs { display: flex; gap: 4px; align-items: center; background: var(--surface); border: 1px solid var(--border); border-radius: 11px; padding: 4px; }
+  .cv-talk-tabs button {
+    flex: 1; min-height: 44px; display: flex; align-items: center; justify-content: center; gap: 7px;
+    border: 0; border-radius: 8px; background: none; color: var(--text-muted); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+  }
+  .cv-talk-tabs button:hover { background: var(--surface-raised); }
+  .cv-talk-tabs button[aria-selected="true"] { background: var(--cv-note-bg); color: var(--text); box-shadow: inset 0 -2px var(--accent); }
+  .cv-talk-tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .cv-talk-tabs .cv-ico { width: 17px; height: 17px; }
+  .cv-talk-count { font-size: 11px; color: var(--accent); }
+  .cv-talk-split { display: block; }
+  .cv-talk-chat, .cv-talk-preview { height: 100%; }
+  .cv-talk-split[data-tab="chat"] .cv-talk-preview,
+  .cv-talk-split[data-tab="paper"] .cv-talk-chat { display: none; }
+}
+@media (min-width: 768px) { .cv-talk-phoneonly { display: none !important; } }
+
+/* A phone: the app's own header stays above; a compact title bar and the tabs below it; no gutters. */
 @media (max-width: 767px) {
-  .cv-talk { padding: 14px 14px; }
-  .cv-msg { max-width: 100%; }
-  .cv-talk-log { max-height: none; }
-  .cv-talk-compose .cv-check { margin-left: 0; }
+  .cv-talk-page { margin: -24px -24px -24px; gap: 0; }
+  .cv-talk-desktopbar { display: none; }
+  .cv-talk-phonebar { display: flex; align-items: center; gap: 6px; min-height: 56px; padding: 0 8px 0 4px; background: var(--surface); border-bottom: 1px solid var(--border); }
+  .cv-talk-phonetitle { display: grid; min-width: 0; flex: 1; line-height: 1.25; }
+  .cv-talk-phonetitle b { font-size: 16px; font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cv-talk-phonetitle span { font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cv-talk-tabs { border-radius: 0; border-width: 0 0 1px; padding: 4px 12px; }
+  .cv-talk-chat, .cv-talk-preview { border: 0; border-radius: 0; }
+  .cv-talk-head { padding: 8px 12px; gap: 6px; }
+  .cv-talk-headrow { display: none; }
+  .cv-talk-step { font-size: 11px; gap: 8px; min-height: 24px; }
+  .cv-talk-thread { padding: 12px; }
+  .cv-talk-thread > ol { gap: 11px; }
+  .cv-talk-person { max-width: 92%; padding: 10px 12px; }
+  .cv-talk-reply { padding: 10px; gap: 8px; }
+  .cv-talk-change { padding: 8px; }
+  .cv-talk-question { padding: 10px 11px; }
+  .cv-talk-q { font-size: 14px; }
+  .cv-talk-hint { font-size: 12.5px; }
+  .cv-talk-composer { padding: 8px 12px max(8px, env(safe-area-inset-bottom)); gap: 7px; }
+  .cv-talk-voice { padding: 7px 8px; min-height: 62px; }
+  .cv-talk-inputrow textarea { font-size: 16px; min-height: 48px; padding: 12px 11px; }
+  .cv-talk-keyhint { display: none; }
+  .cv-talk-foot { justify-content: flex-end; }
+  .cv-talk-paper { padding: 10px 12px 18px; }
+  .cv-talk-previewhead { padding: 10px 12px; }
+  .cv-talk-previewhead h2 { font-size: 15px; }
+}
+@media (max-width: 639px) {
+  .cv-talk-page { margin: -16px -16px -16px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .cv-msg:last-child { animation: none; }
+  .cv-talk-meter i { transition: none; }
 }
+
+/* The New CV form: talking it through, shown first and a little larger. */
+.cv-choice-feature { padding-top: 16px; padding-bottom: 16px; }
+.cv-feature-top { display: flex; align-items: center; gap: 10px; }
+.cv-feature-mark { width: 38px; height: 38px; border-radius: 11px; background: var(--cv-note-bg); color: var(--accent); display: grid; place-items: center; flex: none; }
+.cv-feature-points { display: grid; gap: 6px; margin-top: 10px; padding-left: 48px; font-size: 13px; color: var(--text); }
+.cv-feature-points span { display: flex; align-items: center; gap: 8px; }
+.cv-feature-points span::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--success); flex: none; }
+@media (max-width: 767px) { .cv-feature-points { padding-left: 0; } }

@@ -104,7 +104,14 @@ export type Editable = Pick<CvDoc, "contact" | "sections" | "region" | "level"> 
 /** One change as the person is told about it, and where it is on the paper. */
 export interface Change {
   op: OpName;
+  /** The change as one sentence: for screen readers and for reading aloud. */
   say: string;
+  /** What kind of change, as the list of changes labels it: "Added", "Reworded", "Switched off", "Contact"… */
+  kind: string;
+  /** Where it is: the job ("Data Analyst, Acme Payroll"), the section, or the contact detail. */
+  where: string;
+  /** The exact words now on the CV (or, for a line switched off, the line). */
+  text: string;
   at: Locator;
 }
 
@@ -125,6 +132,9 @@ export interface Applied {
 }
 
 const CONTACT_WORDS: Record<ContactField, string> = { fullName: "name", email: "email address", phone: "phone number", location: "location" };
+/** "Data Analyst, Acme Payroll": where a line is, in the list of changes. */
+const roleOf = (e: Pick<Entry, "title" | "org">) => [e.title.trim(), e.org.trim()].filter(Boolean).join(", ") || "This entry";
+const CONTACT_LABELS: Record<ContactField, string> = { fullName: "Name", email: "Email", phone: "Phone", location: "Location" };
 const q = (s: string) => `“${s.length > 70 ? `${s.slice(0, 67)}…` : s}”`;
 
 /** Where an entry is: its section, and the entry itself. */
@@ -185,7 +195,7 @@ export function applyOps(cv: Editable, ops: Op[], opts: { spoken?: boolean } = {
           break;
         }
         contact = { ...contact, [op.field]: op.value };
-        changes.push({ op: op.op, say: `Set your ${CONTACT_WORDS[op.field]} to ${q(op.value)}`, at: { section: "contact", field: op.field } });
+        changes.push({ op: op.op, say: `Set your ${CONTACT_WORDS[op.field]} to ${q(op.value)}`, kind: "Contact", where: CONTACT_LABELS[op.field], text: op.value, at: { section: "contact", field: op.field } });
         break;
       }
       case "add_link": {
@@ -198,7 +208,7 @@ export function applyOps(cv: Editable, ops: Op[], opts: { spoken?: boolean } = {
           break;
         }
         contact = { ...contact, links: [...contact.links, op.value] };
-        changes.push({ op: op.op, say: `Added the link ${q(op.value)}`, at: { section: "contact", field: "links" } });
+        changes.push({ op: op.op, say: `Added the link ${q(op.value)}`, kind: "Contact", where: "Link", text: op.value, at: { section: "contact", field: "links" } });
         break;
       }
       case "set_target": {
@@ -207,12 +217,12 @@ export function applyOps(cv: Editable, ops: Op[], opts: { spoken?: boolean } = {
           break;
         }
         target = { title: op.title, employer: op.employer, advert: target?.advert ?? "" };
-        changes.push({ op: op.op, say: `Aimed this CV at ${q(entryName({ title: op.title, org: op.employer }))}`, at: { section: "contact" } });
+        changes.push({ op: op.op, say: `Aimed this CV at ${q(entryName({ title: op.title, org: op.employer }))}`, kind: "Target job", where: "", text: entryName({ title: op.title, org: op.employer }), at: { section: "contact" } });
         break;
       }
       case "set_advert": {
         target = { title: target?.title ?? "", employer: target?.employer ?? "", advert: op.text };
-        changes.push({ op: op.op, say: "Saved the job advert, to match your CV to it", at: { section: "contact" } });
+        changes.push({ op: op.op, say: "Saved the job advert, to match your CV to it", kind: "Job advert", where: "", text: "Saved, to match your CV to it", at: { section: "contact" } });
         break;
       }
       case "add_entry": {
@@ -235,7 +245,7 @@ export function applyOps(cv: Editable, ops: Op[], opts: { spoken?: boolean } = {
         entries.splice(at < 0 ? entries.length : at, 0, entry);
         sections = replaceSection(sections, { ...section, entries });
         refs[op.ref] = entry.id;
-        changes.push({ op: op.op, say: `Added ${q(entryName(entry))} to ${sectionHeading(section, cv.region)}`, at: { section: section.id, entry: entry.id, field: "title" } });
+        changes.push({ op: op.op, say: `Added ${q(entryName(entry))} to ${sectionHeading(section, cv.region)}`, kind: "Added", where: sectionHeading(section, cv.region), text: entryName(entry), at: { section: section.id, entry: entry.id, field: "title" } });
         break;
       }
       case "update_entry": {
@@ -253,7 +263,7 @@ export function applyOps(cv: Editable, ops: Op[], opts: { spoken?: boolean } = {
         const next: Entry = { ...found.entry, ...set };
         if (next.current) next.end = "";
         sections = replaceSection(sections, replaceEntry(found.section, next));
-        changes.push({ op: op.op, say: `Updated ${q(entryName(next))}`, at: { section: found.section.id, entry: next.id, field: Object.keys(set)[0] } });
+        changes.push({ op: op.op, say: `Updated ${q(entryName(next))}`, kind: "Updated", where: sectionHeading(found.section, cv.region), text: entryName(next), at: { section: found.section.id, entry: next.id, field: Object.keys(set)[0] } });
         break;
       }
       case "add_bullet": {
@@ -275,7 +285,7 @@ export function applyOps(cv: Editable, ops: Op[], opts: { spoken?: boolean } = {
         const verbatim = quotes.some((s) => tidyLine(s).replace(/^(?:I|We)\s+/i, "").toLowerCase() === line.toLowerCase());
         const bullet = newBullet(line, quotes.length && verbatim ? kind : "assisted", quotes.map((s) => ({ kind, text: s })));
         sections = replaceSection(sections, replaceEntry(found.section, { ...found.entry, bullets: [...found.entry.bullets, bullet] }));
-        changes.push({ op: op.op, say: `Added a line to ${entryName(found.entry)}: ${q(line)}`, at: { section: found.section.id, entry: found.entry.id, field: bullet.id } });
+        changes.push({ op: op.op, say: `Added a line to ${entryName(found.entry)}: ${q(line)}`, kind: "Added", where: roleOf(found.entry), text: line, at: { section: found.section.id, entry: found.entry.id, field: bullet.id } });
         break;
       }
       case "reword_bullet": {
@@ -292,7 +302,7 @@ export function applyOps(cv: Editable, ops: Op[], opts: { spoken?: boolean } = {
         // The line's sources stay: the new wording rests on the same words of the person's, and on what they just said.
         const next: Bullet = { ...found.bullet, text: line, origin: "assisted" };
         sections = replaceSection(sections, replaceEntry(found.section, { ...found.entry, bullets: found.entry.bullets.map((b) => (b.id === next.id ? next : b)) }));
-        changes.push({ op: op.op, say: `Reworded a line in ${entryName(found.entry)}: ${q(line)}`, at: { section: found.section.id, entry: found.entry.id, field: next.id } });
+        changes.push({ op: op.op, say: `Reworded a line in ${entryName(found.entry)}: ${q(line)}`, kind: "Reworded", where: roleOf(found.entry), text: line, at: { section: found.section.id, entry: found.entry.id, field: next.id } });
         break;
       }
       case "hide_bullet":
@@ -308,7 +318,7 @@ export function applyOps(cv: Editable, ops: Op[], opts: { spoken?: boolean } = {
           break;
         }
         sections = replaceSection(sections, replaceEntry(found.section, { ...found.entry, bullets: found.entry.bullets.map((b) => (b.id === op.bullet ? { ...b, visible } : b)) }));
-        changes.push({ op: op.op, say: visible ? `Switched a line back on: ${q(found.bullet.text)}` : `Switched off a line (it’s kept, and you can switch it back on): ${q(found.bullet.text)}`, at: { section: found.section.id, entry: found.entry.id, field: op.bullet } });
+        changes.push({ op: op.op, say: visible ? `Switched a line back on: ${q(found.bullet.text)}` : `Switched off a line (it’s kept, and you can switch it back on): ${q(found.bullet.text)}`, kind: visible ? "Switched on" : "Switched off", where: roleOf(found.entry), text: found.bullet.text, at: { section: found.section.id, entry: found.entry.id, field: op.bullet } });
         break;
       }
       case "move_bullet": {
@@ -320,7 +330,7 @@ export function applyOps(cv: Editable, ops: Op[], opts: { spoken?: boolean } = {
         const rest = found.entry.bullets.filter((b) => b.id !== op.bullet);
         const bullets = op.to === "top" ? [found.bullet, ...rest] : [...rest, found.bullet];
         sections = replaceSection(sections, replaceEntry(found.section, { ...found.entry, bullets }));
-        changes.push({ op: op.op, say: `Moved a line to the ${op.to} of ${entryName(found.entry)}: ${q(found.bullet.text)}`, at: { section: found.section.id, entry: found.entry.id, field: op.bullet } });
+        changes.push({ op: op.op, say: `Moved a line to the ${op.to} of ${entryName(found.entry)}: ${q(found.bullet.text)}`, kind: op.to === "top" ? "Moved to top" : "Moved to bottom", where: roleOf(found.entry), text: found.bullet.text, at: { section: found.section.id, entry: found.entry.id, field: op.bullet } });
         break;
       }
       case "add_skills": {
@@ -343,7 +353,7 @@ export function applyOps(cv: Editable, ops: Op[], opts: { spoken?: boolean } = {
         }
         groups[0] = { ...group, skills: [...group.skills, ...added.map((name) => ({ id: newId("k_"), name, visible: true }))] };
         sections = replaceSection(sections, { ...section, groups });
-        changes.push({ op: op.op, say: `Added ${added.length === 1 ? "a skill" : `${added.length} skills`}: ${added.join(", ")}`, at: { section: section.id } });
+        changes.push({ op: op.op, say: `Added ${added.length === 1 ? "a skill" : `${added.length} skills`}: ${added.join(", ")}`, kind: "Skills", where: "", text: added.join(", "), at: { section: section.id } });
         break;
       }
       case "set_profile": {
@@ -352,7 +362,7 @@ export function applyOps(cv: Editable, ops: Op[], opts: { spoken?: boolean } = {
         const section = got.section;
         if (section.kind !== "summary") break;
         sections = replaceSection(sections, { ...section, text: op.text, visible: true });
-        changes.push({ op: op.op, say: section.text.trim() ? "Rewrote your profile" : "Wrote your profile", at: { section: section.id } });
+        changes.push({ op: op.op, say: section.text.trim() ? "Rewrote your profile" : "Wrote your profile", kind: "Profile", where: "", text: op.text, at: { section: section.id } });
         break;
       }
       case "add_items": {
@@ -367,7 +377,7 @@ export function applyOps(cv: Editable, ops: Op[], opts: { spoken?: boolean } = {
           break;
         }
         sections = replaceSection(sections, { ...section, items: [...section.items, ...fresh.map((i) => ({ id: newId("i_"), name: i.name, level: i.level, visible: true }))] });
-        changes.push({ op: op.op, say: `Added to ${sectionHeading(section, cv.region)}: ${fresh.map((i) => (i.level ? `${i.name} (${i.level})` : i.name)).join(", ")}`, at: { section: section.id } });
+        changes.push({ op: op.op, say: `Added to ${sectionHeading(section, cv.region)}: ${fresh.map((i) => (i.level ? `${i.name} (${i.level})` : i.name)).join(", ")}`, kind: "Added", where: sectionHeading(section, cv.region), text: fresh.map((i) => (i.level ? `${i.name} (${i.level})` : i.name)).join(", "), at: { section: section.id } });
         break;
       }
     }

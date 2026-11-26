@@ -143,6 +143,9 @@ export function styleProblems(text: string, sources: string[]): string[] {
   return problems;
 }
 
+/** The message the plain-word tip's button sends: `Use “used” instead of “leveraged”`. */
+export const swapMessage = (plainer: string, word: string) => `Use “${plainer}” instead of “${word}”`;
+
 /** Plainer words for the ones that read as AI-written. Offered to the person as a choice; never swapped in for them. */
 const PLAINER: Record<string, string> = {
   spearhead: "led",

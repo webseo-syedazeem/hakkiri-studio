@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { type CvDoc, type EntrySection, coreSections, cvStrings, emptyContact, isEntrySection } from "../schema";
 import { type Editable, type Op, applyOps } from "./ops";
-import { nextStep, outline } from "./plan";
-import { looksLikeAdvert, rulesTurn } from "./rules";
-import { aiTells, plainerWords, styleProblems, tidyLine } from "./style";
+import { nextStep, outline, stageOf, stagesFor } from "./plan";
+import { looksLikeAdvert, rulesTurn, swapWord } from "./rules";
+import { aiTells, plainerWords, styleProblems, swapMessage, tidyLine } from "./style";
 import { runTurn, type Said } from "./turn";
 import { checkOps } from "./validate";
 
@@ -275,5 +275,40 @@ describe("the assistant without a model", () => {
     expect(reply.step).toMatch(/^role-did:/);
     expect(reply.ask).toContain("Data Analyst at Acme Payroll");
     expect(isEntrySection(cv.sections[1])).toBe(true);
+  });
+});
+
+describe("the plain-word tip", () => {
+  it("offers a plainer word for one the person used, and swaps it only when they choose", async () => {
+    const start = blank();
+    const { cv, replies } = await talk(["skip", "My name is Sam Okafor", "I work as a data analyst at Acme Payroll since 2021.", "I leveraged Python to automate the payroll checks."], start);
+    const last = replies[replies.length - 1];
+    expect(last.tips).toEqual([{ word: "Leveraged", plainer: "used" }]);
+    expect(experience(cv).entries[0].bullets.map((b) => b.text)).toEqual(["Leveraged Python to automate the payroll checks"]);
+    // The button sends this message; the swap is made by rule and checked like any other rewording.
+    const reply = await runTurn({ cv, hidden: new Set(), message: swapMessage("used", "Leveraged"), words: ["I leveraged Python to automate the payroll checks."], history: [], spoken: false, skipped: ["target"], now: NOW });
+    expect(reply.ops).toEqual([{ op: "reword_bullet", bullet: experience(cv).entries[0].bullets[0].id, text: "Used Python to automate the payroll checks" }]);
+    expect(applyOps(cv, reply.ops).changes[0]).toMatchObject({ kind: "Reworded", where: "Data Analyst, Acme Payroll", text: "Used Python to automate the payroll checks" });
+  });
+
+  it("swaps only the word asked for, keeping each line's capital letter", () => {
+    const cv = blank();
+    const a = applyOps(cv, [
+      { op: "add_entry", ref: "new1", section: "experience", title: "Analyst", org: "Acme", location: "", start: "", end: "", current: false, subject: "", grade: "" },
+      { op: "add_bullet", entry: "new1", text: "Leveraged SQL to find errors", quotes: [] },
+      { op: "add_bullet", entry: "new1", text: "Built reports and leveraged them in reviews", quotes: [] },
+      { op: "add_bullet", entry: "new1", text: "Ran the rota", quotes: [] },
+    ]);
+    const ops = swapWord({ ...cv, sections: a.sections }, "Use “used” instead of “leveraged”");
+    expect(ops?.map((o) => (o.op === "reword_bullet" ? o.text : ""))).toEqual(["Used SQL to find errors", "Built reports and used them in reviews"]);
+    expect(swapWord(cv, "I used SQL every day")).toBeNull();
+  });
+});
+
+describe("the step indicator", () => {
+  it("counts only the stages that apply", () => {
+    expect(stagesFor(blank()).map((s) => s.key)).toEqual(["target", "contact", "work", "education", "skills", "profile"]);
+    expect(stagesFor({ ...blank("student"), target: { title: "Analyst", employer: "", advert: "An advert" } }).map((s) => s.key)).toEqual(["target", "contact", "education", "work", "skills", "advert", "profile"]);
+    expect(["target", "name", "contact", "first-role", "role-did:e_1", "more-roles", "education", "skills", "advert:python", "profile", "done"].map(stageOf)).toEqual(["target", "contact", "contact", "work", "work", "work", "education", "skills", "advert", "profile", "done"]);
   });
 });

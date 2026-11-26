@@ -208,6 +208,28 @@ export function Setup() {
 
           <Panel title="How do you want to start?">
             <div className="cv-pad cv-stack">
+              <label className="cv-choice cv-choice-feature">
+                <input type="radio" name="method" checked={method === "talk"} onChange={() => setMethod("talk")} data-testid="method-talk" />
+                <span>
+                  <span className="cv-feature-top">
+                    <span className="cv-feature-mark" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" className="cv-ico">
+                        <path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3ZM5 10v1a7 7 0 0 0 14 0v-1M12 18v4m-4 0h8" />
+                      </svg>
+                    </span>
+                    <span>
+                      <b style={{ display: "block", fontWeight: 600 }}>Talk it through with the CV assistant</b>
+                      <small>Build your CV by answering one question at a time.</small>
+                    </span>
+                  </span>
+                  <span className="cv-feature-points">
+                    <span>Speak or type your answers</span>
+                    <span>See your CV take shape as you go</span>
+                    <span>Nothing invented. Undo any change.</span>
+                  </span>
+                </span>
+              </label>
+
               <label className="cv-choice">
                 <input type="radio" name="method" checked={method === "example"} onChange={() => setMethod("example")} />
                 <span>
@@ -441,17 +463,6 @@ export function Setup() {
                 <span>
                   <b style={{ display: "block", fontWeight: 600 }}>Upload a CV</b>
                   <small>We read your CV into sections and you check each one before it is used.</small>
-                </span>
-              </label>
-
-              <label className="cv-choice">
-                <input type="radio" name="method" checked={method === "talk"} onChange={() => setMethod("talk")} data-testid="method-talk" />
-                <span>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <b style={{ display: "block", fontWeight: 600 }}>Talk it through with the CV assistant</b>
-                    <span className="cv-chip">Chat or speak</span>
-                  </div>
-                  <small>Tell it about your work, typed or spoken. It writes your CV beside you as you go, in plain words that screening software and recruiters read well, and asks for a number rather than guessing one.</small>
                 </span>
               </label>
 

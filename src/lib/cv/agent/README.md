@@ -38,7 +38,7 @@ save path as typing in the form, so revision checks, conflict handling, autosave
 | `turn.ts` | `runTurn`: one turn end to end, and the prompt. Server only. |
 | `agent.test.ts`, `api.test.ts` | Unit and route tests (`npx vitest run src/lib/cv/agent`). |
 | `src/app/api/cv/versions/[id]/talk/route.ts` | The route: signed in, owner only, counted against the AI limit (`guard(req, "ai")`). |
-| `src/components/cv/Talk.tsx` | The screen: conversation, live paper, Undo per reply, "Read replies aloud". |
+| `src/components/cv/Talk.tsx` | The screen, from the design handoff made with ChatGPT: conversation and page side by side (tabs below 1100px), each scrolling on its own, the message box and microphone always at the bottom; each reply's changes as rows (type, where, exact words) that mark the passage on the page; "Left out" and plain-word tips (Use / Keep mine: a word is never swapped unasked); Undo per reply; a "Next question" card; the step indicator (`stagesFor` / `stageOf` in `plan.ts`). Styles: the "Talk it through" block in `cv.css`. |
 | `src/components/cv/useHandsFree.ts` | Hands-free speech: the microphone stays on, each phrase is cut on a pause and sent to `/api/cv/transcribe` (Deepgram) while the person keeps talking. |
 | `e2e/cv-talk.cjs` | Browser test: builds a CV by conversation in test mode. |
 

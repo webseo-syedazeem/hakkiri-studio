@@ -17,8 +17,8 @@ const settled = (page) => page.waitForTimeout(600);
 /** Types a message and waits for the reply and for its edits to be saved. */
 async function send(page, text) {
   const before = await replies(page).count();
-  await page.getByLabel("Your message").fill(text);
-  await page.getByLabel("Your message").press("Enter");
+  await page.getByLabel("Your answer").fill(text);
+  await page.getByLabel("Your answer").press("Enter");
   await replies(page).nth(before).waitFor({ timeout: 30000 });
   await saved(page);
   return lastReply(page);
@@ -46,7 +46,8 @@ run("CV assistant", async (browser) => {
   const id = idOf(page);
   await replies(page).first().waitFor();
   check(/What job are you going for\?/.test(await lastReply(page)), "the assistant opens by asking what job the CV is for");
-  check(/I’ll ask for a number or a detail rather than guess one/.test(await lastReply(page)), "it says up front that it asks rather than guesses");
+  check(/I ask for a number rather than guess one/.test(await lastReply(page)), "it says up front that it asks rather than guesses");
+  check(await page.getByLabel("Your answer").isVisible() && (await page.getByTestId("talk-mic").isVisible()), "the message box and the microphone are on screen from the start");
   await page.getByText(/Test mode: lines are made from your own sentences/).waitFor();
   check(true, "in test mode it says the lines are made by rule from the person's own sentences");
   await noForbidden(page, "talk (start)");
@@ -55,17 +56,20 @@ run("CV assistant", async (browser) => {
 
   /* --------------------------------------------------- a CV, one reply at a time */
   let said = await send(page, SAID[0]);
-  check(said.includes("Aimed this CV at “Data Analyst at Monzo”"), "the target job is set from what was said, and the reply lists the change", said);
+  check(said.includes("1 change made") && said.includes("Target job Data Analyst at Monzo"), "the target job is set from what was said, and the reply lists the change", said);
   said = await send(page, SAID[1]);
-  check(said.includes("Set your name to “Sam Okafor”") && said.includes("sam.okafor@example.com") && said.includes("07700 900123") && said.includes("Leeds"), "name, email, phone and town are set from one message", said);
+  check(said.includes("4 changes made") && said.includes("Contact · Name Sam Okafor") && said.includes("Contact · Email sam.okafor@example.com") && said.includes("Contact · Phone 07700 900123") && said.includes("Contact · Location Leeds"), "name, email, phone and town are set from one message, each listed", said);
   await onPaper(page, "Sam Okafor").waitFor({ timeout: 15000 });
   check(true, "the name is on the paper as soon as it is said");
   said = await send(page, SAID[2]);
-  check(said.includes("Added “Data Analyst at Acme Payroll”"), "the job is added from a sentence about it", said);
+  check(said.includes("Added · Experience Data Analyst at Acme Payroll"), "the job is added from a sentence about it", said);
   check(/What did you do as Data Analyst at Acme Payroll\?/.test(said), "and the next question is about that job", said);
   said = await send(page, SAID[3]);
   await onPaper(page, "Built the SQL checks").waitFor({ timeout: 15000 });
-  check(said.includes("Added a line to Data Analyst at Acme Payroll"), "each sentence about the job becomes a line under it, listed in the reply", said);
+  check(said.includes("Added · Data Analyst, Acme Payroll Built the SQL checks that catch payroll errors before pay day"), "each sentence about the job becomes a line under it, listed in the reply", said);
+  // A change in the list shows where it is on the page.
+  await replies(page).last().getByRole("button", { name: /Built the SQL checks/ }).click();
+  check((await replies(page).last().getByRole("button", { name: /Built the SQL checks/ }).getAttribute("aria-current")) === "true", "choosing a change marks it as the one shown on the page");
 
   let cv = await getCv(page, id);
   const role = experience(cv).entries[0];
@@ -86,6 +90,18 @@ run("CV assistant", async (browser) => {
   said = await send(page, SAID[3]);
   cv = await getCv(page, id);
   check(experience(cv).entries[0].bullets.length === 2, "saying it again puts the lines back");
+
+  /* ------------------------------------------------- the plain-word tip */
+  said = await send(page, "I leveraged Python to automate the payroll checks.");
+  check(said.includes("Plain-word tip") && said.includes("You said “Leveraged”"), "a word that reads as AI-written, said by the person, gets a tip", said);
+  cv = await getCv(page, id);
+  check(experience(cv).entries[0].bullets.some((b) => b.text === "Leveraged Python to automate the payroll checks"), "and their own word stays until they choose");
+  await replies(page).last().getByRole("button", { name: "Use “used”" }).click();
+  await page.getByTestId("msg-you").filter({ hasText: "Use “used” instead of “Leveraged”" }).waitFor();
+  await page.getByText("Reworded · Data Analyst, Acme Payroll").waitFor({ timeout: 30000 });
+  await saved(page);
+  cv = await getCv(page, id);
+  check(experience(cv).entries[0].bullets.some((b) => b.text === "Used Python to automate the payroll checks"), "“Use” swaps the word, as a message the person can see, and it is saved", JSON.stringify(experience(cv).entries[0].bullets.map((b) => b.text)));
 
   /* ------------------------------------------------- passing on a question */
   said = await send(page, "no more jobs");
@@ -118,10 +134,11 @@ run("CV assistant", async (browser) => {
   await page.goto(`${BASE}/cv/v/${id}/talk`);
   await replies(page).first().waitFor();
   await fitsWidth(page, "talk on a phone");
-  await page.getByRole("group", { name: "Show" }).getByRole("button", { name: "Paper" }).click();
+  check(await page.getByLabel("Your answer").isVisible(), "on a phone the message box is on screen without scrolling");
+  await page.getByRole("tablist", { name: "Show" }).getByRole("tab", { name: /Paper/ }).click();
   await onPaper(page, "Sam Okafor").waitFor({ timeout: 15000 });
   check(true, "on a phone the paper is one tap away");
-  await page.getByRole("group", { name: "Show" }).getByRole("button", { name: "Chat" }).click();
+  await page.getByRole("tablist", { name: "Show" }).getByRole("tab", { name: /Chat/ }).click();
   await settled(page);
   await a11y(page, "talk on a phone");
 

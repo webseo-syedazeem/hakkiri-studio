@@ -112,3 +112,39 @@ export function outline(cv: Pick<CvDoc, "contact" | "sections" | "target" | "reg
   }
   return out.join("\n");
 }
+
+/* ------------------------------------------------------------------ stages */
+
+export interface Stage {
+  key: "target" | "contact" | "work" | "education" | "skills" | "advert" | "profile";
+  name: string;
+}
+
+/**
+ * The stages of the conversation, for "Step 3 of 7". Only those that apply: what a job advert asks
+ * for is a stage only once there is an advert, and a student is asked about study before work.
+ */
+export function stagesFor(cv: Pick<CvDoc, "level" | "target">): Stage[] {
+  const work: Stage = { key: "work", name: "Work experience" };
+  const study: Stage = { key: "education", name: "Education" };
+  return [
+    { key: "target", name: "Target job" },
+    { key: "contact", name: "Contact details" },
+    ...(cv.level === "student" ? [study, work] : [work, study]),
+    { key: "skills", name: "Skills" },
+    ...(cv.target?.advert ? [{ key: "advert", name: "What the job asks for" } as Stage] : []),
+    { key: "profile", name: "Profile" },
+  ];
+}
+
+/** Where a question sits among the stages. "done" once every stage is covered. */
+export function stageOf(step: string): Stage["key"] | "done" {
+  if (step === "target") return "target";
+  if (step === "name" || step === "contact") return "contact";
+  if (step === "education") return "education";
+  if (step === "skills") return "skills";
+  if (step === "profile") return "profile";
+  if (step.startsWith("advert:")) return "advert";
+  if (step === "done") return "done";
+  return "work";
+}

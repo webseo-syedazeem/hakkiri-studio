@@ -7,7 +7,7 @@ import { writingMode } from "../write/assist";
 import { oneLine } from "../write/facts";
 import { type Editable, type Op, applyOps, describeOp, findBullet, parseOps } from "./ops";
 import { PASSING, type StepKey, nextStep, outline } from "./plan";
-import { looksLikeAdvert, rulesTurn } from "./rules";
+import { looksLikeAdvert, rulesTurn, swapWord } from "./rules";
 import { aiTells, plainerWords, tidyProse } from "./style";
 import { type Checked, checkOps, problemsFor } from "./validate";
 
@@ -43,6 +43,12 @@ export interface TurnInput {
   now: Date;
 }
 
+/** A word the person used that reads as AI-written, and a plainer one they may choose instead. */
+export interface Tip {
+  word: string;
+  plainer: string;
+}
+
 export interface Left {
   what: string;
   why: string;
@@ -57,7 +63,7 @@ export interface TurnResult {
   /** Edits that were proposed and left out, with why. */
   left: Left[];
   /** Plainer words for AI-sounding ones the person used themselves. Suggestions only. */
-  tips: string[];
+  tips: Tip[];
   about?: string;
   step: StepKey;
   skipped: string[];
@@ -200,8 +206,13 @@ export async function runTurn(input: TurnInput): Promise<TurnResult> {
   let checked: Checked;
 
   const mode = writingMode();
-  const fromModel = mode === "ai" && !PASSING.test(input.message) ? await modelTurn(input, words, before, pre) : null;
-  if (fromModel) {
+  // The plain-word tip's button asks for one exact swap: it is made by rule, in every mode, and checked like any other edit.
+  const swap = swapWord(cv, input.message);
+  const fromModel = mode === "ai" && !swap && !PASSING.test(input.message) ? await modelTurn(input, words, before, pre) : null;
+  if (swap) {
+    checked = checkOps(cv, swap, ctx);
+    if (!swap.length) say = "I couldn’t find that word on your CV.";
+  } else if (fromModel) {
     by = "ai";
     checked = fromModel.checked;
     const left = checked.left.map((l) => ({ what: describeOp(l.op), why: l.why }));
@@ -236,7 +247,7 @@ export async function runTurn(input: TurnInput): Promise<TurnResult> {
 
   // Words the person used themselves that read as AI-written: a plainer word is offered, never swapped in.
   const theirs = checked.ops.flatMap((o) => (o.op === "add_bullet" || o.op === "reword_bullet" ? [o.text] : []));
-  const tips = [...new Map(theirs.flatMap(plainerWords).map((t) => [t.word.toLowerCase(), `You said “${t.word}”. Screeners and recruiters read plain words better: “${t.plainer}” may say the same. Say “use ${t.plainer}” if you want it changed.`])).values()].slice(0, 2);
+  const tips: Tip[] = [...new Map(theirs.flatMap(plainerWords).map((t) => [t.word.toLowerCase(), t])).values()].slice(0, 2);
 
   return { by, say: oneLine(say).slice(0, 1200), ask: oneLine(question).slice(0, 600), ops: checked.ops, left: left.slice(0, 6), tips, about, step: step.key, skipped, note };
 }

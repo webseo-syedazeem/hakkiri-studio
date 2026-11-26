@@ -56,6 +56,32 @@ function datesIn(s: string): { start?: string; end?: string; current?: boolean }
   return {};
 }
 
+const SWAP = /^\s*use\s+["“'‘]?([\p{L}][\p{L}'’-]*)["”'’]?\s+instead\s+of\s+["“'‘]?([\p{L}][\p{L}'’-]*)["”'’]?[.!]?\s*$/iu;
+
+/**
+ * "Use “used” instead of “leveraged”": the one word swapped in every line that has it, keeping each
+ * line's capital letter. Null when the message isn't asking for a swap. The swap is still checked like
+ * any other rewording: it may not bring in anything the person hasn't said.
+ */
+export function swapWord(cv: Editable, message: string): Op[] | null {
+  const m = SWAP.exec(message);
+  if (!m) return null;
+  const [, to, from] = m;
+  const find = new RegExp(`(?<![\\p{L}-])${from.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?![\\p{L}-])`, "giu");
+  const ops: Op[] = [];
+  for (const s of cv.sections) {
+    if (!("entries" in s)) continue;
+    for (const e of s.entries)
+      for (const b of e.bullets) {
+        if (!b.visible || !find.test(b.text)) continue;
+        find.lastIndex = 0;
+        const text = b.text.replace(find, (w) => (w[0] === w[0].toUpperCase() ? to.charAt(0).toUpperCase() + to.slice(1) : to.toLowerCase()));
+        ops.push({ op: "reword_bullet", bullet: b.id, text });
+      }
+  }
+  return ops;
+}
+
 export interface RulesTurn {
   ops: Op[];
   /** The entry the person is now talking about: an id, or "new1" for one added this turn. */
