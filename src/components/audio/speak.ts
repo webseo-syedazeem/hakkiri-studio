@@ -115,9 +115,9 @@ function getBestBrowserVoice(voiceType?: VoiceName): SpeechSynthesisVoice | null
   const isFemale = voiceType !== "hard";
 
   const isExplicitMale = (name: string) =>
-    /male|david|george|mark|ryan|daniel|oliver|guy|richard|james|arthur|zeus|helios/i.test(name);
+    /male|david|george|mark|ryan|daniel|oliver|guy|richard|james|arthur|zeus|helios|sam|ben|tom|dan|mike|dave|matt|chris|alex|john|william/i.test(name);
   const isExplicitFemale = (name: string) =>
-    /female|woman|sarah|sonia|serena|stephanie|hazel|susan|zira|samantha|karen|victoria|fiona|moira|tessa|jenny/i.test(name);
+    /female|woman|sarah|sonia|serena|stephanie|hazel|susan|zira|samantha|karen|victoria|fiona|moira|tessa|jenny|athena|emma/i.test(name);
 
   // Filter out opposing gender completely
   const candidates = voices.filter((v) => {

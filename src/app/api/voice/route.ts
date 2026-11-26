@@ -52,7 +52,7 @@ export async function POST(req: Request) {
   const voiceId = elevenKey ? VOICES[voice].id : DEEPGRAM_VOICES[voice].id;
   const model = elevenKey ? ELEVENLABS_MODEL : "aura";
 
-  const hash = createHash("sha256").update(`${provider}|${voiceId}|${model}|v5_female_athena_natural|${text}`).digest("hex").slice(0, 32);
+  const hash = createHash("sha256").update(`${provider}|${voiceId}|${model}|v6_interviewer_gender_fixed|${text}`).digest("hex").slice(0, 32);
   const headers = { "content-type": "audio/mpeg", "cache-control": "private, max-age=86400" };
   const inMem = memVoiceCache.get(hash);
   if (inMem) return new Response(new Uint8Array(inMem), { headers });

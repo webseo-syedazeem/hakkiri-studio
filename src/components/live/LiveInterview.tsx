@@ -123,6 +123,21 @@ const SKIP_TO_WRONG: Record<SkipReason, WrongReason> = { "not-relevant": "wrong-
 
 const TOUGHER: Record<InterviewerStyle, InterviewerStyle> = { friendly: "realistic", realistic: "tough", tough: "tough" };
 
+/** The interviewer's voice: consistent female persona (Sarah/Athena) by default, or steady male persona (Daniel/Helios) if explicitly male (e.g. Sam, Ben, Daniel). */
+export const isExplicitlyMale = (n: string): boolean => {
+  const s = (n || "").toLowerCase().trim();
+  if (/\b(sarah|sister|samantha|emma|olivia|sophia|isabella|charlotte|amelia|harper|evelyn|claire|rachel|hannah|lucy|laura|alice|helen|grace|chloe|victoria|rebecca|zoe|jenny|jessica|emily|karen|susan|stephanie|serena|sonia|hazel|dana|maya|kate|katie|anna|lisa|ms|mrs|miss)\b/i.test(s)) {
+    return false;
+  }
+  return /\b(sam|ben|daniel|david|george|james|michael|john|robert|william|richard|thomas|charles|mark|paul|peter|simon|chris|jack|harry|oliver|liam|noah|lucas|ethan|mason|logan|jacob|aidan|helios|alex|andrew|arthur|henry|edward|ryan|nathan|matthew|luke|anthony|frank|joseph|stephen|brian|alan|gary|kevin|colin|neil|ian|trevor|graham|keith|adam|joshua|tom|dan|mike|dave|rob|will|rich|matt|steve|mr|sir|guy|man|male)\b/i.test(s);
+};
+
+export const resolveInterviewerVoice = (n: string, s?: InterviewerStyle): VoiceName => {
+  // "hard" is the male persona (Daniel in ElevenLabs, Helios in Deepgram)
+  if (isExplicitlyMale(n)) return "hard";
+  return s === "friendly" ? "easy" : "medium";
+};
+
 /**
  * The live interview (design screens 4 and 5).
  * Start → the interviewer asks the question out loud → the mic opens → you
@@ -183,15 +198,6 @@ export function LiveInterview(p: LiveInterviewProps) {
         setSwitchingDifficulty(false);
       }
     }
-  };
-  /** The interviewer's voice: consistent female persona (Sarah) by default, or steady male persona (Daniel) if explicitly male. */
-  const isExplicitlyMale = (n: string) => {
-    const s = (n || "").toLowerCase();
-    return s.includes("daniel") || s.includes("george") || s.includes("david") || s.includes("james") || s.includes("michael") || s.includes("john") || s.includes("robert") || s.includes("william") || s.includes("richard") || s.includes("thomas") || s.includes("charles") || s.includes("mark");
-  };
-  const resolveInterviewerVoice = (n: string, s: InterviewerStyle): VoiceName => {
-    if (isExplicitlyMale(n)) return s === "friendly" ? "easy" : "hard";
-    return "medium";
   };
   const voiceName = useRef<VoiceName>(resolveInterviewerVoice(p.interviewer.name, p.interviewer.style));
   useEffect(() => {
