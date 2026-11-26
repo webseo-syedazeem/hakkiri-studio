@@ -120,17 +120,23 @@ export function agenda(interviews: HomeInterview[], presentations: HomePresentat
   for (const iv of interviews) {
     if (iv.isDemo) continue;
     const title = iv.role || "Interview";
-    let staged = false;
+    const hasStages = (iv.stages ?? []).length > 0;
+    let anyStageScheduled = false;
+    let anyStageUpcoming = false;
     (iv.stages ?? []).forEach((st, i) => {
       if (st.status === "completed") return;
+      anyStageUpcoming = true;
       const when = whenOf(st.date, st.time, today);
       if (!when) return;
-      staged = true;
+      anyStageScheduled = true;
       push({ id: `${iv.id}:stage-${i + 1}`, type: "interview", day: when.day, time: when.time, title, subtitle: [iv.company, st.name].filter(Boolean).join(" · "), href: `/interviews/${iv.id}`, actionLabel: "Prepare" });
     });
-    if (!staged) {
-      const when = whenOf(iv.date, undefined, today);
-      if (when) push({ id: iv.id, type: "interview", day: when.day, time: when.time, title, subtitle: iv.company, href: `/interviews/${iv.id}`, actionLabel: "Prepare" });
+    if (!anyStageScheduled && (!hasStages || anyStageUpcoming)) {
+      const allCompleted = hasStages && !anyStageUpcoming;
+      if (!allCompleted) {
+        const when = whenOf(iv.date, undefined, today);
+        if (when) push({ id: iv.id, type: "interview", day: when.day, time: when.time, title, subtitle: iv.company, href: `/interviews/${iv.id}`, actionLabel: "Prepare" });
+      }
     }
   }
   for (const p of presentations) {

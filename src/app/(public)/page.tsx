@@ -51,8 +51,9 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default async function LandingPage() {
+export default async function LandingPage({ searchParams }: { searchParams?: Promise<{ deleted?: string }> }) {
   const content = await getHomepageContentAsync();
+  const deleted = (await searchParams)?.deleted === "1";
 
   const faqSchemaItems = [
     {
@@ -189,6 +190,12 @@ export default async function LandingPage() {
           }),
         }}
       />
+
+      {deleted && (
+        <div role="status" className="bg-emerald-950/80 border-b border-emerald-500/40 px-4 py-3 text-center text-sm font-semibold text-emerald-300">
+          Your account and data have been deleted.
+        </div>
+      )}
 
       <LandingHero content={content} />
       <LandingLiveSection />

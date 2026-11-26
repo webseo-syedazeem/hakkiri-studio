@@ -260,10 +260,10 @@ export default async function SettingsPage() {
         <div className="flex flex-col gap-5">
           <Section
             id="usage"
-            title={showCosts ? "Usage" : "Your practice"}
+            title="Plan and usage"
             intro={
               beta
-                ? "How much of this month’s beta allowance you’ve used. It resets on the 1st; hours count only while you practise."
+                ? "Your current plan is Free Beta. How much of this month’s allowance you’ve used. It resets on the 1st; minutes count only while you practise."
                 : showCosts
                   ? "What Hakkiri has used today and this month, against the limits set in the environment."
                   : "How long you’ve practised. There’s a limit so the service stays quick for everyone."

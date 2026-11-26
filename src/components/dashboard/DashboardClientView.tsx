@@ -95,12 +95,13 @@ export function DashboardClientView({
 
   /** The person recorded that an application ended. The archive entry holds only what they entered. */
   const handleArchive = (ended: ArchiveRequest) => {
+    const outcome = ended.outcome || "Unsuccessful";
     const item: ArchivedItem = {
       id: `archived-${ended.interviewId}-${Date.now()}`,
       interviewId: ended.interviewId,
       role: ended.role,
       company: ended.company,
-      outcome: "Unsuccessful",
+      outcome: outcome === "Offer" ? "Offer" : outcome === "Withdrew" ? "Withdrew" : "Unsuccessful",
       stageReached: ended.stageReached,
       date: new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }),
       feedbackNotes: ended.notes,
@@ -109,6 +110,11 @@ export function DashboardClientView({
     setArchivedItems(updated);
     saveArchivedItems(updated);
     setJustArchived(item);
+    void fetch(`/api/interviews/${ended.interviewId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ outcome: outcome.toLowerCase(), archivedAt: new Date().toISOString() }),
+    }).catch(() => {});
   };
 
   const handleRestore = (id: string) => {

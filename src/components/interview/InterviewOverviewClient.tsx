@@ -6,6 +6,7 @@ import clsx from "clsx";
 import { Icon, Panel } from "@/components/ui";
 import { Segmented } from "@/components/ui/Segmented";
 import { formatStageDate } from "@/lib/format";
+import { DeleteInterview } from "./DeleteInterview";
 import {
   DIFFICULTY_HINT,
   DIFFICULTY_LABEL,
@@ -494,6 +495,8 @@ export function InterviewOverviewClient({
               <Icon name="play" size={13} className="group-hover:translate-x-0.5 transition-transform duration-200" />
               <span>Practise interview</span>
             </StartButton>
+
+            <DeleteInterview id={interviewId} company={companyName} kind="interview" />
           </div>
         </div>
 

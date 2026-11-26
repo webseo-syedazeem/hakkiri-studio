@@ -78,19 +78,22 @@ export async function readForm(req: Request, max: number, message = "That couldn
   if (Number.isFinite(declared) && declared > max) return { ok: false, response: tooLarge() };
   if (!req.body) return bad();
   let size = 0;
-  const counted = req.body.pipeThrough(
-    new TransformStream<Uint8Array, Uint8Array>({
-      transform(chunk, controller) {
-        size += chunk.byteLength;
-        if (size > max) controller.error(new Error("too large"));
-        else controller.enqueue(chunk);
-      },
-    }),
-  );
+  const chunks: Uint8Array[] = [];
+  const reader = req.body.getReader();
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    size += value.byteLength;
+    if (size > max) {
+      return { ok: false, response: tooLarge() };
+    }
+    chunks.push(value);
+  }
   try {
-    const form = await new Response(counted, { headers: { "content-type": req.headers.get("content-type") ?? "" } }).formData();
+    const buffer = Buffer.concat(chunks);
+    const form = await new Response(buffer, { headers: { "content-type": req.headers.get("content-type") ?? "" } }).formData();
     return { ok: true, data: form };
   } catch {
-    return size > max ? { ok: false, response: tooLarge() } : bad();
+    return bad();
   }
 }
