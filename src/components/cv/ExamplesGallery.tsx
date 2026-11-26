@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { EXAMPLE_TEMPLATES, type ExampleTemplate } from "@/lib/cv/templates/examples";
-import { api, messageOf } from "./client";
+import { api, messageOf, ApiError } from "./client";
 import { Bar, Btn, BtnLink, CvScreen, Panel, Toolbar } from "./ui";
 
 export function ExamplesGallery() {
@@ -30,6 +30,10 @@ export function ExamplesGallery() {
       });
       router.push(`/cv/v/${res.id}/edit/contact`);
     } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        router.push("/login?next=/cv/examples");
+        return;
+      }
       setError(messageOf(err));
       setBusyId(null);
     }

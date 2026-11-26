@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { badInput, failure, requireUserId } from "@/lib/cv/access";
 import { EXAMPLE_TEMPLATES, instantiateTemplate } from "@/lib/cv/templates/examples";
 import { atCvLimit, saveCv, TOO_MANY_CVS } from "@/lib/cv/store";
@@ -36,6 +37,10 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ id: saved.id, name: saved.name }, { status: 201 });
   } catch (err) {
+    if (err instanceof z.ZodError) {
+      console.error("[api/cv/templates POST] Schema validation error:", err.format());
+      return badInput(`Template validation failed: ${err.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join(", ")}`);
+    }
     return failure("api/cv/templates POST", err, "Failed to create CV from template.");
   }
 }
