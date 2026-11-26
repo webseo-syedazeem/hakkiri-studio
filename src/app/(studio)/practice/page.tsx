@@ -50,8 +50,9 @@ export default async function PracticeHubPage({ searchParams }: { searchParams: 
     };
   });
 
-  // The interview named in the address; otherwise the person's own soonest, and a demo only when they have none.
-  const chosen = interviews.find((i) => i.id === wantedId) ?? interviews.find((i) => !i.isDemo) ?? interviews[0];
+  // The interview named in the address; otherwise the person's own soonest, and empty state if they have none.
+  const ownInterviews = interviews.filter((i) => !i.isDemo);
+  const chosen = interviews.find((i) => i.id === wantedId) ?? ownInterviews[0];
   const own = listPresentations(user.id).find((p) => !isDemoPresentation(p.id) && p.userId === user.id);
 
   return (

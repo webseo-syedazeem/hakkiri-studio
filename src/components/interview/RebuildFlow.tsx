@@ -12,50 +12,58 @@ import { CATEGORY_ORDER, categoryLabel, type SessionSettings } from "@/lib/inter
 
 type Rethought = { before: RoleUnderstanding; after: RoleUnderstanding; rules: string[]; by: "model" | "rules"; attempt: number };
 
-const FOCUS_OPTIONS = [
-  {
-    key: "strengths-competency",
-    label: "Strengths & Competency (STAR)",
-    badge: "Civil Service / HMRC",
-    description: "STAR behavioural competencies + spontaneous strengths questions",
-    mix: { competency: 40, technical: 20, curveball: 20, motivation: 20, cv: 0 },
-  },
-  {
-    key: "balanced",
-    label: "Balanced (All areas)",
-    badge: undefined,
-    description: "Even coverage across Experience, Skills, Technical, Motivation & Situational",
-    mix: { cv: 20, competency: 20, technical: 20, motivation: 20, curveball: 20 },
-  },
-  {
-    key: "strengths",
-    label: "Strengths focus",
-    badge: undefined,
-    description: "Focus on spontaneous strengths, values, motivation and pressure reactions",
-    mix: { curveball: 80, competency: 20, cv: 0, technical: 0, motivation: 0 },
-  },
-  {
-    key: "competency",
-    label: "Competency focus (STAR)",
-    badge: undefined,
-    description: "Deep dive on structured behavioural examples and delivering outcomes",
-    mix: { competency: 80, curveball: 20, cv: 0, technical: 0, motivation: 0 },
-  },
-  {
-    key: "technical",
-    label: "Role Knowledge & Technical",
-    badge: undefined,
-    description: "GDS standards, delivery methods, WCAG accessibility and technical execution",
-    mix: { technical: 60, competency: 20, motivation: 20, cv: 0, curveball: 0 },
-  },
-  {
-    key: "motivation",
-    label: "Motivation & Why HMRC",
-    badge: undefined,
-    description: "Public service motivation, why this role and organisation",
-    mix: { motivation: 60, cv: 20, competency: 20, technical: 0, curveball: 0 },
-  },
-];
+function getFocusOptions(company: string, isPublicSector: boolean) {
+  return [
+    {
+      key: "strengths-competency",
+      label: "Strengths & Competency (STAR)",
+      badge: isPublicSector ? "Civil Service / HMRC" : undefined,
+      description: isPublicSector
+        ? "STAR behavioural competencies + spontaneous strengths questions"
+        : "STAR behavioural competencies + structured behavioural questions",
+      mix: { competency: 40, technical: 20, curveball: 20, motivation: 20, cv: 0 },
+    },
+    {
+      key: "balanced",
+      label: "Balanced (All areas)",
+      badge: undefined,
+      description: "Even coverage across Experience, Skills, Technical, Motivation & Situational",
+      mix: { cv: 20, competency: 20, technical: 20, motivation: 20, curveball: 20 },
+    },
+    {
+      key: "strengths",
+      label: "Strengths focus",
+      badge: undefined,
+      description: "Focus on spontaneous strengths, values, motivation and pressure reactions",
+      mix: { curveball: 80, competency: 20, cv: 0, technical: 0, motivation: 0 },
+    },
+    {
+      key: "competency",
+      label: "Competency focus (STAR)",
+      badge: undefined,
+      description: "Deep dive on structured behavioural examples and delivering outcomes",
+      mix: { competency: 80, curveball: 20, cv: 0, technical: 0, motivation: 0 },
+    },
+    {
+      key: "technical",
+      label: "Role Knowledge & Technical",
+      badge: undefined,
+      description: isPublicSector
+        ? "GDS standards, delivery methods, WCAG accessibility and technical execution"
+        : "Domain knowledge, system architecture, delivery methods and technical execution",
+      mix: { technical: 60, competency: 20, motivation: 20, cv: 0, curveball: 0 },
+    },
+    {
+      key: "motivation",
+      label: isPublicSector ? `Motivation & Why ${company || "HMRC"}` : `Motivation & Why ${company || "This Role"}`,
+      badge: undefined,
+      description: isPublicSector
+        ? "Public service motivation, why this role and organisation"
+        : "Company culture, values alignment, why this role and organisation",
+      mix: { motivation: 60, cv: 20, competency: 20, technical: 0, curveball: 0 },
+    },
+  ];
+}
 
 const input = "w-full rounded-[9px] bg-panel-2 px-3 py-2 text-sm outline-none shadow-[inset_0_0_0_1px_var(--color-line-strong)] placeholder:text-dim focus:shadow-[inset_0_0_0_1px_var(--color-blue)]";
 
@@ -113,7 +121,10 @@ export function RebuildFlow({
   const [rules, setRules] = useState<string[]>(initialRules);
   const [newRule, setNewRule] = useState("");
   const [jobSummary, setJobSummary] = useState<string>(initialJobSummary);
-  const isCivilService = /\b(civil service|hmrc|gov|government|ministry|public sector)\b/i.test(`${company} ${current.role}`);
+  const isCivilService = /\b(civil service|hmrc|dwp|nhs|council|councils|gds|government digital service|home office|cabinet office|ministry of|department for|public sector|gov\.uk)\b/i.test(
+    `${company} ${current.role} ${current.field} ${initialJobSummary}`
+  );
+  const focusOptions = getFocusOptions(company, isCivilService);
   const [focusPreset, setFocusPreset] = useState<string>(isCivilService ? "strengths-competency" : "balanced");
   const [by, setBy] = useState<"model" | "rules" | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -163,7 +174,7 @@ export function RebuildFlow({
     setPhase("rebuilding");
     setError(null);
     try {
-      const chosen = FOCUS_OPTIONS.find((f) => f.key === focusPreset) || FOCUS_OPTIONS[0];
+      const chosen = focusOptions.find((f) => f.key === focusPreset) || focusOptions[0];
       const res = await fetch(`/api/interviews/${interviewId}/rebuild`, {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -283,7 +294,7 @@ export function RebuildFlow({
           </div>
           <p className="mt-0.5 text-[13px] text-muted">Choose what areas you want your practice questions to focus on.</p>
           <div className="mt-3 space-y-2">
-            {FOCUS_OPTIONS.map((opt) => {
+            {focusOptions.map((opt) => {
               const isSel = focusPreset === opt.key;
               return (
                 <button

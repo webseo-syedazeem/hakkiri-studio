@@ -75,4 +75,29 @@ describe("topic-specific practice drills", () => {
     expect(secondRun).toHaveLength(2);
     expect(secondRun.some((q) => seen.has(q.id))).toBe(false);
   });
+
+  it("TR-4: filters topics by sector and role family", async () => {
+    const { getTopicsForInterview } = await import("./topics");
+    // Private sector Data Analyst: no Civil Service topics
+    const dataAnalyst = {
+      role: "Data Analyst",
+      company: "Acme Analytics",
+      jobSummary: "Data Analyst responsible for SQL queries, Tableau dashboards and business metrics.",
+    };
+    const daTopics = getTopicsForInterview(dataAnalyst);
+    const daTitles = daTopics.map((t) => `${t.title} ${t.subtitle} ${t.focusLabel ?? ""}`).join(" ");
+    expect(daTitles).not.toMatch(/Civil Service/i);
+    expect(daTitles).not.toMatch(/HMRC/i);
+    expect(daTitles).not.toMatch(/GDS/i);
+
+    // HMRC / Civil Service interview: still includes them
+    const hmrcRole = {
+      role: "Associate Product Manager",
+      company: "HMRC",
+      jobSummary: "Digital tax services, Civil Service Success Profiles and GDS standards.",
+    };
+    const hmrcTopics = getTopicsForInterview(hmrcRole);
+    const hmrcTitles = hmrcTopics.map((t) => `${t.title} ${t.subtitle} ${t.focusLabel ?? ""}`).join(" ");
+    expect(hmrcTitles).toMatch(/Civil Service/i);
+  });
 });

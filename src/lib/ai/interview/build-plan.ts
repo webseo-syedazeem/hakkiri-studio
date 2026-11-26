@@ -153,15 +153,30 @@ export interface PlanInput {
 const cap = (s: string | undefined, n: number) => (s ? (s.length > n ? `${s.slice(0, n)}\n[…]` : s) : "");
 
 /** What each category holds, for the model. Shared with the later question builds. */
-export const CATEGORY_RULES = [
-  "- motivation: why this company (type why-us, using the company's name), why this role and why now, what they know about the company and its market. Not “Tell me about yourself”: that opens every interview already.",
-  "- cv (Experience): about this candidate's own CV: real employers, roles, moves, gaps and claims (“Your CV says you grew conversion 17%. How?”). Type competency, or tell-me-about-yourself for “walk me through your CV”.",
-  "- competency (Skills): past examples for the skills the job spec asks for, phrased “Tell me about a time…”, each testing a different skill. For Civil Service or public sector roles, align with Success Profile behaviours: Communicating and Influencing, Making Effective Decisions, Seeing the Big Picture, Delivering at Pace, Changing and Improving, and Working Together. Type competency.",
-  "- technical: what THIS job needs the person to know or do, in this job's own terms. For engineering or data jobs, technical problems and design choices. For other jobs, the work itself: for sales, product, pricing, pipeline and objections; for nursing, clinical judgement and patient safety; for teaching, lesson planning and behaviour. For government and digital roles (HMRC, DWP), accessibility and GDS standards. Never coding questions for a job that doesn't code. Type technical, or situational for “what would you do if…”.",
-  "- curveball (Situational / Strengths): “What would you do if…” scenarios from this job, plus authentic Civil Service strengths questions assessing natural engagement and working preferences (e.g. “Do you enjoy working with people who have different viewpoints?”, “What motivates you when working under pressure?”, “Do you prefer making decisions independently or collaboratively?”). Type situational. Not “What questions do you have for us?”: that closes every interview already.",
-];
+export function getCategoryRules(isPublicSector = false): string[] {
+  return [
+    "- motivation: why this company (type why-us, using the company's name), why this role and why now, what they know about the company and its market. Not “Tell me about yourself”: that opens every interview already.",
+    "- cv (Experience): about this candidate's own CV: real employers, roles, moves, gaps and claims (“Your CV says you grew conversion 17%. How?”). Type competency, or tell-me-about-yourself for “walk me through your CV”.",
+    isPublicSector
+      ? "- competency (Skills): past examples for the skills the job spec asks for, phrased “Tell me about a time…”, each testing a different skill. For Civil Service or public sector roles, align with Success Profile behaviours: Communicating and Influencing, Making Effective Decisions, Seeing the Big Picture, Delivering at Pace, Changing and Improving, and Working Together. Type competency."
+      : "- competency (Skills): past examples for the skills the job spec asks for, phrased “Tell me about a time…”, each testing a different skill. Type competency.",
+    isPublicSector
+      ? "- technical: what THIS job needs the person to know or do, in this job's own terms. For engineering or data jobs, technical problems and design choices. For other jobs, the work itself: for sales, product, pricing, pipeline and objections; for nursing, clinical judgement and patient safety; for teaching, lesson planning and behaviour. For government and digital roles (HMRC, DWP), accessibility and GDS standards. Never coding questions for a job that doesn't code. Type technical, or situational for “what would you do if…”."
+      : "- technical: what THIS job needs the person to know or do, in this job's own terms. For engineering or data jobs, technical problems and design choices. For other jobs, the work itself: for sales, product, pricing, pipeline and objections; for nursing, clinical judgement and patient safety; for teaching, lesson planning and behaviour. Never coding questions for a job that doesn't code. Type technical, or situational for “what would you do if…”." ,
+    isPublicSector
+      ? "- curveball (Situational / Strengths): “What would you do if…” scenarios from this job, plus authentic Civil Service strengths questions assessing natural engagement and working preferences (e.g. “Do you enjoy working with people who have different viewpoints?”, “What motivates you when working under pressure?”, “Do you prefer making decisions independently or collaboratively?”). Type situational. Not “What questions do you have for us?”: that closes every interview already."
+      : "- curveball (Situational / Strengths): “What would you do if…” scenarios from this job, assessing problem-solving, situational judgement, adaptability and working preferences. Type situational. Not “What questions do you have for us?”: that closes every interview already.",
+  ];
+}
+
+export const CATEGORY_RULES = getCategoryRules(false);
 
 export function buildPlanPrompt(input: PlanInput): { system: string; user: string } {
+  const isPublicSector = /\b(civil service|hmrc|dwp|nhs|council|councils|gds|government digital service|home office|cabinet office|ministry of|department for|public sector|gov\.uk)\b/i.test(
+    `${input.company ?? ""} ${input.job ?? ""}`
+  );
+  const categoryRules = getCategoryRules(isPublicSector);
+
   const system = [
     "You are Hakkiri's interview coach. You prepare a candidate for a real interview at a specific company.",
     "From their CV, cover letter, the job spec and the company's website, work out what the job really is, write the questions this company's interviewer is most likely to ask, and a short briefing.",
@@ -170,7 +185,7 @@ export function buildPlanPrompt(input: PlanInput): { system: string; user: strin
     "",
     "The questions:",
     `- Exactly these counts: ${GROUP_ORDER.map((g) => `${g} (${GROUP_LABEL[g]}) ${input.counts[g]}`).join(", ")}.`,
-    ...CATEGORY_RULES,
+    ...categoryRules,
     `- ${DIFFICULTY_GUIDE[input.difficulty]}`,
     "- One question each, in plain spoken English, as the interviewer would say it, ending with a question mark (or a full stop for an instruction like “Walk me through your CV.”). No two alike.",
     "",

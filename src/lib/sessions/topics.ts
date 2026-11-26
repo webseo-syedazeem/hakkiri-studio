@@ -832,8 +832,8 @@ export const DRILL_TOPICS: Record<TopicId, TopicSpec> = {
         group: "competency",
         type: "competency",
         difficulty: "medium",
-        text: "Tell me about a time you changed a product roadmap midway through because of new evidence.",
-        short: "Changing a roadmap",
+        text: "Tell me about a time you changed your approach or roadmap midway through because of new evidence.",
+        short: "Changing approach from evidence",
         drillOnly: true,
       },
       {
@@ -850,7 +850,7 @@ export const DRILL_TOPICS: Record<TopicId, TopicSpec> = {
         group: "competency",
         type: "competency",
         difficulty: "hard",
-        text: "Walk me through your highest-impact product delivery from problem discovery to measurable result.",
+        text: "Walk me through your highest-impact project or delivery from problem discovery to measurable result.",
         short: "Highest-impact delivery",
         drillOnly: true,
       },
@@ -1263,17 +1263,20 @@ export function getTopicsForInterview(interview?: {
   const stagesText = interview.stages ? interview.stages.map((s) => `${s.name ?? ""} ${s.label ?? ""}`).join(" ") : "";
   const text = `${interview.role ?? ""} ${interview.company ?? ""} ${interview.sources?.job ?? ""} ${interview.sources?.company ?? ""} ${stagesText} ${interview.jobSummary ?? ""} ${interview.brief?.whatTheyDo ?? ""} ${interview.understanding?.field ?? ""}`.toLowerCase();
 
-  const isNursing = /\b(nurse|nursing|nhs|clinical|healthcare|hospital|ward|patient|medical|doctor)\b/i.test(text);
+  const isNursing = /\b(nurse|nursing|clinical|hospital|ward|patient|medical|doctor)\b/i.test(text);
   const isPayments = /\b(payment|checkout|fintech|banking|stripe|adyen|visa|mastercard|card|psp|settlement|chargeback)\b/i.test(text);
-  const isCivilService = /\b(civil service|hmrc|dwp|gov|government|ministry|public sector|home office|cabinet office|success profiles?|strengths?|competenc|behaviour|behavior)\b/i.test(text);
+  const isPublicSector = /\b(civil service|hmrc|dwp|nhs|council|councils|gds|government digital service|home office|cabinet office|ministry of|department for|public sector|gov\.uk)\b/i.test(text);
+  const isCivilService = isPublicSector;
   const isPM = /\b(product manager|associate product manager|pm|product lead|product owner)\b/i.test(text);
+  const isData = /\b(data analyst|data scientist|data engineer|analytics|bi analyst|business intelligence|tableau|power bi)\b/i.test(text);
+  const isEngineering = /\b(software engineer|developer|frontend|backend|full stack|devops|cloud engineer)\b/i.test(text);
 
   const list: TopicSpec[] = [];
 
   if (isNursing) {
     if (DRILL_TOPICS["clinical-judgement"]) list.push(DRILL_TOPICS["clinical-judgement"]);
     if (DRILL_TOPICS["nursing-competency"]) list.push(DRILL_TOPICS["nursing-competency"]);
-    if (DRILL_TOPICS["civil-service-strengths"]) list.push(DRILL_TOPICS["civil-service-strengths"]);
+    if (isPublicSector && DRILL_TOPICS["civil-service-strengths"]) list.push(DRILL_TOPICS["civil-service-strengths"]);
     list.push(DRILL_TOPICS["motivation"]);
     list.push(DRILL_TOPICS["experience"]);
     list.push(DRILL_TOPICS["stakeholder-management"]);
@@ -1295,6 +1298,26 @@ export function getTopicsForInterview(interview?: {
     return list;
   }
 
+  if (isData) {
+    list.push(DRILL_TOPICS["technical"]);
+    list.push(DRILL_TOPICS["star"]);
+    list.push(DRILL_TOPICS["stakeholder-management"]);
+    list.push(DRILL_TOPICS["motivation"]);
+    list.push(DRILL_TOPICS["experience"]);
+    list.push(DRILL_TOPICS["curveball"]);
+    return list;
+  }
+
+  if (isEngineering) {
+    list.push(DRILL_TOPICS["technical"]);
+    list.push(DRILL_TOPICS["star"]);
+    list.push(DRILL_TOPICS["stakeholder-management"]);
+    list.push(DRILL_TOPICS["experience"]);
+    list.push(DRILL_TOPICS["motivation"]);
+    list.push(DRILL_TOPICS["curveball"]);
+    return list;
+  }
+
   if (isPayments) {
     list.push(DRILL_TOPICS["stakeholder-management"]);
     list.push(DRILL_TOPICS["payment-fundamentals"]);
@@ -1303,16 +1326,16 @@ export function getTopicsForInterview(interview?: {
     list.push(DRILL_TOPICS["motivation"]);
     list.push(DRILL_TOPICS["experience"]);
     list.push(DRILL_TOPICS["star"]);
-    if (DRILL_TOPICS["civil-service-competencies"]) list.push(DRILL_TOPICS["civil-service-competencies"]);
-    if (DRILL_TOPICS["civil-service-strengths"]) list.push(DRILL_TOPICS["civil-service-strengths"]);
     list.push(DRILL_TOPICS["technical"]);
     list.push(DRILL_TOPICS["curveball"]);
     return list;
   }
 
-  // Standard / General / Tech roles (NEVER show payment fundamentals):
-  if (DRILL_TOPICS["civil-service-competencies"]) list.push(DRILL_TOPICS["civil-service-competencies"]);
-  if (DRILL_TOPICS["civil-service-strengths"]) list.push(DRILL_TOPICS["civil-service-strengths"]);
+  // Standard / General / Tech roles (NEVER show payment fundamentals or Civil Service for private sector):
+  if (isPublicSector) {
+    if (DRILL_TOPICS["civil-service-competencies"]) list.push(DRILL_TOPICS["civil-service-competencies"]);
+    if (DRILL_TOPICS["civil-service-strengths"]) list.push(DRILL_TOPICS["civil-service-strengths"]);
+  }
   list.push(DRILL_TOPICS["motivation"]);
   list.push(DRILL_TOPICS["experience"]);
   list.push(DRILL_TOPICS["stakeholder-management"]);
