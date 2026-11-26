@@ -173,4 +173,68 @@ describe("report flags and the one fix", () => {
     expect(cuts).toEqual([{ n: 4, saveSec: 100 }]);
     expect(cutPlan([{ n: 2, seconds: 61, planned: 60 }], 3)).toEqual([]);
   });
+
+  it("TR-3: rejects empty presentations with missing fields", async () => {
+    const { PresentationIn } = await import("./payload");
+    // Missing title
+    const noTitle = PresentationIn.safeParse({
+      title: "   ",
+      audience: "leadership",
+      ask: "Approve budget",
+      slides: [{ title: "Slide 1", lines: [], plannedSec: 60, point: "Point" }],
+      timeLimitSec: 600,
+      qaStyle: null,
+      source: { kind: "notes" },
+      askSlide: 1,
+      warnings: [],
+      planBy: "you",
+    });
+    expect(noTitle.success).toBe(false);
+
+    // Missing ask
+    const noAsk = PresentationIn.safeParse({
+      title: "My Deck",
+      audience: "leadership",
+      ask: "   ",
+      slides: [{ title: "Slide 1", lines: [], plannedSec: 60, point: "Point" }],
+      timeLimitSec: 600,
+      qaStyle: null,
+      source: { kind: "notes" },
+      askSlide: 1,
+      warnings: [],
+      planBy: "you",
+    });
+    expect(noAsk.success).toBe(false);
+
+    // Empty slides
+    const noSlides = PresentationIn.safeParse({
+      title: "My Deck",
+      audience: "leadership",
+      ask: "Approve budget",
+      slides: [],
+      timeLimitSec: 600,
+      qaStyle: null,
+      source: { kind: "notes" },
+      askSlide: 1,
+      warnings: [],
+      planBy: "you",
+    });
+    expect(noSlides.success).toBe(false);
+
+    // Valid presentation with optional date
+    const valid = PresentationIn.safeParse({
+      title: "My Deck",
+      audience: "leadership",
+      ask: "Approve budget",
+      date: "",
+      slides: [{ title: "Slide 1", lines: [], plannedSec: 60, point: "Point" }],
+      timeLimitSec: 600,
+      qaStyle: null,
+      source: { kind: "notes" },
+      askSlide: 1,
+      warnings: [],
+      planBy: "you",
+    });
+    expect(valid.success).toBe(true);
+  });
 });

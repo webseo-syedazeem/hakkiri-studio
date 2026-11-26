@@ -106,17 +106,17 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
   const fileRef = useRef<HTMLInputElement>(null);
 
   // Core state
-  const [slides, setSlides] = useState<EditableSlide[]>(initial.slides.length > 0 ? initial.slides : DEFAULT_DEMO_SLIDES);
+  const [slides, setSlides] = useState<EditableSlide[]>(initial.slides.length > 0 ? initial.slides : editing ? DEFAULT_DEMO_SLIDES : []);
   const [hasCustomSlides, setHasCustomSlides] = useState(initial.slides.length > 0);
   const [source, setSource] = useState(initial.source);
-  const [title, setTitle] = useState(initial.title || "Q1 product roadmap");
+  const [title, setTitle] = useState(initial.title || "");
   const [presentationType, setPresentationType] = useState<string>("Job interview (case study)");
   const [typeDropdownOpen, setTypeDropdownOpen] = useState(false);
-  const [audience, setAudience] = useState<Audience | "other">(initial.audience || "leadership");
+  const [audience, setAudience] = useState<Audience | "other" | "">(initial.audience || "");
   const [audienceSize, setAudienceSize] = useState("5 - 10 people");
-  const [keyMessage, setKeyMessage] = useState("A proposal for the Q1 product roadmap and investment");
-  const [ask, setAsk] = useState(initial.ask || "Approve the roadmap and required resources");
-  const [when, setWhen] = useState({ date: initial.date || "2026-11-16", time: initial.time || "09:30" });
+  const [keyMessage, setKeyMessage] = useState(initial.ask || "");
+  const [ask, setAsk] = useState(initial.ask || "");
+  const [when, setWhen] = useState({ date: initial.date || "", time: initial.time || "09:30" });
   const [limitMin, setLimitMin] = useState(initial.limitMin || 10);
   const [qa, setQa] = useState<QaStyle | "none">(initial.qaStyle ?? "sceptical");
   const [specificQuestions, setSpecificQuestions] = useState("");
@@ -131,6 +131,7 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
   const [notesOpen, setNotesOpen] = useState(false);
   const [notes, setNotes] = useState("");
   const [problem, setProblem] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [additionalSettingsOpen, setAdditionalSettingsOpen] = useState(false);
@@ -187,6 +188,7 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
       setSource(src);
       setActiveSlideIndex(0);
       setWarnings([]);
+      setFieldErrors((p) => ({ ...p, slides: "", title: "" }));
       const name = editing ? title : suggestTitle(src.fileName ?? null, parsed);
       setTitle(name);
       void plan(deck, { title: name });
@@ -219,18 +221,54 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setProblem(null);
+
+    const errs: Record<string, string> = {};
+    if (!title.trim()) errs.title = "Give your presentation a name";
+    if (slides.length === 0 && !notes.trim()) errs.slides = "Upload slides or paste speaker notes before starting rehearsal";
+    if (!audience) errs.audience = "Choose who you are presenting to";
+    if (!keyMessage.trim()) errs.keyMessage = "Enter the main message your audience should take away";
+    if (!ask.trim()) errs.ask = "Enter what you want your audience to do or decide";
+
+    if (Object.keys(errs).length > 0) {
+      setFieldErrors(errs);
+      setProblem("Check the highlighted fields before starting rehearsal.");
+      return;
+    }
+    setFieldErrors({});
+
+    // If slides are empty but notes were typed, parse notes first
+    let activeSlides = slides;
+    if (activeSlides.length === 0 && notes.trim()) {
+      const parsed = parseNotes(notes);
+      if (parsed.length) {
+        const even = fitToLimit(parsed.map(() => 1), limitSec);
+        activeSlides = parsed.map((s, i) => ({
+          title: s.title,
+          lines: s.lines,
+          notes: s.notes,
+          layout: s.layout,
+          image: s.image ?? null,
+          plannedSec: even[i],
+          point: "",
+        }));
+        setSlides(activeSlides);
+        setSource({ kind: "notes" });
+      }
+    }
+
     setSaving(true);
     const form = new FormData();
-    const effectiveAudience: Audience = audience === "other" ? "leadership" : audience;
+    const effectiveAudience: Audience = audience === "other" || !audience ? "leadership" : audience;
+    const isoDate = when.date ? londonIso(when.date, when.time || "09:30") : "";
     const data = {
-      title: title.trim() || "My presentation",
+      title: title.trim(),
       audience: effectiveAudience,
-      ask: ask.trim() || keyMessage.trim(),
-      date: londonIso(when.date, when.time),
+      ask: ask.trim(),
+      date: isoDate,
       timeLimitSec: limitSec,
       qaStyle: qa === "none" ? null : qa,
       source: source ?? { kind: "notes" as const },
-      slides: slides.map((s, i) => ({
+      slides: activeSlides.map((s, i) => ({
         title: s.title,
         lines: s.lines,
         ...(s.notes ? { notes: s.notes } : {}),
@@ -239,11 +277,11 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
         point: s.point.trim() || s.title,
         image: s.image ? (s.image.blob ? { kind: s.image.kind, field: `img-${i}` } : { kind: s.image.kind, file: s.image.file }) : null,
       })),
-      askSlide: Math.min(askSlide, slides.length),
+      askSlide: Math.min(askSlide, activeSlides.length),
       warnings,
       planBy,
     };
-    slides.forEach((s, i) => s.image?.blob && form.append(`img-${i}`, s.image.blob, `slide-${i + 1}.jpg`));
+    activeSlides.forEach((s, i) => s.image?.blob && form.append(`img-${i}`, s.image.blob, `slide-${i + 1}.jpg`));
     form.append("data", JSON.stringify(data));
     try {
       const res = await fetch(editing ? `/api/presentations/${initial.id}` : "/api/presentations", { method: editing ? "PUT" : "POST", body: form });
@@ -284,12 +322,18 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
                   id="p-name"
                   type="text"
                   value={title}
-                  onChange={(e) => setTitle(e.target.value)}
+                  onChange={(e) => {
+                    setTitle(e.target.value);
+                    if (fieldErrors.title) setFieldErrors((p) => ({ ...p, title: "" }));
+                  }}
                   placeholder="e.g. Q1 product roadmap"
-                  className="w-full h-11 rounded-xl bg-[#141326] border border-white/10 px-3.5 text-sm text-white placeholder:text-muted/50 focus:border-blue focus:outline-none focus:ring-1 focus:ring-blue transition-all"
-                  required
+                  className={clsx(
+                    "w-full h-11 rounded-xl bg-[#141326] border px-3.5 text-sm text-white placeholder:text-muted/50 focus:border-blue focus:outline-none focus:ring-1 focus:ring-blue transition-all",
+                    fieldErrors.title ? "border-rose-500/80 ring-1 ring-rose-500/50" : "border-white/10"
+                  )}
                 />
               </div>
+              {fieldErrors.title && <p className="text-xs text-rose-400 mt-1.5 font-medium">{fieldErrors.title}</p>}
             </div>
 
             {/* Presentation Type Dropdown */}
@@ -340,7 +384,7 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
             <div
               className={clsx(
                 "rounded-xl border-2 border-dashed p-6 transition-all flex flex-col sm:flex-row items-center justify-between gap-4",
-                dragging ? "border-blue bg-blue/10" : "border-white/15 bg-[#121124]/60 hover:border-white/25"
+                fieldErrors.slides ? "border-rose-500/80 bg-rose-500/10" : dragging ? "border-blue bg-blue/10" : "border-white/15 bg-[#121124]/60 hover:border-white/25"
               )}
               onDragOver={(e) => {
                 e.preventDefault();
@@ -402,6 +446,7 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
                 }}
               />
             </div>
+            {fieldErrors.slides && <p className="text-xs text-rose-400 mt-2 font-medium">{fieldErrors.slides}</p>}
 
             {/* Pasted notes area */}
             {notesOpen && (
@@ -409,7 +454,10 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
                 <textarea
                   aria-label="Your notes"
                   value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
+                  onChange={(e) => {
+                    setNotes(e.target.value);
+                    if (fieldErrors.slides) setFieldErrors((p) => ({ ...p, slides: "" }));
+                  }}
                   rows={5}
                   placeholder={"Paste presentation notes or outline here.\nOne slide per paragraph. The first line of each becomes its title."}
                   className="w-full resize-y bg-transparent text-sm leading-relaxed outline-none text-white placeholder:text-muted/60"
@@ -425,6 +473,7 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
                       if (!parsed.length) return setProblem("Those notes look empty.");
                       takeSlides(parsed, { kind: "notes" });
                       setNotesOpen(false);
+                      if (fieldErrors.slides) setFieldErrors((p) => ({ ...p, slides: "" }));
                     }}
                   >
                     Use these notes
@@ -460,11 +509,16 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
                       <button
                         key={opt.id}
                         type="button"
-                        onClick={() => setAudience(opt.id)}
+                        onClick={() => {
+                          setAudience(opt.id);
+                          if (fieldErrors.audience) setFieldErrors((p) => ({ ...p, audience: "" }));
+                        }}
                         className={clsx(
                           "flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition-all border",
                           active
                             ? "bg-blue-fill border-blue-soft text-white shadow-[0_0_16px_rgba(79,70,229,0.4)]"
+                            : fieldErrors.audience
+                            ? "bg-[#141326] border-rose-500/80 text-rose-300"
                             : "bg-[#141326] border-white/10 text-muted hover:text-white hover:border-white/20"
                         )}
                       >
@@ -474,6 +528,7 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
                     );
                   })}
                 </div>
+                {fieldErrors.audience && <p className="text-xs text-rose-400 mt-2 font-medium">{fieldErrors.audience}</p>}
               </div>
 
               {/* Audience size */}
@@ -500,11 +555,17 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
                 <input
                   type="text"
                   value={keyMessage}
-                  onChange={(e) => setKeyMessage(e.target.value)}
+                  onChange={(e) => {
+                    setKeyMessage(e.target.value);
+                    if (fieldErrors.keyMessage) setFieldErrors((p) => ({ ...p, keyMessage: "" }));
+                  }}
                   placeholder="e.g. A proposal for the Q1 product roadmap"
-                  className="w-full h-11 rounded-xl bg-[#141326] border border-white/10 px-3.5 text-sm text-white placeholder:text-muted/50 focus:border-blue focus:outline-none focus:ring-1 focus:ring-blue transition-all"
-                  required
+                  className={clsx(
+                    "w-full h-11 rounded-xl bg-[#141326] border px-3.5 text-sm text-white placeholder:text-muted/50 focus:border-blue focus:outline-none focus:ring-1 focus:ring-blue transition-all",
+                    fieldErrors.keyMessage ? "border-rose-500/80 ring-1 ring-rose-500/50" : "border-white/10"
+                  )}
                 />
+                {fieldErrors.keyMessage && <p className="text-xs text-rose-400 mt-1.5 font-medium">{fieldErrors.keyMessage}</p>}
               </div>
 
               {/* What do you want them to do? */}
@@ -516,11 +577,17 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
                 <input
                   type="text"
                   value={ask}
-                  onChange={(e) => setAsk(e.target.value)}
+                  onChange={(e) => {
+                    setAsk(e.target.value);
+                    if (fieldErrors.ask) setFieldErrors((p) => ({ ...p, ask: "" }));
+                  }}
                   placeholder="e.g. Approve the roadmap and required resources"
-                  className="w-full h-11 rounded-xl bg-[#141326] border border-white/10 px-3.5 text-sm text-white placeholder:text-muted/50 focus:border-blue focus:outline-none focus:ring-1 focus:ring-blue transition-all"
-                  required
+                  className={clsx(
+                    "w-full h-11 rounded-xl bg-[#141326] border px-3.5 text-sm text-white placeholder:text-muted/50 focus:border-blue focus:outline-none focus:ring-1 focus:ring-blue transition-all",
+                    fieldErrors.ask ? "border-rose-500/80 ring-1 ring-rose-500/50" : "border-white/10"
+                  )}
                 />
+                {fieldErrors.ask && <p className="text-xs text-rose-400 mt-1.5 font-medium">{fieldErrors.ask}</p>}
               </div>
             </div>
           </div>
@@ -644,129 +711,141 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
       {/* RIGHT COLUMN: Slide plan & suggested timing + How Hakkiri will help you */}
       <div className="flex flex-col gap-5">
         {/* Card 1: Slide plan & suggested timing */}
-        <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-6 shadow-xl">
-          <div className="flex items-center gap-2.5 pb-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue/15 text-blue-soft">
-              <Icon name="present" size={16} />
+        {slides.length === 0 ? (
+          <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-8 shadow-xl text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue/15 text-blue-soft mx-auto mb-3 border border-blue/25">
+              <Icon name="present" size={24} />
             </div>
-            <h3 className="text-base font-semibold text-white tracking-tight">Slide plan & suggested timing</h3>
+            <h3 className="text-base font-semibold text-white tracking-tight mb-1.5">No slide plan yet</h3>
+            <p className="text-xs text-muted max-w-sm mx-auto leading-relaxed">
+              Upload your presentation (.pptx, .pdf) or paste speaker notes on the left to see your planned slide sequence and timings.
+            </p>
           </div>
-          <p className="text-xs text-muted leading-relaxed pb-4 border-b border-white/[0.07]">
-            Based on your slides, here&apos;s a suggested structure. You can adjust this after upload.
-          </p>
-
-          {/* Carousel Preview */}
-          <div className="mt-4 flex items-center justify-between gap-3 p-3 rounded-xl bg-[#141326] border border-white/10">
-            <button
-              type="button"
-              onClick={() => setActiveSlideIndex((i) => Math.max(0, i - 1))}
-              disabled={activeSlideIndex === 0}
-              aria-label="Previous slide"
-              className="p-1.5 rounded-lg text-muted hover:text-white hover:bg-white/[0.07] disabled:opacity-30 disabled:hover:bg-transparent transition-all"
-            >
-              <Icon name="chevronRight" size={16} className="rotate-180" />
-            </button>
-
-            {/* Thumbnail */}
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="relative w-24 h-16 shrink-0 rounded-lg bg-white overflow-hidden shadow-md flex flex-col justify-between p-1.5 border border-white/20">
-                <div className="text-[8px] font-bold text-gray-900 leading-tight">Q1 Product Roadmap</div>
-                <div className="h-4 w-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-sm opacity-80" />
+        ) : (
+          <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-6 shadow-xl">
+            <div className="flex items-center gap-2.5 pb-2">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue/15 text-blue-soft">
+                <Icon name="present" size={16} />
               </div>
-              <div className="min-w-0">
-                <div className="text-xs font-semibold text-white truncate">
-                  Slide {activeSlideIndex + 1}: {currentPreviewSlide?.title}
-                </div>
-                <div className="text-[11px] text-muted truncate mt-0.5">{currentPreviewSlide?.point}</div>
-              </div>
+              <h3 className="text-base font-semibold text-white tracking-tight">Slide plan & suggested timing</h3>
             </div>
+            <p className="text-xs text-muted leading-relaxed pb-4 border-b border-white/[0.07]">
+              Based on your slides, here&apos;s a suggested structure. You can adjust this after upload.
+            </p>
 
-            <div className="flex items-center gap-2 shrink-0">
-              <span className="text-xs text-muted num font-medium whitespace-nowrap">
-                {activeSlideIndex + 1} of {slides.length}
-              </span>
+            {/* Carousel Preview */}
+            <div className="mt-4 flex items-center justify-between gap-3 p-3 rounded-xl bg-[#141326] border border-white/10">
               <button
                 type="button"
-                onClick={() => setActiveSlideIndex((i) => Math.min(slides.length - 1, i + 1))}
-                disabled={activeSlideIndex === slides.length - 1}
-                aria-label="Next slide"
+                onClick={() => setActiveSlideIndex((i) => Math.max(0, i - 1))}
+                disabled={activeSlideIndex === 0}
+                aria-label="Previous slide"
                 className="p-1.5 rounded-lg text-muted hover:text-white hover:bg-white/[0.07] disabled:opacity-30 disabled:hover:bg-transparent transition-all"
               >
-                <Icon name="chevronRight" size={16} />
+                <Icon name="chevronRight" size={16} className="rotate-180" />
               </button>
-            </div>
-          </div>
 
-          {/* Slides Table */}
-          <div className="mt-4 overflow-hidden rounded-xl border border-white/[0.08]">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-[#141326] text-muted border-b border-white/[0.08]">
-                <tr>
-                  <th className="py-2.5 px-3 font-medium w-8">#</th>
-                  <th className="py-2.5 px-3 font-medium">Slide title</th>
-                  <th className="py-2.5 px-3 font-medium">Key message</th>
-                  <th className="py-2.5 px-3 font-medium text-right w-16">Time</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/[0.05] text-[#c9cad3]">
-                {slides.map((s, idx) => (
-                  <tr
-                    key={idx}
-                    onClick={() => setActiveSlideIndex(idx)}
-                    className={clsx(
-                      "cursor-pointer hover:bg-white/[0.03] transition-colors",
-                      activeSlideIndex === idx && "bg-blue/10 text-white"
-                    )}
-                  >
-                    <td className="py-2.5 px-3 num text-muted">{idx + 1}</td>
-                    <td className="py-2.5 px-3 font-medium text-white truncate max-w-[110px]">{s.title}</td>
-                    <td className="py-2.5 px-3 text-muted truncate max-w-[140px]">{s.point || s.lines[0]}</td>
-                    <td className="py-2.5 px-3 num text-right text-muted">{mmss(s.plannedSec)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Edit timing link */}
-          <div className="mt-3.5 flex items-center justify-between text-xs">
-            <button
-              type="button"
-              onClick={() => setEditingTiming((e) => !e)}
-              className="text-muted hover:text-white flex items-center gap-1.5 transition-colors"
-            >
-              <Icon name="edit" size={13} />
-              <span>Edit timing</span>
-            </button>
-            <span className="num text-muted">
-              Total: {mmss(totalSec)} / {limitMin}:00
-            </span>
-          </div>
-
-          {editingTiming && (
-            <div className="mt-3 p-3 rounded-xl bg-[#141326] border border-white/10 space-y-2 text-xs">
-              {slides.map((s, idx) => (
-                <div key={idx} className="flex items-center justify-between gap-3">
-                  <span className="truncate text-white max-w-[180px]">{idx + 1}. {s.title}</span>
-                  <div className="flex items-center gap-1.5">
-                    <input
-                      type="number"
-                      min={10}
-                      step={5}
-                      value={s.plannedSec}
-                      onChange={(e) => {
-                        const sec = Math.max(10, Number(e.target.value));
-                        setSlides((cur) => cur.map((item, i) => (i === idx ? { ...item, plannedSec: sec } : item)));
-                      }}
-                      className="w-16 h-7 rounded bg-[#1f1e35] px-2 text-right num text-white border border-white/10"
-                    />
-                    <span className="text-muted">sec</span>
-                  </div>
+              {/* Thumbnail */}
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="relative w-24 h-16 shrink-0 rounded-lg bg-white overflow-hidden shadow-md flex flex-col justify-between p-1.5 border border-white/20">
+                  <div className="text-[8px] font-bold text-gray-900 leading-tight truncate">{currentPreviewSlide?.title || "Slide"}</div>
+                  <div className="h-4 w-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-sm opacity-80" />
                 </div>
-              ))}
+                <div className="min-w-0">
+                  <div className="text-xs font-semibold text-white truncate">
+                    Slide {activeSlideIndex + 1}: {currentPreviewSlide?.title}
+                  </div>
+                  <div className="text-[11px] text-muted truncate mt-0.5">{currentPreviewSlide?.point}</div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="text-xs text-muted num font-medium whitespace-nowrap">
+                  {activeSlideIndex + 1} of {slides.length}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setActiveSlideIndex((i) => Math.min(slides.length - 1, i + 1))}
+                  disabled={activeSlideIndex === slides.length - 1}
+                  aria-label="Next slide"
+                  className="p-1.5 rounded-lg text-muted hover:text-white hover:bg-white/[0.07] disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+                >
+                  <Icon name="chevronRight" size={16} />
+                </button>
+              </div>
             </div>
-          )}
-        </div>
+
+            {/* Slides Table */}
+            <div className="mt-4 overflow-hidden rounded-xl border border-white/[0.08]">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-[#141326] text-muted border-b border-white/[0.08]">
+                  <tr>
+                    <th className="py-2.5 px-3 font-medium w-8">#</th>
+                    <th className="py-2.5 px-3 font-medium">Slide title</th>
+                    <th className="py-2.5 px-3 font-medium">Key message</th>
+                    <th className="py-2.5 px-3 font-medium text-right w-16">Time</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/[0.05] text-[#c9cad3]">
+                  {slides.map((s, idx) => (
+                    <tr
+                      key={idx}
+                      onClick={() => setActiveSlideIndex(idx)}
+                      className={clsx(
+                        "cursor-pointer hover:bg-white/[0.03] transition-colors",
+                        activeSlideIndex === idx && "bg-blue/10 text-white"
+                      )}
+                    >
+                      <td className="py-2.5 px-3 num text-muted">{idx + 1}</td>
+                      <td className="py-2.5 px-3 font-medium text-white truncate max-w-[110px]">{s.title}</td>
+                      <td className="py-2.5 px-3 text-muted truncate max-w-[140px]">{s.point || s.lines[0]}</td>
+                      <td className="py-2.5 px-3 num text-right text-muted">{mmss(s.plannedSec)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Edit timing link */}
+            <div className="mt-3.5 flex items-center justify-between text-xs">
+              <button
+                type="button"
+                onClick={() => setEditingTiming((e) => !e)}
+                className="text-muted hover:text-white flex items-center gap-1.5 transition-colors"
+              >
+                <Icon name="edit" size={13} />
+                <span>Edit timing</span>
+              </button>
+              <span className="num text-muted">
+                Total: {mmss(totalSec)} / {limitMin}:00
+              </span>
+            </div>
+
+            {editingTiming && (
+              <div className="mt-3 p-3 rounded-xl bg-[#141326] border border-white/10 space-y-2 text-xs">
+                {slides.map((s, idx) => (
+                  <div key={idx} className="flex items-center justify-between gap-3">
+                    <span className="truncate text-white max-w-[180px]">{idx + 1}. {s.title}</span>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="number"
+                        min={10}
+                        step={5}
+                        value={s.plannedSec}
+                        onChange={(e) => {
+                          const sec = Math.max(10, Number(e.target.value));
+                          setSlides((cur) => cur.map((item, i) => (i === idx ? { ...item, plannedSec: sec } : item)));
+                        }}
+                        className="w-16 h-7 rounded bg-[#1f1e35] px-2 text-right num text-white border border-white/10"
+                      />
+                      <span className="text-muted">sec</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Card 2: How Hakkiri will help you */}
         <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-6 shadow-xl">

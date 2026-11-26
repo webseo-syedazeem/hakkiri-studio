@@ -27,14 +27,14 @@ const SlideIn = z.object({
 });
 
 export const PresentationIn = z.object({
-  title: z.string().trim().min(1).max(120),
+  title: z.string().trim().min(1, "Presentation name is required").max(120),
   audience: z.enum(["investors", "leadership", "client", "team", "conference"]),
-  ask: z.string().trim().max(240),
-  date: z.iso.datetime(),
+  ask: z.string().trim().min(1, "The ask or desired outcome is required").max(240),
+  date: z.string().optional().default(""),
   timeLimitSec: z.number().int().min(60).max(5400),
   qaStyle: z.enum(["curious", "sceptical", "time-pressed", "technical"]).nullable(),
   source: z.object({ kind: z.enum(["pdf", "pptx", "notes", "demo"]), fileName: z.string().max(200).optional() }),
-  slides: z.array(SlideIn).min(1).max(80),
+  slides: z.array(SlideIn).min(1, "At least one slide or note is required").max(80),
   askSlide: z.number().int().min(1),
   warnings: z.array(z.string().max(240)).max(3),
   planBy: z.enum(["model", "estimate", "you"]),
@@ -56,7 +56,10 @@ export async function presentationFromForm(form: FormData, id: string, existing?
     return { message: "That presentation couldn’t be read. Try again." };
   }
   const parsed = PresentationIn.safeParse(raw);
-  if (!parsed.success) return { message: "Some of the set-up is missing or too long. Check each field and try again." };
+  if (!parsed.success) {
+    const firstIssue = parsed.error.issues[0]?.message || "Some of the set-up is missing or too long. Check each field and try again.";
+    return { message: firstIssue };
+  }
   const d = parsed.data;
   if (d.askSlide > d.slides.length) d.askSlide = d.slides.length;
 
