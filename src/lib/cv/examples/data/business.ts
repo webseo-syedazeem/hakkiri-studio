@@ -101,10 +101,10 @@ export const BUSINESS: ExampleSpec[] = [
         current: true,
         bullets: [
           { uk: "Lead an £8 million warehouse systems programme across 4 sites, on course to finish 2 months early against the original plan", us: "Lead a $10 million warehouse systems program across 4 sites, on course to finish 2 months early against the original plan" },
-          "Run fortnightly steering meetings with 6 senior managers, logging every decision and action in one shared register",
+          { uk: "Run fortnightly steering meetings with 6 senior managers, logging every decision and action in one shared register", us: "Run steering meetings every two weeks with 6 senior managers, logging every decision and action in one shared register" },
           "Brought in a shared risk register for 12 projects, catching 90% of delays at least a month ahead",
           { uk: "Cut supplier costs by £600,000 by renegotiating 3 contracts before renewal", us: "Cut supplier costs by $750,000 by renegotiating 3 contracts before renewal" },
-          "Coach 5 project coordinators in planning, budgets and stakeholder updates through monthly one-to-ones",
+          { uk: "Coach 5 project coordinators in planning, budgets and stakeholder updates through monthly one-to-ones", us: "Coach 5 project coordinators in planning, budgets and stakeholder updates through monthly one-on-ones" },
           "Wrote the company's project start-up checklist, now used on all 20 projects that have started since",
         ],
       },

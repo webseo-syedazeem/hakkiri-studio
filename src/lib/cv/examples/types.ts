@@ -68,6 +68,22 @@ export interface ExamplePerson {
   links?: string[];
 }
 
+/**
+ * A cover letter to go with the example: for a made-up job, at a made-up
+ * employer, with its advert. Every sentence passes the app's own letter
+ * check, so each thing it says about the person is on their CV (or in their
+ * reason for applying) and each thing about the employer is in the advert.
+ */
+export interface ExampleLetter {
+  job: { title: Regional<string>; employer: Regional<string>; advert: Regional<string> };
+  /** Their answer to "Why do you want this role?". */
+  reason: Regional<string>;
+  /** Who it is to. Empty: "Dear Hiring Manager". */
+  recipient?: Regional<string>;
+  /** Three to five paragraphs: an opening, the evidence, a close. */
+  paragraphs: Regional<string>[];
+}
+
 export interface ExampleSpec {
   /** Stable, used in web addresses: "first-officer". */
   id: string;
@@ -93,6 +109,7 @@ export interface ExampleSpec {
   languages?: { name: string; level: Regional<string> }[];
   /** Names of the example's own fictional employers and products, so the spelling check knows them. */
   names?: string[];
+  letter?: ExampleLetter;
 }
 
 export const REGIONS: CvRegion[] = ["uk", "us"];

@@ -58,8 +58,8 @@ describe("the template catalogue", () => {
     expect(catalogue().map((t) => t.no)).toEqual(Array.from({ length: all.length }, (_, i) => i + 1));
   });
 
-  it("has a preview image for every template (scripts/template-previews.cjs)", () => {
-    for (const t of all) for (const size of ["large", "small"] as const) expect(existsSync(join(process.cwd(), "public", templatePreview(t, size))), templatePreview(t, size)).toBe(true);
+  it("has a CV and a cover letter preview image for every template (scripts/template-previews.cjs)", () => {
+    for (const t of all) for (const size of ["large", "small"] as const) for (const kind of ["cv", "letter"] as const) expect(existsSync(join(process.cwd(), "public", templatePreview(t, size, kind))), templatePreview(t, size, kind)).toBe(true);
   });
 
   it("words each template in the region's spelling for the UK and US galleries", () => {
@@ -68,7 +68,7 @@ describe("the template catalogue", () => {
         for (const text of [item.suits, ...item.tags]) expect(wrongRegionSpelling(text, region).filter((h) => !h.isTypo), `${region}: ${text}`).toEqual([]);
       }
       for (const t of all) {
-        const meta = templateMeta(t, region);
+        const meta = templateMeta(t, region === "us" ? "resume" : "cv");
         expect(wrongRegionSpelling(meta.description, region).filter((h) => !h.isTypo), meta.description).toEqual([]);
         expect(meta.title).toContain(region === "us" ? "resume template" : "CV template");
       }

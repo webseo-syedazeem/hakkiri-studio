@@ -89,22 +89,39 @@ export const templateLabel = (t: Pick<TemplateDef, "no" | "name">) => `No. ${Str
 
 /** The template's web address part: "07-harbour". */
 export const templateSlug = (t: Pick<TemplateDef, "no" | "name">) => `${String(t.no).padStart(2, "0")}-${t.name.toLowerCase().replace(/\s+/g, "-")}`;
-/** The template's preview image, drawn by the renderer with an example CV (scripts/template-previews.cjs): 1098 by 1552 pixels, or 550 wide when small. */
-export const templatePreview = (t: Pick<TemplateDef, "no" | "id">, size: "large" | "small" = "large") => `/cv-templates/${String(t.no).padStart(2, "0")}-${t.id}${size === "small" ? "-small" : ""}.webp`;
+/**
+ * The public template galleries: CV templates for the UK, resume templates
+ * for the US, and cover letter templates, each letter design matching the CV
+ * template of the same number.
+ */
+export type GalleryKind = "cv" | "resume" | "letter";
+export const GALLERIES: Record<GalleryKind, { region: "uk" | "us"; word: string; title: string; base: string }> = {
+  cv: { region: "uk", word: "CV", title: "CV templates", base: "/cv-templates" },
+  resume: { region: "us", word: "resume", title: "Resume templates", base: "/resume-templates" },
+  letter: { region: "uk", word: "cover letter", title: "Cover letter templates", base: "/cover-letter-templates" },
+};
+
+/** The template's preview image, drawn by the renderer with an example (scripts/template-previews.cjs): 1098 by 1552 pixels, or 550 wide when small. */
+export const templatePreview = (t: Pick<TemplateDef, "no" | "id">, size: "large" | "small" = "large", kind: GalleryKind = "cv") =>
+  `/${kind === "letter" ? "cover-letter-templates" : "cv-templates"}/${String(t.no).padStart(2, "0")}-${t.id}${size === "small" ? "-small" : ""}.webp`;
 /** Every template, by number. */
 export const catalogue = (): TemplateDef[] => (Object.values(TEMPLATES) as TemplateDef[]).sort((a, b) => a.no - b.no);
 export const templateBySlug = (slug: string): TemplateDef | undefined => catalogue().find((t) => templateSlug(t) === slug);
 
-/** The page title, description and addresses for a template's page in the UK (CV) or US (resume) gallery. */
-export function templateMeta(t: TemplateDef, region: "uk" | "us") {
-  const word = region === "us" ? "resume" : "CV";
+/** The page title, description and addresses for a template's page in one of the galleries. */
+export function templateMeta(t: TemplateDef, kind: GalleryKind) {
+  const { word, base, region } = GALLERIES[kind];
   const slug = templateSlug(t);
-  const suits = t.suits.charAt(0).toLowerCase() + t.suits.slice(1);
   // Suits lines are written to read the same in both regions (checked in catalogue.test.ts).
+  const suits = t.suits.charAt(0).toLowerCase() + t.suits.slice(1);
+  const colour = region === "us" ? "color" : "colour";
   return {
     title: `${templateLabel(t)} ${word} template | Hakkiri`,
-    description: `${templateLabel(t)}: an ATS-friendly ${word} template for ${suits}. One column of real text, PDF and Word downloads, and every font, ${region === "us" ? "color" : "colour"} and spacing yours to change.`,
-    alternates: { canonical: `/${region === "us" ? "resume" : "cv"}-templates/${slug}`, languages: { "en-GB": `/cv-templates/${slug}`, "en-US": `/resume-templates/${slug}` } },
+    description:
+      kind === "letter"
+        ? `${templateLabel(t)}: a cover letter template that matches the CV template of the same number, for ${suits}. One page, PDF and Word downloads, and every sentence checked against your CV.`
+        : `${templateLabel(t)}: an ATS-friendly ${word} template for ${suits}. One column of real text, PDF and Word downloads, and every font, ${colour} and spacing yours to change.`,
+    alternates: { canonical: `${base}/${slug}`, ...(kind === "letter" ? {} : { languages: { "en-GB": `/cv-templates/${slug}`, "en-US": `/resume-templates/${slug}` } }) },
   };
 }
 

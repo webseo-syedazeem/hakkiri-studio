@@ -26,7 +26,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const userId = await requireUserId();
-    const body = (await req.json().catch(() => ({}))) as { templateId?: string; name?: string; region?: string; template?: string };
+    const body = (await req.json().catch(() => ({}))) as { templateId?: string; name?: string; region?: string; template?: string; letter?: boolean };
     const { templateId, name } = body;
     if (body.region !== undefined && body.region !== "uk" && body.region !== "us") return badInput("Choose UK or US.");
 
@@ -36,7 +36,8 @@ export async function POST(req: Request) {
 
     if (await atCvLimit(userId)) return badInput(TOO_MANY_CVS);
 
-    const doc = instantiateTemplate(template, userId, name, body.region as "uk" | "us" | undefined);
+    // With its cover letter: the CV is then aimed at the letter's made-up job, which the person changes to their own.
+    const doc = instantiateTemplate(template, userId, name, body.region as "uk" | "us" | undefined, { letter: body.letter === true });
     // A design chosen in the template gallery replaces the one the example is shown in.
     const design = (CV_TEMPLATES as readonly string[]).includes(body.template ?? "") ? (body.template as TemplateId) : undefined;
     if (design) doc.design = { ...doc.design, template: design };

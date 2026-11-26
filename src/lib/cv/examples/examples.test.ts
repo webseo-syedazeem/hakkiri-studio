@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { audit } from "@/test/cv-quality";
+import { auditLetter } from "@/test/letter-quality";
 import { CvDocSchema } from "../schema";
 import { exampleCv, pick } from "./build";
 import { EXAMPLES } from "./index";
@@ -26,6 +27,30 @@ describe.each(EXAMPLES.flatMap((spec) => REGIONS.map((region) => [spec.id, regio
     });
     expect(a.goodEnough).toBe(true);
     expect(a.score).toBeGreaterThanOrEqual(98);
+  }, 30_000);
+});
+
+/**
+ * Each example's cover letter, in both regions: every sentence passes the
+ * app's own letter check (nothing claimed that isn't on the CV, in the reason
+ * for applying or in the advert), spelled and worded as cleanly as the CV,
+ * one page, and 200 to 400 words.
+ */
+describe.each(EXAMPLES.filter((spec) => spec.letter).flatMap((spec) => REGIONS.map((region) => [spec.id, region, spec] as const)))("%s cover letter (%s)", (_id, region, spec) => {
+  const cv = exampleCv(spec, region, "usr_test", undefined, new Date(), { letter: true });
+
+  it("is a valid CV with its letter and the job it is for", () => {
+    expect(CvDocSchema.safeParse(cv).success).toBe(true);
+    expect(cv.target?.advert).toBeTruthy();
+  });
+
+  it("passes the letter check, reads cleanly and fits one page", async () => {
+    const a = await auditLetter(cv, undefined, spec.names);
+    expect({ unsupported: a.unsupported, spelling: a.spelling, otherRegion: a.otherRegion, grammar: a.grammar, aiWords: a.aiWords, pages: a.pages, files: a.files }).toEqual({
+      unsupported: [], spelling: [], otherRegion: [], grammar: [], aiWords: [], pages: 1, files: "",
+    });
+    expect(a.words).toBeGreaterThanOrEqual(200);
+    expect(a.words).toBeLessThanOrEqual(400);
   }, 30_000);
 });
 

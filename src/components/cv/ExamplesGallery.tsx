@@ -1,236 +1,219 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { CvRegion } from "@/lib/cv/schema";
+import { useEffect, useMemo, useState } from "react";
+import { type CvRegion, type Section, isEntrySection, isListSection } from "@/lib/cv/schema";
+import { formatDates, sectionHeading } from "@/lib/cv/sections";
 import { type ExampleTemplate, examplesFor } from "@/lib/cv/templates/examples";
 import { api, messageOf } from "./client";
+import { Dialog } from "./Dialog";
 import { Bar, Btn, BtnLink, CvScreen, Panel, Toolbar } from "./ui";
 
+/** One section of an example, as plain text: what it says, not how it is laid out. */
+function SectionText({ s, region }: { s: Section; region: CvRegion }) {
+  return (
+    <section>
+      <h4 className="cv-label" style={{ margin: "0 0 6px" }}>
+        {sectionHeading(s, region)}
+      </h4>
+      {s.kind === "summary" && <p style={{ margin: 0 }}>{s.text}</p>}
+      {s.kind === "skills" && <p style={{ margin: 0 }}>{s.groups.flatMap((g) => g.skills.map((k) => k.name)).join(", ")}</p>}
+      {isListSection(s) && <p style={{ margin: 0 }}>{s.items.map((i) => (i.level ? `${i.name} (${i.level})` : i.name)).join(", ")}</p>}
+      {isEntrySection(s) &&
+        s.entries.map((e) => (
+          <div key={e.id} style={{ marginBottom: 10 }}>
+            <p style={{ margin: 0, fontWeight: 600 }}>{[e.title, e.subject && e.subject !== e.title ? e.subject : "", e.org].filter(Boolean).join(" · ")}</p>
+            <p className="cv-small" style={{ margin: "0 0 4px" }}>
+              {[formatDates(e), e.location, e.grade].filter(Boolean).join(" · ")}
+            </p>
+            {e.bullets.length > 0 && (
+              <ul style={{ margin: 0, paddingLeft: 18 }}>
+                {e.bullets.map((b) => (
+                  <li key={b.id}>{b.text}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        ))}
+    </section>
+  );
+}
+
+/**
+ * Example CVs and their cover letters, by industry, each written for the UK
+ * (a CV, A4) and the US (a resume, US Letter). Each one clears the app's own
+ * checks: spelling for its region, both files read back word for word, and
+ * every sentence of its letter traced to the CV or the advert. They can be
+ * read here, or copied to start a CV of one's own.
+ */
 export function ExamplesGallery() {
   const router = useRouter();
-  const [selectedCategory, setSelectedCategory] = useState<string>("All");
-  const [previewTemplate, setPreviewTemplate] = useState<ExampleTemplate | null>(null);
-  const [busyId, setBusyId] = useState<string | null>(null);
-  const [error, setError] = useState<string>("");
-  /** Every example has a UK CV and a US resume: the toggle shows one or the other. */
+  const [category, setCategory] = useState("All");
+  const [open, setOpen] = useState<ExampleTemplate | null>(null);
+  const [view, setView] = useState<"cv" | "letter">("cv");
+  const [busy, setBusy] = useState("");
+  const [error, setError] = useState("");
   const [region, setRegion] = useState<CvRegion>("uk");
   // Starts on the visitor's likely region, once the page is in the browser (the server can't know it).
   useEffect(() => {
     if (/^en-US$/i.test(navigator.language)) setRegion("us");
   }, []);
-  const all = examplesFor(region);
+  const all = useMemo(() => examplesFor(region), [region]);
   const categories = ["All", ...[...new Set(all.map((t) => t.category))].sort()];
+  const shown = category === "All" || !categories.includes(category) ? all : all.filter((t) => t.category === category);
+  const word = region === "us" ? "resume" : "CV";
+  // The open example in the chosen region's wording.
+  const reading = open ? all.find((t) => t.id === open.id) ?? open : null;
 
-  const filtered = selectedCategory === "All" || !categories.includes(selectedCategory) ? all : all.filter((t) => t.category === selectedCategory);
-
-  async function useTemplate(t: ExampleTemplate) {
-    setBusyId(t.id);
+  async function use(t: ExampleTemplate, letter = false) {
+    setBusy(`${t.id}${letter ? ":letter" : ""}`);
     setError("");
     try {
-      const res = await api<{ id: string }>("/api/cv/templates", {
-        method: "POST",
-        json: { templateId: t.id, name: t.title, region },
-      });
-      router.push(`/cv/v/${res.id}/edit/contact`);
+      const res = await api<{ id: string }>("/api/cv/templates", { method: "POST", json: { templateId: t.id, name: `${t.title} (example)`, region, letter } });
+      router.push(letter ? `/cv/v/${res.id}/letter` : `/cv/v/${res.id}/edit/contact`);
     } catch (err) {
       setError(messageOf(err));
-      setBusyId(null);
+      setBusy("");
     }
   }
 
   return (
     <CvScreen>
-      <Bar crumbs={[{ label: "CVs and letters", href: "/cv" }, { label: "Example Resumes" }]}>
+      <Bar crumbs={[{ label: "CVs and letters", href: "/cv" }, { label: "Examples" }]}>
         <BtnLink kind="primary" href="/cv/new">
-          + New Blank CV
+          New CV
         </BtnLink>
       </Bar>
 
       <div className="cv-area">
         <Toolbar
-          title="Example Resumes & Templates"
-          subtitle="Explore verified, high-scoring ATS resume templates across top careers. Learn from winning bullet structures or clone any template directly to start your CV."
+          title={`Example ${word}s and cover letters`}
+          subtitle={`Read a strong ${word} and letter for your kind of job, or start from one and make it yours. The people and employers are made up.`}
         />
 
         {error && (
           <div className="cv-issue" role="alert" style={{ marginBottom: 18 }}>
-            <strong>Could not use template</strong>
+            <strong>That didn’t work</strong>
             <span>{error}</span>
           </div>
         )}
 
-        <div className="cv-seg" role="group" aria-label="Region" style={{ marginBottom: 14 }}>
-          <button type="button" aria-pressed={region === "uk"} onClick={() => setRegion("uk")}>
-            UK CV
-          </button>
-          <button type="button" aria-pressed={region === "us"} onClick={() => setRegion("us")}>
-            US resume
-          </button>
+        <div className="cv-row" style={{ flexWrap: "wrap", gap: 12, marginBottom: 14 }}>
+          <div className="cv-seg" role="group" aria-label="Country">
+            <button type="button" aria-pressed={region === "uk"} onClick={() => setRegion("uk")}>
+              UK CV
+            </button>
+            <button type="button" aria-pressed={region === "us"} onClick={() => setRegion("us")}>
+              US resume
+            </button>
+          </div>
         </div>
 
-        {/* Category Pills */}
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20 }}>
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              type="button"
-              onClick={() => setSelectedCategory(cat)}
-              className="cv-chip"
-              style={{
-                cursor: "pointer",
-                padding: "6px 14px",
-                fontSize: 13,
-                fontWeight: 600,
-                borderRadius: 9999,
-                background: selectedCategory === cat ? "var(--accent, #7b88ff)" : "var(--surface, #1c1d25)",
-                color: selectedCategory === cat ? "#ffffff" : "var(--text, #f1f1f4)",
-                borderColor: selectedCategory === cat ? "var(--accent, #7b88ff)" : "var(--border, rgba(255, 255, 255, 0.1))",
-                transition: "all 0.15s ease",
-              }}
-            >
-              {cat}
+        <div role="group" aria-label="Industry" style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20 }}>
+          {categories.map((c) => (
+            <button key={c} type="button" className="cv-chip cv-filter" aria-pressed={category === c} onClick={() => setCategory(c)}>
+              {c}
             </button>
           ))}
         </div>
 
-        {/* Templates Grid */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(360px, 1fr))", gap: 20 }}>
-          {filtered.map((tpl) => (
-            <Panel key={tpl.id}>
-              <div className="cv-pad cv-stack" style={{ padding: 22, height: "100%", display: "flex", flexDirection: "column" }}>
-                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8, marginBottom: 8 }}>
+        <ul className="cv-examples" aria-label={`Example ${word}s`}>
+          {shown.map((t) => (
+            <li key={t.id}>
+              <Panel className="cv-example">
+                <div className="cv-pad cv-stack">
                   <div>
-                    <span className="cv-chip" style={{ fontSize: 11, fontWeight: 700, color: "var(--accent, #7b88ff)", background: "rgba(123, 136, 255, 0.12)", borderColor: "rgba(123, 136, 255, 0.25)" }}>
-                      {tpl.badge}
-                    </span>
-                    <h3 style={{ margin: "8px 0 2px", fontSize: 16, fontWeight: 700, color: "var(--text, #f1f1f4)" }}>
-                      {tpl.title}
-                    </h3>
-                    <small style={{ color: "var(--text-muted, #9a9ba7)" }}>
-                      {tpl.category} · {tpl.level.toUpperCase()} · {tpl.region.toUpperCase()} Format
-                    </small>
+                    <p className="cv-small" style={{ margin: 0 }}>
+                      {t.category} · {t.badge}
+                    </p>
+                    <h3 style={{ margin: "4px 0 0" }}>{t.title}</h3>
+                  </div>
+                  <p style={{ margin: 0 }}>{t.description}</p>
+                  <p className="cv-small" style={{ margin: 0 }}>
+                    {t.stats.experienceYears === "Student" ? "Student" : `${t.stats.experienceYears} of work`} · {t.stats.rolesCount} {t.stats.rolesCount === 1 ? "role" : "roles"} · {t.stats.skillsCount} skills{t.letter ? " · with a cover letter" : ""}
+                  </p>
+                  <div className="cv-row" style={{ gap: 8, marginTop: "auto" }}>
+                    <Btn
+                      onClick={() => {
+                        setView("cv");
+                        setOpen(t);
+                      }}
+                      aria-label={`Read the ${t.title} example`}
+                    >
+                      Read it
+                    </Btn>
+                    <Btn kind="primary" busy={busy === t.id} onClick={() => void use(t)} aria-label={`Start from the ${t.title} example`}>
+                      {busy === t.id ? "Copying…" : "Start from this"}
+                    </Btn>
                   </div>
                 </div>
-
-                <p style={{ fontSize: 12, lineHeight: 1.5, color: "var(--text-muted, #9a9ba7)", margin: "8px 0 14px", flexGrow: 1 }}>
-                  {tpl.description}
-                </p>
-
-                {/* Metric stats */}
-                <div style={{ display: "flex", gap: 12, padding: "8px 12px", background: "rgba(255, 255, 255, 0.03)", borderRadius: 8, border: "1px solid var(--border, rgba(255, 255, 255, 0.08))", marginBottom: 16, fontSize: 11, fontWeight: 600 }}>
-                  <span>⏳ {tpl.stats.experienceYears}</span>
-                  <span>💼 {tpl.stats.rolesCount} Roles</span>
-                  <span>⚡ {tpl.stats.skillsCount} Key Skills</span>
-                </div>
-
-                {/* Action Buttons */}
-                <div style={{ display: "flex", gap: 10, marginTop: "auto" }}>
-                  <Btn
-                    kind="primary"
-                    busy={busyId === tpl.id}
-                    onClick={() => void useTemplate(tpl)}
-                    style={{ flexGrow: 1 }}
-                  >
-                    {busyId === tpl.id ? "Cloning CV…" : "Use this template"}
-                  </Btn>
-                  <Btn
-                    kind="quiet"
-                    onClick={() => setPreviewTemplate(tpl)}
-                  >
-                    View details
-                  </Btn>
-                </div>
-              </div>
-            </Panel>
+              </Panel>
+            </li>
           ))}
-        </div>
+        </ul>
+      </div>
 
-        {/* Modal / Preview Dialog */}
-        {previewTemplate && (
-          <div
-            style={{
-              position: "fixed",
-              inset: 0,
-              background: "rgba(15, 23, 42, 0.6)",
-              backdropFilter: "blur(4px)",
-              zIndex: 1000,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: 20,
-            }}
-            onClick={() => setPreviewTemplate(null)}
-          >
-            <div
-              style={{
-                background: "var(--surface, #1c1d25)",
-                color: "var(--text, #f1f1f4)",
-                border: "1px solid var(--border, rgba(255, 255, 255, 0.12))",
-                borderRadius: 20,
-                maxWidth: 680,
-                width: "100%",
-                maxHeight: "85vh",
-                overflowY: "auto",
-                padding: 28,
-                boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
-                <div>
-                  <span className="cv-chip" style={{ fontSize: 11, fontWeight: 700, color: "var(--accent, #7b88ff)", background: "rgba(123, 136, 255, 0.12)", borderColor: "rgba(123, 136, 255, 0.25)" }}>
-                    {previewTemplate.badge}
-                  </span>
-                  <h2 style={{ fontSize: 20, fontWeight: 700, margin: "6px 0 2px", color: "var(--text, #f1f1f4)" }}>{previewTemplate.title}</h2>
-                  <small style={{ color: "var(--text-muted, #9a9ba7)" }}>
-                    {previewTemplate.category} · {previewTemplate.stats.experienceYears} experience
-                  </small>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setPreviewTemplate(null)}
-                  style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "var(--text-muted, #9a9ba7)" }}
-                >
-                  ✕
+      {reading && (
+        <Dialog
+          title={`${reading.title}: example ${view === "cv" ? word : "cover letter"}`}
+          onClose={() => setOpen(null)}
+          wide
+          actions={
+            <>
+              <Btn onClick={() => setOpen(null)}>Close</Btn>
+              {reading.letter && (
+                <Btn busy={busy === `${reading.id}:letter`} onClick={() => void use(reading, true)}>
+                  Start from this, with the letter
+                </Btn>
+              )}
+              <Btn kind="primary" busy={busy === reading.id} onClick={() => void use(reading)}>
+                Start from this
+              </Btn>
+            </>
+          }
+        >
+          <div className="cv-row" style={{ flexWrap: "wrap", gap: 10 }}>
+            {reading.letter && (
+              <div className="cv-seg" role="group" aria-label="Show">
+                <button type="button" aria-pressed={view === "cv"} onClick={() => setView("cv")}>
+                  {region === "us" ? "Resume" : "CV"}
+                </button>
+                <button type="button" aria-pressed={view === "letter"} onClick={() => setView("letter")}>
+                  Cover letter
                 </button>
               </div>
-
-              <div style={{ borderTop: "1px solid var(--border, rgba(255, 255, 255, 0.1))", paddingTop: 16, marginTop: 8 }}>
-                <h4 style={{ fontSize: 13, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-muted, #9a9ba7)", margin: "0 0 6px" }}>
-                  Summary Excerpt
-                </h4>
-                <p style={{ fontSize: 13, lineHeight: 1.6, color: "var(--text, #f1f1f4)", background: "var(--surface-raised, #22232c)", padding: 12, borderRadius: 8, border: "1px solid var(--border, rgba(255, 255, 255, 0.08))" }}>
-                  {previewTemplate.summary}
-                </p>
-
-                <h4 style={{ fontSize: 13, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-muted, #9a9ba7)", margin: "16px 0 8px" }}>
-                  Included Sections &amp; Structure
-                </h4>
-                <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13, color: "var(--text-muted, #9a9ba7)", lineHeight: 1.6 }}>
-                  <li><strong style={{ color: "var(--text, #f1f1f4)" }}>Contact Information:</strong> Phone, email, UK/US location, and LinkedIn link.</li>
-                  <li><strong style={{ color: "var(--text, #f1f1f4)" }}>Professional Experience:</strong> {previewTemplate.stats.rolesCount} chronologically structured roles with quantified ATS action bullets.</li>
-                  <li><strong style={{ color: "var(--text, #f1f1f4)" }}>Education &amp; Certifications:</strong> Degree, institution, and honors details.</li>
-                  <li><strong style={{ color: "var(--text, #f1f1f4)" }}>Skills Breakdown:</strong> {previewTemplate.stats.skillsCount} industry-specific competencies and tooling proficiencies.</li>
-                </ul>
-              </div>
-
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 24, borderTop: "1px solid var(--border, rgba(255, 255, 255, 0.1))", paddingTop: 16 }}>
-                <Btn kind="quiet" onClick={() => setPreviewTemplate(null)}>
-                  Close
-                </Btn>
-                <Btn
-                  kind="primary"
-                  busy={busyId === previewTemplate.id}
-                  onClick={() => void useTemplate(previewTemplate)}
-                >
-                  {busyId === previewTemplate.id ? "Cloning CV…" : "Use this template"}
-                </Btn>
-              </div>
+            )}
+            <div className="cv-seg" role="group" aria-label="Country">
+              <button type="button" aria-pressed={region === "uk"} onClick={() => setRegion("uk")}>
+                UK
+              </button>
+              <button type="button" aria-pressed={region === "us"} onClick={() => setRegion("us")}>
+                US
+              </button>
             </div>
           </div>
-        )}
-      </div>
+          {view === "cv" || !reading.letter ? (
+            reading.getSections().map((s) => <SectionText key={s.id} s={s} region={region} />)
+          ) : (
+            <div data-testid="example-letter" style={{ display: "flex", flexDirection: "column", gap: 14, lineHeight: 1.55 }}>
+              <p className="cv-small" style={{ margin: 0 }}>
+                For the role of {reading.letter.job} at {reading.letter.employer}, a made-up employer. Every sentence about the person is on their {word}.
+              </p>
+              <p style={{ margin: 0 }}>{reading.letter.greeting}</p>
+              {reading.letter.paragraphs.map((p) => (
+                <p key={p.slice(0, 40)} style={{ margin: 0 }}>
+                  {p}
+                </p>
+              ))}
+              <p style={{ margin: 0 }}>
+                {reading.letter.signoff}
+                <br />
+                {reading.letter.name}
+              </p>
+            </div>
+          )}
+        </Dialog>
+      )}
     </CvScreen>
   );
 }

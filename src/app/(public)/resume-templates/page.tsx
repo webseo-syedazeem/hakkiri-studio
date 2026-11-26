@@ -9,5 +9,5 @@ export const metadata: Metadata = {
 };
 
 export default function ResumeTemplatesPage() {
-  return <TemplateGallery region="us" items={galleryItems("us")} />;
+  return <TemplateGallery kind="resume" items={galleryItems("us")} />;
 }

@@ -11,11 +11,11 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const t = templateBySlug((await params).slug);
-  return t ? templateMeta(t, "us") : {};
+  return t ? templateMeta(t, "resume") : {};
 }
 
 export default async function ResumeTemplatePage({ params }: Props) {
   const t = templateBySlug((await params).slug);
   if (!t) notFound();
-  return <TemplateDetail t={t} region="us" />;
+  return <TemplateDetail t={t} kind="resume" />;
 }

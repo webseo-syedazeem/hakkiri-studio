@@ -83,7 +83,59 @@ export const COMMERCIAL: ExampleSpec[] = [
       },
     ],
     skills: ["Google Ads", "Meta Ads", "LinkedIn Ads", "Klaviyo", "Email marketing", "Search engine optimisation", "Landing pages", "Conversion tests", "Social media", "Google Analytics"],
-    names: ["Kinetix", "Brightwave", "Klaviyo", "Chloe", "Westside"],
+    names: ["Kinetix", "Brightwave", "Klaviyo", "Chloe", "Westside", "Fernbrook"],
+    letter: {
+      job: {
+        title: "Head of Growth Marketing",
+        employer: "Fernbrook Outdoor",
+        advert: {
+          uk: `Head of Growth Marketing
+Fernbrook Outdoor, Brighton (hybrid)
+
+Fernbrook Outdoor makes camping and walking gear and sells it online across the UK.
+
+The role
+You will lead paid, email and search marketing, with a budget of £2 million a year and a team of four.
+
+What we are looking for
+- Experience managing paid social and search budgets of over £1 million
+- A record of growing email sales
+- Experience leading a small team and working with agencies
+- Comfort reporting results to the leadership team`,
+          us: `Head of Growth Marketing
+Fernbrook Outdoor, Los Angeles, CA (hybrid)
+
+Fernbrook Outdoor makes camping and hiking gear and sells it online across the US.
+
+The role
+You will lead paid, email and search marketing, with a budget of $2.5 million a year and a team of four.
+
+What we are looking for
+- Experience managing paid social and search budgets of over $1 million
+- A record of growing email sales
+- Experience leading a small team and working with agencies
+- Comfort reporting results to the leadership team`,
+        },
+      },
+      reason: {
+        uk: "I spend most weekends walking the South Downs, and I want to market gear I use myself. Fernbrook sells only online, which is where I have done my best work.",
+        us: "I spend most weekends hiking in the Santa Monica Mountains, and I want to market gear I use myself. Fernbrook sells only online, which is where I have done my best work.",
+      },
+      recipient: { uk: "Ms Patel", us: "Ms. Patel" },
+      paragraphs: [
+        {
+          uk: "I am applying for the role of Head of Growth Marketing at Fernbrook Outdoor. I spend most weekends walking the South Downs, and I want to market gear I use myself. Fernbrook sells only online, which is where I have done my best work.",
+          us: "I am applying for the role of Head of Growth Marketing at Fernbrook Outdoor. I spend most weekends hiking in the Santa Monica Mountains, and I want to market gear I use myself. Fernbrook sells only online, which is where I have done my best work.",
+        },
+        {
+          uk: "At Kinetix Home I manage a £1.5 million yearly budget for Google Ads, Meta Ads and LinkedIn Ads, returning £4.10 in sales for every £1 spent over the last 2 years. Your advert asks for a record of growing email sales. I launched an email programme in Klaviyo that adds around £380,000 in sales a year.",
+          us: "At Kinetix Home I manage a $1.9 million yearly budget for Google Ads, Meta Ads and LinkedIn Ads, returning $4.10 in sales for every $1 spent over the last 2 years. Your advert asks for a record of growing email sales. I launched an email program in Klaviyo that adds around $480,000 in sales a year.",
+        },
+        "I also grew qualified leads by 52% in a year by rebuilding the 6 main landing pages with the design team. Through 40 tests on product pages, I raised the checkout conversion rate from 2.1% to 3.4%.",
+        "I lead a team of 3 marketers and 2 agencies, with campaigns planned a quarter ahead and reviewed every week. I report monthly to the leadership team on 8 measures, from cost per lead to repeat purchase rate.",
+        "My CV is attached, and I would welcome the chance to discuss the role. I am available to start after a one-month notice period. Thank you for your time and consideration.",
+      ],
+    },
   },
   {
     id: "finance-analyst",

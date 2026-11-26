@@ -2,7 +2,7 @@
 // a page for each template, the UK (CV) and US (resume) wording, and "Use this template" carrying the design into a
 // new CV, through sign-in when needed.
 const path = require("node:path");
-const { BASE, OUT, PHONE, check, newUser, a11y, fitsWidth, run } = require("./cv-helpers.cjs");
+const { BASE, OUT, PHONE, check, newUser, a11y, bothThemes, fitsWidth, run } = require("./cv-helpers.cjs");
 
 const cards = (page) => page.locator("main ul li a[href*='-templates/']");
 
@@ -62,13 +62,27 @@ run("Template galleries", async (browser) => {
   check(/No\. 07 · Harbour resume template/.test(text) && /US Letter/.test(text) && !/colour|centred/i.test(text), "the resume template page says resume, US Letter and color");
   await a11y(page, "Resume template page");
 
+  // The cover letter gallery: the same 45 designs, each drawn as a letter, linked to its matching CV.
+  await page.goto(`${BASE}/cover-letter-templates`);
+  await page.getByRole("heading", { level: 1, name: "Cover letter templates" }).waitFor();
+  check((await cards(page).count()) === 45, "the cover letter gallery lists all 45 designs");
+  await a11y(page, "Cover letter gallery");
+  await page.goto(`${BASE}/cover-letter-templates/07-harbour`);
+  await page.getByRole("heading", { level: 1, name: "No. 07 · Harbour cover letter template" }).waitFor();
+  check((await page.getByRole("link", { name: "See the matching CV" }).getAttribute("href")) === "/cv-templates/07-harbour", "a letter design links to its matching CV template");
+  await page.waitForFunction(() => [...document.querySelectorAll("main img")].slice(0, 1).every((i) => i.complete && i.naturalWidth > 0));
+  check(true, "the letter preview loads");
+  await a11y(page, "Cover letter template page");
+  await page.goto(`${BASE}/cv-templates/07-harbour`);
+  check((await page.getByRole("link", { name: "See the matching cover letter" }).getAttribute("href")) === "/cover-letter-templates/07-harbour", "a CV template links to its matching cover letter");
+
   // An address that is not a template is not found.
   const missing = await page.goto(`${BASE}/cv-templates/99-nothing`);
   check(missing.status() === 404, "an unknown template address is not found", String(missing.status()));
 
   // The sitemap lists the galleries and each template's page.
   const map = await (await page.request.get(`${BASE}/sitemap.xml`)).text();
-  check(map.includes("/cv-templates/07-harbour") && map.includes("/resume-templates/45-palette"), "the sitemap lists every template page");
+  check(map.includes("/cv-templates/07-harbour") && map.includes("/resume-templates/45-palette") && map.includes("/cover-letter-templates/01-hallmark"), "the sitemap lists every template page");
 
   // On a phone.
   const phone = await browser.newContext({ ...PHONE });
@@ -109,5 +123,27 @@ run("Template galleries", async (browser) => {
   const id2 = a.page.url().match(/cv_[a-f0-9]+/)[0];
   cv = await a.page.evaluate(async (cvId) => (await (await fetch(`/api/cv/versions/${cvId}`)).json()).cv, id2);
   check(cv.design.template === "standard", "without it, the CV starts in the usual design", cv.design.template);
+
+  // The example CVs and their cover letters, in the app.
+  await a.page.goto(`${BASE}/cv/examples`);
+  await a.page.getByRole("button", { name: "UK CV" }).click();
+  await a.page.getByRole("button", { name: "Read the Marketing Manager example" }).click();
+  const dialog = a.page.getByRole("dialog");
+  await dialog.getByText("Grew qualified leads by 52%").first().waitFor();
+  check(true, "an example can be read in full");
+  await dialog.getByRole("button", { name: "Cover letter" }).click();
+  const letterText = await dialog.getByTestId("example-letter").innerText();
+  check(/Dear Ms Patel,/.test(letterText) && /Yours sincerely,/.test(letterText) && /Fernbrook Outdoor/.test(letterText), "its cover letter can be read, with a UK greeting and sign-off");
+  await bothThemes(a.page, "examples-letter");
+  await dialog.getByRole("button", { name: "US", exact: true }).click();
+  const usText = await dialog.getByTestId("example-letter").innerText();
+  check(/Dear Ms\. Patel,/.test(usText) && /Sincerely,/.test(usText) && /\$480,000/.test(usText) && !/£|programme/.test(usText), "the US version is the US letter: dollars, US spelling, US sign-off");
+  await dialog.getByRole("button", { name: "Start from this, with the letter" }).click();
+  await a.page.waitForURL(/\/cv\/v\/cv_[a-f0-9]+\/letter/, { timeout: 30000 });
+  const id3 = a.page.url().match(/cv_[a-f0-9]+/)[0];
+  cv = await a.page.evaluate(async (cvId) => (await (await fetch(`/api/cv/versions/${cvId}`)).json()).cv, id3);
+  check(cv.region === "us" && cv.target?.employer === "Fernbrook Outdoor" && cv.letter?.paragraphs?.length === 5, "starting from it with the letter gives a US resume with its letter and the job it is for", JSON.stringify({ region: cv.region, target: cv.target?.employer, paras: cv.letter?.paragraphs?.length }));
+  await a.page.getByTestId("letter-fit").waitFor({ timeout: 30000 });
+  check(true, "the letter opens on the letter screen and fits one page");
   check(a.errors.length === 0, "no errors on the CV screens", a.errors.join(" | "));
 });

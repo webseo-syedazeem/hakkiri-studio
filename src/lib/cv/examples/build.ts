@@ -1,15 +1,20 @@
+import { splitSentences } from "../letter/check";
 import {
   type CvDoc,
   type CvRegion,
   type Entry,
+  LETTER_ROLES,
+  type Letter,
   type Section,
   type SectionKind,
+  type Target,
+  emptyLetter,
   emptySection,
   newBullet,
   newId,
 } from "../schema";
 import { wrongRegionSpelling } from "../score/detect";
-import type { ExampleEntry, ExampleSpec, Regional } from "./types";
+import type { ExampleEntry, ExampleLetter, ExampleSpec, Regional } from "./types";
 
 /** True when a value is written separately for each region. */
 const split = <T>(v: Regional<T>): v is { uk: T; us: T } => typeof v === "object" && v !== null && !Array.isArray(v) && "uk" in v && "us" in v;
@@ -87,8 +92,21 @@ export function exampleSections(spec: ExampleSpec, region: CvRegion): Section[] 
   return [...profile, ...middle, ...entries("certificates", spec.certificates, region), ...entries("volunteering", spec.volunteering, region), ...skillList, ...languages];
 }
 
-/** The example as a CV of the person's own, ready to edit. */
-export function exampleCv(spec: ExampleSpec, region: CvRegion, userId: string, name?: string, now = new Date()): CvDoc {
+/** The example's cover letter and the job it is for, in the region's wording. The date is left empty: it is the day the file is made. */
+export function exampleLetter(l: ExampleLetter, region: CvRegion): { target: Target; letter: Letter } {
+  const paragraphs = l.paragraphs.map((p, i, all) => ({
+    id: newId("p_"),
+    role: i === 0 ? LETTER_ROLES[0] : i === all.length - 1 ? LETTER_ROLES[2] : LETTER_ROLES[1],
+    sentences: splitSentences(pick(p, region)).map((text) => ({ id: newId("s_"), text, origin: "typed" as const, sources: [] })),
+  }));
+  return {
+    target: { title: pick(l.job.title, region), employer: pick(l.job.employer, region), advert: pick(l.job.advert, region) },
+    letter: { ...emptyLetter(), reason: pick(l.reason, region), recipient: l.recipient ? pick(l.recipient, region) : "", paragraphs, started: true },
+  };
+}
+
+/** The example as a CV of the person's own, ready to edit; with its cover letter, and the job that is for, when asked. */
+export function exampleCv(spec: ExampleSpec, region: CvRegion, userId: string, name?: string, now = new Date(), opts: { letter?: boolean } = {}): CvDoc {
   const at = now.toISOString();
   const p = spec.person;
   return {
@@ -102,6 +120,7 @@ export function exampleCv(spec: ExampleSpec, region: CvRegion, userId: string, n
     contact: { fullName: p.name, email: p.email, phone: pick(p.phone, region), location: pick(p.location, region), links: p.links ?? [] },
     sections: exampleSections(spec, region),
     design: { template: spec.template, pageSize: region === "us" ? "letter" : "a4", density: spec.density ? pickAny(spec.density, region) : "default", pageTarget: spec.level === "student" || spec.level === "early" ? 1 : 2 },
+    ...(opts.letter && spec.letter ? exampleLetter(spec.letter, region) : {}),
     accepted: spec.names ?? [],
     requirements: [],
     changes: [],

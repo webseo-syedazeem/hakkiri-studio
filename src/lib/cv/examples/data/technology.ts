@@ -26,7 +26,7 @@ export const TECHNOLOGY: ExampleSpec[] = [
           "Moved 30 older endpoints to GraphQL over 6 months, cutting the data sent to the mobile app by 60% and speeding up the main screens",
           "Cut checkout load time from 3.1 to 1.7 seconds by caching product data and splitting large code bundles, lifting completed orders by 4%",
           "Set up automated tests and releases in GitHub Actions, cutting failed releases by 60% in 6 months and releasing 5 times a day",
-          "Review code in around 25 pull requests a week and run fortnightly design sessions for 12 engineers across 3 teams",
+          { uk: "Review code in around 25 pull requests a week and run fortnightly design sessions for 12 engineers across 3 teams", us: "Review code in around 25 pull requests a week and run design sessions every two weeks for 12 engineers across 3 teams" },
           "Brought the customer dashboard up to the Web Content Accessibility Guidelines (WCAG) 2.1 in a quarter, fixing 140 accessibility issues",
         ],
       },

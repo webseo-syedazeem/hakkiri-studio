@@ -9,5 +9,5 @@ export const metadata: Metadata = {
 };
 
 export default function CvTemplatesPage() {
-  return <TemplateGallery region="uk" items={galleryItems("uk")} />;
+  return <TemplateGallery kind="cv" items={galleryItems("uk")} />;
 }

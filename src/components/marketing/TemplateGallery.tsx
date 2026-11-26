@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import type { CvRegion, TemplateId } from "@/lib/cv/schema";
-import { FAMILY_NAMES, TEMPLATE_FAMILIES, type TemplateFamily, templateLabel, templatePreview, templateSlug } from "@/lib/cv/render/templates";
+import type { TemplateId } from "@/lib/cv/schema";
+import { FAMILY_NAMES, GALLERIES, type GalleryKind, TEMPLATE_FAMILIES, type TemplateFamily, templateLabel, templatePreview, templateSlug } from "@/lib/cv/render/templates";
 
 /** What the gallery needs of a template: no functions, so it can be handed from the server. */
 export interface GalleryItem {
@@ -18,11 +18,10 @@ export interface GalleryItem {
 /**
  * The template gallery: every template as the renderer draws it, by number,
  * with filters by family and a search by name, number or tag. Shared by the
- * UK (CV) and US (resume) pages.
+ * UK (CV), US (resume) and cover letter pages.
  */
-export function TemplateGallery({ items, region }: { items: GalleryItem[]; region: CvRegion }) {
-  const word = region === "us" ? "resume" : "CV";
-  const base = region === "us" ? "/resume-templates" : "/cv-templates";
+export function TemplateGallery({ items, kind }: { items: GalleryItem[]; kind: GalleryKind }) {
+  const { word, base, title, region } = GALLERIES[kind];
   const [family, setFamily] = useState<TemplateFamily | "all">("all");
   const [query, setQuery] = useState("");
   const shown = useMemo(() => {
@@ -35,9 +34,11 @@ export function TemplateGallery({ items, region }: { items: GalleryItem[]; regio
     <div className="w-full bg-[#fafbfc]">
       <section className="border-b border-black/[0.06] bg-white px-4 pt-12 pb-10 sm:px-6">
         <div className="mx-auto flex max-w-3xl flex-col items-center gap-4 text-center">
-          <h1 className="text-3xl font-extrabold leading-tight tracking-tight text-slate-900 sm:text-5xl">{word === "CV" ? "CV templates" : "Resume templates"}</h1>
+          <h1 className="text-3xl font-extrabold leading-tight tracking-tight text-slate-900 sm:text-5xl">{title}</h1>
           <p className="max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
-            {items.length} templates, each one column of real text with standard headings, so screening software reads them the way a person does. Pick one, then change the fonts, {region === "us" ? "color" : "colour"}, spacing and more.
+            {kind === "letter"
+              ? `${items.length} cover letter templates, each matching the CV template with the same number, so your letter and CV look like a pair. Every sentence is checked against your CV before you send it.`
+              : `${items.length} templates, each one column of real text with standard headings, so screening software reads them the way a person does. Pick one, then change the fonts, ${region === "us" ? "color" : "colour"}, spacing and more.`}
           </p>
           <label className="relative mt-2 w-full max-w-lg">
             <span className="sr-only">Search templates by name, number or style</span>
@@ -75,7 +76,7 @@ export function TemplateGallery({ items, region }: { items: GalleryItem[]; regio
               <Link href={`${base}/${templateSlug(t)}`} className="group block rounded-2xl border border-slate-200 bg-white p-3 shadow-sm transition-shadow hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[#3d4bd8]">
                 <span className="block overflow-hidden rounded-lg border border-slate-100 bg-white">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={templatePreview(t, "small")} srcSet={`${templatePreview(t, "small")} 550w, ${templatePreview(t)} 1098w`} sizes="(min-width: 1024px) 340px, (min-width: 640px) 45vw, 92vw" alt={`${templateLabel(t)}: the first page of an example ${word}`} width={550} height={777} loading="lazy" className="block h-auto w-full" />
+                  <img src={templatePreview(t, "small", kind)} srcSet={`${templatePreview(t, "small", kind)} 550w, ${templatePreview(t, "large", kind)} 1098w`} sizes="(min-width: 1024px) 340px, (min-width: 640px) 45vw, 92vw" alt={`${templateLabel(t)}: the first page of an example ${word}`} width={550} height={777} loading="lazy" className="block h-auto w-full" />
                 </span>
                 <span className="mt-3 block text-base font-semibold text-slate-900">{templateLabel(t)}</span>
                 <span className="block text-sm text-slate-600">{t.suits}</span>
