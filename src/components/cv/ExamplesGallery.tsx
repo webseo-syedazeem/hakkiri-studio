@@ -2,40 +2,35 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { type CvRegion, type Section, isEntrySection, isListSection } from "@/lib/cv/schema";
-import { formatDates, sectionHeading } from "@/lib/cv/sections";
+import { exampleCv } from "@/lib/cv/examples/build";
+import { exampleById } from "@/lib/cv/examples/index";
+import { isoDate } from "@/lib/cv/letter/flow";
+import type { CvRegion } from "@/lib/cv/schema";
 import { type ExampleTemplate, examplesFor } from "@/lib/cv/templates/examples";
 import { api, messageOf } from "./client";
 import { Dialog } from "./Dialog";
+import { PaperView } from "./Paper";
+import { useLetterPaper, usePaper } from "./usePaper";
 import { Bar, Btn, BtnLink, CvScreen, Panel, Toolbar } from "./ui";
 
-/** One section of an example, as plain text: what it says, not how it is laid out. */
-function SectionText({ s, region }: { s: Section; region: CvRegion }) {
+/**
+ * The example drawn as it prints: a white page in its own template, by the
+ * same renderer as the editor and the downloads. The CV, or its cover letter.
+ */
+function ExamplePaper({ id, region, view, word }: { id: string; region: CvRegion; view: "cv" | "letter"; word: string }) {
+  const cv = useMemo(() => {
+    const spec = exampleById(id);
+    return spec ? exampleCv(spec, region, "example", undefined, new Date(), { letter: true }) : null;
+  }, [id, region]);
+  const today = useMemo(() => isoDate(new Date()), []);
+  const cvPaper = usePaper(view === "cv" ? cv : null);
+  const letterPaper = useLetterPaper(view === "letter" ? cv : null, today);
+  const shown = view === "cv" ? cvPaper : letterPaper;
+  if (!cv) return null;
   return (
-    <section>
-      <h4 className="cv-label" style={{ margin: "0 0 6px" }}>
-        {sectionHeading(s, region)}
-      </h4>
-      {s.kind === "summary" && <p style={{ margin: 0 }}>{s.text}</p>}
-      {s.kind === "skills" && <p style={{ margin: 0 }}>{s.groups.flatMap((g) => g.skills.map((k) => k.name)).join(", ")}</p>}
-      {isListSection(s) && <p style={{ margin: 0 }}>{s.items.map((i) => (i.level ? `${i.name} (${i.level})` : i.name)).join(", ")}</p>}
-      {isEntrySection(s) &&
-        s.entries.map((e) => (
-          <div key={e.id} style={{ marginBottom: 10 }}>
-            <p style={{ margin: 0, fontWeight: 600 }}>{[e.title, e.subject && e.subject !== e.title ? e.subject : "", e.org].filter(Boolean).join(" · ")}</p>
-            <p className="cv-small" style={{ margin: "0 0 4px" }}>
-              {[formatDates(e), e.location, e.grade].filter(Boolean).join(" · ")}
-            </p>
-            {e.bullets.length > 0 && (
-              <ul style={{ margin: 0, paddingLeft: 18 }}>
-                {e.bullets.map((b) => (
-                  <li key={b.id}>{b.text}</li>
-                ))}
-              </ul>
-            )}
-          </div>
-        ))}
-    </section>
+    <div data-testid={view === "letter" ? "example-letter" : "example-cv"}>
+      <PaperView paper={shown.paper} state={shown.state} retry={shown.retry} cv={cv} focus={null} word={view === "letter" ? "letter" : word} />
+    </div>
   );
 }
 
@@ -198,26 +193,12 @@ export function ExamplesGallery() {
               </button>
             </div>
           </div>
-          {view === "cv" || !reading.letter ? (
-            reading.getSections().map((s) => <SectionText key={s.id} s={s} region={region} />)
-          ) : (
-            <div data-testid="example-letter" style={{ display: "flex", flexDirection: "column", gap: 14, lineHeight: 1.55 }}>
-              <p className="cv-small" style={{ margin: 0 }}>
-                For the role of {reading.letter.job} at {reading.letter.employer}, a made-up employer. Every sentence about the person is on their {word}.
-              </p>
-              <p style={{ margin: 0 }}>{reading.letter.greeting}</p>
-              {reading.letter.paragraphs.map((p) => (
-                <p key={p.slice(0, 40)} style={{ margin: 0 }}>
-                  {p}
-                </p>
-              ))}
-              <p style={{ margin: 0 }}>
-                {reading.letter.signoff}
-                <br />
-                {reading.letter.name}
-              </p>
-            </div>
+          {view === "letter" && reading.letter && (
+            <p className="cv-small" style={{ margin: 0 }}>
+              For the role of {reading.letter.job} at {reading.letter.employer}, a made-up employer. Every sentence about the person is on their {word}.
+            </p>
           )}
+          <ExamplePaper id={reading.id} region={region} view={view === "letter" && reading.letter ? "letter" : "cv"} word={word} />
         </Dialog>
       )}
     </CvScreen>

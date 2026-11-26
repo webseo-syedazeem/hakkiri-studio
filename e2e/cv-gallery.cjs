@@ -155,14 +155,23 @@ run("Template galleries", async (browser) => {
   await a.page.getByRole("button", { name: "UK CV" }).click();
   await a.page.getByRole("button", { name: "Read the Marketing Manager example" }).click();
   const dialog = a.page.getByRole("dialog");
-  await dialog.getByText("Grew qualified leads by 52%").first().waitFor();
+  // The example is drawn as its printed page, white, in its own template.
+  const pageText = async (id) => {
+    const svg = dialog.getByTestId(id).locator("svg.cv-paper").first();
+    await svg.waitFor({ timeout: 20000 });
+    return svg.evaluate((el) => [...el.querySelectorAll("text")].map((t) => t.textContent).join("\n"));
+  };
+  check((await pageText("example-cv")).includes("Grew qualified leads by 52%"), "an example opens as its printed page");
+  const fill = await dialog.getByTestId("example-cv").locator("svg.cv-paper rect").first().getAttribute("fill");
+  check(/^#f[0-9a-f]{5}$|^#fff/i.test(fill || ""), "the page is white, not dark", fill);
   check(true, "an example can be read in full");
   await dialog.getByRole("button", { name: "Cover letter" }).click();
-  const letterText = await dialog.getByTestId("example-letter").innerText();
+  const letterText = await pageText("example-letter");
   check(/Dear Ms Patel,/.test(letterText) && /Yours sincerely,/.test(letterText) && /Fernbrook Outdoor/.test(letterText), "its cover letter can be read, with a UK greeting and sign-off");
   await bothThemes(a.page, "examples-letter");
   await dialog.getByRole("button", { name: "US", exact: true }).click();
-  const usText = await dialog.getByTestId("example-letter").innerText();
+  await a.page.waitForTimeout(500);
+  const usText = await pageText("example-letter");
   check(/Dear Ms\. Patel,/.test(usText) && /Sincerely,/.test(usText) && /\$480,000/.test(usText) && !/£|programme/.test(usText), "the US version is the US letter: dollars, US spelling, US sign-off");
   await dialog.getByRole("button", { name: "Start from this, with the letter" }).click();
   await a.page.waitForURL(/\/cv\/v\/cv_[a-f0-9]+\/letter/, { timeout: 30000 });
