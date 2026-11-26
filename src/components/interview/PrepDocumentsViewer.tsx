@@ -52,7 +52,7 @@ export function PrepDocumentsViewer({
             <Icon name="doc" size={16} />
           </div>
           <div>
-            <h2 className="text-sm font-bold text-white">Application Documents & Job Spec</h2>
+            <h2 className="text-sm font-bold text-ink">Application Documents & Job Spec</h2>
             <p className="text-xs text-muted">
               Your one-stop reference for the job description, your submitted CV, and cover letter.
             </p>
@@ -65,7 +65,7 @@ export function PrepDocumentsViewer({
               href={cleanJobUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs font-medium text-white/90 hover:bg-white/[0.08] hover:text-white transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-line-strong bg-panel-2 px-2.5 py-1 text-xs font-medium text-ink hover:bg-panel hover:border-blue-fill/50 dark:border-white/10 dark:bg-white/[0.04] dark:text-white/90 transition-colors"
             >
               <span>View Job Advert</span>
               <span className="text-[10px] text-muted">↗</span>
@@ -75,9 +75,9 @@ export function PrepDocumentsViewer({
             <button
               type="button"
               onClick={handleCopy}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1 text-xs font-medium text-white/90 hover:bg-white/[0.08] hover:text-white transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-line-strong bg-panel-2 px-2.5 py-1 text-xs font-medium text-ink hover:bg-panel hover:border-blue-fill/50 dark:border-white/10 dark:bg-white/[0.04] dark:text-white/90 transition-colors cursor-pointer"
             >
-              <Icon name="check" size={12} className={copied ? "text-emerald-400" : "text-muted"} />
+              <Icon name="check" size={12} className={copied ? "text-emerald-600 dark:text-emerald-400" : "text-muted"} />
               <span>{copied ? "Copied" : "Copy text"}</span>
             </button>
           )}
@@ -85,15 +85,15 @@ export function PrepDocumentsViewer({
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-1.5 border-b border-white/[0.06] pb-2">
+      <div className="flex items-center gap-1.5 border-b border-line pb-2">
         <button
           type="button"
           onClick={() => setActiveTab("job")}
           className={clsx(
             "rounded-lg px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer",
             activeTab === "job"
-              ? "bg-indigo-500/20 text-indigo-200 border border-indigo-500/35"
-              : "text-muted hover:text-ink hover:bg-white/[0.03]",
+              ? "bg-blue-fill/12 text-blue-fill border border-blue-fill/30 dark:bg-indigo-500/20 dark:text-indigo-200 dark:border-indigo-500/35"
+              : "text-muted hover:text-ink hover:bg-panel-2",
           )}
         >
           Job Description
@@ -105,8 +105,8 @@ export function PrepDocumentsViewer({
           className={clsx(
             "rounded-lg px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer",
             activeTab === "cv"
-              ? "bg-indigo-500/20 text-indigo-200 border border-indigo-500/35"
-              : "text-muted hover:text-ink hover:bg-white/[0.03]",
+              ? "bg-blue-fill/12 text-blue-fill border border-blue-fill/30 dark:bg-indigo-500/20 dark:text-indigo-200 dark:border-indigo-500/35"
+              : "text-muted hover:text-ink hover:bg-panel-2",
           )}
         >
           Uploaded CV {cvFileName ? `(${cvFileName})` : ""}
@@ -119,8 +119,8 @@ export function PrepDocumentsViewer({
             className={clsx(
               "rounded-lg px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer",
               activeTab === "cover"
-                ? "bg-indigo-500/20 text-indigo-200 border border-indigo-500/35"
-                : "text-muted hover:text-ink hover:bg-white/[0.03]",
+                ? "bg-blue-fill/12 text-blue-fill border border-blue-fill/30 dark:bg-indigo-500/20 dark:text-indigo-200 dark:border-indigo-500/35"
+                : "text-muted hover:text-ink hover:bg-panel-2",
             )}
           >
             Cover Letter {coverLetterFileName ? `(${coverLetterFileName})` : ""}

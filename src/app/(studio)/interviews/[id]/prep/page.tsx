@@ -30,7 +30,7 @@ function Card({ icon, tone, title, note, children, testid }: { icon: IconName; t
           <Icon name={icon} size={16} />
         </div>
         <div className="min-w-0">
-          <h2 className="text-sm font-bold text-white">{title}</h2>
+          <h2 className="text-sm font-bold text-ink">{title}</h2>
           {note ? <p className="mt-0.5 text-xs text-muted">{note}</p> : null}
         </div>
       </div>
@@ -89,11 +89,11 @@ export default async function PrepSheetPage({ params }: { params: Promise<{ id: 
 
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex min-w-0 items-center gap-3.5">
-            <span aria-hidden className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-900/40 text-[19px] font-bold text-emerald-300 border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.15)]">
+            <span aria-hidden className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 text-[19px] font-bold text-emerald-700 border border-emerald-500/30 dark:bg-emerald-900/40 dark:text-emerald-300 shadow-sm">
               {interview.companyInitial || interview.company.charAt(0).toUpperCase() || "?"}
             </span>
             <div className="min-w-0">
-              <h1 className="truncate text-2xl font-bold tracking-tight text-white">{interview.role || "Prep sheet"}</h1>
+              <h1 className="truncate text-2xl font-bold tracking-tight text-ink">{interview.role || "Prep sheet"}</h1>
               <div className="mt-0.5 text-xs text-muted flex flex-wrap items-center gap-2">
                 {interview.company ? <span>{interview.company}</span> : null}
                 {stage ? (
@@ -228,7 +228,7 @@ export default async function PrepSheetPage({ params }: { params: Promise<{ id: 
             )}
           </Card>
 
-          <Card testid="prep-best-answers" icon="sparkle" tone="bg-amber-500/15 text-amber-300 border-amber-500/25" title="Your best answers" note="Your highest-scoring answer to each question, in its stronger version.">
+          <Card testid="prep-best-answers" icon="sparkle" tone="bg-amber-500/15 text-amber-600 dark:text-amber-300 border-amber-500/25" title="Your best answers" note="Your highest-scoring answer to each question, in its stronger version.">
             {sheet.bestAnswers.length ? (
               <ul className="space-y-3">
                 {sheet.bestAnswers.map((a) => (
@@ -237,7 +237,7 @@ export default async function PrepSheetPage({ params }: { params: Promise<{ id: 
                       <Link href={`/interviews/${interview.id}/answers/${a.answerId}`} className="hover:text-blue-soft">
                         {a.question}
                       </Link>
-                      <span className="num shrink-0 text-white">{a.score.toFixed(1)} / 5</span>
+                      <span className="num shrink-0 text-ink">{a.score.toFixed(1)} / 5</span>
                     </div>
                     {a.text ? <p className="text-[11px] leading-relaxed text-muted">“{a.text}”</p> : <p className="text-[11px] text-muted">No stronger version was written for this answer.</p>}
                   </li>
@@ -285,11 +285,11 @@ export default async function PrepSheetPage({ params }: { params: Promise<{ id: 
                   <span>How to approach it</span>
                 </div>
                 {questions.map((q) => (
-                  <Link key={q.id} href={`/mock/${interview.id}?q=${encodeURIComponent(q.id)}`} className="grid grid-cols-[1.2fr_1.8fr] gap-3 py-3 items-start text-xs group hover:bg-white/[0.02] rounded-lg transition-colors px-1">
+                  <Link key={q.id} href={`/mock/${interview.id}?q=${encodeURIComponent(q.id)}`} className="grid grid-cols-[1.2fr_1.8fr] gap-3 py-3 items-start text-xs group hover:bg-panel-2/70 rounded-lg transition-colors px-1">
                     <span className="font-semibold text-ink group-hover:text-blue-soft transition-colors">{q.text}</span>
                     <span className="flex items-start justify-between gap-2 text-muted leading-relaxed text-[11px]">
                       <span>{q.approach}</span>
-                      <Icon name="chevronRight" size={13} className="shrink-0 text-dim mt-0.5 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+                      <Icon name="chevronRight" size={13} className="shrink-0 text-dim mt-0.5 group-hover:text-blue-fill dark:group-hover:text-white group-hover:translate-x-0.5 transition-all" />
                     </span>
                   </Link>
                 ))}

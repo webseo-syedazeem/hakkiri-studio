@@ -155,38 +155,38 @@ export function InterviewReportView(p: InterviewReportViewProps) {
   return (
     <div className="flex flex-col gap-6 w-full pb-20 animate-rise">
       {/* 1. HEADER */}
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-5 border-b border-white/[0.08] pb-5">
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-5 border-b border-line pb-5">
         <div>
           {/* Breadcrumb */}
           <Link
             href={`/interviews/${interview.id}`}
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-muted hover:text-white transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-muted hover:text-ink transition-colors"
           >
             <Icon name="back" size={13} />
             <span>Interviews</span>
-            <span className="text-white/20">/</span>
-            <span className="text-[#c9cad3]">{interview.role}</span>
+            <span className="text-dim/40">/</span>
+            <span className="text-ink/85">{interview.role}</span>
           </Link>
 
-          <h1 className="mt-2 text-[32px] font-bold tracking-tight text-white">Interview report</h1>
+          <h1 className="mt-2 text-[32px] font-bold tracking-tight text-ink">Interview report</h1>
 
           {/* Meta line */}
           <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-muted">
-            <span className="flex items-center gap-1.5 text-white/90 font-medium">
+            <span className="flex items-center gap-1.5 text-ink font-medium">
               <Icon name="cal" size={13} className="text-muted" />
               {p.whenFormatted}
             </span>
-            <span className="text-white/20">·</span>
+            <span className="text-dim/40">·</span>
             <span>{countsLine(report.questionCount, report.followUpCount)}</span>
             {p.difficultyFormatted ? (
               <>
-                <span className="text-white/20">·</span>
+                <span className="text-dim/40">·</span>
                 <span>{p.difficultyFormatted}</span>
               </>
             ) : null}
             {p.durationFormatted ? (
               <>
-                <span className="text-white/20">·</span>
+                <span className="text-dim/40">·</span>
                 <span>{p.durationFormatted}</span>
               </>
             ) : null}
@@ -200,7 +200,7 @@ export function InterviewReportView(p: InterviewReportViewProps) {
             micOk={p.micOk}
             size="sm"
             body={{ kind: "rerun", sessionId: mock.id }}
-            className="bg-[#141326] border border-white/10 hover:border-white/25 text-white flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold"
+            className="bg-panel dark:bg-[#141326] border border-line-strong dark:border-white/10 hover:border-blue/40 text-ink dark:text-white flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold shadow-sm"
           >
             <Icon name="repeat" size={14} />
             <span>Run it again</span>
@@ -210,7 +210,7 @@ export function InterviewReportView(p: InterviewReportViewProps) {
 
           <Link
             href={`/interviews/${interview.id}`}
-            className="pro-btn-glow bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:brightness-110 text-white flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold shadow-lg shadow-indigo-500/20 transition-all"
+            className="pro-btn-glow bg-blue-fill hover:bg-blue-hover text-white flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold shadow-md transition-all"
           >
             <Icon name="diamond" size={14} />
             <span>Back to your training</span>
@@ -231,13 +231,13 @@ export function InterviewReportView(p: InterviewReportViewProps) {
       {p.testMode && <TestModeNotice what="The scores and feedback in this report" />}
 
       {/* 2. HERO SUMMARY CARD */}
-      <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-6 lg:p-7 shadow-xl grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-6 items-center">
+      <div className="rounded-2xl bg-panel dark:bg-[#0d0c1c] border border-line dark:border-white/[0.08] p-6 lg:p-7 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_10px_28px_-6px_rgba(15,23,42,0.08)] dark:shadow-xl grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-6 items-center">
         {/* Left / Middle: Gauge + Strengths */}
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
           {/* Radial Gauge */}
           <div className="relative w-28 h-28 shrink-0 flex items-center justify-center">
             <svg className="w-28 h-28 -rotate-90 transform" viewBox="0 0 100 100">
-              <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.08)" strokeWidth="10" fill="transparent" />
+              <circle cx="50" cy="50" r="40" stroke="var(--color-line)" strokeWidth="10" fill="transparent" />
               <circle
                 cx="50"
                 cy="50"
@@ -252,33 +252,33 @@ export function InterviewReportView(p: InterviewReportViewProps) {
               />
               <defs>
                 <linearGradient id="radialGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#4f46e5" />
-                  <stop offset="100%" stopColor="#a855f7" />
+                  <stop offset="0%" stopColor="#0071e3" />
+                  <stop offset="100%" stopColor="#6366f1" />
                 </linearGradient>
               </defs>
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-              <span className="num text-2xl font-bold text-white tracking-tight leading-none" data-testid="report-score">{report.score != null ? report.score.toFixed(1) : "–"}</span>
+              <span className="num text-2xl font-bold text-ink tracking-tight leading-none" data-testid="report-score">{report.score != null ? report.score.toFixed(1) : "–"}</span>
               <span className="text-[11px] text-muted font-medium mt-0.5">{report.score != null ? "/ 5" : "Not scored"}</span>
             </div>
           </div>
 
           {/* Headline and summary, from this session's own score and categories */}
           <div data-testid="report-summary">
-            <h2 className="text-xl font-bold text-white tracking-tight">{reportHeadline(report)}</h2>
-            <p className="mt-2 text-sm text-[#c9cad3] leading-relaxed max-w-xl">{reportSummary(report)}</p>
+            <h2 className="text-xl font-bold text-ink tracking-tight">{reportHeadline(report)}</h2>
+            <p className="mt-2 text-sm text-muted leading-relaxed max-w-xl">{reportSummary(report)}</p>
           </div>
         </div>
 
         {/* Key takeaways: the strongest area and the patterns that repeated in this session */}
-        <div className="lg:border-l lg:border-white/[0.08] lg:pl-6 space-y-3" data-testid="report-takeaways">
-          <h3 className="text-xs font-semibold text-white tracking-wide uppercase">Key takeaways</h3>
+        <div className="lg:border-l lg:border-line dark:lg:border-white/[0.08] lg:pl-6 space-y-3" data-testid="report-takeaways">
+          <h3 className="text-xs font-semibold text-ink tracking-wide uppercase">Key takeaways</h3>
           <ul className="space-y-2.5">
             {takeaways(report).map((t) => (
-              <li key={t.title} className="flex items-start gap-2.5 text-xs text-[#d1d2dc] leading-relaxed">
-                <Icon name={t.tone === "good" ? "checkCircle" : t.tone === "fix" ? "alertCircle" : "info"} size={15} className={clsx("shrink-0 mt-0.5", t.tone === "good" ? "text-emerald-300" : t.tone === "fix" ? "text-amber-300" : "text-blue-soft")} />
+              <li key={t.title} className="flex items-start gap-2.5 text-xs text-muted leading-relaxed">
+                <Icon name={t.tone === "good" ? "checkCircle" : t.tone === "fix" ? "alertCircle" : "info"} size={15} className={clsx("shrink-0 mt-0.5", t.tone === "good" ? "text-emerald-600 dark:text-emerald-300" : t.tone === "fix" ? "text-amber-600 dark:text-amber-300" : "text-blue-soft")} />
                 <span>
-                  {t.detail ? <b className="font-semibold text-white">{t.title}. </b> : t.title}
+                  {t.detail ? <b className="font-semibold text-ink">{t.title}. </b> : t.title}
                   {t.detail}
                 </span>
               </li>
@@ -290,10 +290,10 @@ export function InterviewReportView(p: InterviewReportViewProps) {
       {/* 3. ROW 2: 3 CARDS IN A GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-stretch">
         {/* CARD 1: Scores by category: only the categories with a scored answer */}
-        <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-5 shadow-xl flex flex-col justify-between" data-testid="report-categories">
+        <div className="rounded-2xl bg-panel dark:bg-[#0d0c1c] border border-line dark:border-white/[0.08] p-5 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_10px_28px_-6px_rgba(15,23,42,0.08)] dark:shadow-xl flex flex-col justify-between" data-testid="report-categories">
           <div>
-            <div className="pb-3 border-b border-white/[0.07]">
-              <h3 className="text-sm font-semibold text-white">Scores by category</h3>
+            <div className="pb-3 border-b border-line dark:border-white/[0.07]">
+              <h3 className="text-sm font-semibold text-ink">Scores by category</h3>
               <p className="mt-0.5 text-[11px] text-muted">The average of your scored answers in each category.</p>
             </div>
 
@@ -304,14 +304,14 @@ export function InterviewReportView(p: InterviewReportViewProps) {
                 {categories.map((cat) => (
                   <div key={cat.key} className="space-y-1.5">
                     <div className="flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-2 text-[#c9cad3] font-medium">
+                      <div className="flex items-center gap-2 text-ink/85 font-medium">
                         <Icon name={CATEGORY_ICON[cat.key]} size={14} className="text-muted" />
                         <span>{cat.label}</span>
                       </div>
-                      <span className="num font-semibold text-white">{cat.score.toFixed(1)} / 5</span>
+                      <span className="num font-semibold text-ink">{cat.score.toFixed(1)} / 5</span>
                     </div>
-                    <div className="h-2 w-full rounded-full bg-white/[0.08] overflow-hidden" aria-hidden>
-                      <div className={clsx("h-full rounded-full transition-all duration-700", cat.score < 2 ? "bg-gradient-to-r from-rose-500 to-red-400" : cat.score < 3.5 ? "bg-gradient-to-r from-amber-500 to-orange-400" : "bg-gradient-to-r from-indigo-500 to-purple-400")} style={{ width: `${Math.min(100, (cat.score / 5) * 100)}%` }} />
+                    <div className="h-2 w-full rounded-full bg-panel-2 border border-line/60 dark:bg-white/[0.08] overflow-hidden" aria-hidden>
+                      <div className={clsx("h-full rounded-full transition-all duration-700", cat.score < 2 ? "bg-gradient-to-r from-rose-500 to-red-400" : cat.score < 3.5 ? "bg-gradient-to-r from-amber-500 to-orange-400" : "bg-gradient-to-r from-blue-fill to-indigo-500")} style={{ width: `${Math.min(100, (cat.score / 5) * 100)}%` }} />
                     </div>
                   </div>
                 ))}
@@ -321,26 +321,26 @@ export function InterviewReportView(p: InterviewReportViewProps) {
         </div>
 
         {/* CARD 2: Recommended next steps, worked out from this session */}
-        <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-5 shadow-xl flex flex-col justify-between" data-testid="report-next-steps">
+        <div className="rounded-2xl bg-panel dark:bg-[#0d0c1c] border border-line dark:border-white/[0.08] p-5 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_10px_28px_-6px_rgba(15,23,42,0.08)] dark:shadow-xl flex flex-col justify-between" data-testid="report-next-steps">
           <div>
             <div className="flex items-center gap-2 pb-1">
-              <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue/15 text-blue-soft">
+              <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue/10 dark:bg-blue/15 text-blue-soft">
                 <Icon name="target" size={14} />
               </div>
-              <h3 className="text-sm font-semibold text-white">Recommended next steps</h3>
+              <h3 className="text-sm font-semibold text-ink">Recommended next steps</h3>
             </div>
-            <p className="text-xs text-muted mb-4 border-b border-white/[0.07] pb-3">Worked out from this session’s answers: your weakest answer, your lowest category and any habit that repeated.</p>
+            <p className="text-xs text-muted mb-4 border-b border-line dark:border-white/[0.07] pb-3">Worked out from this session’s answers: your weakest answer, your lowest category and any habit that repeated.</p>
 
             {p.drills.length === 0 ? (
               <p className="text-xs text-muted">{report.score == null ? "Nothing was scored in this session, so there is nothing to recommend from it." : "Nothing is recommended from this session: no answer, category or habit needs a drill."}</p>
             ) : (
               <ul className="space-y-2.5">
                 {p.drills.map((d) => (
-                  <li key={d.title} className="flex items-center justify-between gap-3 p-3 rounded-xl bg-[#141326] border border-white/10">
+                  <li key={d.title} className="flex items-center justify-between gap-3 p-3 rounded-xl bg-panel-2 dark:bg-[#141326] border border-line dark:border-white/10">
                     <div className="min-w-0">
-                      <div className="text-xs font-semibold text-white">
+                      <div className="text-xs font-semibold text-ink">
                         {d.title}
-                        {d.done ? <span className="ml-1.5 font-medium text-emerald-300">Done</span> : null}
+                        {d.done ? <span className="ml-1.5 font-medium text-emerald-600 dark:text-emerald-300">Done</span> : null}
                       </div>
                       <div className="text-[11px] text-muted mt-0.5">
                         {d.detail} About {d.minutes} min.
@@ -349,7 +349,7 @@ export function InterviewReportView(p: InterviewReportViewProps) {
                     {d.spec.kind === "story" ? (
                       <Link
                         href={`/interviews/${interview.id}/story?skill=${encodeURIComponent(d.spec.skill ?? "")}&question=${encodeURIComponent(d.spec.question ?? "")}`}
-                        className="shrink-0 rounded-xl bg-[#252048] hover:bg-[#322a61] border border-indigo-500/30 px-3 py-1.5 text-xs font-semibold text-white transition-colors"
+                        className="shrink-0 rounded-xl bg-panel hover:bg-panel-2 dark:bg-[#252048] dark:hover:bg-[#322a61] border border-line-strong dark:border-indigo-500/30 px-3 py-1.5 text-xs font-semibold text-ink dark:text-white transition-colors shadow-sm"
                       >
                         Build it
                       </Link>
@@ -366,76 +366,76 @@ export function InterviewReportView(p: InterviewReportViewProps) {
         </div>
 
         {/* CARD 3: Answering frameworks */}
-        <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-5 shadow-xl flex flex-col justify-between">
+        <div className="rounded-2xl bg-panel dark:bg-[#0d0c1c] border border-line dark:border-white/[0.08] p-5 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_10px_28px_-6px_rgba(15,23,42,0.08)] dark:shadow-xl flex flex-col justify-between">
           <div>
             <div className="flex items-center gap-2 pb-1">
-              <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue/15 text-blue-soft">
+              <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue/10 dark:bg-blue/15 text-blue-soft">
                 <Icon name="layers" size={14} />
               </div>
-              <h3 className="text-sm font-semibold text-white">Answering frameworks</h3>
+              <h3 className="text-sm font-semibold text-ink">Answering frameworks</h3>
             </div>
-            <p className="text-xs text-muted mb-4 border-b border-white/[0.07] pb-3">Use proven structures to give clear, focused answers.</p>
+            <p className="text-xs text-muted mb-4 border-b border-line dark:border-white/[0.07] pb-3">Use proven structures to give clear, focused answers.</p>
 
             <div className="space-y-2">
               <button
                 type="button"
                 onClick={() => setSelectedFramework("star")}
-                className="w-full text-left group flex items-center justify-between gap-3 p-2.5 rounded-xl bg-[#141326] border border-white/10 hover:border-indigo-500/40 hover:bg-[#1a1832] transition-all cursor-pointer active:scale-[0.99]"
+                className="w-full text-left group flex items-center justify-between gap-3 p-2.5 rounded-xl bg-panel-2 dark:bg-[#141326] border border-line dark:border-white/10 hover:border-blue/40 hover:bg-panel dark:hover:bg-[#1a1832] transition-all cursor-pointer active:scale-[0.99]"
               >
                 <div className="flex items-center gap-2.5 truncate">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/[0.06] text-amber-400 group-hover:bg-amber-400/10 transition-colors">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-panel border border-line/60 dark:bg-white/[0.06] text-amber-500 dark:text-amber-400 group-hover:bg-amber-400/10 transition-colors">
                     <Icon name="star" size={15} />
                   </div>
                   <div className="truncate">
-                    <div className="text-xs font-semibold text-white group-hover:text-blue-soft transition-colors">STAR</div>
+                    <div className="text-xs font-semibold text-ink group-hover:text-blue-soft transition-colors">STAR</div>
                     <div className="text-[11px] text-muted truncate">Best for experience and situational questions.</div>
                   </div>
                 </div>
-                <Icon name="chevronRight" size={14} className="text-muted group-hover:text-white group-hover:translate-x-0.5 transition-all shrink-0" />
+                <Icon name="chevronRight" size={14} className="text-muted group-hover:text-ink group-hover:translate-x-0.5 transition-all shrink-0" />
               </button>
 
               <button
                 type="button"
                 onClick={() => setSelectedFramework("prep")}
-                className="w-full text-left group flex items-center justify-between gap-3 p-2.5 rounded-xl bg-[#141326] border border-white/10 hover:border-indigo-500/40 hover:bg-[#1a1832] transition-all cursor-pointer active:scale-[0.99]"
+                className="w-full text-left group flex items-center justify-between gap-3 p-2.5 rounded-xl bg-panel-2 dark:bg-[#141326] border border-line dark:border-white/10 hover:border-blue/40 hover:bg-panel dark:hover:bg-[#1a1832] transition-all cursor-pointer active:scale-[0.99]"
               >
                 <div className="flex items-center gap-2.5 truncate">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/[0.06] text-blue-soft group-hover:bg-blue/10 transition-colors">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-panel border border-line/60 dark:bg-white/[0.06] text-blue-soft group-hover:bg-blue/10 transition-colors">
                     <Icon name="list" size={15} />
                   </div>
                   <div className="truncate">
-                    <div className="text-xs font-semibold text-white group-hover:text-blue-soft transition-colors">PREP</div>
+                    <div className="text-xs font-semibold text-ink group-hover:text-blue-soft transition-colors">PREP</div>
                     <div className="text-[11px] text-muted truncate">A simple structure for structured responses.</div>
                   </div>
                 </div>
-                <Icon name="chevronRight" size={14} className="text-muted group-hover:text-white group-hover:translate-x-0.5 transition-all shrink-0" />
+                <Icon name="chevronRight" size={14} className="text-muted group-hover:text-ink group-hover:translate-x-0.5 transition-all shrink-0" />
               </button>
 
               <button
                 type="button"
                 onClick={() => setSelectedFramework("other")}
-                className="w-full text-left group flex items-center justify-between gap-3 p-2.5 rounded-xl bg-[#141326] border border-white/10 hover:border-indigo-500/40 hover:bg-[#1a1832] transition-all cursor-pointer active:scale-[0.99]"
+                className="w-full text-left group flex items-center justify-between gap-3 p-2.5 rounded-xl bg-panel-2 dark:bg-[#141326] border border-line dark:border-white/10 hover:border-blue/40 hover:bg-panel dark:hover:bg-[#1a1832] transition-all cursor-pointer active:scale-[0.99]"
               >
                 <div className="flex items-center gap-2.5 truncate">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/[0.06] text-purple-400 group-hover:bg-purple-400/10 transition-colors">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-panel border border-line/60 dark:bg-white/[0.06] text-purple-500 dark:text-purple-400 group-hover:bg-purple-400/10 transition-colors">
                     <Icon name="layers" size={15} />
                   </div>
                   <div className="truncate">
-                    <div className="text-xs font-semibold text-white group-hover:text-blue-soft transition-colors">Other useful frameworks</div>
+                    <div className="text-xs font-semibold text-ink group-hover:text-blue-soft transition-colors">Other useful frameworks</div>
                     <div className="text-[11px] text-muted truncate">For technical, product and strategy questions.</div>
                   </div>
                 </div>
-                <Icon name="chevronRight" size={14} className="text-muted group-hover:text-white group-hover:translate-x-0.5 transition-all shrink-0" />
+                <Icon name="chevronRight" size={14} className="text-muted group-hover:text-ink group-hover:translate-x-0.5 transition-all shrink-0" />
               </button>
             </div>
 
-            <div className="mt-3 pt-3 border-t border-white/[0.07]">
+            <div className="mt-3 pt-3 border-t border-line dark:border-white/[0.07]">
               <Link
                 href="/practice#hub-playbooks"
-                className="text-xs font-semibold text-blue-soft hover:text-white flex items-center justify-between gap-2 transition-colors group"
+                className="text-xs font-semibold text-blue-soft hover:text-ink flex items-center justify-between gap-2 transition-colors group"
               >
                 <span>Answering guides in Practice Hub</span>
-                <span className="text-[11px] text-indigo-400 group-hover:translate-x-0.5 transition-transform">Explore →</span>
+                <span className="text-[11px] text-blue-soft group-hover:translate-x-0.5 transition-transform">Explore →</span>
               </Link>
             </div>
           </div>
@@ -443,9 +443,9 @@ export function InterviewReportView(p: InterviewReportViewProps) {
       </div>
 
       {/* 4. ROW 3: QUESTION REVIEW SECTION */}
-      <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-6 shadow-xl">
+      <div className="rounded-2xl bg-panel dark:bg-[#0d0c1c] border border-line dark:border-white/[0.08] p-6 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_10px_28px_-6px_rgba(15,23,42,0.08)] dark:shadow-xl">
         {/* Tabs Row */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/[0.08] pb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-line dark:border-white/[0.08] pb-4">
           <div role="tablist" aria-label="Report" className="flex items-center gap-6">
             <button
               type="button"
@@ -453,8 +453,8 @@ export function InterviewReportView(p: InterviewReportViewProps) {
               aria-selected={activeTab === "review"}
               onClick={() => setActiveTab("review")}
               className={clsx(
-                "text-sm font-semibold pb-1 relative transition-colors",
-                activeTab === "review" ? "text-white after:absolute after:bottom-[-17px] after:left-0 after:right-0 after:h-0.5 after:bg-blue-500" : "text-[#a9abc0] hover:text-white"
+                "text-sm font-semibold pb-1 relative transition-colors cursor-pointer",
+                activeTab === "review" ? "text-ink after:absolute after:bottom-[-17px] after:left-0 after:right-0 after:h-0.5 after:bg-blue-fill" : "text-muted hover:text-ink"
               )}
             >
               Question review
@@ -465,8 +465,8 @@ export function InterviewReportView(p: InterviewReportViewProps) {
               aria-selected={activeTab === "details"}
               onClick={() => setActiveTab("details")}
               className={clsx(
-                "text-sm font-semibold pb-1 relative transition-colors",
-                activeTab === "details" ? "text-white after:absolute after:bottom-[-17px] after:left-0 after:right-0 after:h-0.5 after:bg-blue-500" : "text-[#a9abc0] hover:text-white"
+                "text-sm font-semibold pb-1 relative transition-colors cursor-pointer",
+                activeTab === "details" ? "text-ink after:absolute after:bottom-[-17px] after:left-0 after:right-0 after:h-0.5 after:bg-blue-fill" : "text-muted hover:text-ink"
               )}
             >
               Session details
@@ -482,29 +482,29 @@ export function InterviewReportView(p: InterviewReportViewProps) {
 
         {activeTab === "review" && (
           <>
-            <div className="mt-5 rounded-2xl bg-[#141326] border border-white/[0.08] p-5 flex items-center justify-between gap-4">
+            <div className="mt-5 rounded-2xl bg-panel-2 dark:bg-[#141326] border border-line dark:border-white/[0.08] p-5 flex items-center justify-between gap-4">
               <div className="flex items-center gap-3.5">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-500/15 text-purple-300 border border-purple-500/25">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-500/15 text-purple-600 dark:text-purple-300 border border-purple-500/25">
                   <Icon name="chat" size={20} />
                 </div>
                 <div>
-                  <h2 className="text-base font-bold text-white tracking-tight">Question review</h2>
-                  <p className="text-xs text-[#a5a7b8]">Open a question to hear your answer and read its transcript and feedback. The notes beside each one are what was measured in that answer.</p>
+                  <h2 className="text-base font-bold text-ink tracking-tight">Question review</h2>
+                  <p className="text-xs text-muted">Open a question to hear your answer and read its transcript and feedback. The notes beside each one are what was measured in that answer.</p>
                 </div>
               </div>
-              <span className="rounded-full bg-white/10 border border-white/10 px-3 py-1 text-xs font-semibold text-white shrink-0">
+              <span className="rounded-full bg-panel border border-line px-3 py-1 text-xs font-semibold text-ink shrink-0 shadow-xs">
                 {filteredRows.length} question{filteredRows.length === 1 ? "" : "s"}
               </span>
             </div>
 
             {filteredRows.length === 0 ? (
-              <p className="mt-4 rounded-xl bg-[#141326] border border-white/[0.06] p-5 text-xs text-muted" data-testid="report-no-rows">
+              <p className="mt-4 rounded-xl bg-panel-2 dark:bg-[#141326] border border-line dark:border-white/[0.06] p-5 text-xs text-muted" data-testid="report-no-rows">
                 {rows.length === 0 ? "No questions were answered in this session." : "No questions in this category."}
               </p>
             ) : (
               <div className="mt-4 overflow-x-auto">
                 <table className="w-full text-left text-xs" data-testid="report-rows">
-                  <thead className="text-muted border-b border-white/[0.06]">
+                  <thead className="text-muted border-b border-line dark:border-white/[0.06]">
                     <tr>
                       <th scope="col" className="py-3 px-3 font-medium w-8">#</th>
                       <th scope="col" className="py-3 px-3 font-medium min-w-[280px]">Question</th>
@@ -516,16 +516,16 @@ export function InterviewReportView(p: InterviewReportViewProps) {
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-white/[0.05] text-[#c9cad3]">
+                  <tbody className="divide-y divide-line dark:divide-white/[0.05] text-ink/85">
                     {visibleRows.map((r) => {
                       const measured = rowFeedback(r);
                       // Only an answer that was saved can be opened. A row without one has no link.
                       const answerHref = r.answerId ? `/interviews/${interview.id}/answers/${r.answerId}?mock=${mock.id}` : null;
                       const pill = r.slot === "opening" ? "Opening" : r.slot === "closing" ? "Close" : GROUP_LABEL[r.group];
                       return (
-                        <tr key={r.number} className="hover:bg-white/[0.03] transition-colors">
+                        <tr key={r.number} className="hover:bg-panel-2/60 dark:hover:bg-white/[0.03] transition-colors">
                           <td className="py-4 px-3 num text-muted">{r.number}</td>
-                          <td className="py-4 px-3 font-medium text-white max-w-[340px]">
+                          <td className="py-4 px-3 font-medium text-ink max-w-[340px]">
                             {answerHref ? (
                               <Link href={answerHref} className="hover:text-blue-soft transition-colors">
                                 {r.question}
@@ -535,9 +535,9 @@ export function InterviewReportView(p: InterviewReportViewProps) {
                             )}
                           </td>
                           <td className="py-4 px-3">
-                            <span className="inline-flex px-3 py-1 rounded-md text-[11px] font-semibold bg-[#2a1b42] text-[#d8b4fe] border border-[#581c87]/50">{pill}</span>
+                            <span className="inline-flex px-3 py-1 rounded-md text-[11px] font-semibold bg-purple-500/10 dark:bg-[#2a1b42] text-purple-700 dark:text-[#d8b4fe] border border-purple-500/30 dark:border-[#581c87]/50">{pill}</span>
                           </td>
-                          <td className="py-4 px-3 num font-bold text-white whitespace-nowrap">{r.overall != null ? `${r.overall.toFixed(1)} / 5` : <span className="font-medium text-muted">Not scored</span>}</td>
+                          <td className="py-4 px-3 num font-bold text-ink whitespace-nowrap">{r.overall != null ? `${r.overall.toFixed(1)} / 5` : <span className="font-medium text-muted">Not scored</span>}</td>
                           <td className="py-4 px-3">
                             {measured.good.length + measured.improve.length === 0 ? (
                               <span className="text-muted">Nothing could be measured in this answer.</span>
@@ -545,14 +545,14 @@ export function InterviewReportView(p: InterviewReportViewProps) {
                               <ul className="space-y-1.5 text-xs">
                                 {measured.improve.slice(0, 2).map((line) => (
                                   <li key={line} className="flex items-start gap-2">
-                                    <span aria-hidden className="mt-0.5 flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border border-amber-400/60 text-amber-300 text-[9px] font-bold">!</span>
-                                    <span className="text-[#d1d2dc] leading-tight">{line}</span>
+                                    <span aria-hidden className="mt-0.5 flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border border-amber-500/60 text-amber-600 dark:text-amber-300 text-[9px] font-bold">!</span>
+                                    <span className="text-ink/85 leading-tight">{line}</span>
                                   </li>
                                 ))}
                                 {measured.good.slice(0, 2).map((line) => (
                                   <li key={line} className="flex items-start gap-2">
-                                    <span aria-hidden className="mt-0.5 flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">✓</span>
-                                    <span className="text-[#a5a7b8] leading-tight">{line}</span>
+                                    <span aria-hidden className="mt-0.5 flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-300 text-[10px] font-bold">✓</span>
+                                    <span className="text-muted leading-tight">{line}</span>
                                   </li>
                                 ))}
                               </ul>
@@ -560,7 +560,7 @@ export function InterviewReportView(p: InterviewReportViewProps) {
                           </td>
                           <td className="py-4 px-3 text-right whitespace-nowrap">
                             {answerHref ? (
-                              <Link href={answerHref} aria-label={`Review your answer to question ${r.number}`} className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-[#252048] hover:bg-[#322a61] border border-indigo-500/30 hover:border-indigo-400/60 text-xs font-semibold text-white whitespace-nowrap transition-colors">
+                              <Link href={answerHref} aria-label={`Review your answer to question ${r.number}`} className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-panel-2 hover:bg-panel dark:bg-[#252048] dark:hover:bg-[#322a61] border border-line-strong dark:border-indigo-500/30 hover:border-blue/50 text-xs font-semibold text-ink dark:text-white whitespace-nowrap transition-colors shadow-xs">
                                 <span className="whitespace-nowrap">Review answer</span>
                                 <span aria-hidden className="text-sm leading-none shrink-0">→</span>
                               </Link>
@@ -577,8 +577,8 @@ export function InterviewReportView(p: InterviewReportViewProps) {
             )}
 
             {filteredRows.length > 3 && (
-              <div className="mt-4 border-t border-white/[0.06] pt-3 text-center">
-                <button type="button" onClick={() => setExpandedAll((v) => !v)} aria-expanded={expandedAll} className="text-xs font-semibold text-[#a9abc0] hover:text-white inline-flex items-center gap-1.5 transition-colors">
+              <div className="mt-4 border-t border-line dark:border-white/[0.06] pt-3 text-center">
+                <button type="button" onClick={() => setExpandedAll((v) => !v)} aria-expanded={expandedAll} className="text-xs font-semibold text-muted hover:text-ink inline-flex items-center gap-1.5 transition-colors cursor-pointer">
                   {expandedAll ? "Show fewer questions" : `View all ${filteredRows.length} questions`}
                 </button>
               </div>
@@ -600,18 +600,18 @@ export function InterviewReportView(p: InterviewReportViewProps) {
             ).map(([label, value]) => (
               <div key={label}>
                 <dt className="text-muted font-medium">{label}</dt>
-                <dd className="mt-0.5 text-white">{value}</dd>
+                <dd className="mt-0.5 text-ink font-medium">{value}</dd>
               </div>
             ))}
             {p.endedEarly && (
               <div className="sm:col-span-2">
                 <dt className="text-muted font-medium">Ended early</dt>
-                <dd className="mt-0.5 text-white">This interview was ended before every planned question was answered, so the score covers only the answers above.</dd>
+                <dd className="mt-0.5 text-ink">This interview was ended before every planned question was answered, so the score covers only the answers above.</dd>
               </div>
             )}
             <div className="sm:col-span-2">
               <dt className="text-muted font-medium">Questions skipped or replaced</dt>
-              <dd className="mt-1 text-white">
+              <dd className="mt-1 text-ink">
                 {p.skipped.length === 0 ? (
                   "None."
                 ) : (
@@ -634,17 +634,17 @@ export function InterviewReportView(p: InterviewReportViewProps) {
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 dark:bg-black/75 backdrop-blur-sm animate-fade-in"
           onClick={() => setSelectedFramework(null)}
         >
           <div
-            className="relative w-full max-w-xl rounded-2xl bg-[#0f1122] border border-white/15 p-6 sm:p-7 shadow-2xl animate-rise space-y-5"
+            className="relative w-full max-w-xl rounded-2xl bg-panel dark:bg-[#0f1122] border border-line-strong dark:border-white/15 p-6 sm:p-7 shadow-2xl animate-rise space-y-5"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-start justify-between gap-4 border-b border-white/[0.08] pb-4">
+            <div className="flex items-start justify-between gap-4 border-b border-line dark:border-white/[0.08] pb-4">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-400">Answering Framework Guide</span>
-                <h3 className="text-lg font-bold text-white mt-0.5">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-blue-soft">Answering Framework Guide</span>
+                <h3 className="text-lg font-bold text-ink mt-0.5">
                   {selectedFramework === "star"
                     ? "The STAR Method"
                     : selectedFramework === "prep"
@@ -663,7 +663,7 @@ export function InterviewReportView(p: InterviewReportViewProps) {
               <button
                 type="button"
                 onClick={() => setSelectedFramework(null)}
-                className="rounded-lg p-1.5 text-muted hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer"
+                className="rounded-lg p-1.5 text-muted hover:text-ink hover:bg-panel-2 transition-colors cursor-pointer"
                 aria-label="Close"
               >
                 ✕
@@ -671,15 +671,15 @@ export function InterviewReportView(p: InterviewReportViewProps) {
             </div>
 
             {/* Framework Switcher Tabs inside Modal */}
-            <div className="flex flex-wrap items-center gap-2 border-b border-white/[0.08] pb-3">
+            <div className="flex flex-wrap items-center gap-2 border-b border-line dark:border-white/[0.08] pb-3">
               <button
                 type="button"
                 onClick={() => setSelectedFramework("star")}
                 className={clsx(
                   "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer",
                   selectedFramework === "star"
-                    ? "bg-blue text-white shadow-[0_0_12px_rgba(79,82,248,0.4)] font-bold"
-                    : "bg-white/[0.05] text-muted hover:text-white hover:bg-white/[0.1]"
+                    ? "bg-blue-fill text-white shadow-sm font-bold"
+                    : "bg-panel-2 border border-line text-muted hover:text-ink"
                 )}
               >
                 ⭐ STAR Method
@@ -690,8 +690,8 @@ export function InterviewReportView(p: InterviewReportViewProps) {
                 className={clsx(
                   "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer",
                   selectedFramework === "prep"
-                    ? "bg-blue text-white shadow-[0_0_12px_rgba(79,82,248,0.4)] font-bold"
-                    : "bg-white/[0.05] text-muted hover:text-white hover:bg-white/[0.1]"
+                    ? "bg-blue-fill text-white shadow-sm font-bold"
+                    : "bg-panel-2 border border-line text-muted hover:text-ink"
                 )}
               >
                 📝 PREP Framework
@@ -702,8 +702,8 @@ export function InterviewReportView(p: InterviewReportViewProps) {
                 className={clsx(
                   "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer",
                   selectedFramework === "other"
-                    ? "bg-blue text-white shadow-[0_0_12px_rgba(79,82,248,0.4)] font-bold"
-                    : "bg-white/[0.05] text-muted hover:text-white hover:bg-white/[0.1]"
+                    ? "bg-blue-fill text-white shadow-sm font-bold"
+                    : "bg-panel-2 border border-line text-muted hover:text-ink"
                 )}
               >
                 🎯 Alternative Models (CARL, SOAR, CIRCLES)
@@ -713,25 +713,25 @@ export function InterviewReportView(p: InterviewReportViewProps) {
             {selectedFramework === "star" && (
               <div className="space-y-3">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                  <div className="rounded-xl bg-[#14162a] p-3.5 border border-white/[0.08] space-y-1">
-                    <div className="font-bold text-amber-300">1. Situation (~15–20s)</div>
+                  <div className="rounded-xl bg-panel-2 dark:bg-[#14162a] p-3.5 border border-line dark:border-white/[0.08] space-y-1">
+                    <div className="font-bold text-amber-600 dark:text-amber-300">1. Situation (~15–20s)</div>
                     <p className="text-muted leading-relaxed">Set the scene and scope. Where were you, who was involved, and what was the problem?</p>
                   </div>
-                  <div className="rounded-xl bg-[#14162a] p-3.5 border border-white/[0.08] space-y-1">
-                    <div className="font-bold text-blue-300">2. Task (~10–15s)</div>
+                  <div className="rounded-xl bg-panel-2 dark:bg-[#14162a] p-3.5 border border-line dark:border-white/[0.08] space-y-1">
+                    <div className="font-bold text-blue-600 dark:text-blue-300">2. Task (~10–15s)</div>
                     <p className="text-muted leading-relaxed">What was your specific personal remit? Keep it strictly focused on &ldquo;I&rdquo;, not &ldquo;we&rdquo;.</p>
                   </div>
-                  <div className="rounded-xl bg-[#14162a] p-3.5 border border-white/[0.08] space-y-1">
-                    <div className="font-bold text-indigo-300">3. Action (~45–60s)</div>
+                  <div className="rounded-xl bg-panel-2 dark:bg-[#14162a] p-3.5 border border-line dark:border-white/[0.08] space-y-1">
+                    <div className="font-bold text-indigo-600 dark:text-indigo-300">3. Action (~45–60s)</div>
                     <p className="text-muted leading-relaxed">The heart of your answer: decisions made, trade-offs, and concrete actions you took.</p>
                   </div>
-                  <div className="rounded-xl bg-[#14162a] p-3.5 border border-white/[0.08] space-y-1">
-                    <div className="font-bold text-emerald-300">4. Result (~20–30s)</div>
+                  <div className="rounded-xl bg-panel-2 dark:bg-[#14162a] p-3.5 border border-line dark:border-white/[0.08] space-y-1">
+                    <div className="font-bold text-emerald-600 dark:text-emerald-300">4. Result (~20–30s)</div>
                     <p className="text-muted leading-relaxed">Quantifiable impact, metrics delivered, and key takeaways for this role.</p>
                   </div>
                 </div>
-                <p className="text-[11px] text-muted rounded-lg bg-white/[0.03] p-2.5 border border-white/[0.06]">
-                  <b className="font-semibold text-white">Pro Tip: </b> Spend at least 60% of your time on Action and Result. Interviewers score what you did and the outcomes you created.
+                <p className="text-[11px] text-muted rounded-lg bg-panel-2 p-2.5 border border-line">
+                  <b className="font-semibold text-ink">Pro Tip: </b> Spend at least 60% of your time on Action and Result. Interviewers score what you did and the outcomes you created.
                 </p>
               </div>
             )}
@@ -739,25 +739,25 @@ export function InterviewReportView(p: InterviewReportViewProps) {
             {selectedFramework === "prep" && (
               <div className="space-y-3">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                  <div className="rounded-xl bg-[#14162a] p-3.5 border border-white/[0.08] space-y-1">
-                    <div className="font-bold text-blue-300">1. Point</div>
+                  <div className="rounded-xl bg-panel-2 dark:bg-[#14162a] p-3.5 border border-line dark:border-white/[0.08] space-y-1">
+                    <div className="font-bold text-blue-600 dark:text-blue-300">1. Point</div>
                     <p className="text-muted leading-relaxed">State your answer or thesis directly in your very first sentence.</p>
                   </div>
-                  <div className="rounded-xl bg-[#14162a] p-3.5 border border-white/[0.08] space-y-1">
-                    <div className="font-bold text-amber-300">2. Reason</div>
+                  <div className="rounded-xl bg-panel-2 dark:bg-[#14162a] p-3.5 border border-line dark:border-white/[0.08] space-y-1">
+                    <div className="font-bold text-amber-600 dark:text-amber-300">2. Reason</div>
                     <p className="text-muted leading-relaxed">Give the underlying logic or motivation backing up your position.</p>
                   </div>
-                  <div className="rounded-xl bg-[#14162a] p-3.5 border border-white/[0.08] space-y-1">
-                    <div className="font-bold text-indigo-300">3. Example</div>
+                  <div className="rounded-xl bg-panel-2 dark:bg-[#14162a] p-3.5 border border-line dark:border-white/[0.08] space-y-1">
+                    <div className="font-bold text-indigo-600 dark:text-indigo-300">3. Example</div>
                     <p className="text-muted leading-relaxed">Ground it with a concrete anecdote or data point from your career.</p>
                   </div>
-                  <div className="rounded-xl bg-[#14162a] p-3.5 border border-white/[0.08] space-y-1">
-                    <div className="font-bold text-emerald-300">4. Point</div>
+                  <div className="rounded-xl bg-panel-2 dark:bg-[#14162a] p-3.5 border border-line dark:border-white/[0.08] space-y-1">
+                    <div className="font-bold text-emerald-600 dark:text-emerald-300">4. Point</div>
                     <p className="text-muted leading-relaxed">Restate your conclusion and connect it back to this organisation.</p>
                   </div>
                 </div>
-                <p className="text-[11px] text-muted rounded-lg bg-white/[0.03] p-2.5 border border-white/[0.06]">
-                  <b className="font-semibold text-white">Pro Tip: </b> Ideal for 45–75 second answers to motivation, why this role, and spontaneous strengths questions.
+                <p className="text-[11px] text-muted rounded-lg bg-panel-2 p-2.5 border border-line">
+                  <b className="font-semibold text-ink">Pro Tip: </b> Ideal for 45–75 second answers to motivation, why this role, and spontaneous strengths questions.
                 </p>
               </div>
             )}
@@ -765,33 +765,33 @@ export function InterviewReportView(p: InterviewReportViewProps) {
             {selectedFramework === "other" && (
               <div className="space-y-3">
                 <div className="space-y-2.5 text-xs">
-                  <div className="rounded-xl bg-[#14162a] p-3.5 border border-white/[0.08] space-y-1">
-                    <div className="font-bold text-purple-300">CARL (Context, Action, Result, Learning)</div>
+                  <div className="rounded-xl bg-panel-2 dark:bg-[#14162a] p-3.5 border border-line dark:border-white/[0.08] space-y-1">
+                    <div className="font-bold text-purple-600 dark:text-purple-300">CARL (Context, Action, Result, Learning)</div>
                     <p className="text-muted leading-relaxed">The best model for questions about project setbacks or when things didn&rsquo;t go to plan. Emphasises self-awareness and growth.</p>
                   </div>
-                  <div className="rounded-xl bg-[#14162a] p-3.5 border border-white/[0.08] space-y-1">
-                    <div className="font-bold text-cyan-300">SOAR (Situation, Obstacle, Action, Result)</div>
+                  <div className="rounded-xl bg-panel-2 dark:bg-[#14162a] p-3.5 border border-line dark:border-white/[0.08] space-y-1">
+                    <div className="font-bold text-cyan-600 dark:text-cyan-300">SOAR (Situation, Obstacle, Action, Result)</div>
                     <p className="text-muted leading-relaxed">Highlights how you navigated severe obstacles or conflicting stakeholder demands under tight timelines.</p>
                   </div>
-                  <div className="rounded-xl bg-[#14162a] p-3.5 border border-white/[0.08] space-y-1">
-                    <div className="font-bold text-emerald-300">CIRCLES Method</div>
+                  <div className="rounded-xl bg-panel-2 dark:bg-[#14162a] p-3.5 border border-line dark:border-white/[0.08] space-y-1">
+                    <div className="font-bold text-emerald-600 dark:text-emerald-300">CIRCLES Method</div>
                     <p className="text-muted leading-relaxed">Industry standard for product and technical strategy: Comprehend, Identify users, Report customer needs, Cut through solutions, List trade-offs, Evaluate metrics, Summarise.</p>
                   </div>
                 </div>
               </div>
             )}
 
-            <div className="flex items-center justify-between pt-2 border-t border-white/[0.08]">
+            <div className="flex items-center justify-between pt-2 border-t border-line dark:border-white/[0.08]">
               <Link
                 href="/practice"
-                className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 hover:underline"
+                className="text-xs font-semibold text-blue-soft hover:underline"
               >
                 Go to Practice Hub for interactive workouts →
               </Link>
               <button
                 type="button"
                 onClick={() => setSelectedFramework(null)}
-                className="rounded-xl bg-white/[0.08] hover:bg-white/[0.14] px-4 py-2 text-xs font-semibold text-white transition-colors"
+                className="rounded-xl bg-panel-2 hover:bg-panel border border-line-strong px-4 py-2 text-xs font-semibold text-ink transition-colors cursor-pointer"
               >
                 Done
               </button>

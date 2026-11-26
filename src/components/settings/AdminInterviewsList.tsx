@@ -60,7 +60,7 @@ export function AdminInterviewsList({
         <a
           href="/api/admin/interviews?format=csv"
           download="hakkiri-interviews-and-questions.csv"
-          className="inline-flex items-center gap-1.5 rounded-lg bg-panel-2 px-3 py-1.5 text-xs font-semibold text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-[#2b2d38] transition-colors"
+          className="inline-flex items-center gap-1.5 rounded-lg bg-panel-2 border border-line-strong px-3 py-1.5 text-xs font-semibold text-ink hover:bg-panel transition-colors"
         >
           <Icon name="download" size={13} />
           Download CSV
@@ -78,20 +78,20 @@ export function AdminInterviewsList({
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="space-y-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-sm font-semibold text-white">
+                      <span className="text-sm font-semibold text-ink">
                         {interview.role}
                       </span>
                       <span className="text-sm text-muted">at</span>
-                      <span className="text-sm font-medium text-[#cbd5e1]">
+                      <span className="text-sm font-medium text-ink/80 dark:text-[#cbd5e1]">
                         {interview.company}
                       </span>
                       {interview.format && (
-                        <span className="rounded-full bg-white/[0.08] px-2 py-0.5 text-[10px] font-medium text-dim uppercase">
+                        <span className="rounded-full bg-panel-2 border border-line px-2 py-0.5 text-[10px] font-medium text-dim uppercase">
                           {interview.format}
                         </span>
                       )}
                       {interview.seniority && (
-                        <span className="rounded-full bg-white/[0.05] px-2 py-0.5 text-[10px] text-muted">
+                        <span className="rounded-full bg-panel-2 border border-line px-2 py-0.5 text-[10px] text-muted">
                           {interview.seniority}
                         </span>
                       )}
@@ -107,7 +107,7 @@ export function AdminInterviewsList({
                     <button
                       type="button"
                       onClick={() => toggleExpand(interview.id)}
-                      className="inline-flex items-center gap-1 rounded-md bg-white/[0.06] hover:bg-white/[0.1] px-2.5 py-1 text-[11px] font-medium text-ink transition-colors"
+                      className="inline-flex items-center gap-1 rounded-md bg-panel-2 border border-line hover:bg-panel px-2.5 py-1 text-[11px] font-medium text-ink transition-colors"
                     >
                       <span>
                         {isExpanded ? "Hide Questions" : `View ${interview.questions.length} AI Questions`}
@@ -160,7 +160,7 @@ export function AdminInterviewsList({
         </ul>
       )}
 
-      <div className="rounded-lg border border-line bg-[#0d1117] p-3 text-[11px] text-muted flex items-start gap-2">
+      <div className="rounded-lg border border-line bg-panel-2 dark:bg-[#0d1117] p-3 text-[11px] text-muted flex items-start gap-2">
         <span className="text-base select-none">🔒</span>
         <div>
           <span className="font-semibold text-ink">Candidate Answer Privacy:</span> Candidate answers, voice recordings, and practice transcripts are kept strictly confidential to the candidate’s personal session and are never exposed in the interview question bank or admin exports.

@@ -25,13 +25,13 @@ export function PrepChecklist({
   };
 
   return (
-    <ul className="divide-y divide-line/60">
+    <ul className="divide-y divide-line">
       {items.map((item) => {
         const isChecked = !!checkedIds[item.id];
         return (
           <li
             key={item.id}
-            className="flex items-start justify-between gap-3 py-3 -mx-2 px-2 rounded-xl transition-colors hover:bg-white/[0.02] first:pt-1.5 last:pb-1.5"
+            className="flex items-start justify-between gap-3 py-3 -mx-2 px-2 rounded-xl transition-colors hover:bg-panel-2/70 first:pt-1.5 last:pb-1.5"
           >
             <div className="flex items-start gap-3 min-w-0">
               <button
@@ -40,8 +40,8 @@ export function PrepChecklist({
                 className={clsx(
                   "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-all duration-200 cursor-pointer active:scale-90",
                   isChecked
-                    ? "border-emerald-500 bg-emerald-500/20 text-emerald-400 font-bold shadow-[0_0_8px_rgba(16,185,129,0.25)] scale-105"
-                    : "border-white/15 bg-white/[0.04] hover:border-white/30 text-transparent"
+                    ? "border-emerald-500 bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold shadow-[0_0_8px_rgba(16,185,129,0.25)] scale-105"
+                    : "border-line-strong bg-panel-2 hover:border-blue-fill/50 dark:border-white/15 dark:bg-white/[0.04] text-transparent"
                 )}
                 aria-label={`Toggle ${item.title}`}
               >
@@ -62,7 +62,7 @@ export function PrepChecklist({
 
             <Link
               href={item.drillHref || `/interviews/${interviewId}`}
-              className="shrink-0 rounded-lg bg-white/[0.04] hover:bg-white/[0.1] px-3 py-1.5 text-[11px] font-semibold text-white/90 hover:text-white border border-white/10 hover:border-white/20 shadow-sm transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.96]"
+              className="shrink-0 rounded-lg bg-panel-2 hover:bg-panel px-3 py-1.5 text-[11px] font-semibold text-ink border border-line-strong hover:border-blue-fill/50 dark:bg-white/[0.04] dark:hover:bg-white/[0.1] dark:text-white/90 dark:hover:text-white dark:border-white/10 shadow-sm transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.96]"
             >
               Practise
             </Link>

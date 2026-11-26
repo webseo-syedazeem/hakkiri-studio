@@ -116,17 +116,17 @@
 .cv.mk,
 [data-theme="light"] .cv,
 .cv[data-theme="light"] {
-  --background: #f5f7fa;
+  --background: #eceef4;
   --surface: #ffffff;
-  --surface-raised: #f2f4f8;
+  --surface-raised: #f3f5fa;
   --surface-hover: #e8ecf4;
   --surface-selected: #e8edff;
-  --border: #e2e7f0;
-  --border-strong: #cbd5e1;
-  --border-control: #94a3b8;
-  --text: #1d1d1f;
-  --text-muted: #64748b;
-  --text-subtle: #64748b;
+  --border: #d4d9e6;
+  --border-strong: #b6bfd4;
+  --border-control: #8e9ab0;
+  --text: #11131a;
+  --text-muted: #525866;
+  --text-subtle: #717888;
   --accent: #0071e3;
   --accent-fill: #4a5af0;
   --accent-hover: #3b4bd6;
@@ -140,8 +140,8 @@
   --danger-soft: #a12f38;
   --danger-surface: #fcecef;
   --focus: #0071e3;
-  --shadow-panel: 0 2px 12px -2px rgba(16, 24, 40, 0.06), 0 1px 2px rgba(16, 24, 40, 0.04);
-  --shadow-panel-hover: 0 10px 28px -6px rgba(16, 24, 40, 0.1), 0 2px 6px rgba(16, 24, 40, 0.05);
+  --shadow-panel: 0 2px 8px -2px rgba(15, 23, 42, 0.06), 0 10px 28px -6px rgba(15, 23, 42, 0.08);
+  --shadow-panel-hover: 0 12px 32px -6px rgba(15, 23, 42, 0.12), 0 4px 10px rgba(15, 23, 42, 0.06);
   --shadow-dialog: 0 20px 52px -10px rgba(16, 24, 40, 0.18);
   --shadow-paper: 0 12px 32px -6px rgba(16, 24, 40, 0.12);
 
@@ -149,9 +149,9 @@
   --color-panel: var(--surface);
   --color-panel-2: var(--surface-raised);
   --cv-input-bg: #ffffff;
-  --color-line: rgba(15, 23, 42, 0.08);
-  --cv-edge: #e2e7f0;
-  --cv-input-edge: #cbd5e1;
+  --color-line: #d4d9e6;
+  --cv-edge: #d4d9e6;
+  --cv-input-edge: #b6bfd4;
   --color-ink: var(--text);
   --color-muted: var(--text-muted);
   --color-dim: var(--text-subtle);

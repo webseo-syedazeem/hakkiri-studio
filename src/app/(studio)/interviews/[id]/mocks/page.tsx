@@ -48,7 +48,7 @@ export default async function PastSessionsPage({ params }: { params: Promise<{ i
             <Link
               key={m.id}
               href={`/interviews/${interview.id}/mocks/${m.id}`}
-              className={clsx("grid grid-cols-[minmax(0,1fr)_220px_110px_150px] items-center gap-4 rounded-md px-1 py-3.5 text-sm hover:bg-white/[0.03]", k > 0 && "border-t border-line")}
+              className={clsx("grid grid-cols-[minmax(0,1fr)_220px_110px_150px] items-center gap-4 rounded-md px-1 py-3.5 text-sm hover:bg-panel-2/70", k > 0 && "border-t border-line")}
             >
               <span className="min-w-0 truncate">
                 <span className="font-semibold">{sessionTitle(m, interview)}</span>

@@ -31,7 +31,7 @@ export interface HomeRecentPractice {
   href: string;
 }
 
-const CARD = "group relative overflow-hidden flex animate-rise items-center justify-between rounded-[20px] bg-panel p-5 text-left shadow-[inset_0_0_0_1px_var(--color-line)] transition-all duration-300 hover:-translate-y-1 hover:shadow-lg dark:hover:shadow-[0_16px_36px_-8px_rgba(0,0,0,0.7)] cursor-pointer";
+const CARD = "group relative overflow-hidden flex animate-rise items-center justify-between rounded-[20px] bg-panel border border-line p-5 text-left shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_10px_28px_-6px_rgba(15,23,42,0.08)] transition-all duration-300 hover:-translate-y-1 hover:border-line-strong hover:shadow-[0_12px_32px_-6px_rgba(15,23,42,0.12)] dark:shadow-[0_12px_32px_-8px_rgba(0,0,0,0.55)] dark:hover:shadow-[0_16px_36px_-8px_rgba(0,0,0,0.7)] cursor-pointer";
 
 function Metric({ icon, tint, label, value, note }: { icon: IconName; tint: string; label: string; value: number; note?: string; delay?: string }) {
   return (
@@ -133,17 +133,17 @@ export function DashboardClientView({
     <>
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4" data-testid="home-metrics">
         <Link href="/interviews" className={CARD} style={{ animationDelay: "0.1s" }} data-testid="home-interviews">
-          <Metric icon="cal" tint="bg-blue-500/10 text-blue-600 dark:bg-[#1a2238] dark:text-[#a5b4fc]" label="Your interviews" value={interviewsCount} delay="0.1s" />
+          <Metric icon="cal" tint="bg-blue-500/10 text-blue-600 border border-blue-500/20 dark:bg-[#1a2238] dark:text-[#a5b4fc] dark:border-indigo-500/30" label="Your interviews" value={interviewsCount} delay="0.1s" />
         </Link>
         <Link href="/presentations" className={CARD} style={{ animationDelay: "0.15s" }} data-testid="home-presentations">
-          <Metric icon="present" tint="bg-emerald-500/10 text-emerald-600 dark:bg-[#142825] dark:text-[#6ee7b7]" label="Your presentations" value={presentationsCount} delay="0.15s" />
+          <Metric icon="present" tint="bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 dark:bg-[#142825] dark:text-[#6ee7b7] dark:border-emerald-500/30" label="Your presentations" value={presentationsCount} delay="0.15s" />
         </Link>
         <Link href="/interviews" className={CARD} style={{ animationDelay: "0.2s" }} data-testid="home-sessions">
-          <Metric icon="zap" tint="bg-purple-500/10 text-purple-600 dark:bg-[#221c38] dark:text-[#d8b4fe]" label="Practice sessions completed" value={sessionsCount} note="in all" delay="0.2s" />
+          <Metric icon="zap" tint="bg-purple-500/10 text-purple-600 border border-purple-500/20 dark:bg-[#221c38] dark:text-[#d8b4fe] dark:border-purple-500/30" label="Practice sessions completed" value={sessionsCount} note="in all" delay="0.2s" />
         </Link>
         <button type="button" onClick={() => setIsArchiveOpen(true)} className={CARD} style={{ animationDelay: "0.25s" }} data-testid="home-archive">
           <div className="relative z-10 flex items-center gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-blue-500/10 text-blue-600 dark:bg-[#1a2238] dark:text-[#a5b4fc] transition-transform duration-300 group-hover:scale-110">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-blue-500/10 text-blue-600 border border-blue-500/20 dark:bg-[#1a2238] dark:text-[#a5b4fc] dark:border-indigo-500/30 transition-transform duration-300 group-hover:scale-110">
               <Icon name="archive" size={24} />
             </div>
             <div>
@@ -201,15 +201,15 @@ export function DashboardClientView({
                 ))}
               </ul>
             ) : (
-              <div className="mt-4 rounded-[14px] bg-panel-2 p-4 text-xs text-muted" data-testid="home-no-next-steps">
+              <div className="mt-4 rounded-[14px] bg-panel-2 border border-line p-4 text-xs text-muted" data-testid="home-no-next-steps">
                 <p className="font-semibold text-ink">Nothing to continue yet</p>
                 <p className="mt-1">Set up an interview with your CV and the job, and your next step will show here.</p>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <Link href="/interviews/new" className="inline-flex items-center rounded-[10px] bg-blue-fill px-4 py-2 font-semibold text-white hover:bg-blue-hover transition-colors">
+                  <Link href="/interviews/new" className="inline-flex items-center rounded-[10px] bg-blue-fill px-4 py-2 font-semibold text-white hover:bg-blue-hover transition-colors shadow-sm">
                     Set up an interview
                   </Link>
                   {example ? (
-                    <Link href={example.href} className="inline-flex items-center rounded-[10px] px-4 py-2 font-semibold text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel transition-colors">
+                    <Link href={example.href} className="inline-flex items-center rounded-[10px] bg-panel px-4 py-2 font-semibold text-ink border border-line-strong hover:border-blue-fill/50 transition-colors shadow-sm">
                       {example.label}
                     </Link>
                   ) : null}
@@ -223,7 +223,7 @@ export function DashboardClientView({
             <p className="mt-0.5 text-[13px] text-muted">Your completed practice sessions.</p>
 
             {recentPractices.length > 0 ? (
-              <ul className="mt-3.5 flex flex-col divide-y divide-white/[0.06]">
+              <ul className="mt-3.5 flex flex-col divide-y divide-line">
                 {recentPractices.map((rp) => (
                   <li key={rp.id}>
                     <Link href={rp.href} className="flex items-center justify-between py-3 px-2.5 -mx-2.5 rounded-xl transition-colors duration-200 hover:bg-panel-2/80 group">
@@ -240,9 +240,9 @@ export function DashboardClientView({
                 ))}
               </ul>
             ) : (
-              <div className="mt-4 py-8 text-center text-xs text-muted" data-testid="home-no-recent">
-                <div className="flex h-9 w-9 mx-auto items-center justify-center rounded-xl bg-white/[0.04] text-muted border border-white/10 mb-2">
-                  <Icon name="play" size={13} />
+              <div className="mt-4 rounded-[14px] bg-panel-2 border border-line py-7 px-4 text-center text-xs text-muted" data-testid="home-no-recent">
+                <div className="flex h-10 w-10 mx-auto items-center justify-center rounded-xl bg-panel text-blue-fill border border-line shadow-sm mb-2.5">
+                  <Icon name="play" size={14} />
                 </div>
                 <p className="font-semibold text-ink">No practice sessions yet</p>
                 <p className="mt-1 max-w-[240px] mx-auto">Completed practice sessions and their scores will appear here after your first one.</p>

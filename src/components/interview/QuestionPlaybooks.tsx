@@ -126,15 +126,15 @@ export function QuestionPlaybooks({ role, company, className }: QuestionPlaybook
   const activePlaybook = playbooks.find((x) => x.id === activePlaybookId) ?? playbooks[0];
 
   return (
-    <div className={clsx("rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-6 sm:p-7 shadow-xl", className)}>
+    <div className={clsx("rounded-2xl bg-panel dark:bg-[#0d0c1c] border border-line dark:border-white/[0.08] p-6 sm:p-7 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_10px_28px_-6px_rgba(15,23,42,0.08)] dark:shadow-xl", className)}>
       {/* Header */}
       <div className="flex items-center gap-3 mb-5">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#18172c] border border-white/10 text-[#8c8d9e]">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-panel-2 dark:bg-[#18172c] border border-line dark:border-white/10 text-muted">
           <Icon name="book" size={16} />
         </div>
         <div>
-          <h3 className="text-sm sm:text-base font-bold text-white tracking-tight">Question playbooks</h3>
-          <p className="text-xs text-[#8c8d9e]">Guidance, example structures and key things to cover for common interview questions.</p>
+          <h3 className="text-sm sm:text-base font-bold text-ink tracking-tight">Question playbooks</h3>
+          <p className="text-xs text-muted">Guidance, example structures and key things to cover for common interview questions.</p>
         </div>
       </div>
 
@@ -150,8 +150,8 @@ export function QuestionPlaybooks({ role, company, className }: QuestionPlaybook
               className={clsx(
                 "px-4 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer",
                 active
-                  ? "bg-[#5c64f7] text-white shadow-[0_0_14px_rgba(92,100,247,0.45)] border border-[#6d75fc]"
-                  : "bg-[#141326] border border-white/10 text-[#8c8d9e] hover:text-white hover:border-white/20"
+                  ? "bg-blue-fill text-white shadow-[0_4px_14px_rgba(0,113,227,0.3)] border border-blue-fill"
+                  : "bg-panel-2 dark:bg-[#141326] border border-line dark:border-white/10 text-muted hover:text-ink hover:border-line-strong"
               )}
             >
               {pb.label}
@@ -164,24 +164,24 @@ export function QuestionPlaybooks({ role, company, className }: QuestionPlaybook
       <div className="grid grid-cols-1 md:grid-cols-[1.1fr_1.6fr_1.5fr] gap-8 items-start">
         {/* Column 1: Summary */}
         <div>
-          <h4 className="text-sm font-bold text-white tracking-tight">{activePlaybook.title}</h4>
-          <p className="mt-2 text-xs text-[#8c8d9e] leading-relaxed">{activePlaybook.summary}</p>
+          <h4 className="text-sm font-bold text-ink tracking-tight">{activePlaybook.title}</h4>
+          <p className="mt-2 text-xs text-muted leading-relaxed">{activePlaybook.summary}</p>
         </div>
 
         {/* Column 2: Structure */}
         <div className="space-y-3">
-          <h5 className="text-[11px] font-bold text-white tracking-wider uppercase">
+          <h5 className="text-[11px] font-bold text-ink tracking-wider uppercase">
             A simple structure ({activePlaybook.structureDuration || "~ 1–2 minutes"})
           </h5>
           <div className="space-y-2.5">
             {activePlaybook.structure.map((item) => (
-              <div key={item.step} className="flex items-start gap-2.5 text-xs text-[#c9cad3]">
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#5c64f7] text-[10px] font-bold text-white mt-0.5">
+              <div key={item.step} className="flex items-start gap-2.5 text-xs text-muted">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-fill text-[10px] font-bold text-white mt-0.5">
                   {item.step}
                 </span>
                 <div className="leading-relaxed">
-                  <strong className="text-white font-semibold">{item.name}</strong>
-                  <span className="text-[#8c8d9e]"> — {item.detail}</span>
+                  <strong className="text-ink font-semibold">{item.name}</strong>
+                  <span className="text-muted"> — {item.detail}</span>
                 </div>
               </div>
             ))}
@@ -189,9 +189,9 @@ export function QuestionPlaybooks({ role, company, className }: QuestionPlaybook
         </div>
 
         {/* Column 3: Example Flow */}
-        <div className="p-5 rounded-2xl bg-[#121124] border border-white/10 shadow-sm">
-          <h5 className="text-[11px] font-bold text-white tracking-wider uppercase mb-2.5">Example flow</h5>
-          <p className="text-xs text-[#a5a7b8] italic leading-relaxed">{activePlaybook.example}</p>
+        <div className="p-5 rounded-2xl bg-panel-2 dark:bg-[#121124] border border-line dark:border-white/10 shadow-sm">
+          <h5 className="text-[11px] font-bold text-ink tracking-wider uppercase mb-2.5">Example flow</h5>
+          <p className="text-xs text-muted italic leading-relaxed">{activePlaybook.example}</p>
         </div>
       </div>
     </div>

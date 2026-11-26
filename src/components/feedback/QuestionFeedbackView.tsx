@@ -203,7 +203,7 @@ export function QuestionFeedbackView({
   const answerHref = (id: string) => `/interviews/${interviewId}/answers/${id}${mockId ? `?mock=${mockId}` : ""}`;
   const position = answer.questionNumber > 0 && answer.questionsInMock > 0 ? `Question ${answer.questionNumber} of ${answer.questionsInMock} · ` : "";
   const delta = overallScore != null && answer.previousOverall != null ? overallScore - answer.previousOverall : null;
-  const tabClass = (on: boolean) => clsx("pb-3 -mb-3 transition-colors cursor-pointer relative", on ? "text-white border-b-2 border-indigo-500 font-bold" : "text-[#a9abc0] hover:text-white");
+  const tabClass = (on: boolean) => clsx("pb-3 -mb-3 transition-colors cursor-pointer relative", on ? "text-ink border-b-2 border-blue-fill font-bold" : "text-muted hover:text-ink");
   const pointList = (points: { title?: string; body: string }[], bullet: string) =>
     points.map((p, i) => (
       <li key={i} className="flex items-start gap-2">
@@ -211,7 +211,7 @@ export function QuestionFeedbackView({
           •
         </span>
         <span>
-          {p.title ? <b className="font-semibold text-white">{p.title}. </b> : null}
+          {p.title ? <b className="font-semibold text-ink">{p.title}. </b> : null}
           {p.body}
         </span>
       </li>
@@ -222,42 +222,42 @@ export function QuestionFeedbackView({
       {audioSrc && !audioFailed && <audio ref={audioRef} src={audioSrc} preload="metadata" className="hidden" />}
 
       {/* Header */}
-      <div className="flex items-center justify-between gap-4 border-b border-white/[0.08] pb-4 mb-5">
+      <div className="flex items-center justify-between gap-4 border-b border-line pb-4 mb-5">
         <div>
           <div className="text-xs font-medium text-muted">
             {position}
             {categoryLabel}
           </div>
-          <h1 className="text-base font-bold text-white tracking-tight">Question feedback</h1>
+          <h1 className="text-base font-bold text-ink tracking-tight">Question feedback</h1>
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="flex items-center rounded-lg bg-[#141624] border border-white/10 p-0.5">
+          <div className="flex items-center rounded-lg bg-panel border border-line p-0.5 shadow-sm">
             {prevAnswerId ? (
-              <Link href={answerHref(prevAnswerId)} aria-label="Previous question" className="flex h-7 w-7 items-center justify-center rounded text-muted hover:text-white hover:bg-white/[0.06] transition-colors">
+              <Link href={answerHref(prevAnswerId)} aria-label="Previous question" className="flex h-7 w-7 items-center justify-center rounded text-muted hover:text-ink hover:bg-panel-2 transition-colors">
                 <Icon name="back" size={13} />
               </Link>
             ) : (
-              <span aria-hidden className="flex h-7 w-7 items-center justify-center rounded text-white/20">
+              <span aria-hidden className="flex h-7 w-7 items-center justify-center rounded text-dim/30">
                 <Icon name="back" size={13} />
               </span>
             )}
-            <div className="h-4 w-[1px] bg-white/10 my-auto" />
+            <div className="h-4 w-[1px] bg-line my-auto" />
             {nextAnswerId ? (
-              <Link href={answerHref(nextAnswerId)} aria-label="Next question" className="flex h-7 w-7 items-center justify-center rounded text-muted hover:text-white hover:bg-white/[0.06] transition-colors rotate-180">
+              <Link href={answerHref(nextAnswerId)} aria-label="Next question" className="flex h-7 w-7 items-center justify-center rounded text-muted hover:text-ink hover:bg-panel-2 transition-colors rotate-180">
                 <Icon name="back" size={13} />
               </Link>
             ) : (
-              <span aria-hidden className="flex h-7 w-7 items-center justify-center rounded text-white/20 rotate-180">
+              <span aria-hidden className="flex h-7 w-7 items-center justify-center rounded text-dim/30 rotate-180">
                 <Icon name="back" size={13} />
               </span>
             )}
           </div>
 
-          <div className="rounded-xl bg-[#141624] border border-white/15 px-3.5 py-1.5 shadow-sm" data-testid="answer-score">
+          <div className="rounded-xl bg-panel border border-line-strong px-3.5 py-1.5 shadow-sm" data-testid="answer-score">
             {overallScore != null ? (
               <>
-                <span className="num text-base font-bold text-white">{overallScore.toFixed(1)}</span>
+                <span className="num text-base font-bold text-ink">{overallScore.toFixed(1)}</span>
                 <span className="text-xs text-muted font-medium"> / 5</span>
               </>
             ) : (
@@ -265,7 +265,7 @@ export function QuestionFeedbackView({
             )}
           </div>
 
-          <Link href={closeReportUrl} aria-label="Close and return to report" title="Close and return to report" className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/[0.05] hover:bg-white/[0.1] text-muted hover:text-white transition-colors">
+          <Link href={closeReportUrl} aria-label="Close and return to report" title="Close and return to report" className="flex h-8 w-8 items-center justify-center rounded-xl bg-panel border border-line hover:bg-panel-2 text-muted hover:text-ink transition-colors shadow-sm">
             <Icon name="x" size={16} />
           </Link>
         </div>
@@ -274,11 +274,11 @@ export function QuestionFeedbackView({
       {testMode && <TestModeNotice className="mb-5" what="The transcript, scores and feedback on this screen" />}
 
       <div className="mb-6">
-        <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight leading-snug">{question.text}</h2>
+        <h2 className="text-xl sm:text-2xl font-bold text-ink tracking-tight leading-snug">{question.text}</h2>
       </div>
 
       {/* Tabs */}
-      <div role="tablist" aria-label="Feedback" className="flex items-center gap-8 border-b border-white/[0.08] pb-3 text-xs font-semibold mb-6">
+      <div role="tablist" aria-label="Feedback" className="flex items-center gap-8 border-b border-line pb-3 text-xs font-semibold mb-6">
         <button type="button" role="tab" aria-selected={activeTab === "feedback"} onClick={() => setActiveTab("feedback")} className={tabClass(activeTab === "feedback")}>
           Feedback
         </button>
@@ -290,13 +290,13 @@ export function QuestionFeedbackView({
       {activeTab === "feedback" && (
         <div className="space-y-5 animate-fade-in">
           {/* Your answer */}
-          <div className="rounded-2xl bg-[#0f111d] border border-white/[0.08] p-5 sm:p-6 shadow-xl space-y-4">
+          <div className="rounded-2xl bg-panel dark:bg-[#0f111d] border border-line dark:border-white/[0.08] p-5 sm:p-6 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_10px_28px_-6px_rgba(15,23,42,0.08)] dark:shadow-xl space-y-4">
             <div className="flex items-center justify-between gap-4">
-              <h3 className="text-xs font-bold text-white tracking-wide">
+              <h3 className="text-xs font-bold text-ink tracking-wide">
                 Your answer{feedback.corrected ? <span className="ml-2 font-medium text-muted">corrected by you</span> : null}
               </h3>
               {feedback.transcript && (
-                <button type="button" onClick={startEditing} className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-500/40 bg-indigo-500/10 hover:bg-indigo-500/20 px-2.5 py-1 text-xs font-semibold text-indigo-200 transition-colors cursor-pointer">
+                <button type="button" onClick={startEditing} className="inline-flex items-center gap-1.5 rounded-lg border border-blue/40 bg-blue/10 hover:bg-blue/20 px-2.5 py-1 text-xs font-semibold text-blue-soft transition-colors cursor-pointer">
                   <Icon name="edit" size={11} />
                   <span>Correct the transcript</span>
                 </button>
@@ -304,35 +304,35 @@ export function QuestionFeedbackView({
             </div>
 
             {canPlay ? (
-              <div className="flex items-center gap-3.5 rounded-xl bg-[#17192b] border border-white/[0.08] px-4 py-2.5">
+              <div className="flex items-center gap-3.5 rounded-xl bg-panel-2 dark:bg-[#17192b] border border-line dark:border-white/[0.08] px-4 py-2.5">
                 <button type="button" onClick={togglePlay} aria-label={isPlaying ? "Pause your recording" : "Play your recording"} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-fill hover:bg-blue-hover text-white shadow-md shadow-blue-500/30 transition-transform active:scale-95 cursor-pointer">
                   <Icon name={isPlaying ? "pause" : "play"} size={13} strokeWidth={2.4} />
                 </button>
                 <span className="num text-xs font-semibold text-muted shrink-0 w-[4.5rem]">
                   {mmss(currentTime)} / {mmss(duration)}
                 </span>
-                <input type="range" min={0} max={duration || 1} step={0.1} value={Math.min(currentTime, duration || 1)} onChange={handleSeek} aria-label="Position in your recording" className="h-1.5 grow accent-indigo-500 bg-white/10 rounded-lg cursor-pointer" />
-                <button type="button" onClick={cycleSpeed} aria-label={`Playback speed ${playbackRate}×. Change speed`} className="rounded-md bg-white/[0.06] hover:bg-white/[0.1] px-2 py-1 text-[11px] font-bold text-muted hover:text-white transition-colors cursor-pointer shrink-0">
+                <input type="range" min={0} max={duration || 1} step={0.1} value={Math.min(currentTime, duration || 1)} onChange={handleSeek} aria-label="Position in your recording" className="h-1.5 grow accent-blue-fill bg-line rounded-lg cursor-pointer" />
+                <button type="button" onClick={cycleSpeed} aria-label={`Playback speed ${playbackRate}×. Change speed`} className="rounded-md bg-panel border border-line hover:bg-panel-2 px-2 py-1 text-[11px] font-bold text-muted hover:text-ink transition-colors cursor-pointer shrink-0">
                   {playbackRate}x
                 </button>
-                <button type="button" onClick={toggleMute} aria-label={isMuted ? "Unmute" : "Mute"} aria-pressed={isMuted} className="text-muted hover:text-white transition-colors shrink-0 cursor-pointer p-1">
+                <button type="button" onClick={toggleMute} aria-label={isMuted ? "Unmute" : "Mute"} aria-pressed={isMuted} className="text-muted hover:text-ink transition-colors shrink-0 cursor-pointer p-1">
                   <Icon name={isMuted ? "volumeX" : "volume"} size={15} />
                 </button>
               </div>
             ) : (
-              <p className="rounded-xl bg-[#17192b] border border-white/[0.08] px-4 py-3 text-xs text-muted" data-testid="no-recording">
+              <p className="rounded-xl bg-panel-2 dark:bg-[#17192b] border border-line dark:border-white/[0.08] px-4 py-3 text-xs text-muted" data-testid="no-recording">
                 {audioSrc ? "Your recording couldn’t be played in this browser. The transcript below is what was heard." : "No recording was kept for this answer, so there is nothing to play back."}
               </p>
             )}
 
             {feedback.extract.length > 0 ? (
-              <p className="text-xs sm:text-[13px] text-[#c9cad8] leading-relaxed italic bg-black/20 p-4 rounded-xl border border-white/[0.04]" data-testid="answer-extract">
+              <p className="text-xs sm:text-[13px] text-ink/85 leading-relaxed italic bg-panel-2 dark:bg-black/20 p-4 rounded-xl border border-line dark:border-white/[0.04]" data-testid="answer-extract">
                 &ldquo;
                 {feedback.extract.map((run, i) => (
                   <span key={i}>
                     {i > 0 ? " " : ""}
                     {run.kind ? (
-                      <span className={clsx("rounded-md px-1.5 py-0.5 not-italic font-medium border", run.kind === "good" ? "bg-emerald-500/20 text-emerald-200 border-emerald-500/40" : "bg-amber-500/15 text-amber-200 border-amber-500/40")}>{run.text}</span>
+                      <span className={clsx("rounded-md px-1.5 py-0.5 not-italic font-medium border", run.kind === "good" ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-200 border-emerald-500/40" : "bg-amber-500/15 text-amber-700 dark:text-amber-200 border-amber-500/40")}>{run.text}</span>
                     ) : (
                       run.text
                     )}
@@ -342,7 +342,7 @@ export function QuestionFeedbackView({
                 &rdquo;
               </p>
             ) : (
-              <p className="text-xs sm:text-[13px] text-muted bg-black/20 p-4 rounded-xl border border-white/[0.04]" data-testid="answer-extract">
+              <p className="text-xs sm:text-[13px] text-muted bg-panel-2 dark:bg-black/20 p-4 rounded-xl border border-line dark:border-white/[0.04]" data-testid="answer-extract">
                 No words were heard in this answer.
               </p>
             )}
@@ -350,12 +350,12 @@ export function QuestionFeedbackView({
               <p className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted">
                 {feedback.extract.some((r) => r.kind === "good") && (
                   <span>
-                    <span className="text-emerald-200">Green</span>: a strong line
+                    <span className="text-emerald-600 dark:text-emerald-200 font-medium">Green</span>: a strong line
                   </span>
                 )}
                 {feedback.extract.some((r) => r.kind === "late") && (
                   <span>
-                    <span className="text-amber-200">Amber</span>: your point came late
+                    <span className="text-amber-600 dark:text-amber-200 font-medium">Amber</span>: your point came late
                   </span>
                 )}
               </p>
@@ -370,9 +370,9 @@ export function QuestionFeedbackView({
                   ["Length", lengthSec > 0 ? mmss(lengthSec) : "n/a"],
                 ] as const
               ).map(([label, value]) => (
-                <div key={label} className="rounded-xl bg-[#141624] border border-white/[0.06] px-3.5 py-3">
+                <div key={label} className="rounded-xl bg-panel-2 dark:bg-[#141624] border border-line dark:border-white/[0.06] px-3.5 py-3">
                   <dt className="text-[11px] text-muted font-medium">{label}</dt>
-                  <dd className="num text-base font-bold text-white mt-0.5">{value}</dd>
+                  <dd className="num text-base font-bold text-ink mt-0.5">{value}</dd>
                 </div>
               ))}
             </dl>
@@ -385,36 +385,36 @@ export function QuestionFeedbackView({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div className="rounded-2xl bg-[#0f111d] border border-emerald-500/25 p-5 sm:p-6 shadow-xl space-y-3.5" data-testid="answer-strengths">
+            <div className="rounded-2xl bg-panel dark:bg-[#0f111d] border border-emerald-500/35 p-5 sm:p-6 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_10px_28px_-6px_rgba(15,23,42,0.08)] dark:shadow-xl space-y-3.5" data-testid="answer-strengths">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-300">
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-300">
                   <Icon name="checkCircle" size={15} />
                 </div>
-                <h3 className="text-sm font-bold text-white">What worked well</h3>
+                <h3 className="text-sm font-bold text-ink">What worked well</h3>
               </div>
-              {feedback.strengths.length ? <ul className="space-y-2.5 text-xs text-[#c9cad8]">{pointList(feedback.strengths, "text-emerald-300")}</ul> : <p className="text-xs text-muted">Nothing was picked out as a strength in this answer.</p>}
+              {feedback.strengths.length ? <ul className="space-y-2.5 text-xs text-muted">{pointList(feedback.strengths, "text-emerald-600 dark:text-emerald-300")}</ul> : <p className="text-xs text-muted">Nothing was picked out as a strength in this answer.</p>}
             </div>
 
-            <div className="rounded-2xl bg-[#0f111d] border border-amber-500/25 p-5 sm:p-6 shadow-xl space-y-3.5" data-testid="answer-fixes">
+            <div className="rounded-2xl bg-panel dark:bg-[#0f111d] border border-amber-500/35 p-5 sm:p-6 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_10px_28px_-6px_rgba(15,23,42,0.08)] dark:shadow-xl space-y-3.5" data-testid="answer-fixes">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-500/20 text-amber-300">
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-300">
                   <Icon name="sparkle" size={14} />
                 </div>
-                <h3 className="text-sm font-bold text-white">What to work on</h3>
+                <h3 className="text-sm font-bold text-ink">What to work on</h3>
               </div>
-              {feedback.fixes.length ? <ul className="space-y-2.5 text-xs text-[#c9cad8]">{pointList(feedback.fixes, "text-amber-300")}</ul> : <p className="text-xs text-muted">No fix was suggested for this answer.</p>}
+              {feedback.fixes.length ? <ul className="space-y-2.5 text-xs text-muted">{pointList(feedback.fixes, "text-amber-600 dark:text-amber-300")}</ul> : <p className="text-xs text-muted">No fix was suggested for this answer.</p>}
             </div>
           </div>
 
           {feedback.stronger && (
-            <div className="rounded-2xl bg-[#0f111d] border border-indigo-500/30 p-5 sm:p-6 shadow-xl space-y-4" data-testid="answer-stronger">
+            <div className="rounded-2xl bg-panel dark:bg-[#0f111d] border border-blue/35 p-5 sm:p-6 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_10px_28px_-6px_rgba(15,23,42,0.08)] dark:shadow-xl space-y-4" data-testid="answer-stronger">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="flex items-center gap-2.5">
-                  <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-500/20 text-indigo-200">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue/15 text-blue-soft">
                     <Icon name="sparkle" size={14} />
                   </div>
                   <div>
-                    <h3 className="text-sm font-bold text-white">A stronger version</h3>
+                    <h3 className="text-sm font-bold text-ink">A stronger version</h3>
                     <p className="text-[11px] text-muted">
                       Rewritten from what you said{answer.strongerLengthSec > 0 ? `, about ${mmss(answer.strongerLengthSec)} spoken` : ""}. Check every fact in it is true before you use it.
                     </p>
@@ -426,25 +426,25 @@ export function QuestionFeedbackView({
                   className={clsx(
                     "inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer shadow-sm",
                     savedExample
-                      ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
-                      : "border-white/10 bg-white/[0.06] hover:bg-white/[0.12] text-white",
+                      ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/40"
+                      : "border-line-strong bg-panel-2 hover:bg-panel text-ink",
                   )}
                 >
-                  <Icon name={savedExample ? "check" : "doc"} size={12} className={savedExample ? "text-emerald-300" : "text-muted"} />
+                  <Icon name={savedExample ? "check" : "doc"} size={12} className={savedExample ? "text-emerald-600 dark:text-emerald-300" : "text-muted"} />
                   <span aria-live="polite">{savedExample ? "Saved to your examples & copied!" : "Save to my examples"}</span>
                 </button>
               </div>
-              <p className="rounded-xl bg-[#141624] p-4 text-xs sm:text-[13px] text-[#d6d7e2] leading-relaxed border border-white/[0.06]">&ldquo;{feedback.stronger}&rdquo;</p>
+              <p className="rounded-xl bg-panel-2 dark:bg-[#141624] p-4 text-xs sm:text-[13px] text-ink/90 leading-relaxed border border-line dark:border-white/[0.06]">&ldquo;{feedback.stronger}&rdquo;</p>
             </div>
           )}
 
-          <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-white/[0.08]">
+          <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-line">
             <div className="flex items-center gap-2.5">
-              <Link href="/practice" className="inline-flex items-center gap-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 px-4 py-2.5 text-xs font-semibold text-white transition-colors cursor-pointer">
+              <Link href="/practice" className="inline-flex items-center gap-2 rounded-xl bg-panel hover:bg-panel-2 border border-line-strong px-4 py-2.5 text-xs font-semibold text-ink transition-colors cursor-pointer shadow-sm">
                 <Icon name="chevronRight" size={13} className="rotate-180" />
                 <span>Practice Hub</span>
               </Link>
-              <Link href={`/mock/${interviewId}?q=${question.id}`} className="inline-flex items-center gap-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 px-4 py-2.5 text-xs font-semibold text-white transition-colors cursor-pointer">
+              <Link href={`/mock/${interviewId}?q=${question.id}`} className="inline-flex items-center gap-2 rounded-xl bg-panel hover:bg-panel-2 border border-line-strong px-4 py-2.5 text-xs font-semibold text-ink transition-colors cursor-pointer shadow-sm">
                 <Icon name="repeat" size={14} />
                 <span>Practise again</span>
               </Link>
@@ -458,12 +458,12 @@ export function QuestionFeedbackView({
                       ? `/mock/${interviewId}?q=${nextQuestionId}&practice=1`
                       : `/mock/${interviewId}?practice=1&next=1&type=${question.group === "curveball" || question.type === "strengths" ? "strengths" : question.group}`
                 }
-                className="inline-flex items-center gap-2 rounded-xl bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/35 px-4 py-2.5 text-xs font-semibold text-indigo-100 transition-colors cursor-pointer"
+                className="inline-flex items-center gap-2 rounded-xl bg-blue/10 hover:bg-blue/20 border border-blue/35 px-4 py-2.5 text-xs font-semibold text-blue-soft transition-colors cursor-pointer"
               >
                 <span>Next question</span>
                 <Icon name="chevronRight" size={13} />
               </Link>
-              <Link href={`/mock/${interviewId}?q=${question.id}&record=1`} className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:brightness-110 px-5 py-2.5 text-xs font-semibold text-white shadow-lg shadow-indigo-500/25 transition-all cursor-pointer">
+              <Link href={`/mock/${interviewId}?q=${question.id}&record=1`} className="inline-flex items-center gap-2 rounded-xl bg-blue-fill hover:bg-blue-hover px-5 py-2.5 text-xs font-semibold text-white shadow-md transition-all cursor-pointer">
                 <Icon name="mic" size={14} />
                 <span>Record improved answer</span>
               </Link>
@@ -474,14 +474,14 @@ export function QuestionFeedbackView({
 
       {activeTab === "transcript" && (
         <div className="space-y-5 animate-fade-in">
-          <div className="rounded-2xl bg-[#0f111d] border border-white/[0.08] p-5 sm:p-6 shadow-xl space-y-4">
-            <div className="flex items-center justify-between gap-4 pb-2 border-b border-white/[0.06]">
+          <div className="rounded-2xl bg-panel dark:bg-[#0f111d] border border-line dark:border-white/[0.08] p-5 sm:p-6 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_10px_28px_-6px_rgba(15,23,42,0.08)] dark:shadow-xl space-y-4">
+            <div className="flex items-center justify-between gap-4 pb-2 border-b border-line dark:border-white/[0.06]">
               <div>
-                <h3 className="text-sm font-bold text-white">What was heard</h3>
+                <h3 className="text-sm font-bold text-ink">What was heard</h3>
                 <p className="text-xs text-muted">{testMode ? "Test mode: this is a stand-in transcript, not a reading of your recording." : "The transcript made from your recording. Speech-to-text makes mistakes: correct any you find."}</p>
               </div>
               {!isEditing && feedback.transcript && (
-                <button type="button" onClick={startEditing} className="inline-flex items-center gap-1.5 rounded-lg border border-indigo-500/40 bg-indigo-500/10 hover:bg-indigo-500/20 px-3 py-1.5 text-xs font-semibold text-indigo-200 transition-colors cursor-pointer">
+                <button type="button" onClick={startEditing} className="inline-flex items-center gap-1.5 rounded-lg border border-blue/40 bg-blue/10 hover:bg-blue/20 px-3 py-1.5 text-xs font-semibold text-blue-soft transition-colors cursor-pointer">
                   <Icon name="edit" size={12} />
                   <span>Correct the transcript</span>
                 </button>
@@ -489,14 +489,14 @@ export function QuestionFeedbackView({
             </div>
 
             {saveNote && (
-              <p role={saveNote.ok ? "status" : "alert"} className={clsx("rounded-xl border p-3 text-xs", saveNote.ok ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-200" : "bg-red/10 border-red/30 text-red-soft")}>
+              <p role={saveNote.ok ? "status" : "alert"} className={clsx("rounded-xl border p-3 text-xs", saveNote.ok ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-700 dark:text-emerald-200" : "bg-red/10 border-red/30 text-red-soft")}>
                 {saveNote.text}
               </p>
             )}
 
             {isEditing ? (
               <div className="space-y-3">
-                <label htmlFor="transcript-edit" className="block text-xs font-semibold text-white">
+                <label htmlFor="transcript-edit" className="block text-xs font-semibold text-ink">
                   Your answer, corrected
                 </label>
                 <textarea
@@ -505,13 +505,13 @@ export function QuestionFeedbackView({
                   onChange={(e) => setEditedText(e.target.value)}
                   rows={8}
                   maxLength={10000}
-                  className="w-full rounded-xl bg-[#141624] p-4 text-xs sm:text-[13px] text-white leading-relaxed border border-indigo-500/50 outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 shadow-inner"
+                  className="w-full rounded-xl bg-panel-2 dark:bg-[#141624] p-4 text-xs sm:text-[13px] text-ink leading-relaxed border border-blue/50 outline-none focus:border-blue-fill focus:ring-1 focus:ring-blue-fill shadow-inner"
                 />
                 <p className="text-[11px] text-muted">Correcting the words doesn’t change the scores or feedback: they were worked out from the answer as it was first heard. Record the answer again to be scored again.</p>
                 <div className="flex items-center justify-between text-xs text-muted">
                   <span>{editedText.split(/\s+/).filter(Boolean).length} words</span>
                   <div className="flex items-center gap-2.5">
-                    <button type="button" onClick={() => setIsEditing(false)} className="px-3.5 py-1.5 text-xs font-semibold text-muted hover:text-white transition-colors cursor-pointer">
+                    <button type="button" onClick={() => setIsEditing(false)} className="px-3.5 py-1.5 text-xs font-semibold text-muted hover:text-ink transition-colors cursor-pointer">
                       Cancel
                     </button>
                     <button type="button" disabled={saving || !editedText.trim()} onClick={saveEdit} className="inline-flex items-center gap-1.5 rounded-xl bg-blue-fill hover:bg-blue-hover px-4 py-2 text-xs font-semibold text-white shadow-md transition-all cursor-pointer disabled:opacity-60">
@@ -522,10 +522,10 @@ export function QuestionFeedbackView({
               </div>
             ) : feedback.corrected ? (
               <div className="space-y-4" data-testid="answer-transcript">
-                <p className="whitespace-pre-wrap rounded-xl bg-[#141624] p-5 text-xs sm:text-[13px] leading-relaxed text-[#d6d7e2] border border-white/[0.06]">{feedback.transcript}</p>
+                <p className="whitespace-pre-wrap rounded-xl bg-panel-2 dark:bg-[#141624] p-5 text-xs sm:text-[13px] leading-relaxed text-ink/90 border border-line dark:border-white/[0.06]">{feedback.transcript}</p>
                 <p className="text-[11px] text-muted">This is your corrected version. The scores, timings and marks are those of the answer as it was first heard, shown below.</p>
-                <details className="rounded-xl border border-white/[0.06] bg-[#0b0c16] p-4">
-                  <summary className="cursor-pointer text-xs font-semibold text-white">As it was first heard</summary>
+                <details className="rounded-xl border border-line dark:border-white/[0.06] bg-panel-2 dark:bg-[#0b0c16] p-4">
+                  <summary className="cursor-pointer text-xs font-semibold text-ink">As it was first heard</summary>
                   <div className="mt-4 min-h-[220px]">
                     <Transcript words={answer.words} highlights={answer.highlights ?? []} notes={answer.notes ?? []} stronger={answer.strongerVersion ?? []} strongerLengthSec={answer.strongerLengthSec ?? 0} followUps={followUps} interviewerName={interviewerName} />
                   </div>
@@ -536,7 +536,7 @@ export function QuestionFeedbackView({
                 <Transcript words={answer.words} highlights={answer.highlights ?? []} notes={answer.notes ?? []} stronger={answer.strongerVersion ?? []} strongerLengthSec={answer.strongerLengthSec ?? 0} followUps={followUps} interviewerName={interviewerName} />
               </div>
             ) : (
-              <p className="rounded-xl bg-[#141624] p-5 text-xs sm:text-[13px] text-muted border border-white/[0.06]" data-testid="answer-transcript">
+              <p className="rounded-xl bg-panel-2 dark:bg-[#141624] p-5 text-xs sm:text-[13px] text-muted border border-line dark:border-white/[0.06]" data-testid="answer-transcript">
                 No words were heard in this answer, so there is no transcript.
               </p>
             )}

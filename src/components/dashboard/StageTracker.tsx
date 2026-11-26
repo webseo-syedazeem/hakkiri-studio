@@ -205,11 +205,16 @@ export function StageTracker({
   if (!activeInterview) {
     return (
       <div className="flex h-full flex-col gap-3" data-testid="tracker-empty">
-        <h2 className="text-[19px] font-bold tracking-[-0.01em] text-ink">Multi-stage interview tracker</h2>
-        <p className="text-[13px] text-muted">You haven’t set up an interview yet. When you do, its stages show here so you can follow where you’ve got to.</p>
-        <Link href="/interviews/new" className="mt-1 inline-flex w-fit items-center gap-2 rounded-xl bg-blue-fill px-4 py-2 text-xs font-semibold text-white hover:bg-blue-hover transition-colors">
-          Set up an interview
-        </Link>
+        <div>
+          <h2 className="text-[19px] font-bold tracking-[-0.01em] text-ink">Multi-stage interview tracker</h2>
+          <p className="mt-0.5 text-[13px] text-muted">Track progress, add feedback and update outcomes.</p>
+        </div>
+        <div className="mt-1 rounded-[14px] bg-panel-2 border border-line p-4 text-xs text-muted">
+          <p className="leading-relaxed">You haven’t set up an interview yet. When you do, its stages show here so you can follow where you’ve got to.</p>
+          <Link href="/interviews/new" className="mt-3 inline-flex w-fit items-center gap-2 rounded-[10px] bg-blue-fill px-4 py-2 text-xs font-semibold text-white hover:bg-blue-hover transition-colors shadow-sm">
+            Set up an interview
+          </Link>
+        </div>
       </div>
     );
   }
@@ -290,7 +295,7 @@ export function StageTracker({
                 className="fixed inset-0 z-40"
                 onClick={() => setIsDropdownOpen(false)}
               />
-              <div className="absolute top-full left-0 right-0 mt-2 z-50 rounded-xl bg-panel border border-line shadow-2xl overflow-hidden py-1.5 backdrop-blur-xl animate-dropdown divide-y divide-line">
+              <div className="absolute top-full left-0 right-0 mt-2 z-50 rounded-xl bg-panel border border-line-strong shadow-2xl overflow-hidden py-1.5 backdrop-blur-xl animate-dropdown divide-y divide-line">
                 <div className="px-3.5 py-2 text-[11px] font-bold uppercase tracking-wider text-muted">
                   Switch multi-stage interview
                 </div>
@@ -306,22 +311,22 @@ export function StageTracker({
                         className={clsx(
                           "w-full flex items-center justify-between px-3.5 py-2.5 text-left transition-colors text-xs cursor-pointer",
                           isSelected
-                            ? "bg-indigo-600/20 text-white font-semibold"
-                            : "hover:bg-white/[0.08] text-[#c9cad4]"
+                            ? "bg-blue-fill/12 text-blue-fill dark:bg-indigo-600/20 dark:text-white font-semibold"
+                            : "hover:bg-panel-2 text-ink dark:hover:bg-white/[0.08] dark:text-[#c9cad4]"
                         )}
                       >
                         <div className="flex items-center gap-3 min-w-0">
-                          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/10 text-xs font-bold text-white">
+                          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-panel-2 border border-line text-xs font-bold text-ink dark:bg-white/10 dark:text-white dark:border-0">
                             {iv.companyInitial || iv.company[0]}
                           </span>
                           <div className="min-w-0 truncate">
-                            <div className="font-semibold text-white truncate">{iv.role}</div>
+                            <div className="font-semibold text-ink truncate">{iv.role}</div>
                             <div className="text-[11px] text-muted truncate">
                               {iv.company} · {stageCount} {stageCount === 1 ? "stage" : "stages"}
                             </div>
                           </div>
                         </div>
-                        {isSelected && <Icon name="check" size={14} className="text-indigo-400 shrink-0 ml-2" />}
+                        {isSelected && <Icon name="check" size={14} className="text-blue-fill dark:text-indigo-400 shrink-0 ml-2" />}
                       </button>
                     );
                   })}
@@ -332,7 +337,7 @@ export function StageTracker({
         </div>
 
         {totalStages === 0 ? (
-          <p className="mt-4 rounded-[14px] bg-panel-2 p-4 text-xs text-muted" data-testid="tracker-no-stages">
+          <p className="mt-4 rounded-[14px] bg-panel-2 border border-line p-4 text-xs text-muted" data-testid="tracker-no-stages">
             This interview has no stages yet. Add them from{" "}
             <Link href={displayHref} className="font-semibold text-blue-soft hover:underline">
               the interview’s workspace
@@ -350,7 +355,7 @@ export function StageTracker({
                 key={s.num}
                 className={clsx(
                   "h-1.5 w-7 rounded-full transition-colors duration-300",
-                  s.num <= currentStage ? "bg-[#6366f1] shadow-[0_0_8px_rgba(99,102,241,0.5)]" : "bg-white/[0.12]"
+                  s.num <= currentStage ? "bg-[#6366f1] shadow-[0_0_8px_rgba(99,102,241,0.5)]" : "bg-line-strong dark:bg-white/[0.12]"
                 )}
               />
             ))}
@@ -424,7 +429,7 @@ export function StageTracker({
                           setActiveFeedbackStage(s.num);
                           setShowFeedbackModal(true);
                         }}
-                        className="flex items-center gap-1 rounded-lg bg-panel-2 px-2 py-0.5 text-[11px] font-medium text-muted hover:text-ink hover:bg-[#282a38] transition-colors cursor-pointer"
+                        className="flex items-center gap-1 rounded-lg bg-panel-2 border border-line px-2 py-0.5 text-[11px] font-medium text-muted hover:text-ink hover:bg-panel transition-colors cursor-pointer"
                       >
                         <Icon name="chat" size={12} />
                         <span>Feedback</span>
@@ -439,8 +444,8 @@ export function StageTracker({
             return (
               <div key={s.num} className="flex items-start gap-3 mt-1">
                 <div className="flex flex-col items-center">
-                  <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-white/[0.22] bg-transparent" />
-                  {!isLast && <div className="h-7 w-[2px] bg-white/[0.12]" />}
+                  <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-line-strong dark:border-white/[0.22] bg-transparent" />
+                  {!isLast && <div className="h-7 w-[2px] bg-line-strong dark:bg-white/[0.12]" />}
                 </div>
                 <div className="-mt-0.5 min-w-0 grow pb-1.5">
                   <div className="text-[13px] font-medium text-muted">
@@ -487,7 +492,7 @@ export function StageTracker({
                     setConfirmEnd(false);
                     onArchiveRole?.({ interviewId: activeInterview.id, role: activeInterview.role, company: activeInterview.company, stageReached: displayStages[currentStage - 1]?.title ?? "", notes: stageFeedback[currentStage] ?? "", outcome: "Withdrew" });
                   }}
-                  className="rounded-lg bg-white/10 px-2.5 py-1.5 font-semibold text-muted hover:bg-white/20 hover:text-white transition-colors cursor-pointer"
+                  className="rounded-lg bg-panel-2 border border-line px-2.5 py-1.5 font-semibold text-muted hover:bg-panel hover:text-ink dark:bg-white/10 dark:hover:bg-white/20 dark:hover:text-white transition-colors cursor-pointer"
                 >
                   Withdrew
                 </button>

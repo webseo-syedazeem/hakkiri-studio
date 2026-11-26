@@ -121,33 +121,33 @@ export function RunReportView({ presentation, run, whenFormatted }: RunReportVie
   };
 
   return (
-    <div className="flex flex-col gap-6 w-full pb-20 animate-rise text-white">
-      {/* 1. HEADER (Matching Image 2) */}
-      <header className="flex flex-col md:flex-row md:items-end justify-between gap-5 border-b border-white/[0.08] pb-5">
+    <div className="flex flex-col gap-6 w-full pb-20 animate-rise text-ink">
+      {/* 1. HEADER */}
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-5 border-b border-line pb-5">
         <div>
           <Link
             href={`/presentations/${presentation.id}`}
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-muted hover:text-white transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-muted hover:text-ink transition-colors"
           >
             <Icon name="back" size={13} />
             <span>Presentations</span>
-            <span className="text-white/20">/</span>
+            <span className="text-dim/40">/</span>
             <span>{presentation.title}</span>
-            <span className="text-white/20">/</span>
-            <span className="text-[#c9cad3]">Run {run.number}</span>
+            <span className="text-dim/40">/</span>
+            <span className="text-ink/85">Run {run.number}</span>
           </Link>
 
-          <h1 className="mt-2 text-[30px] font-bold tracking-tight text-white">{presentation.title} — Rehearsal report</h1>
+          <h1 className="mt-2 text-[30px] font-bold tracking-tight text-ink">{presentation.title} — Rehearsal report</h1>
 
           <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-muted">
-            <span className="text-white/90 font-medium">{presentation.audience === "leadership" ? "Leadership team" : presentation.audience}</span>
-            <span className="text-white/20">·</span>
+            <span className="text-ink font-medium">{presentation.audience === "leadership" ? "Leadership team" : presentation.audience}</span>
+            <span className="text-dim/40">·</span>
             <span>Run {run.number}</span>
-            <span className="text-white/20">·</span>
+            <span className="text-dim/40">·</span>
             <span>{whenFormatted}</span>
-            <span className="text-white/20">·</span>
+            <span className="text-dim/40">·</span>
             <span>{totalSlides} slides</span>
-            <span className="text-white/20">·</span>
+            <span className="text-dim/40">·</span>
             <span>Target: {Math.round(presentation.timeLimitSec / 60)} minutes</span>
           </div>
         </div>
@@ -157,7 +157,7 @@ export function RunReportView({ presentation, run, whenFormatted }: RunReportVie
           <button
             type="button"
             onClick={handleShare}
-            className="bg-[#141326] border border-white/10 hover:border-white/25 text-white flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-colors"
+            className="bg-panel dark:bg-[#141326] border border-line-strong dark:border-white/10 hover:border-blue/40 text-ink dark:text-white flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-colors shadow-sm cursor-pointer"
           >
             <Icon name="share" size={14} />
             <span>{copied ? "Copied link!" : "Share report"}</span>
@@ -165,7 +165,7 @@ export function RunReportView({ presentation, run, whenFormatted }: RunReportVie
 
           <Link
             href={`/rehearse/${presentation.id}`}
-            className="pro-btn-glow bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:brightness-110 text-white flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold shadow-lg shadow-indigo-500/20 transition-all"
+            className="pro-btn-glow bg-blue-fill hover:bg-blue-hover text-white flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold shadow-md transition-all"
           >
             <Icon name="mic" size={14} />
             <span>Rehearse again</span>
@@ -173,14 +173,14 @@ export function RunReportView({ presentation, run, whenFormatted }: RunReportVie
         </div>
       </header>
 
-      {/* 2. TOP HERO SUMMARY CARD (Matching Image 2) */}
-      <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-6 lg:p-7 shadow-xl grid grid-cols-1 lg:grid-cols-[1.25fr_1fr] gap-6 items-center">
+      {/* 2. TOP HERO SUMMARY CARD */}
+      <div className="rounded-2xl bg-panel dark:bg-[#0d0c1c] border border-line dark:border-white/[0.08] p-6 lg:p-7 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_10px_28px_-6px_rgba(15,23,42,0.08)] dark:shadow-xl grid grid-cols-1 lg:grid-cols-[1.25fr_1fr] gap-6 items-center">
         {/* Left: Gauge + Description */}
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
           {/* Radial Gauge */}
           <div className="relative w-28 h-28 shrink-0 flex items-center justify-center">
             <svg className="w-28 h-28 -rotate-90 transform" viewBox="0 0 100 100">
-              <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.08)" strokeWidth="10" fill="transparent" />
+              <circle cx="50" cy="50" r="40" stroke="var(--color-line)" strokeWidth="10" fill="transparent" />
               <circle
                 cx="50"
                 cy="50"
@@ -195,13 +195,13 @@ export function RunReportView({ presentation, run, whenFormatted }: RunReportVie
               />
               <defs>
                 <linearGradient id="rehearsalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#4f46e5" />
-                  <stop offset="100%" stopColor="#818cf8" />
+                  <stop offset="0%" stopColor="#0071e3" />
+                  <stop offset="100%" stopColor="#6366f1" />
                 </linearGradient>
               </defs>
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-              <span className="num text-2xl font-bold text-white tracking-tight leading-none">
+              <span className="num text-2xl font-bold text-ink tracking-tight leading-none">
                 {scoreVal != null ? scoreVal.toFixed(1) : "—"}
               </span>
               <span className="text-[11px] text-muted font-medium mt-0.5">
@@ -211,7 +211,7 @@ export function RunReportView({ presentation, run, whenFormatted }: RunReportVie
           </div>
 
           <div>
-            <h2 className="text-xl font-bold text-white tracking-tight">
+            <h2 className="text-xl font-bold text-ink tracking-tight">
               {scoreVal != null
                 ? scoreVal >= 4
                   ? "An outstanding rehearsal"
@@ -220,7 +220,7 @@ export function RunReportView({ presentation, run, whenFormatted }: RunReportVie
                 ? "A solid start, but incomplete"
                 : "Rehearsal finished"}
             </h2>
-            <p className="mt-2 text-xs text-[#c9cad3] leading-relaxed max-w-md">
+            <p className="mt-2 text-xs text-muted leading-relaxed max-w-md">
               {timeVerdict}{" "}
               {!isComplete && totalSlides > deliveredSlidesCount
                 ? `The rehearsal ended early, so the later slides (${deliveredSlidesCount + 1}–${totalSlides}) weren't assessed.`
@@ -232,33 +232,33 @@ export function RunReportView({ presentation, run, whenFormatted }: RunReportVie
         {/* Right: Metrics + Incomplete Notice */}
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
-            <div className="p-3 rounded-xl bg-[#141326] border border-white/10">
+            <div className="p-3 rounded-xl bg-panel-2 dark:bg-[#141326] border border-line dark:border-white/10">
               <div className="flex items-center gap-1.5 text-xs text-muted">
                 <Icon name="clock" size={13} />
                 <span>Time delivered</span>
               </div>
-              <div className="mt-1 text-lg font-bold text-white num">
+              <div className="mt-1 text-lg font-bold text-ink num">
                 {mmss(run.totalSec || 0)} <span className="text-muted text-xs font-normal">/ {mmss(presentation.timeLimitSec)}</span>
               </div>
             </div>
 
-            <div className="p-3 rounded-xl bg-[#141326] border border-white/10">
+            <div className="p-3 rounded-xl bg-panel-2 dark:bg-[#141326] border border-line dark:border-white/10">
               <div className="flex items-center gap-1.5 text-xs text-muted">
                 <Icon name="present" size={13} />
                 <span>Slides reached</span>
               </div>
-              <div className="mt-1 text-lg font-bold text-white num">
+              <div className="mt-1 text-lg font-bold text-ink num">
                 {deliveredSlidesCount} <span className="text-muted text-xs font-normal">/ {totalSlides}</span>
               </div>
             </div>
           </div>
 
           {!isComplete && (
-            <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-start gap-2.5">
-              <Icon name="alertCircle" size={16} className="text-amber-400 shrink-0 mt-0.5" />
+            <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-2.5">
+              <Icon name="alertCircle" size={16} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
               <div>
-                <div className="text-xs font-semibold text-amber-300">Incomplete rehearsal</div>
-                <div className="text-[11px] text-[#e2d5c3] mt-0.5 leading-relaxed">
+                <div className="text-xs font-semibold text-amber-700 dark:text-amber-300">Incomplete rehearsal</div>
+                <div className="text-[11px] text-amber-900/80 dark:text-[#e2d5c3] mt-0.5 leading-relaxed">
                   The score reflects the slides you delivered (1–{deliveredSlidesCount}) and is not directly comparable with completed runs.
                 </div>
               </div>
@@ -270,10 +270,10 @@ export function RunReportView({ presentation, run, whenFormatted }: RunReportVie
       {/* 3. ROW 2: 3-CARD GRID (Performance by area, What went well, Recommended next step) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-stretch">
         {/* Card 1: Performance by area */}
-        <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-5 shadow-xl flex flex-col justify-between">
+        <div className="rounded-2xl bg-panel dark:bg-[#0d0c1c] border border-line dark:border-white/[0.08] p-5 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_10px_28px_-6px_rgba(15,23,42,0.08)] dark:shadow-xl flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between pb-3 border-b border-white/[0.07]">
-              <div className="flex items-center gap-1.5 text-sm font-semibold text-white">
+            <div className="flex items-center justify-between pb-3 border-b border-line dark:border-white/[0.07]">
+              <div className="flex items-center gap-1.5 text-sm font-semibold text-ink">
                 <span>Performance by area</span>
                 <Icon name="info" size={13} className="text-muted" />
               </div>
@@ -291,14 +291,14 @@ export function RunReportView({ presentation, run, whenFormatted }: RunReportVie
               ].map((area) => (
                 <div key={area.label} className="space-y-1">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-[#c9cad3]">{area.label}</span>
-                    <span className="num font-semibold text-white">{area.score.toFixed(1)} / 5</span>
+                    <span className="text-ink/85">{area.label}</span>
+                    <span className="num font-semibold text-ink">{area.score.toFixed(1)} / 5</span>
                   </div>
-                  <div className="h-1.5 w-full rounded-full bg-white/[0.08] overflow-hidden">
+                  <div className="h-1.5 w-full rounded-full bg-panel-2 border border-line/60 dark:bg-white/[0.08] overflow-hidden">
                     <div
                       className={clsx(
                         "h-full rounded-full transition-all duration-700",
-                        area.isLow ? "bg-rose-500" : "bg-gradient-to-r from-indigo-500 to-purple-400"
+                        area.isLow ? "bg-rose-500" : "bg-gradient-to-r from-blue-fill to-indigo-500"
                       )}
                       style={{ width: `${Math.min(100, (area.score / 5) * 100)}%` }}
                     />
@@ -310,35 +310,35 @@ export function RunReportView({ presentation, run, whenFormatted }: RunReportVie
         </div>
 
         {/* Card 2: What went well & Main areas to improve */}
-        <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-5 shadow-xl flex flex-col justify-between">
+        <div className="rounded-2xl bg-panel dark:bg-[#0d0c1c] border border-line dark:border-white/[0.08] p-5 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_10px_28px_-6px_rgba(15,23,42,0.08)] dark:shadow-xl flex flex-col justify-between">
           <div>
             <div className="space-y-4">
               {/* What went well */}
               <div>
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400 mb-2">
-                  <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 mb-2">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500" />
                   <span>What went well</span>
                 </div>
-                <ul className="space-y-2 text-xs text-[#d1d2dc] leading-relaxed">
+                <ul className="space-y-2 text-xs text-muted leading-relaxed">
                   {isDemo ? (
                     <>
                       <li className="flex items-start gap-2">
-                        <span className="text-emerald-400 mt-0.5">•</span>
+                        <span className="text-emerald-600 dark:text-emerald-400 mt-0.5">•</span>
                         <span>Clear and confident opening that set the context.</span>
                       </li>
                       <li className="flex items-start gap-2">
-                        <span className="text-emerald-400 mt-0.5">•</span>
+                        <span className="text-emerald-600 dark:text-emerald-400 mt-0.5">•</span>
                         <span>Explained the performance improvement with a relevant business example.</span>
                       </li>
                       <li className="flex items-start gap-2">
-                        <span className="text-emerald-400 mt-0.5">•</span>
+                        <span className="text-emerald-600 dark:text-emerald-400 mt-0.5">•</span>
                         <span>Spoke at a good pace with minimal filler words.</span>
                       </li>
                     </>
                   ) : (
                     <>
                       <li className="flex items-start gap-2">
-                        <span className="text-emerald-400 mt-0.5">•</span>
+                        <span className="text-emerald-600 dark:text-emerald-400 mt-0.5">•</span>
                         <span>
                           {run.delivery?.fillersPerMinute != null && run.delivery.fillersPerMinute < 3
                             ? `Spoke cleanly with only ${run.delivery.fillerCount} filler words (${run.delivery.fillersPerMinute.toFixed(1)}/min).`
@@ -347,7 +347,7 @@ export function RunReportView({ presentation, run, whenFormatted }: RunReportVie
                       </li>
                       {run.fix?.title && (
                         <li className="flex items-start gap-2">
-                          <span className="text-emerald-400 mt-0.5">•</span>
+                          <span className="text-emerald-600 dark:text-emerald-400 mt-0.5">•</span>
                           <span>{run.fix.title}</span>
                         </li>
                       )}
@@ -357,20 +357,20 @@ export function RunReportView({ presentation, run, whenFormatted }: RunReportVie
               </div>
 
               {/* Main areas to improve */}
-              <div className="pt-3 border-t border-white/[0.07]">
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-400 mb-2">
+              <div className="pt-3 border-t border-line dark:border-white/[0.07]">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-600 dark:text-amber-400 mb-2">
                   <Icon name="alertCircle" size={13} />
                   <span>Main areas to improve</span>
                 </div>
-                <ul className="space-y-2 text-xs text-[#d1d2dc] leading-relaxed">
+                <ul className="space-y-2 text-xs text-muted leading-relaxed">
                   {isDemo ? (
                     <>
                       <li className="flex items-start gap-2">
-                        <span className="text-amber-400 mt-0.5">•</span>
+                        <span className="text-amber-600 dark:text-amber-400 mt-0.5">•</span>
                         <span>Complete the full presentation, including the recommendation and final ask.</span>
                       </li>
                       <li className="flex items-start gap-2">
-                        <span className="text-amber-400 mt-0.5">•</span>
+                        <span className="text-amber-600 dark:text-amber-400 mt-0.5">•</span>
                         <span>Be more concise on key results (e.g. payment completion).</span>
                       </li>
                     </>
@@ -378,18 +378,18 @@ export function RunReportView({ presentation, run, whenFormatted }: RunReportVie
                     <>
                       {!isComplete && (
                         <li className="flex items-start gap-2">
-                          <span className="text-amber-400 mt-0.5">•</span>
+                          <span className="text-amber-600 dark:text-amber-400 mt-0.5">•</span>
                           <span>Complete the full presentation, including the final ask.</span>
                         </li>
                       )}
                       {run.fix?.body ? (
                         <li className="flex items-start gap-2">
-                          <span className="text-amber-400 mt-0.5">•</span>
+                          <span className="text-amber-600 dark:text-amber-400 mt-0.5">•</span>
                           <span>{run.fix.body}</span>
                         </li>
                       ) : (
                         <li className="flex items-start gap-2">
-                          <span className="text-amber-400 mt-0.5">•</span>
+                          <span className="text-amber-600 dark:text-amber-400 mt-0.5">•</span>
                           <span>Review per-slide timings below to optimize your delivery.</span>
                         </li>
                       )}
@@ -402,25 +402,25 @@ export function RunReportView({ presentation, run, whenFormatted }: RunReportVie
         </div>
 
         {/* Card 3: Recommended next step */}
-        <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-5 shadow-xl flex flex-col justify-between">
+        <div className="rounded-2xl bg-panel dark:bg-[#0d0c1c] border border-line dark:border-white/[0.08] p-5 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_10px_28px_-6px_rgba(15,23,42,0.08)] dark:shadow-xl flex flex-col justify-between">
           <div>
             <div className="flex items-center gap-2 pb-1">
-              <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-500/15 text-indigo-300">
+              <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue/10 dark:bg-indigo-500/15 text-blue-soft">
                 <Icon name="target" size={14} />
               </div>
-              <h3 className="text-sm font-semibold text-white">Recommended next step</h3>
+              <h3 className="text-sm font-semibold text-ink">Recommended next step</h3>
             </div>
             <div className="mt-3">
               {deliveredSlidesCount < totalSlides ? (
                 <>
-                  <h4 className="text-base font-bold text-white tracking-tight">Continue the presentation</h4>
+                  <h4 className="text-base font-bold text-ink tracking-tight">Continue the presentation</h4>
                   <p className="mt-1 text-xs text-muted leading-relaxed">
                     Rehearse from slide {deliveredSlidesCount + 1} to complete the deck, cover the remaining points, and finish with a clear ask.
                   </p>
                 </>
               ) : (
                 <>
-                  <h4 className="text-base font-bold text-white tracking-tight">Full presentation delivered</h4>
+                  <h4 className="text-base font-bold text-ink tracking-tight">Full presentation delivered</h4>
                   <p className="mt-1 text-xs text-muted leading-relaxed">
                     You covered all slides. Rehearse again to sharpen your timing, or practise tough audience questions.
                   </p>
@@ -433,7 +433,7 @@ export function RunReportView({ presentation, run, whenFormatted }: RunReportVie
             {deliveredSlidesCount < totalSlides && (
               <Link
                 href={`/rehearse/${presentation.id}?from=${deliveredSlidesCount + 1}&to=${totalSlides}`}
-                className="pro-btn-glow w-full bg-blue hover:bg-blue-600 text-white flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold shadow-lg transition-all"
+                className="pro-btn-glow w-full bg-blue-fill hover:bg-blue-hover text-white flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold shadow-md transition-all"
               >
                 <Icon name="play" size={13} />
                 <span>Continue from slide {deliveredSlidesCount + 1} →</span>
@@ -442,7 +442,7 @@ export function RunReportView({ presentation, run, whenFormatted }: RunReportVie
 
             <Link
               href={`/rehearse/${presentation.id}`}
-              className="w-full bg-[#141326] border border-white/10 hover:border-white/20 text-white flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all"
+              className="w-full bg-panel-2 hover:bg-panel dark:bg-[#141326] border border-line-strong dark:border-white/10 hover:border-blue/40 text-ink dark:text-white flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all"
             >
               <Icon name="repeat" size={13} />
               <span>Rehearse the full presentation</span>
@@ -451,16 +451,16 @@ export function RunReportView({ presentation, run, whenFormatted }: RunReportVie
         </div>
       </div>
 
-      {/* 4. ROW 3: TABS & SLIDE-BY-SLIDE COACHING (Matching Image 2) */}
-      <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-6 shadow-xl">
+      {/* 4. ROW 3: TABS & SLIDE-BY-SLIDE COACHING */}
+      <div className="rounded-2xl bg-panel dark:bg-[#0d0c1c] border border-line dark:border-white/[0.08] p-6 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_10px_28px_-6px_rgba(15,23,42,0.08)] dark:shadow-xl">
         {/* Tabs */}
-        <div className="flex items-center gap-6 border-b border-white/[0.08] pb-4">
+        <div className="flex items-center gap-6 border-b border-line dark:border-white/[0.08] pb-4">
           <button
             type="button"
             onClick={() => setActiveTab("coaching")}
             className={clsx(
-              "text-sm font-semibold pb-1 relative transition-colors",
-              activeTab === "coaching" ? "text-white after:absolute after:bottom-[-17px] after:left-0 after:right-0 after:h-0.5 after:bg-blue-500" : "text-muted hover:text-white"
+              "text-sm font-semibold pb-1 relative transition-colors cursor-pointer",
+              activeTab === "coaching" ? "text-ink after:absolute after:bottom-[-17px] after:left-0 after:right-0 after:h-0.5 after:bg-blue-fill" : "text-muted hover:text-ink"
             )}
           >
             Slide-by-slide coaching
@@ -469,8 +469,8 @@ export function RunReportView({ presentation, run, whenFormatted }: RunReportVie
             type="button"
             onClick={() => setActiveTab("overall")}
             className={clsx(
-              "text-sm font-semibold pb-1 relative transition-colors",
-              activeTab === "overall" ? "text-white after:absolute after:bottom-[-17px] after:left-0 after:right-0 after:h-0.5 after:bg-blue-500" : "text-muted hover:text-white"
+              "text-sm font-semibold pb-1 relative transition-colors cursor-pointer",
+              activeTab === "overall" ? "text-ink after:absolute after:bottom-[-17px] after:left-0 after:right-0 after:h-0.5 after:bg-blue-fill" : "text-muted hover:text-ink"
             )}
           >
             Overall feedback
@@ -479,8 +479,8 @@ export function RunReportView({ presentation, run, whenFormatted }: RunReportVie
             type="button"
             onClick={() => setActiveTab("transcript")}
             className={clsx(
-              "text-sm font-semibold pb-1 relative transition-colors",
-              activeTab === "transcript" ? "text-white after:absolute after:bottom-[-17px] after:left-0 after:right-0 after:h-0.5 after:bg-blue-500" : "text-muted hover:text-white"
+              "text-sm font-semibold pb-1 relative transition-colors cursor-pointer",
+              activeTab === "transcript" ? "text-ink after:absolute after:bottom-[-17px] after:left-0 after:right-0 after:h-0.5 after:bg-blue-fill" : "text-muted hover:text-ink"
             )}
           >
             Transcript
@@ -489,8 +489,8 @@ export function RunReportView({ presentation, run, whenFormatted }: RunReportVie
             type="button"
             onClick={() => setActiveTab("compare")}
             className={clsx(
-              "text-sm font-semibold pb-1 relative transition-colors",
-              activeTab === "compare" ? "text-white after:absolute after:bottom-[-17px] after:left-0 after:right-0 after:h-0.5 after:bg-blue-500" : "text-muted hover:text-white"
+              "text-sm font-semibold pb-1 relative transition-colors cursor-pointer",
+              activeTab === "compare" ? "text-ink after:absolute after:bottom-[-17px] after:left-0 after:right-0 after:h-0.5 after:bg-blue-fill" : "text-muted hover:text-ink"
             )}
           >
             Compare runs
@@ -513,23 +513,23 @@ export function RunReportView({ presentation, run, whenFormatted }: RunReportVie
                   type="button"
                   onClick={() => setSelectedSlideNum(s.n)}
                   className={clsx(
-                    "w-full text-left p-3 rounded-xl border flex items-center justify-between gap-3 transition-all",
+                    "w-full text-left p-3 rounded-xl border flex items-center justify-between gap-3 transition-all cursor-pointer",
                     active
-                      ? "bg-indigo-600/20 border-indigo-500/60 ring-1 ring-indigo-500 text-white"
-                      : "bg-[#141326] border-white/10 hover:border-white/20 text-[#c9cad3]"
+                      ? "bg-blue/10 border-blue-fill ring-1 ring-blue-fill text-ink"
+                      : "bg-panel-2 dark:bg-[#141326] border-line dark:border-white/10 hover:border-line-strong text-ink/85"
                   )}
                 >
                   <div className="flex items-center gap-2.5 truncate">
-                    <div className="w-8 h-6 rounded bg-white text-gray-900 text-[8px] font-bold flex items-center justify-center shrink-0">
+                    <div className="w-8 h-6 rounded bg-panel border border-line text-ink text-[8px] font-bold flex items-center justify-center shrink-0">
                       {s.n}
                     </div>
                     <div className="truncate">
-                      <div className="text-xs font-semibold truncate text-white">{s.n}. {s.title}</div>
+                      <div className="text-xs font-semibold truncate text-ink">{s.n}. {s.title}</div>
                       <div className="text-[11px] text-muted num">{timingFormatted}</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
-                    <Icon name="checkCircle" size={14} className="text-emerald-400" />
+                    <Icon name="checkCircle" size={14} className="text-emerald-500" />
                     <Icon name="chevronRight" size={12} className="text-muted" />
                   </div>
                 </button>
@@ -542,7 +542,7 @@ export function RunReportView({ presentation, run, whenFormatted }: RunReportVie
                 <button
                   type="button"
                   onClick={() => setNotDeliveredOpen((o) => !o)}
-                  className="w-full p-2.5 rounded-xl bg-[#141326]/60 border border-white/[0.08] flex items-center justify-between text-xs text-muted hover:text-white transition-colors"
+                  className="w-full p-2.5 rounded-xl bg-panel-2 dark:bg-[#141326]/60 border border-line dark:border-white/[0.08] flex items-center justify-between text-xs text-muted hover:text-ink transition-colors cursor-pointer"
                 >
                   <span>Not delivered ({notDeliveredSlides.length})</span>
                   <Icon name="chevronDown" size={14} className={clsx("transition-transform", notDeliveredOpen && "rotate-180")} />
@@ -553,7 +553,7 @@ export function RunReportView({ presentation, run, whenFormatted }: RunReportVie
                     {notDeliveredSlides.map((s) => (
                       <div
                         key={s.n}
-                        className="p-2 rounded-lg bg-[#141326] border border-white/[0.06] flex items-center justify-between text-xs text-muted"
+                        className="p-2 rounded-lg bg-panel-2 dark:bg-[#141326] border border-line dark:border-white/[0.06] flex items-center justify-between text-xs text-muted"
                       >
                         <span className="truncate">{s.n}. {s.title}</span>
                         <span className="text-[11px] num">Planned {mmss(s.plannedSec)}</span>
@@ -565,19 +565,19 @@ export function RunReportView({ presentation, run, whenFormatted }: RunReportVie
             )}
           </div>
 
-          {/* Right: Active Slide Coaching Card (Matching Image 2) */}
-          <div className="rounded-xl bg-[#141326] border border-white/10 p-5 shadow-xl">
+          {/* Right: Active Slide Coaching Card */}
+          <div className="rounded-xl bg-panel-2 dark:bg-[#141326] border border-line dark:border-white/10 p-5 shadow-sm">
             {/* Slide Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-white/[0.08]">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-line dark:border-white/[0.08]">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-9 rounded-lg bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-300">
+                <div className="w-12 h-9 rounded-lg bg-blue/10 border border-blue/30 flex items-center justify-center text-blue-soft">
                   <Icon name="chart" size={18} />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="text-base font-bold text-white">Slide {selectedSlideNum}: {presentation.slides.find((s) => s.n === selectedSlideNum)?.title}</h3>
+                    <h3 className="text-base font-bold text-ink">Slide {selectedSlideNum}: {presentation.slides.find((s) => s.n === selectedSlideNum)?.title}</h3>
                     {activeCoaching && (
-                      <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/20">
+                      <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
                         {activeCoaching.status}
                       </span>
                     )}
@@ -594,18 +594,18 @@ export function RunReportView({ presentation, run, whenFormatted }: RunReportVie
                 const activeActual = activeSlideRun?.seconds ?? 0;
                 const diff = activeActual - activePlanned;
                 const diffText = diff > 0 ? `${mmss(diff)} over` : diff < 0 ? `${mmss(Math.abs(diff))} under` : "on plan";
-                const diffColor = diff > 0 ? "text-amber-400" : "text-emerald-400";
+                const diffColor = diff > 0 ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400";
                 return (
                   <div className="flex items-center gap-3 shrink-0">
                     <div className="text-right text-xs text-muted">
-                      <span className="num font-semibold text-white">Time: {mmss(activeActual)}</span> · Planned: {mmss(activePlanned)} · <span className={diffColor}>{diffText}</span>
+                      <span className="num font-semibold text-ink">Time: {mmss(activeActual)}</span> · Planned: {mmss(activePlanned)} · <span className={diffColor}>{diffText}</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <button
                         type="button"
                         onClick={() => setSelectedSlideNum((n) => Math.max(1, n - 1))}
                         disabled={selectedSlideNum === 1}
-                        className="p-1 rounded text-muted hover:text-white disabled:opacity-30 cursor-pointer"
+                        className="p-1 rounded text-muted hover:text-ink disabled:opacity-30 cursor-pointer"
                       >
                         <Icon name="chevronRight" size={14} className="rotate-180" />
                       </button>
@@ -613,7 +613,7 @@ export function RunReportView({ presentation, run, whenFormatted }: RunReportVie
                         type="button"
                         onClick={() => setSelectedSlideNum((n) => Math.min(Math.max(1, deliveredSlidesCount), n + 1))}
                         disabled={selectedSlideNum >= deliveredSlidesCount}
-                        className="p-1 rounded text-muted hover:text-white disabled:opacity-30 cursor-pointer"
+                        className="p-1 rounded text-muted hover:text-ink disabled:opacity-30 cursor-pointer"
                       >
                         <Icon name="chevronRight" size={14} />
                       </button>
@@ -630,14 +630,14 @@ export function RunReportView({ presentation, run, whenFormatted }: RunReportVie
                 <div className="space-y-4">
                   {/* What you did well */}
                   <div>
-                    <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400 mb-2">
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 mb-2">
                       <Icon name="checkCircle" size={14} />
                       <span>What you did well</span>
                     </div>
-                    <ul className="space-y-2 text-xs text-[#d1d2dc] leading-relaxed">
+                    <ul className="space-y-2 text-xs text-muted leading-relaxed">
                       {activeCoaching.whatDidWell.map((w, i) => (
                         <li key={i} className="flex items-start gap-2">
-                          <span className="text-emerald-400 mt-0.5">•</span>
+                          <span className="text-emerald-600 dark:text-emerald-400 mt-0.5">•</span>
                           <span>{w}</span>
                         </li>
                       ))}
@@ -645,15 +645,15 @@ export function RunReportView({ presentation, run, whenFormatted }: RunReportVie
                   </div>
 
                   {/* What to improve */}
-                  <div className="pt-3 border-t border-white/[0.08]">
-                    <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-400 mb-2">
+                  <div className="pt-3 border-t border-line dark:border-white/[0.08]">
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-600 dark:text-amber-400 mb-2">
                       <Icon name="alertCircle" size={14} />
                       <span>What to improve</span>
                     </div>
-                    <ul className="space-y-2 text-xs text-[#d1d2dc] leading-relaxed">
+                    <ul className="space-y-2 text-xs text-muted leading-relaxed">
                       {activeCoaching.whatToImprove.map((imp, i) => (
                         <li key={i} className="flex items-start gap-2">
-                          <span className="text-amber-400 mt-0.5">•</span>
+                          <span className="text-amber-600 dark:text-amber-400 mt-0.5">•</span>
                           <span>{imp}</span>
                         </li>
                       ))}
@@ -664,18 +664,18 @@ export function RunReportView({ presentation, run, whenFormatted }: RunReportVie
                 {/* Right Column: Recommended structure & Suggested opening */}
                 <div className="space-y-4">
                   <div>
-                    <div className="flex items-center gap-1.5 text-xs font-semibold text-indigo-300 mb-2.5">
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-blue-soft mb-2.5">
                       <Icon name="layers" size={14} />
                       <span>Recommended structure: Result → Evidence → Significance</span>
                     </div>
-                    <div className="space-y-2 text-xs text-[#c9cad3]">
+                    <div className="space-y-2 text-xs text-muted">
                       {activeCoaching.structure.map((item) => (
                         <div key={item.step} className="flex items-start gap-2.5">
-                          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue text-[10px] font-bold text-white mt-0.5">
+                          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-fill text-[10px] font-bold text-white mt-0.5">
                             {item.step}
                           </span>
                           <div>
-                            <strong className="text-white font-medium">{item.name}</strong> — {item.detail}
+                            <strong className="text-ink font-semibold">{item.name}</strong> — {item.detail}
                           </div>
                         </div>
                       ))}
@@ -683,16 +683,16 @@ export function RunReportView({ presentation, run, whenFormatted }: RunReportVie
                   </div>
 
                   {/* Suggested Opening */}
-                  <div className="p-3.5 rounded-xl bg-[#0d0c1c] border border-white/10">
-                    <div className="text-xs font-semibold text-white uppercase tracking-wider mb-1.5">Suggested opening</div>
-                    <p className="text-xs text-[#d1d2dc] italic leading-relaxed">{activeCoaching.suggestedOpening}</p>
+                  <div className="p-3.5 rounded-xl bg-panel dark:bg-[#0d0c1c] border border-line dark:border-white/10">
+                    <div className="text-xs font-semibold text-ink uppercase tracking-wider mb-1.5">Suggested opening</div>
+                    <p className="text-xs text-muted italic leading-relaxed">{activeCoaching.suggestedOpening}</p>
                   </div>
 
                   {/* Practise this slide button */}
                   <div className="pt-1">
                     <Link
                       href={`/rehearse/${presentation.id}?from=${selectedSlideNum}&to=${selectedSlideNum}`}
-                      className="pro-btn-glow w-full bg-blue hover:bg-blue-600 text-white flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold shadow-lg transition-all"
+                      className="pro-btn-glow w-full bg-blue-fill hover:bg-blue-hover text-white flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold shadow-md transition-all"
                     >
                       <Icon name="play" size={13} />
                       <span>Practise this slide →</span>
@@ -701,16 +701,16 @@ export function RunReportView({ presentation, run, whenFormatted }: RunReportVie
                 </div>
               </div>
             ) : (
-              <div className="mt-5 p-8 rounded-xl bg-[#0d0c1c] border border-white/[0.08] text-center">
-                <Icon name="info" size={24} className="mx-auto mb-2 text-indigo-400 opacity-80" />
-                <p className="text-sm font-semibold text-white">Coaching needs the AI service; your timings are below.</p>
+              <div className="mt-5 p-8 rounded-xl bg-panel dark:bg-[#0d0c1c] border border-line dark:border-white/[0.08] text-center">
+                <Icon name="info" size={24} className="mx-auto mb-2 text-blue-soft opacity-80" />
+                <p className="text-sm font-semibold text-ink">Coaching needs the AI service; your timings are below.</p>
                 <p className="mt-1 text-xs text-muted max-w-sm mx-auto">
                   Slide timing and coverage have been measured and recorded from your live rehearsal.
                 </p>
                 <div className="mt-4 inline-block">
                   <Link
                     href={`/rehearse/${presentation.id}?from=${selectedSlideNum}&to=${selectedSlideNum}`}
-                    className="pro-btn-glow bg-blue hover:bg-blue-600 text-white inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold shadow-lg transition-all"
+                    className="pro-btn-glow bg-blue-fill hover:bg-blue-hover text-white inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold shadow-md transition-all"
                   >
                     <Icon name="play" size={13} />
                     <span>Practise slide {selectedSlideNum} again</span>

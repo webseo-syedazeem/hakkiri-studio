@@ -75,7 +75,7 @@ export function DraftStorageModal({
         {/* Header */}
         <div className="flex items-center justify-between border-b border-line pb-4 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-[#1a2238] text-blue-soft">
+            <div className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-blue-500/10 text-blue-600 border border-blue-500/20 dark:bg-[#1a2238] dark:text-blue-soft">
               <Icon name="archive" size={20} />
             </div>
             <div>

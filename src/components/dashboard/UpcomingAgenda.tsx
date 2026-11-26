@@ -75,7 +75,7 @@ export function UpcomingAgenda({ events }: { events: UpcomingEvent[] }) {
         {/* Event List */}
         <div className="mt-4 flex flex-col gap-4" data-testid="home-agenda">
           {displayed.length === 0 && (
-            <p className="rounded-[15px] bg-panel-2 p-4 text-xs text-muted" data-testid="home-agenda-empty">
+            <p className="rounded-[15px] bg-panel-2 border border-line p-4 text-xs text-muted leading-relaxed" data-testid="home-agenda-empty">
               {events.length === 0
                 ? "Nothing is booked. When you add a date to an interview stage or a presentation, it shows here."
                 : `Nothing in the next seven days. Your next one is ${events[0].relative ?? "later"}: choose “All upcoming” to see it.`}
@@ -91,7 +91,7 @@ export function UpcomingAgenda({ events }: { events: UpcomingEvent[] }) {
                 {item.dateGroup}
                 {item.relative ? <span className="font-normal"> · {item.relative}</span> : null}
               </span>
-              <div className="group relative overflow-hidden flex items-center justify-between gap-3.5 rounded-[15px] bg-panel-2 p-4 shadow-[inset_0_0_0_1px_var(--color-line)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_28px_-6px_rgba(0,0,0,0.6),inset_0_0_0_1px_var(--color-line-strong)]">
+              <div className="group relative overflow-hidden flex items-center justify-between gap-3.5 rounded-[15px] bg-panel-2 border border-line p-4 transition-all duration-300 hover:-translate-y-0.5 hover:bg-panel hover:border-line-strong hover:shadow-[0_8px_20px_-4px_rgba(15,23,42,0.08)] dark:hover:shadow-[0_12px_28px_-6px_rgba(0,0,0,0.6)]">
                 {/* Subtle sheen highlight on hover */}
                 <div className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/[0.04] to-transparent transition-transform duration-700 group-hover:translate-x-full" />
 

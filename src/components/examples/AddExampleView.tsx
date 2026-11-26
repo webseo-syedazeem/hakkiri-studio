@@ -87,12 +87,12 @@ export function AddExampleView() {
       <div className="mb-4">
         <Link
           href="/interview-examples"
-          className="inline-flex items-center gap-1.5 text-xs font-medium text-muted hover:text-white transition-colors mb-2"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-muted hover:text-ink transition-colors mb-2"
         >
           <Icon name="back" size={13} />
           <span>Experience Library</span>
         </Link>
-        <h1 className="text-2xl font-bold tracking-tight text-white">Add interview question example</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-ink">Add interview question example</h1>
         <p className="mt-1 text-xs text-muted">
           Save a question and your example answer to practise and reuse later.
         </p>
@@ -102,7 +102,7 @@ export function AddExampleView() {
       <Panel className="w-full p-6 sm:p-7 space-y-5 rounded-[20px] border border-line shadow-xl">
         <form onSubmit={handleSave} className="space-y-5">
           {error && (
-            <div className="rounded-xl bg-rose-500/15 border border-rose-500/30 p-3 text-xs text-rose-300">
+            <div className="rounded-xl bg-rose-500/15 border border-rose-500/30 p-3 text-xs text-rose-600 dark:text-rose-300">
               {error}
             </div>
           )}
@@ -120,7 +120,7 @@ export function AddExampleView() {
             />
 
             <div className="space-y-1.5">
-              <label className="flex items-center gap-1.5 text-xs font-semibold text-white">
+              <label className="flex items-center gap-1.5 text-xs font-semibold text-ink">
                 <Icon name="user" size={13} className="text-muted" />
                 <span>Role</span>
               </label>
@@ -129,12 +129,12 @@ export function AddExampleView() {
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
                 placeholder="e.g. Associate Product Manager, Policy Lead"
-                className="w-full rounded-[12px] bg-panel-2 px-3.5 py-2.5 text-xs text-ink outline-none border border-line focus:border-indigo-500 transition-colors placeholder:text-dim"
+                className="w-full rounded-[12px] bg-panel-2 px-3.5 py-2.5 text-xs text-ink outline-none border border-line focus:border-blue-fill transition-colors placeholder:text-dim"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="flex items-center gap-1.5 text-xs font-semibold text-white">
+              <label className="flex items-center gap-1.5 text-xs font-semibold text-ink">
                 <Icon name="layers" size={13} className="text-muted" />
                 <span>Interview type</span>
               </label>
@@ -143,15 +143,15 @@ export function AddExampleView() {
                 value={interviewType}
                 onChange={(e) => setInterviewType(e.target.value)}
                 placeholder="e.g. Competency round, Final panel, Case study"
-                className="w-full rounded-[12px] bg-panel-2 px-3.5 py-2.5 text-xs text-ink outline-none border border-line focus:border-indigo-500 transition-colors placeholder:text-dim"
+                className="w-full rounded-[12px] bg-panel-2 px-3.5 py-2.5 text-xs text-ink outline-none border border-line focus:border-blue-fill transition-colors placeholder:text-dim"
               />
             </div>
           </div>
 
           {/* Field 2: Interview Question */}
           <div className="space-y-1.5">
-            <label className="block text-xs font-semibold text-white">
-              Interview question <span className="text-rose-400">*</span>
+            <label className="block text-xs font-semibold text-ink">
+              Interview question <span className="text-rose-500 dark:text-rose-400">*</span>
             </label>
             <input
               type="text"
@@ -162,14 +162,14 @@ export function AddExampleView() {
                 setError(null);
               }}
               placeholder="e.g. Tell me about a time you led a project."
-              className="w-full rounded-[12px] bg-panel-2 px-3.5 py-2.5 text-xs text-ink outline-none border border-line focus:border-indigo-500 transition-colors placeholder:text-dim"
+              className="w-full rounded-[12px] bg-panel-2 px-3.5 py-2.5 text-xs text-ink outline-none border border-line focus:border-blue-fill transition-colors placeholder:text-dim"
             />
           </div>
 
           {/* Field 3: Your Example Answer */}
           <div className="space-y-1.5">
-            <label className="block text-xs font-semibold text-white">
-              Your example answer <span className="text-rose-400">*</span>
+            <label className="block text-xs font-semibold text-ink">
+              Your example answer <span className="text-rose-500 dark:text-rose-400">*</span>
             </label>
             <div className="relative">
               <textarea
@@ -182,7 +182,7 @@ export function AddExampleView() {
                   setError(null);
                 }}
                 placeholder="Write a concise answer using STAR (Situation, Task, Action, Result)."
-                className="w-full resize-y rounded-[12px] bg-panel-2 p-3.5 pb-7 text-xs leading-relaxed text-ink outline-none border border-line focus:border-indigo-500 transition-colors placeholder:text-dim"
+                className="w-full resize-y rounded-[12px] bg-panel-2 p-3.5 pb-7 text-xs leading-relaxed text-ink outline-none border border-line focus:border-blue-fill transition-colors placeholder:text-dim"
               />
               <span className="absolute right-3 bottom-2.5 text-[10px] text-dim num">
                 {answer.length} / 1,000
@@ -192,7 +192,7 @@ export function AddExampleView() {
 
           {/* Field 4: Tags (optional) */}
           <div className="space-y-2">
-            <label className="block text-xs font-semibold text-white">
+            <label className="block text-xs font-semibold text-ink">
               Tags <span className="text-muted font-normal">(optional)</span>
             </label>
             <div className="flex flex-wrap items-center gap-2">
@@ -242,7 +242,7 @@ export function AddExampleView() {
                 <button
                   type="button"
                   onClick={() => setShowCustomTagField(true)}
-                  className="rounded-lg border border-dashed border-white/20 px-3 py-1.5 text-xs font-medium text-muted hover:text-white hover:border-white/40 transition-colors cursor-pointer"
+                  className="rounded-lg border border-dashed border-line-strong px-3 py-1.5 text-xs font-medium text-muted hover:text-ink hover:border-blue-fill/50 transition-colors cursor-pointer"
                 >
                   + Add tag
                 </button>
@@ -254,7 +254,7 @@ export function AddExampleView() {
           <div className="flex items-center justify-end gap-3 border-t border-line pt-4">
             <Link
               href="/interview-examples"
-              className="rounded-xl px-4 py-2 text-xs font-semibold text-muted hover:text-white transition-colors"
+              className="rounded-xl px-4 py-2 text-xs font-semibold text-muted hover:text-ink transition-colors"
             >
               Cancel
             </Link>

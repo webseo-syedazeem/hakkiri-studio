@@ -41,7 +41,7 @@ export function PresentationsGrid({
         className="group block animate-rise"
         style={{ animationDelay: `${0.05 * i}s` }}
       >
-        <Panel className="flex gap-5 p-5 transition-shadow group-hover:shadow-[inset_0_0_0_1px_var(--color-line-strong)]">
+        <Panel className="flex gap-5 p-5 transition-all duration-200 group-hover:-translate-y-0.5 group-hover:border-line-strong group-hover:shadow-[0_12px_32px_-6px_rgba(15,23,42,0.12)] dark:group-hover:shadow-[0_16px_36px_-8px_rgba(0,0,0,0.65)]">
           <SlideView
             slide={p.slides[0]}
             presentationId={p.id}
@@ -92,7 +92,7 @@ export function PresentationsGrid({
 
       {own.length > 0 && demos.length > 0 && (
         <div className="pt-2">
-          <div className="flex items-center justify-between border-t border-white/[0.08] pt-4">
+          <div className="flex items-center justify-between border-t border-line pt-4">
             <span className="text-xs font-medium text-muted">
               {showExamples ? "Example presentations (read-only)" : "Looking for inspiration?"}
             </span>

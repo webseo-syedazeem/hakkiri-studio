@@ -87,7 +87,7 @@ export function CalendarPopup({
   return (
     <div
       onClick={(e) => e.stopPropagation()}
-      className="absolute top-full left-0 z-50 mt-2 w-64 rounded-2xl border border-line bg-[#151824] p-3.5 shadow-[0_16px_40px_rgba(0,0,0,0.8),0_0_20px_rgba(99,102,241,0.2)] backdrop-blur-md animate-scale-in"
+      className="absolute top-full left-0 z-50 mt-2 w-64 rounded-2xl border border-line-strong bg-panel dark:bg-[#151824] p-3.5 shadow-[0_16px_40px_rgba(15,23,42,0.16)] dark:shadow-[0_16px_40px_rgba(0,0,0,0.8),0_0_20px_rgba(99,102,241,0.2)] backdrop-blur-md animate-scale-in"
     >
       {/* Month & Year Navigation Header */}
       <div className="flex items-center justify-between pb-2.5 border-b border-line/60">
@@ -223,7 +223,7 @@ export function TimePickerPopup({
   return (
     <div
       onClick={(e) => e.stopPropagation()}
-      className="absolute top-full left-0 z-50 mt-2 w-48 rounded-2xl border border-line bg-[#151824] p-3 shadow-[0_16px_40px_rgba(0,0,0,0.8),0_0_20px_rgba(99,102,241,0.2)] backdrop-blur-md animate-scale-in"
+      className="absolute top-full left-0 z-50 mt-2 w-48 rounded-2xl border border-line-strong bg-panel dark:bg-[#151824] p-3 shadow-[0_16px_40px_rgba(15,23,42,0.16)] dark:shadow-[0_16px_40px_rgba(0,0,0,0.8),0_0_20px_rgba(99,102,241,0.2)] backdrop-blur-md animate-scale-in"
     >
       <div className="flex items-center justify-between pb-2 border-b border-line/60 text-xs font-bold text-ink">
         <span>Select Time</span>
@@ -276,7 +276,7 @@ export function TimePickerPopup({
           value={customTime}
           onChange={(e) => setCustomTime(e.target.value)}
           placeholder="Custom time"
-          className="w-full bg-[#12141c] rounded-lg px-2.5 py-1 text-xs text-ink outline-none border border-line focus:border-blue-fill"
+          className="w-full bg-panel-2 dark:bg-[#12141c] rounded-lg px-2.5 py-1 text-xs text-ink outline-none border border-line focus:border-blue-fill"
         />
         <button
           type="button"

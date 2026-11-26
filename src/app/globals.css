@@ -10,17 +10,17 @@
 @theme {
   --font-sans: "Inter Variable", "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
 
-  /* Surfaces: Apple-inspired Light Default */
-  --color-booth: #f5f5f7;        /* Apple off-white canvas */
-  --color-panel: #ffffff;        /* Pure white cards */
-  --color-panel-2: #f2f2f7;      /* Apple grouped / secondary surface */
-  --color-line: rgb(0 0 0 / 0.08); /* Apple hairline borders */
-  --color-line-strong: rgb(0 0 0 / 0.14);
+  /* Surfaces: Apple-inspired Light Default with distinct container contrast */
+  --color-booth: #eceef4;        /* Distinct cool Apple-slate canvas so white cards pop clearly */
+  --color-panel: #ffffff;        /* Pure white elevated cards */
+  --color-panel-2: #f3f5fa;      /* Distinct secondary inset container surface */
+  --color-line: #d4d9e6;         /* Crisp 1px architectural border around every card & box */
+  --color-line-strong: #b6bfd4;  /* Strong border for buttons, inputs, chips & active states */
 
   /* Text: Apple-inspired Light Default */
-  --color-ink: #1d1d1f;          /* Apple signature deep black ink */
-  --color-muted: #6e6e73;        /* Apple slate text, 5:1 on white */
-  --color-dim: #86868b;          /* Secondary subtitle text */
+  --color-ink: #11131a;          /* Apple signature deep black ink */
+  --color-muted: #525866;        /* Apple slate text, high readability */
+  --color-dim: #717888;          /* Secondary subtitle text */
 
   /* Brand: Apple-vibrant blue for actions, red for coach's marks */
   --color-blue: #0071e3;         /* Apple vibrant action blue */
@@ -306,20 +306,37 @@
 }
 
 /* Backward compatibility for .mk class: mapped to Apple light tokens */
-html:has(.mk) { background: #f5f5f7; }
+html:has(.mk) { background: #eceef4; }
 .mk {
-  --color-booth: #f5f5f7;
+  --color-booth: #eceef4;
   --color-panel: #ffffff;
-  --color-panel-2: #f2f2f7;
-  --color-line: rgb(0 0 0 / 0.08);
-  --color-line-strong: rgb(0 0 0 / 0.14);
-  --color-ink: #1d1d1f;
-  --color-muted: #6e6e73;
-  --color-dim: #86868b;
+  --color-panel-2: #f3f5fa;
+  --color-line: #d4d9e6;
+  --color-line-strong: #b6bfd4;
+  --color-ink: #11131a;
+  --color-muted: #525866;
+  --color-dim: #717888;
   --color-blue-soft: #3d4bd8;
   --color-lilac: #4a5af0;
   --color-red-soft: #b3261e;
   color-scheme: light;
+}
+
+/* Light-mode container elevation: ensure every bg-panel card and sub-container has crisp separation on the canvas */
+html:not(.dark) .bg-panel {
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05), 0 8px 24px -4px rgba(15, 23, 42, 0.07);
+}
+html:not(.dark) .bg-panel-2 {
+  border-color: var(--color-line);
+}
+html:not(.dark) .bg-panel [class*="border-white/"],
+html:not(.dark) .bg-panel-2 [class*="border-white/"] {
+  border-color: var(--color-line);
+}
+html:not(.dark) .bg-panel [class*="bg-white/[0.0"],
+html:not(.dark) .bg-panel [class*="bg-white/5"],
+html:not(.dark) .bg-panel [class*="bg-white/10"] {
+  background-color: var(--color-panel-2);
 }
 
 @media (prefers-reduced-motion: reduce) {

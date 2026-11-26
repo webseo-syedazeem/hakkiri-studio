@@ -69,14 +69,14 @@ export function DraftInterviewCard() {
   if (!draft) return null;
 
   return (
-    <div className="mt-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-[20px] bg-gradient-to-r from-[#171d32] via-[#1c2444] to-[#171d32] p-5 shadow-[0_0_30px_rgba(99,102,241,0.22),inset_0_0_0_1.5px_#6366f1] animate-rise">
+    <div className="mt-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-[20px] bg-panel border-2 border-blue-fill/40 dark:bg-gradient-to-r dark:from-[#171d32] dark:via-[#1c2444] dark:to-[#171d32] p-5 shadow-[0_8px_24px_rgba(74,90,240,0.1)] dark:shadow-[0_0_30px_rgba(99,102,241,0.22),inset_0_0_0_1.5px_#6366f1] animate-rise">
       <div className="flex items-center gap-4 min-w-0">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-[#1c264a] text-blue-soft shadow-[0_0_16px_rgba(99,102,241,0.35)]">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[14px] bg-blue-fill/12 text-blue-fill border border-blue-fill/25 dark:bg-[#1c264a] dark:text-blue-soft shadow-sm">
           <Icon name="doc" size={22} />
         </div>
         <div className="min-w-0 grow">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-blue-soft/20 px-2.5 py-0.5 text-[10px] font-bold text-blue-soft uppercase tracking-wider">
+            <span className="rounded-full bg-blue-fill/12 border border-blue-fill/25 px-2.5 py-0.5 text-[10px] font-bold text-blue-fill dark:bg-blue-soft/20 dark:text-blue-soft uppercase tracking-wider">
               Draft in progress
             </span>
             <span className="text-xs text-muted">

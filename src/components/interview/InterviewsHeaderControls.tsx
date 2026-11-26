@@ -51,18 +51,18 @@ export function InterviewsHeaderControls() {
 
   return (
     <>
-      <div className="flex shrink-0 items-center gap-2.5">
+      <div className="flex flex-wrap shrink-0 items-center gap-2.5">
         {/* 1. Archive Button */}
         <button
           type="button"
           onClick={() => setIsArchiveOpen(true)}
-          className="group/btn relative overflow-hidden inline-flex h-[38px] items-center justify-center gap-2 rounded-xl bg-panel-2 px-3.5 text-[13px] font-semibold text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)] transition-all duration-300 hover:bg-[#2b2d38] hover:shadow-[0_4px_16px_rgba(0,0,0,0.4)] active:scale-95 cursor-pointer"
+          className="group/btn relative overflow-hidden inline-flex h-[38px] items-center justify-center gap-2 rounded-xl bg-panel border border-line-strong px-3.5 text-[13px] font-semibold text-ink shadow-sm transition-all duration-200 hover:bg-panel-2 hover:border-blue-fill/40 dark:bg-panel-2 dark:hover:bg-[#2b2d38] active:scale-95 cursor-pointer"
         >
           <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/[0.08] to-transparent transition-transform duration-700 group-hover/btn:translate-x-full" />
           <Icon name="archive" size={15} className="text-muted group-hover/btn:text-ink transition-colors" />
           <span>Archive</span>
           {archivedItems.length > 0 && (
-            <span className="rounded-full bg-white/[0.08] px-1.5 py-0.5 text-[10px] text-dim font-bold">
+            <span className="rounded-full bg-panel-2 border border-line px-1.5 py-0.5 text-[10px] text-muted font-bold">
               {archivedItems.length}
             </span>
           )}
@@ -73,10 +73,10 @@ export function InterviewsHeaderControls() {
           type="button"
           onClick={() => setIsDraftModalOpen(true)}
           className={clsx(
-            "group/btn relative overflow-hidden inline-flex h-[38px] items-center justify-center gap-2 rounded-xl px-3.5 text-[13px] font-semibold transition-all duration-300 active:scale-95 cursor-pointer",
+            "group/btn relative overflow-hidden inline-flex h-[38px] items-center justify-center gap-2 rounded-xl px-3.5 text-[13px] font-semibold transition-all duration-200 active:scale-95 cursor-pointer",
             hasDraft
-              ? "bg-[#1c2444] text-blue-soft border border-blue-fill/50 shadow-[0_0_16px_rgba(99,102,241,0.25)] hover:bg-[#232d56] hover:border-blue-fill"
-              : "bg-panel-2 text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-[#2b2d38]"
+              ? "bg-blue-fill/10 text-blue-fill border border-blue-fill/50 shadow-sm hover:bg-blue-fill/18 dark:bg-[#1c2444] dark:text-blue-soft"
+              : "bg-panel border border-line-strong text-ink shadow-sm hover:bg-panel-2 hover:border-blue-fill/40 dark:bg-panel-2 dark:hover:bg-[#2b2d38]"
           )}
         >
           <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/[0.08] to-transparent transition-transform duration-700 group-hover/btn:translate-x-full" />

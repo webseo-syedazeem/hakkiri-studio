@@ -886,7 +886,7 @@ export function InterviewSetup() {
                     <div
                       className={clsx(
                         "h-[2px] w-6 sm:w-10 lg:w-14 -translate-y-3 transition-colors duration-300",
-                        step >= s.num ? "bg-blue-fill" : "bg-white/[0.12]"
+                        step >= s.num ? "bg-blue-fill" : "bg-line dark:bg-white/[0.12]"
                       )}
                     />
                   )}
@@ -903,7 +903,7 @@ export function InterviewSetup() {
                         "flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold transition-all duration-300",
                         isPast && "bg-blue-fill text-white shadow-[0_0_12px_rgba(74,90,240,0.5)]",
                         isCurrent && "bg-blue-fill text-white ring-4 ring-blue-fill/20 shadow-[0_0_14px_rgba(74,90,240,0.6)]",
-                        !isPast && !isCurrent && "border border-white/20 bg-transparent text-muted"
+                        !isPast && !isCurrent && "border border-line-strong dark:border-white/20 bg-panel text-muted"
                       )}
                     >
                       {isPast ? <Icon name="check" size={12} strokeWidth={3} /> : s.num}
@@ -932,13 +932,13 @@ export function InterviewSetup() {
 
       {/* Restored Draft Banner if draft exists */}
       {draftRestoredBanner && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-gradient-to-r from-[#171d32] to-[#1c2444] px-4 py-3 text-xs text-ink border border-line shadow-sm animate-fade-in">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-blue/10 dark:bg-gradient-to-r dark:from-[#171d32] dark:to-[#1c2444] px-4 py-3 text-xs text-ink border border-blue/30 dark:border-line shadow-sm animate-fade-in">
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-blue-soft/20 text-blue-soft">
               <Icon name="doc" size={15} />
             </div>
             <div className="truncate">
-              <span className="font-bold text-white">Draft in progress: </span>
+              <span className="font-bold text-ink">Draft in progress: </span>
               <span className="text-muted">{draftRestoredBanner}. It was kept in this browser.</span>
             </div>
           </div>
@@ -971,7 +971,7 @@ export function InterviewSetup() {
             <Panel className="rounded-[20px] p-6 shadow-[inset_0_0_0_1px_var(--color-line)]">
               {/* Box 1 Header */}
               <div className="flex items-start gap-3.5 border-b border-line pb-5">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-[#1a2238] text-[#818cf8] shadow-sm">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-blue/10 dark:bg-[#1a2238] text-blue-soft dark:text-[#818cf8] border border-blue/20 shadow-sm">
                   <Icon name="brief" size={20} />
                 </div>
                 <div>
@@ -1066,7 +1066,7 @@ export function InterviewSetup() {
                       </div>
 
                       {/* 3 Mode Selector Pills */}
-                      <div className="flex items-center rounded-lg bg-[#141620] p-0.5 border border-line/60 text-xs">
+                      <div className="flex items-center rounded-lg bg-panel dark:bg-[#141620] p-0.5 border border-line/60 text-xs">
                         <button
                           type="button"
                           onClick={() => setJobMode("attach")}
@@ -1103,7 +1103,7 @@ export function InterviewSetup() {
                     {jobMode === "attach" && (
                       <div
                         onClick={() => jobInputRef.current?.click()}
-                        className="group flex items-center justify-between gap-3 rounded-[12px] bg-[#141620] p-3 border border-line/60 hover:border-blue-soft transition-all cursor-pointer"
+                        className="group flex items-center justify-between gap-3 rounded-[12px] bg-panel dark:bg-[#141620] p-3 border border-line/60 hover:border-blue-soft transition-all cursor-pointer"
                       >
                         <div className="flex items-center gap-3 min-w-0">
                           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-fill/15 text-blue-soft">
@@ -1154,7 +1154,7 @@ export function InterviewSetup() {
                               }
                             }}
                             placeholder="e.g. https://app.beapplied.com/apply/fyx8yxrzfg or careers URL"
-                            className="w-full rounded-[10px] bg-[#141620] px-3.5 py-2.5 text-xs text-ink outline-none border border-line/80 focus:border-blue-fill placeholder:text-dim"
+                            className="w-full rounded-[10px] bg-panel dark:bg-[#141620] px-3.5 py-2.5 text-xs text-ink outline-none border border-line/80 focus:border-blue-fill placeholder:text-dim"
                           />
                           <button
                             type="button"
@@ -1187,7 +1187,7 @@ export function InterviewSetup() {
                           value={jobPastedText}
                           onChange={(e) => handleJobPasteChange(e.target.value)}
                           placeholder="Paste the full job description or core responsibilities here..."
-                          className="w-full resize-y rounded-[10px] bg-[#141620] p-3 text-xs leading-relaxed text-ink outline-none border border-line/80 focus:border-blue-fill placeholder:text-dim"
+                          className="w-full resize-y rounded-[10px] bg-panel dark:bg-[#141620] p-3 text-xs leading-relaxed text-ink outline-none border border-line/80 focus:border-blue-fill placeholder:text-dim"
                         />
                         <div className="flex justify-between items-center text-[11px] text-muted">
                           <span>Hakkiri calibrates your interview questions around this text.</span>
@@ -1217,7 +1217,7 @@ export function InterviewSetup() {
                             </span>
                           )}
                         </div>
-                        <div className="flex items-center rounded-lg bg-[#141620] p-0.5 border border-line/60 text-xs">
+                        <div className="flex items-center rounded-lg bg-panel dark:bg-[#141620] p-0.5 border border-line/60 text-xs">
                           <button
                             type="button"
                             onClick={() => setCvMode("attach")}
@@ -1257,7 +1257,7 @@ export function InterviewSetup() {
                       {cvMode === "attach" ? (
                         <div
                           onClick={() => cvInputRef.current?.click()}
-                          className="group flex items-center justify-between gap-2 rounded-[12px] bg-[#141620] p-3 border border-line/60 hover:border-blue-soft transition-all cursor-pointer"
+                          className="group flex items-center justify-between gap-2 rounded-[12px] bg-panel dark:bg-[#141620] p-3 border border-line/60 hover:border-blue-soft transition-all cursor-pointer"
                         >
                           <div className="flex items-center gap-2.5 min-w-0">
                             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-fill/15 text-blue-soft">
@@ -1293,7 +1293,7 @@ export function InterviewSetup() {
                             value={cvPastedText}
                             onChange={(e) => handleCvPasteChange(e.target.value)}
                             placeholder="Paste your CV / resume text here..."
-                            className="w-full resize-y rounded-[10px] bg-[#141620] p-2.5 text-xs text-ink outline-none border border-line/80 focus:border-blue-fill placeholder:text-dim"
+                            className="w-full resize-y rounded-[10px] bg-panel dark:bg-[#141620] p-2.5 text-xs text-ink outline-none border border-line/80 focus:border-blue-fill placeholder:text-dim"
                           />
                           <div className="text-right text-[10px] text-muted">
                             {cvPastedText.split(/\s+/).filter(Boolean).length} words
@@ -1304,7 +1304,7 @@ export function InterviewSetup() {
                           {loadingMyCvs ? (
                             <div className="p-3 text-center text-xs text-muted">Loading your CVs…</div>
                           ) : myCvs.length === 0 ? (
-                            <div className="p-3 text-center text-xs text-muted bg-[#141620] rounded-[10px] border border-line/60">
+                            <div className="p-3 text-center text-xs text-muted bg-panel dark:bg-[#141620] rounded-[10px] border border-line/60">
                               No saved CVs found. <Link href="/cv/new" className="text-blue-soft underline">Create a CV</Link> or attach a file above.
                             </div>
                           ) : (
@@ -1319,7 +1319,7 @@ export function InterviewSetup() {
                                       "p-2.5 rounded-[10px] border cursor-pointer transition-all flex items-center justify-between text-xs",
                                       isSelected
                                         ? "bg-blue-fill/15 border-blue-soft text-white"
-                                        : "bg-[#141620] border-line/60 text-ink hover:border-line"
+                                        : "bg-panel dark:bg-[#141620] border-line/60 text-ink hover:border-line"
                                     )}
                                   >
                                     <div className="min-w-0">
@@ -1417,7 +1417,7 @@ export function InterviewSetup() {
                 </div>
 
                 {/* Blue Info Callout Banner */}
-                <div className="flex items-start gap-3 rounded-[14px] bg-[#171d32] p-4 text-xs shadow-[inset_0_0_0_1px_#2b3658]">
+                <div className="flex items-start gap-3 rounded-[14px] bg-blue/10 dark:bg-[#171d32] p-4 text-xs border border-blue/25 dark:border-[#2b3658]">
                   <Icon name="sparkle" size={17} className="text-blue-soft shrink-0 mt-0.5" />
                   <div>
                     <div className="font-semibold text-ink">
@@ -1448,7 +1448,7 @@ export function InterviewSetup() {
                     <button
                       type="button"
                       onClick={saveDraft}
-                      className="inline-flex h-[42px] items-center justify-center rounded-[11px] bg-panel-2 px-5 text-sm font-semibold text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-[#2b2d38] transition-all cursor-pointer active:scale-95"
+                      className="inline-flex h-[42px] items-center justify-center rounded-[11px] bg-panel-2 px-5 text-sm font-semibold text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel dark:hover:bg-[#2b2d38] transition-all cursor-pointer active:scale-95"
                     >
                       Save draft
                     </button>
@@ -1477,7 +1477,7 @@ export function InterviewSetup() {
             <Panel className="rounded-[20px] p-6 shadow-[inset_0_0_0_1px_var(--color-line)]">
               {/* Card Header */}
               <div className="flex items-start gap-3.5 border-b border-line pb-5">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-[#221c38] text-[#c084fc] shadow-sm">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-purple-500/10 dark:bg-[#221c38] text-purple-600 dark:text-[#c084fc] border border-purple-500/20 shadow-sm">
                   <Icon name="layers" size={20} />
                 </div>
                 <div>
@@ -1506,7 +1506,7 @@ export function InterviewSetup() {
                       className={clsx(
                         "flex items-center gap-3 rounded-[12px] p-3.5 text-xs font-semibold transition-all cursor-pointer",
                         stagesExpectation === opt.key
-                          ? "bg-[#1c2237] text-white shadow-[inset_0_0_0_1.5px_#818cf8]"
+                          ? "bg-blue/10 dark:bg-[#1c2237] text-ink dark:text-white shadow-[inset_0_0_0_1.5px_var(--color-blue)]"
                           : "bg-panel-2 text-muted shadow-[inset_0_0_0_1px_var(--color-line)] hover:text-ink"
                       )}
                     >
@@ -1515,7 +1515,7 @@ export function InterviewSetup() {
                           "flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-colors",
                           stagesExpectation === opt.key
                             ? "border-blue-fill bg-blue-fill text-white"
-                            : "border-white/20 bg-transparent"
+                            : "border-line-strong dark:border-white/20 bg-transparent"
                         )}
                       >
                         {stagesExpectation === opt.key && <Icon name="check" size={10} strokeWidth={3} />}
@@ -1565,7 +1565,7 @@ export function InterviewSetup() {
                         className={clsx(
                           "group relative flex flex-wrap items-center justify-between gap-3 rounded-[14px] p-3.5 transition-all duration-200",
                           stagesExpectation !== "practice" && isNext
-                            ? "bg-[#1c2237] shadow-[inset_0_0_0_1.5px_#6366f1,0_4px_20px_rgba(99,102,241,0.2)]"
+                            ? "bg-blue/10 dark:bg-[#1c2237] shadow-[inset_0_0_0_1.5px_var(--color-blue),0_4px_16px_rgba(0,113,227,0.12)]"
                             : "bg-panel-2 shadow-[inset_0_0_0_1px_var(--color-line)] hover:shadow-[inset_0_0_0_1px_var(--color-line-strong)]"
                         )}
                       >
@@ -1581,17 +1581,17 @@ export function InterviewSetup() {
                           <div
                             className={clsx(
                               "flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px]",
-                              stg.icon === "phone" && "bg-[#142825] text-[#34d399]",
-                              stg.icon === "code" && "bg-[#1a2238] text-[#818cf8]",
-                              stg.icon === "present" && "bg-[#142825] text-[#34d399]",
-                              stg.icon === "users" && "bg-[#241e38] text-[#c084fc]"
+                              stg.icon === "phone" && "bg-emerald-500/10 dark:bg-[#142825] text-emerald-600 dark:text-[#34d399] border border-emerald-500/20",
+                              stg.icon === "code" && "bg-blue/10 dark:bg-[#1a2238] text-blue-soft dark:text-[#818cf8] border border-blue/20",
+                              stg.icon === "present" && "bg-emerald-500/10 dark:bg-[#142825] text-emerald-600 dark:text-[#34d399] border border-emerald-500/20",
+                              stg.icon === "users" && "bg-purple-500/10 dark:bg-[#241e38] text-purple-600 dark:text-[#c084fc] border border-purple-500/20"
                             )}
                           >
                             <Icon name={stg.icon} size={15} />
                           </div>
 
                           {/* Editable Stage Name Input */}
-                          <div className="relative flex items-center gap-1.5 rounded-lg bg-[#141620] px-3 py-1.5 border border-line/80 focus-within:border-blue-fill min-w-[180px] max-w-[240px] grow transition-all">
+                          <div className="relative flex items-center gap-1.5 rounded-lg bg-panel dark:bg-[#141620] px-3 py-1.5 border border-line/80 focus-within:border-blue-fill min-w-[180px] max-w-[240px] grow transition-all">
                             <input
                               type="text"
                               value={stg.name}
@@ -1619,7 +1619,7 @@ export function InterviewSetup() {
                                     setActiveStatusDropdownId(null);
                                   }}
                                   className={clsx(
-                                    "flex items-center gap-1.5 rounded-lg bg-[#141620] px-2.5 py-1.5 text-muted border transition-all cursor-pointer",
+                                    "flex items-center gap-1.5 rounded-lg bg-panel dark:bg-[#141620] px-2.5 py-1.5 text-muted border transition-all cursor-pointer",
                                     activeDatePickerId === stg.id
                                       ? "border-blue-fill text-ink shadow-[0_0_12px_rgba(74,90,240,0.4)]"
                                       : "border-line/80 hover:border-line hover:text-ink"
@@ -1653,7 +1653,7 @@ export function InterviewSetup() {
                                     setActiveStatusDropdownId(null);
                                   }}
                                   className={clsx(
-                                    "flex items-center gap-1.5 rounded-lg bg-[#141620] px-2.5 py-1.5 text-muted border transition-all cursor-pointer",
+                                    "flex items-center gap-1.5 rounded-lg bg-panel dark:bg-[#141620] px-2.5 py-1.5 text-muted border transition-all cursor-pointer",
                                     activeTimePickerId === stg.id
                                       ? "border-blue-fill text-ink shadow-[0_0_12px_rgba(74,90,240,0.4)]"
                                       : "border-line/80 hover:border-line hover:text-ink"
@@ -1689,7 +1689,7 @@ export function InterviewSetup() {
                                 setActiveStatusDropdownId(null);
                               }}
                               className={clsx(
-                                "flex items-center gap-1.5 rounded-lg bg-[#141620] px-2.5 py-1.5 text-muted border transition-all cursor-pointer group",
+                                "flex items-center gap-1.5 rounded-lg bg-panel dark:bg-[#141620] px-2.5 py-1.5 text-muted border transition-all cursor-pointer group",
                                 activeFormatDropdownId === stg.id
                                   ? "border-blue-fill text-ink shadow-[0_0_12px_rgba(74,90,240,0.4)]"
                                   : "border-line/80 hover:border-line hover:text-ink"
@@ -1719,7 +1719,7 @@ export function InterviewSetup() {
                             {activeFormatDropdownId === stg.id && (
                               <div
                                 onClick={(e) => e.stopPropagation()}
-                                className="absolute top-full left-0 z-50 mt-1.5 w-56 rounded-xl border border-line bg-[#151824] p-1.5 shadow-[0_16px_40px_rgba(0,0,0,0.8),0_0_20px_rgba(99,102,241,0.25)] backdrop-blur-md animate-scale-in"
+                                className="absolute top-full left-0 z-50 mt-1.5 w-56 rounded-xl border border-line bg-panel dark:bg-[#151824] p-1.5 shadow-[0_16px_40px_rgba(0,0,0,0.8),0_0_20px_rgba(99,102,241,0.25)] backdrop-blur-md animate-scale-in"
                               >
                                 <div className="px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-dim border-b border-line/50 mb-1 flex items-center justify-between">
                                   <span>Select Format</span>
@@ -1802,7 +1802,7 @@ export function InterviewSetup() {
 
                           {stagesExpectation !== "practice" && (
                             /* Interviewer Field */
-                            <div className="flex items-center gap-1.5 rounded-lg bg-[#141620] px-2.5 py-1.5 text-muted border border-line/80 focus-within:border-blue-fill">
+                            <div className="flex items-center gap-1.5 rounded-lg bg-panel dark:bg-[#141620] px-2.5 py-1.5 text-muted border border-line/80 focus-within:border-blue-fill">
                               <span className="text-[10px] text-dim font-medium uppercase tracking-wider">Interviewer</span>
                               <input
                                 type="text"
@@ -1851,7 +1851,7 @@ export function InterviewSetup() {
                               {activeStatusDropdownId === stg.id && (
                                 <div
                                   onClick={(e) => e.stopPropagation()}
-                                  className="absolute top-full right-0 z-50 mt-1.5 w-56 rounded-xl border border-line bg-[#151824] p-1.5 shadow-[0_16px_40px_rgba(0,0,0,0.8),0_0_20px_rgba(99,102,241,0.25)] backdrop-blur-md animate-scale-in"
+                                  className="absolute top-full right-0 z-50 mt-1.5 w-56 rounded-xl border border-line bg-panel dark:bg-[#151824] p-1.5 shadow-[0_16px_40px_rgba(0,0,0,0.8),0_0_20px_rgba(99,102,241,0.25)] backdrop-blur-md animate-scale-in"
                                 >
                                   <div className="px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-dim border-b border-line/50 mb-1 flex items-center justify-between">
                                     <span>Stage Status</span>
@@ -1956,7 +1956,7 @@ export function InterviewSetup() {
                 <button
                   type="button"
                   onClick={handleAddStage}
-                  className="mt-4 flex items-center gap-1.5 rounded-[10px] bg-panel-2 px-4 py-2 text-xs font-semibold text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-[#2b2d38] transition-colors cursor-pointer active:scale-95"
+                  className="mt-4 flex items-center gap-1.5 rounded-[10px] bg-panel-2 px-4 py-2 text-xs font-semibold text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel dark:hover:bg-[#2b2d38] transition-colors cursor-pointer active:scale-95"
                 >
                   <Icon name="plus" size={14} strokeWidth={2.2} />
                   <span>{stagesExpectation === "practice" ? "+ Add another practice round" : "+ Add another stage"}</span>
@@ -1975,7 +1975,7 @@ export function InterviewSetup() {
                     <button
                       type="button"
                       onClick={saveDraft}
-                      className="inline-flex h-[42px] items-center justify-center rounded-[11px] bg-panel-2 px-5 text-sm font-semibold text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-[#2b2d38] transition-all cursor-pointer active:scale-95"
+                      className="inline-flex h-[42px] items-center justify-center rounded-[11px] bg-panel-2 px-5 text-sm font-semibold text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel dark:hover:bg-[#2b2d38] transition-all cursor-pointer active:scale-95"
                     >
                       Save draft
                     </button>
@@ -2002,7 +2002,7 @@ export function InterviewSetup() {
             <Panel className="rounded-[20px] p-6 shadow-[inset_0_0_0_1px_var(--color-line)]">
               {/* Card Header */}
               <div className="flex items-start gap-3.5 border-b border-line pb-5">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-[#1a2238] text-[#818cf8] shadow-sm">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px] bg-blue/10 dark:bg-[#1a2238] text-blue-soft dark:text-[#818cf8] border border-blue/20 shadow-sm">
                   <Icon name="target" size={20} />
                 </div>
                 <div>
@@ -2058,7 +2058,7 @@ export function InterviewSetup() {
                       className={clsx(
                         "flex flex-col text-left rounded-[14px] p-4 transition-all duration-200 cursor-pointer",
                         isChecked
-                          ? "bg-[#1c2237] shadow-[inset_0_0_0_1.5px_#6366f1,0_4px_16px_rgba(99,102,241,0.2)]"
+                          ? "bg-blue/10 dark:bg-[#1c2237] shadow-[inset_0_0_0_1.5px_var(--color-blue),0_4px_16px_rgba(0,113,227,0.12)]"
                           : "bg-panel-2 shadow-[inset_0_0_0_1px_var(--color-line)] hover:shadow-[inset_0_0_0_1px_var(--color-line-strong)]"
                       )}
                     >
@@ -2066,7 +2066,7 @@ export function InterviewSetup() {
                         <div
                           className={clsx(
                             "flex h-4 w-4 shrink-0 items-center justify-center rounded transition-colors",
-                            isChecked ? "bg-blue-fill text-white" : "border border-white/20 bg-transparent"
+                            isChecked ? "bg-blue-fill text-white" : "border border-line-strong dark:border-white/20 bg-transparent"
                           )}
                         >
                           {isChecked && <Icon name="check" size={11} strokeWidth={3} />}
@@ -2080,8 +2080,8 @@ export function InterviewSetup() {
               </div>
 
               {/* Summary Pill */}
-              <div className="mt-4 flex items-center gap-2 rounded-xl bg-panel-2 px-3.5 py-2.5 text-xs text-muted">
-                <span className="rounded bg-[#1e2544] px-2 py-0.5 font-semibold text-[#818cf8]">
+              <div className="mt-4 flex items-center gap-2 rounded-xl bg-panel-2 border border-line px-3.5 py-2.5 text-xs text-muted">
+                <span className="rounded bg-blue/10 dark:bg-[#1e2544] border border-blue/25 px-2 py-0.5 font-semibold text-blue-soft dark:text-[#818cf8]">
                   {rounds.length} {rounds.length === 1 ? "round" : "rounds"} selected
                 </span>
                 <span className="truncate">
@@ -2093,7 +2093,7 @@ export function InterviewSetup() {
               <div className="mt-6 border-t border-line pt-5">
                 <h3 className="text-[14px] font-bold text-ink">Interview style</h3>
                 <div className="mt-3 flex flex-col gap-2">
-                  <label className="flex items-start gap-3 rounded-xl border border-white/[0.08] bg-panel-2/60 p-3.5 hover:border-white/20 transition-all cursor-pointer">
+                  <label className="flex items-start gap-3 rounded-xl border border-line dark:border-white/[0.08] bg-panel-2/60 p-3.5 hover:border-line-strong transition-all cursor-pointer">
                     <input
                       type="radio"
                       name="interviewStyle"
@@ -2103,7 +2103,7 @@ export function InterviewSetup() {
                         setInterviewStyle("recommended");
                         setCategoryWeights(getSuggestedWeights(jobTitle, jobDoc?.text || jobPastedText));
                       }}
-                      className="mt-0.5 h-4 w-4 text-indigo-500 accent-indigo-500 cursor-pointer"
+                      className="mt-0.5 h-4 w-4 text-blue-fill accent-blue-fill cursor-pointer"
                     />
                     <div>
                       <span className="text-xs font-semibold text-ink">
@@ -2113,14 +2113,14 @@ export function InterviewSetup() {
                     </div>
                   </label>
 
-                  <label className="flex items-start gap-3 rounded-xl border border-white/[0.08] bg-panel-2/60 p-3.5 hover:border-white/20 transition-all cursor-pointer">
+                  <label className="flex items-start gap-3 rounded-xl border border-line dark:border-white/[0.08] bg-panel-2/60 p-3.5 hover:border-line-strong transition-all cursor-pointer">
                     <input
                       type="radio"
                       name="interviewStyle"
                       value="custom"
                       checked={interviewStyle === "custom"}
                       onChange={() => setInterviewStyle("custom")}
-                      className="mt-0.5 h-4 w-4 text-indigo-500 accent-indigo-500 cursor-pointer"
+                      className="mt-0.5 h-4 w-4 text-blue-fill accent-blue-fill cursor-pointer"
                     />
                     <div>
                       <span className="text-xs font-semibold text-ink">Custom</span>
@@ -2139,7 +2139,7 @@ export function InterviewSetup() {
                   </p>
                 </div>
 
-                <div className="mt-3 flex items-center justify-between gap-2 border-b border-white/[0.08] pb-3">
+                <div className="mt-3 flex items-center justify-between gap-2 border-b border-line dark:border-white/[0.08] pb-3">
                   <span className="text-xs text-muted truncate">
                     {interviewStyle === "recommended"
                       ? `Suggested for ${jobTitle.trim() || companyName.trim() || "Associate Product Manager"}`
@@ -2149,8 +2149,8 @@ export function InterviewSetup() {
                     className={clsx(
                       "shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-bold tracking-tight border transition-colors",
                       totalCategoryWeight === 100
-                        ? "bg-emerald-950/80 border-emerald-500/40 text-emerald-400"
-                        : "bg-amber-950/80 border-amber-500/40 text-amber-300"
+                        ? "bg-emerald-500/15 dark:bg-emerald-950/80 border-emerald-500/40 text-emerald-700 dark:text-emerald-400"
+                        : "bg-amber-500/15 dark:bg-amber-950/80 border-amber-500/40 text-amber-700 dark:text-amber-300"
                     )}
                   >
                     {totalCategoryWeight}% of 100%
@@ -2158,7 +2158,7 @@ export function InterviewSetup() {
                 </div>
 
                 {/* 10 Category Checklist & Weighting Adjusters */}
-                <div className="mt-2 divide-y divide-white/[0.06]">
+                <div className="mt-2 divide-y divide-line dark:divide-white/[0.06]">
                   {FOCUS_CATEGORIES.map((cat) => {
                     const weight = categoryWeights[cat.key] || 0;
                     const isChecked = weight > 0;
@@ -2175,12 +2175,12 @@ export function InterviewSetup() {
                               className={clsx(
                                 "h-5 w-5 rounded-full flex items-center justify-center border transition-all shrink-0",
                                 isChecked
-                                  ? "bg-white text-black border-white shadow-[0_0_8px_rgba(255,255,255,0.4)]"
-                                  : "border-white/30 bg-transparent group-hover:border-white/60"
+                                  ? "bg-blue-fill text-white border-blue-fill shadow-xs"
+                                  : "border-line-strong dark:border-white/30 bg-transparent group-hover:border-blue/60"
                               )}
                             >
                               {isChecked && (
-                                <Icon name="check" size={12} strokeWidth={3} className="text-slate-950" />
+                                <Icon name="check" size={12} strokeWidth={3} className="text-white" />
                               )}
                             </div>
                             <span
@@ -2201,7 +2201,7 @@ export function InterviewSetup() {
                                 disabled={weight <= 5}
                                 onClick={() => adjustCategory(cat.key, -5)}
                                 aria-label={`Decrease ${cat.label} weighting`}
-                                className="h-6 w-6 rounded-full bg-white/[0.08] hover:bg-white/[0.18] active:scale-95 text-white disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center font-bold text-xs transition-all cursor-pointer"
+                                className="h-6 w-6 rounded-full bg-panel-2 border border-line hover:bg-panel active:scale-95 text-ink disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center font-bold text-xs transition-all cursor-pointer"
                               >
                                 −
                               </button>
@@ -2213,7 +2213,7 @@ export function InterviewSetup() {
                                 disabled={weight >= 100}
                                 onClick={() => adjustCategory(cat.key, 5)}
                                 aria-label={`Increase ${cat.label} weighting`}
-                                className="h-6 w-6 rounded-full bg-white/[0.08] hover:bg-white/[0.18] active:scale-95 text-white disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center font-bold text-xs transition-all cursor-pointer"
+                                className="h-6 w-6 rounded-full bg-panel-2 border border-line hover:bg-panel active:scale-95 text-ink disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center font-bold text-xs transition-all cursor-pointer"
                               >
                                 +
                               </button>
@@ -2225,9 +2225,9 @@ export function InterviewSetup() {
 
                         {/* Progress Bar Track */}
                         {isChecked && (
-                          <div className="h-1 w-full rounded-full bg-white/[0.06] overflow-hidden ml-8 max-w-[calc(100%-32px)]">
+                          <div className="h-1 w-full rounded-full bg-panel-2 border border-line/60 dark:bg-white/[0.06] overflow-hidden ml-8 max-w-[calc(100%-32px)]">
                             <div
-                              className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-indigo-400 shadow-[0_0_8px_rgba(99,102,241,0.5)] transition-all duration-150"
+                              className="h-full rounded-full bg-gradient-to-r from-blue-fill to-indigo-500 transition-all duration-150"
                               style={{ width: `${Math.min(100, weight)}%` }}
                             />
                           </div>
@@ -2237,7 +2237,7 @@ export function InterviewSetup() {
                   })}
                 </div>
 
-                <p className="mt-3 text-xs text-ink pt-2 border-t border-white/[0.06]" data-testid="mix-sent">
+                <p className="mt-3 text-xs text-ink pt-2 border-t border-line dark:border-white/[0.06]" data-testid="mix-sent">
                   Your questions will be: <b className="font-semibold">{weightsLine(categoryWeights)}</b>
                 </p>
               </div>
@@ -2321,7 +2321,7 @@ export function InterviewSetup() {
                   <button
                     type="button"
                     onClick={saveDraft}
-                    className="inline-flex h-[42px] items-center justify-center rounded-[11px] bg-panel-2 px-5 text-sm font-semibold text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-[#2b2d38] transition-all cursor-pointer active:scale-95"
+                    className="inline-flex h-[42px] items-center justify-center rounded-[11px] bg-panel-2 px-5 text-sm font-semibold text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel dark:hover:bg-[#2b2d38] transition-all cursor-pointer active:scale-95"
                   >
                     Save draft
                   </button>
@@ -2348,7 +2348,7 @@ export function InterviewSetup() {
             <Panel className="rounded-[18px] p-5 shadow-[inset_0_0_0_1px_var(--color-line)]">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#1a2238] text-[#818cf8]">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-blue/10 dark:bg-[#1a2238] text-blue-soft dark:text-[#818cf8] border border-blue/20">
                     <Icon name="brief" size={17} />
                   </div>
                   <div>
@@ -2380,7 +2380,7 @@ export function InterviewSetup() {
             <Panel className="rounded-[18px] p-5 shadow-[inset_0_0_0_1px_var(--color-line)]">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#142825] text-[#34d399]">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-emerald-500/10 dark:bg-[#142825] text-emerald-600 dark:text-[#34d399] border border-emerald-500/20">
                     <Icon name="doc" size={17} />
                   </div>
                   <h3 className="text-sm font-bold text-ink">Your documents</h3>
@@ -2413,7 +2413,7 @@ export function InterviewSetup() {
             <Panel className="rounded-[18px] p-5 shadow-[inset_0_0_0_1px_var(--color-line)]">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#221c38] text-[#c084fc]">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-purple-500/10 dark:bg-[#221c38] text-purple-600 dark:text-[#c084fc] border border-purple-500/20">
                     <Icon name="layers" size={17} />
                   </div>
                   <div>
@@ -2484,7 +2484,7 @@ export function InterviewSetup() {
             <Panel className="rounded-[18px] p-5 shadow-[inset_0_0_0_1px_var(--color-line)]">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[#1a2238] text-[#818cf8]">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-blue/10 dark:bg-[#1a2238] text-blue-soft dark:text-[#818cf8] border border-blue/20">
                     <Icon name="target" size={17} />
                   </div>
                   <div>
@@ -2607,7 +2607,7 @@ export function InterviewSetup() {
                       return (
                         <span
                           key={id}
-                          className="inline-flex items-center gap-1 rounded-full bg-[#1e2544] px-2.5 py-0.5 text-[11px] font-semibold text-[#818cf8]"
+                          className="inline-flex items-center gap-1 rounded-full bg-blue/10 dark:bg-[#1e2544] border border-blue/25 px-2.5 py-0.5 text-[11px] font-semibold text-blue-soft dark:text-[#818cf8]"
                         >
                           <Icon name={stg?.icon || "users"} size={11} /> {stg?.name}
                         </span>
@@ -2689,7 +2689,7 @@ export function InterviewSetup() {
                 <button
                   type="button"
                   onClick={saveDraft}
-                  className="flex h-[40px] w-full items-center justify-center rounded-[11px] bg-panel-2 text-xs font-semibold text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-[#2b2d38] transition-all cursor-pointer"
+                  className="flex h-[40px] w-full items-center justify-center rounded-[11px] bg-panel-2 text-xs font-semibold text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel dark:hover:bg-[#2b2d38] transition-all cursor-pointer"
                 >
                   Save draft
                 </button>
@@ -2806,12 +2806,12 @@ export function InterviewSetup() {
 
       {/* Floating Animated Toast on Save Draft */}
       {draftToast && (
-        <div className="fixed bottom-6 right-6 z-50 flex max-w-[420px] items-start gap-3 rounded-2xl border border-line bg-[#151824] p-4 text-xs text-ink shadow-[0_20px_50px_rgba(0,0,0,0.8),0_0_25px_rgba(99,102,241,0.25)] animate-rise">
+        <div className="fixed bottom-6 right-6 z-50 flex max-w-[420px] items-start gap-3 rounded-2xl border border-line-strong bg-panel dark:bg-[#151824] p-4 text-xs text-ink shadow-2xl animate-rise">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#10b981]/20 text-[#10b981]">
             <Icon name="check" size={16} strokeWidth={2.6} />
           </div>
           <div className="min-w-0 grow">
-            <div className="font-bold text-white text-sm">{draftToast.title}</div>
+            <div className="font-bold text-ink text-sm">{draftToast.title}</div>
             <p className="mt-0.5 text-xs text-muted leading-relaxed">{draftToast.subtitle}</p>
             <div className="mt-2.5 flex items-center gap-3">
               <Link
@@ -2866,9 +2866,9 @@ export function InterviewSetup() {
 
       {/* Cancel Confirmation Modal (UX-5) */}
       {showCancelModal && (
-        <div role="dialog" aria-modal="true" aria-labelledby="cancel-draft-title" className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-md rounded-2xl bg-panel border border-white/15 p-6 shadow-2xl">
-            <h3 id="cancel-draft-title" className="text-lg font-bold text-white">Keep this draft?</h3>
+        <div role="dialog" aria-modal="true" aria-labelledby="cancel-draft-title" className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70 p-4 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-md rounded-2xl bg-panel border border-line-strong p-6 shadow-2xl">
+            <h3 id="cancel-draft-title" className="text-lg font-bold text-ink">Keep this draft?</h3>
             <p className="mt-2 text-xs leading-relaxed text-muted">
               You can keep your progress to carry on later, or discard it to start fresh.
             </p>
@@ -2882,7 +2882,7 @@ export function InterviewSetup() {
                   setShowCancelModal(false);
                   router.push("/interviews");
                 }}
-                className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-xs font-semibold text-red-300 hover:bg-red-500/20 transition-all cursor-pointer"
+                className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-xs font-semibold text-red-600 dark:text-red-300 hover:bg-red-500/20 transition-all cursor-pointer"
               >
                 Discard draft
               </button>
@@ -2900,7 +2900,7 @@ export function InterviewSetup() {
               <button
                 type="button"
                 onClick={() => setShowCancelModal(false)}
-                className="rounded-xl border border-line px-4 py-2.5 text-xs font-medium text-muted hover:text-white transition-all cursor-pointer"
+                className="rounded-xl border border-line-strong bg-panel-2 px-4 py-2.5 text-xs font-medium text-muted hover:text-ink transition-all cursor-pointer"
               >
                 Carry on
               </button>

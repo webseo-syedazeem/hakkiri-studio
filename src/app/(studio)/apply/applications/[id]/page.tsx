@@ -210,10 +210,10 @@ export default function ApplicationWorkspacePage({
       {/* Tab 1: Gap Map */}
       {activeTab === "gap" && (
         <div className="space-y-6">
-          <div className="rounded-2xl border border-line bg-booth p-6">
+          <div className="rounded-2xl border border-line bg-panel p-6 shadow-sm">
             <div className="flex items-center justify-between border-b border-line pb-3 mb-4">
               <div>
-                <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+                <h2 className="text-sm font-bold text-ink uppercase tracking-wider">
                   Requirement-to-Evidence Gap Map
                 </h2>
                 <p className="text-xs text-muted">
@@ -221,7 +221,7 @@ export default function ApplicationWorkspacePage({
                 </p>
               </div>
               <div className="text-right">
-                <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
+                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
                   {strongMatchesCount} Strong Matches
                 </span>
               </div>
@@ -235,13 +235,13 @@ export default function ApplicationWorkspacePage({
                 return (
                   <div
                     key={req.id}
-                    className="rounded-xl border border-line bg-card/60 p-4 space-y-2 hover:border-line-hover transition"
+                    className="rounded-xl border border-line bg-panel-2 p-4 space-y-2 hover:border-line-strong transition"
                   >
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-mono text-muted">#{i + 1}</span>
-                        <span className="text-xs font-bold text-white">{req.text}</span>
-                        <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded bg-canvas text-muted border border-line">
+                        <span className="text-xs font-bold text-ink">{req.text}</span>
+                        <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded bg-panel text-muted border border-line">
                           {req.kind}
                         </span>
                       </div>
@@ -249,17 +249,17 @@ export default function ApplicationWorkspacePage({
                       <span
                         className={`text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded border self-start sm:self-auto ${
                           strength === "strong"
-                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
                             : strength === "partial"
-                            ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
-                            : "bg-rose-500/10 text-rose-300 border-rose-500/20"
+                            ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
+                            : "bg-rose-500/10 text-rose-600 dark:text-rose-300 border-rose-500/20"
                         }`}
                       >
                         {strength} evidence
                       </span>
                     </div>
 
-                    <div className="text-[11px] text-muted italic bg-canvas/70 p-2.5 rounded-lg border border-line/60">
+                    <div className="text-[11px] text-muted italic bg-panel p-2.5 rounded-lg border border-line/60">
                       Advert context: &quot;{req.sourceQuote}&quot;
                     </div>
 
@@ -287,9 +287,9 @@ export default function ApplicationWorkspacePage({
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
             {/* Left Config Box (5 cols) */}
-            <div className="md:col-span-5 rounded-2xl border border-line bg-booth p-6 space-y-4">
+            <div className="md:col-span-5 rounded-2xl border border-line bg-panel p-6 space-y-4 shadow-sm">
               <div>
-                <h3 className="text-sm font-bold text-white">Cover Letter Builder</h3>
+                <h3 className="text-sm font-bold text-ink">Cover Letter Builder</h3>
                 <p className="text-xs text-muted">
                   Grounded in your Gap Map and authentic writing style.
                 </p>
@@ -297,7 +297,7 @@ export default function ApplicationWorkspacePage({
 
               <form onSubmit={handleGenerateCoverLetter} className="space-y-4">
                 <div>
-                  <label className="text-xs font-semibold text-white block mb-1">
+                  <label className="text-xs font-semibold text-ink block mb-1">
                     Why this job? (In your own words)
                   </label>
                   <p className="text-[11px] text-muted mb-2">
@@ -308,7 +308,7 @@ export default function ApplicationWorkspacePage({
                     value={whyThisJob}
                     onChange={(e) => setWhyThisJob(e.target.value)}
                     placeholder="e.g. I have followed their payments scaleup since 2024 and want to lead their next-generation API architecture..."
-                    className="w-full rounded-xl border border-line bg-canvas p-3 text-xs text-ink placeholder:text-muted/60 focus:border-accent focus:outline-none"
+                    className="w-full rounded-xl border border-line bg-panel-2 p-3 text-xs text-ink placeholder:text-muted/60 focus:border-accent focus:outline-none"
                   />
                 </div>
 
@@ -323,16 +323,16 @@ export default function ApplicationWorkspacePage({
             </div>
 
             {/* Right Output Box (7 cols) */}
-            <div className="md:col-span-7 rounded-2xl border border-line bg-booth p-6 space-y-4">
+            <div className="md:col-span-7 rounded-2xl border border-line bg-panel p-6 space-y-4 shadow-sm">
               <div className="flex items-center justify-between border-b border-line pb-3">
-                <h3 className="text-sm font-bold text-white">Generated Output</h3>
-                <span className="text-[11px] text-emerald-400 font-mono">
+                <h3 className="text-sm font-bold text-ink">Generated Output</h3>
+                <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono">
                   Zero Inventions Guaranteed
                 </span>
               </div>
 
               {letterResult ? (
-                <div className="rounded-xl border border-line bg-canvas p-5 text-xs text-ink/90 font-mono whitespace-pre-line leading-relaxed">
+                <div className="rounded-xl border border-line bg-panel-2 p-5 text-xs text-ink/90 font-mono whitespace-pre-line leading-relaxed">
                   {letterResult}
                 </div>
               ) : (
@@ -347,12 +347,12 @@ export default function ApplicationWorkspacePage({
 
       {/* Tab 3: Job Description */}
       {activeTab === "job" && (
-        <div className="rounded-2xl border border-line bg-booth p-6 space-y-4">
+        <div className="rounded-2xl border border-line bg-panel p-6 space-y-4 shadow-sm">
           <div className="flex items-center justify-between border-b border-line pb-3">
-            <h3 className="text-sm font-bold text-white">Full Job Description Text</h3>
+            <h3 className="text-sm font-bold text-ink">Full Job Description Text</h3>
             <span className="text-xs text-muted">Tone: {job.tone}</span>
           </div>
-          <div className="rounded-xl bg-canvas p-4 text-xs font-mono text-muted whitespace-pre-wrap leading-relaxed max-h-[500px] overflow-y-auto">
+          <div className="rounded-xl bg-panel-2 p-4 text-xs font-mono text-muted whitespace-pre-wrap leading-relaxed max-h-[500px] overflow-y-auto border border-line">
             {job.text}
           </div>
         </div>
@@ -360,16 +360,16 @@ export default function ApplicationWorkspacePage({
 
       {/* Tab 4: Send Log */}
       {activeTab === "send" && (
-        <div className="rounded-2xl border border-line bg-booth p-6 space-y-4">
+        <div className="rounded-2xl border border-line bg-panel p-6 space-y-4 shadow-sm">
           <div className="flex items-center justify-between border-b border-line pb-3">
-            <h3 className="text-sm font-bold text-white">Send log</h3>
+            <h3 className="text-sm font-bold text-ink">Send log</h3>
           </div>
 
           <p className="text-xs text-muted">
             Nothing has been sent for this application. Hakkiri doesn’t submit applications for you: you send it yourself, and can record where it has got to with the status above.
           </p>
 
-          <div className="rounded-xl bg-canvas p-4 border border-line text-xs font-mono text-muted space-y-2">
+          <div className="rounded-xl bg-panel-2 p-4 border border-line text-xs font-mono text-muted space-y-2">
             <div>• Application system: {job.applicationSystem || "Not known"}</div>
             <div>• Status: {app.status.toUpperCase()}</div>
             <div>• Route: {job.applyRoute === "unknown" ? "Not known" : job.applyRoute}</div>

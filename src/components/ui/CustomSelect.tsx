@@ -123,9 +123,9 @@ export function CustomSelect({
       ref={containerRef}
     >
       {label && (
-        <label className="flex items-center gap-1 text-xs font-semibold text-white">
+        <label className="flex items-center gap-1 text-xs font-semibold text-ink">
           <span>{label}</span>
-          {required && <span className="text-rose-400">*</span>}
+          {required && <span className="text-rose-500 dark:text-rose-400">*</span>}
           {tooltip && (
             <span className="text-dim text-[11px] cursor-help" title={tooltip}>
               ⓘ
@@ -151,7 +151,7 @@ export function CustomSelect({
           disabled
             ? "opacity-50 cursor-not-allowed border-line text-muted"
             : isOpen
-            ? "border-blue-500/80 bg-panel shadow-[0_0_0_2px_rgba(59,130,246,0.35),0_8px_24px_rgba(0,0,0,0.6)] text-ink"
+            ? "border-blue-fill bg-panel shadow-[0_0_0_2px_rgba(74,90,240,0.2),0_8px_24px_rgba(15,23,42,0.12)] dark:shadow-[0_0_0_2px_rgba(59,130,246,0.35),0_8px_24px_rgba(0,0,0,0.6)] text-ink"
             : "border-line text-ink hover:border-line-strong hover:bg-panel cursor-pointer shadow-sm active:scale-[0.98]",
           triggerClassName
         )}
@@ -211,14 +211,10 @@ export function CustomSelect({
           role="listbox"
           tabIndex={-1}
           className={clsx(
-            "absolute top-[calc(100%+6px)] z-[100] min-w-[220px] max-h-72 overflow-y-auto rounded-2xl bg-[#0c0e1c]/95 backdrop-blur-2xl border border-white/15 p-1.5 shadow-[0_24px_60px_rgba(0,0,0,0.85),0_0_0_1px_rgba(255,255,255,0.08)] origin-top animate-dropdown",
+            "absolute top-[calc(100%+6px)] z-[100] min-w-[220px] max-h-72 overflow-y-auto rounded-2xl bg-panel/98 dark:bg-[#0c0e1c]/95 backdrop-blur-2xl border border-line-strong dark:border-white/15 p-1.5 shadow-[0_20px_50px_rgba(15,23,42,0.16),0_0_0_1px_rgba(15,23,42,0.06)] dark:shadow-[0_24px_60px_rgba(0,0,0,0.85),0_0_0_1px_rgba(255,255,255,0.08)] origin-top animate-dropdown",
             align === "right" ? "right-0 left-auto" : "left-0",
             menuClassName
           )}
-          style={{
-            scrollbarWidth: "thin",
-            scrollbarColor: "rgba(255,255,255,0.2) transparent",
-          }}
         >
           {normalizedOptions.map((opt, idx) => {
             const isSelected = opt.value === value;
@@ -238,10 +234,10 @@ export function CustomSelect({
                 className={clsx(
                   "flex items-center justify-between w-full px-3 py-2 rounded-xl text-xs transition-all duration-150 cursor-pointer select-none active:scale-[0.98]",
                   isSelected
-                    ? "bg-blue/20 text-white font-bold border border-blue/40 shadow-sm"
+                    ? "bg-blue-fill/12 text-blue-fill dark:bg-blue/20 dark:text-white font-bold border border-blue-fill/30 dark:border-blue/40 shadow-sm"
                     : isFocused
-                    ? "bg-white/[0.09] text-white"
-                    : "text-muted hover:text-ink hover:bg-white/[0.05]"
+                    ? "bg-panel-2 text-ink dark:bg-white/[0.09] dark:text-white"
+                    : "text-muted hover:text-ink hover:bg-panel-2 dark:hover:bg-white/[0.05]"
                 )}
               >
                 <div className="flex items-center gap-2.5 truncate">
@@ -258,7 +254,7 @@ export function CustomSelect({
                     <Icon
                       name={opt.icon}
                       size={13}
-                      className={clsx(isSelected ? "text-blue" : "text-muted")}
+                      className={clsx(isSelected ? "text-blue-fill dark:text-blue" : "text-muted")}
                     />
                   )}
                   <div className="truncate">
@@ -277,15 +273,15 @@ export function CustomSelect({
                       className={clsx(
                         "rounded-md px-1.5 py-0.5 text-[10px] font-mono",
                         isSelected
-                          ? "bg-blue/30 text-blue-200 border border-blue/40"
-                          : "bg-white/[0.08] text-muted border border-white/5"
+                          ? "bg-blue-fill/15 text-blue-fill dark:bg-blue/30 dark:text-blue-200 border border-blue-fill/30 dark:border-blue/40"
+                          : "bg-panel-2 text-muted border border-line dark:bg-white/[0.08] dark:border-white/5"
                       )}
                     >
                       {opt.badge}
                     </span>
                   )}
                   {isSelected && (
-                    <span className="text-blue font-black text-xs animate-scaleIn">
+                    <span className="text-blue-fill dark:text-blue font-black text-xs animate-scaleIn">
                       ✓
                     </span>
                   )}

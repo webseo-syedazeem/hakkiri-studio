@@ -41,10 +41,10 @@ export function HomeHeaderActions() {
           type="button"
           onClick={() => setIsDraftModalOpen(true)}
           className={clsx(
-            "group/btn relative overflow-hidden inline-flex h-[38px] items-center justify-center gap-2 rounded-xl px-3.5 text-[13px] font-semibold whitespace-nowrap transition-all duration-300 active:scale-95 cursor-pointer",
+            "group/btn relative overflow-hidden inline-flex h-[38px] items-center justify-center gap-2 rounded-xl px-3.5 text-[13px] font-semibold whitespace-nowrap transition-all duration-200 active:scale-95 cursor-pointer",
             hasDraft
               ? "bg-blue-fill/10 text-blue-fill border border-blue-fill/50 shadow-sm hover:bg-blue-fill/20 hover:border-blue-fill"
-              : "bg-panel-2 text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel hover:shadow-sm"
+              : "bg-panel border border-line-strong text-ink shadow-sm hover:bg-panel-2 hover:border-blue-fill/40"
           )}
         >
           <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/[0.08] to-transparent transition-transform duration-700 group-hover/btn:translate-x-full" />
@@ -61,7 +61,7 @@ export function HomeHeaderActions() {
         {/* New Interview Button (Clean Solid Unified Button) */}
         <Link
           href="/interviews/new"
-          className="group/btn relative overflow-hidden inline-flex h-[38px] items-center justify-center gap-2 rounded-xl bg-panel-2 px-4 text-[13px] font-semibold text-ink whitespace-nowrap shadow-[inset_0_0_0_1px_var(--color-line-strong)] transition-all duration-300 hover:bg-panel hover:shadow-md active:scale-95 cursor-pointer"
+          className="group/btn relative overflow-hidden inline-flex h-[38px] items-center justify-center gap-2 rounded-xl bg-panel border border-line-strong px-4 text-[13px] font-semibold text-ink whitespace-nowrap shadow-sm transition-all duration-200 hover:bg-panel-2 hover:border-blue-fill/40 hover:shadow-md active:scale-95 cursor-pointer"
         >
           <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/[0.08] to-transparent transition-transform duration-700 group-hover/btn:translate-x-full" />
           <Icon name="plus" size={15} strokeWidth={2.2} className="transition-transform duration-300 group-hover/btn:rotate-90" />
@@ -71,7 +71,7 @@ export function HomeHeaderActions() {
         {/* New Presentation Button */}
         <Link
           href="/presentations/new"
-          className="group/btn relative overflow-hidden inline-flex h-[38px] items-center justify-center gap-2 rounded-xl bg-panel-2 px-4 text-[13px] font-semibold text-ink whitespace-nowrap shadow-[inset_0_0_0_1px_var(--color-line-strong)] transition-all duration-300 hover:bg-panel hover:shadow-md active:scale-95 cursor-pointer"
+          className="group/btn relative overflow-hidden inline-flex h-[38px] items-center justify-center gap-2 rounded-xl bg-panel border border-line-strong px-4 text-[13px] font-semibold text-ink whitespace-nowrap shadow-sm transition-all duration-200 hover:bg-panel-2 hover:border-blue-fill/40 hover:shadow-md active:scale-95 cursor-pointer"
         >
           <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/[0.08] to-transparent transition-transform duration-700 group-hover/btn:translate-x-full" />
           <Icon name="plus" size={15} strokeWidth={2.2} className="transition-transform duration-300 group-hover/btn:rotate-90" />

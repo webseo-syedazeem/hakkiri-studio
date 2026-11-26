@@ -11,11 +11,11 @@ const buttonBase =
   "group relative inline-flex items-center justify-center gap-2 whitespace-nowrap font-semibold transition-all duration-200 ease-out disabled:pointer-events-none disabled:opacity-50 select-none cursor-pointer";
 const buttonVariants: Record<Variant, string> = {
   primary:
-    "pro-btn-glow bg-gradient-to-r from-[#4f52f8] via-[#5c5ffc] to-[#6d5eff] text-white border border-white/15 shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_4px_16px_-2px_rgba(79,82,248,0.45)] hover:from-[#5b5efd] hover:to-[#7b6dff] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_6px_24px_-2px_rgba(79,82,248,0.7)] hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]",
+    "pro-btn-glow bg-gradient-to-r from-[#4f52f8] via-[#5c5ffc] to-[#6d5eff] text-white border border-indigo-500/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_4px_16px_-2px_rgba(79,82,248,0.45)] hover:from-[#5b5efd] hover:to-[#7b6dff] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_6px_24px_-2px_rgba(79,82,248,0.7)] hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]",
   secondary:
-    "bg-[#1c1d27] text-ink border border-white/10 shadow-[0_2px_8px_rgba(0,0,0,0.35)] hover:border-white/20 hover:bg-[#252634] hover:shadow-[0_4px_16px_rgba(0,0,0,0.5)] hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]",
+    "bg-panel text-ink border border-line-strong shadow-[0_1px_3px_rgba(15,23,42,0.06)] hover:border-blue-fill/50 hover:bg-panel-2 hover:shadow-[0_4px_12px_rgba(15,23,42,0.1)] dark:bg-[#1c1d27] dark:border-white/10 dark:shadow-[0_2px_8px_rgba(0,0,0,0.35)] dark:hover:border-white/20 dark:hover:bg-[#252634] hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]",
   ghost:
-    "bg-transparent text-muted hover:text-white hover:bg-white/[0.06] active:scale-[0.98]",
+    "bg-transparent text-muted hover:text-ink hover:bg-panel-2 dark:hover:text-white dark:hover:bg-white/[0.06] active:scale-[0.98]",
 };
 const buttonSizes: Record<Size, string> = {
   sm: "h-[34px] px-3.5 rounded-[10px] text-[13px]",
@@ -39,7 +39,13 @@ export function ButtonLink({ variant = "secondary", size = "md", className, ...r
 
 export function Panel({ className, children, ...rest }: ComponentProps<"section">) {
   return (
-    <section className={clsx("rounded-[14px] bg-panel shadow-[inset_0_0_0_1px_var(--color-line)]", className)} {...rest}>
+    <section
+      className={clsx(
+        "rounded-[18px] bg-panel border border-line shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_10px_28px_-6px_rgba(15,23,42,0.08)] dark:shadow-[0_12px_32px_-8px_rgba(0,0,0,0.55)] transition-all duration-200",
+        className
+      )}
+      {...rest}
+    >
       {children}
     </section>
   );
@@ -115,7 +121,7 @@ export function Meter({ value, max = 5, segments = 20, tone, height = 16, label 
   return (
     <div role="img" aria-label={label ?? `${value} out of ${max}`} className="flex gap-[3px]">
       {Array.from({ length: segments }, (_, k) => (
-        <span key={k} className={clsx("flex-1 rounded-[2px]", k < lit ? meterColour[tone] : "bg-white/[0.07]")} style={{ height }} />
+        <span key={k} className={clsx("flex-1 rounded-[2px]", k < lit ? meterColour[tone] : "bg-panel-2 border border-line/60 dark:bg-white/[0.07] dark:border-0")} style={{ height }} />
       ))}
     </div>
   );

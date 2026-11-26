@@ -303,12 +303,12 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
       {/* LEFT COLUMN: Setup Form Sections 1, 2, 3 */}
       <div className="flex flex-col gap-5">
         {/* SECTION 1: Presentation details */}
-        <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-6 shadow-xl">
-          <div className="flex items-center gap-2.5 pb-5 border-b border-white/[0.07]">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue text-xs font-bold text-white shadow-[0_0_12px_rgba(79,70,229,0.5)]">
+        <div className="rounded-2xl bg-panel dark:bg-[#0d0c1c] border border-line dark:border-white/[0.08] p-6 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_10px_28px_-6px_rgba(15,23,42,0.08)] dark:shadow-xl">
+          <div className="flex items-center gap-2.5 pb-5 border-b border-line dark:border-white/[0.07]">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-fill text-xs font-bold text-white shadow-sm">
               1
             </span>
-            <h2 className="text-base font-semibold text-white tracking-tight">Presentation details</h2>
+            <h2 className="text-base font-semibold text-ink tracking-tight">Presentation details</h2>
           </div>
 
           <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -328,24 +328,24 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
                   }}
                   placeholder="e.g. Q1 product roadmap"
                   className={clsx(
-                    "w-full h-11 rounded-xl bg-[#141326] border px-3.5 text-sm text-white placeholder:text-muted/50 focus:border-blue focus:outline-none focus:ring-1 focus:ring-blue transition-all",
-                    fieldErrors.title ? "border-rose-500/80 ring-1 ring-rose-500/50" : "border-white/10"
+                    "w-full h-11 rounded-xl bg-panel-2 dark:bg-[#141326] border px-3.5 text-sm text-ink placeholder:text-muted/60 focus:border-blue-fill focus:outline-none focus:ring-1 focus:ring-blue-fill transition-all",
+                    fieldErrors.title ? "border-rose-500/80 ring-1 ring-rose-500/50" : "border-line dark:border-white/10"
                   )}
                 />
               </div>
-              {fieldErrors.title && <p className="text-xs text-rose-400 mt-1.5 font-medium">{fieldErrors.title}</p>}
+              {fieldErrors.title && <p className="text-xs text-rose-500 dark:text-rose-400 mt-1.5 font-medium">{fieldErrors.title}</p>}
             </div>
 
             {/* Presentation Type Dropdown */}
             <div className="relative">
               <label className="flex items-center gap-1.5 text-xs font-semibold text-muted mb-2">
                 Presentation type *
-                <Icon name="info" size={13} className="text-muted hover:text-white cursor-pointer" />
+                <Icon name="info" size={13} className="text-muted hover:text-ink cursor-pointer" />
               </label>
               <button
                 type="button"
                 onClick={() => setTypeDropdownOpen((o) => !o)}
-                className="w-full h-11 rounded-xl bg-[#141326] border border-white/10 px-3.5 text-sm text-white flex items-center justify-between hover:border-white/20 transition-all text-left"
+                className="w-full h-11 rounded-xl bg-panel-2 dark:bg-[#141326] border border-line dark:border-white/10 px-3.5 text-sm text-ink flex items-center justify-between hover:border-line-strong transition-all text-left cursor-pointer"
               >
                 <div className="flex items-center gap-2.5 truncate">
                   <Icon name="brief" size={16} className="text-blue-soft shrink-0" />
@@ -356,7 +356,7 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
 
               {/* Exact 10 options matching mockup */}
               {typeDropdownOpen && (
-                <div className="absolute z-30 left-0 right-0 mt-1.5 py-1.5 rounded-xl bg-[#16152b] border border-white/15 shadow-2xl backdrop-blur-md max-h-72 overflow-y-auto">
+                <div className="absolute z-30 left-0 right-0 mt-1.5 py-1.5 rounded-xl bg-panel dark:bg-[#16152b] border border-line-strong dark:border-white/15 shadow-2xl backdrop-blur-md max-h-72 overflow-y-auto">
                   {PRESENTATION_TYPES.map((pt) => (
                     <button
                       key={pt.id}
@@ -366,8 +366,8 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
                         setTypeDropdownOpen(false);
                       }}
                       className={clsx(
-                        "w-full px-3.5 py-2.5 flex items-center gap-3 text-sm text-left transition-colors",
-                        presentationType === pt.label ? "bg-blue/20 text-white font-medium" : "text-[#c9cad3] hover:bg-white/[0.06] hover:text-white"
+                        "w-full px-3.5 py-2.5 flex items-center gap-3 text-sm text-left transition-colors cursor-pointer",
+                        presentationType === pt.label ? "bg-blue/10 dark:bg-blue/20 text-blue-fill dark:text-white font-medium" : "text-ink/85 hover:bg-panel-2 dark:hover:bg-white/[0.06] hover:text-ink"
                       )}
                     >
                       <Icon name={pt.icon} size={16} className={presentationType === pt.label ? "text-blue-soft" : "text-muted"} />
@@ -384,7 +384,7 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
             <div
               className={clsx(
                 "rounded-xl border-2 border-dashed p-6 transition-all flex flex-col sm:flex-row items-center justify-between gap-4",
-                fieldErrors.slides ? "border-rose-500/80 bg-rose-500/10" : dragging ? "border-blue bg-blue/10" : "border-white/15 bg-[#121124]/60 hover:border-white/25"
+                fieldErrors.slides ? "border-rose-500/80 bg-rose-500/10" : dragging ? "border-blue-fill bg-blue/10" : "border-line-strong dark:border-white/15 bg-panel-2 dark:bg-[#121124]/60 hover:border-blue/40"
               )}
               onDragOver={(e) => {
                 e.preventDefault();
@@ -399,11 +399,11 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
               }}
             >
               <div className="flex items-center gap-4 text-center sm:text-left">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue/15 text-blue-soft border border-blue/30 shadow-inner">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue/10 dark:bg-blue/15 text-blue-soft border border-blue/30 shadow-inner">
                   <Icon name="cloudUpload" size={24} />
                 </div>
                 <div>
-                  <div className="text-sm font-semibold text-white">Upload your slides</div>
+                  <div className="text-sm font-semibold text-ink">Upload your slides</div>
                   <div className="text-xs text-muted mt-0.5">PowerPoint (.pptx) or PDF (up to 50 MB)</div>
                 </div>
               </div>
@@ -425,7 +425,7 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
                   size="sm"
                   variant="ghost"
                   onClick={() => setNotesOpen((o) => !o)}
-                  className="border border-white/10 hover:bg-white/[0.05] text-white flex items-center gap-1.5"
+                  className="border border-line-strong dark:border-white/10 bg-panel hover:bg-panel-2 dark:bg-transparent dark:hover:bg-white/[0.05] text-ink flex items-center gap-1.5"
                 >
                   <Icon name="doc" size={14} className="text-muted" />
                   Paste notes
@@ -446,11 +446,11 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
                 }}
               />
             </div>
-            {fieldErrors.slides && <p className="text-xs text-rose-400 mt-2 font-medium">{fieldErrors.slides}</p>}
+            {fieldErrors.slides && <p className="text-xs text-rose-500 dark:text-rose-400 mt-2 font-medium">{fieldErrors.slides}</p>}
 
             {/* Pasted notes area */}
             {notesOpen && (
-              <div className="mt-3.5 rounded-xl bg-[#141326] p-4 border border-white/10 animate-rise">
+              <div className="mt-3.5 rounded-xl bg-panel-2 dark:bg-[#141326] p-4 border border-line dark:border-white/10 animate-rise">
                 <textarea
                   aria-label="Your notes"
                   value={notes}
@@ -460,9 +460,9 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
                   }}
                   rows={5}
                   placeholder={"Paste presentation notes or outline here.\nOne slide per paragraph. The first line of each becomes its title."}
-                  className="w-full resize-y bg-transparent text-sm leading-relaxed outline-none text-white placeholder:text-muted/60"
+                  className="w-full resize-y bg-transparent text-sm leading-relaxed outline-none text-ink placeholder:text-muted/60"
                 />
-                <div className="mt-2.5 flex items-center justify-between border-t border-white/[0.08] pt-3">
+                <div className="mt-2.5 flex items-center justify-between border-t border-line dark:border-white/[0.08] pt-3">
                   <Button
                     type="button"
                     size="sm"
@@ -488,12 +488,12 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
         </div>
 
         {/* SECTION 2: Audience & message */}
-        <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-6 shadow-xl">
-          <div className="flex items-center gap-2.5 pb-5 border-b border-white/[0.07]">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue text-xs font-bold text-white shadow-[0_0_12px_rgba(79,70,229,0.5)]">
+        <div className="rounded-2xl bg-panel dark:bg-[#0d0c1c] border border-line dark:border-white/[0.08] p-6 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_10px_28px_-6px_rgba(15,23,42,0.08)] dark:shadow-xl">
+          <div className="flex items-center gap-2.5 pb-5 border-b border-line dark:border-white/[0.07]">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-fill text-xs font-bold text-white shadow-sm">
               2
             </span>
-            <h2 className="text-base font-semibold text-white tracking-tight">Audience & message</h2>
+            <h2 className="text-base font-semibold text-ink tracking-tight">Audience & message</h2>
           </div>
 
           <div className="mt-5">
@@ -514,12 +514,12 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
                           if (fieldErrors.audience) setFieldErrors((p) => ({ ...p, audience: "" }));
                         }}
                         className={clsx(
-                          "flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition-all border",
+                          "flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition-all border cursor-pointer",
                           active
-                            ? "bg-blue-fill border-blue-soft text-white shadow-[0_0_16px_rgba(79,70,229,0.4)]"
+                            ? "bg-blue-fill border-blue-fill text-white shadow-sm"
                             : fieldErrors.audience
-                            ? "bg-[#141326] border-rose-500/80 text-rose-300"
-                            : "bg-[#141326] border-white/10 text-muted hover:text-white hover:border-white/20"
+                            ? "bg-panel-2 dark:bg-[#141326] border-rose-500/80 text-rose-600 dark:text-rose-300"
+                            : "bg-panel-2 dark:bg-[#141326] border-line dark:border-white/10 text-muted hover:text-ink hover:border-line-strong"
                         )}
                       >
                         <Icon name={opt.icon} size={14} className={active ? "text-white" : "text-muted"} />
@@ -528,7 +528,7 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
                     );
                   })}
                 </div>
-                {fieldErrors.audience && <p className="text-xs text-rose-400 mt-2 font-medium">{fieldErrors.audience}</p>}
+                {fieldErrors.audience && <p className="text-xs text-rose-500 dark:text-rose-400 mt-2 font-medium">{fieldErrors.audience}</p>}
               </div>
 
               {/* Audience size */}
@@ -550,7 +550,7 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
               <div>
                 <label className="flex items-center gap-1.5 text-xs font-semibold text-muted mb-2">
                   What&apos;s your key message? *
-                  <Icon name="info" size={13} className="text-muted hover:text-white cursor-pointer" />
+                  <Icon name="info" size={13} className="text-muted hover:text-ink cursor-pointer" />
                 </label>
                 <input
                   type="text"
@@ -561,18 +561,18 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
                   }}
                   placeholder="e.g. A proposal for the Q1 product roadmap"
                   className={clsx(
-                    "w-full h-11 rounded-xl bg-[#141326] border px-3.5 text-sm text-white placeholder:text-muted/50 focus:border-blue focus:outline-none focus:ring-1 focus:ring-blue transition-all",
-                    fieldErrors.keyMessage ? "border-rose-500/80 ring-1 ring-rose-500/50" : "border-white/10"
+                    "w-full h-11 rounded-xl bg-panel-2 dark:bg-[#141326] border px-3.5 text-sm text-ink placeholder:text-muted/60 focus:border-blue-fill focus:outline-none focus:ring-1 focus:ring-blue-fill transition-all",
+                    fieldErrors.keyMessage ? "border-rose-500/80 ring-1 ring-rose-500/50" : "border-line dark:border-white/10"
                   )}
                 />
-                {fieldErrors.keyMessage && <p className="text-xs text-rose-400 mt-1.5 font-medium">{fieldErrors.keyMessage}</p>}
+                {fieldErrors.keyMessage && <p className="text-xs text-rose-500 dark:text-rose-400 mt-1.5 font-medium">{fieldErrors.keyMessage}</p>}
               </div>
 
               {/* What do you want them to do? */}
               <div>
                 <label className="flex items-center gap-1.5 text-xs font-semibold text-muted mb-2">
                   What do you want them to do? *
-                  <Icon name="info" size={13} className="text-muted hover:text-white cursor-pointer" />
+                  <Icon name="info" size={13} className="text-muted hover:text-ink cursor-pointer" />
                 </label>
                 <input
                   type="text"
@@ -583,23 +583,23 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
                   }}
                   placeholder="e.g. Approve the roadmap and required resources"
                   className={clsx(
-                    "w-full h-11 rounded-xl bg-[#141326] border px-3.5 text-sm text-white placeholder:text-muted/50 focus:border-blue focus:outline-none focus:ring-1 focus:ring-blue transition-all",
-                    fieldErrors.ask ? "border-rose-500/80 ring-1 ring-rose-500/50" : "border-white/10"
+                    "w-full h-11 rounded-xl bg-panel-2 dark:bg-[#141326] border px-3.5 text-sm text-ink placeholder:text-muted/60 focus:border-blue-fill focus:outline-none focus:ring-1 focus:ring-blue-fill transition-all",
+                    fieldErrors.ask ? "border-rose-500/80 ring-1 ring-rose-500/50" : "border-line dark:border-white/10"
                   )}
                 />
-                {fieldErrors.ask && <p className="text-xs text-rose-400 mt-1.5 font-medium">{fieldErrors.ask}</p>}
+                {fieldErrors.ask && <p className="text-xs text-rose-500 dark:text-rose-400 mt-1.5 font-medium">{fieldErrors.ask}</p>}
               </div>
             </div>
           </div>
         </div>
 
         {/* SECTION 3: Rehearsal settings */}
-        <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-6 shadow-xl">
-          <div className="flex items-center gap-2.5 pb-5 border-b border-white/[0.07]">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue text-xs font-bold text-white shadow-[0_0_12px_rgba(79,70,229,0.5)]">
+        <div className="rounded-2xl bg-panel dark:bg-[#0d0c1c] border border-line dark:border-white/[0.08] p-6 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_10px_28px_-6px_rgba(15,23,42,0.08)] dark:shadow-xl">
+          <div className="flex items-center gap-2.5 pb-5 border-b border-line dark:border-white/[0.07]">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-fill text-xs font-bold text-white shadow-sm">
               3
             </span>
-            <h2 className="text-base font-semibold text-white tracking-tight">Rehearsal settings</h2>
+            <h2 className="text-base font-semibold text-ink tracking-tight">Rehearsal settings</h2>
           </div>
 
           <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -620,7 +620,7 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
             <div>
               <label className="flex items-center gap-1.5 text-xs font-semibold text-muted mb-2">
                 Q&A style *
-                <Icon name="info" size={13} className="text-muted hover:text-white cursor-pointer" />
+                <Icon name="info" size={13} className="text-muted hover:text-ink cursor-pointer" />
               </label>
               <CustomSelect
                 value={qa}
@@ -646,7 +646,7 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
                   value={specificQuestions}
                   onChange={(e) => setSpecificQuestions(e.target.value)}
                   placeholder="e.g. How did you prioritise these initiatives?"
-                  className="w-full h-11 rounded-xl bg-[#141326] border border-white/10 pl-9 pr-3.5 text-sm text-white placeholder:text-muted/50 focus:border-blue focus:outline-none focus:ring-1 focus:ring-blue transition-all"
+                  className="w-full h-11 rounded-xl bg-panel-2 dark:bg-[#141326] border border-line dark:border-white/10 pl-9 pr-3.5 text-sm text-ink placeholder:text-muted/60 focus:border-blue-fill focus:outline-none focus:ring-1 focus:ring-blue-fill transition-all"
                 />
                 <Icon name="chat" size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
               </div>
@@ -663,7 +663,7 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
                   type="date"
                   value={when.date}
                   onChange={(e) => setWhen({ ...when, date: e.target.value })}
-                  className="w-full h-11 rounded-xl bg-[#141326] border border-white/10 pl-9 pr-3.5 text-sm text-white [color-scheme:dark] focus:border-blue focus:outline-none focus:ring-1 focus:ring-blue transition-all"
+                  className="w-full h-11 rounded-xl bg-panel-2 dark:bg-[#141326] border border-line dark:border-white/10 pl-9 pr-3.5 text-sm text-ink dark:[color-scheme:dark] focus:border-blue-fill focus:outline-none focus:ring-1 focus:ring-blue-fill transition-all"
                 />
                 <Icon name="cal" size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
               </div>
@@ -671,17 +671,17 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
           </div>
 
           {/* Additional settings */}
-          <div className="mt-4 border-t border-white/[0.06] pt-3">
+          <div className="mt-4 border-t border-line dark:border-white/[0.06] pt-3">
             <button
               type="button"
               onClick={() => setAdditionalSettingsOpen((o) => !o)}
-              className="text-xs font-medium text-muted hover:text-white flex items-center gap-1.5 transition-colors"
+              className="text-xs font-medium text-muted hover:text-ink flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               <span>Additional settings</span>
               <Icon name="chevronDown" size={14} className={clsx("transition-transform", additionalSettingsOpen && "rotate-180")} />
             </button>
             {additionalSettingsOpen && (
-              <div className="mt-3 p-3.5 rounded-xl bg-[#141326] border border-white/10 text-xs text-muted leading-relaxed animate-rise">
+              <div className="mt-3 p-3.5 rounded-xl bg-panel-2 dark:bg-[#141326] border border-line dark:border-white/10 text-xs text-muted leading-relaxed animate-rise">
                 Rehearsal feedback includes pacing alerts, filler word counts, and an audience persona score calibrated to {audience}.
               </div>
             )}
@@ -712,47 +712,47 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
       <div className="flex flex-col gap-5">
         {/* Card 1: Slide plan & suggested timing */}
         {slides.length === 0 ? (
-          <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-8 shadow-xl text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue/15 text-blue-soft mx-auto mb-3 border border-blue/25">
+          <div className="rounded-2xl bg-panel dark:bg-[#0d0c1c] border border-line dark:border-white/[0.08] p-8 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_10px_28px_-6px_rgba(15,23,42,0.08)] dark:shadow-xl text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue/10 dark:bg-blue/15 text-blue-soft mx-auto mb-3 border border-blue/25">
               <Icon name="present" size={24} />
             </div>
-            <h3 className="text-base font-semibold text-white tracking-tight mb-1.5">No slide plan yet</h3>
+            <h3 className="text-base font-semibold text-ink tracking-tight mb-1.5">No slide plan yet</h3>
             <p className="text-xs text-muted max-w-sm mx-auto leading-relaxed">
               Upload your presentation (.pptx, .pdf) or paste speaker notes on the left to see your planned slide sequence and timings.
             </p>
           </div>
         ) : (
-          <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-6 shadow-xl">
+          <div className="rounded-2xl bg-panel dark:bg-[#0d0c1c] border border-line dark:border-white/[0.08] p-6 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_10px_28px_-6px_rgba(15,23,42,0.08)] dark:shadow-xl">
             <div className="flex items-center gap-2.5 pb-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue/15 text-blue-soft">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue/10 dark:bg-blue/15 text-blue-soft">
                 <Icon name="present" size={16} />
               </div>
-              <h3 className="text-base font-semibold text-white tracking-tight">Slide plan & suggested timing</h3>
+              <h3 className="text-base font-semibold text-ink tracking-tight">Slide plan & suggested timing</h3>
             </div>
-            <p className="text-xs text-muted leading-relaxed pb-4 border-b border-white/[0.07]">
+            <p className="text-xs text-muted leading-relaxed pb-4 border-b border-line dark:border-white/[0.07]">
               Based on your slides, here&apos;s a suggested structure. You can adjust this after upload.
             </p>
 
             {/* Carousel Preview */}
-            <div className="mt-4 flex items-center justify-between gap-3 p-3 rounded-xl bg-[#141326] border border-white/10">
+            <div className="mt-4 flex items-center justify-between gap-3 p-3 rounded-xl bg-panel-2 dark:bg-[#141326] border border-line dark:border-white/10">
               <button
                 type="button"
                 onClick={() => setActiveSlideIndex((i) => Math.max(0, i - 1))}
                 disabled={activeSlideIndex === 0}
                 aria-label="Previous slide"
-                className="p-1.5 rounded-lg text-muted hover:text-white hover:bg-white/[0.07] disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+                className="p-1.5 rounded-lg text-muted hover:text-ink hover:bg-panel disabled:opacity-30 disabled:hover:bg-transparent transition-all cursor-pointer"
               >
                 <Icon name="chevronRight" size={16} className="rotate-180" />
               </button>
 
               {/* Thumbnail */}
               <div className="flex items-center gap-3 min-w-0">
-                <div className="relative w-24 h-16 shrink-0 rounded-lg bg-white overflow-hidden shadow-md flex flex-col justify-between p-1.5 border border-white/20">
+                <div className="relative w-24 h-16 shrink-0 rounded-lg bg-white overflow-hidden shadow-md flex flex-col justify-between p-1.5 border border-line">
                   <div className="text-[8px] font-bold text-gray-900 leading-tight truncate">{currentPreviewSlide?.title || "Slide"}</div>
                   <div className="h-4 w-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-sm opacity-80" />
                 </div>
                 <div className="min-w-0">
-                  <div className="text-xs font-semibold text-white truncate">
+                  <div className="text-xs font-semibold text-ink truncate">
                     Slide {activeSlideIndex + 1}: {currentPreviewSlide?.title}
                   </div>
                   <div className="text-[11px] text-muted truncate mt-0.5">{currentPreviewSlide?.point}</div>
@@ -768,7 +768,7 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
                   onClick={() => setActiveSlideIndex((i) => Math.min(slides.length - 1, i + 1))}
                   disabled={activeSlideIndex === slides.length - 1}
                   aria-label="Next slide"
-                  className="p-1.5 rounded-lg text-muted hover:text-white hover:bg-white/[0.07] disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+                  className="p-1.5 rounded-lg text-muted hover:text-ink hover:bg-panel disabled:opacity-30 disabled:hover:bg-transparent transition-all cursor-pointer"
                 >
                   <Icon name="chevronRight" size={16} />
                 </button>
@@ -776,9 +776,9 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
             </div>
 
             {/* Slides Table */}
-            <div className="mt-4 overflow-hidden rounded-xl border border-white/[0.08]">
+            <div className="mt-4 overflow-hidden rounded-xl border border-line dark:border-white/[0.08]">
               <table className="w-full text-left text-xs">
-                <thead className="bg-[#141326] text-muted border-b border-white/[0.08]">
+                <thead className="bg-panel-2 dark:bg-[#141326] text-muted border-b border-line dark:border-white/[0.08]">
                   <tr>
                     <th className="py-2.5 px-3 font-medium w-8">#</th>
                     <th className="py-2.5 px-3 font-medium">Slide title</th>
@@ -786,18 +786,18 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
                     <th className="py-2.5 px-3 font-medium text-right w-16">Time</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/[0.05] text-[#c9cad3]">
+                <tbody className="divide-y divide-line dark:divide-white/[0.05] text-ink/85">
                   {slides.map((s, idx) => (
                     <tr
                       key={idx}
                       onClick={() => setActiveSlideIndex(idx)}
                       className={clsx(
-                        "cursor-pointer hover:bg-white/[0.03] transition-colors",
-                        activeSlideIndex === idx && "bg-blue/10 text-white"
+                        "cursor-pointer hover:bg-panel-2/70 dark:hover:bg-white/[0.03] transition-colors",
+                        activeSlideIndex === idx && "bg-blue/10 text-ink font-semibold"
                       )}
                     >
                       <td className="py-2.5 px-3 num text-muted">{idx + 1}</td>
-                      <td className="py-2.5 px-3 font-medium text-white truncate max-w-[110px]">{s.title}</td>
+                      <td className="py-2.5 px-3 font-medium text-ink truncate max-w-[110px]">{s.title}</td>
                       <td className="py-2.5 px-3 text-muted truncate max-w-[140px]">{s.point || s.lines[0]}</td>
                       <td className="py-2.5 px-3 num text-right text-muted">{mmss(s.plannedSec)}</td>
                     </tr>
@@ -811,7 +811,7 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
               <button
                 type="button"
                 onClick={() => setEditingTiming((e) => !e)}
-                className="text-muted hover:text-white flex items-center gap-1.5 transition-colors"
+                className="text-muted hover:text-ink flex items-center gap-1.5 transition-colors cursor-pointer"
               >
                 <Icon name="edit" size={13} />
                 <span>Edit timing</span>
@@ -822,10 +822,10 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
             </div>
 
             {editingTiming && (
-              <div className="mt-3 p-3 rounded-xl bg-[#141326] border border-white/10 space-y-2 text-xs">
+              <div className="mt-3 p-3 rounded-xl bg-panel-2 dark:bg-[#141326] border border-line dark:border-white/10 space-y-2 text-xs">
                 {slides.map((s, idx) => (
                   <div key={idx} className="flex items-center justify-between gap-3">
-                    <span className="truncate text-white max-w-[180px]">{idx + 1}. {s.title}</span>
+                    <span className="truncate text-ink max-w-[180px]">{idx + 1}. {s.title}</span>
                     <div className="flex items-center gap-1.5">
                       <input
                         type="number"
@@ -836,7 +836,7 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
                           const sec = Math.max(10, Number(e.target.value));
                           setSlides((cur) => cur.map((item, i) => (i === idx ? { ...item, plannedSec: sec } : item)));
                         }}
-                        className="w-16 h-7 rounded bg-[#1f1e35] px-2 text-right num text-white border border-white/10"
+                        className="w-16 h-7 rounded bg-panel dark:bg-[#1f1e35] px-2 text-right num text-ink border border-line dark:border-white/10"
                       />
                       <span className="text-muted">sec</span>
                     </div>
@@ -848,48 +848,48 @@ export function PitchSetup({ initial }: { initial: SetupInitial }) {
         )}
 
         {/* Card 2: How Hakkiri will help you */}
-        <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-6 shadow-xl">
+        <div className="rounded-2xl bg-panel dark:bg-[#0d0c1c] border border-line dark:border-white/[0.08] p-6 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_10px_28px_-6px_rgba(15,23,42,0.08)] dark:shadow-xl">
           <div className="flex items-center gap-2 pb-3">
-            <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue/15 text-blue-soft">
+            <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue/10 dark:bg-blue/15 text-blue-soft">
               <Icon name="sparkle" size={15} />
             </div>
-            <h3 className="text-sm font-semibold text-white tracking-tight">How Hakkiri will help you</h3>
+            <h3 className="text-sm font-semibold text-ink tracking-tight">How Hakkiri will help you</h3>
           </div>
 
           <div className="space-y-3 mt-1">
-            <div className="flex items-start gap-2.5 text-xs text-[#c9cad3] leading-relaxed">
-              <div className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-400 mt-0.5">
+            <div className="flex items-start gap-2.5 text-xs text-muted leading-relaxed">
+              <div className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 mt-0.5">
                 <Icon name="check" size={11} strokeWidth={2.6} />
               </div>
               <div>
-                <strong className="text-white font-medium">Prepare</strong> — turn your slides into a clear, focused story.
+                <strong className="text-ink font-semibold">Prepare</strong> — turn your slides into a clear, focused story.
               </div>
             </div>
 
-            <div className="flex items-start gap-2.5 text-xs text-[#c9cad3] leading-relaxed">
-              <div className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-400 mt-0.5">
+            <div className="flex items-start gap-2.5 text-xs text-muted leading-relaxed">
+              <div className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 mt-0.5">
                 <Icon name="check" size={11} strokeWidth={2.6} />
               </div>
               <div>
-                <strong className="text-white font-medium">Practise</strong> — rehearse your delivery with real-time feedback.
+                <strong className="text-ink font-semibold">Practise</strong> — rehearse your delivery with real-time feedback.
               </div>
             </div>
 
-            <div className="flex items-start gap-2.5 text-xs text-[#c9cad3] leading-relaxed">
-              <div className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-400 mt-0.5">
+            <div className="flex items-start gap-2.5 text-xs text-muted leading-relaxed">
+              <div className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 mt-0.5">
                 <Icon name="check" size={11} strokeWidth={2.6} />
               </div>
               <div>
-                <strong className="text-white font-medium">Improve</strong> — get personalised advice on structure, clarity and pacing.
+                <strong className="text-ink font-semibold">Improve</strong> — get personalised advice on structure, clarity and pacing.
               </div>
             </div>
 
-            <div className="flex items-start gap-2.5 text-xs text-[#c9cad3] leading-relaxed">
-              <div className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-400 mt-0.5">
+            <div className="flex items-start gap-2.5 text-xs text-muted leading-relaxed">
+              <div className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 mt-0.5">
                 <Icon name="check" size={11} strokeWidth={2.6} />
               </div>
               <div>
-                <strong className="text-white font-medium">Prepare for questions</strong> — practise a realistic Q&A with your chosen audience.
+                <strong className="text-ink font-semibold">Prepare for questions</strong> — practise a realistic Q&A with your chosen audience.
               </div>
             </div>
           </div>

@@ -517,7 +517,7 @@ export default async function SettingsPage() {
                 <a
                   href="/api/feedback/survey?format=csv"
                   download="hakkiri-beta-surveys.csv"
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-panel-2 px-3 py-1.5 text-xs font-semibold text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-[#2b2d38] transition-colors"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-panel-2 border border-line-strong px-3 py-1.5 text-xs font-semibold text-ink hover:bg-panel transition-colors"
                 >
                   <Icon name="download" size={13} />
                   Download CSV
@@ -530,10 +530,10 @@ export default async function SettingsPage() {
                     <li key={s.id} className="py-3.5 space-y-2">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
-                          <span className="rounded-full bg-[#f59e0b]/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#fbbf24] border border-[#f59e0b]/40">
+                          <span className="rounded-full bg-[#f59e0b]/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-[#fbbf24] border border-[#f59e0b]/40">
                             £15 Voucher
                           </span>
-                          <span className="font-semibold text-white">{s.email}</span>
+                          <span className="font-semibold text-ink">{s.email}</span>
                         </div>
                         <span className="text-[11px] text-dim">{s.at.slice(0, 16).replace("T", " ")}</span>
                       </div>
