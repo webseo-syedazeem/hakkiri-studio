@@ -78,18 +78,58 @@ const ISE_RE = new RegExp(`(?<![\\p{L}])(?:${ISE.join("|")})(i[sz]|y[sz])(?:e|es
 // Words where the pair is not a spelling difference in every sense: left alone.
 const AMBIGUOUS = new Set(["practice", "practise", "program", "check", "tire", "story", "meter", "license", "curb", "math"]);
 
+const COMMON_TYPOS: Record<string, string> = {
+  "microsoft ofice": "Microsoft Office",
+  warehose: "warehouse",
+  warehouses: "warehouses",
+  recieved: "received",
+  recieving: "receiving",
+  recieve: "receive",
+  ofice: "office",
+  manger: "manager",
+  experiance: "experience",
+  responsable: "responsible",
+  commited: "committed",
+  seperate: "separate",
+  sucessful: "successful",
+  definately: "definitely",
+  acheive: "achieve",
+  acheived: "achieved",
+  enviroment: "environment",
+  collaberation: "collaboration",
+  maintainance: "maintenance",
+  goverment: "government",
+  publically: "publicly",
+  occurance: "occurrence",
+  curriculum: "curriculum",
+  calender: "calendar",
+  tendancy: "tendency",
+  tommorrow: "tomorrow",
+  untill: "until",
+  wich: "which",
+  grammer: "grammar",
+};
+
 /**
- * Words spelt the other region's way: US spellings in a UK CV, or UK spellings
- * in a US resume. Words the person has accepted are left alone.
+ * Words spelt the other region's way or common typos: US spellings in a UK CV,
+ * UK spellings in a US resume, or dictionary misspellings. Words the person has accepted are left alone.
  */
-export function wrongRegionSpelling(text: string, region: CvRegion, accepted: Iterable<string> = []): (Hit & { suggest: string })[] {
+export function wrongRegionSpelling(text: string, region: CvRegion, accepted: Iterable<string> = []): (Hit & { suggest: string; isTypo?: boolean })[] {
   const ok = new Set([...accepted].map((w) => w.toLowerCase()));
-  const out: (Hit & { suggest: string })[] = [];
-  const keep = (m: RegExpMatchArray, suggest: string) => {
+  const out: (Hit & { suggest: string; isTypo?: boolean })[] = [];
+  const keep = (m: RegExpMatchArray, suggest: string, isTypo = false) => {
     if (ok.has(m[0].toLowerCase())) return;
     const cased = /^\p{Lu}/u.test(m[0]) ? suggest.charAt(0).toUpperCase() + suggest.slice(1) : suggest;
-    out.push({ start: m.index!, end: m.index! + m[0].length, text: m[0], suggest: cased });
+    out.push({ start: m.index!, end: m.index! + m[0].length, text: m[0], suggest: cased, isTypo });
   };
+
+  // Check multi-word and single-word common typos first
+  for (const [typo, fix] of Object.entries(COMMON_TYPOS)) {
+    for (const m of text.matchAll(new RegExp(`(?<![\\p{L}])${typo}(?![\\p{L}])`, "giu"))) {
+      keep(m, fix, true);
+    }
+  }
+
   for (const [uk, us] of PAIRS) {
     const [wrong, right] = region === "uk" ? [us, uk] : [uk, us];
     if (AMBIGUOUS.has(wrong)) continue;
@@ -134,10 +174,19 @@ const SUPPORT_LEAD = "helped|assisted|supported|contributed to|participated in|i
 /** A bullet that says the work was shared without saying what the person's own part was. */
 export const unclearContribution = (t: string) => first(new RegExp(`^\\s*(?:i )?(${SUPPORT_LEAD})`, "i"), t, 1) ?? dutyLead(t);
 
+const BAD_DIRECTION_RE = /\b(?:increased|increasing|higher|more|boosted|grew|doubled)\s+(?:waste|costs?|churn|defects?|errors?|downtime|complaints?|attrition|overspend|losses)\b|\b(?:reduced|reducing|lower|less|cutting|cut|halved|dropped)\s+(?:revenue|retention|accuracy|profit|profits|sales|conversion|uptime|satisfaction)\b/i;
+
+/** Bad outcome direction: increasing waste/cost or reducing revenue/accuracy. */
+export function badOutcomeDirection(t: string): Hit | null {
+  const m = t.match(BAD_DIRECTION_RE);
+  if (!m || m.index === undefined) return null;
+  return { start: m.index, end: m.index + m[0].length, text: m[0] };
+}
+
 const DELIVERED = words("built, created, wrote, designed, launched, delivered, published, produced, developed, introduced, implemented, set up, established, founded, won, secured, completed, achieved, opened, shipped, released, installed, drafted, compiled, catalogued, cataloged, digitised, digitized, translated, organised, organized, hosted, presented, trained, taught, recruited, hired, negotiated, sold, raised, saved, cut, reduced, increased, improved, grew, doubled, halved, resolved, fixed, migrated, automated, mapped, audited, restored, repaired");
 const OUTCOME = "resulting in|which (?:led|meant|cut|saved|reduced|increased|improved|helped|allowed|stopped|gave)|so that|leading to|led to|that (?:cut|saved|reduced|increased|improved|stopped|allowed)|now used|still in use|used (?:by|at|in|every)|adopted by|rolled out|on time|under budget|ahead of schedule|without (?:a|any) |first time|from \\S+ to \\S+";
 /** A concrete outcome or a thing that was made: a figure, a result, or a deliverable. */
-export const hasOutcome = (t: string) => figures(t).length > 0 || new RegExp(`(?<![\\p{L}])(?:${DELIVERED})(?![\\p{L}])`, "iu").test(t) || new RegExp(`(?<![\\p{L}])(?:${OUTCOME})`, "iu").test(t);
+export const hasOutcome = (t: string) => !badOutcomeDirection(t) && (figures(t).length > 0 || new RegExp(`(?<![\\p{L}])(?:${DELIVERED})(?![\\p{L}])`, "iu").test(t) || new RegExp(`(?<![\\p{L}])(?:${OUTCOME})`, "iu").test(t));
 
 const BOUNDED = "each (?:day|week|month|year|term|shift|morning)|every (?:day|week|month|year|term|shift|morning|\\p{L}+)|daily|weekly|monthly|quarterly|annual(?:ly)?|all (?:the |of the |our |new )?\\p{L}+|whole (?:team|site|company|school|department)|company-wide|site-wide|nationwide|national|regional|across (?:the |all |every )?\\p{L}+|team of|a team|both|dozens|hundreds|thousands|full[- ]time|part[- ]time|per (?:day|week|month|year|shift)|single-handed";
 /** How big the work was: a number, or a description with clear edges ("every new starter", "across the Leeds site"). */
@@ -160,6 +209,26 @@ export function bigClaim(t: string): Hit | null {
 const CONTEXT = "by (?:\\p{L}+ing)|through|using|with (?:a|the|an) |after|over (?:\\d|a |the |two|three|four|five|six)|in (?:\\d|a |the |two|three|four|five|six|under)|within|from \\S+ to \\S+|against|compared (?:with|to)|measured|according to|as (?:shown|reported|measured)|out of|among|judged by|voted by";
 /** Something that backs a big claim up: how it was done, over what time, against what. */
 export const hasContext = (t: string) => new RegExp(`(?<![\\p{L}])(?:${CONTEXT})`, "iu").test(t);
+
+/** Doubled words like "the the", "in in", "to to". */
+export function doubledWords(t: string): Hit | null {
+  const m = t.match(/\b([a-z]{2,})\s+\1\b/i);
+  if (!m || m.index === undefined) return null;
+  return { start: m.index, end: m.index + m[0].length, text: m[0] };
+}
+
+/** Bullet length over about 200 characters. */
+export function longBullet(t: string): Hit | null {
+  const trimmed = t.trim();
+  if (trimmed.length <= 200) return null;
+  return { start: 0, end: trimmed.length, text: trimmed.slice(0, 40) + "…" };
+}
+
+/** Opening word of a bullet. */
+export function openingWord(t: string): string {
+  const m = t.trim().match(/^([a-z]+)/i);
+  return m ? m[1].toLowerCase() : "";
+}
 
 /* ---------------------------------------------------------------- structure */
 

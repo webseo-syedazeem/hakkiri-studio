@@ -585,4 +585,62 @@ describe("a CV with almost nothing in it", () => {
     const s = run(sixtyWords(), { files: {} });
     expect(s.pending).toBeCloseTo(6 / 6, 1);
   });
+
+  describe("CV-2: score padding prevention and honest verdicts", () => {
+    it("flags 'warehose', 'recieved', and 'Microsoft Ofice' as spelling findings", () => {
+      const cv = strongCv([
+        "Managed inventory in the warehose with 99% accuracy across 3 sites.",
+        "Promptly recieved incoming stock and handled £50k worth of shipments weekly.",
+        "Proficient in Microsoft Ofice, producing 12 executive reports monthly.",
+      ]);
+      const s = run(cv);
+      const spellCheck = check(s, "spelling");
+      expect(spellCheck.findings.some((f) => f.excerpt.toLowerCase() === "warehose")).toBe(true);
+      expect(spellCheck.findings.some((f) => f.excerpt.toLowerCase() === "recieved")).toBe(true);
+      expect(spellCheck.findings.some((f) => f.excerpt.toLowerCase() === "microsoft ofice")).toBe(true);
+    });
+
+    it("flags bad outcome direction (increased waste, reduced revenue) and earns nothing for outcome", () => {
+      const cv = strongCv([
+        "Increased waste by 25% across 4 production lines.",
+        "Reduced revenue by £100k over 6 months.",
+      ]);
+      const s = run(cv);
+      const outcomeCheck = check(s, "outcome");
+      expect(outcomeCheck.findings.some((f) => f.reason.includes("check this says what you meant"))).toBe(true);
+    });
+
+    it("a tailored CV with job fit 17 never shows 'Ready for this job'", () => {
+      const cv = strongCv(STRONG_LINES, (c) => {
+        c.target = {
+          title: "Paid Media Manager",
+          employer: "Acme",
+          advert: "Must have 5+ years paid search and French fluency.",
+        };
+        c.requirements = [
+          { id: "r1", quote: "French fluency", text: "French fluency", priority: "required", evidence: [], uncovered: "French fluency", gap: false },
+          { id: "r2", quote: "5+ years paid search", text: "5+ years paid search", priority: "required", evidence: [], uncovered: "paid search", gap: false },
+        ];
+      });
+      const s = run(cv);
+      expect(s.readyForJob).toBe(false);
+      expect(s.verdict).not.toBe("ready-for-job");
+    });
+
+    it("nonsense CV with templated near-duplicates and contradictory outcomes scores under 70 and shows no verdict", () => {
+      const cv = strongCv([
+        "Increased waste by 40% across 5 manufacturing plants.",
+        "Increased waste by 50% across 6 manufacturing plants.",
+        "Increased waste by 60% across 7 manufacturing plants.",
+        "Managed the team in warehose without supervision.",
+        "Managed the team in warehose without supervision.",
+        "Managed the team in warehose without supervision.",
+      ]);
+      const s = run(cv);
+      expect(s.shown).toBeLessThan(70);
+      expect(s.verdict).toBe("not-ready");
+      expect(s.readyForJob).toBe(false);
+      expect(s.wellWritten).toBe(false);
+    });
+  });
 });
