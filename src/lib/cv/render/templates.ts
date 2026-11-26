@@ -213,28 +213,93 @@ export function kindOrder(template: TemplateDef): SectionKind[] {
   return [...lead, ...template.order, ...REST.filter((k) => !template.order.includes(k))];
 }
 
+/** WCAG 2.1 relative luminance for contrast verification on white paper. */
+export function relativeLuminance(hex: string): number {
+  const clean = hex.replace("#", "").trim();
+  if (clean.length !== 6) return 0.5;
+  const r = parseInt(clean.substring(0, 2), 16) / 255;
+  const g = parseInt(clean.substring(2, 4), 16) / 255;
+  const b = parseInt(clean.substring(4, 6), 16) / 255;
+  const a = [r, g, b].map((v) => (v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)));
+  return 0.2126 * a[0] + 0.7152 * a[1] + 0.0722 * a[2];
+}
+
+/** Contrast ratio of a hex colour against pure white (#ffffff) paper. */
+export function contrastRatioOnWhite(hex: string): number {
+  const l1 = 1.0; // White luminance
+  const l2 = relativeLuminance(hex);
+  return Number(((l1 + 0.05) / (l2 + 0.05)).toFixed(2));
+}
+
 /** What is drawn: the template with the person's own font pairing, accent and density applied. */
 export interface PaperStyle {
   template: TemplateDef;
   fonts: { heading: FamilyId; body: FamilyId };
   accent: string;
-  /** The multiplier on the template's spacing: 0.85, 1 or 1.15. */
+  /** The multiplier on the template's spacing: 0.85, 1 or 1.15, or fine-grained. */
   density: number;
   page: { width: number; height: number; marginX: number; marginY: number };
+  /** Body font size in pt (default 10.5, allows 6-16 pt). */
+  fontSize: number;
+  /** Fine line spacing multiplier (default 1.0). */
+  lineSpacing: number;
+  /** Section divider line style. */
+  dividerStyle: "solid" | "dashed" | "dots" | "none" | "accent-bar";
+  /** Whether to render section icons on headings. */
+  sectionIcons: boolean;
+  /** Bullet indentation in pt (default 13). */
+  indentation: number;
 }
 
 const PAGES = { a4: { width: 595.28, height: 841.89 }, letter: { width: 612, height: 792 } };
 
-export function paperStyle(design: { template: TemplateId; pageSize: "a4" | "letter"; density: Density; fonts?: TemplateId; accent?: AccentId; customAccent?: string }): PaperStyle {
+export function paperStyle(design: {
+  template: TemplateId;
+  pageSize: "a4" | "letter";
+  density: Density;
+  fonts?: TemplateId;
+  accent?: AccentId;
+  customAccent?: string;
+  fontSize?: number;
+  lineSpacing?: number;
+  margin?: "compact" | "normal" | "relaxed" | number;
+  dividerStyle?: "solid" | "dashed" | "dots" | "none" | "accent-bar";
+  sectionIcons?: boolean;
+  indentation?: number;
+}): PaperStyle {
   const template = TEMPLATES[design.template] ?? TEMPLATES.standard;
   const customHex = design.customAccent && /^#[0-9A-Fa-f]{6}$/.test(design.customAccent) ? design.customAccent : undefined;
+
+  // Custom margin calculations (in pt)
+  let marginX = 50;
+  let marginY = 46;
+  if (typeof design.margin === "number") {
+    marginX = Math.max(15, Math.min(72, design.margin));
+    marginY = Math.round(marginX * 0.92);
+  } else if (design.margin === "compact") {
+    marginX = 36;
+    marginY = 34;
+  } else if (design.margin === "relaxed") {
+    marginX = 64;
+    marginY = 58;
+  }
+
+  // Spacing density multiplier
+  const densityMultiplier = design.lineSpacing
+    ? design.lineSpacing
+    : DENSITY_FACTOR[design.density] ?? 1;
+
   return {
     template,
     fonts: TEMPLATES[design.fonts ?? template.id]?.fonts ?? template.fonts,
     accent: customHex ?? ACCENTS[design.accent ?? template.accent].hex,
-    density: DENSITY_FACTOR[design.density] ?? 1,
-    // The same safe margins on every template: wide enough for any printer, and never changed by fitting.
-    page: { ...PAGES[design.pageSize], marginX: 50, marginY: 46 },
+    density: densityMultiplier,
+    fontSize: design.fontSize ? Math.max(6, Math.min(16, design.fontSize)) : BODY_SIZE,
+    lineSpacing: design.lineSpacing ? Math.max(0.7, Math.min(1.8, design.lineSpacing)) : 1.0,
+    page: { ...PAGES[design.pageSize], marginX, marginY },
+    dividerStyle: design.dividerStyle ?? "solid",
+    sectionIcons: Boolean(design.sectionIcons),
+    indentation: typeof design.indentation === "number" ? design.indentation : 13,
   };
 }
 

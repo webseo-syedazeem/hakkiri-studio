@@ -289,6 +289,18 @@ export const DesignSchema = z.object({
   order: z.array(z.string().max(40)).max(24).optional(),
   /** The person's own file name for downloads, without the extension. Empty uses "[Name] - [Role] - CV". */
   fileName: line(120).optional(),
+  /** Fine-grained font size for body text in points (range 6 to 16, default 10.5). */
+  fontSize: z.number().min(6).max(16).default(10.5).optional(),
+  /** Fine-grained line spacing multiplier (range 0.7 to 1.8, default 1.0). */
+  lineSpacing: z.number().min(0.7).max(1.8).default(1.0).optional(),
+  /** Margin width preset or points ("compact", "normal", "relaxed", or 20-72pt). */
+  margin: z.union([z.enum(["compact", "normal", "relaxed"]), z.number().min(15).max(72)]).default("normal").optional(),
+  /** Section divider line style ("solid", "dashed", "dots", "none", "accent-bar"). */
+  dividerStyle: z.enum(["solid", "dashed", "dots", "none", "accent-bar"]).default("solid").optional(),
+  /** Whether to show modern section divider icons on headings. */
+  sectionIcons: z.boolean().default(false).optional(),
+  /** Bullet indentation in points (range 0 to 24, default 13). */
+  indentation: z.number().min(0).max(24).default(13).optional(),
 });
 export type Design = z.infer<typeof DesignSchema>;
 

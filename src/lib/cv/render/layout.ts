@@ -244,6 +244,9 @@ export interface ParaSpec {
 /** Describes each paragraph of a flow in a style. Needs no fonts: nothing is measured yet. */
 export function describeFlow(flow: Flow, style: PaperStyle): ParaSpec[] {
   const { template: t, density: d, accent } = style;
+  const bodySize = style.fontSize ?? BODY_SIZE;
+  const lineSpacingFactor = style.lineSpacing ?? 1.0;
+  const bulletIndent = style.indentation ?? 13;
   const body = fontKey(style.fonts.body, 400);
   const bold = fontKey(style.fonts.body, 600);
   const titleFont = fontKey(style.fonts.heading, t.title.weight);
@@ -316,16 +319,16 @@ export function describeFlow(flow: Flow, style: PaperStyle): ParaSpec[] {
         tag: "H3",
         sectionId: n.sectionId,
         entryId: n.entryId,
-        pieces: n.runs.map((r) => ({ text: r.text, font: bold, size: BODY_SIZE, color: INK, link: r.link })),
-        lineHeight: BODY_SIZE * 1.38,
-        size: BODY_SIZE,
+        pieces: n.runs.map((r) => ({ text: r.text, font: bold, size: bodySize, color: INK, link: r.link })),
+        lineHeight: bodySize * 1.38 * lineSpacingFactor,
+        size: bodySize,
         font: bold,
         before: prev?.kind === "heading" ? 0 : t.space.entry * d,
         keepWithNext: !!next && "entryId" in next && next.entryId === n.entryId,
       });
     } else if (n.kind === "para") {
       const meta = n.role === "meta";
-      const size = meta ? 9.5 : BODY_SIZE;
+      const size = meta ? Math.max(7, bodySize - 1) : bodySize;
       const sameEntryBefore = !!prev && "entryId" in prev && !!n.entryId && prev.entryId === n.entryId;
       const before = n.space !== undefined ? n.space * d : prev?.kind === "heading" ? 0 : sameEntryBefore ? (meta ? 1 : 2.5 * d) : prev?.kind === "para" && prev.role === "body" ? 3.5 * d : t.space.entry * d;
       specs.push({
@@ -334,7 +337,7 @@ export function describeFlow(flow: Flow, style: PaperStyle): ParaSpec[] {
         sectionId: n.sectionId,
         entryId: n.entryId,
         pieces: n.runs.map((r) => ({ text: r.text, font: r.bold ? bold : body, size, color: meta ? MUTED : INK, link: r.link })),
-        lineHeight: size * 1.38,
+        lineHeight: size * 1.38 * lineSpacingFactor,
         size,
         font: body,
         before,
@@ -348,14 +351,14 @@ export function describeFlow(flow: Flow, style: PaperStyle): ParaSpec[] {
         tag: "LI",
         sectionId: n.sectionId,
         entryId: n.entryId,
-        pieces: [{ text: n.text, font: body, size: BODY_SIZE, color: INK }],
-        lineHeight: BODY_SIZE * 1.38,
-        size: BODY_SIZE,
+        pieces: [{ text: n.text, font: body, size: bodySize, color: INK }],
+        lineHeight: bodySize * 1.38 * lineSpacingFactor,
+        size: bodySize,
         font: body,
-        indent: 13,
+        indent: bulletIndent,
         before: prev?.kind === "heading" ? 0 : !sameEntryBefore ? t.space.entry * d : firstOfEntry ? 3.5 * d : 2.2 * d,
         keepWithNext: false,
-        mark: { text: "•", font: body, size: BODY_SIZE, color: INK },
+        mark: { text: "•", font: body, size: bodySize, color: INK },
       });
     }
   });

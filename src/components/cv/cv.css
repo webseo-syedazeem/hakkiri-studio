@@ -1300,6 +1300,44 @@ select.cv-mini option,
   accent-color: var(--color-blue-fill);
 }
 
+/* Custom range sliders in Finish tab */
+.cv-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  background: var(--surface-hover, #292b37);
+  border-radius: 9999px;
+  outline: none;
+  cursor: pointer;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+}
+.cv-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent, #7b88ff);
+  cursor: pointer;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+.cv-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+  background: #5a69ff;
+}
+.cv-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent, #7b88ff);
+  cursor: pointer;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+
 /* Template selection cards in Setup */
 .cv-tpl-card {
   padding: 13px 15px;

@@ -6,7 +6,7 @@ import { cannotDrawAdvice } from "@/lib/cv/render/fonts";
 import { paperOrder } from "@/lib/cv/render/flow";
 import { FAMILIES } from "@/lib/cv/render/fonts";
 import { fitToPages } from "@/lib/cv/render/layout";
-import { ACCENTS, PAIRINGS, TEMPLATES, type TemplateDef } from "@/lib/cv/render/templates";
+import { ACCENTS, PAIRINGS, TEMPLATES, type TemplateDef, contrastRatioOnWhite } from "@/lib/cv/render/templates";
 import { type AccentId, CV_ACCENTS, CV_DENSITIES, CV_TEMPLATES, type Design, type TemplateId, cvIsEmpty, sectionIsEmpty } from "@/lib/cv/schema";
 import { docWord, sectionHeading } from "@/lib/cv/sections";
 import { Grip, ItemControls, useDragOrder } from "./Arrange";
@@ -104,6 +104,15 @@ function hsvToHex(h: number, s: number, v: number): string {
   else { r = c; g = 0; b = x; }
   const toHex = (val: number) => Math.round((val + m) * 255).toString(16).padStart(2, "0").toUpperCase();
   return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+
+function darkenHexToPass(hex: string): string {
+  const { h, s, v } = hexToHsv(hex);
+  for (let newV = Math.min(v, 65); newV >= 15; newV -= 5) {
+    const candidate = hsvToHex(h, Math.max(s, 65), newV);
+    if (contrastRatioOnWhite(candidate) >= 4.5) return candidate;
+  }
+  return "#1F2937";
 }
 
 function CustomColorPicker({ value, onChange }: { value: string; onChange: (hex: string) => void }) {
@@ -384,6 +393,35 @@ export function Finish({ onOverflow, say }: { onOverflow: () => void; say: (text
               }))}
             />
           </div>
+
+          {/* Fine-grained Font Size Slider (Rezi audit: 6-16 pt) */}
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+              <label className="cv-label" htmlFor="cv-font-size" style={{ margin: 0 }}>
+                Body font size
+              </label>
+              <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--accent, #7b88ff)" }}>
+                {design.fontSize ?? 10.5} pt
+              </span>
+            </div>
+            <input
+              id="cv-font-size"
+              type="range"
+              min="6"
+              max="16"
+              step="0.5"
+              value={design.fontSize ?? 10.5}
+              onChange={(e) => set({ fontSize: Number(e.target.value) })}
+              className="cv-slider"
+              style={{ width: "100%" }}
+            />
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4, fontSize: "11px", color: "var(--text-muted, #9a9ba7)" }}>
+              <button type="button" onClick={() => set({ fontSize: 9 })} className="cv-link" style={{ fontSize: "11px" }}>9 pt (Compact)</button>
+              <button type="button" onClick={() => set({ fontSize: 10.5 })} className="cv-link" style={{ fontSize: "11px" }}>10.5 pt (Standard)</button>
+              <button type="button" onClick={() => set({ fontSize: 12 })} className="cv-link" style={{ fontSize: "11px" }}>12 pt (Large)</button>
+            </div>
+          </div>
+
           <fieldset>
             <legend className="cv-label">Colour</legend>
             <div className="cv-row" style={{ gap: 8, marginTop: 8 }}>
@@ -436,6 +474,48 @@ export function Finish({ onOverflow, say }: { onOverflow: () => void; say: (text
                 onChange={(hex) => set({ customAccent: hex })}
               />
             )}
+
+            {/* Live Contrast Verification Check (Audit: contrast check for yellow/light accents on white) */}
+            {(() => {
+              const ratio = contrastRatioOnWhite(activeHex);
+              const isPass = ratio >= 4.5;
+              const isHeadingPass = ratio >= 3.0;
+              return (
+                <div
+                  style={{
+                    marginTop: 10,
+                    padding: "8px 12px",
+                    borderRadius: 8,
+                    background: isPass ? "rgba(131, 213, 180, 0.1)" : isHeadingPass ? "rgba(123, 136, 255, 0.1)" : "rgba(255, 92, 97, 0.12)",
+                    border: `1px solid ${isPass ? "rgba(131, 213, 180, 0.3)" : isHeadingPass ? "rgba(123, 136, 255, 0.3)" : "rgba(255, 92, 97, 0.35)"}`,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 8,
+                    fontSize: 11.5,
+                  }}
+                >
+                  <span style={{ color: isPass ? "#83d5b4" : isHeadingPass ? "#93c5fd" : "#ff8588", fontWeight: 500 }}>
+                    {isPass
+                      ? `✓ Contrast ${ratio}:1 on white paper (WCAG AA Compliant)`
+                      : isHeadingPass
+                      ? `ℹ️ Contrast ${ratio}:1 on white paper (Acceptable for headings)`
+                      : `⚠️ Low contrast warning: ${ratio}:1 on white paper (headings may be hard to read)`}
+                  </span>
+                  {!isHeadingPass && (
+                    <button
+                      type="button"
+                      onClick={() => set({ customAccent: darkenHexToPass(activeHex) })}
+                      className="cv-btn cv-btn-subtle"
+                      style={{ padding: "3px 8px", fontSize: 11, whiteSpace: "nowrap" }}
+                    >
+                      Auto-Darken
+                    </button>
+                  )}
+                </div>
+              );
+            })()}
+
             <small style={{ display: "block", marginTop: 8 }}>
               {design.customAccent ? `Custom (${design.customAccent.toUpperCase()})` : ACCENTS[accent].name}. Used for headings and rules only; body text stays black.
             </small>
@@ -443,7 +523,7 @@ export function Finish({ onOverflow, say }: { onOverflow: () => void; say: (text
         </div>
       </Panel>
 
-      <Panel title="Pages and spacing">
+      <Panel title="Pages, spacing and margins">
         <div className="cv-pad cv-stack">
           <fieldset>
             <legend className="cv-label">Paper</legend>
@@ -456,6 +536,7 @@ export function Finish({ onOverflow, say }: { onOverflow: () => void; say: (text
               ))}
             </div>
           </fieldset>
+
           <fieldset>
             <legend className="cv-label">Page target</legend>
             <div className="cv-seg" style={{ marginTop: 6 }}>
@@ -467,18 +548,82 @@ export function Finish({ onOverflow, say }: { onOverflow: () => void; say: (text
               ))}
             </div>
           </fieldset>
+
+          {/* Fine-grained Line Spacing Slider (Audit: range instead of 3 discrete steps) */}
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+              <label className="cv-label" htmlFor="cv-line-spacing" style={{ margin: 0 }}>
+                Line spacing range
+              </label>
+              <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--accent, #7b88ff)" }}>
+                {(design.lineSpacing ?? (design.density === "tighter" ? 0.85 : design.density === "looser" ? 1.15 : 1.0)).toFixed(2)}×
+              </span>
+            </div>
+            <input
+              id="cv-line-spacing"
+              type="range"
+              min="0.75"
+              max="1.50"
+              step="0.05"
+              value={design.lineSpacing ?? (design.density === "tighter" ? 0.85 : design.density === "looser" ? 1.15 : 1.0)}
+              onChange={(e) => {
+                const val = Number(e.target.value);
+                set({
+                  lineSpacing: val,
+                  density: val < 0.95 ? "tighter" : val > 1.05 ? "looser" : "default",
+                });
+              }}
+              className="cv-slider"
+              style={{ width: "100%" }}
+            />
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4, fontSize: "11px", color: "var(--text-muted, #9a9ba7)" }}>
+              <button type="button" onClick={() => set({ lineSpacing: 0.85, density: "tighter" })} className="cv-link" style={{ fontSize: "11px" }}>0.85× (Tight)</button>
+              <button type="button" onClick={() => set({ lineSpacing: 1.0, density: "default" })} className="cv-link" style={{ fontSize: "11px" }}>1.00× (Default)</button>
+              <button type="button" onClick={() => set({ lineSpacing: 1.15, density: "looser" })} className="cv-link" style={{ fontSize: "11px" }}>1.15× (Relaxed)</button>
+            </div>
+          </div>
+
+          {/* Margins Control (Audit: Fixed. No control) */}
           <fieldset>
-            <legend className="cv-label">Spacing</legend>
-            <span className="cv-rule">Changes the space between lines and sections. The type stays the same size.</span>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+              <legend className="cv-label" style={{ margin: 0 }}>Margins</legend>
+              <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--accent, #7b88ff)" }}>
+                {typeof design.margin === "number" ? `${design.margin} pt` : design.margin === "compact" ? "Compact (12mm)" : design.margin === "relaxed" ? "Relaxed (24mm)" : "Standard (18mm)"}
+              </span>
+            </div>
             <div className="cv-seg" style={{ marginTop: 6 }}>
-              {CV_DENSITIES.map((d) => (
-                <label key={d}>
-                  <input type="radio" name="density" className="sr-only" checked={design.density === d} onChange={() => set({ density: d })} />
-                  <span>{d.charAt(0).toUpperCase() + d.slice(1)}</span>
+              {(["compact", "normal", "relaxed"] as const).map((m) => (
+                <label key={m}>
+                  <input
+                    type="radio"
+                    name="margin"
+                    className="sr-only"
+                    checked={(design.margin ?? "normal") === m}
+                    onChange={() => set({ margin: m })}
+                  />
+                  <span>{m === "compact" ? "Compact (12mm)" : m === "relaxed" ? "Relaxed (24mm)" : "Standard (18mm)"}</span>
                 </label>
               ))}
             </div>
+            <div style={{ marginTop: 10 }}>
+              <input
+                id="cv-margin-slider"
+                type="range"
+                min="24"
+                max="68"
+                step="2"
+                aria-label="Fine margin slider"
+                value={typeof design.margin === "number" ? design.margin : design.margin === "compact" ? 36 : design.margin === "relaxed" ? 64 : 50}
+                onChange={(e) => set({ margin: Number(e.target.value) })}
+                className="cv-slider"
+                style={{ width: "100%" }}
+              />
+              <small style={{ display: "block", marginTop: 4, color: "var(--text-muted, #9a9ba7)" }}>
+                Adjusts edge spacing across all pages for ATS scanners and standard printers.
+              </small>
+            </div>
           </fieldset>
+
           {!empty && paper && (
             <div className={over ? "cv-note cv-row" : "cv-row"} data-testid="page-status">
               <span className={over ? undefined : "cv-small"}>
@@ -489,6 +634,73 @@ export function Finish({ onOverflow, say }: { onOverflow: () => void; say: (text
               </Btn>
             </div>
           )}
+        </div>
+      </Panel>
+
+      {/* Dividers, Icons and Indentation (Audit: Icons, indentation and section dividers missing on Finish tab) */}
+      <Panel title="Dividers, icons and indentation">
+        <div className="cv-pad cv-stack">
+          {/* Section divider style */}
+          <fieldset>
+            <legend className="cv-label">Section divider style</legend>
+            <div className="cv-seg" style={{ marginTop: 6, display: "grid", gridTemplateColumns: "repeat(5, 1fr)" }}>
+              {(["solid", "dashed", "dots", "accent-bar", "none"] as const).map((d) => (
+                <label key={d}>
+                  <input
+                    type="radio"
+                    name="dividerStyle"
+                    className="sr-only"
+                    checked={(design.dividerStyle ?? "solid") === d}
+                    onChange={() => set({ dividerStyle: d })}
+                  />
+                  <span>{d === "accent-bar" ? "Accent Bar" : d.charAt(0).toUpperCase() + d.slice(1)}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+
+          {/* Section heading icons */}
+          <div>
+            <label className="cv-choice" style={{ padding: "10px 14px" }}>
+              <input
+                type="checkbox"
+                checked={Boolean(design.sectionIcons)}
+                onChange={(e) => set({ sectionIcons: e.target.checked })}
+              />
+              <span>
+                <b style={{ display: "block", fontSize: 13, fontWeight: 600 }}>Show section icons on headings</b>
+                <small>Adds clean visual icons (e.g. briefcase, graduation cap, star) alongside major section headings.</small>
+              </span>
+            </label>
+          </div>
+
+          {/* Bullet indentation */}
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+              <label className="cv-label" htmlFor="cv-indent" style={{ margin: 0 }}>
+                Bullet indentation
+              </label>
+              <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--accent, #7b88ff)" }}>
+                {design.indentation ?? 13} pt
+              </span>
+            </div>
+            <input
+              id="cv-indent"
+              type="range"
+              min="0"
+              max="24"
+              step="1"
+              value={design.indentation ?? 13}
+              onChange={(e) => set({ indentation: Number(e.target.value) })}
+              className="cv-slider"
+              style={{ width: "100%" }}
+            />
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4, fontSize: "11px", color: "var(--text-muted, #9a9ba7)" }}>
+              <button type="button" onClick={() => set({ indentation: 0 })} className="cv-link" style={{ fontSize: "11px" }}>0 pt (Flush)</button>
+              <button type="button" onClick={() => set({ indentation: 13 })} className="cv-link" style={{ fontSize: "11px" }}>13 pt (Standard)</button>
+              <button type="button" onClick={() => set({ indentation: 20 })} className="cv-link" style={{ fontSize: "11px" }}>20 pt (Deep)</button>
+            </div>
+          </div>
         </div>
       </Panel>
 

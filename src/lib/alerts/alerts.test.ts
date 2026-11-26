@@ -16,7 +16,7 @@ describe("problems and alerts", () => {
     vi.stubEnv("ALERT_WEBHOOK_URL", "https://hooks.example.com/x");
     const fetchMock = vi.fn(async () => ok());
     vi.stubGlobal("fetch", fetchMock);
-    const t0 = new Date("2026-10-26T10:00:00Z");
+    const t0 = new Date(Date.now() - 3600_000);
     await reportProblem({ source: "service", where: "Claude: score-answer", message: "claude returned 529: overloaded (request 123)" }, t0);
     await reportProblem({ source: "service", where: "Claude: score-answer", message: "claude returned 529: overloaded (request 456)" }, new Date(t0.getTime() + 60_000));
     expect(recentProblems()).toHaveLength(1);
