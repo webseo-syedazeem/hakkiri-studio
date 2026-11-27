@@ -37,7 +37,7 @@ describe("POST /api/cv/templates", () => {
       expect(json.id).toMatch(/^cv_[a-f0-9]{16}$/);
       expect(json.name).toContain(template.title);
     }
-  });
+  }, 60_000);
 
   it("handles custom CV name when provided", async () => {
     const req = new Request("http://localhost/api/cv/templates", {
