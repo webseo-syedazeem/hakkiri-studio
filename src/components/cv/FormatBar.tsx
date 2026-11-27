@@ -29,7 +29,11 @@ export function linesOver(paper: Paper | null, target: number): number {
  * one page". Every one acts on the real page, drawn by the same renderer as
  * the PDF; the rest of the design options are one click away.
  */
-export function FormatBar({ cv, paper, update, base, say }: { cv: CvDoc; paper: Paper | null; update: (patch: Partial<CvDoc>) => void; base: string; say: (s: string) => void }) {
+/**
+ * With `slim`, the one row above the page (template, font, size, colour, then More design options).
+ * Without it, every design control, in the Design dialog.
+ */
+export function FormatBar({ cv, paper, update, base, say, slim, onMore }: { cv: CvDoc; paper: Paper | null; update: (patch: Partial<CvDoc>) => void; base: string; say: (s: string) => void; slim?: boolean; onMore?: () => void }) {
   const design = cv.design;
   const template = TEMPLATES[design.template];
   const set = (changes: Partial<Design>) => update({ design: { ...design, ...changes } });
@@ -38,26 +42,8 @@ export function FormatBar({ cv, paper, update, base, say }: { cv: CvDoc; paper: 
   const size = design.fontSize ?? 10.5;
   const line = design.lineSpacing ?? 1;
   const accent: AccentId = design.accent ?? template.accent;
-  const target = design.pageTarget;
-  const over = linesOver(paper, target);
-  const [stillOver, setStillOver] = useState<number | null>(null);
-  const pagesWord = target === 1 ? "1 page" : `${target} pages`;
-
-  function fit() {
-    if (!paper) return;
-    const f = fitToPages(cv, paper.fonts, target);
-    if (!f.fits) {
-      setStillOver(over);
-      say(`Still ${over} ${over === 1 ? "line" : "lines"} over. Shorten your content or use ${target === 1 ? "two pages" : "more space"}.`);
-      return;
-    }
-    setStillOver(null);
-    if (f.density !== design.density) set({ density: f.density });
-    say(`Fits on ${f.pages === 1 ? "1 page" : `${f.pages} pages`} with ${SPACING[f.density].toLowerCase()} spacing.`);
-  }
-
   return (
-    <div className="cv-formatbar" role="group" aria-label="Design" data-testid="format-bar">
+    <div className={slim ? "cv-formatbar cv-formatbar-slim" : "cv-formatbar"} role="group" aria-label="Design" data-testid="format-bar">
       <div className="cv-fb-item cv-fb-wide">
         <span className="cv-fb-label">Template</span>
         <Link className="cv-btn cv-fb-control" href={`/cv/templates/${templateSlug(template)}?cv=${cv.id}`}>
@@ -75,6 +61,18 @@ export function FormatBar({ cv, paper, update, base, say }: { cv: CvDoc; paper: 
           ))}
         </select>
       </label>
+      {slim ? (
+        <label className="cv-fb-item">
+          <span className="cv-fb-label">Text size</span>
+          <select className="cv-input cv-fb-control" value={String(size)} onChange={(e) => set({ fontSize: Number(e.target.value) })}>
+            {sizeSteps(size).map((v) => (
+              <option key={v} value={String(v)}>
+                {v} pt
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : (
       <div className="cv-fb-item">
         <span className="cv-fb-label" id="fb-size">
           Text size
@@ -89,6 +87,9 @@ export function FormatBar({ cv, paper, update, base, say }: { cv: CvDoc; paper: 
           </Btn>
         </span>
       </div>
+      )}
+      {!slim && (
+      <>
       <label className="cv-fb-item">
         <span className="cv-fb-label">Line spacing</span>
         <select className="cv-input cv-fb-control" value={String(line)} onChange={(e) => set({ lineSpacing: Number(e.target.value) })}>
@@ -129,6 +130,8 @@ export function FormatBar({ cv, paper, update, base, say }: { cv: CvDoc; paper: 
           <option value="letter">US Letter</option>
         </select>
       </label>
+      </>
+      )}
       <label className="cv-fb-item">
         <span className="cv-fb-label">{cv.region === "us" ? "Color" : "Colour"}</span>
         <select className="cv-input cv-fb-control" value={design.customAccent ? "own" : accent} onChange={(e) => e.target.value !== "own" && set({ accent: e.target.value as AccentId, customAccent: undefined })}>
@@ -140,17 +143,55 @@ export function FormatBar({ cv, paper, update, base, say }: { cv: CvDoc; paper: 
           ))}
         </select>
       </label>
-      <div className="cv-fb-fit">
-        <Btn onClick={fit} disabled={!paper}>
-          Fit to {target === 1 ? "one page" : "two pages"}
-        </Btn>
-        <span className="cv-small" role="status" data-testid="fit-status">
-          {!paper ? "" : stillOver !== null && over > 0 ? `Still ${over} ${over === 1 ? "line" : "lines"} over. Shorten your content or use two pages.` : over > 0 ? `${over} ${over === 1 ? "line" : "lines"} over` : `Fits on ${pagesWord}`}
-        </span>
-        <Link className="cv-link cv-push" href={`${base}/finish`}>
+      {slim ? (
+        <Btn className="cv-fb-more" onClick={onMore}>
           More design options
-        </Link>
-      </div>
+        </Btn>
+      ) : (
+        <div className="cv-fb-fit">
+          <Link className="cv-link cv-push" href={`${base}/finish`}>
+            All design and file options
+          </Link>
+        </div>
+      )}
     </div>
   );
+}
+
+/** "Fit to one page" (or two): the loosest spacing that keeps the CV to its page target, and what it did. */
+export function FitControl({ cv, paper, update, say }: { cv: CvDoc; paper: Paper | null; update: (patch: Partial<CvDoc>) => void; say: (s: string) => void }) {
+  const design = cv.design;
+  const target = design.pageTarget;
+  const over = linesOver(paper, target);
+  const [stillOver, setStillOver] = useState<number | null>(null);
+  const pagesWord = target === 1 ? "1 page" : `${target} pages`;
+  function fit() {
+    if (!paper) return;
+    const f = fitToPages(cv, paper.fonts, target);
+    if (!f.fits) {
+      setStillOver(over);
+      say(`Still ${over} ${over === 1 ? "line" : "lines"} over. Shorten your content or use ${target === 1 ? "two pages" : "more space"}.`);
+      return;
+    }
+    setStillOver(null);
+    if (f.density !== design.density) update({ design: { ...design, density: f.density } });
+    say(`Fits on ${f.pages === 1 ? "1 page" : `${f.pages} pages`} with ${SPACING[f.density].toLowerCase()} spacing.`);
+  }
+  return (
+    <span className="cv-fitcontrol">
+      <Btn onClick={fit} disabled={!paper}>
+        Fit to {target === 1 ? "one page" : "two pages"}
+      </Btn>
+      <span className="cv-small" role="status" data-testid="fit-status">
+        {!paper ? "" : stillOver !== null && over > 0 ? `Still ${over} ${over === 1 ? "line" : "lines"} over. Shorten your content or use two pages.` : over > 0 ? `${over} ${over === 1 ? "line" : "lines"} over` : `Fits on ${pagesWord}`}
+      </span>
+    </span>
+  );
+}
+
+/** Every text size the stepper can reach, and the CV's own if it is between steps. */
+function sizeSteps(current: number): number[] {
+  const out: number[] = [];
+  for (let v = SIZES.min; v <= SIZES.max + 1e-9; v += SIZES.step) out.push(Math.round(v * 10) / 10);
+  return out.includes(current) ? out : [...out, current].sort((a, b) => a - b);
 }

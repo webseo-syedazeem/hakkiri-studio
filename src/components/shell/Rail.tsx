@@ -73,6 +73,8 @@ export function Rail({
   beta?: boolean;
 }) {
   const pathname = usePathname() ?? "/";
+  // In the CV editor the page needs the room: the sidebar shrinks to its icons (names stay as labels and tips).
+  const compact = /^\/cv\/v\/[^/]+\/(edit|letter|talk|tailor|findings|questions)/.test(pathname);
   const { user: authUser, logout } = useAuth();
   const [showMenu, setShowMenu] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -226,21 +228,22 @@ export function Rail({
       )}
 
       {/* Desktop spacer to preserve layout flow alongside fixed sidebar */}
-      <div className="hidden md:block print:hidden w-[216px] shrink-0" aria-hidden="true" />
+      <div className={clsx("hidden md:block print:hidden shrink-0", compact ? "w-[64px]" : "w-[216px]")} aria-hidden="true" />
 
       {/* Desktop Navigation Sidebar (>= md) */}
       <nav
         aria-label="Main"
-        className="print-hide fixed top-0 bottom-0 left-0 z-30 hidden md:flex h-screen w-[216px] shrink-0 flex-col border-r border-line bg-booth py-5 px-3 overflow-y-auto overflow-x-hidden [scrollbar-width:none] transition-colors duration-250"
+        data-compact={compact ? "true" : undefined}
+        className={clsx("print-hide fixed top-0 bottom-0 left-0 z-30 hidden md:flex h-screen shrink-0 flex-col border-r border-line bg-booth py-5 overflow-y-auto overflow-x-hidden [scrollbar-width:none] transition-colors duration-250", compact ? "w-[64px] px-2 items-center" : "w-[216px] px-3")}
       >
         {/* Brand Header */}
         <Link
           href="/"
           aria-label="Hakkiri Studio home"
-          className="mb-6 flex items-center gap-3 px-2 text-ink hover:opacity-90 transition-opacity"
+          className={clsx("mb-6 flex items-center gap-3 text-ink hover:opacity-90 transition-opacity", compact ? "px-0" : "px-2")}
         >
           <Mark size={28} badge />
-          <span className="text-[18px] font-bold tracking-tight text-ink">Hakkiri</span>
+          <span className={compact ? "sr-only" : "text-[18px] font-bold tracking-tight text-ink"}>Hakkiri</span>
         </Link>
 
         {/* Navigation Items with labels matching mockup */}
@@ -252,8 +255,10 @@ export function Rail({
                 key={it.label}
                 href={it.href}
                 aria-current={on ? "page" : undefined}
+                title={compact ? it.label : undefined}
                 className={clsx(
-                  "flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all duration-200",
+                  "flex items-center gap-3 rounded-xl py-2.5 text-[13px] font-medium transition-all duration-200",
+                  compact ? "justify-center px-0 w-11" : "px-3",
                   on
                     ? "bg-white text-ink shadow-[0_1px_3px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)] border border-black/[0.06] font-semibold dark:bg-[#1c2237] dark:text-white dark:border-[#374268]"
                     : "text-muted hover:bg-panel-2 hover:text-ink"
@@ -264,8 +269,8 @@ export function Rail({
                   size={18}
                   className={clsx("shrink-0 transition-colors", on ? "text-blue-soft" : "text-muted")}
                 />
-                <span className="truncate">{it.label}</span>
-                {on && <span className="ml-auto h-4 w-[3px] shrink-0 rounded-full bg-blue-fill" aria-hidden="true" />}
+                <span className={compact ? "sr-only" : "truncate"}>{it.label}</span>
+                {on && !compact && <span className="ml-auto h-4 w-[3px] shrink-0 rounded-full bg-blue-fill" aria-hidden="true" />}
               </Link>
             );
           })}
@@ -275,13 +280,13 @@ export function Rail({
         {beta && <FeedbackButton />}
 
         {/* Bottom Appearance Toggle, Profile and Settings */}
-        <div className="mt-4 flex flex-col gap-2.5 border-t border-line/80 pt-4 px-2">
+        <div className={clsx("mt-4 flex flex-col gap-2.5 border-t border-line/80 pt-4", compact ? "px-0 items-center" : "px-2")}>
           <button
             type="button"
             onClick={toggleTheme}
             aria-label="Change theme"
             title={isDark ? "Switch to Apple light theme" : "Switch to dark theme"}
-            className="group flex w-full items-center justify-between rounded-xl px-2.5 py-2 text-[13px] font-medium text-ink hover:bg-panel-2 transition-all cursor-pointer"
+            className={clsx("group flex items-center rounded-xl py-2 text-[13px] font-medium text-ink hover:bg-panel-2 transition-all cursor-pointer", compact ? "w-11 justify-center px-0" : "w-full justify-between px-2.5")}
           >
             <div className="flex items-center gap-2.5 min-w-0">
               <svg
@@ -299,9 +304,9 @@ export function Rail({
                 <circle cx="12" cy="12" r="4" />
                 <path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l2 2m10 10 2 2M19 5l-2 2M7 17l-2 2" />
               </svg>
-              <span className="font-medium whitespace-nowrap text-ink">Appearance</span>
+              <span className={compact ? "sr-only" : "font-medium whitespace-nowrap text-ink"}>Appearance</span>
             </div>
-            <span className="shrink-0 text-[10px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-md bg-panel-2 text-ink border border-line">
+            <span className={compact ? "sr-only" : "shrink-0 text-[10px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-md bg-panel-2 text-ink border border-line"}>
               {isDark ? "Dark" : "Light"}
             </span>
           </button>
@@ -331,7 +336,7 @@ export function Rail({
             {showMenu && authUser && (
               <div className="absolute bottom-11 left-0 z-50 mb-1 w-44 rounded-xl border border-line bg-panel p-2 shadow-2xl backdrop-blur-md">
                 <div className="px-2.5 py-1.5 border-b border-line/60">
-                  <p className="text-[13px] font-medium text-ink truncate">{authUser.firstName || "Sazia Aktar"}</p>
+                  <p className="text-[13px] font-medium text-ink truncate">{authUser.firstName || "Your account"}</p>
                   <p className="text-[11px] text-muted truncate">{authUser.email}</p>
                 </div>
                 <Link

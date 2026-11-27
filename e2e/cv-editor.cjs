@@ -198,13 +198,13 @@ run("CV editor", async (browser) => {
   check((await page.getByRole("textbox", { name: "Bullet 2" }).inputValue()) === firstBullet, "a bullet that is switched off leaves the paper and keeps its words in the form");
 
   // Move with the menu.
-  await page.getByRole("button", { name: "Move PPC Executive", exact: true }).click();
+  await page.getByRole("button", { name: "Actions for PPC Executive", exact: true }).click();
   await page.getByRole("button", { name: "Move up", exact: true }).click();
   check((await roleOrder()).join(",") === "Northlight Agency,Brightside Digital Ltd,Harbour Travel Group", "Move up moves a role up one place, on the paper too", (await roleOrder()).join(","));
-  await page.getByRole("button", { name: "Move PPC Executive", exact: true }).click();
+  await page.getByRole("button", { name: "Actions for PPC Executive", exact: true }).click();
   await page.getByLabel("Move to").selectOption("0");
   check((await roleOrder()).join(",") === "Brightside Digital Ltd,Northlight Agency,Harbour Travel Group", "Move to puts a role at the place chosen", (await roleOrder()).join(","));
-  await page.getByRole("button", { name: "Move PPC Executive", exact: true }).click();
+  await page.getByRole("button", { name: "Actions for PPC Executive", exact: true }).click();
   check(await page.getByRole("button", { name: "Move up", exact: true }).isDisabled(), "the first item cannot be moved up");
   await page.keyboard.press("Escape");
   check(!(await page.getByRole("button", { name: "Move up", exact: true }).isVisible()), "Escape closes the Move menu");
@@ -241,6 +241,7 @@ run("CV editor", async (browser) => {
   await page.getByRole("button", { name: "Undo", exact: true }).click();
 
   // Remove, then undo from the line that appears.
+  await page.getByRole("button", { name: "Actions for bullet 3", exact: true }).click();
   await page.getByRole("button", { name: "Remove bullet 3" }).click();
   check((await page.getByRole("textbox", { name: /^Bullet/ }).count()) === 2, "Remove takes the bullet out");
   await page.locator("p.cv-note", { hasText: "Removed." }).getByRole("button", { name: "Undo" }).click();
@@ -327,7 +328,7 @@ run("CV editor", async (browser) => {
   // The order on the page, separate from the form's tabs.
   const paperHeads = () => page.locator('svg.cv-paper g[data-kind="heading"]').allTextContents();
   check((await paperHeads()).join(",") === "Profile,Experience,Education,Skills,Languages", "Standard's own order, with Certificates off", (await paperHeads()).join(","));
-  await page.getByRole("button", { name: "Move the Education section", exact: true }).click();
+  await page.getByRole("button", { name: "Actions for the Education section", exact: true }).click();
   await page.getByLabel("Move to").selectOption("0");
   await page.waitForFunction(() => document.querySelector('svg.cv-paper g[data-kind="heading"]').textContent === "Education");
   check((await paperHeads()).join(",") === "Education,Profile,Experience,Skills,Languages", "moving Education to the top of the page order moves it on the paper", (await paperHeads()).join(","));
@@ -581,7 +582,7 @@ run("CV editor", async (browser) => {
   await page.getByTestId("page-count").waitFor({ timeout: 20000 });
   check((await page.locator("svg.cv-paper").isVisible()) && (await page.getByRole("button", { name: "+ Add role" }).isVisible()) && !(await seg.isVisible()), "at desktop width the form and the paper sit side by side");
   const box = await page.locator(".cv-layout").evaluate((el) => [...el.children].map((c) => Math.round(c.getBoundingClientRect().width)));
-  check(box.length === 3 && box[0] >= 318 && box[1] > box[0] && Math.abs(box[2] - 272) <= 2, "at 1440 the fields, the page and the score sit side by side, the page the widest", box.join(" / "));
+  check(box.length === 3 && box[0] >= 360 && box[1] >= 640 && box[1] > box[0] && Math.abs(box[2] - 260) <= 2, "at 1440 the fields, the page and the score sit side by side, the page the widest (about half the width)", box.join(" / "));
   await tab(page, "Finish");
   await page.getByRole("heading", { name: "Files" }).waitFor();
   const fbox = await page.locator(".cv-layout").evaluate((el) => [...el.children].map((c) => Math.round(c.getBoundingClientRect().width)));
@@ -609,7 +610,7 @@ run("CV editor", async (browser) => {
   const small = await page.locator(".cv-switch, .cv-controls .cv-btn, .cv-seg button, .cv-bar .cv-btn").evaluateAll((els) => els.filter((e) => e.offsetParent).map((e) => `${e.getAttribute("aria-label") || e.textContent}: ${Math.round(e.getBoundingClientRect().width)}x${Math.round(e.getBoundingClientRect().height)}`).filter((t) => Number(/x(\d+)$/.exec(t)[1]) < 44 || Number(/: (\d+)x/.exec(t)[1]) < 44));
   check(small.length === 0, "on a phone every switch and button in the builder is at least 44px each way", small.join(" ¦ "));
   check(!(await page.locator(".cv-grip").first().isVisible()), "on a touch screen the drag handles are hidden: the Move menu does the job");
-  await page.getByRole("button", { name: "Move bullet 2", exact: true }).click();
+  await page.getByRole("button", { name: "Actions for bullet 2", exact: true }).click();
   await page.getByRole("button", { name: "Move up", exact: true }).click();
   check((await page.getByRole("textbox", { name: "Bullet 1" }).inputValue()) === "Cut stock loss by 12% in a year", "Move up reorders a bullet on a phone");
   await bothThemes(page, "builder-phone");

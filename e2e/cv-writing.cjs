@@ -89,6 +89,7 @@ run("CV writing help", async (browser) => {
   check((await getBank(page)).length === 2, "the achievements hold the two bullets that were kept");
 
   /* ----------------------------------------------------- help with one bullet */
+  await page.getByRole("button", { name: "Actions for bullet 2", exact: true }).click();
   await page.getByRole("button", { name: "Help with bullet 2" }).click();
   const help = page.getByTestId("bullet-help");
   await help.waitFor();
@@ -110,6 +111,7 @@ run("CV writing help", async (browser) => {
   const wordy = "I successfully managed the stock room on a daily basis for 2 years";
   await page.getByRole("textbox", { name: "Bullet 3" }).fill(wordy);
   await saved(page);
+  await page.getByRole("button", { name: "Actions for bullet 3", exact: true }).click();
   await page.getByRole("button", { name: "Help with bullet 3" }).click();
   await help.getByRole("button", { name: "Rewrite" }).click();
   let dialog = page.getByRole("dialog", { name: "Review the new wording" });
@@ -121,6 +123,7 @@ run("CV writing help", async (browser) => {
   await dialog.waitFor({ state: "detached" });
   await help.getByRole("button", { name: "Back to paper" }).click();
   check((await page.getByRole("textbox", { name: "Bullet 3" }).inputValue()) === wordy, "“Keep original” changes nothing");
+  await page.getByRole("button", { name: "Actions for bullet 3", exact: true }).click();
   await page.getByRole("button", { name: "Help with bullet 3" }).click();
   await help.getByRole("button", { name: "Rewrite" }).click();
   await dialog.getByRole("button", { name: "Use this wording" }).click();
@@ -148,6 +151,7 @@ run("CV writing help", async (browser) => {
   check(true, "“Clarify my notes” puts the cursor in the bullet");
   await page.unroute("**/write/rewrite");
   await page.route("**/write/rewrite", (r) => r.fulfill({ json: { status: "unavailable", message: "Rewriting needs the AI service, which isn’t available right now. Your bullet is unchanged, and you can still edit it yourself." } }));
+  await page.getByRole("button", { name: "Actions for bullet 3", exact: true }).click();
   await page.getByRole("button", { name: "Help with bullet 3" }).click();
   await help.getByRole("button", { name: "Rewrite" }).click();
   await help.getByTestId("help-status").waitFor();
@@ -156,6 +160,7 @@ run("CV writing help", async (browser) => {
 
   // Add the number: it asks; it never supplies.
   await help.getByRole("button", { name: "Back to paper" }).click();
+  await page.getByRole("button", { name: "Actions for bullet 1", exact: true }).click();
   await page.getByRole("button", { name: "Help with bullet 1" }).click();
   await help.getByRole("button", { name: "Add the number" }).click();
   dialog = page.getByRole("dialog", { name: "Add the number" });
@@ -197,6 +202,7 @@ run("CV writing help", async (browser) => {
 
   // Save to achievements, from Help.
   await help.getByRole("button", { name: "Back to paper" }).click();
+  await page.getByRole("button", { name: "Actions for bullet 3", exact: true }).click();
   await page.getByRole("button", { name: "Help with bullet 3" }).click();
   await help.getByRole("button", { name: "Save to achievements" }).click();
   await help.getByRole("link", { name: "In your achievements" }).waitFor();
@@ -405,6 +411,7 @@ run("CV writing help", async (browser) => {
   await bothThemes(page, "writing-capture-phone");
   await page.getByRole("button", { name: "Use the selected bullet" }).click();
   await page.waitForURL(/\/edit\/experience/, { timeout: 20000 });
+  await page.getByRole("button", { name: "Actions for bullet 1", exact: true }).click();
   await page.getByRole("button", { name: "Help with bullet 1" }).click();
   await page.getByTestId("bullet-help").waitFor();
   check(await page.getByTestId("bullet-help").isVisible(), "on a phone, Help opens in the paper view");

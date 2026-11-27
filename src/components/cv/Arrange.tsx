@@ -27,8 +27,19 @@ export function OffChip() {
   return <span className="cv-chip cv-off-chip">Off in this version</span>;
 }
 
-/** Move up, Move down and Move to a position, for an item at `index` of `count`. */
-export function MoveMenu({ index, count, name, onMove }: { index: number; count: number; name: string; onMove: (to: number) => void }) {
+/** One more thing an item's menu can do ("Help me word this", "Practise this"). */
+export interface MenuAction {
+  label: string;
+  /** The button's name for screen readers when the label alone doesn't say which item, e.g. "Help with bullet 2". */
+  name?: string;
+  onSelect: () => void;
+}
+
+/**
+ * The ⋯ menu of one item: its own actions first, then Move up, Move down and Move to a position,
+ * then Remove. Opened by the ⋯ button; Escape or a press outside closes it and returns focus.
+ */
+export function ItemMenu({ index, count, name, onMove, actions = [], onRemove }: { index: number; count: number; name: string; onMove: (to: number) => void; actions?: MenuAction[]; onRemove?: () => void }) {
   const [open, setOpen] = useState(false);
   const wrap = useRef<HTMLSpanElement>(null);
   const toggle = useRef<HTMLButtonElement>(null);
@@ -48,34 +59,68 @@ export function MoveMenu({ index, count, name, onMove }: { index: number; count:
       document.removeEventListener("keydown", key);
     };
   }, [open]);
-  const go = (to: number) => {
+  const done = () => {
     setOpen(false);
-    onMove(to);
     toggle.current?.focus();
   };
+  const go = (to: number) => {
+    done();
+    onMove(to);
+  };
+  const nothing = count < 2 && actions.length === 0 && !onRemove;
   return (
     <span className="cv-menu" ref={wrap}>
-      <Btn kind="quiet" ref={toggle} aria-expanded={open} aria-controls={open ? id : undefined} aria-label={`Move ${name}`} disabled={count < 2} onClick={() => setOpen((v) => !v)}>
-        Move
+      <Btn kind="quiet" className="cv-dots" ref={toggle} aria-expanded={open} aria-controls={open ? id : undefined} aria-label={`Actions for ${name}`} title="More actions" disabled={nothing} onClick={() => setOpen((v) => !v)}>
+        <span aria-hidden="true">⋯</span>
       </Btn>
       {open && (
-        <div id={id} role="group" aria-label={`Move ${name}`} className="cv-menu-list">
-          <button type="button" disabled={index === 0} onClick={() => go(index - 1)}>
-            Move up
-          </button>
-          <button type="button" disabled={index === count - 1} onClick={() => go(index + 1)}>
-            Move down
-          </button>
-          <div className="cv-menu-to">
-            <label htmlFor={`${id}-to`}>Move to</label>
-            <select id={`${id}-to`} value={index} onChange={(e) => go(Number(e.target.value))}>
-              {Array.from({ length: count }, (_, i) => (
-                <option key={i} value={i}>
-                  {i === 0 ? "1 (top)" : i === count - 1 ? `${i + 1} (bottom)` : i + 1}
-                </option>
-              ))}
-            </select>
-          </div>
+        <div id={id} role="group" aria-label={`Actions for ${name}`} className="cv-menu-list">
+          {actions.map((a) => (
+            <button
+              key={a.label}
+              type="button"
+              aria-label={a.name}
+              onClick={() => {
+                setOpen(false);
+                a.onSelect();
+              }}
+            >
+              {a.label}
+            </button>
+          ))}
+          {count > 1 && (
+            <>
+              <button type="button" disabled={index === 0} onClick={() => go(index - 1)}>
+                Move up
+              </button>
+              <button type="button" disabled={index === count - 1} onClick={() => go(index + 1)}>
+                Move down
+              </button>
+              <div className="cv-menu-to">
+                <label htmlFor={`${id}-to`}>Move to</label>
+                <select id={`${id}-to`} value={index} onChange={(e) => go(Number(e.target.value))}>
+                  {Array.from({ length: count }, (_, i) => (
+                    <option key={i} value={i}>
+                      {i === 0 ? "1 (top)" : i === count - 1 ? `${i + 1} (bottom)` : i + 1}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </>
+          )}
+          {onRemove && (
+            <button
+              type="button"
+              className="cv-menu-danger"
+              aria-label={`Remove ${name}`}
+              onClick={() => {
+                setOpen(false);
+                onRemove();
+              }}
+            >
+              Remove
+            </button>
+          )}
         </div>
       )}
     </span>
@@ -137,19 +182,14 @@ export function Grip(props: Record<string, unknown>) {
   );
 }
 
-/** Switch, Move and Remove together, for one item of a list. */
-export function ItemControls({ name, index, count, visible, onVisible, onMove, onRemove, children }: { name: string; index: number; count: number; visible: boolean; onVisible: (on: boolean) => void; onMove: (to: number) => void; onRemove?: () => void; children?: ReactNode }) {
+/** The switch, any other control (Edit or Close), and the ⋯ menu with Move and Remove, for one item of a list. */
+export function ItemControls({ name, index, count, visible, onVisible, onMove, onRemove, actions, children }: { name: string; index: number; count: number; visible: boolean; onVisible: (on: boolean) => void; onMove: (to: number) => void; onRemove?: () => void; actions?: MenuAction[]; children?: ReactNode }) {
   return (
     <span className="cv-controls">
       {!visible && <OffChip />}
       <Switch checked={visible} onChange={onVisible} label={`Include ${name} in this version`} />
-      <MoveMenu index={index} count={count} name={name} onMove={onMove} />
       {children}
-      {onRemove && (
-        <Btn kind="quiet" onClick={onRemove} aria-label={`Remove ${name}`}>
-          Remove
-        </Btn>
-      )}
+      <ItemMenu index={index} count={count} name={name} onMove={onMove} actions={actions} onRemove={onRemove} />
     </span>
   );
 }

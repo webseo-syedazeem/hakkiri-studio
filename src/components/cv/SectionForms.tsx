@@ -4,7 +4,7 @@ import { type ReactNode, useEffect, useRef, useState } from "react";
 import { findDates } from "@/lib/cv/import/dates";
 import { type Bullet, type Contact, type CvRegion, type Entry, type EntrySection, type ListSection, type Section, type SkillGroup, type SkillsSection, type SummarySection, LIMITS, emptyEntry, newBullet, newId } from "@/lib/cv/schema";
 import { type FieldDef, SECTION_DEFS, fieldLabel, formatDate, formatDates } from "@/lib/cv/sections";
-import { Grip, ItemControls, MoveMenu, OffChip, Switch, useDragOrder } from "./Arrange";
+import { Grip, ItemControls, ItemMenu, OffChip, Switch, useDragOrder } from "./Arrange";
 import { Btn, Field } from "./ui";
 
 /**
@@ -23,6 +23,8 @@ export interface FieldHooks {
   onEdit?: (entryId: string, field: string) => void;
   /** The builder: opens the writing help for one bullet. */
   onHelp?: (entryId: string, bulletId: string) => void;
+  /** "Practise this": the interview question this line will get. */
+  onPractise?: (entryId: string, bulletId: string) => void;
   /** The builder: what else can be done for an entry (start from notes, use a saved achievement), shown under its bullets. */
   entryTools?: (entry: Entry) => ReactNode;
 }
@@ -320,6 +322,17 @@ function BulletsEditor({ bullets, onChange, label, rule, hooks, entryId, arrange
               <div className="cv-row" style={{ gap: 6 }}>
                 {!b.visible && <OffChip />}
                 <Switch checked={b.visible} onChange={(visible) => onChange(bullets.map((x) => (x.id === b.id ? { ...x, visible } : x)))} label={`Include bullet ${i + 1} in this version`} />
+                <ItemMenu
+                  index={i}
+                  count={bullets.length}
+                  name={`bullet ${i + 1}`}
+                  onMove={(to) => drag.move(b.id, to)}
+                  actions={[
+                    ...(hooks?.onHelp ? [{ label: "Help me word this", name: `Help with bullet ${i + 1}`, onSelect: () => hooks.onHelp!(entryId, b.id) }] : []),
+                    ...(hooks?.onPractise && b.text.trim() ? [{ label: "Practise this", name: `Practise bullet ${i + 1}`, onSelect: () => hooks.onPractise!(entryId, b.id) }] : []),
+                  ]}
+                  onRemove={() => onChange(bullets.filter((x) => x.id !== b.id))}
+                />
               </div>
             </div>
             <Field
@@ -335,19 +348,6 @@ function BulletsEditor({ bullets, onChange, label, rule, hooks, entryId, arrange
               }}
               {...hook(hooks, entryId, b.id)}
             />
-            <div className="cv-bullet-foot">
-              <span className="cv-controls">
-                <MoveMenu index={i} count={bullets.length} name={`bullet ${i + 1}`} onMove={(to) => drag.move(b.id, to)} />
-                {hooks?.onHelp && (
-                  <Btn kind="quiet" aria-label={`Help with bullet ${i + 1}`} onClick={() => hooks.onHelp!(entryId, b.id)}>
-                    Help
-                  </Btn>
-                )}
-                <Btn kind="quiet" onClick={() => onChange(bullets.filter((x) => x.id !== b.id))} aria-label={`Remove bullet ${i + 1}`}>
-                  Remove
-                </Btn>
-              </span>
-            </div>
           </div>
         ) : (
           <div key={b.id} className="cv-item" data-item={b.id} data-off={!b.visible || undefined}>
@@ -513,8 +513,8 @@ export function EntriesForm({ value, onChange, region, hooks, expandAll, entryNo
                   onMove={(to) => drag.move(e.id, to)}
                   onRemove={() => remove(e.id)}
                 >
-                  <Btn kind="quiet" aria-expanded={isOpen} aria-label={`${isOpen ? "Close" : "Edit"} ${title}`} onClick={() => setOpen(isOpen ? "" : e.id)}>
-                    {isOpen ? "Close" : "Edit"}
+                  <Btn kind="quiet" className="cv-dots" aria-expanded={isOpen} aria-label={`${isOpen ? "Close" : "Edit"} ${title}`} title={isOpen ? "Close" : "Edit"} onClick={() => setOpen(isOpen ? "" : e.id)}>
+                    <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isOpen ? "rotate(180deg)" : undefined }}><path d="m6 9 6 6 6-6" /></svg>
                   </Btn>
                 </ItemControls>
               ) : (

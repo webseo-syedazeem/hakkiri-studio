@@ -97,25 +97,16 @@ export function ScorePanel({ score, word, base, onShow }: { score: Score | null;
         <Link className="cv-link" href={`${base}/findings`}>
           See all findings
         </Link>
+        {/* The step after a good CV: the questions it will get you, from its own lines. */}
+        <div className="cv-practisecard" data-testid="practise-card">
+          <b>{score.goodEnough ? `Your ${word} is ready. Practise the questions it will get you.` : `Practise the questions your ${word} will get you.`}</b>
+          <span className="cv-small cv-muted">Questions built from your own {word}.</span>
+          <Link className="cv-btn cv-btn-primary" href={`${base}/questions`}>
+            Questions your {word} will get
+          </Link>
+        </div>
       </div>
     </Panel>
   );
 }
 
-/** On a phone: the score as one line at the top of the editor. */
-export function ScoreLine({ score, word, base }: { score: Score | null; word: string; base: string }) {
-  if (!score || score.empty) return null;
-  return (
-    <div className="cv-scoreline cv-phone" data-testid="score-line">
-      <b>
-        {word === "CV" ? "CV" : "Resume"} score {score.shown}/100
-      </b>
-      <span className="cv-ring-inline" data-band={bandOf(score.shown).key}>
-        {scoreBand(score.shown)}
-      </span>
-      <Link className="cv-link cv-push" href={`${base}/findings`}>
-        See findings
-      </Link>
-    </div>
-  );
-}

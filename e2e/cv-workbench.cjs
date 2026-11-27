@@ -15,31 +15,51 @@ run("CV workbench", async (browser) => {
   // The marketing example, with its letter and the job it is aimed at.
   const id = await page.evaluate(async () => (await (await fetch("/api/cv/templates", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ templateId: "marketing-lead", name: "Bench", region: "uk", letter: true }) })).json()).id);
   await page.goto(`${BASE}/cv/v/${id}/edit/experience`);
-  const bar = page.getByTestId("format-bar");
+  // The bar above the page (the Design dialog has a full one of its own).
+  const bar = page.getByRole("complementary", { name: "Paper" }).getByTestId("format-bar");
   await bar.waitFor();
   await page.locator("svg.cv-paper").first().waitFor({ timeout: 20000 });
 
   // Format bar: every control acts on the real page.
   check(await bar.getByRole("link", { name: /^No\. \d\d · / }).isVisible(), "the format bar names the template, and links to the template picker");
   const before = await bulletSize(page);
-  await bar.getByRole("button", { name: "Larger text" }).click();
+  await bar.getByLabel("Text size").selectOption("11");
   await page.waitForFunction((was) => document.querySelector('svg.cv-paper g[data-kind="bullet"] text').getAttribute("font-size") !== was, before);
   await saved(page);
   check(Number(await bulletSize(page)) > Number(before), "Larger text makes the page's text larger", `${before} → ${await bulletSize(page)}`);
-  await bar.getByLabel("Page size").selectOption("letter");
+  check(!(await bar.getByLabel("Page size").count()), "the bar above the page is one slim row: page size and the rest are under More design options");
+  await bar.getByRole("button", { name: "More design options" }).click();
+  const more = page.getByRole("dialog", { name: "Design" });
+  await more.getByLabel("Page size").selectOption("letter");
   await page.waitForFunction(() => document.querySelector("svg.cv-paper").getAttribute("viewBox") === "0 0 612 792");
   check(true, "Page size changes the page to US Letter");
+  await more.getByRole("button", { name: "Off" }).click();
+  await more.getByRole("button", { name: "Close" }).first().click();
+  await more.waitFor({ state: "hidden" });
   await bar.getByLabel("Colour").selectOption({ label: "Plum" });
   await page.waitForFunction(() => document.querySelector('svg.cv-paper g[data-kind="heading"] text').getAttribute("fill").toUpperCase() === "#673E83");
   check(true, "Colour redraws the headings");
-  await bar.getByRole("button", { name: "Off" }).click();
   await saved(page);
   let cv = await getCv(page, id);
   check(cv.design.dividerStyle === "none" && cv.design.pageSize === "letter" && cv.design.accent === "plum" && cv.design.fontSize === 11, "the choices are saved with the CV", JSON.stringify({ d: cv.design.dividerStyle, p: cv.design.pageSize, a: cv.design.accent, f: cv.design.fontSize }));
   check(/Fits on (1|2) page|lines? over/.test(await page.getByTestId("fit-status").innerText()), "the fit status says how the page fits", await page.getByTestId("fit-status").innerText());
-  await bar.getByRole("button", { name: /^Fit to (one|two) pages?$/ }).click();
+  await page.getByRole("button", { name: /^Fit to (one|two) pages?$/ }).click();
   check(/Fits on|over/.test(await page.getByTestId("fit-status").innerText()), "Fit to one page says what it did, and never removes text", await page.getByTestId("fit-status").innerText());
   check((await paperText(page)).includes("Grew qualified leads by 52%"), "the page still has all of its text");
+
+  // v3: the header has three actions, and the fields fold away to give the page the room.
+  const head = page.locator("header.cv-edhead");
+  check((await head.getByRole("button", { name: "Download" }).isVisible()) && (await head.getByRole("button", { name: "Share" }).isVisible()) && (await head.getByRole("button", { name: "More" }).isVisible()) && !(await head.getByRole("link", { name: "Talk it through" }).count()), "the header has Download, Share and More; Talk it through, Tailor and Cover letter sit with the tabs");
+  const pageWidth = async () => Math.round(await page.locator(".cv-workbench > aside.cv-sticky").evaluate((el) => el.getBoundingClientRect().width));
+  const wide = await pageWidth();
+  await page.getByTestId("fields-toggle").click();
+  check((await page.getByTestId("fields-toggle").innerText()) === "Show editing fields" && (await pageWidth()) > wide + 200, "Hide editing fields gives the page the room", `${wide} → ${await pageWidth()}`);
+  await page.getByTestId("fields-toggle").click();
+  check((await pageWidth()) === wide, "and Show editing fields brings them back");
+  await page.getByRole("button", { name: "Actions for bullet 1", exact: true }).click();
+  const menu = page.getByRole("group", { name: "Actions for bullet 1" });
+  check((await menu.getByRole("button", { name: "Move down" }).isVisible()) && (await menu.getByRole("button", { name: "Remove bullet 1" }).isVisible()), "each bullet's ⋯ menu holds Move and Remove");
+  await page.keyboard.press("Escape");
 
   // The score beside the page.
   const score = page.getByTestId("score-panel");
@@ -100,13 +120,37 @@ run("CV workbench", async (browser) => {
     async () => check(false, "and it is on the page", (await paperText(page)).slice(0, 400)),
   );
 
+  // Questions your CV will get: from the score panel, five lines of the CV with a question each.
+  await page.goto(`${BASE}/cv/v/${id}/edit/experience`);
+  await page.getByTestId("practise-card").getByRole("link", { name: "Questions your CV will get" }).click();
+  await page.waitForURL(/\/questions$/);
+  const qs = page.getByTestId("cv-question");
+  await qs.first().waitFor({ timeout: 15000 });
+  const cvNow = await getCv(page, id);
+  const lines = cvNow.sections.flatMap((x) => (x.entries ?? []).flatMap((e) => e.bullets.map((b) => b.text)));
+  const quoted = await page.locator('[data-testid="cv-question"] q').allInnerTexts();
+  check((await qs.count()) === 5 && quoted.every((q) => lines.includes(q)), "five lines of the CV, each quoted exactly as written", quoted.join(" | "));
+  const asks = await page.locator(".cv-q-ask").allInnerTexts();
+  check(asks.length === 5 && asks.every((a) => a.endsWith("?")) && asks.some((a) => /\d/.test(a)), "each has a question about what the line says", asks.join(" | "));
+  const practise = new URL(await qs.first().getByRole("link", { name: "Practise question 1" }).getAttribute("href"), BASE);
+  check(practise.pathname === "/practice" && practise.searchParams.get("claim") === quoted[0] && practise.searchParams.get("returnTo") === `/cv/v/${id}/questions`, "Practise takes the line and its question to the Practice Hub, and comes back here", practise.search);
+  check(/type=experience/.test(await page.getByTestId("practise-all").getAttribute("href")), "Practise all opens practice on experience questions");
+  await bothThemes(page, "cv-questions");
+  await qs.first().getByRole("button", { name: "Show on my CV" }).click();
+  await page.waitForURL(/\/edit\//);
+  check(true, "Show on my CV goes back to the line in the editor");
+  await page.getByRole("button", { name: "Actions for bullet 1", exact: true }).click();
+  await page.getByRole("button", { name: "Practise bullet 1" }).click();
+  await page.waitForURL(/\/practice\?claim=/);
+  check(true, "a bullet's ⋯ menu has Practise this, which opens the Practice Hub with that line");
+
   // On a phone.
   const p = await newUser(browser, "bench-phone", PHONE);
   await p.page.goto(`${BASE}/cv`);
   const pid = await p.page.evaluate(async () => (await (await fetch("/api/cv/templates", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ templateId: "staff-nurse", name: "Phone", region: "uk", letter: true }) })).json()).id);
   await p.page.goto(`${BASE}/cv/v/${pid}/edit/experience`);
-  await p.page.getByTestId("score-line").waitFor({ timeout: 20000 });
-  check(/CV score \d+\/100/.test(await p.page.getByTestId("score-line").innerText()), "on a phone the score is one line at the top");
+  await p.page.locator('[data-testid="score-button"]', { hasText: /CV score \d+/ }).waitFor({ timeout: 20000 });
+  check(true, "on a phone the score shows at the top, with the CV's name");
   await p.page.getByTestId("design-button").click();
   await p.page.getByRole("dialog", { name: "Design" }).getByTestId("format-bar").waitFor();
   check(true, "on a phone the format bar is in a Design dialog");

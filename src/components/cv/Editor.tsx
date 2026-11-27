@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { diffParts, fieldFor, formTabs, itemCount, snapshotOf, stateAt, switchOff, tabFor } from "@/lib/cv/edit";
 import type { Finding } from "@/lib/cv/score/score";
+import { bandOf } from "@/lib/cv/score/band";
+import { questionAbout } from "@/lib/cv/questions";
 import { fitToPages } from "@/lib/cv/render/layout";
 import { type CvSummary, type Locator, type Section, type SectionKind, cvIsEmpty, emptySection, isEntrySection } from "@/lib/cv/schema";
 import { OPTIONAL_KINDS, SECTION_DEFS, docWord, sectionHeading } from "@/lib/cv/sections";
@@ -15,11 +17,11 @@ import { Dialog, usePanel } from "./Dialog";
 import { scoreLabel } from "./Findings";
 import { Finish } from "./Finish";
 import { FilesPanel } from "./Files";
-import { FormatBar } from "./FormatBar";
+import { FitControl, FormatBar } from "./FormatBar";
 import { ShareDialog } from "./ShareDialog";
 import { JobPanel } from "./JobPanel";
 import { PaperView } from "./Paper";
-import { ScoreLine, ScorePanel } from "./ScorePanel";
+import { ScorePanel } from "./ScorePanel";
 import { ContactForm, type FieldHooks, SectionForm } from "./SectionForms";
 import { ACCEPT, STAGE_WORDS, type UploadStage, sendUpload } from "./upload";
 import { jobFit } from "@/lib/cv/tailor/fit";
@@ -46,6 +48,7 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
   const [removed, setRemoved] = useState(false);
   const [busy, setBusy] = useState("");
   const [moreFor, setMoreFor] = useState("");
+  const [fieldsHidden, setFieldsHidden] = useFieldsHidden();
   const fileRef = useRef<HTMLInputElement>(null);
   const versionId = w.versionId;
 
@@ -242,6 +245,14 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
       w.setInspect({ section: sectionId, entry, field: bullet });
       setView("paper");
     },
+    // "Practise this": the question an interviewer is likely to ask about this line, in the Practice Hub.
+    onPractise: (entryId, bulletId) => {
+      const sec = cv.sections.find((x) => x.id === sectionId);
+      const text = sec && isEntrySection(sec) ? (sec.entries.find((e) => e.id === entryId)?.bullets.find((b) => b.id === bulletId)?.text ?? "") : "";
+      if (!text.trim()) return;
+      void flush();
+      router.push(`/practice?claim=${encodeURIComponent(text)}&question=${encodeURIComponent(questionAbout(text))}&returnTo=${encodeURIComponent(`${base}/${tab.key}`)}`);
+    },
     entryTools: (entry) => (
       <div className="cv-row" style={{ gap: 8 }}>
         <BtnLink href={`/cv/v/${cv.id}/capture/${entry.id}`} onClick={() => void flush()}>
@@ -278,6 +289,9 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
               <span>{cv.region === "uk" ? "UK" : "US"}</span>
               <span aria-hidden="true">⇄</span>
             </button>
+            <Link className="cv-chip cv-score-chip" href={`/cv/v/${cv.id}/findings`} onClick={() => void flush()} data-testid="score-button" data-band={w.score && !w.score.empty ? bandOf(w.score.shown).key : undefined}>
+              {scoreLabel(w.score, word)}
+            </Link>
             <small role="status" data-testid="save-state" data-save={save}>
               {SAVE_WORDS[save]}
             </small>
@@ -290,32 +304,20 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
               Back to findings
             </BtnLink>
           )}
-          <BtnLink href={`/cv/v/${cv.id}/talk`} onClick={() => void flush()} data-testid="talk-button">
-            Talk it through
-          </BtnLink>
-          <BtnLink className="cv-notphone" href={`/cv/v/${cv.id}/findings`} onClick={() => void flush()} data-testid="score-button">
-            {scoreLabel(w.score, word)}
-          </BtnLink>
-          <BtnLink className="cv-notphone" href={`/cv/v/${cv.id}/tailor`} onClick={() => void flush()} data-testid="fit-button">
-            {fitLabel(cv.requirements.length ? jobFit(cv).score : null)}
-          </BtnLink>
-          <BtnLink className="cv-notphone" href={`/cv/v/${cv.id}/letter`} onClick={() => void flush()} data-testid="letter-button">
-            Cover letter
-          </BtnLink>
           <Btn kind="primary" onClick={() => openPanel("download")} data-testid="download-button">
             Download
           </Btn>
-          <Btn className="cv-notphone" onClick={() => openPanel("share")} data-testid="share-button">
+          <Btn onClick={() => openPanel("share")} data-testid="share-button">
             Share
           </Btn>
-          <Btn className="cv-notphone" onClick={doUndo} disabled={!canUndo} aria-keyshortcuts="Control+Z Meta+Z">
-            Undo
-          </Btn>
-          <Btn className="cv-notphone" onClick={doRedo} disabled={!canRedo} aria-keyshortcuts="Control+Shift+Z Meta+Shift+Z">
-            Redo
-          </Btn>
-          <Btn className="cv-phone-only" onClick={() => openPanel("more")} data-testid="more-button">
+          <Btn onClick={() => openPanel("more")} data-testid="more-button">
             More
+          </Btn>
+          <Btn className="cv-iconbtn cv-notphone" onClick={doUndo} disabled={!canUndo} aria-label="Undo" title="Undo (Ctrl+Z)" aria-keyshortcuts="Control+Z Meta+Z">
+            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 14 4 9l5-5" /><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" /></svg>
+          </Btn>
+          <Btn className="cv-iconbtn cv-notphone" onClick={doRedo} disabled={!canRedo} aria-label="Redo" title="Redo (Ctrl+Shift+Z)" aria-keyshortcuts="Control+Shift+Z Meta+Shift+Z">
+            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 14 5-5-5-5" /><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13" /></svg>
           </Btn>
         </div>
       </header>
@@ -366,6 +368,16 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
               {t.section && !t.section.visible && <span className="sr-only"> (off in this version)</span>}
             </a>
           ))}
+          <span className="cv-tabs-sep" aria-hidden="true" />
+          <Link href={`/cv/v/${cv.id}/talk`} onClick={() => void flush()} data-testid="talk-button">
+            Talk it through
+          </Link>
+          <Link href={`/cv/v/${cv.id}/tailor`} onClick={() => void flush()} data-testid="fit-button">
+            {fitLabel(cv.requirements.length ? jobFit(cv).score : null)}
+          </Link>
+          <Link href={`/cv/v/${cv.id}/letter`} onClick={() => void flush()} data-testid="letter-button">
+            Cover letter
+          </Link>
           <button className="cv-push" onClick={() => openPanel("add-section")}>
             + Add section
           </button>
@@ -389,7 +401,18 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
           <Btn onClick={() => openPanel("add-section")}>+ Add section</Btn>
         </div>
 
-        <ScoreLine score={w.score} word={word} base={`/cv/v/${cv.id}`} />
+        {!isFinish && (
+          <div className="cv-toolrow">
+            <Btn className="cv-notnarrow" aria-pressed={fieldsHidden} onClick={() => setFieldsHidden(!fieldsHidden)} data-testid="fields-toggle">
+              {fieldsHidden ? "Show editing fields" : "Hide editing fields"}
+            </Btn>
+            <FitControl cv={cv} paper={paper} update={update} say={say} />
+            {/* Below 1400 px the score panel doesn't fit beside the page: this opens it. */}
+            <Btn className="cv-belowwide cv-push" onClick={() => openPanel("insights")} data-testid="insights-button">
+              Score and job keywords
+            </Btn>
+          </div>
+        )}
         <div className="cv-narrow cv-viewbar">
           <div className="cv-seg" role="group" aria-label="Show">
             <button type="button" aria-pressed={view === "paper"} onClick={() => setView("paper")}>
@@ -406,7 +429,7 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
           )}
         </div>
 
-        <div className={isFinish ? "cv-layout" : "cv-layout cv-workbench"} style={isFinish ? { gridTemplateColumns: "minmax(0, 0.94fr) minmax(0, 1.16fr)" } : undefined}>
+        <div className={isFinish ? "cv-layout" : fieldsHidden ? "cv-layout cv-workbench cv-fields-hidden" : "cv-layout cv-workbench"} style={isFinish ? { gridTemplateColumns: "minmax(0, 0.94fr) minmax(0, 1.16fr)" } : undefined}>
           <div key={tab.key} className={view === "edit" ? "min-w-0 cv-tab-content" : "min-w-0 cv-wide cv-tab-content"} onBlur={() => void flush()}>
             {empty && !pending && !isFinish && (
               <Panel style={{ marginBottom: 18 }}>
@@ -510,7 +533,7 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
             <>
             {!isFinish && (
               <div className="cv-notnarrow">
-                <FormatBar cv={cv} paper={paper} update={update} base={base} say={say} />
+                <FormatBar slim cv={cv} paper={paper} update={update} base={base} say={say} onMore={() => openPanel("design")} />
               </div>
             )}
             <PaperView paper={paper} state={w.state} retry={w.retryPaper} cv={cv} focus={isFinish ? null : focus} onPick={pick} word={word}>
@@ -558,7 +581,10 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
               </BtnLink>
             )}
             <BtnLink href={`/cv/v/${cv.id}/findings`} onClick={() => void flush()}>
-              {scoreLabel(w.score, word)}
+              {scoreLabel(w.score, word)}: see all findings
+            </BtnLink>
+            <BtnLink href={`/cv/v/${cv.id}/talk`} onClick={() => void flush()}>
+              Talk it through
             </BtnLink>
             <BtnLink href={`/cv/v/${cv.id}/tailor`} onClick={() => void flush()}>
               {fitLabel(cv.requirements.length ? jobFit(cv).score : null)}
@@ -566,8 +592,15 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
             <BtnLink href={`/cv/v/${cv.id}/letter`} onClick={() => void flush()}>
               Cover letter
             </BtnLink>
-            <Btn onClick={() => openPanel("share")}>Share</Btn>
+            <BtnLink href={`/cv/v/${cv.id}/questions`} onClick={() => void flush()}>
+              Questions your {word} will get
+            </BtnLink>
+            <Btn onClick={() => openPanel("design")}>Design</Btn>
+            <BtnLink href={`${base}/finish`} onClick={() => void flush()}>
+              Finish: files and checks
+            </BtnLink>
             <Btn
+              className="cv-phone-only"
               onClick={() => {
                 closePanel();
                 doUndo();
@@ -577,6 +610,7 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
               Undo
             </Btn>
             <Btn
+              className="cv-phone-only"
               onClick={() => {
                 closePanel();
                 doRedo();
@@ -585,6 +619,14 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
             >
               Redo
             </Btn>
+          </div>
+        </Dialog>
+      )}
+      {panel === "insights" && (
+        <Dialog title="Score and job keywords" onClose={closePanel} wide>
+          <div className="cv-insights">
+            <ScorePanel score={w.score} word={word} base={`/cv/v/${cv.id}`} onShow={(at) => { closePanel(); pick(at); }} />
+            <JobPanel cv={cv} update={update} word={word} onShow={(at) => { closePanel(); pick(at); }} say={say} />
           </div>
         </Dialog>
       )}
@@ -765,4 +807,23 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
       )}
     </CvScreen>
   );
+}
+
+/** Whether the editing fields are folded away, remembered on this device. */
+function useFieldsHidden(): [boolean, (v: boolean) => void] {
+  const [hidden, setHidden] = useState(false);
+  useEffect(() => {
+    try {
+      setHidden(localStorage.getItem("hk_cv_fields_hidden") === "1");
+    } catch {}
+  }, []);
+  return [
+    hidden,
+    (v: boolean) => {
+      setHidden(v);
+      try {
+        localStorage.setItem("hk_cv_fields_hidden", v ? "1" : "0");
+      } catch {}
+    },
+  ];
 }
