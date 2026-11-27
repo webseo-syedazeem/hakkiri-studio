@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import type { SoftwareView } from "@/lib/cv/render/software";
+import { COLUMNS_NOTE, TEMPLATES } from "@/lib/cv/render/templates";
 import type { ExportRecord } from "@/lib/cv/schema";
 import { docWord } from "@/lib/cv/sections";
 import { ApiError, api, messageOf } from "./client";
@@ -155,7 +156,7 @@ export function Software({ format }: { format: Format }) {
               </ul>
             </div>
           )}
-          {view && !stale && view.atsReady && <p className="cv-pad cv-small" style={{ paddingTop: 0 }}>This file is one column of real text with standard headings, and it reads back word for word with every field where a parser expects it. No file can be promised to pass every employer’s system.</p>}
+          {view && !stale && view.atsReady && <p className="cv-pad cv-small" style={{ paddingTop: 0 }}>{TEMPLATES[cv.design.template]?.grid ? `This file is real text with standard headings, written in reading order, and it reads back word for word in that order. ${COLUMNS_NOTE}` : "This file is one column of real text with standard headings, and it reads back word for word with every field where a parser expects it."} No file can be promised to pass every employer’s system.</p>}
         </Panel>
 
         {view && first && !stale && (

@@ -93,25 +93,32 @@ describe("the page", () => {
     const { layout, style } = layoutCv(cv, fonts);
     const { marginX, marginY, width, height } = style.page;
     let last = { page: 0, top: 0 };
+    // Text beside text (TEMPLATES-v3 designs) goes back up the page; the reading order is the order of the pieces.
+    const columns = !!TEMPLATES[id].grid;
+    expect(layout.blocks.map((b) => b.node)).toEqual([...layout.blocks.map((b) => b.node)].sort((a, b) => a - b));
     for (const b of layout.blocks) {
       for (const l of b.lines) {
         expect(l.top).toBeGreaterThanOrEqual(marginY - 0.01);
         expect(l.top + l.height).toBeLessThanOrEqual(height - marginY + 0.01);
         // Reading order: never above the line before it on the same page.
-        expect(l.page * 10000 + l.top).toBeGreaterThanOrEqual(last.page * 10000 + last.top - 0.01);
+        if (!columns) expect(l.page * 10000 + l.top).toBeGreaterThanOrEqual(last.page * 10000 + last.top - 0.01);
         last = { page: l.page, top: l.top };
         for (const r of l.runs) {
           expect(r.x).toBeGreaterThanOrEqual(marginX - 0.01);
           expect(r.x + r.width).toBeLessThanOrEqual(width - marginX + 0.5);
-          if (b.kind === "bullet" || (b.kind === "para" && r.size > 9.6)) expect(r.size).toBeGreaterThanOrEqual(BODY_SIZE);
+          // Body text (not the smaller dates line) is never under 10.5 pt.
+          if (b.kind === "bullet" || (b.kind === "para" && r.size > style.fontSize - 0.95)) expect(r.size).toBeGreaterThanOrEqual(BODY_SIZE);
         }
       }
     }
     expect(layout.missing).toEqual([]);
     // Lines and bars stay inside the margins. A band of colour behind the name runs to the edges of the page, by design.
     for (const r of layout.rules) {
-      if (r.under) expect({ x: r.x, y: r.y, width: r.width }).toEqual({ x: 0, y: 0, width });
-      else expect(r.x + r.width).toBeLessThanOrEqual(width - marginX + 0.5);
+      if (r.under && r.x === 0) expect({ x: r.x, y: r.y, width: r.width }).toEqual({ x: 0, y: 0, width });
+      else {
+        expect(r.x).toBeGreaterThanOrEqual(marginX - 0.01);
+        expect(r.x + r.width).toBeLessThanOrEqual(width - marginX + 0.5);
+      }
     }
   });
 

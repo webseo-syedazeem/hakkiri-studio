@@ -1,5 +1,5 @@
 import type { Design, Locator } from "../schema";
-import { BODY_SIZE } from "./templates";
+import { BODY_SIZE, TEMPLATES } from "./templates";
 import { type Fonts, type Printable, layoutCv } from "./layout";
 
 /**
@@ -19,16 +19,21 @@ export const MIN_FIT_MARGIN_PT = 37;
 const MM_PER_PT = 25.4 / 72;
 
 /** The horizontal margin a design uses, in points (as the renderer reads it). */
-export function marginPt(design: Pick<Design, "margin">): number {
+export function marginPt(design: Pick<Design, "margin"> & Partial<Pick<Design, "template">>): number {
   const m = design.margin;
   if (typeof m === "number") return Math.max(15, Math.min(72, m));
-  return m === "compact" ? 36 : m === "relaxed" ? 64 : 50;
+  // A v3 design draws its own margin, the same on every side (TEMPLATES-v3).
+  return m === "compact" ? 36 : m === "relaxed" ? 64 : ownMargin(design) ?? 50;
 }
+const ownMargin = (design: Partial<Pick<Design, "template">>) => (design.template ? TEMPLATES[design.template]?.margin : undefined);
+/** The body text size a design draws, in points: the person's own, or the design's (a v3 design has its own). */
+export const textPt = (design: Pick<Design, "fontSize"> & Partial<Pick<Design, "template">>) => design.fontSize ?? ((design.template && TEMPLATES[design.template]?.bodySize) || BODY_SIZE);
 
 /** The smaller of the two page margins, in whole millimetres, as a person would read it on the page. */
-export function marginMm(design: Pick<Design, "margin">): number {
+export function marginMm(design: Pick<Design, "margin"> & Partial<Pick<Design, "template">>): number {
   const x = marginPt(design);
-  const y = typeof design.margin === "number" ? Math.round(x * 0.92) : design.margin === "compact" ? 34 : design.margin === "relaxed" ? 58 : 46;
+  const own = ownMargin(design);
+  const y = own && design.margin !== "compact" && design.margin !== "relaxed" ? x : typeof design.margin === "number" ? Math.round(x * 0.92) : design.margin === "compact" ? 34 : design.margin === "relaxed" ? 58 : 46;
   return Math.round(Math.min(x, y) * MM_PER_PT);
 }
 
@@ -71,7 +76,7 @@ export function fitHonestly(cv: Printable, fonts: Fonts, target: number = cv.des
     layout = measure(cv, fonts, design);
   }
   // 2. Smaller text, never below 10 pt (and never larger than the person had it).
-  let size = design.fontSize ?? BODY_SIZE;
+  let size = textPt(design);
   while (!done() && size - 0.5 >= MIN_FIT_SIZE) {
     size = Math.round((size - 0.5) * 2) / 2;
     design = { ...design, fontSize: size };
@@ -92,7 +97,7 @@ export function fitHonestly(cv: Printable, fonts: Fonts, target: number = cv.des
 
   const changed = {
     spacing: design.density !== start.density,
-    textPt: (design.fontSize ?? BODY_SIZE) !== (start.fontSize ?? BODY_SIZE) ? (design.fontSize ?? BODY_SIZE) : null,
+    textPt: textPt(design) !== textPt(start) ? textPt(design) : null,
     marginMm: marginPt(design) !== marginPt(start) ? marginMm(design) : null,
   };
   if (done()) return { status: "fits", design, pages: layout.pages, changed, over: [] };

@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { TemplateDetail } from "@/components/marketing/TemplateDetail";
-import { catalogue, templateBySlug, templateMeta, templateSlug } from "@/lib/cv/render/templates";
+import { allTemplates, templateBySlug, templateMeta, templateSlug } from "@/lib/cv/render/templates";
 
 type Props = { params: Promise<{ slug: string }> };
 
 export function generateStaticParams() {
-  return catalogue().map((t) => ({ slug: templateSlug(t) }));
+  // Every design keeps its page, offered or not, so existing links and search results still open.
+  return allTemplates().map((t) => ({ slug: templateSlug(t) }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

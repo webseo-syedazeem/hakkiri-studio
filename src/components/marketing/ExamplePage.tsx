@@ -178,7 +178,7 @@ export function ExamplePage({ spec, region }: { spec: ExampleSpec; region: CvReg
               <p className="mt-1 text-sm text-slate-700">
                 Any example works in any of the{" "}
                 <Link href={region === "us" ? "/resume-templates" : "/cv-templates"} className="font-medium text-[#3d4bd8] underline">
-                  45 templates
+                  20 templates
                 </Link>
                 , with a{" "}
                 <Link href="/cover-letter-templates" className="font-medium text-[#3d4bd8] underline">

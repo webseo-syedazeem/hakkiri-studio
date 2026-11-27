@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { wrongRegionSpelling } from "../score/detect";
 import { CV_TEMPLATES } from "../schema";
 import { galleryItems } from "../templates/gallery";
-import { BODY_SIZE, FAMILY_NAMES, GALLERY_V3, TEMPLATES, TEMPLATE_FAMILIES, type TemplateDef, catalogue, galleryTemplates, templateBySlug, templateLabel, templateMeta, templatePreview, templateSlug } from "./templates";
+import { BODY_SIZE, FAMILY_NAMES, GALLERY_V3, MERGED_INTO, TEMPLATES, TEMPLATE_FAMILIES, type TemplateDef, allTemplates, catalogue, galleryTemplates, isOffered, templateBySlug, templateLabel, templateMeta, templatePreview, templateSlug } from "./templates";
 
 const all = Object.values(TEMPLATES) as TemplateDef[];
 
@@ -32,7 +32,18 @@ describe("the template catalogue", () => {
   });
 
   it("puts five of the original 45 templates in each of the nine families", () => {
-    for (const f of TEMPLATE_FAMILIES) expect(catalogue().filter((t) => t.family === f).map((t) => t.name), FAMILY_NAMES[f]).toHaveLength(5);
+    for (const f of TEMPLATE_FAMILIES) expect(allTemplates().filter((t) => t.no <= 45 && t.family === f).map((t) => t.name), FAMILY_NAMES[f]).toHaveLength(5);
+  });
+
+  it("merges every design no longer offered into one that is (TEMPLATES-v3 §01), and the public galleries list the same 20 as the app", () => {
+    for (const [from, to] of Object.entries(MERGED_INTO)) {
+      expect(TEMPLATES[from as keyof typeof TEMPLATES], from).toBeDefined();
+      expect(isOffered(TEMPLATES[to!]), `${from} → ${to}`).toBe(true);
+    }
+    expect(Object.keys(MERGED_INTO)).toHaveLength(30);
+    for (const t of allTemplates()) expect(isOffered(t) !== !!MERGED_INTO[t.id], t.name).toBe(true);
+    expect(catalogue().map((t) => t.no)).toEqual([...GALLERY_V3]);
+    expect(galleryItems("uk")).toHaveLength(20);
   });
 
   it("labels each by number and name", () => {
@@ -64,7 +75,7 @@ describe("the template catalogue", () => {
     expect(new Set(slugs).size).toBe(all.length);
     for (const t of all) expect(templateBySlug(templateSlug(t))?.id).toBe(t.id);
     expect(templateBySlug("07-clean-sans")).toBeUndefined();
-    expect(catalogue().map((t) => t.no)).toEqual(Array.from({ length: 45 }, (_, i) => i + 1));
+    expect(templateSlug(TEMPLATES["margin-notes"])).toBe("49-margin-notes");
   });
 
   it("has a CV and a cover letter preview image for every template (scripts/template-previews.cjs)", () => {

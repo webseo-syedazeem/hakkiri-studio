@@ -270,11 +270,11 @@ export const CV_TEMPLATES = [
   "ledger", "linen", "chancery", "meridian", "harbour", "slate", "quartz", "arcadia", "vellum", "hairline", "tern", "clearwater",
   "tally", "docket", "index", "marginalia", "boardroom", "crest", "regent", "atlas", "campus", "first-light", "ladder", "sapling",
   "terminal", "circuit", "lattice", "kernel", "ward", "chalkboard", "canvas", "atelier", "palette",
-  // Design spec v3: five new designs. The 45 above are never removed, so saved CVs keep their design.
+  // Design v3 (TEMPLATES-v3): 46, 47, 49, 51 and 52. 48 and 50 were proposals that were not approved: never used.
   "clearline", "fieldwork", "margin-notes", "framework", "chronicle",
 ] as const;
 export type TemplateId = (typeof CV_TEMPLATES)[number];
-export const CV_ACCENTS = ["indigo", "navy", "teal", "copper", "plum", "slate", "emerald", "crimson", "royal", "forest", "burgundy", "charcoal"] as const;
+export const CV_ACCENTS = ["indigo", "navy", "teal", "copper", "plum", "slate", "emerald", "crimson", "royal", "forest", "burgundy", "charcoal", "steel", "pine", "umber", "mulberry", "lagoon"] as const;
 export type AccentId = (typeof CV_ACCENTS)[number];
 export const CV_DENSITIES = ["tighter", "default", "looser"] as const;
 /** The font families a CV can be set in (see render/fonts.ts, which holds the files). */
@@ -488,6 +488,13 @@ export const emptyLetter = (): Letter => ({ reason: "", evidence: [], voice: "",
 
 /* -------------------------------------------------------------- the CV doc */
 
+/** How UK or US and the level were set from an upload, and which the file didn't show (see CvDoc.inferred). */
+export const InferredSchema = z.object({
+  region: z.string().max(200).default(""),
+  level: z.string().max(200).default(""),
+  unknown: z.array(z.enum(["region", "level"])).max(2).default([]),
+});
+
 export const CvDocSchema = z.object({
   id: z.string().regex(/^cv_[a-f0-9]{16}$/),
   userId: z.string().min(1),
@@ -508,6 +515,12 @@ export const CvDocSchema = z.object({
   design: DesignSchema,
   /** The upload this CV was started from, if any. */
   importId: z.string().optional(),
+  /**
+   * How UK or US and the level were set when nothing was asked before the upload (DESIGN-SPEC-v3 §01):
+   * why each was chosen, in words, and which the file didn't show, so the editor says "Not known yet"
+   * for those until the person chooses. Cleared, one by one, as the person sets them.
+   */
+  inferred: InferredSchema.optional(),
   /** Words the person has told the checks to leave alone: a name, a specialist term, an acronym they chose not to spell out. */
   accepted: z.array(line(60)).max(200).default([]),
   /** What the target advert asks for, as the person has confirmed it. */

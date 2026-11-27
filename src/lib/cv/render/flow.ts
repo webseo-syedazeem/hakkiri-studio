@@ -1,4 +1,4 @@
-import { type CvDoc, type Entry, type EntrySection, type Locator, type Section, isEntrySection, isListSection, sectionIsEmpty, storable } from "../schema";
+import { type CvDoc, type Entry, type EntrySection, type Locator, type Section, type SectionKind, isEntrySection, isListSection, sectionIsEmpty, storable } from "../schema";
 import { docWord, formatDates, sectionHeading } from "../sections";
 import { type TemplateDef, kindOrder } from "./templates";
 
@@ -48,6 +48,8 @@ export interface Flow {
   title: string;
   /** Pieces that start a new page: the CV, when it follows a cover letter in the same file. */
   breaks?: number[];
+  /** Each section's kind, by id: a design that sets short items beside the main text needs to know which they are. */
+  kinds?: Record<string, SectionKind>;
 }
 
 /**
@@ -106,7 +108,12 @@ export function buildFlow(cv: Pick<CvDoc, "contact" | "sections" | "design" | "r
   for (const link of c.links) if (link.trim()) items.push({ text: link.trim(), link: href(link.trim()), at: { section: "contact", field: "links" } });
   if (items.length) nodes.push({ kind: "contact", items });
 
-  for (const s of paperOrder(cv, template)) {
+  // A design with a rail of short items (46, 47, 51) reads them after all the main text, wherever they sit on the page.
+  const rail = template.grid?.kind === "rail" ? template.grid.kinds : [];
+  const ordered = paperOrder(cv, template);
+  const kinds: Record<string, SectionKind> = {};
+  for (const s of [...ordered.filter((x) => !rail.includes(x.kind)), ...ordered.filter((x) => rail.includes(x.kind))]) {
+    kinds[s.id] = s.kind;
     if (!s.visible || sectionIsEmpty(s)) continue;
     const body: FlowNode[] = [];
     const sectionId = s.id;
@@ -162,6 +169,7 @@ export function buildFlow(cv: Pick<CvDoc, "contact" | "sections" | "design" | "r
     lang: region === "us" ? "en-US" : "en-GB",
     docWord: word,
     title: [c.fullName.trim(), cv.target?.title.trim() ?? "", word].filter(Boolean).join(" – "),
+    kinds,
   };
 }
 

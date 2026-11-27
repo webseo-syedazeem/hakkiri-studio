@@ -91,7 +91,8 @@ export function layoutLetter(cv: LetterPrintable, fonts: Fonts, today: string, w
   const style = paperStyle(cv.design);
   const own = letterFlow(cv, today);
   const flow = withCv ? joinFlows(own, buildFlow(cv, style.template)) : own;
-  return { flow, layout: layoutFlow(flow, style, fonts), style };
+  // A letter is one column, whatever the CV's design: a side rail is for a CV's short items.
+  return { flow, layout: layoutFlow(flow, style, fonts, { grid: false }), style };
 }
 
 export interface LetterFit {

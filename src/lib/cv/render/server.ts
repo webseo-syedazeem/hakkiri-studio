@@ -56,7 +56,7 @@ export async function exportCv(cv: Printable, format: ExportFormat, now = new Da
   const bytes = format === "pdf" ? writePdf(layout, flow, fonts, info) : await writeDocx(flow, style, info);
   let check: ReadBack | null = null;
   try {
-    check = format === "pdf" ? await readBackPdf(bytes, flow) : await readBackDocx(bytes, flow);
+    check = format === "pdf" ? await readBackPdf(bytes, flow, { inWrittenOrder: !!style.template.grid }) : await readBackDocx(bytes, flow);
   } catch (err) {
     // The file exists; what failed is the reading of it. That is reported as "not checked", never as "checked".
     console.error(`[cv export] the ${format} file could not be read back:`, err);

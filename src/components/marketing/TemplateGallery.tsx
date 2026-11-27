@@ -38,7 +38,7 @@ export function TemplateGallery({ items, kind }: { items: GalleryItem[]; kind: G
           <p className="max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
             {kind === "letter"
               ? `${items.length} cover letter templates, each matching the CV template with the same number, so your letter and CV look like a pair. Every sentence is checked against your CV before you send it.`
-              : `${items.length} templates, each one column of real text with standard headings, so screening software reads them the way a person does. Pick one, then change the fonts, ${region === "us" ? "color" : "colour"}, spacing and more.`}
+              : `${items.length} templates of real text with standard headings, written in reading order so screening software reads them the way a person does. Pick one, then change the fonts, ${region === "us" ? "color" : "colour"}, spacing and more.`}
           </p>
           <label className="relative mt-2 w-full max-w-lg">
             <span className="sr-only">Search templates by name, number or style</span>

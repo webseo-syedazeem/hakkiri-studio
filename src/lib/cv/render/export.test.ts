@@ -15,7 +15,7 @@ import { PDF_PRODUCER, writePdf } from "./pdf";
 import { compareText, readBackDocx, readBackPdf, wordsOf } from "./readback";
 import { exportCv } from "./server";
 import { FAMILIES } from "./fonts";
-import { TEMPLATES } from "./templates";
+import { COLUMNS_NOTE, TEMPLATES } from "./templates";
 import { fernCv, loadAllFonts, longCv } from "./testing";
 
 const fonts = loadAllFonts();
@@ -49,7 +49,7 @@ describe.each(CV_TEMPLATES)("PDF, %s template", (template: TemplateId) => {
   const { bytes, layout, flow } = pdfOf(cv);
 
   it("reads back word for word, in order, with nothing extra", async () => {
-    const check = await readBackPdf(bytes, flow);
+    const check = await readBackPdf(bytes, flow, { inWrittenOrder: !!TEMPLATES[template].grid });
     expect({ missing: check.missing, unexpected: check.unexpected }).toEqual({ missing: [], unexpected: [] });
     expect(check.status).toBe("checked");
     expect(check.pages).toBe(layout.pages);
@@ -58,8 +58,14 @@ describe.each(CV_TEMPLATES)("PDF, %s template", (template: TemplateId) => {
 
   it.runIf(POPPLER)("an independent reader (poppler) extracts the same words in the same order", () => {
     const file = save(`${template}.pdf`, bytes);
-    const text = execFileSync("pdftotext", ["-enc", "UTF-8", file, "-"], { encoding: "utf8" });
-    expect(wordsOf(text)).toEqual(flowText(flow).flatMap(wordsOf));
+    const want = flowText(flow).flatMap(wordsOf);
+    // A design with text beside text (TEMPLATES-v3) is written in reading order: read in that order (-raw), it says
+    // exactly what the CV says. Read by place on the page, as some software does, every word is there, but a side
+    // column can come in a different order: those designs say so.
+    const columns = !!TEMPLATES[template].grid;
+    const text = execFileSync("pdftotext", ["-enc", "UTF-8", ...(columns ? ["-raw"] : []), file, "-"], { encoding: "utf8" });
+    expect(wordsOf(text)).toEqual(want);
+    if (columns) expect(wordsOf(execFileSync("pdftotext", ["-enc", "UTF-8", file, "-"], { encoding: "utf8" })).sort()).toEqual([...want].sort());
     // Every font is embedded, cut down to the glyphs used, and maps glyphs back to characters.
     const table = execFileSync("pdffonts", [file], { encoding: "utf8" }).trim().split("\n").slice(2);
     expect(table.length).toBeGreaterThanOrEqual(2);
@@ -134,7 +140,13 @@ describe.each(CV_TEMPLATES)("PDF, %s template", (template: TemplateId) => {
     await doc.loadingTask.destroy();
   });
 
-  it("the upload reader, given the PDF, rebuilds the CV's fields", async () => {
+  // A design with text beside text (TEMPLATES-v3) is not rebuilt field by field by a reader that goes by place on the
+  // page, ours included: that is why such designs carry the note below wherever they are offered.
+  it.runIf(!!TEMPLATES[template].grid)("text beside text: the template says that some software reads it in a different order", () => {
+    expect(COLUMNS_NOTE).toMatch(/some applicant software reads side-by-side text in a different order/);
+  });
+
+  it.runIf(!TEMPLATES[template].grid)("the upload reader, given the PDF, rebuilds the CV's fields", async () => {
     const read = await readCvFile(bytes);
     expect(read.contact).toEqual({ fullName: "Fern Example", email: "fern@example.com", phone: "07700 900123", location: "York", links: ["linkedin.com/in/fern-example"] });
     const exp = read.sections.find((s) => s.kind === "experience");
@@ -178,7 +190,8 @@ describe.each(CV_TEMPLATES)("Word, %s template", (template: TemplateId) => {
     expect(core).toContain("<dc:language>en-GB</dc:language>");
     expect(core).not.toMatch(/creator|lastModifiedBy|keywords|subject/i);
     const fontNames = [...new Set([...xml.matchAll(/w:ascii="([^"]+)"/g)].map((m) => m[1]))].sort();
-    const want = [...new Set([TEMPLATES[template].fonts.body, TEMPLATES[template].fonts.heading].map((f) => FAMILIES[f]))].sort();
+    const t = TEMPLATES[template];
+    const want = [...new Set([t.fonts.body, t.fonts.heading, t.titleFont ?? t.fonts.heading].map((f) => FAMILIES[f]))].sort();
     expect(fontNames).toEqual(want);
   });
 

@@ -6,8 +6,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { bulletAt, changeBullet, diffParts, fieldFor, formTabs, itemCount, snapshotOf, stateAt, switchOff, tabFor } from "@/lib/cv/edit";
 import type { Finding } from "@/lib/cv/score/score";
 import { fitToPages } from "@/lib/cv/render/layout";
-import { type HonestFit, fitHonestly, fitSummary, marginMm } from "@/lib/cv/render/fit";
-import { BODY_SIZE } from "@/lib/cv/render/templates";
+import { type HonestFit, fitHonestly, fitSummary, marginMm, textPt } from "@/lib/cv/render/fit";
+import { TEMPLATES } from "@/lib/cv/render/templates";
 import { type Design } from "@/lib/cv/schema";
 import { type CvSummary, type CvLevel, type Locator, type Section, type SectionKind, CV_LEVELS, LEVEL_LABELS, cvIsEmpty, emptySection, isEntrySection } from "@/lib/cv/schema";
 import { OPTIONAL_KINDS, SECTION_DEFS, docWord, sectionHeading } from "@/lib/cv/sections";
@@ -621,7 +621,7 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
                 target={cv.design.pageTarget}
                 liveOver={liveOver}
                 lines={overLines}
-                textPt={cv.design.fontSize ?? BODY_SIZE}
+                textPt={textPt(cv.design)}
                 marginMm={marginMm(cv.design)}
                 onUndo={() => {
                   update({ design: fitResult.before });
@@ -649,6 +649,12 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
               {w.previewProfile !== null && (
                 <div className="cv-note" style={{ marginBottom: 10 }} data-testid="profile-preview">
                   Preview of your profile. It isn’t in your {word} yet.
+                </div>
+              )}
+              {pages > 1 && TEMPLATES[cv.design.template]?.grid?.kind === "rail" && (
+                // TEMPLATES-v3: a side column is used only on a one-page CV; it is never read before the text it follows.
+                <div className="cv-note" style={{ marginBottom: 10 }} data-testid="rail-note">
+                  Short items sit in the side column when your {word} fits on one page. On more pages they follow the main text, so they are always read after it.
                 </div>
               )}
               {over && !fitResult && (

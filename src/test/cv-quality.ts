@@ -108,7 +108,8 @@ const fonts = loadAllFonts();
 /** The CV score as the builder shows it once the page is laid out and both files have been made and read back. */
 export async function fullScore(cv: CvDoc, now: Date): Promise<{ score: Score; pages: number; pdf: string; docx: string }> {
   const { layout, flow, style } = layoutCv(cv, fonts);
-  const pdf = await readBackPdf(writePdf(layout, flow, fonts, { title: flow.title, lang: flow.lang, created: now }), flow);
+  // As the export does: a design with text beside text (TEMPLATES-v3) is read back in the order it was written.
+  const pdf = await readBackPdf(writePdf(layout, flow, fonts, { title: flow.title, lang: flow.lang, created: now }), flow, { inWrittenOrder: !!style.template.grid });
   const docx = await readBackDocx(await writeDocx(flow, style, { title: flow.title, lang: flow.lang, created: now }), flow);
   const score = scoreCv({ cv, pages: layout.pages, missingGlyphs: layout.missing, files: { pdf: pdf.status, docx: docx.status }, now });
   return { score, pages: layout.pages, pdf: pdf.status, docx: docx.status };

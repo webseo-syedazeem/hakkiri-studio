@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { exampleCv } from "@/lib/cv/examples/build";
 import { exampleForTemplate } from "@/lib/cv/examples/search";
-import { FAMILY_NAMES, galleryTemplates, templateBySlug, templateLabel, templatePreview, templateSlug } from "@/lib/cv/render/templates";
+import { COLUMNS_NOTE, FAMILY_NAMES, galleryTemplates, templateBySlug, templateLabel, templatePreview, templateSlug } from "@/lib/cv/render/templates";
 import type { CvDoc, CvRegion } from "@/lib/cv/schema";
 import { ApiError, api, messageOf } from "./client";
 import { PaperView } from "./Paper";
@@ -127,6 +127,11 @@ export function TemplatePicker({ slug }: { slug: string }) {
                 <p className="cv-muted" style={{ margin: 0 }}>
                   Change fonts, spacing, colour and every section in the editor.
                 </p>
+                {t.grid && (
+                  <p className="cv-small" style={{ margin: 0 }} data-testid="columns-note">
+                    {COLUMNS_NOTE}
+                  </p>
+                )}
               </div>
             </Panel>
             <Panel title="Choose a different template">

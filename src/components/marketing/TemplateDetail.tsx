@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { FAMILIES } from "@/lib/cv/render/fonts";
-import { ACCENTS, FAMILY_NAMES, GALLERIES, type GalleryKind, type TemplateDef, catalogue, templateLabel, templatePreview, templateSlug } from "@/lib/cv/render/templates";
+import { ACCENTS, FAMILY_NAMES, GALLERIES, type GalleryKind, type TemplateDef, COLUMNS_NOTE, catalogue, templateLabel, templatePreview, templateSlug } from "@/lib/cv/render/templates";
 import { templateWords } from "@/lib/cv/templates/gallery";
 
 /** One template: a large preview, what it suits, what it's made of, and the way into the builder with it. */
@@ -9,7 +9,8 @@ export function TemplateDetail({ t, kind }: { t: TemplateDef; kind: GalleryKind 
   const letter = kind === "letter";
   const words = templateWords(t, region);
   const others = catalogue().filter((x) => x.family === t.family && x.id !== t.id);
-  const fonts = t.fonts.heading === t.fonts.body ? FAMILIES[t.fonts.heading] : `${FAMILIES[t.fonts.heading]} headings, ${FAMILIES[t.fonts.body]} text`;
+  const fontsBase = t.fonts.heading === t.fonts.body ? FAMILIES[t.fonts.heading] : `${FAMILIES[t.fonts.heading]} headings, ${FAMILIES[t.fonts.body]} text`;
+  const fonts = t.titleFont && t.titleFont !== t.fonts.heading ? `${FAMILIES[t.titleFont]} name, ${fontsBase}` : fontsBase;
   const colour = region === "us" ? "color" : "colour";
   return (
     <div className="w-full bg-[#fafbfc]">
@@ -32,6 +33,11 @@ export function TemplateDetail({ t, kind }: { t: TemplateDef; kind: GalleryKind 
                 {templateLabel(t)} {word} template
               </h1>
               <p className="mt-3 text-base leading-relaxed text-slate-700">Good for: {words.suits.charAt(0).toLowerCase() + words.suits.slice(1)}.</p>
+              {t.grid && !letter && (
+                <p className="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm leading-relaxed text-slate-700" data-testid="columns-note">
+                  {COLUMNS_NOTE}
+                </p>
+              )}
             </div>
             <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
               <dt className="font-semibold text-slate-900">Fonts</dt>
@@ -54,7 +60,7 @@ export function TemplateDetail({ t, kind }: { t: TemplateDef; kind: GalleryKind 
               </ul>
             ) : (
               <ul className="list-disc space-y-1 pl-5 text-sm text-slate-700">
-                <li>One column of real text with standard headings, read the same way by screening software and people.</li>
+                <li>{t.grid && !letter ? "Real text with standard headings, written in reading order: the side column is read after the main text." : "One column of real text with standard headings, read the same way by screening software and people."}</li>
                 <li>Download as PDF or Word. Both files are read back before you get them, to check nothing is lost.</li>
                 <li>Change the fonts, {colour}, name size, bullets, dividers, spacing and indents, or save your look to use again.</li>
               </ul>

@@ -41,6 +41,12 @@ export const ACCENTS: Record<AccentId, { name: string; hex: string }> = {
   forest: { name: "Forest", hex: "#14532D" }, // 9.21:1
   burgundy: { name: "Burgundy", hex: "#701A46" }, // 9.54:1
   charcoal: { name: "Charcoal", hex: "#1F2937" }, // 14.6:1
+  // The five v3 designs' own colours (TEMPLATES-v3, "Default accent text contrast on white").
+  steel: { name: "Steel", hex: "#254B63" }, // 9.27:1
+  pine: { name: "Pine", hex: "#275F51" }, // 7.39:1
+  umber: { name: "Umber", hex: "#84512B" }, // 6.58:1
+  mulberry: { name: "Mulberry", hex: "#5C426C" }, // 8.57:1
+  lagoon: { name: "Lagoon", hex: "#285E68" }, // 7.26:1
 };
 
 export const INK = "#17181F";
@@ -54,6 +60,19 @@ export const DENSITY_FACTOR: Record<Density, number> = { tighter: 0.85, default:
 export type Align = "left" | "center" | "right";
 /** The decoration a section heading carries. Decoration is drawn, never text, and is marked as such in the PDF. */
 export type HeadingRule = "none" | "hairline-below" | "short-below" | "short-above" | "bar-before";
+
+/**
+ * A page structure beyond one column (TEMPLATES-v3 §02). The reading order never changes with it: the name and
+ * contact details, the profile, every main section, then the short items. A rail holds short items only, beside
+ * the main text on a one-page CV; when it would not fit there, it follows the main text at full width.
+ */
+export type Grid =
+  /** A column of short items (skills, languages…) beside the main text: 46 Clearline, 47 Fieldwork, 51 Framework. */
+  | { kind: "rail"; side: "left" | "right"; width: number; gap: number; padX: number; padY: number; kinds: SectionKind[]; line?: string; fill?: string; outline?: string }
+  /** Each section's heading in a narrow margin beside its own content: 49 Margin Notes. */
+  | { kind: "margin-heads"; width: number; gap: number; rule: string }
+  /** Each role's dates and place in a gutter beside it: 52 Chronicle. */
+  | { kind: "date-gutter"; width: number; gap: number; rule: string };
 
 export interface TemplateDef {
   id: TemplateId;
@@ -82,6 +101,28 @@ export interface TemplateDef {
   separator?: ContactSeparator;
   /** The name on a band of the accent colour, or plain. Plain unless said. */
   header?: HeaderStyle;
+  /* ---- Design v3 (TEMPLATES-v3 §02); none of these is set on the first 45. ---- */
+  /** The name's own font, when it differs from the headings'. */
+  titleFont?: FamilyId;
+  /** The name's colour, when it is neither the ink nor the accent. */
+  titleColor?: string;
+  /** Margins on all sides, in points, when the person hasn't chosen their own. */
+  margin?: number;
+  /** Body text size in points, when not the standard 10.5. */
+  bodySize?: number;
+  /** Line height of body text, as a multiple of its size, when not the standard 1.38. */
+  leading?: number;
+  /** The colour of heading rules, when not the standard hairline grey. */
+  ruleColor?: string;
+  /** A rule of the accent colour under the name and contact details: its thickness and the space above it. */
+  headerRule?: { height: number; gap: number };
+  /** A bar of the accent colour across the top of the first page, and the space below it. */
+  topBar?: { height: number; gap: number };
+  /** A short upright bar of the accent colour beside the name, and how far the name sits in from it. */
+  nameBar?: { width: number; inset: number };
+  /** A thin outline around the profile, with its padding. */
+  frame?: { color: string; padX: number; padY: number };
+  grid?: Grid;
 }
 
 /** "No. 07 · Harbour": how a template is named everywhere it is shown. */
@@ -104,16 +145,28 @@ export const GALLERIES: Record<GalleryKind, { region: "uk" | "us"; word: string;
 /** The template's preview image, drawn by the renderer with an example (scripts/template-previews.cjs): 1098 by 1552 pixels, or 550 wide when small. */
 export const templatePreview = (t: Pick<TemplateDef, "no" | "id">, size: "large" | "small" = "large", kind: GalleryKind = "cv") =>
   `/${kind === "letter" ? "cover-letter-templates" : "cv-templates"}/${String(t.no).padStart(2, "0")}-${t.id}${size === "small" ? "-small" : ""}.webp`;
-/** The 45 original templates, by number: the public CV, resume and cover-letter galleries. */
-export const catalogue = (): TemplateDef[] => (Object.values(TEMPLATES) as TemplateDef[]).filter((t) => t.no <= 45).sort((a, b) => a.no - b.no);
 /** Every template there is, by number, including the v3 designs: so any saved CV's design can always be opened. */
 export const allTemplates = (): TemplateDef[] => (Object.values(TEMPLATES) as TemplateDef[]).sort((a, b) => a.no - b.no);
 /**
- * The in-app gallery (design spec v3 §05): 15 retained designs and 5 new ones, covering all nine families.
- * The other 25 stay available to CVs already using them; they are just not offered for new choices.
+ * The 20 designs offered (TEMPLATES-v3 §01): 15 of the first 45 and the five v3 designs, covering all nine families.
+ * The other 30 stay for CVs and files already made in them, and their public pages still open; they are just not listed.
  */
 export const GALLERY_V3: readonly number[] = [1, 2, 6, 7, 11, 16, 19, 21, 26, 30, 31, 36, 39, 40, 42, 46, 47, 49, 51, 52];
-export const galleryTemplates = (): TemplateDef[] => allTemplates().filter((t) => GALLERY_V3.includes(t.no));
+export const isOffered = (t: Pick<TemplateDef, "no">) => GALLERY_V3.includes(t.no);
+/** Each design no longer offered, and the offered design closest to it (for search, and for suggesting a replacement). */
+export const MERGED_INTO: Partial<Record<TemplateId, TemplateId>> = {
+  linen: "minimal", chancery: "ledger", meridian: "minimal", slate: "modern", quartz: "modern", arcadia: "harbour", vellum: "minimal", hairline: "standard", tern: "ledger", clearwater: "modern",
+  tally: "compact", docket: "compact", marginalia: "compact", boardroom: "executive", crest: "harbour", regent: "executive", atlas: "executive", campus: "graduate", "first-light": "harbour", ladder: "graduate",
+  terminal: "index", circuit: "technical", lattice: "harbour", kernel: "index", consulting: "research", "career-change": "portfolio", creative: "portfolio", canvas: "harbour", atelier: "margin-notes", palette: "harbour",
+};
+export const galleryTemplates = (): TemplateDef[] => allTemplates().filter(isOffered);
+/** The public CV, resume and cover-letter galleries and the sitemap: the same 20 designs as the app. */
+export const catalogue = galleryTemplates;
+/** The designs to show someone choosing for a CV: those offered, and the CV's own if it is one no longer offered. */
+export const offeredWith = (current?: TemplateId): TemplateDef[] => allTemplates().filter((t) => isOffered(t) || t.id === current);
+/** Text set beside text: some software reads such a page in a different order, and the designs say so. */
+export const COLUMNS_NOTE = "Text sits beside text in this design. Our files keep the reading order, but some applicant software reads side-by-side text in a different order. For the widest compatibility, choose a one-column design.";
+/** Any template's page, offered or not, so existing links keep working. */
 export const templateBySlug = (slug: string): TemplateDef | undefined => allTemplates().find((t) => templateSlug(t) === slug);
 
 /** The page title, description and addresses for a template's page in one of the galleries. */
@@ -128,7 +181,7 @@ export function templateMeta(t: TemplateDef, kind: GalleryKind) {
     description:
       kind === "letter"
         ? `${templateLabel(t)}: a cover letter template that matches the CV template of the same number, for ${suits}. One page, PDF and Word downloads, and every sentence checked against your CV.`
-        : `${templateLabel(t)}: an ATS-friendly ${word} template for ${suits}. One column of real text, PDF and Word downloads, and every font, ${colour} and spacing yours to change.`,
+        : `${templateLabel(t)}: an ATS-friendly ${word} template for ${suits}. ${t.grid ? "Real text in reading order" : "One column of real text"}, PDF and Word downloads, and every font, ${colour} and spacing yours to change.`,
     alternates: { canonical: `${base}/${slug}`, ...(kind === "letter" ? {} : { languages: { "en-GB": `/cv-templates/${slug}`, "en-US": `/resume-templates/${slug}` } }) },
   };
 }
@@ -849,86 +902,110 @@ export const TEMPLATES: Record<TemplateId, TemplateDef> = {
     header: "band",
     separator: "bullet",
   },
-  /* ---- Design spec v3: five new designs. One column of real text, like every design here, so the
-   * software read-back and the word-for-word download check work exactly as for the others. */
+  /* ------------------------------------------------ Design v3 (TEMPLATES-v3 §02) */
   clearline: {
     id: "clearline",
     no: 46,
     name: "Clearline",
     family: "contemporary",
-    tags: ["clean lines", "accent name", "rule under contact"],
+    tags: ["side column", "short items on the right", "header rule"],
     suits: "Commercial and product roles",
-    order: ["summary", "experience", "skills", "projects", "education"],
-    fonts: { heading: "manrope", body: "inter" },
-    accent: "navy",
-    space: { section: 14, entry: 8 },
-    title: { size: 27, weight: 700, align: "left", accent: true },
-    contact: { align: "left", ruleBelow: true },
-    heading: { size: 11, weight: 700, caps: true, tracking: 0.08, align: "left", accent: true, rule: "hairline-below" },
+    order: ["summary", "experience", "projects", "education", "volunteering", "skills", "certificates", "languages", "interests"],
+    fonts: { heading: "inter", body: "inter" },
+    accent: "steel",
+    space: { section: 10, entry: 7 },
+    title: { size: 26, weight: 700, align: "left", accent: true },
+    contact: { align: "left", tight: true },
+    // 11.5 pt, not the drawn 11: a heading at least 1 pt larger than a bold job title is not taken for one by software.
+    heading: { size: 11.5, weight: 700, tracking: 0.02, align: "left", accent: true, rule: "hairline-below" },
+    margin: 45.35,
+    leading: 1.32,
+    ruleColor: "#B9C3D3",
+    headerRule: { height: 3, gap: 9 },
+    grid: { kind: "rail", side: "right", width: 135, gap: 18, padX: 14, padY: 0, kinds: ["skills", "certificates", "languages", "awards", "courses", "interests"], line: "#A7BAC3" },
   },
   fieldwork: {
     id: "fieldwork",
     no: 47,
     name: "Fieldwork",
     family: "contemporary",
-    tags: ["practical", "dash bullets", "short rules"],
+    tags: ["side column", "short items on the left", "top bar"],
     suits: "Operations and project roles",
-    order: ["summary", "skills", "experience", "projects", "certificates", "education"],
-    fonts: { heading: "work", body: "work" },
-    accent: "teal",
-    space: { section: 13, entry: 7 },
-    title: { size: 27, weight: 700, align: "left", accent: true },
-    contact: { align: "left" },
-    heading: { size: 12, weight: 700, align: "left", accent: true, rule: "short-below", ruleAccent: true },
-    bullet: "dash",
+    order: ["summary", "experience", "projects", "education", "volunteering", "skills", "certificates", "languages", "interests"],
+    fonts: { heading: "inter", body: "inter" },
+    accent: "pine",
+    space: { section: 10, entry: 7 },
+    title: { size: 26, weight: 700, align: "left", accent: true },
+    contact: { align: "left", tight: true },
+    heading: { size: 11.5, weight: 700, tracking: 0.02, align: "left", accent: true, rule: "hairline-below" },
+    margin: 42.52,
+    leading: 1.32,
+    ruleColor: "#B9C3D3",
+    topBar: { height: 6, gap: 12 },
+    grid: { kind: "rail", side: "left", width: 132, gap: 20, padX: 11, padY: 10, kinds: ["skills", "certificates", "languages", "awards", "courses", "interests"], fill: "#F1F6F3" },
   },
   "margin-notes": {
     id: "margin-notes",
     no: 49,
     name: "Margin Notes",
     family: "contemporary",
-    tags: ["serif headings", "indented entries", "editorial"],
+    tags: ["headings in the margin", "centred serif name"],
     suits: "Consulting and editorial roles",
-    order: ["summary", "experience", "education", "skills", "publications"],
-    fonts: { heading: "lora", body: "plex" },
-    accent: "burgundy",
-    space: { section: 14, entry: 8 },
-    title: { size: 26, weight: 600, align: "left" },
-    contact: { align: "left" },
-    heading: { size: 13, weight: 400, italic: true, align: "left", accent: true, rule: "short-above", ruleAccent: true },
-    entryIndent: 14,
+    order: ["summary", "experience", "projects", "education", "volunteering", "skills"],
+    fonts: { heading: "inter", body: "inter" },
+    titleFont: "serif",
+    titleColor: "#503323",
+    accent: "umber",
+    space: { section: 10, entry: 7 },
+    title: { size: 26, weight: 700, align: "center" },
+    contact: { align: "center", tight: true },
+    heading: { size: 10, weight: 700, caps: true, tracking: 0.06, align: "left", accent: true, rule: "none" },
+    margin: 45.35,
+    leading: 1.34,
+    headerRule: { height: 1, gap: 7 },
+    grid: { kind: "margin-heads", width: 91, gap: 12, rule: "#D8C8B6" },
   },
   framework: {
     id: "framework",
     no: 51,
     name: "Framework",
     family: "contemporary",
-    tags: ["framed header", "colour band", "structured"],
-    suits: "Policy, planning and analyst roles",
-    order: ["summary", "experience", "skills", "certificates", "languages", "education"],
-    fonts: { heading: "sans3", body: "sans3" },
-    accent: "slate",
-    space: { section: 14, entry: 8 },
-    title: { size: 26, weight: 700, align: "left" },
+    tags: ["framed profile", "short items on the right"],
+    suits: "Marketing, consulting and client-facing roles",
+    order: ["summary", "experience", "projects", "education", "volunteering", "skills", "certificates", "languages", "interests"],
+    fonts: { heading: "inter", body: "inter" },
+    accent: "mulberry",
+    space: { section: 10, entry: 8 },
+    title: { size: 30, weight: 700, align: "left" },
     contact: { align: "left" },
-    heading: { size: 11.5, weight: 700, caps: true, tracking: 0.06, align: "left", accent: true, rule: "hairline-below", ruleAccent: true },
-    header: "band",
+    heading: { size: 11, weight: 700, caps: true, tracking: 0.065, align: "left", accent: true, rule: "hairline-below" },
+    margin: 45.35,
+    leading: 1.32,
+    ruleColor: "#C5B6CE",
+    nameBar: { width: 4, inset: 12 },
+    frame: { color: "#C5B6CE", padX: 12, padY: 10 },
+    grid: { kind: "rail", side: "right", width: 142, gap: 18, padX: 11, padY: 10, kinds: ["skills", "certificates", "languages", "awards", "courses", "interests"], outline: "#C5B6CE" },
   },
   chronicle: {
     id: "chronicle",
     no: 52,
     name: "Chronicle",
     family: "contemporary",
-    tags: ["timeline", "accent bars", "dates first"],
-    suits: "Long, steady careers in one field",
-    order: ["summary", "experience", "education", "skills", "certificates"],
-    fonts: { heading: "franklin", body: "franklin" },
-    accent: "indigo",
-    space: { section: 14, entry: 9 },
-    title: { size: 27, weight: 700, align: "left", accent: true },
-    contact: { align: "left", ruleBelow: true },
-    heading: { size: 12, weight: 700, caps: true, tracking: 0.05, align: "left", accent: true, rule: "bar-before", ruleAccent: true },
-    entryIndent: 10,
+    tags: ["dates in a gutter", "serif name"],
+    suits: "Experienced professionals and career progression",
+    order: ["summary", "experience", "projects", "education", "volunteering", "skills"],
+    fonts: { heading: "inter", body: "inter" },
+    titleFont: "serif",
+    accent: "lagoon",
+    space: { section: 11, entry: 10 },
+    title: { size: 28, weight: 600, align: "left" },
+    contact: { align: "left" },
+    heading: { size: 12, weight: 700, align: "left", accent: true, rule: "none" },
+    margin: 45.35,
+    bodySize: 11,
+    leading: 1.35,
+    headerRule: { height: 2, gap: 10 },
+    grid: { kind: "date-gutter", width: 96, gap: 15, rule: "#B8CCD0" },
   },
 };
 
@@ -965,7 +1042,7 @@ export function contrastRatioOnWhite(hex: string): number {
 /** What is drawn: the template with the person's own fonts, colour, sizes, spacing and decoration applied. */
 export interface PaperStyle {
   template: TemplateDef;
-  fonts: { heading: FamilyId; body: FamilyId };
+  fonts: { heading: FamilyId; body: FamilyId; /** The name's font. */ title: FamilyId };
   accent: string;
   /** The multiplier on the template's spacing: 0.85, 1 or 1.15, or fine-grained. */
   density: number;
@@ -1035,12 +1112,14 @@ export function paperStyle(design: {
   };
   const customHex = design.customAccent && /^#[0-9A-Fa-f]{6}$/.test(design.customAccent) ? design.customAccent : undefined;
 
-  // Custom margin calculations (in pt)
-  let marginX = 50;
-  let marginY = 46;
+  // Custom margin calculations (in pt). A v3 design has its own margins, used until the person chooses theirs.
+  let marginX = base.margin ?? 50;
+  let marginY = base.margin ?? 46;
   if (typeof design.margin === "number") {
     marginX = Math.max(15, Math.min(72, design.margin));
-    marginY = Math.round(marginX * 0.92);
+    // A v3 design has the same margin on every side. Otherwise the top and bottom are a little less, but never
+    // under 12 mm while the sides are at least that (Fit to one page goes down to 12 mm on every side).
+    marginY = base.margin ? marginX : Math.max(Math.round(marginX * 0.92), Math.min(marginX, 34.1));
   } else if (design.margin === "compact") {
     marginX = 36;
     marginY = 34;
@@ -1058,10 +1137,10 @@ export function paperStyle(design: {
   const accentHex = customHex ?? ACCENTS[design.accent ?? template.accent].hex;
   return {
     template,
-    fonts: { heading: design.headingFont ?? pairing.heading, body: design.bodyFont ?? pairing.body },
+    fonts: { heading: design.headingFont ?? pairing.heading, body: design.bodyFont ?? pairing.body, title: design.headingFont ?? (design.fonts && design.fonts !== base.id ? pairing.heading : (base.titleFont ?? pairing.heading)) },
     accent: accentHex,
     density: densityMultiplier,
-    fontSize: design.fontSize ? Math.max(6, Math.min(16, design.fontSize)) : BODY_SIZE,
+    fontSize: design.fontSize ? Math.max(6, Math.min(16, design.fontSize)) : (base.bodySize ?? BODY_SIZE),
     lineSpacing: design.lineSpacing ? Math.max(0.7, Math.min(1.8, design.lineSpacing)) : 1.0,
     page: { ...PAGES[design.pageSize], marginX, marginY },
     dividerStyle: design.dividerStyle ?? "solid",

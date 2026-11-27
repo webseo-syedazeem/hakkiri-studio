@@ -63,12 +63,15 @@ const BOLD_FONT = /bold|black|heavy|semibold|demi|extrab/i;
 const round = (n: number, to = 0.5) => Math.round(n / to) * to;
 
 /** Words on the same baseline become one row; a wide gap inside a row starts a new segment. */
-function toRows(items: Item[]): Row[] {
-  const sorted = [...items].sort((a, b) => b.y - a.y || a.x - b.x);
+function toRows(items: Item[], stream = false): Row[] {
+  const sorted = stream ? items : [...items].sort((a, b) => b.y - a.y || a.x - b.x);
   const groups: Item[][] = [];
   for (const it of sorted) {
     const last = groups[groups.length - 1];
-    if (last && Math.abs(last[0].y - it.y) <= Math.max(1.5, 0.35 * Math.min(last[0].size, it.size))) last.push(it);
+    const sameLine = last && Math.abs(last[0].y - it.y) <= Math.max(1.5, 0.35 * Math.min(last[0].size, it.size));
+    // In the order the file was written, a line goes on only to the right: text set back to the left on the same
+    // line (a role's dates in a margin, written after the role) is a line of its own.
+    if (sameLine && (!stream || it.x >= Math.max(...last.map((x) => x.x + x.w)) - 1)) last.push(it);
     else groups.push([it]);
   }
   return groups.map((g) => {
@@ -293,6 +296,12 @@ export async function extractPdf(
      * would make the file look different from what was put into it.
      */
     raw?: boolean;
+    /**
+     * With `raw`: read the text in the order the file was written, not by its place on the page. For a file of
+     * this app's own in a design with text beside text (a rail of short items, headings or dates in a margin),
+     * which is written in reading order: the main text, then the short items.
+     */
+    stream?: boolean;
   } = {},
 ): Promise<ExtractedFile> {
   // The legacy build runs on the server without a browser.
@@ -364,7 +373,7 @@ export async function extractPdf(
         chars += it.str.trim().length;
       }
       if (!opts.raw && chars > MAX_FILE_CHARS) throw new ImportError("too-much", "The PDF has far more text in it than a CV.");
-      const rows = toRows(items);
+      const rows = toRows(items, opts.raw && opts.stream);
       const gutter = opts.raw ? null : findGutter(rows, isDates);
       const links = (await page.getAnnotations().catch(() => [])).filter((a: { url?: string; rect?: number[] }) => a.url && a.rect) as { url: string; rect: number[] }[];
       const pageLines: Raw[][] = [[], []];

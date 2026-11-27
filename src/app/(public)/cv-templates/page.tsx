@@ -3,8 +3,8 @@ import { TemplateGallery } from "@/components/marketing/TemplateGallery";
 import { galleryItems } from "@/lib/cv/templates/gallery";
 
 export const metadata: Metadata = {
-  title: "CV templates: 45 ATS-friendly designs | Hakkiri",
-  description: "45 CV templates, each one column of real text that screening software reads correctly. Choose one, then change the fonts, colour and spacing. Download as PDF or Word.",
+  title: "CV templates: 20 ATS-friendly designs | Hakkiri",
+  description: "20 CV templates of real text with standard headings, written in reading order so screening software reads them correctly. Choose one, then change the fonts, colour and spacing. Download as PDF or Word.",
   alternates: { canonical: "/cv-templates", languages: { "en-GB": "/cv-templates", "en-US": "/resume-templates" } },
 };
 

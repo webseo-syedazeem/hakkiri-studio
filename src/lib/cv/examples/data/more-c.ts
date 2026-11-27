@@ -12,7 +12,7 @@ export const MORE_C: ExampleSpec[] = [
     industry: "marketing",
     role: { uk: "Digital Marketing Executive", us: "Digital Marketing Specialist" },
     level: "early",
-    template: "framework",
+    template: "clearline",
     blurb: {
       uk: "A digital marketing executive two years into running paid search and email for an online outdoor clothing retailer.",
       us: "A digital marketing specialist two years into running paid search and email for an online outdoor apparel retailer.",
