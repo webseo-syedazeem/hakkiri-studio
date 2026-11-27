@@ -562,7 +562,8 @@ export function PracticeHubClient({
                 {current.focus ? (
                   <span className="text-base font-bold text-ink tracking-tight">{current.focus.name}</span>
                 ) : (
-                  <span className="text-xs text-muted">All areas balanced</span>
+                  // No scored practice yet: nothing is known, so nothing is said to be balanced.
+                  <span className="text-xs text-muted">{current.stats.averageScore == null ? "Not known yet" : "All areas balanced"}</span>
                 )}
               </div>
             </div>

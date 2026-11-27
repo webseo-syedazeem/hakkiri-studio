@@ -38,8 +38,8 @@ const APPLY_STOCK = ["Alex Morgan", "FinTech Scaleup", "+44 7700 900123", "Unive
     await p.goto(`${BASE}/practice`, { waitUntil: "networkidle" });
     await none(p, "The Practice Hub", HUB_STOCK);
     const hub = await text(p);
-    check(hub.includes("None yet") && hub.includes("No scores yet") && hub.includes("Not known yet"), "A new account's Practice Hub says there is no practice, score or focus area yet");
-    check(/No date set|\(example\)/.test(hub), "The interview shown is marked as an example, with its own date or none");
+    check(/\b0 sessions\b/.test(hub) && hub.includes("Not scored yet") && hub.includes("Not known yet"), "A new account's Practice Hub says there is no practice, score or focus area yet");
+    check(/No date set|\(example\)|\bExample\b/.test(hub), "The interview shown is marked as an example, with its own date or none");
     await p.screenshot({ path: `${OUT}/honest-practice.png`, fullPage: true });
 
     // ── Experience Library ──────────────────────────────────────────────────────────────────────
