@@ -18,6 +18,9 @@ const ids = fs
   .filter((f) => f.endsWith(".ts") && f !== "letters.ts")
   .flatMap((f) => [...fs.readFileSync(path.join(dir, f), "utf8").matchAll(/\n {4}id: "([a-z0-9-]+)",\n {4}industry:/g)].map((m) => m[1]));
 
+// ONLY=care-worker,chef renders just those examples.
+const ONLY = (process.env.ONLY || "").split(",").filter(Boolean);
+
 (async () => {
   if (ids.length < 33) throw new Error(`Expected at least 33 examples, found ${ids.length}`);
   const browser = await chromium.launch();
@@ -27,7 +30,7 @@ const ids = fs
   const res = await page.request.post(`${BASE}/api/auth/signup`, { data: { email: `examples-${Date.now()}@example.com`, password: "Password123!", name: "Previews" } });
   if (!res.ok()) throw new Error(`Sign-up failed: ${res.status()}`);
   let made = 0;
-  for (const id of ids) {
+  for (const id of ONLY.length ? ids.filter((x) => ONLY.includes(x)) : ids) {
     for (const region of ["uk", "us"]) {
       // A fresh account every 15 copies, so the limit on CVs per account is never reached.
       if (made && made % 15 === 0) {
