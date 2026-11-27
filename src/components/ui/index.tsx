@@ -8,19 +8,19 @@ type Variant = "primary" | "secondary" | "ghost";
 type Size = "sm" | "md" | "lg";
 
 const buttonBase =
-  "group relative inline-flex items-center justify-center gap-2 whitespace-nowrap font-semibold transition-all duration-200 ease-out disabled:pointer-events-none disabled:opacity-50 select-none cursor-pointer";
+  "group relative inline-flex items-center justify-center gap-2 whitespace-nowrap font-semibold transition-colors duration-150 ease-out disabled:pointer-events-none disabled:opacity-50 select-none cursor-pointer";
 const buttonVariants: Record<Variant, string> = {
   primary:
-    "pro-btn-glow bg-blue-fill hover:bg-blue-hover text-white border border-blue-fill/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_4px_14px_-2px_rgba(0,113,227,0.38)] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_6px_20px_-2px_rgba(0,113,227,0.55)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_4px_16px_-2px_rgba(74,90,240,0.45)] hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]",
+    "bg-blue-fill hover:bg-blue-hover active:bg-blue-hover text-white border border-transparent shadow-none",
   secondary:
-    "bg-panel text-ink border border-line-strong shadow-[0_1px_3px_rgba(15,23,42,0.06)] hover:border-blue-fill/50 hover:bg-panel-2 hover:shadow-[0_4px_12px_rgba(15,23,42,0.1)] dark:bg-[#1c1d27] dark:border-white/10 dark:shadow-[0_2px_8px_rgba(0,0,0,0.35)] dark:hover:border-white/20 dark:hover:bg-[#252634] hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]",
+    "bg-panel-2 text-ink border border-line-strong hover:bg-[#e8ecf4] hover:border-[#68758a] dark:bg-[#22232c] dark:border-white/[0.18] dark:hover:border-[#777d95] dark:hover:bg-[#292b37] shadow-none",
   ghost:
-    "bg-transparent text-muted hover:text-ink hover:bg-panel-2 dark:hover:text-white dark:hover:bg-white/[0.06] active:scale-[0.98]",
+    "bg-transparent text-muted hover:text-ink hover:bg-panel-2 dark:hover:text-white dark:hover:bg-white/[0.06]",
 };
 const buttonSizes: Record<Size, string> = {
-  sm: "h-[34px] px-3.5 rounded-[10px] text-[13px]",
-  md: "h-[42px] px-5 rounded-xl text-sm",
-  lg: "h-[48px] px-6 rounded-xl text-[15px]",
+  sm: "h-[36px] px-3.5 rounded-[11px] text-[13px]",
+  md: "h-[40px] px-4 rounded-[11px] text-[13.5px]",
+  lg: "h-[44px] px-5 rounded-[11px] text-[14px]",
 };
 
 export function buttonClass(variant: Variant = "secondary", size: Size = "md", extra?: string) {
@@ -41,7 +41,7 @@ export function Panel({ className, children, ...rest }: ComponentProps<"section"
   return (
     <section
       className={clsx(
-        "rounded-[18px] bg-panel border border-line shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_10px_28px_-6px_rgba(15,23,42,0.08)] dark:shadow-[0_12px_32px_-8px_rgba(0,0,0,0.55)] transition-all duration-200",
+        "rounded-[12px] bg-panel border border-line shadow-none transition-colors duration-150",
         className
       )}
       {...rest}

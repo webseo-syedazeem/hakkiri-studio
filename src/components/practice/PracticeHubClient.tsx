@@ -582,10 +582,10 @@ export function PracticeHubClient({
               type="button"
               onClick={() => setMode("general")}
               className={clsx(
-                "text-left p-5 rounded-2xl border transition-all duration-200 cursor-pointer flex flex-col justify-between min-h-[120px] relative overflow-hidden group",
+                "text-left p-5 rounded-[14px] border transition-colors duration-150 cursor-pointer flex flex-col justify-between min-h-[116px] relative overflow-hidden group",
                 mode === "general"
-                  ? "bg-blue-fill/5 border-blue-fill text-ink shadow-[0_4px_20px_rgba(74,90,240,0.12)] ring-1 ring-blue-fill dark:bg-gradient-to-br dark:from-[#242646] dark:to-[#17192a] dark:border-[#7474f3] dark:shadow-[0_0_25px_rgba(116,116,243,0.25)]"
-                  : "bg-panel-2 border-line hover:border-blue-fill/40 hover:bg-panel text-ink hover:-translate-y-0.5"
+                  ? "bg-[#eceefe] dark:bg-[#252842] border-blue text-ink shadow-[inset_0_0_0_1px_var(--color-blue)]"
+                  : "bg-panel-2 border-line hover:border-blue/50 text-ink"
               )}
             >
               <div className="flex items-center justify-between w-full">
@@ -606,10 +606,10 @@ export function PracticeHubClient({
               type="button"
               onClick={() => setMode("tailored")}
               className={clsx(
-                "text-left p-5 rounded-2xl border transition-all duration-200 cursor-pointer flex flex-col justify-between min-h-[120px] relative overflow-hidden group",
+                "text-left p-5 rounded-[14px] border transition-colors duration-150 cursor-pointer flex flex-col justify-between min-h-[116px] relative overflow-hidden group",
                 mode === "tailored"
-                  ? "bg-blue-fill/5 border-blue-fill text-ink shadow-[0_4px_20px_rgba(74,90,240,0.12)] ring-1 ring-blue-fill dark:bg-gradient-to-br dark:from-[#242646] dark:to-[#17192a] dark:border-[#7474f3] dark:shadow-[0_0_25px_rgba(116,116,243,0.25)]"
-                  : "bg-panel-2 border-line hover:border-blue-fill/40 hover:bg-panel text-ink hover:-translate-y-0.5"
+                  ? "bg-[#eceefe] dark:bg-[#252842] border-blue text-ink shadow-[inset_0_0_0_1px_var(--color-blue)]"
+                  : "bg-panel-2 border-line hover:border-blue/50 text-ink"
               )}
             >
               <div className="flex items-center justify-between w-full">
@@ -766,10 +766,10 @@ export function PracticeHubClient({
               type="button"
               onClick={() => setFocus("mix")}
               className={clsx(
-                "w-full text-left p-5 rounded-2xl border transition-all duration-200 cursor-pointer flex items-center justify-between gap-4 group",
+                "w-full text-left p-5 rounded-[14px] border transition-colors duration-150 cursor-pointer flex items-center justify-between gap-4 group",
                 focus === "mix"
-                  ? "bg-blue-fill/5 border-blue-fill text-ink shadow-[0_4px_20px_rgba(74,90,240,0.12)] ring-1 ring-blue-fill dark:bg-gradient-to-r dark:from-[#2c2d58] dark:via-[#24254b] dark:to-[#1c1d38] dark:border-[#7474f3] dark:shadow-[0_0_25px_rgba(116,116,243,0.3)]"
-                  : "bg-panel-2 border-line hover:border-blue-fill/40 hover:bg-panel text-ink hover:-translate-y-0.5"
+                  ? "bg-[#eceefe] dark:bg-[#252842] border-blue text-ink shadow-[inset_0_0_0_1px_var(--color-blue)]"
+                  : "bg-panel-2 border-line hover:border-blue/50 text-ink"
               )}
             >
               <div className="flex items-center gap-4">
@@ -804,10 +804,10 @@ export function PracticeHubClient({
                   type="button"
                   onClick={() => setFocus(cat.key)}
                   className={clsx(
-                    "text-left px-4 py-3.5 rounded-xl border transition-all duration-200 cursor-pointer flex items-center justify-between gap-3 group",
+                    "text-left px-4 py-3.5 rounded-[11px] border transition-colors duration-150 cursor-pointer flex items-center justify-between gap-3 group",
                     active
-                      ? "bg-blue-fill/10 border-blue-fill text-ink font-semibold shadow-sm ring-1 ring-blue-fill/40 dark:bg-gradient-to-r dark:from-[#2c2c54] dark:to-[#1e1f3a] dark:border-[#7474f3] dark:shadow-[0_0_15px_rgba(116,116,243,0.25)] dark:text-white"
-                      : "bg-panel-2 border-line hover:border-blue-fill/30 hover:bg-panel text-ink hover:-translate-y-0.5"
+                      ? "bg-[#eceefe] dark:bg-[#252842] border-blue text-ink font-semibold shadow-[inset_0_0_0_1px_var(--color-blue)]"
+                      : "bg-panel-2 border-line hover:border-blue/50 text-ink"
                   )}
                 >
                   <div className="flex items-center gap-3 min-w-0">
@@ -824,7 +824,7 @@ export function PracticeHubClient({
         </div>
 
         {/* Step 3: Session settings */}
-        <div className="rounded-2xl bg-panel border border-line p-6 sm:p-7 shadow-sm">
+        <div className="rounded-[12px] bg-panel border border-line p-6 sm:p-7">
           <div className="flex items-center gap-2.5 mb-5">
             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-fill/15 text-blue-fill dark:bg-[#42478a] dark:text-[#dddaff] text-xs font-bold">
               3
@@ -843,10 +843,10 @@ export function PracticeHubClient({
                     type="button"
                     onClick={() => setDuration(m)}
                     className={clsx(
-                      "py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 border text-center cursor-pointer",
+                      "py-2.5 rounded-[11px] text-xs font-semibold transition-colors duration-150 border text-center cursor-pointer",
                       duration === m
-                        ? "bg-blue-fill border-blue-fill text-white shadow-md shadow-blue-500/20 ring-1 ring-blue-400/40"
-                        : "bg-panel-2 border-line text-muted hover:border-blue-fill/40 hover:text-ink hover:bg-panel"
+                        ? "bg-[#eceefe] dark:bg-[#252842] border-blue text-[#2f3bb5] dark:text-[#f1f1f4] shadow-[inset_0_0_0_1px_var(--color-blue)]"
+                        : "bg-panel-2 border-line text-muted hover:border-blue/50 hover:text-ink"
                     )}
                   >
                     {m} min
@@ -865,10 +865,10 @@ export function PracticeHubClient({
                     type="button"
                     onClick={() => setDifficulty(d)}
                     className={clsx(
-                      "py-2.5 rounded-xl text-xs font-semibold capitalize transition-all duration-200 border text-center cursor-pointer",
+                      "py-2.5 rounded-[11px] text-xs font-semibold capitalize transition-colors duration-150 border text-center cursor-pointer",
                       difficulty === d
-                        ? "bg-blue-fill border-blue-fill text-white shadow-md shadow-blue-500/20 ring-1 ring-blue-400/40"
-                        : "bg-panel-2 border-line text-muted hover:border-blue-fill/40 hover:text-ink hover:bg-panel"
+                        ? "bg-[#eceefe] dark:bg-[#252842] border-blue text-[#2f3bb5] dark:text-[#f1f1f4] shadow-[inset_0_0_0_1px_var(--color-blue)]"
+                        : "bg-panel-2 border-line text-muted hover:border-blue/50 hover:text-ink"
                     )}
                   >
                     {d}
@@ -880,8 +880,7 @@ export function PracticeHubClient({
         </div>
 
         {/* 4. SESSION PREVIEW (AC18: Rendered BELOW Step 3) */}
-        <div className="rounded-2xl bg-panel border border-blue-fill/30 p-6 sm:p-8 shadow-lg relative overflow-hidden dark:bg-gradient-to-b dark:from-[#181b30] dark:to-[#101322] dark:border-[#6366f1]/40">
-          <div className="h-1.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 absolute top-0 left-0 right-0" />
+        <div className="rounded-[12px] bg-panel border border-line p-6 sm:p-8 relative overflow-hidden">
 
           <div className="flex items-center justify-between gap-4 mb-4">
             <h2 className="text-base sm:text-lg font-bold text-ink tracking-tight">Your session preview</h2>

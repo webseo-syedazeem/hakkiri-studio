@@ -145,14 +145,14 @@ export function CustomSelect({
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         className={clsx(
-          "group relative flex items-center justify-between gap-2.5 rounded-2xl bg-panel-2 text-xs transition-all duration-200 outline-none border",
+          "group relative flex items-center justify-between gap-2.5 rounded-[9px] bg-panel dark:bg-[#1a1b23] text-xs transition-colors duration-150 outline-none border",
           autoWidth ? "w-auto" : "w-full",
-          size === "sm" ? "px-3 py-1.5 min-h-[34px]" : "px-3.5 py-2.5 min-h-[40px]",
+          size === "sm" ? "px-3 py-1.5 min-h-[34px]" : "px-3.5 py-2.5 min-h-[38px]",
           disabled
             ? "opacity-50 cursor-not-allowed border-line text-muted"
             : isOpen
-            ? "border-blue-fill bg-panel shadow-[0_0_0_2px_rgba(74,90,240,0.2),0_8px_24px_rgba(15,23,42,0.12)] dark:shadow-[0_0_0_2px_rgba(59,130,246,0.35),0_8px_24px_rgba(0,0,0,0.6)] text-ink"
-            : "border-line text-ink hover:border-line-strong hover:bg-panel cursor-pointer shadow-sm active:scale-[0.98]",
+            ? "border-blue ring-2 ring-blue/30 text-ink"
+            : "border-[#68758a] dark:border-[#777d95] text-ink hover:border-blue cursor-pointer",
           triggerClassName
         )}
       >
