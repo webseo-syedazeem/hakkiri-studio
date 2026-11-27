@@ -582,7 +582,7 @@ run("CV editor", async (browser) => {
   await page.getByTestId("page-count").waitFor({ timeout: 20000 });
   check((await page.locator("svg.cv-paper").isVisible()) && (await page.getByRole("button", { name: "+ Add role" }).isVisible()) && !(await seg.isVisible()), "at desktop width the form and the paper sit side by side");
   const box = await page.locator(".cv-layout").evaluate((el) => [...el.children].map((c) => Math.round(c.getBoundingClientRect().width)));
-  check(box.length === 3 && box[0] >= 360 && box[1] >= 640 && box[1] > box[0] && Math.abs(box[2] - 260) <= 2, "at 1440 the fields, the page and the score sit side by side, the page the widest (about half the width)", box.join(" / "));
+  check(box.length === 3 && box[0] >= 360 && box[1] >= 640 && box[1] > box[0] && Math.abs(box[2] - 268) <= 2 && box[0] >= 378, "at 1440 the fields, the page and the score sit side by side, the page the widest (about half the width)", box.join(" / "));
   await tab(page, "Finish");
   await page.getByRole("heading", { name: "Files" }).waitFor();
   const fbox = await page.locator(".cv-layout").evaluate((el) => [...el.children].map((c) => Math.round(c.getBoundingClientRect().width)));

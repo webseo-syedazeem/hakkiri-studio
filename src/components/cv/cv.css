@@ -3140,32 +3140,43 @@ html:not(.dark):not([data-theme="dark"]) .cv, .mk .cv, .cv.mk, [data-theme="ligh
 
 /* ======================================================================= Design v3: the editor
  * The page is the widest column and starts near the top. The sidebar shrinks to icons here (Rail.tsx).
- * 1400 px and up: fields 372, the page, score and job keywords 260.
- * 1200 to 1399 px: fields 360 and the page; the score is one line that opens a panel.
+ * 1440 px and up: fields 380, the page, score and job keywords 268 (DESIGN-SPEC-v3 §02: 56 px rail, 16 px gutters).
+ * 1200 to 1439 px: fields 360 and the page; the score is one line that opens a panel.
  * Under 1200 px: one column with the Page / Editing fields switch, as before. */
 @media (min-width: 1200px) {
-  main:has(.cv-workbench) { padding-left: 20px; padding-right: 20px; }
+  main:has(.cv-workbench) { padding-left: 16px; padding-right: 16px; }
   .cv .cv-area:has(.cv-workbench) { padding-left: 0; padding-right: 0; max-width: none; }
   .cv .cv-workbench { grid-template-columns: 360px minmax(0, 1fr); gap: 12px; }
   .cv .cv-workbench > .cv-insights { display: none; }
   .cv .cv-workbench.cv-fields-hidden { grid-template-columns: minmax(0, 1fr); }
   .cv .cv-workbench.cv-fields-hidden > .cv-tab-content { display: none; }
 }
-@media (min-width: 1400px) {
-  .cv .cv-workbench { grid-template-columns: 372px minmax(0, 1fr) 260px; }
+@media (min-width: 1440px) {
+  .cv .cv-workbench { grid-template-columns: 380px minmax(0, 1fr) 268px; }
   .cv .cv-workbench > .cv-insights { display: flex; grid-column: auto; flex-direction: column; gap: 14px; position: sticky; top: 16px; align-self: start; }
-  .cv .cv-workbench.cv-fields-hidden { grid-template-columns: minmax(0, 1fr) 260px; }
+  .cv .cv-workbench.cv-fields-hidden { grid-template-columns: minmax(0, 1fr) 268px; }
   .cv .cv-belowwide { display: none !important; }
 }
 .cv .cv-sticky { top: 16px; }
 
-/* The header: Download, Share, More, then Undo and Redo as icons. The score sits with the chips. */
+/* The header: Download, Share, More, then Undo and Redo as icons. UK · A4 and the level sit with the chips. */
 .cv .cv-iconbtn { width: 36px; padding: 0 !important; justify-content: center; }
-.cv a.cv-score-chip { text-decoration: none; font-weight: 600; }
-.cv a.cv-score-chip[data-band] { color: var(--ring-text); border-color: color-mix(in srgb, var(--ring) 40%, var(--cv-edge)); }
-.cv a.cv-score-chip:hover { border-color: var(--control-edge); }
+.cv .cv-level-chip { position: relative; padding: 0; }
+.cv .cv-level-chip select { appearance: none; border: 0; background: transparent; color: inherit; font: inherit; padding: 0 26px 0 10px; min-height: 28px; cursor: pointer; border-radius: inherit;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: calc(100% - 13px) 55%, calc(100% - 9px) 55%; background-size: 4px 4px; background-repeat: no-repeat; }
+.cv .cv-level-chip select:focus-visible { outline: 2px solid var(--color-blue); outline-offset: 2px; }
+.cv .cv-level-chip:hover { border-color: var(--control-edge); }
 
-/* Talk it through, Tailor and Cover letter sit with the section tabs, after a divider. */
+/* The score panel ends with two equal ways on: Tailor to a job, Cover letter. */
+.cv .cv-panelways { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+.cv .cv-panelways .cv-btn { justify-content: center; text-align: center; white-space: normal; min-height: 44px; padding: 8px 5px; font-size: 12px; line-height: 1.25; }
+
+/* Below 1440 px: the one-line score strip above the columns. */
+.cv .cv-scoreline.cv-belowwide { position: static; margin-bottom: 10px; padding: 8px 12px; }
+.cv .cv-scoreline .cv-link { font: inherit; font-size: 13px; font-weight: 600; background: none; border: 0; padding: 4px 0; cursor: pointer; color: var(--color-blue); }
+
+/* Talk it through and Cover letter sit with the section tabs, after a divider. */
 .cv-tabs-sep { width: 1px; height: 18px; background: var(--cv-edge); margin: 0 6px; align-self: center; flex: none; }
 
 /* The tools row above the columns: fold the fields away, fit the page. */
@@ -3192,14 +3203,14 @@ html:not(.dark):not([data-theme="dark"]) .cv, .mk .cv, .cv.mk, [data-theme="ligh
 
 /* v3: Questions your CV will get */
 .cv-qlist { list-style: none; margin: 0; padding: 0; border: 1px solid var(--cv-edge); border-radius: 12px; background: var(--color-panel); }
-.cv-q { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; gap: 14px 16px; padding: 18px 20px; align-items: start; }
+.cv-q { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 14px; padding: 20px; align-items: start; }
 .cv-q + .cv-q { border-top: 1px solid var(--cv-edge); }
 .cv-q-n { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 9px; border: 1px solid var(--control-edge); font-weight: 600; font-size: 14px; color: var(--color-blue); }
 .cv-q-body { display: grid; gap: 8px; min-width: 0; }
 .cv-q-ask { margin: 0; font-size: 16px; line-height: 1.45; font-weight: 600; color: var(--color-ink); }
 .cv-q-actions { display: grid; gap: 6px; justify-items: stretch; }
 @media (max-width: 767px) {
-  .cv-q { grid-template-columns: 32px minmax(0, 1fr); padding: 16px; }
+  .cv-q { grid-template-columns: 32px minmax(0, 1fr); gap: 8px; padding: 14px; }
   .cv-q-actions { grid-column: 1 / -1; grid-template-columns: 1fr 1fr; }
 }
 .cv-practisecard { display: grid; gap: 6px; padding: 12px; border: 1px solid var(--cv-edge); border-radius: 11px; background: var(--color-panel-2); }

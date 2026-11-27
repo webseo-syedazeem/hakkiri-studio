@@ -29,7 +29,9 @@ async function patch(page, id, change) {
 }
 const saved = (page) => page.locator('[data-testid="save-state"]', { hasText: /^Saved$/ }).waitFor({ timeout: 15000 });
 const scoreOf = async (page) => Number(/(\d+)/.exec(await page.getByTestId("score").innerText())[1]);
-const buttonScore = async (page) => Number(/(\d+)$/.exec((await page.getByTestId("score-button").innerText()).trim())?.[1] ?? NaN);
+// The score beside the page (1440 px and up): the ring in the score panel says it in words.
+const PANEL_RING = '.cv-insights [data-testid="score-panel"] .cv-scorering';
+const panelScore = async (page) => Number(/: (\d+) out of 100/.exec((await page.locator(PANEL_RING).getAttribute("aria-label")) ?? "")?.[1] ?? NaN);
 async function tab(page, name) {
   await page.getByRole("navigation", { name: "Sections" }).getByRole("link", { name, exact: true }).click();
   await page.locator('nav[aria-label="Sections"] a[aria-current="page"]', { hasText: new RegExp(`^${name}`) }).waitFor({ timeout: 15000 });
@@ -69,9 +71,9 @@ run("CV score", async (browser) => {
   await setUp(page, { name: "Fern CV", level: "Experienced" });
   const id = idOf(page);
   await page.getByLabel("Name").waitFor();
-  await page.locator('[data-testid="score-button"]', { hasText: "Add content to score" }).waitFor({ timeout: 8000 });
-  check(true, "an empty CV has no score: the button says “Add content to score”");
-  await page.getByTestId("score-button").click();
+  await page.locator('.cv-insights [data-testid="score-panel"]', { hasText: "Not checked yet" }).waitFor({ timeout: 8000 });
+  check((await page.locator(PANEL_RING).count()) === 0, "an empty CV has no score: the panel says “Not checked yet”, with no ring");
+  await page.locator(".cv-insights").getByRole("link", { name: "How the score works" }).click();
   await page.waitForURL(/\/findings/);
   await page.getByRole("heading", { name: "Add content to score" }).waitFor();
   check((await page.getByTestId("score").count()) === 0 && (await page.locator(".cv-finding").count()) === 0, "the score screen shows no number and no findings for an empty CV");
@@ -121,12 +123,12 @@ run("CV score", async (browser) => {
   await inline.getByRole("button", { name: /^View \d+ more/ }).click();
   check((await inline.locator(".cv-note").count()) >= 3, "“View more” shows the other findings for that field");
   await bothThemes(page, "score-inline");
-  const before = await buttonScore(page);
+  const before = await panelScore(page);
   await page.getByRole("textbox", { name: "Bullet 1" }).fill("Catalogued 3,200 maps in two years by rebuilding the intake process");
   await page.locator(".cv-fixed", { hasText: "Fixed" }).waitFor({ timeout: 8000 });
   check(true, "rewriting the line clears its findings, and “Fixed” shows under the field");
-  await page.waitForFunction((was) => Number(/(\d+)$/.exec(document.querySelector('[data-testid="score-button"]').textContent.trim())?.[1]) > was, before, { timeout: 8000 });
-  check((await buttonScore(page)) > before, "the score in the bar goes up without a reload", `${before} → ${await buttonScore(page)}`);
+  await page.waitForFunction(([sel, was]) => Number(/: (\d+) out of 100/.exec(document.querySelector(sel)?.getAttribute("aria-label") ?? "")?.[1]) > was, [PANEL_RING, before], { timeout: 8000 });
+  check((await panelScore(page)) > before, "the score beside the page goes up without a reload", `${before} → ${await panelScore(page)}`);
   await saved(page);
   await page.getByRole("link", { name: "Back to findings" }).click();
   await page.waitForURL(/\/findings/);

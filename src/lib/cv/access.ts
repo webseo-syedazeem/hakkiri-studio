@@ -46,6 +46,38 @@ export const SetupSchema = z.object({
 });
 export type Setup = z.infer<typeof SetupSchema>;
 
+/**
+ * Start without questions (DESIGN-SPEC-v3 §01): nothing is asked before the CV exists. It starts as "My CV",
+ * UK and Experienced only as working values, with both marked "Not known yet" until the file shows them or
+ * the person chooses them in the editor.
+ */
+export const QuickStartSchema = z.object({
+  quick: z.literal(true),
+  template: z.enum(CV_TEMPLATES).optional().catch(undefined),
+});
+export const QUICK_SETUP: Omit<Setup, "template"> = { name: "My CV", level: "experienced", region: "uk", targetTitle: "", targetEmployer: "", targetAdvert: "" };
+export function quickCv(userId: string, template: Setup["template"], now: string): CvDoc {
+  return { ...newCv(userId, { ...QUICK_SETUP, template }, now), inferred: { region: "", level: "", unknown: ["region", "level"] } };
+}
+
+/**
+ * Sets UK or US, the level and the name from what an upload showed. What it didn't show stays "Not known yet":
+ * the working value is kept but not presented as a fact.
+ */
+export function withInferred(cv: CvDoc, found: { region: CvDoc["region"]; level: CvDoc["level"]; name: string; why: { region: string; level: string }; unknown: ("region" | "level")[] }, chosenTemplate: boolean): CvDoc {
+  const level = found.unknown.includes("level") ? cv.level : found.level;
+  const region = found.unknown.includes("region") ? cv.region : found.region;
+  return {
+    ...cv,
+    name: found.name,
+    level,
+    region,
+    sections: coreSections(level),
+    design: { ...cv.design, template: chosenTemplate ? cv.design.template : level === "student" ? "graduate" : "standard", pageSize: region === "us" ? "letter" : "a4", pageTarget: level === "student" || level === "early" ? 1 : 2 },
+    inferred: { region: found.why.region, level: found.why.level, unknown: found.unknown },
+  };
+}
+
 /** Field-by-field messages from a failed check, for the form to show beside each field. */
 export function fieldErrors(error: z.ZodError): Record<string, string> {
   const out: Record<string, string> = {};

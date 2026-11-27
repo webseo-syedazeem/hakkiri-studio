@@ -5,10 +5,9 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { diffParts, fieldFor, formTabs, itemCount, snapshotOf, stateAt, switchOff, tabFor } from "@/lib/cv/edit";
 import type { Finding } from "@/lib/cv/score/score";
-import { bandOf } from "@/lib/cv/score/band";
 import { questionAbout } from "@/lib/cv/questions";
 import { fitToPages } from "@/lib/cv/render/layout";
-import { type CvSummary, type Locator, type Section, type SectionKind, cvIsEmpty, emptySection, isEntrySection } from "@/lib/cv/schema";
+import { CV_LEVELS, type CvLevel, type CvSummary, LEVEL_LABELS, type Locator, type Section, type SectionKind, cvIsEmpty, emptySection, isEntrySection } from "@/lib/cv/schema";
 import { OPTIONAL_KINDS, SECTION_DEFS, docWord, sectionHeading } from "@/lib/cv/sections";
 import { Switch } from "./Arrange";
 import { BulletHelp } from "./Assist";
@@ -21,7 +20,7 @@ import { FitControl, FormatBar } from "./FormatBar";
 import { ShareDialog } from "./ShareDialog";
 import { JobPanel } from "./JobPanel";
 import { PaperView } from "./Paper";
-import { ScorePanel } from "./ScorePanel";
+import { ScoreLine, ScorePanel } from "./ScorePanel";
 import { ContactForm, type FieldHooks, SectionForm } from "./SectionForms";
 import { ACCEPT, STAGE_WORDS, type UploadStage, sendUpload } from "./upload";
 import { jobFit } from "@/lib/cv/tailor/fit";
@@ -49,6 +48,7 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
   const [busy, setBusy] = useState("");
   const [moreFor, setMoreFor] = useState("");
   const [fieldsHidden, setFieldsHidden] = useFieldsHidden();
+  const [setHere, setSetHere] = useState<string[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
   const versionId = w.versionId;
 
@@ -266,6 +266,8 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
   const fit = panel === "page-overflow" && paper ? fitToPages(cv, paper.fonts, cv.design.pageTarget) : null;
   const diff = panel === "save-conflict" && w.other ? diffParts(snapshotOf(cv), snapshotOf(w.other)) : [];
 
+  // UK or US and the level, when the file didn't show them: "Not known yet" until set here.
+  const notKnown = (k: "region" | "level") => (cv.inferred?.unknown ?? []).includes(k) && !setHere.includes(k);
   return (
     <CvScreen>
       <header className="cv-bar cv-edhead">
@@ -274,24 +276,66 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
           <p className="cv-edhead-name">{cv.name}</p>
           <div className="cv-row cv-edhead-meta">
             <span className="cv-chip">{cv.kind === "base" ? `Base ${word}` : cv.target?.employer || "Tailored copy"}</span>
-            <button
-              type="button"
-              onClick={() => {
-                const nextRegion = cv.region === "uk" ? "us" : "uk";
-                update({ region: nextRegion, design: { ...cv.design, pageSize: nextRegion === "uk" ? "a4" : "letter" } });
-                say(`Spelling switched to ${nextRegion === "uk" ? "UK English (A4)" : "US English (Letter)"}.`);
-              }}
-              className="cv-chip cv-region-toggle"
-              title={`Spelling format: ${cv.region === "uk" ? "UK (British)" : "US (American)"}. Click to toggle.`}
-              aria-label={`Toggle spelling between UK and US. Currently ${cv.region.toUpperCase()}`}
-              data-testid="spelling-toggle"
-            >
-              <span>{cv.region === "uk" ? "UK" : "US"}</span>
-              <span aria-hidden="true">⇄</span>
-            </button>
-            <Link className="cv-chip cv-score-chip" href={`/cv/v/${cv.id}/findings`} onClick={() => void flush()} data-testid="score-button" data-band={w.score && !w.score.empty ? bandOf(w.score.shown).key : undefined}>
-              {scoreLabel(w.score, word)}
-            </Link>
+            {notKnown("region") ? (
+              // Nothing asked before the upload, and the file didn't say: not shown as a fact until chosen.
+              <label className="cv-chip cv-level-chip" data-unknown="true" title={cv.inferred?.region || undefined}>
+                <select
+                  value=""
+                  aria-label="UK or US"
+                  data-testid="region-choice"
+                  onChange={(e) => {
+                    const r = e.target.value as "uk" | "us";
+                    setSetHere((x) => [...x, "region"]);
+                    update({ region: r, design: { ...cv.design, pageSize: r === "uk" ? "a4" : "letter" } });
+                    say(r === "uk" ? "Set to UK: a CV on A4, UK spelling." : "Set to US: a resume on Letter, US spelling.");
+                  }}
+                >
+                  <option value="" disabled>
+                    UK or US: not known yet
+                  </option>
+                  <option value="uk">UK · A4</option>
+                  <option value="us">US · Letter</option>
+                </select>
+              </label>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  const nextRegion = cv.region === "uk" ? "us" : "uk";
+                  update({ region: nextRegion, design: { ...cv.design, pageSize: nextRegion === "uk" ? "a4" : "letter" } });
+                  say(`Spelling switched to ${nextRegion === "uk" ? "UK English (A4)" : "US English (Letter)"}.`);
+                }}
+                className="cv-chip cv-region-toggle"
+                title={`${cv.inferred?.region ? `From your file: ${cv.inferred.region}. ` : ""}Spelling format: ${cv.region === "uk" ? "UK (British)" : "US (American)"}. Click to toggle.`}
+                aria-label={`Toggle spelling between UK and US. Currently ${cv.region.toUpperCase()}`}
+                data-testid="spelling-toggle"
+              >
+                <span>{cv.region === "uk" ? "UK · A4" : "US · Letter"}</span>
+                <span aria-hidden="true">⇄</span>
+              </button>
+            )}
+            <label className="cv-chip cv-level-chip" data-unknown={notKnown("level") || undefined} title={cv.inferred?.level ? (notKnown("level") ? cv.inferred.level : `From your file: ${cv.inferred.level}`) : undefined}>
+              <span className="sr-only">Level</span>
+              <select
+                value={notKnown("level") ? "" : cv.level}
+                onChange={(e) => {
+                  setSetHere((x) => [...x, "level"]);
+                  update({ level: e.target.value as CvLevel });
+                }}
+                aria-label="Level"
+              >
+                {notKnown("level") && (
+                  <option value="" disabled>
+                    Level: not known yet
+                  </option>
+                )}
+                {CV_LEVELS.map((l) => (
+                  <option key={l} value={l}>
+                    {LEVEL_LABELS[l]}
+                  </option>
+                ))}
+              </select>
+            </label>
             <small role="status" data-testid="save-state" data-save={save}>
               {SAVE_WORDS[save]}
             </small>
@@ -372,9 +416,6 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
           <Link href={`/cv/v/${cv.id}/talk`} onClick={() => void flush()} data-testid="talk-button">
             Talk it through
           </Link>
-          <Link href={`/cv/v/${cv.id}/tailor`} onClick={() => void flush()} data-testid="fit-button">
-            {fitLabel(cv.requirements.length ? jobFit(cv).score : null)}
-          </Link>
           <Link href={`/cv/v/${cv.id}/letter`} onClick={() => void flush()} data-testid="letter-button">
             Cover letter
           </Link>
@@ -401,16 +442,13 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
           <Btn onClick={() => openPanel("add-section")}>+ Add section</Btn>
         </div>
 
+        <ScoreLine score={w.score} word={word} onOpen={() => openPanel("insights")} />
         {!isFinish && (
           <div className="cv-toolrow">
             <Btn className="cv-notnarrow" aria-pressed={fieldsHidden} onClick={() => setFieldsHidden(!fieldsHidden)} data-testid="fields-toggle">
               {fieldsHidden ? "Show editing fields" : "Hide editing fields"}
             </Btn>
             <FitControl cv={cv} paper={paper} update={update} say={say} />
-            {/* Below 1400 px the score panel doesn't fit beside the page: this opens it. */}
-            <Btn className="cv-belowwide cv-push" onClick={() => openPanel("insights")} data-testid="insights-button">
-              Score and job keywords
-            </Btn>
           </div>
         )}
         <div className="cv-narrow cv-viewbar">
@@ -558,7 +596,7 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
           </aside>
           {!isFinish && (
             <aside className={view === "paper" ? "cv-insights min-w-0" : "cv-insights min-w-0 cv-wide"} aria-label="Score and job keywords">
-              <ScorePanel score={w.score} word={word} base={`/cv/v/${cv.id}`} onShow={pick} />
+              <ScorePanel score={w.score} word={word} base={`/cv/v/${cv.id}`} onShow={pick} fitLabel={fitLabel(cv.requirements.length ? jobFit(cv).score : null)} onLeave={() => void flush()} />
               <JobPanel cv={cv} update={update} word={word} onShow={pick} say={say} />
             </aside>
           )}
@@ -625,7 +663,7 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
       {panel === "insights" && (
         <Dialog title="Score and job keywords" onClose={closePanel} wide>
           <div className="cv-insights">
-            <ScorePanel score={w.score} word={word} base={`/cv/v/${cv.id}`} onShow={(at) => { closePanel(); pick(at); }} />
+            <ScorePanel score={w.score} word={word} base={`/cv/v/${cv.id}`} onShow={(at) => { closePanel(); pick(at); }} fitLabel={fitLabel(cv.requirements.length ? jobFit(cv).score : null)} onLeave={() => void flush()} inDrawer />
             <JobPanel cv={cv} update={update} word={word} onShow={(at) => { closePanel(); pick(at); }} say={say} />
           </div>
         </Dialog>

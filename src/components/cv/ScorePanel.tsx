@@ -27,7 +27,18 @@ export function fixNext(score: Score) {
  * that line. It is worked out in code as the person types; nothing about it
  * is a sample.
  */
-export function ScorePanel({ score, word, base, onShow }: { score: Score | null; word: string; base: string; onShow: (at: Locator) => void }) {
+export function ScorePanel({ score, word, base, onShow, fitLabel, onLeave, inDrawer }: { score: Score | null; word: string; base: string; onShow: (at: Locator) => void; fitLabel?: string; onLeave?: () => void; inDrawer?: boolean }) {
+  // Tailor to a job and Cover letter, as two equal buttons (DESIGN-SPEC-v3 §02). Only one panel carries the test ids.
+  const ways = fitLabel ? (
+    <div className="cv-panelways">
+      <Link className="cv-btn" href={`${base}/tailor`} onClick={onLeave} data-testid={inDrawer ? undefined : "fit-button"}>
+        {fitLabel}
+      </Link>
+      <Link className="cv-btn" href={`${base}/letter`} onClick={onLeave}>
+        Cover letter
+      </Link>
+    </div>
+  ) : null;
   const title = word === "CV" ? "CV score" : "Resume score";
   if (!score) {
     return (
@@ -47,6 +58,10 @@ export function ScorePanel({ score, word, base, onShow }: { score: Score | null;
           <p className="cv-muted" style={{ margin: 0 }}>
             Not checked yet. Add your experience and the score appears here, with what to fix first.
           </p>
+          <Link className="cv-link" href={`${base}/findings`} style={{ display: "inline-block", marginTop: 8 }}>
+            How the score works
+          </Link>
+          {ways}
         </div>
       </Panel>
     );
@@ -105,8 +120,32 @@ export function ScorePanel({ score, word, base, onShow }: { score: Score | null;
             Questions your {word} will get
           </Link>
         </div>
+        {ways}
       </div>
     </Panel>
   );
 }
 
+/** Below 1440 px the score panel doesn't fit beside the page: one line stands in for it, and opens it with the job keywords. */
+export function ScoreLine({ score, word, onOpen }: { score: Score | null; word: string; onOpen: () => void }) {
+  if (!score) return null;
+  return (
+    <div className="cv-scoreline cv-belowwide" data-testid="score-line">
+      {score.empty ? (
+        <span className="cv-muted">{word === "CV" ? "CV" : "Resume"} score: not checked yet</span>
+      ) : (
+        <>
+          <b>
+            {word === "CV" ? "CV" : "Resume"} score {score.shown}/100
+          </b>
+          <span className="cv-ring-inline" data-band={bandOf(score.shown).key}>
+            {scoreBand(score.shown)}
+          </span>
+        </>
+      )}
+      <button type="button" className="cv-link cv-push" onClick={onOpen}>
+        Score and job keywords
+      </button>
+    </div>
+  );
+}

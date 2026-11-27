@@ -228,13 +228,13 @@ export function Rail({
       )}
 
       {/* Desktop spacer to preserve layout flow alongside fixed sidebar */}
-      <div className={clsx("hidden md:block print:hidden shrink-0", compact ? "w-[64px]" : "w-[216px]")} aria-hidden="true" />
+      <div className={clsx("hidden md:block print:hidden shrink-0", compact ? "w-[56px]" : "w-[216px]")} aria-hidden="true" />
 
       {/* Desktop Navigation Sidebar (>= md) */}
       <nav
         aria-label="Main"
         data-compact={compact ? "true" : undefined}
-        className={clsx("print-hide fixed top-0 bottom-0 left-0 z-30 hidden md:flex h-screen shrink-0 flex-col border-r border-line bg-booth py-5 overflow-y-auto overflow-x-hidden [scrollbar-width:none] transition-colors duration-250", compact ? "w-[64px] px-2 items-center" : "w-[216px] px-3")}
+        className={clsx("print-hide fixed top-0 bottom-0 left-0 z-30 hidden md:flex h-screen shrink-0 flex-col border-r border-line bg-booth py-5 overflow-y-auto overflow-x-hidden [scrollbar-width:none] transition-colors duration-250", compact ? "w-[56px] px-1.5 items-center" : "w-[216px] px-3")}
       >
         {/* Brand Header */}
         <Link

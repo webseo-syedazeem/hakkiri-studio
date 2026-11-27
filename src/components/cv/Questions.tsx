@@ -33,16 +33,21 @@ export function Questions() {
   const claims = probedClaims(cv);
   return (
     <CvScreen>
-      <Bar crumbs={[{ label: "CVs and letters", href: "/cv" }, { label: cv.name, href: `${base}/edit/contact` }, { label: "Questions your CV will get" }]} />
+      <Bar crumbs={[{ label: "CVs and letters", href: "/cv" }, { label: cv.name, href: `${base}/edit/contact` }, { label: `Questions your ${word} will get` }]} />
       <div className="cv-area">
-        <Toolbar title={`Questions your ${word} will get`} subtitle={`These come from your own ${word}: the numbers, the people you led and the results you claim. Practise explaining them before an interviewer asks.`}>
+        <Toolbar title={`Questions your ${word} will get`} subtitle={`These questions come from your own ${word}. Practise explaining the numbers, decisions and results you’ve included.`}>
           {claims.length > 0 && (
             <BtnLink kind="primary" href={`/practice?type=experience&returnTo=${enc(here)}`} data-testid="practise-all">
               Practise all
             </BtnLink>
           )}
-          <BtnLink href={`${base}/edit/experience`}>Back to the editor</BtnLink>
+          <BtnLink href={`${base}/edit/experience`}>Back to editor</BtnLink>
         </Toolbar>
+        {claims.length > 0 && (
+          <p className="cv-small cv-muted" style={{ margin: "0 0 12px" }} data-testid="questions-count">
+            {cv.name} · {claims.length} {claims.length === 1 ? "question" : "questions"}
+          </p>
+        )}
 
         {claims.length ? (
           <ol className="cv-qlist" data-testid="cv-questions" aria-label={`Questions your ${word} will get`}>
@@ -77,7 +82,7 @@ export function Questions() {
         ) : (
           <Panel>
             <div className="cv-pad cv-stack">
-              <h2 style={{ margin: 0 }}>No questions yet</h2>
+              <h2 style={{ margin: 0 }}>No questions to show yet</h2>
               <p className="cv-muted" style={{ margin: 0 }}>
                 Add what you did in your roles, with a number where you have one. The lines an interviewer is most likely to ask about will show here.
               </p>

@@ -13,6 +13,8 @@ export interface Inferred {
   name: string;
   /** Why each was chosen, for the person: "UK phone number and spelling". */
   why: { region: string; level: string };
+  /** What the file didn't show, or showed both ways: said as "Not known yet", never as a fact. */
+  unknown: ("region" | "level")[];
 }
 
 const UK_WORDS = /\b(organis(?:e|ed|es|ing|ation|ations)|colour(?:s|ed)?|centre(?:s|d)?|programme(?:s)?|analys(?:e|ed|es|ing)|behaviour(?:s)?|favour(?:ite|s)?|licence|travelled|travelling|optimis(?:e|ed|ing|ation)|prioritis(?:e|ed|ing)|catalogu(?:e|ed|ing)|whilst|GCSEs?|A-?levels?|\(Hons\)|2:1|2:2|First-class)\b/gi;
@@ -22,8 +24,8 @@ const US_PHONE = /(?:\+1[\s.-]?)?\(?\b\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}\b/;
 const UK_POSTCODE = /\b[A-Z]{1,2}\d[A-Z\d]?\s\d[A-Z]{2}\b/;
 const US_PLACE = /,\s(?:AL|AK|AZ|AR|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY|DC)\b(?:\s\d{5})?/;
 
-/** UK or US, from the phone number, the address and the spelling. A tie stays UK. */
-export function inferRegion(text: string): { region: CvRegion; why: string } {
+/** UK or US, from the phone number, the address and the spelling. No evidence, or evidence both ways that is close, is not known. */
+export function inferRegion(text: string): { region: CvRegion; why: string; known: boolean } {
   const uk: string[] = [];
   const us: string[] = [];
   let ukScore = 0;
@@ -36,15 +38,16 @@ export function inferRegion(text: string): { region: CvRegion; why: string } {
   const usWords = (text.match(US_WORDS) ?? []).length;
   if (ukWords > usWords) (ukScore += Math.min(3, ukWords)), uk.push("spelling");
   if (usWords > ukWords) (usScore += Math.min(3, usWords)), us.push("spelling");
-  if (usScore > ukScore) return { region: "us", why: `US ${us.join(" and ")}` };
-  if (ukScore > 0) return { region: "uk", why: `UK ${uk.join(" and ")}` };
-  return { region: "uk", why: "Nothing in the file said UK or US, so UK is used. Change it any time." };
+  if (ukScore > 0 && usScore > 0 && Math.abs(ukScore - usScore) <= 1) return { region: "uk", why: `The file shows both: UK ${uk.join(" and ")}, US ${us.join(" and ")}`, known: false };
+  if (usScore > ukScore) return { region: "us", why: `US ${us.join(" and ")}`, known: true };
+  if (ukScore > 0) return { region: "uk", why: `UK ${uk.join(" and ")}`, known: true };
+  return { region: "uk", why: "Nothing in the file said UK or US", known: false };
 }
 
 const year = (d: string | undefined) => (d && /^\d{4}/.test(d) ? Number(d.slice(0, 4)) : null);
 
 /** The level, from how long ago the first job started, and whether study is recent. */
-export function inferLevel(sections: Section[], now = new Date()): { level: CvLevel; why: string } {
+export function inferLevel(sections: Section[], now = new Date()): { level: CvLevel; why: string; known: boolean } {
   const thisYear = now.getUTCFullYear();
   const starts: number[] = [];
   let studyEnd: number | null = null;
@@ -64,15 +67,15 @@ export function inferLevel(sections: Section[], now = new Date()): { level: CvLe
     }
   }
   if (!starts.length) {
-    if (studying || (studyEnd !== null && studyEnd >= thisYear - 1)) return { level: "student", why: "No work history yet, and recent study" };
-    return { level: "early", why: "No dated work history" };
+    if (studying || (studyEnd !== null && studyEnd >= thisYear - 1)) return { level: "student", why: "No work history yet, and recent study", known: true };
+    return { level: "experienced", why: "No dated work history", known: false };
   }
   const years = thisYear - Math.min(...starts);
   const said = `${years} ${years === 1 ? "year" : "years"} since your first role`;
-  if (years >= 12) return { level: "senior", why: said };
-  if (years >= 2) return { level: "experienced", why: said };
-  if (studying || (studyEnd !== null && studyEnd >= thisYear - 1)) return { level: "student", why: `${said}, and recent study` };
-  return { level: "early", why: said };
+  if (years >= 12) return { level: "senior", why: said, known: true };
+  if (years >= 2) return { level: "experienced", why: said, known: true };
+  if (studying || (studyEnd !== null && studyEnd >= thisYear - 1)) return { level: "student", why: `${said}, and recent study`, known: true };
+  return { level: "early", why: said, known: true };
 }
 
 /** The CV's name: the person and their latest role, else the file's name. */
@@ -88,5 +91,8 @@ export function inferName(fullName: string, sections: Section[], fileName: strin
 export function inferSetup(input: { fullName: string; sections: Section[]; text: string; fileName: string }, now = new Date()): Inferred {
   const r = inferRegion(input.text);
   const l = inferLevel(input.sections, now);
-  return { region: r.region, level: l.level, name: inferName(input.fullName, input.sections, input.fileName), why: { region: r.why, level: l.why } };
+  const unknown: Inferred["unknown"] = [];
+  if (!r.known) unknown.push("region");
+  if (!l.known) unknown.push("level");
+  return { region: r.region, level: l.level, name: inferName(input.fullName, input.sections, input.fileName), why: { region: r.why, level: l.why }, unknown };
 }

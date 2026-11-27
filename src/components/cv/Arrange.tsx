@@ -39,7 +39,7 @@ export interface MenuAction {
  * The ⋯ menu of one item: its own actions first, then Move up, Move down and Move to a position,
  * then Remove. Opened by the ⋯ button; Escape or a press outside closes it and returns focus.
  */
-export function ItemMenu({ index, count, name, onMove, actions = [], onRemove }: { index: number; count: number; name: string; onMove: (to: number) => void; actions?: MenuAction[]; onRemove?: () => void }) {
+export function ItemMenu({ index, count, name, onMove, actions = [], onRemove, visible, onVisible }: { index: number; count: number; name: string; onMove: (to: number) => void; actions?: MenuAction[]; onRemove?: () => void; visible?: boolean; onVisible?: (on: boolean) => void }) {
   const [open, setOpen] = useState(false);
   const wrap = useRef<HTMLSpanElement>(null);
   const toggle = useRef<HTMLButtonElement>(null);
@@ -67,7 +67,9 @@ export function ItemMenu({ index, count, name, onMove, actions = [], onRemove }:
     done();
     onMove(to);
   };
-  const nothing = count < 2 && actions.length === 0 && !onRemove;
+  // The switch beside the menu does the same; the menu says it in words (DESIGN-SPEC-v3 §02).
+  const all: MenuAction[] = onVisible && visible !== undefined ? [...actions, { label: visible ? "Switch off for this version" : "Include in this version", onSelect: () => onVisible(!visible) }] : actions;
+  const nothing = count < 2 && all.length === 0 && !onRemove;
   return (
     <span className="cv-menu" ref={wrap}>
       <Btn kind="quiet" className="cv-dots" ref={toggle} aria-expanded={open} aria-controls={open ? id : undefined} aria-label={`Actions for ${name}`} title="More actions" disabled={nothing} onClick={() => setOpen((v) => !v)}>
@@ -75,7 +77,7 @@ export function ItemMenu({ index, count, name, onMove, actions = [], onRemove }:
       </Btn>
       {open && (
         <div id={id} role="group" aria-label={`Actions for ${name}`} className="cv-menu-list">
-          {actions.map((a) => (
+          {all.map((a) => (
             <button
               key={a.label}
               type="button"
@@ -189,7 +191,7 @@ export function ItemControls({ name, index, count, visible, onVisible, onMove, o
       {!visible && <OffChip />}
       <Switch checked={visible} onChange={onVisible} label={`Include ${name} in this version`} />
       {children}
-      <ItemMenu index={index} count={count} name={name} onMove={onMove} actions={actions} onRemove={onRemove} />
+      <ItemMenu index={index} count={count} name={name} onMove={onMove} actions={actions} onRemove={onRemove} visible={visible} onVisible={onVisible} />
     </span>
   );
 }

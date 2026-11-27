@@ -49,7 +49,10 @@ run("CV workbench", async (browser) => {
 
   // v3: the header has three actions, and the fields fold away to give the page the room.
   const head = page.locator("header.cv-edhead");
-  check((await head.getByRole("button", { name: "Download" }).isVisible()) && (await head.getByRole("button", { name: "Share" }).isVisible()) && (await head.getByRole("button", { name: "More" }).isVisible()) && !(await head.getByRole("link", { name: "Talk it through" }).count()), "the header has Download, Share and More; Talk it through, Tailor and Cover letter sit with the tabs");
+  check((await head.getByRole("button", { name: "Download" }).isVisible()) && (await head.getByRole("button", { name: "Share" }).isVisible()) && (await head.getByRole("button", { name: "More" }).isVisible()) && !(await head.getByRole("link", { name: "Talk it through" }).count()), "the header has Download, Share and More; Talk it through and Cover letter sit with the tabs");
+  const tabs = page.getByRole("navigation", { name: "Sections" });
+  check((await tabs.getByRole("link", { name: "Talk it through" }).count()) === 1 && (await tabs.getByRole("link", { name: "Cover letter" }).count()) === 1 && (await tabs.getByTestId("fit-button").count()) === 0, "Tailor is not a tab: it is at the end of the score panel, with Cover letter");
+  check(/^(UK · A4|US · Letter)/.test((await head.getByTestId("spelling-toggle").innerText()).trim()) && (await head.getByRole("combobox", { name: "Level" }).count()) === 1 && (await head.getByTestId("score-button").count()) === 0, "the chips say UK · A4 and the level, which can be changed there; the score is not in the header");
   const pageWidth = async () => Math.round(await page.locator(".cv-workbench > aside.cv-sticky").evaluate((el) => el.getBoundingClientRect().width));
   const wide = await pageWidth();
   await page.getByTestId("fields-toggle").click();
@@ -149,8 +152,12 @@ run("CV workbench", async (browser) => {
   await p.page.goto(`${BASE}/cv`);
   const pid = await p.page.evaluate(async () => (await (await fetch("/api/cv/templates", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ templateId: "staff-nurse", name: "Phone", region: "uk", letter: true }) })).json()).id);
   await p.page.goto(`${BASE}/cv/v/${pid}/edit/experience`);
-  await p.page.locator('[data-testid="score-button"]', { hasText: /CV score \d+/ }).waitFor({ timeout: 20000 });
-  check(true, "on a phone the score shows at the top, with the CV's name");
+  await p.page.locator('[data-testid="score-line"]', { hasText: /CV score \d+\/100/ }).waitFor({ timeout: 20000 });
+  check(true, "on a phone the score is one line above the page, with a way to the details");
+  await p.page.getByTestId("score-line").getByRole("button", { name: "Score and job keywords" }).click();
+  await p.page.getByRole("dialog", { name: "Score and job keywords" }).getByRole("link", { name: "Cover letter" }).waitFor();
+  check(true, "it opens the score and job keywords, which end with Tailor to a job and Cover letter");
+  await p.page.getByRole("dialog", { name: "Score and job keywords" }).getByRole("button", { name: "Close" }).first().click();
   await p.page.getByTestId("design-button").click();
   await p.page.getByRole("dialog", { name: "Design" }).getByTestId("format-bar").waitFor();
   check(true, "on a phone the format bar is in a Design dialog");

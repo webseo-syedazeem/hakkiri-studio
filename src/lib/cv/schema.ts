@@ -506,6 +506,18 @@ export const CvDocSchema = z.object({
   design: DesignSchema,
   /** The upload this CV was started from, if any. */
   importId: z.string().optional(),
+  /**
+   * How UK or US and the level were set when nothing was asked before the upload (DESIGN-SPEC-v3 §01):
+   * why each was chosen, in words, and which the file didn't show, so the editor says "Not known yet"
+   * for those until the person chooses. Cleared, one by one, as the person sets them.
+   */
+  inferred: z
+    .object({
+      region: z.string().max(200).default(""),
+      level: z.string().max(200).default(""),
+      unknown: z.array(z.enum(["region", "level"])).max(2).default([]),
+    })
+    .optional(),
   /** Words the person has told the checks to leave alone: a name, a specialist term, an acronym they chose not to spell out. */
   accepted: z.array(line(60)).max(200).default([]),
   /** What the target advert asks for, as the person has confirmed it. */

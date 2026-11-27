@@ -47,6 +47,8 @@ export async function PATCH(req: Request, { params }: Ctx) {
       ...changes,
       target: target === null ? undefined : (target ?? cv.target),
       letter: letter === null ? undefined : (letter ?? cv.letter),
+      // UK or US and the level stop being "Not known yet" once the person sets them.
+      inferred: cv.inferred && { ...cv.inferred, unknown: cv.inferred.unknown.filter((k) => !(k in changes)) },
       rev: cv.rev + 1,
       lastSaveId: saveId,
       updatedAt: new Date().toISOString(),

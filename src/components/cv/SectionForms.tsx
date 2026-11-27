@@ -332,6 +332,8 @@ function BulletsEditor({ bullets, onChange, label, rule, hooks, entryId, arrange
                     ...(hooks?.onPractise && b.text.trim() ? [{ label: "Practise this", name: `Practise bullet ${i + 1}`, onSelect: () => hooks.onPractise!(entryId, b.id) }] : []),
                   ]}
                   onRemove={() => onChange(bullets.filter((x) => x.id !== b.id))}
+                  visible={b.visible}
+                  onVisible={(visible) => onChange(bullets.map((x) => (x.id === b.id ? { ...x, visible } : x)))}
                 />
               </div>
             </div>
