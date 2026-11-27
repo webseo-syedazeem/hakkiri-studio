@@ -72,7 +72,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   const gaId = process.env.NEXT_PUBLIC_GA_ID || process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 
   return (
-    <html lang="en" className="overflow-x-clip" data-theme="light" suppressHydrationWarning>
+    <html lang="en" className="dark overflow-x-clip" data-theme="dark" suppressHydrationWarning>
       <head>
         <meta
           name="google-site-verification"
@@ -84,12 +84,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               (function() {
                 try {
                   var saved = localStorage.getItem("hk_theme");
-                  if (saved === "dark") {
-                    document.documentElement.classList.add("dark");
-                    document.documentElement.dataset.theme = "dark";
-                  } else {
+                  if (saved === "light") {
                     document.documentElement.classList.remove("dark");
+                    document.documentElement.classList.add("mk");
                     document.documentElement.dataset.theme = "light";
+                  } else {
+                    document.documentElement.classList.add("dark");
+                    document.documentElement.classList.remove("mk");
+                    document.documentElement.dataset.theme = "dark";
                   }
                 } catch (e) {}
               })();

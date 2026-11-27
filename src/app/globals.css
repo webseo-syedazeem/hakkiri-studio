@@ -10,34 +10,34 @@
 @theme {
   --font-sans: "Inter Variable", "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
 
-  /* Surfaces: Apple-inspired Light Default with distinct container contrast */
-  --color-booth: #eceef4;        /* Distinct cool Apple-slate canvas so white cards pop clearly */
-  --color-panel: #ffffff;        /* Pure white elevated cards */
-  --color-panel-2: #f3f5fa;      /* Distinct secondary inset container surface */
-  --color-line: #d4d9e6;         /* Crisp 1px architectural border around every card & box */
-  --color-line-strong: #b6bfd4;  /* Strong border for buttons, inputs, chips & active states */
+  /* Surfaces: Studio Dark Blue Default ("Booth") */
+  --color-booth: #16171e;        /* Outer frame, rail, empty space */
+  --color-panel: #1c1d25;        /* Cards */
+  --color-panel-2: #22232c;      /* Inset wells, active row */
+  --color-line: rgb(255 255 255 / 0.08);       /* Hairline dividers */
+  --color-line-strong: rgb(255 255 255 / 0.14);/* Hover and selected borders */
 
-  /* Text: Apple-inspired Light Default */
-  --color-ink: #11131a;          /* Apple signature deep black ink */
-  --color-muted: #525866;        /* Apple slate text, high readability */
-  --color-dim: #717888;          /* Secondary subtitle text */
+  /* Text: Studio Dark Blue Default */
+  --color-ink: #f1f1f4;          /* Primary text */
+  --color-muted: #9a9ba7;        /* Secondary copy, labels */
+  --color-dim: #8a8b97;          /* Timestamps, hints */
 
-  /* Brand: Apple-vibrant blue for actions, red for coach's marks */
-  --color-blue: #0071e3;         /* Apple vibrant action blue */
-  --color-blue-fill: #4a5af0;    /* primary buttons */
-  --color-blue-hover: #3d4bd8;
-  --color-blue-soft: #3d4bd8;    /* links, accents */
-  --color-lilac: #4a5af0;
-  --color-wave: #4a5af0;         /* recorded waveform */
-  --color-late: #c2545f;         /* waveform inside a late point */
-  --color-red: #d9383a;          /* fillers, late points, recording light */
-  --color-red-soft: #b3261e;
+  /* Brand: Blue for actions, red for coach's marks */
+  --color-blue: #7b88ff;         /* Focus, active pill, good mark */
+  --color-blue-fill: #4a5af0;    /* Primary buttons */
+  --color-blue-hover: #5a69ff;
+  --color-blue-soft: #aeb6ff;    /* Links, accents */
+  --color-lilac: #c9ccf5;
+  --color-wave: #5664d8;         /* Recorded waveform */
+  --color-late: #c2545f;         /* Waveform inside a late point */
+  --color-red: #ff5c61;          /* Fillers, late points, recording light */
+  --color-red-soft: #ffb3b5;
 
   /* 4-Band Score Colours (Poor / Average / Good / Strong) across the board */
-  --band-poor: #b91c1c;
-  --band-average: #c2410c;
-  --band-good: #4d7c0f;
-  --band-strong: #15803d;
+  --band-poor: #f87171;
+  --band-average: #fb923c;
+  --band-good: #a3e635;
+  --band-strong: #4ade80;
 
   /* The prep sheet: a light page, on screen and in print */
   --color-paper: #fbfbfd;
@@ -166,11 +166,11 @@
 
 @layer base {
   html, body {
-    color-scheme: light;
+    color-scheme: dark;
     background-color: var(--color-booth);
     background-image: 
-      radial-gradient(1200px 500px at 50% -50px, rgba(74, 90, 240, 0.04), transparent 70%),
-      radial-gradient(800px 400px at 90% 10%, rgba(123, 136, 255, 0.03), transparent 60%);
+      radial-gradient(1200px 500px at 50% -50px, rgba(123, 136, 255, 0.08), transparent 70%),
+      radial-gradient(800px 400px at 90% 10%, rgba(74, 90, 240, 0.04), transparent 60%);
     background-attachment: fixed;
     color: var(--color-ink);
     font-family: var(--font-sans);
@@ -184,10 +184,10 @@
   }
   button { cursor: pointer; }
 
-  /* Smooth custom desktop scrollbars across all browsers (Apple-clean light default) */
+  /* Smooth custom desktop scrollbars across all browsers */
   * {
     scrollbar-width: thin;
-    scrollbar-color: rgba(0, 0, 0, 0.16) transparent;
+    scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
   }
   ::-webkit-scrollbar {
     width: 6px;
@@ -197,20 +197,54 @@
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.16);
+    background: rgba(255, 255, 255, 0.18);
     border-radius: 9999px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: rgba(0, 0, 0, 0.28);
+    background: rgba(255, 255, 255, 0.35);
   }
 
-  /* Dark theme overrides (optional secondary mode toggled via Appearance) */
-  .dark,
-  [data-theme="dark"],
-  html.dark,
-  html.dark body,
-  html[data-theme="dark"],
-  html[data-theme="dark"] body {
+  /* Light theme overrides (toggled via Appearance or .mk) */
+  .mk,
+  [data-theme="light"],
+  html.mk,
+  html.mk body,
+  html[data-theme="light"],
+  html[data-theme="light"] body {
+    --color-booth: #eceef4;
+    --color-panel: #ffffff;
+    --color-panel-2: #f3f5fa;
+    --color-line: #d4d9e6;
+    --color-line-strong: #b6bfd4;
+    --color-ink: #11131a;
+    --color-muted: #525866;
+    --color-dim: #717888;
+    --color-blue: #0071e3;
+    --color-blue-fill: #4a5af0;
+    --color-blue-hover: #3d4bd8;
+    --color-blue-soft: #3d4bd8;
+    --color-lilac: #4a5af0;
+    --color-wave: #4a5af0;
+    --color-red: #d9383a;
+    --color-red-soft: #b3261e;
+    --band-poor: #b91c1c;
+    --band-average: #c2410c;
+    --band-good: #4d7c0f;
+    --band-strong: #15803d;
+    color-scheme: light;
+    background-color: #eceef4;
+    background-image: 
+      radial-gradient(1200px 500px at 50% -50px, rgba(74, 90, 240, 0.04), transparent 70%),
+      radial-gradient(800px 400px at 90% 10%, rgba(123, 136, 255, 0.03), transparent 60%);
+  }
+
+  /* Dark theme explicit rules */
+  .dark:not(.mk),
+  [data-theme="dark"]:not(.mk),
+  html.dark:not(.mk),
+  html.dark:not(.mk) body,
+  html[data-theme="dark"]:not(.mk),
+  html[data-theme="dark"]:not(.mk) body {
     --color-booth: #16171e;
     --color-panel: #1c1d25;
     --color-panel-2: #22232c;
@@ -236,19 +270,6 @@
     background-image: 
       radial-gradient(1200px 500px at 50% -50px, rgba(123, 136, 255, 0.08), transparent 70%),
       radial-gradient(800px 400px at 90% 10%, rgba(74, 90, 240, 0.04), transparent 60%);
-  }
-
-  .dark *,
-  [data-theme="dark"] * {
-    scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
-  }
-  .dark ::-webkit-scrollbar-thumb,
-  [data-theme="dark"] ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.18);
-  }
-  .dark ::-webkit-scrollbar-thumb:hover,
-  [data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.35);
   }
 }
 

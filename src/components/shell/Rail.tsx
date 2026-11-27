@@ -76,15 +76,15 @@ export function Rail({
   const { user: authUser, logout } = useAuth();
   const [showMenu, setShowMenu] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [isDark, setIsDark] = useState(false);
+  const [isDark, setIsDark] = useState(true);
   const displayInitials = authUser?.initials || initials || "SA";
 
   useEffect(() => {
-    const darkActive =
+    const lightActive =
       typeof document !== "undefined" &&
-      (document.documentElement.classList.contains("dark") ||
-        document.documentElement.dataset.theme === "dark");
-    setIsDark(Boolean(darkActive));
+      (document.documentElement.classList.contains("mk") ||
+        document.documentElement.dataset.theme === "light");
+    setIsDark(!lightActive);
   }, []);
 
   const toggleTheme = () => {
@@ -99,6 +99,7 @@ export function Rail({
       } catch {}
     } else {
       document.documentElement.classList.remove("dark");
+      document.documentElement.classList.add("mk");
       document.documentElement.dataset.theme = "light";
       try {
         localStorage.setItem("hk_theme", "light");
