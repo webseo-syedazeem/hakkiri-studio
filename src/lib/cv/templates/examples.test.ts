@@ -1,7 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { EXAMPLE_TEMPLATES, instantiateTemplate } from "./examples";
-import { CvDocSchema } from "@/lib/cv/schema";
-import { saveCv } from "@/lib/cv/store";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+
+// Saved CVs go to a throwaway folder, never into the project's own .data folder.
+process.env.HAKKIRI_DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), "hakkiri-examples-"));
+const { EXAMPLE_TEMPLATES, instantiateTemplate } = await import("./examples");
+const { CvDocSchema } = await import("@/lib/cv/schema");
+const { saveCv } = await import("@/lib/cv/store");
 
 describe("CV Example Templates", () => {
   it("every example template instantiates into a valid, schema-compliant CvDoc and can be saved", async () => {
