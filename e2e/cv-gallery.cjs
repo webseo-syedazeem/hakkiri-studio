@@ -12,11 +12,20 @@ run("Template galleries", async (browser) => {
   const errors = [];
   page.on("pageerror", (e) => errors.push(String(e)));
 
-  // The UK gallery: all 45, in number order, each with a preview that loads.
+  // The UK gallery: the 20 designs offered (TEMPLATES-v3), in number order, each with a preview that loads.
   await page.goto(`${BASE}/cv-templates`);
   await page.getByRole("heading", { level: 1, name: "CV templates" }).waitFor();
   const labels = await page.locator("main ul li a > span.font-semibold").allInnerTexts();
-  check(labels.length === 45 && labels[0] === "No. 01 · Clean Sans" && labels[44] === "No. 45 · Bold Band", "the CV gallery lists all 45 templates by number", `${labels.length}: ${labels.slice(0, 2).join(", ")}`);
+  check(labels.length === 20 && labels[0] === "No. 01 · Clean Sans" && labels.slice(15).join("|") === "No. 46 · Clearline|No. 47 · Fieldwork|No. 49 · Margin Notes|No. 51 · Framework|No. 52 · Chronicle", "the CV gallery lists the 20 designs offered by number, ending with the five new ones", `${labels.length}: ${labels.slice(14).join(", ")}`);
+  check(!labels.some((l) => /^No\. (03|17|45) /.test(l)), "designs merged into another are not offered");
+  await page.goto(`${BASE}/cv-templates/52-chronicle`);
+  await page.getByRole("heading", { level: 1, name: "No. 52 · Chronicle CV template" }).waitFor();
+  check(/some applicant software reads side-by-side text in a different order/.test(await page.getByTestId("columns-note").innerText()), "a design with text beside text says that some software reads it in a different order");
+  await page.goto(`${BASE}/cv-templates/17-compact-two-page`);
+  await page.getByRole("heading", { level: 1 }).first().waitFor();
+  check(true, "a merged design's own page still opens, for links already shared");
+  await page.goto(`${BASE}/cv-templates`);
+  await page.getByRole("heading", { level: 1, name: "CV templates" }).waitFor();
   await page.locator("main img").first().scrollIntoViewIfNeeded();
   await page.waitForFunction(() => [...document.querySelectorAll("main img")].slice(0, 3).every((i) => i.complete && i.naturalWidth > 0));
   check(true, "the preview images load");
@@ -25,8 +34,8 @@ run("Template galleries", async (browser) => {
   await fitsWidth(page, "CV gallery");
 
   // Filters and search.
-  await page.getByRole("button", { name: "Technical", exact: true }).click();
-  check((await cards(page).count()) === 5 && (await page.getByRole("status").innerText()).includes("5 of 45"), "a family filter shows its five templates");
+  await page.getByRole("button", { name: "Contemporary", exact: true }).click();
+  check((await cards(page).count()) === 7 && (await page.getByRole("status").innerText()).includes("7 of 20"), "a family filter shows its designs (Contemporary: seven, with the five new ones)", await page.getByRole("status").innerText());
   await page.getByRole("button", { name: "All", exact: true }).click();
   await page.getByLabel("Search templates by name, number or style").fill("07");
   check((await cards(page).count()) === 1 && (await cards(page).first().innerText()).includes("No. 07 · Header Band"), "searching by number finds that template");
@@ -62,10 +71,10 @@ run("Template galleries", async (browser) => {
   check(/No\. 07 · Header Band resume template/.test(text) && /US Letter/.test(text) && !/colour|centred/i.test(text), "the resume template page says resume, US Letter and color");
   await a11y(page, "Resume template page");
 
-  // The cover letter gallery: the same 45 designs, each drawn as a letter, linked to its matching CV.
+  // The cover letter gallery: the same 20 designs, each drawn as a letter, linked to its matching CV.
   await page.goto(`${BASE}/cover-letter-templates`);
   await page.getByRole("heading", { level: 1, name: "Cover letter templates" }).waitFor();
-  check((await cards(page).count()) === 45, "the cover letter gallery lists all 45 designs");
+  check((await cards(page).count()) === 20, "the cover letter gallery lists the same 20 designs");
   await a11y(page, "Cover letter gallery");
   await page.goto(`${BASE}/cover-letter-templates/07-header-band`);
   await page.getByRole("heading", { level: 1, name: "No. 07 · Header Band cover letter template" }).waitFor();
@@ -102,7 +111,7 @@ run("Template galleries", async (browser) => {
 
   // The sitemap lists the galleries and each template's page.
   const map = await (await page.request.get(`${BASE}/sitemap.xml`)).text();
-  check(map.includes("/cv-templates/07-header-band") && map.includes("/resume-templates/45-bold-band") && map.includes("/cover-letter-templates/01-clean-sans") && map.includes("/resume-examples/marketing-lead"), "the sitemap lists every template and example page");
+  check(map.includes("/cv-templates/07-header-band") && map.includes("/resume-templates/52-chronicle") && map.includes("/cover-letter-templates/01-clean-sans") && map.includes("/resume-examples/marketing-lead") && !map.includes("/resume-templates/45-bold-band"), "the sitemap lists the designs offered and every example page, not the merged designs");
 
   // On a phone.
   const phone = await browser.newContext({ ...PHONE });
@@ -149,7 +158,7 @@ run("Template galleries", async (browser) => {
   // Find an example or template: one search by job.
   await a.page.goto(`${BASE}/cv/examples?region=uk`);
   await a.page.getByRole("heading", { level: 1, name: "Find an example or template" }).waitFor();
-  check((await a.page.getByTestId("example-card").count()) >= 33 && (await a.page.getByTestId("template-card").count()) === 45, "with nothing asked, every example and all 45 templates are listed");
+  check((await a.page.getByTestId("example-card").count()) >= 33 && (await a.page.getByTestId("template-card").count()) === 20, "with nothing asked, every example and the 20 designs offered are listed");
   await a.page.getByLabel("Search by job or industry").fill("pilot");
   check(/First Officer/.test(await a.page.getByTestId("example-card").first().innerText()), "searching “pilot” finds the First Officer example first");
   await a.page.getByLabel("Search by job or industry").fill("nurse");

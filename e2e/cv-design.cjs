@@ -22,7 +22,9 @@ run("CV design panel", async (browser) => {
 
   // The template list is numbered, in order.
   const labels = await page.locator(".cv-templates .cv-template b").allInnerTexts();
-  check(labels.length === 45 && /No\. 01 · Clean Sans/.test(labels[0]) && /No\. 45 · Bold Band/.test(labels[44]), "all 45 templates are listed by number", labels.slice(0, 2).join(", "));
+  // The 20 designs offered, and the CV's own design if it is one that was merged into another (TEMPLATES-v3 §01).
+  const own = (await getCv(page, id)).design.template;
+  check(labels.length >= 20 && labels.length <= 21 && /No\. 01 · Clean Sans/.test(labels[0]) && labels.some((l) => /No\. 52 · Chronicle/.test(l)) && labels.some((l) => /No\. 46 · Clearline/.test(l)), `the designs offered are listed by number, with the new ones (this CV is in “${own}”)`, `${labels.length}: ${labels.slice(0, 2).join(", ")}`);
 
   // Bullet marks and the colour band reach the paper, and are saved.
   await page.getByText("– Dash", { exact: true }).click();

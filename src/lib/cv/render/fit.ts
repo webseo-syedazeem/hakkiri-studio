@@ -1,6 +1,6 @@
 import type { CvDoc, Density, Locator } from "../schema";
 import { type Fonts, type Layout, layoutCv } from "./layout";
-import { BODY_SIZE } from "./templates";
+import { BODY_SIZE, TEMPLATES } from "./templates";
 
 /**
  * Fit to one page, honestly (DESIGN-SPEC-v3 §03). Only the formatting changes, in this order, and only
@@ -23,16 +23,16 @@ const TEXT_STEP = 0.5;
 const MARGIN_STEP = 2;
 const DENSITIES: Density[] = ["looser", "default", "tighter"];
 
-/** The side margin a design draws, in points: the same numbers the renderer uses. */
-export function marginPt(design: Pick<Design, "margin">): number {
+/** The side margin a design draws, in points: the same numbers the renderer uses. A v3 design has its own. */
+export function marginPt(design: Pick<Design, "margin"> & Partial<Pick<Design, "template">>): number {
   const m = design.margin;
   if (typeof m === "number") return Math.max(15, Math.min(72, m));
   if (m === "compact") return 36;
   if (m === "relaxed") return 64;
-  return 50;
+  return (design.template && TEMPLATES[design.template]?.margin) || 50;
 }
 export const mmOf = (pt: number) => Math.round(pt / PT_PER_MM);
-export const textPt = (design: Pick<Design, "fontSize">) => design.fontSize ?? BODY_SIZE;
+export const textPt = (design: Pick<Design, "fontSize"> & Partial<Pick<Design, "template">>) => design.fontSize ?? ((design.template && TEMPLATES[design.template]?.bodySize) || BODY_SIZE);
 
 export interface OverLine {
   at: Locator;

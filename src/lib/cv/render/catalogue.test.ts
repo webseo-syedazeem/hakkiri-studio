@@ -4,16 +4,26 @@ import { describe, expect, it } from "vitest";
 import { wrongRegionSpelling } from "../score/detect";
 import { CV_TEMPLATES } from "../schema";
 import { galleryItems } from "../templates/gallery";
-import { BODY_SIZE, FAMILY_NAMES, TEMPLATES, TEMPLATE_FAMILIES, type TemplateDef, catalogue, templateBySlug, templateLabel, templateMeta, templatePreview, templateSlug } from "./templates";
+import { BODY_SIZE, FAMILY_NAMES, MERGED_INTO, TEMPLATES, TEMPLATE_FAMILIES, type TemplateDef, catalogue, isOffered, offered, templateBySlug, templateLabel, templateMeta, templatePreview, templateSlug } from "./templates";
 
 const all = Object.values(TEMPLATES) as TemplateDef[];
 
 describe("the template catalogue", () => {
-  it("has 45 templates, numbered 1 to 45, each number once", () => {
-    expect(all).toHaveLength(45);
-    expect(all.map((t) => t.no).sort((a, b) => a - b)).toEqual(Array.from({ length: 45 }, (_, i) => i + 1));
-    expect(CV_TEMPLATES).toHaveLength(45);
+  it("has the first 45 templates and the five v3 designs, each number once (48 and 50 were never approved)", () => {
+    const numbers = [...Array.from({ length: 45 }, (_, i) => i + 1), 46, 47, 49, 51, 52].sort((a, b) => a - b);
+    expect(all.map((t) => t.no).sort((a, b) => a - b)).toEqual([...new Set(numbers)]);
+    expect(CV_TEMPLATES).toHaveLength(50);
     for (const id of CV_TEMPLATES) expect(TEMPLATES[id].id).toBe(id);
+  });
+
+  it("offers 20 designs for new CVs, and every other one is merged into one of them, never deleted (TEMPLATES-v3 §01)", () => {
+    expect(offered().map((t) => t.no)).toEqual([1, 2, 6, 7, 11, 16, 19, 21, 26, 30, 31, 36, 39, 40, 42, 46, 47, 49, 51, 52]);
+    for (const [from, to] of Object.entries(MERGED_INTO)) {
+      expect(TEMPLATES[from as keyof typeof TEMPLATES], from).toBeDefined();
+      expect(isOffered(TEMPLATES[to!]), `${from} → ${to}`).toBe(true);
+    }
+    expect(Object.keys(MERGED_INTO)).toHaveLength(30);
+    expect(galleryItems("uk")).toHaveLength(20);
   });
 
   it("gives each a name of its own, and none of another builder's template names", () => {
@@ -23,8 +33,9 @@ describe("the template catalogue", () => {
     expect(names.filter((n) => theirs.includes(n))).toEqual([]);
   });
 
-  it("puts five templates in each of the nine families", () => {
-    for (const f of TEMPLATE_FAMILIES) expect(all.filter((t) => t.family === f).map((t) => t.name), FAMILY_NAMES[f]).toHaveLength(5);
+  it("covers all nine families with the designs offered", () => {
+    const counts = Object.fromEntries(TEMPLATE_FAMILIES.map((f) => [f, offered().filter((t) => t.family === f).length]));
+    expect(counts, Object.values(FAMILY_NAMES).join(", ")).toEqual({ classic: 2, contemporary: 7, minimal: 1, condensed: 2, executive: 1, "early-career": 2, technical: 1, specialist: 3, expressive: 1 });
   });
 
   it("labels each by number and name", () => {
@@ -56,7 +67,8 @@ describe("the template catalogue", () => {
     expect(new Set(slugs).size).toBe(all.length);
     for (const t of all) expect(templateBySlug(templateSlug(t))?.id).toBe(t.id);
     expect(templateBySlug("07-clean-sans")).toBeUndefined();
-    expect(catalogue().map((t) => t.no)).toEqual(Array.from({ length: all.length }, (_, i) => i + 1));
+    expect(catalogue().map((t) => t.no)).toEqual(all.map((t) => t.no).sort((a, b) => a - b));
+    expect(templateSlug(TEMPLATES["margin-notes"])).toBe("49-margin-notes");
   });
 
   it("has a CV and a cover letter preview image for every template (scripts/template-previews.cjs)", () => {

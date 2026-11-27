@@ -58,18 +58,19 @@ describe("finding a template for a job", () => {
   it("brings the designs made for that kind of job first", () => {
     expect(tids("nurse")[0]).toBe("ward");
     expect(tids("teacher")[0]).toBe("chalkboard");
-    expect(tids("developer").slice(0, 6)).toEqual(expect.arrayContaining(["terminal"]));
+    // Terminal is merged into Index (TEMPLATES-v3 §01): only designs offered are found.
+    expect(tids("developer").slice(0, 6)).toEqual(expect.arrayContaining(["technical"]));
   });
 
-  it("finds a design by its own name and style", () => {
-    expect(tids("formal serif")[0]).toBe("chancery");
-    expect(tids("compact")).toEqual(expect.arrayContaining(["compact", "tally", "docket", "index", "marginalia"]));
+  it("finds a design by its own name and style, among the designs offered", () => {
+    expect(tids("formal serif")[0]).toBe("ledger");
+    expect(tids("compact")).toEqual(expect.arrayContaining(["compact", "index"]));
+    expect(tids("compact")).not.toContain("tally");
   });
 
-  it("lists all 45 by number when nothing is asked, and keeps to one look when asked", () => {
+  it("lists the 20 offered designs by number when nothing is asked, and keeps to one look when asked", () => {
     const all = findTemplates({ q: "" });
-    expect(all).toHaveLength(45);
-    expect(all.map((t) => t.no)).toEqual(Array.from({ length: 45 }, (_, i) => i + 1));
+    expect(all.map((t) => t.no)).toEqual([1, 2, 6, 7, 11, 16, 19, 21, 26, 30, 31, 36, 39, 40, 42, 46, 47, 49, 51, 52]);
     expect(findTemplates({ q: "", look: "executive" }).every((t) => t.family === "executive")).toBe(true);
   });
 });

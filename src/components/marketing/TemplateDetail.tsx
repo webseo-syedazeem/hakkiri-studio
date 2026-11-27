@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { FAMILIES } from "@/lib/cv/render/fonts";
-import { ACCENTS, FAMILY_NAMES, GALLERIES, type GalleryKind, type TemplateDef, catalogue, templateLabel, templatePreview, templateSlug } from "@/lib/cv/render/templates";
+import { ACCENTS, FAMILY_NAMES, GALLERIES, type GalleryKind, type TemplateDef, COLUMNS_NOTE, offered, templateLabel, templatePreview, templateSlug } from "@/lib/cv/render/templates";
 import { templateWords } from "@/lib/cv/templates/gallery";
 
 /** One template: a large preview, what it suits, what it's made of, and the way into the builder with it. */
@@ -8,7 +8,7 @@ export function TemplateDetail({ t, kind }: { t: TemplateDef; kind: GalleryKind 
   const { word, base, title, region } = GALLERIES[kind];
   const letter = kind === "letter";
   const words = templateWords(t, region);
-  const others = catalogue().filter((x) => x.family === t.family && x.id !== t.id);
+  const others = offered().filter((x) => x.family === t.family && x.id !== t.id);
   const fonts = t.fonts.heading === t.fonts.body ? FAMILIES[t.fonts.heading] : `${FAMILIES[t.fonts.heading]} headings, ${FAMILIES[t.fonts.body]} text`;
   const colour = region === "us" ? "color" : "colour";
   return (
@@ -32,6 +32,11 @@ export function TemplateDetail({ t, kind }: { t: TemplateDef; kind: GalleryKind 
                 {templateLabel(t)} {word} template
               </h1>
               <p className="mt-3 text-base leading-relaxed text-slate-700">Good for: {words.suits.charAt(0).toLowerCase() + words.suits.slice(1)}.</p>
+              {t.grid && (
+                <p className="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm leading-relaxed text-slate-700" data-testid="columns-note">
+                  {COLUMNS_NOTE}
+                </p>
+              )}
             </div>
             <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
               <dt className="font-semibold text-slate-900">Fonts</dt>

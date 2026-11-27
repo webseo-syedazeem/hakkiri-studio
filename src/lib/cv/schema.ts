@@ -270,9 +270,11 @@ export const CV_TEMPLATES = [
   "ledger", "linen", "chancery", "meridian", "harbour", "slate", "quartz", "arcadia", "vellum", "hairline", "tern", "clearwater",
   "tally", "docket", "index", "marginalia", "boardroom", "crest", "regent", "atlas", "campus", "first-light", "ladder", "sapling",
   "terminal", "circuit", "lattice", "kernel", "ward", "chalkboard", "canvas", "atelier", "palette",
+  // Design v3 (TEMPLATES-v3): 46, 47, 49, 51 and 52. 48 and 50 were proposals that were not approved: never used.
+  "clearline", "fieldwork", "margin-notes", "framework", "chronicle",
 ] as const;
 export type TemplateId = (typeof CV_TEMPLATES)[number];
-export const CV_ACCENTS = ["indigo", "navy", "teal", "copper", "plum", "slate", "emerald", "crimson", "royal", "forest", "burgundy", "charcoal"] as const;
+export const CV_ACCENTS = ["indigo", "navy", "teal", "copper", "plum", "slate", "emerald", "crimson", "royal", "forest", "burgundy", "charcoal", "steel", "pine", "umber", "mulberry", "lagoon"] as const;
 export type AccentId = (typeof CV_ACCENTS)[number];
 export const CV_DENSITIES = ["tighter", "default", "looser"] as const;
 /** The font families a CV can be set in (see render/fonts.ts, which holds the files). */

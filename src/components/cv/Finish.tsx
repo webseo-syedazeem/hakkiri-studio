@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { paperOrder } from "@/lib/cv/render/flow";
 import { FAMILIES } from "@/lib/cv/render/fonts";
 import { fitChanges, fitHonestly } from "@/lib/cv/render/fit";
-import { ACCENTS, PAIRINGS, TEMPLATES, type TemplateDef, contrastRatioOnWhite, templateLabel } from "@/lib/cv/render/templates";
-import { type AccentId, CHANGE_KEYS, CV_ACCENTS, CV_BULLETS, CV_DENSITIES, CV_FONT_FAMILIES, CV_SEPARATORS, CV_TEMPLATES, type Design, type FontFamilyId, type SavedStyle, type TemplateId, cvIsEmpty, sectionIsEmpty } from "@/lib/cv/schema";
+import { ACCENTS, PAIRINGS, TEMPLATES, type TemplateDef, contrastRatioOnWhite, offeredWith, templateLabel } from "@/lib/cv/render/templates";
+import { type AccentId, CHANGE_KEYS, CV_ACCENTS, CV_BULLETS, CV_DENSITIES, CV_FONT_FAMILIES, CV_SEPARATORS, type Design, type FontFamilyId, type SavedStyle, type TemplateId, cvIsEmpty, sectionIsEmpty } from "@/lib/cv/schema";
 import { docWord, sectionHeading } from "@/lib/cv/sections";
 import { Grip, ItemControls, useDragOrder } from "./Arrange";
 import { api, messageOf } from "./client";
@@ -320,7 +320,7 @@ export function Finish({ onOverflow, say }: { onOverflow: () => void; say: (text
           <legend className="sr-only">Template</legend>
           <div className="cv-pad">
           <div className="cv-templates">
-            {[...CV_TEMPLATES].sort((a, b) => TEMPLATES[a].no - TEMPLATES[b].no).map((id) => {
+            {offeredWith(design.template).map(({ id }) => {
               const t = TEMPLATES[id];
               return (
                 <label key={id} className="cv-choice cv-template">

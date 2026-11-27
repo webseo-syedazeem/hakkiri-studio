@@ -1,4 +1,4 @@
-import { type TemplateDef, type TemplateFamily, catalogue } from "../render/templates";
+import { MERGED_INTO, type TemplateDef, type TemplateFamily, offered } from "../render/templates";
 import type { CvLevel, CvRegion } from "../schema";
 import { pick, pickList } from "./build";
 import { EXAMPLES } from "./index";
@@ -120,9 +120,10 @@ export function findTemplates(query: CatalogueQuery): TemplateDef[] {
   const industries = new Set(industriesFor(query.q));
   if (query.industry) industries.add(query.industry);
   const industryWords = [...industries].flatMap((id) => words(`${pick(industryById(id).name, "uk")}`));
-  const homes = new Set([...industries].map((id) => industryById(id).template));
+  // An industry's own design, or the offered design it was merged into.
+  const homes = new Set([...industries].map((id) => MERGED_INTO[industryById(id).template] ?? industryById(id).template));
   const levelWords: Record<CvLevel, string[]> = { student: ["student", "graduate", "school", "first"], early: ["graduate", "first", "early", "short"], experienced: ["experienced", "professional"], senior: ["senior", "leader", "director", "executive", "board"] };
-  const scored = catalogue()
+  const scored = offered()
     .filter((t) => !query.look || t.family === query.look)
     .map((t) => {
       const name = new Set(words(t.name));

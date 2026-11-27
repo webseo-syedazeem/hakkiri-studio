@@ -7,6 +7,7 @@ import { diffParts, fieldFor, formTabs, itemCount, snapshotOf, stateAt, tabFor }
 import type { Finding } from "@/lib/cv/score/score";
 import { questionAbout } from "@/lib/cv/questions";
 import { fitChanges, fitHonestly, marginPt, mmOf, textPt } from "@/lib/cv/render/fit";
+import { TEMPLATES } from "@/lib/cv/render/templates";
 import { CV_LEVELS, type CvLevel, type CvSummary, LEVEL_LABELS, type Locator, type Section, type SectionKind, cvIsEmpty, emptySection, isEntrySection } from "@/lib/cv/schema";
 import { OPTIONAL_KINDS, SECTION_DEFS, docWord, sectionHeading } from "@/lib/cv/sections";
 import { Switch } from "./Arrange";
@@ -578,6 +579,12 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
               {w.previewProfile !== null && (
                 <div className="cv-note" style={{ marginBottom: 10 }} data-testid="profile-preview">
                   Preview of your profile. It isn’t in your {word} yet.
+                </div>
+              )}
+              {pages > 1 && TEMPLATES[cv.design.template]?.grid?.kind === "rail" && (
+                // TEMPLATES-v3: a rail is set beside the main text only on a one-page CV; it is never read before the text it follows.
+                <div className="cv-note" style={{ marginBottom: 10 }} data-testid="rail-note">
+                  Short items sit in the side column when your {word} fits on one page. On more pages they follow the main text, so they are always read after it.
                 </div>
               )}
               {over && (

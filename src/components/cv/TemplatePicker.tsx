@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { exampleCv } from "@/lib/cv/examples/build";
 import { exampleForTemplate } from "@/lib/cv/examples/search";
-import { FAMILY_NAMES, catalogue, templateBySlug, templateLabel, templatePreview, templateSlug } from "@/lib/cv/render/templates";
+import { COLUMNS_NOTE, FAMILY_NAMES, offered, templateBySlug, templateLabel, templatePreview, templateSlug } from "@/lib/cv/render/templates";
 import type { CvDoc, CvRegion } from "@/lib/cv/schema";
 import { ApiError, api, messageOf } from "./client";
 import { PaperView } from "./Paper";
@@ -60,7 +60,7 @@ export function TemplatePicker({ slug }: { slug: string }) {
   }
   const word = (mine?.region ?? region) === "us" ? "resume" : "CV";
   const keep = cvId ? `?cv=${cvId}` : `?region=${region}`;
-  const others = catalogue()
+  const others = offered()
     .filter((x) => x.id !== t.id)
     .sort((a, b) => Number(b.family === t.family) - Number(a.family === t.family) || a.no - b.no)
     .slice(0, 9);
@@ -127,6 +127,11 @@ export function TemplatePicker({ slug }: { slug: string }) {
                 <p className="cv-muted" style={{ margin: 0 }}>
                   Change fonts, spacing, colour and every section in the editor.
                 </p>
+                {t.grid && (
+                  <p className="cv-small" style={{ margin: 0 }} data-testid="columns-note">
+                    {COLUMNS_NOTE}
+                  </p>
+                )}
               </div>
             </Panel>
             <Panel title="Choose a different template">

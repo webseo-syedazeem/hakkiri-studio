@@ -274,9 +274,9 @@ run("CV editor", async (browser) => {
   /* -------------------------------- Finish: every template, and their files */
   await tab(page, "Finish");
   await page.getByRole("heading", { name: "Files" }).waitFor();
-  check((await page.locator(".cv-template").count()) === 45, "all 45 templates are offered");
-  // One from each kind of layout: classic, graduate, compact, executive, projects first, research, skills-led and technical.
-  const templates = [["No. 01 · Clean Sans", "standard"], ["No. 26 · Graduate Serif", "graduate"], ["No. 16 · Compact Classic", "compact"], ["No. 21 · Executive Serif", "executive"], ["No. 42 · Portfolio", "portfolio"], ["No. 36 · Academic Serif", "research"], ["No. 38 · Career Change", "career-change"], ["No. 31 · Skills First", "technical"]];
+  check((await page.locator(".cv-template").count()) === 20, "the 20 designs offered for new CVs are listed");
+  // One from each kind of layout: classic, graduate, compact, executive, projects first, research, technical, and two v3 designs.
+  const templates = [["No. 01 · Clean Sans", "standard"], ["No. 26 · Graduate Serif", "graduate"], ["No. 16 · Compact Classic", "compact"], ["No. 21 · Executive Serif", "executive"], ["No. 42 · Portfolio", "portfolio"], ["No. 36 · Academic Serif", "research"], ["No. 31 · Skills First", "technical"], ["No. 46 · Clearline", "clearline"], ["No. 52 · Chronicle", "chronicle"]];
   const sizes = new Set();
   for (const [name, key] of templates) {
     await page.locator(".cv-template", { hasText: name }).click();
@@ -293,7 +293,7 @@ run("CV editor", async (browser) => {
     check(out.docx.tables === 0 && out.docx.paragraphs[0].style === "Heading1", `${name}: the Word file starts with the name as a real heading and has no tables`);
     sizes.add(fs.statSync(out.pdf.file).size);
   }
-  check(sizes.size === templates.length, "eight different templates give eight different PDFs", [...sizes].join(","));
+  check(sizes.size === templates.length, "nine different templates give nine different PDFs", [...sizes].join(","));
 
   // Fonts, colour, paper size, spacing.
   await page.locator(".cv-template", { hasText: "No. 01 · Clean Sans" }).click();

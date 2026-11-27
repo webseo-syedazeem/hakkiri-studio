@@ -112,12 +112,16 @@ export function compareText(flow: Flow, fileText: string, pages = 0): ReadBack {
   return { status: "loss", missing: [...missing].sort((a, b) => a - b).map((p) => pieces[p]), unexpected, words: want.length, pages };
 }
 
-/** Reads a PDF back with pdf.js and compares it with the CV. */
-export async function readBackPdf(bytes: Uint8Array, flow: Flow): Promise<ReadBack> {
+/**
+ * Reads a PDF back with pdf.js and compares it with the CV. `inWrittenOrder`: for a design with text beside text
+ * (TEMPLATES-v3 46–52), the file is read in the order it was written, which is the reading order; read by place on
+ * the page, a line of the side column would be read in the middle of a line of the main text.
+ */
+export async function readBackPdf(bytes: Uint8Array, flow: Flow, opts: { inWrittenOrder?: boolean } = {}): Promise<ReadBack> {
   // Our own files have no running headers or footers, so no line is set aside as one.
   // The text is read as it is on the page. The upload reader's tidying (taking list marks off, joining a line that
   // ends in a hyphen to the next) is for other people's files; on ours it would report differences that are not there.
-  const file = await extractPdf(bytes, isOnlyDates, { keepEdges: true, raw: true });
+  const file = await extractPdf(bytes, isOnlyDates, { keepEdges: true, raw: true, stream: opts.inWrittenOrder });
   return compareText(flow, file.lines.map((l) => l.text).join("\n"), file.pages);
 }
 
