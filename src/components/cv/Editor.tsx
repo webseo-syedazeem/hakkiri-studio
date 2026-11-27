@@ -299,7 +299,7 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
     }, 0);
   };
   const liveOver = paper ? linesOver(paper, cv.design.pageTarget) : 0;
-  const overLines = paper && fitResult?.fit.status === "over"
+  const overLines = paper && fitResult
     ? paper.layout.blocks.flatMap((b) => b.lines.filter((l) => l.page >= cv.design.pageTarget).map((l) => ({ at: b.at, text: l.runs.map((x) => x.text).join("").trim() }))).filter((l) => l.text)
     : [];
 
@@ -537,7 +537,7 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
             )}
 
             {isFinish ? (
-              <Finish onOverflow={() => openPanel("page-overflow")} say={say} />
+              <Finish onOverflow={runFit} say={say} />
             ) : tab.key === "contact" ? (
               <Panel title="Contact">
                 <div className="cv-pad">
@@ -615,7 +615,7 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
                 <FormatBar cv={cv} paper={paper} update={update} base={base} say={say} />
               </div>
             )}
-            {!isFinish && fitResult && (
+            {fitResult && (
               <FitResultPanel
                 result={fitResult.fit}
                 target={cv.design.pageTarget}
@@ -656,8 +656,8 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
                   <span>
                     This runs to {pages} pages. Your target is {cv.design.pageTarget === 1 ? "one page" : "two pages"}.
                   </span>
-                  <Btn className="cv-push" onClick={() => openPanel("page-overflow")}>
-                    See what runs over
+                  <Btn className="cv-push" onClick={runFit}>
+                    Fit to {cv.design.pageTarget === 1 ? "one page" : "two pages"}
                   </Btn>
                 </div>
               )}
@@ -934,16 +934,18 @@ function FitResultPanel({ result, target, liveOver, lines, textPt, marginMm, onU
   canSwitchOff: (at: Locator) => boolean;
   onShorten: (at: Locator, text: string) => void;
 }) {
-  const nowFits = result.status === "over" && liveOver === 0;
+  // Always measured against the page as it is now: a fit that held can stop holding after an edit, and the other way round.
+  const nowOver = liveOver > 0;
+  const nowFits = result.status === "over" && !nowOver;
   return (
     <section className="cv-fitresult" aria-label="Fit to one page result" data-testid="fit-result" data-status={nowFits ? "fits" : result.status}>
       <div className="cv-fitresult-head">
         <div className="min-w-0">
           <p className="cv-fitresult-title" role="status">
-            {nowFits ? `Fits on ${target === 1 ? "1 page" : `${target} pages`} now.` : result.status === "over" ? (liveOver > 0 ? `${liveOver} ${liveOver === 1 ? "line still runs" : "lines still run"} onto page ${target + 1}.` : fitSummary(result, target)) : fitSummary(result, target)}
+            {nowOver ? `${liveOver} ${liveOver === 1 ? "line runs" : "lines run"} onto page ${target + 1} now.` : nowFits ? `Fits on ${target === 1 ? "1 page" : `${target} pages`} now.` : fitSummary(result, target)}
           </p>
           <p className="cv-small" style={{ margin: "2px 0 0" }}>
-            {result.status === "over" && !nowFits ? `Text is at ${textPt} pt, margins at ${marginMm} mm. No change made to your words.` : "Your words haven’t changed."}
+            {nowOver ? `Text is at ${textPt} pt, margins at ${marginMm} mm. No change made to your words.${result.status !== "over" ? " Run Fit again to try once more." : ""}` : "Your words haven’t changed."}
           </p>
         </div>
         <span className="cv-row" style={{ gap: 6 }}>
@@ -951,7 +953,7 @@ function FitResultPanel({ result, target, liveOver, lines, textPt, marginMm, onU
           <Btn kind="quiet" onClick={onClose} aria-label="Close the fit result">Close</Btn>
         </span>
       </div>
-      {result.status === "over" && !nowFits && lines.length > 0 && (
+      {nowOver && lines.length > 0 && (
         <ul className="cv-fitresult-lines">
           {lines.slice(0, 12).map((l, i) => (
             <li key={`${i}-${l.text}`}>

@@ -232,9 +232,18 @@ export function UploadCheck({ imp, cv, change, flush }: { imp: CvImport; cv: CvD
           )}
           <div className="cv-row" style={{ marginTop: 18 }}>
             {flagged && (
-              <BtnLink href="/cv/new" kind="default">
+              <Btn
+                disabled={busy}
+                onClick={async () => {
+                  // Going back starts again: what was read, and the empty CV made for it, are not left behind.
+                  setBusy(true);
+                  await api(`/api/cv/imports/${imp.id}`, { method: "DELETE" }).catch(() => {});
+                  await api(`/api/cv/versions/${cv.id}`, { method: "DELETE" }).catch(() => {});
+                  router.push("/cv/new");
+                }}
+              >
                 Back
-              </BtnLink>
+              </Btn>
             )}
             <Btn kind="primary" busy={busy} disabled={!ready} onClick={() => void openEditor()}>
               {flagged ? "Confirm and open editor" : "Open editor"}

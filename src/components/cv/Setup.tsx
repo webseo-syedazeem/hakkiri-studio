@@ -47,6 +47,8 @@ export function Setup() {
   const fileRef = useRef<HTMLInputElement>(null);
   const linkedinRef = useRef<HTMLInputElement>(null);
   const otherRef = useRef<HTMLDivElement>(null);
+  /** A CV is only ever created once per visit, however often effects or clicks run. */
+  const creating = useRef(false);
 
   useEffect(() => {
     const q = new URLSearchParams(window.location.search);
@@ -114,12 +116,14 @@ export function Setup() {
 
   /** A blank page, three questions or the assistant: an empty CV in UK · A4 until the person changes it in the editor. */
   async function create(kind: "blank" | "three" | "talk") {
-    if (busy) return;
+    if (busy || creating.current) return;
+    creating.current = true;
     setStage("creating");
     try {
       const { id } = await api<{ id: string }>("/api/cv/versions", { method: "POST", json: { name: "Untitled CV", level: "experienced", region: "uk", ...(design ? { template: design } : {}) } });
       router.push(kind === "three" ? `/cv/v/${id}/capture/new` : kind === "talk" ? `/cv/v/${id}/talk` : `/cv/v/${id}/edit/contact`);
     } catch (err) {
+      creating.current = false;
       setStage("");
       setProblem("failed");
       setMessage(messageOf(err));
@@ -253,6 +257,7 @@ export function Setup() {
                   <WayCard title="Start with a blank page" body="Fill in the sections yourself." onClick={() => void create("blank")} />
                   <WayCard title="Answer three questions" body="Tell us about one job in your own words." pressed={other === "three"} onClick={() => pickOther("three")} />
                   <WayCard title="Talk it through" body="Work through the CV with the assistant." onClick={() => void create("talk")} />
+                  <p className="cv-small" style={{ gridColumn: "1 / -1", margin: 0 }}>A blank page, three questions and Talk it through start as a UK CV on A4. Change it to US · Letter, and set your level, at the top of the editor.</p>
                 </div>
               )}
 

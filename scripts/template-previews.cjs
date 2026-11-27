@@ -22,7 +22,8 @@ const EXAMPLE = { technical: "software-engineer", "early-career": "cs-graduate",
 const OWN = { ward: "staff-nurse", scholar: "data-scientist", research: "data-scientist", index: "devops-engineer", kernel: "software-engineer" };
 
 (async () => {
-  if (templates.length !== 45) throw new Error(`Expected 45 templates, found ${templates.length}`);
+  // 45 original designs plus the five design spec v3 designs (46, 47, 49, 51, 52).
+  if (templates.length !== 50) throw new Error(`Expected 50 templates, found ${templates.length}`);
   const browser = await chromium.launch();
   const context = await browser.newContext({ viewport: { width: 1440, height: 1200 }, deviceScaleFactor: 2, extraHTTPHeaders: { "x-forwarded-for": "10.9.7.7" } });
   await context.addInitScript(() => sessionStorage.setItem("dismiss_phone_notice", "1"));
