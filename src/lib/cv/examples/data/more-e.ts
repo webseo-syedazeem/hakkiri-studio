@@ -963,6 +963,10 @@ Salary $125,000 to $145,000`,
             uk: "Ran undergraduate admissions for the department for 2 years, raising applications by 25% through new open day field trips",
             us: "Led undergraduate recruitment for the department for 2 years, raising applications by 25% through new campus visit field trips",
           },
+          {
+            uk: "Completed a Postgraduate Certificate in Higher Education in 2016 while teaching 4 modules a year",
+            us: "Earned tenure and promotion to associate professor in 2019 after a 5-year tenure-track review",
+          },
         ],
       },
       {
