@@ -36,7 +36,13 @@ run("CV share and download", async (browser) => {
   check(/\.pdf$/.test(file.suggestedFilename()), "Download PDF downloads the PDF", file.suggestedFilename());
   await dl.getByTestId("status-pdf").filter({ hasText: "Checked" }).waitFor({ timeout: 30000 });
   check(true, "the PDF's line says it was checked: it reads back the same as the CV");
-  await dl.getByRole("button", { name: "Close" }).first().click();
+  const ready = dl.getByTestId("download-practise");
+  await ready.waitFor();
+  check(/Your CV is ready\. Practise the questions it will get you\./.test(await ready.innerText()) && (await ready.getByRole("link", { name: "Questions your CV will get" }).getAttribute("href")) === `/cv/v/${id}/questions`, "after the download: practice is offered, with the questions its CV will get (never required)");
+  await bothThemes(page, "download-success");
+  await ready.getByRole("button", { name: "Back to editor" }).click();
+  await dl.waitFor({ state: "hidden" });
+  check(true, "Back to editor closes the dialog");
 
   // The CV list's Download opens the same dialog.
   await page.goto(`${BASE}/cv`);

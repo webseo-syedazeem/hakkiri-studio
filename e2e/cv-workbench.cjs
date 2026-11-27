@@ -44,7 +44,9 @@ run("CV workbench", async (browser) => {
   check(cv.design.dividerStyle === "none" && cv.design.pageSize === "letter" && cv.design.accent === "plum" && cv.design.fontSize === 11, "the choices are saved with the CV", JSON.stringify({ d: cv.design.dividerStyle, p: cv.design.pageSize, a: cv.design.accent, f: cv.design.fontSize }));
   check(/Fits on (1|2) page|lines? over/.test(await page.getByTestId("fit-status").innerText()), "the fit status says how the page fits", await page.getByTestId("fit-status").innerText());
   await page.getByRole("button", { name: /^Fit to (one|two) pages?$/ }).click();
-  check(/Fits on|over/.test(await page.getByTestId("fit-status").innerText()), "Fit to one page says what it did, and never removes text", await page.getByTestId("fit-status").innerText());
+  await page.getByTestId("fit-result").waitFor({ timeout: 15000 });
+  const fitSaid = await page.getByTestId("fit-result").innerText();
+  check(/Fits on \d pages?|still runs? onto page/.test(fitSaid) && /Your words haven’t changed|No change made to your words/.test(fitSaid), "Fit to one page says what it did, right above the page, and that the words haven’t changed", fitSaid.split("\n").slice(0, 2).join(" / "));
   check((await paperText(page)).includes("Grew qualified leads by 52%"), "the page still has all of its text");
 
   // v3: the header has three actions, and the fields fold away to give the page the room.

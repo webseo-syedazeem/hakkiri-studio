@@ -121,11 +121,9 @@ run("Template galleries", async (browser) => {
   const a = await newUser(browser, "gallery");
   await a.page.goto(`${BASE}/cv/new?template=harbour`);
   await a.page.getByText("Design: No. 07 · Header Band").waitFor();
-  check(true, "the New CV form shows the design chosen in the gallery");
-  await a.page.getByLabel("CV name").fill("Gallery test");
-  await a.page.getByText("Experienced", { exact: true }).click();
-  await a.page.getByText("UK", { exact: true }).click();
-  await a.page.getByRole("button", { name: "Create CV" }).click();
+  check(true, "Start your CV shows the design chosen in the gallery");
+  await a.page.getByRole("button", { name: /^Start with a blank page Fill it in/ }).click();
+  await a.page.getByRole("button", { name: "Start with a blank page", exact: true }).click();
   await a.page.waitForURL(/\/cv\/v\/(cv_[a-f0-9]+)\/edit\/contact/, { timeout: 30000 });
   const id = a.page.url().match(/cv_[a-f0-9]+/)[0];
   let cv = await a.page.evaluate(async (cvId) => (await (await fetch(`/api/cv/versions/${cvId}`)).json()).cv, id);
@@ -135,10 +133,8 @@ run("Template galleries", async (browser) => {
   await a.page.goto(`${BASE}/cv/new?template=harbour`);
   await a.page.getByRole("button", { name: "Don’t use this design" }).click();
   check((await a.page.getByText("Design: No. 07 · Header Band").count()) === 0, "the chosen design can be dropped");
-  await a.page.getByLabel("CV name").fill("Gallery test two");
-  await a.page.getByText("Experienced", { exact: true }).click();
-  await a.page.getByText("UK", { exact: true }).click();
-  await a.page.getByRole("button", { name: "Create CV" }).click();
+  await a.page.getByRole("button", { name: /^Start with a blank page Fill it in/ }).click();
+  await a.page.getByRole("button", { name: "Start with a blank page", exact: true }).click();
   await a.page.waitForURL(/\/cv\/v\/cv_[a-f0-9]+\/edit\/contact/, { timeout: 30000 });
   const id2 = a.page.url().match(/cv_[a-f0-9]+/)[0];
   cv = await a.page.evaluate(async (cvId) => (await (await fetch(`/api/cv/versions/${cvId}`)).json()).cv, id2);

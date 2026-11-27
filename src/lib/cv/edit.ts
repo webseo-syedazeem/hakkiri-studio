@@ -206,10 +206,10 @@ export function stateAt(sections: Section[], at: Locator): "on" | "off" | "gone"
 /* --------------------------------------------------------------------- undo */
 
 /** Everything a person can change about a CV. One of these is what Undo goes back to. */
-export type Snapshot = Pick<CvDoc, "name" | "level" | "region" | "target" | "contact" | "sections" | "design" | "accepted" | "requirements" | "changes" | "letter">;
-export const SNAPSHOT_KEYS = ["name", "level", "region", "target", "contact", "sections", "design", "accepted", "requirements", "changes", "letter"] as const;
+export type Snapshot = Pick<CvDoc, "name" | "level" | "region" | "target" | "contact" | "sections" | "design" | "accepted" | "requirements" | "changes" | "letter" | "inferred">;
+export const SNAPSHOT_KEYS = ["name", "level", "region", "target", "contact", "sections", "design", "accepted", "requirements", "changes", "letter", "inferred"] as const;
 
-export const snapshotOf = (cv: Snapshot): Snapshot => ({ name: cv.name, level: cv.level, region: cv.region, target: cv.target, contact: cv.contact, sections: cv.sections, design: cv.design, accepted: cv.accepted, requirements: cv.requirements, changes: cv.changes, letter: cv.letter });
+export const snapshotOf = (cv: Snapshot): Snapshot => ({ name: cv.name, level: cv.level, region: cv.region, target: cv.target, contact: cv.contact, sections: cv.sections, design: cv.design, accepted: cv.accepted, requirements: cv.requirements, changes: cv.changes, letter: cv.letter, inferred: cv.inferred });
 
 export interface History {
   past: Snapshot[];

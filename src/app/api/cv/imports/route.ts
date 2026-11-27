@@ -78,6 +78,8 @@ export async function POST(req: Request) {
 
     // Reading never throws: a file that cannot be read gives a record that says why.
     const imp = await readUpload({ id: newImportId(), userId, versionId: cv.id, createdAt: now }, cv, { file: hasFile ? (file as File) : null, text: hasText ? finalText : null }, now);
+    // From the start screen, a file that can't be read leaves nothing behind: the screen says why, and the person tries again there.
+    if (quick && imp.status === "failed") return NextResponse.json({ error: imp.error?.code ?? "unreadable", message: imp.error?.message ?? IMPORT_ERRORS.unreadable.message }, { status: 422 });
     // Nothing asked first: what the file shows sets the name, UK or US and the level; the rest says "Not known yet".
     if (quick) cv = withInferred(cv, inferSetup({ fullName: imp.draft.contact.fullName, sections: imp.draft.sections, text: imp.lines.map((l) => l.text).join("\n"), fileName: imp.fileName || (hasFile ? (file as File).name : "") }, new Date(now)), Boolean(template));
     try {

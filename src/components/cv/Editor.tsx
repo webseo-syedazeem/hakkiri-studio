@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { diffParts, fieldFor, formTabs, itemCount, snapshotOf, stateAt, switchOff, tabFor } from "@/lib/cv/edit";
+import { diffParts, fieldFor, formTabs, itemCount, snapshotOf, stateAt, tabFor } from "@/lib/cv/edit";
 import type { Finding } from "@/lib/cv/score/score";
 import { questionAbout } from "@/lib/cv/questions";
-import { fitToPages } from "@/lib/cv/render/layout";
+import { fitChanges, fitHonestly, marginPt, mmOf, textPt } from "@/lib/cv/render/fit";
 import { CV_LEVELS, type CvLevel, type CvSummary, LEVEL_LABELS, type Locator, type Section, type SectionKind, cvIsEmpty, emptySection, isEntrySection } from "@/lib/cv/schema";
 import { OPTIONAL_KINDS, SECTION_DEFS, docWord, sectionHeading } from "@/lib/cv/sections";
 import { Switch } from "./Arrange";
@@ -16,7 +16,8 @@ import { Dialog, usePanel } from "./Dialog";
 import { scoreLabel } from "./Findings";
 import { Finish } from "./Finish";
 import { FilesPanel } from "./Files";
-import { FitControl, FormatBar } from "./FormatBar";
+import { FitControl, OverList, ShortenDialog } from "./Fit";
+import { FormatBar } from "./FormatBar";
 import { ShareDialog } from "./ShareDialog";
 import { JobPanel } from "./JobPanel";
 import { PaperView } from "./Paper";
@@ -48,7 +49,8 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
   const [busy, setBusy] = useState("");
   const [moreFor, setMoreFor] = useState("");
   const [fieldsHidden, setFieldsHidden] = useFieldsHidden();
-  const [setHere, setSetHere] = useState<string[]>([]);
+  /** A line that runs over, being shortened by the person (DESIGN-SPEC-v3 §03). */
+  const [shortenAt, setShortenAt] = useState<Locator | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const versionId = w.versionId;
 
@@ -263,11 +265,13 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
     ),
   });
   const chosenEntry = panel === "choose-achievement" ? cv.sections.flatMap((s) => (isEntrySection(s) ? s.entries.map((e) => ({ entry: e, sectionId: s.id })) : [])).find((x) => x.entry.id === item) : undefined;
-  const fit = panel === "page-overflow" && paper ? fitToPages(cv, paper.fonts, cv.design.pageTarget) : null;
+  const fit = panel === "page-overflow" && paper ? fitHonestly(cv, paper.fonts, cv.design.pageTarget) : null;
   const diff = panel === "save-conflict" && w.other ? diffParts(snapshotOf(cv), snapshotOf(w.other)) : [];
 
   // UK or US and the level, when the file didn't show them: "Not known yet" until set here.
-  const notKnown = (k: "region" | "level") => (cv.inferred?.unknown ?? []).includes(k) && !setHere.includes(k);
+  const notKnown = (k: "region" | "level") => (cv.inferred?.unknown ?? []).includes(k);
+  /** Chosen here: no longer "Not known yet", even when it is the value already there. */
+  const known = (k: "region" | "level") => (cv.inferred ? { ...cv.inferred, unknown: cv.inferred.unknown.filter((x) => x !== k) } : undefined);
   return (
     <CvScreen>
       <header className="cv-bar cv-edhead">
@@ -285,8 +289,7 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
                   data-testid="region-choice"
                   onChange={(e) => {
                     const r = e.target.value as "uk" | "us";
-                    setSetHere((x) => [...x, "region"]);
-                    update({ region: r, design: { ...cv.design, pageSize: r === "uk" ? "a4" : "letter" } });
+                    update({ region: r, design: { ...cv.design, pageSize: r === "uk" ? "a4" : "letter" }, inferred: known("region") });
                     say(r === "uk" ? "Set to UK: a CV on A4, UK spelling." : "Set to US: a resume on Letter, US spelling.");
                   }}
                 >
@@ -318,10 +321,7 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
               <span className="sr-only">Level</span>
               <select
                 value={notKnown("level") ? "" : cv.level}
-                onChange={(e) => {
-                  setSetHere((x) => [...x, "level"]);
-                  update({ level: e.target.value as CvLevel });
-                }}
+                onChange={(e) => update({ level: e.target.value as CvLevel, ...(cv.inferred ? { inferred: known("level") } : {}) })}
                 aria-label="Level"
               >
                 {notKnown("level") && (
@@ -448,7 +448,7 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
             <Btn className="cv-notnarrow" aria-pressed={fieldsHidden} onClick={() => setFieldsHidden(!fieldsHidden)} data-testid="fields-toggle">
               {fieldsHidden ? "Show editing fields" : "Hide editing fields"}
             </Btn>
-            <FitControl cv={cv} paper={paper} update={update} say={say} />
+            <FitControl cv={cv} paper={paper} update={update} say={say} onShorten={setShortenAt} />
           </div>
         )}
         <div className="cv-narrow cv-viewbar">
@@ -607,7 +607,7 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
       {panel === "download" && (
         <Dialog title="Download" onClose={closePanel} wide>
           <p style={{ marginTop: 0 }}>Download your current {word} as PDF or Word. Each file is read back and compared with your {word} before it is downloaded.</p>
-          <FilesPanel say={say} inDialog />
+          <FilesPanel say={say} inDialog onBack={closePanel} />
         </Dialog>
       )}
       {panel === "more" && (
@@ -698,61 +698,50 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
           ) : fit.fits ? (
             <>
               <p>
-                Your {word} runs to {pages} pages. With {fit.density === "tighter" ? "tighter" : "default"} spacing it fits on {cv.design.pageTarget === 1 ? "one" : "two"}. Only the space between lines and sections changes: nothing is cut and the type stays the same size.
+                Your {word} runs to {pages} pages. With {fitChanges(fit)} it fits on {cv.design.pageTarget === 1 ? "one" : "two"}. Only the formatting changes: nothing is cut and your words stay as they are.
               </p>
               <div className="cv-row">
                 <Btn
                   kind="primary"
                   onClick={() => {
-                    update({ design: { ...cv.design, density: fit.density } });
-                    say(`Spacing set to ${fit.density}.`);
+                    update({ design: fit.design });
+                    say(`Fits on ${cv.design.pageTarget === 1 ? "one page" : "two pages"}: ${fitChanges(fit)}. Your words haven’t changed.`);
                     closePanel();
                   }}
                 >
-                  Use {fit.density} spacing
+                  {fit.changed.text || fit.changed.margins ? "Use these settings" : `Use ${fit.design.density} spacing`}
                 </Btn>
               </div>
             </>
           ) : (
             <>
               <p>
-                Even at the tightest spacing your {word} runs to {fit.pages} pages. It is never cropped and the type is never made smaller, so something has to give. These lines are past page {cv.design.pageTarget}:
+                Even with tighter spacing, text at {textPt(fit.design)} pt and margins at {mmOf(marginPt(fit.design))} mm, your {word} runs to {fit.pages} pages. Nothing is cut or reworded, so something has to give. With those settings, these lines run past page {cv.design.pageTarget}:
               </p>
-              <ul className="cv-overlist">
-                {fit.over.slice(0, 14).map((o, i) => {
-                  const off = switchOff(cv.sections, o.at);
-                  return (
-                    <li key={i}>
-                      <span className="min-w-0 grow" style={{ overflowWrap: "anywhere" }}>
-                        {o.text}
-                      </span>
-                      <Btn
-                        onClick={() => {
-                          closePanel();
-                          pick(o.at);
-                        }}
-                        aria-label={`Shorten: ${o.text.slice(0, 60)}`}
-                      >
-                        Shorten
-                      </Btn>
-                      {off && (
-                        <Btn
-                          onClick={() => {
-                            update({ sections: off.sections });
-                            say(`Switched off. It stays in your ${word} and can be switched back on.`);
-                          }}
-                          aria-label={`Switch off this ${off.what}: ${o.text.slice(0, 60)}`}
-                        >
-                          Switch off {off.what === "entry" ? "this entry" : ""}
-                        </Btn>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-              {fit.over.length > 14 && <small>And {fit.over.length - 14} more lines.</small>}
-              {cv.design.pageTarget === 1 && (
-                <div className="cv-row">
+              <OverList
+                cv={cv}
+                over={fit.over}
+                update={update}
+                say={say}
+                word={word}
+                onShorten={(at) => {
+                  closePanel();
+                  setShortenAt(at);
+                }}
+              />
+              <div className="cv-row">
+                {fit.design !== cv.design && (
+                  <Btn
+                    kind="primary"
+                    onClick={() => {
+                      update({ design: fit.design });
+                      say(`Text at ${textPt(fit.design)} pt, margins at ${mmOf(marginPt(fit.design))} mm. No change made to your words.`);
+                    }}
+                  >
+                    Use these settings
+                  </Btn>
+                )}
+                {cv.design.pageTarget === 1 && (
                   <Btn
                     onClick={() => {
                       update({ design: { ...cv.design, pageTarget: 2 } });
@@ -761,13 +750,25 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
                   >
                     Use two pages instead
                   </Btn>
-                </div>
-              )}
+                )}
+              </div>
             </>
           )}
         </Dialog>
       )}
-
+      {shortenAt && (
+        <ShortenDialog
+          cv={cv}
+          at={shortenAt}
+          update={update}
+          say={say}
+          onClose={() => setShortenAt(null)}
+          onField={(at) => {
+            setShortenAt(null);
+            pick(at);
+          }}
+        />
+      )}
       {panel === "save-conflict" && (
         <Dialog
           title="Two copies of this CV"

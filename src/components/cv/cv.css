@@ -3216,3 +3216,51 @@ html:not(.dark):not([data-theme="dark"]) .cv, .mk .cv, .cv.mk, [data-theme="ligh
 .cv-practisecard { display: grid; gap: 6px; padding: 12px; border: 1px solid var(--cv-edge); border-radius: 11px; background: var(--color-panel-2); }
 .cv-practisecard b { font-size: 14px; line-height: 1.35; }
 .cv .cv-practisecard .cv-btn { justify-content: center; }
+
+/* ======================================================================= Design v3: Start your CV (§01)
+ * Upload first, in three steps. One centred column, at most 840 px. Nothing is asked before the upload. */
+.cv .cv-start3 { max-width: 840px; margin-left: auto; margin-right: auto; }
+.cv-steps3 { list-style: none; display: flex; flex-wrap: wrap; gap: 12px; margin: 0 0 18px; padding: 0; font-size: 13px; }
+.cv-steps3 li { display: inline-flex; align-items: center; gap: 8px; color: var(--color-muted); }
+.cv-steps3 li + li::before { content: ""; width: 28px; height: 1px; background: var(--cv-edge); margin-right: 4px; }
+.cv-steps3-n { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--control-edge); font-weight: 600; font-size: 12px; }
+.cv-steps3 li[data-state="current"] { color: var(--color-ink); font-weight: 600; }
+.cv-steps3 li[data-state="current"] .cv-steps3-n { background: var(--color-blue); border-color: var(--color-blue); color: #fff; }
+.cv-steps3 li[data-state="done"] .cv-steps3-n { border-color: var(--color-blue); color: var(--color-blue); }
+
+.cv-start3-card { border: 1px solid var(--cv-edge); border-radius: 14px; background: var(--color-panel); padding: 32px; }
+.cv-drop3 { min-height: 250px; display: grid; place-items: center; text-align: center; border: 2px dashed var(--control-edge); border-radius: 12px; padding: 24px 16px; background: transparent; }
+.cv-drop3[data-state="over"] { background: var(--cv-selected); border-color: var(--color-blue); }
+.cv-drop3[data-state="wrong-type"], .cv-drop3[data-state="too-big"], .cv-drop3[data-state="scanned"], .cv-drop3[data-state="failed"], .cv-drop3[data-state="empty-file"] { border-color: color-mix(in srgb, var(--color-red) 55%, var(--cv-edge)); }
+.cv-drop3-body { display: grid; gap: 10px; justify-items: center; max-width: 460px; }
+.cv-drop3-body h2 { margin: 0; font-size: 20px; line-height: 1.3; }
+.cv-drop3-body p { margin: 0; }
+.cv-drop3-rows { list-style: none; margin: 6px 0 0; padding: 0; width: min(360px, 100%); display: grid; gap: 6px; text-align: left; }
+.cv-drop3-rows li { display: flex; justify-content: space-between; gap: 12px; padding: 8px 12px; border: 1px solid var(--cv-edge); border-radius: 9px; font-size: 14px; }
+
+.cv-start3-other { margin-top: 24px; }
+.cv-start3-h { font-size: 16px; margin: 0 0 10px; }
+.cv-start3-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.cv .cv-start3-way { display: grid; gap: 4px; text-align: left; padding: 14px 16px; border: 1px solid var(--cv-edge); border-radius: 11px; background: var(--color-panel); color: var(--color-ink); font: inherit; cursor: pointer; text-decoration: none; }
+.cv .cv-start3-way b { font-weight: 600; font-size: 15px; }
+.cv .cv-start3-way span { font-size: 13px; color: var(--color-muted); }
+.cv .cv-start3-way:hover { border-color: var(--control-edge); }
+.cv .cv-start3-way[aria-pressed="true"] { border-color: var(--color-blue); background: var(--cv-selected); }
+.cv .cv-start3-way:focus-visible { outline: 2px solid var(--color-blue); outline-offset: 2px; }
+.cv-start3-open { margin-top: 12px; border: 1px solid var(--cv-edge); border-radius: 14px; background: var(--color-panel); padding: 20px; }
+@media (max-width: 767px) {
+  .cv-start3-card { padding: 16px; }
+  .cv-drop3 { min-height: 224px; }
+  .cv-start3-grid { grid-template-columns: 1fr; }
+  .cv-start3-open { padding: 16px; }
+  .cv .cv-start3-way { min-height: 44px; }
+}
+/* After the upload: what the file showed, as chips that can be changed in the editor. */
+.cv-found { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 16px; }
+.cv-found .cv-chip[data-unknown="true"] { border-style: dashed; color: var(--color-muted); }
+
+/* v3: the fit result, right above the page (§03): quiet, bordered, from the real numbers. */
+.cv-fitresult { flex-basis: 100%; display: grid; gap: 10px; padding: 12px; border: 1px solid var(--cv-edge); border-radius: 11px; background: var(--color-panel); }
+.cv-fitresult-head { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 10px; }
+.cv-fitresult-head > span:first-child { display: grid; gap: 4px; min-width: 0; }
+.cv-fitresult .cv-overlist { margin: 0; }

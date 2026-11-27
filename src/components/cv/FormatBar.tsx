@@ -1,9 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
 import { FAMILIES } from "@/lib/cv/render/fonts";
-import { fitToPages } from "@/lib/cv/render/layout";
 import { ACCENTS, PAIRINGS, TEMPLATES, type TemplateDef, templateLabel, templateSlug } from "@/lib/cv/render/templates";
 import { type AccentId, CV_ACCENTS, CV_DENSITIES, type CvDoc, type Density, type Design, type TemplateId } from "@/lib/cv/schema";
 import type { Paper } from "./usePaper";
@@ -16,12 +14,6 @@ export const FONT_CHOICES = PAIRINGS.map((p) => ({ id: p.id, label: pairLabel(p.
 const SPACING: Record<Density, string> = { tighter: "Tighter", default: "Default", looser: "Looser" };
 const LINE_SPACING = [0.85, 1, 1.15, 1.3];
 const SIZES = { min: 9, max: 12.5, step: 0.5 };
-
-/** Lines of the CV that fall past the pages it is meant to fit on. */
-export function linesOver(paper: Paper | null, target: number): number {
-  if (!paper) return 0;
-  return paper.layout.blocks.reduce((n, b) => n + b.lines.filter((l) => l.page >= target).length, 0);
-}
 
 /**
  * The design controls most changed, directly above the page while editing:
@@ -159,36 +151,6 @@ export function FormatBar({ cv, paper, update, base, say, slim, onMore }: { cv: 
 }
 
 /** "Fit to one page" (or two): the loosest spacing that keeps the CV to its page target, and what it did. */
-export function FitControl({ cv, paper, update, say }: { cv: CvDoc; paper: Paper | null; update: (patch: Partial<CvDoc>) => void; say: (s: string) => void }) {
-  const design = cv.design;
-  const target = design.pageTarget;
-  const over = linesOver(paper, target);
-  const [stillOver, setStillOver] = useState<number | null>(null);
-  const pagesWord = target === 1 ? "1 page" : `${target} pages`;
-  function fit() {
-    if (!paper) return;
-    const f = fitToPages(cv, paper.fonts, target);
-    if (!f.fits) {
-      setStillOver(over);
-      say(`Still ${over} ${over === 1 ? "line" : "lines"} over. Shorten your content or use ${target === 1 ? "two pages" : "more space"}.`);
-      return;
-    }
-    setStillOver(null);
-    if (f.density !== design.density) update({ design: { ...design, density: f.density } });
-    say(`Fits on ${f.pages === 1 ? "1 page" : `${f.pages} pages`} with ${SPACING[f.density].toLowerCase()} spacing.`);
-  }
-  return (
-    <span className="cv-fitcontrol">
-      <Btn onClick={fit} disabled={!paper}>
-        Fit to {target === 1 ? "one page" : "two pages"}
-      </Btn>
-      <span className="cv-small" role="status" data-testid="fit-status">
-        {!paper ? "" : stillOver !== null && over > 0 ? `Still ${over} ${over === 1 ? "line" : "lines"} over. Shorten your content or use two pages.` : over > 0 ? `${over} ${over === 1 ? "line" : "lines"} over` : `Fits on ${pagesWord}`}
-      </span>
-    </span>
-  );
-}
-
 /** Every text size the stepper can reach, and the CV's own if it is between steps. */
 function sizeSteps(current: number): number[] {
   const out: number[] = [];

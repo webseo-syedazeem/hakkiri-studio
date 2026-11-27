@@ -3,7 +3,7 @@ import { rateLimited } from "@/lib/usage/limits";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth/require";
-import { type CvDoc, CV_LEVELS, CV_REGIONS, CV_TEMPLATES, ChangeRecordSchema, ContactSchema, DesignSchema, ExcerptSchema, LIMITS, LetterSchema, RequirementSchema, type Section, SectionSchema, TargetSchema, coreSections, emptyContact, newId } from "./schema";
+import { type CvDoc, CV_LEVELS, CV_REGIONS, CV_TEMPLATES, ChangeRecordSchema, ContactSchema, DesignSchema, ExcerptSchema, InferredSchema, LIMITS, LetterSchema, RequirementSchema, type Section, SectionSchema, TargetSchema, coreSections, emptyContact, newId } from "./schema";
 
 /** The signed-in person's id. Throws the same 401 response as requireUser when signed out. */
 export async function requireUserId(): Promise<string> {
@@ -105,6 +105,8 @@ export const EditableSchema = z
     requirements: z.array(RequirementSchema).max(40).optional(),
     changes: z.array(ChangeRecordSchema).max(200).optional(),
     letter: LetterSchema.nullable().optional(),
+    /** Choosing UK or US, or the level, in the editor says it is now known, even when it is the value already there. */
+    inferred: InferredSchema.optional(),
   })
   .strict();
 

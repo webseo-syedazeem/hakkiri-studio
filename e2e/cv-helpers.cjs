@@ -24,13 +24,20 @@ async function noForbidden(page, where) {
 }
 
 /** A brand-new account, signed in, in its own browser context (so cookies never mix). */
-async function newUser(browser, label, opts = {}) {
+async function newUser(browser, label, { firstVisit = false, ...opts } = {}) {
   // Limits are counted per address. The test server trusts the forwarded address (HAKKIRI_TRUST_PROXY=1),
   // so each test account gets its own, as each real person has.
   const from = `10.${Math.floor(Math.random() * 250)}.${Math.floor(Math.random() * 250)}.${1 + Math.floor(Math.random() * 250)}`;
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, acceptDownloads: true, extraHTTPHeaders: { "x-forwarded-for": from }, ...opts });
   // The app's "best on desktop" notice is dismissed, as a person would on first visit.
   await context.addInitScript(() => sessionStorage.setItem("dismiss_phone_notice", "1"));
+  // The one-time appearance choice is made (dark, the default), as a person would on first sign-in; `firstVisit` keeps it, to test it.
+  if (!firstVisit)
+    await context.addInitScript(() => {
+      try {
+        if (localStorage.getItem("hk_theme") === null) localStorage.setItem("hk_theme", "dark");
+      } catch {}
+    });
   const page = await context.newPage();
   const errors = [];
   page.on("pageerror", (e) => errors.push(String(e)));
@@ -40,25 +47,40 @@ async function newUser(browser, label, opts = {}) {
   return { context, page, email, errors };
 }
 
-/** Fills in the set-up form. `method` is "empty", or a file name from the fixtures to upload. */
+const LEVELS = { "Student or graduate": "student", "Early career": "early", Experienced: "experienced", Senior: "senior" };
+const TYPES = { ".pdf": "application/pdf", ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document", ".doc": "application/msword" };
+
+/**
+ * Starts a CV with known answers, as an API call: the start screen asks nothing (cv-start.cjs tests that screen),
+ * so the other suites set the name, the level and UK or US here. A file or pasted text is read as an upload and
+ * the page opens on it, as after an upload on the start screen.
+ */
 async function setUp(page, { name = "Test CV", level = "Experienced", region = "UK", file, paste } = {}) {
-  await page.goto(`${BASE}/cv/new`);
-  // First how to start, then the questions about the CV.
-  await page.getByRole("button", { name: file ? "Upload PDF or Word" : paste ? "Paste text" : "Start with a blank page", exact: true }).click();
-  await page.getByLabel("CV name").fill(name);
-  await page.getByText(level, { exact: true }).click();
-  await page.getByText(region, { exact: true }).click();
-  if (file) {
-    await page.getByLabel("CV file").setInputFiles(path.join(FIXTURES, file));
-    await page.waitForURL(/\/cv\/import\/imp_/, { timeout: 45000 });
-  } else if (paste) {
-    await page.getByLabel("The text of your CV").fill(paste);
-    await page.getByRole("button", { name: "Read this text" }).click();
-    await page.waitForURL(/\/cv\/import\/imp_/, { timeout: 45000 });
-  } else {
-    await page.getByRole("button", { name: "Create CV" }).click();
-    await page.waitForURL(/\/cv\/v\/cv_[a-f0-9]+\/edit\/contact/, { timeout: 30000 });
+  if (!/^https?:/.test(page.url()) || !page.url().startsWith(BASE)) await page.goto(`${BASE}/cv`);
+  const setup = { name, level: LEVELS[level] ?? level, region: region.toLowerCase() };
+  if (file || paste) {
+    const bytes = file ? fs.readFileSync(path.join(FIXTURES, file)).toString("base64") : null;
+    const made = await page.evaluate(
+      async ({ setup, bytes, fileName, type, paste }) => {
+        const form = new FormData();
+        for (const [k, v] of Object.entries(setup)) form.set(k, v);
+        if (bytes) form.set("file", new File([Uint8Array.from(atob(bytes), (c) => c.charCodeAt(0))], fileName, { type }));
+        else form.set("text", paste);
+        const r = await fetch("/api/cv/imports", { method: "POST", body: form });
+        return { status: r.status, body: await r.json() };
+      },
+      { setup, bytes, fileName: file ?? "", type: file ? (TYPES[path.extname(file).toLowerCase()] ?? "application/octet-stream") : "", paste: paste ?? "" },
+    );
+    if (made.status !== 201) throw new Error(`setUp: upload refused (${made.status}): ${JSON.stringify(made.body)}`);
+    await page.goto(`${BASE}/cv/import/${made.body.importId}`);
+    return;
   }
+  const made = await page.evaluate(async (setup) => {
+    const r = await fetch("/api/cv/versions", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(setup) });
+    return { status: r.status, body: await r.json() };
+  }, setup);
+  if (made.status !== 201) throw new Error(`setUp: create refused (${made.status}): ${JSON.stringify(made.body)}`);
+  await page.goto(`${BASE}/cv/v/${made.body.id}/edit/contact`);
 }
 
 /** Switches the page to the app's light surface (the same tokens the public pages use), or back to dark. */

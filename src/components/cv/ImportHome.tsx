@@ -5,12 +5,13 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { IMPORT_ERRORS, type ImportErrorCode } from "@/lib/cv/import/errors";
 import { type CvImport, openFlags, reviewSteps } from "@/lib/cv/import/record";
-import type { CvDoc } from "@/lib/cv/schema";
+import { type CvDoc, LEVEL_LABELS } from "@/lib/cv/schema";
 import { SECTION_DEFS, sectionHeading } from "@/lib/cv/sections";
 import { api, messageOf } from "./client";
 import { afterImport } from "./upload";
 import { Dialog, usePanel } from "./Dialog";
 import { ReplaceFileDialog } from "./ReplaceFile";
+import { StartSteps } from "./Setup";
 import { Bar, Btn, BtnLink, CvScreen, Panel, Skeleton, Toolbar } from "./ui";
 import { useImport } from "./useImport";
 
@@ -125,7 +126,12 @@ export function ImportHome({ importId }: { importId: string }) {
           </>
         ) : (
           <>
-            <Toolbar eyebrow={cv.name} title="Check what we read" subtitle={`${imp.fileName || "Your file"} · ${SOURCE_WORDS[imp.source ?? "pdf"]}${imp.pages ? ` · ${imp.pages} page${imp.pages === 1 ? "" : "s"}` : ""}`}>
+            {cv.inferred && <StartSteps at={2} />}
+            <Toolbar
+              eyebrow={cv.name}
+              title={toCheck === 0 ? "Nothing flagged" : "Check what we read"}
+              subtitle={toCheck === 0 ? "Everything we read is ready to edit. No extra review step is needed." : "Check only the details we couldn’t place confidently."}
+            >
               {toCheck === 0 ? (
                 <>
                   <Btn
@@ -142,8 +148,9 @@ export function ImportHome({ importId }: { importId: string }) {
                         setProblem(messageOf(err));
                       }
                     }}
+                    data-testid="open-editor"
                   >
-                    Open in builder
+                    Open editor
                   </Btn>
                   <BtnLink kind="quiet" href={`/cv/import/${importId}/review/${steps[0].key}`}>
                     Review section by section
@@ -158,7 +165,7 @@ export function ImportHome({ importId }: { importId: string }) {
                     </BtnLink>
                   )}
                   <BtnLink kind={imp.reviewed.length > 0 ? "default" : "primary"} href={`/cv/import/${importId}/review/${(steps.find((s) => openFlags(imp, s) > 0) ?? next).key}?flagged=true`}>
-                    {`Review flagged sections (${toCheck} to check)`}
+                    {`Check flagged details (${toCheck})`}
                   </BtnLink>
                   <BtnLink kind="quiet" href={`/cv/import/${importId}/review/${steps[0].key}`}>
                     Review all sections
@@ -166,6 +173,15 @@ export function ImportHome({ importId }: { importId: string }) {
                 </>
               )}
             </Toolbar>
+            <p className="cv-small cv-muted" style={{ margin: "0 0 12px" }} data-testid="import-source">
+              {`${imp.fileName || "Your file"} · ${SOURCE_WORDS[imp.source ?? "pdf"]}${imp.pages ? ` · ${imp.pages} page${imp.pages === 1 ? "" : "s"}` : ""}`}
+            </p>
+            {problem && (
+              <p className="cv-error-text" role="alert">
+                {problem}
+              </p>
+            )}
+            {cv.inferred && <FoundFromFile cv={cv} />}
             <div className="cv-layout" style={{ gridTemplateColumns: "minmax(0, 720fr) minmax(0, 448fr)" }}>
               <Panel title="Sections to confirm" aside={<small>{toCheck === 0 ? "Nothing flagged" : `${toCheck} thing${toCheck === 1 ? "" : "s"} to check`}</small>}>
                 <ol style={{ listStyle: "none", margin: 0, padding: 0 }}>
@@ -242,4 +258,45 @@ export function ImportHome({ importId }: { importId: string }) {
       )}
     </CvScreen>
   );
+}
+
+/**
+ * What the file showed, said as it is: the CV's name, UK or US and the level, each with why, or
+ * "Not known yet" where the file didn't say. All three are changed in the editor, in one press.
+ */
+function FoundFromFile({ cv }: { cv: CvDoc }) {
+  const unknown = cv.inferred?.unknown ?? [];
+  return (
+    <div className="cv-found" data-testid="found-from-file" aria-label="What we found in your file">
+      <span className="cv-chip" title="The name is for you: change it in the editor.">
+        {cv.name}
+      </span>
+      {unknown.includes("region") ? (
+        <span className="cv-chip" data-unknown="true" title={cv.inferred?.region}>
+          UK or US: Not known yet
+        </span>
+      ) : (
+        <span className="cv-chip" title={cv.inferred?.region}>
+          {cv.region === "uk" ? "UK · A4" : "US · Letter"}
+        </span>
+      )}
+      {unknown.includes("level") ? (
+        <span className="cv-chip" data-unknown="true" title={cv.inferred?.level}>
+          Level: Not known yet
+        </span>
+      ) : (
+        <span className="cv-chip" title={cv.inferred?.level}>
+          {LEVEL_LABELS[cv.level]}
+        </span>
+      )}
+      <small className="cv-muted">{foundWords(cv)}</small>
+    </div>
+  );
+}
+
+/** "From your file: UK phone number and spelling · 8 years since your first role. Change any of these in the editor." */
+function foundWords(cv: CvDoc): string {
+  const unknown = cv.inferred?.unknown ?? [];
+  const reasons = [unknown.includes("region") ? "" : cv.inferred?.region, unknown.includes("level") ? "" : cv.inferred?.level].filter(Boolean).join(" · ");
+  return `${reasons ? `From your file: ${reasons}. ` : ""}${unknown.length ? "Set what isn’t known in the editor." : "Change any of these in the editor."}`;
 }

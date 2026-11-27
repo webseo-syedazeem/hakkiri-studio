@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { paperOrder } from "@/lib/cv/render/flow";
 import { FAMILIES } from "@/lib/cv/render/fonts";
-import { fitToPages } from "@/lib/cv/render/layout";
+import { fitChanges, fitHonestly } from "@/lib/cv/render/fit";
 import { ACCENTS, PAIRINGS, TEMPLATES, type TemplateDef, contrastRatioOnWhite, templateLabel } from "@/lib/cv/render/templates";
 import { type AccentId, CHANGE_KEYS, CV_ACCENTS, CV_BULLETS, CV_DENSITIES, CV_FONT_FAMILIES, CV_SEPARATORS, CV_TEMPLATES, type Design, type FontFamilyId, type SavedStyle, type TemplateId, cvIsEmpty, sectionIsEmpty } from "@/lib/cv/schema";
 import { docWord, sectionHeading } from "@/lib/cv/sections";
@@ -292,12 +292,14 @@ export function Finish({ onOverflow, say }: { onOverflow: () => void; say: (text
   const ordered = paperOrder(cv, template);
   const drag = useDragOrder(ordered, (next) => set({ order: next.map((s) => s.id) }));
 
+  /** The same honest fit as above the page: spacing, then text to 10 pt, then margins to 12 mm. What still runs over is listed. */
   function fit() {
     if (!paper) return;
-    const f = fitToPages(cv, paper.fonts, target);
+    const f = fitHonestly(cv, paper.fonts, target);
     if (!f.fits) return onOverflow();
-    if (f.density !== design.density) set({ density: f.density });
-    say(`Fits on ${f.pages === 1 ? "one page" : `${f.pages} pages`} with ${f.density} spacing.`);
+    if (f.design !== design) set({ density: f.design.density, fontSize: f.design.fontSize, margin: f.design.margin });
+    const changes = fitChanges(f);
+    say(`Fits on ${f.pages === 1 ? "one page" : `${f.pages} pages`}${changes ? `: ${changes}` : ""}. Your words haven’t changed.`);
   }
 
   return (

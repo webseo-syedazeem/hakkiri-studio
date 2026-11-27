@@ -36,11 +36,10 @@ run("CV assistant", async (browser) => {
   const page = a.page;
 
   /* ------------------------------------------------------- starting by talking */
-  await page.goto(`${BASE}/cv/new`);
+  // The CV home's "Build with the assistant" opens Start your CV on Talk it through: nothing else is asked.
+  await page.goto(`${BASE}/cv`);
   await page.getByTestId("path-assistant").click();
-  await page.getByLabel("CV name").fill("Sam CV");
-  await page.getByText("Experienced", { exact: true }).click();
-  await page.getByText("UK", { exact: true }).click();
+  await page.waitForURL(/\/cv\/new\?start=talk/);
   await page.getByRole("button", { name: "Start talking" }).click();
   await page.waitForURL(/\/cv\/v\/cv_[a-f0-9]+\/talk$/, { timeout: 30000 });
   const id = idOf(page);

@@ -1,4 +1,4 @@
-// Starting a CV as a new user: the set-up form, an empty start, typing that is saved as you go,
+// Starting a CV as a new user: upload first with nothing asked, an empty start, typing that is saved as you go,
 // and one account unable to open or change another's CV. Each screen is checked in both themes and on a phone.
 const { BASE, PHONE, check, noForbidden, newUser, setUp, bothThemes, fitsWidth, a11y, run } = require("./cv-helpers.cjs");
 
@@ -15,33 +15,72 @@ run("CV start", async (browser) => {
   await bothThemes(page, "dashboard-empty");
   check(await page.getByRole("link", { name: "CVs and letters" }).first().isVisible(), "the rail has “CVs and letters”");
 
-  // --- Set-up asks its questions and says what is missing ---
+  // --- Start your CV: upload first, nothing asked before it (DESIGN-SPEC-v3 §01) ---
   await page.getByRole("link", { name: "New CV" }).first().click();
   await page.waitForURL(/\/cv\/new/);
-  check((await page.getByLabel("CV name").count()) === 0 && (await page.locator("[data-testid^=path-]").count()) === 4, "New CV asks how to start first, with the same four ways in");
-  await page.getByRole("button", { name: "Start with a blank page", exact: true }).click();
-  check((await page.getByLabel("CV name").inputValue()) === "", "the CV name starts blank");
-  check((await page.locator("input[type=radio][name=level]:checked, input[type=radio][name=region]:checked").count()) === 0, "level and region are not chosen for you");
-  await page.getByRole("button", { name: "Create CV" }).click();
-  await page.getByText("Give your CV a name.").waitFor();
-  check(await page.getByText("Choose the level that fits you best.").isVisible(), "set-up says the level is missing");
-  check(await page.getByText("Choose UK or US.").isVisible(), "set-up says UK or US is missing");
-  check(await page.getByLabel("CV name").evaluate((el) => el === document.activeElement), "focus moves to the first field with a problem");
-  check(page.url().endsWith("/cv/new"), "nothing is created while answers are missing");
-  await bothThemes(page, "setup-errors");
+  await page.getByRole("heading", { name: "Start your CV" }).waitFor();
+  check((await page.getByLabel("CV name").count()) === 0 && (await page.locator("input[type=radio]").count()) === 0, "nothing is asked before the upload: no CV name, level or UK/US questions");
+  const steps = await page.getByRole("list", { name: "Starting your CV" }).locator("li").allInnerTexts();
+  check(steps.length === 3 && /Upload/.test(steps[0]) && /Check/.test(steps[1]) && /Edit/.test(steps[2]) && (await page.locator('.cv-steps3 li[aria-current="step"]').innerText()).includes("Upload"), "three steps, Upload first and current", steps.join(" | "));
+  const dropText = await page.getByTestId("drop-area").innerText();
+  check(/Upload your CV/.test(dropText) && /PDF, DOCX · Up to 5 MB/.test(dropText) && /Choose file/.test(dropText) && /Or drag and drop your file here/.test(dropText), "the drop area: Upload your CV, PDF, DOCX · Up to 5 MB, Choose file, or drag and drop", dropText.replace(/\n/g, " / "));
+  const ways = await page.locator(".cv-start3-way b").allInnerTexts();
+  check(ways.join("|") === "Paste text|LinkedIn|Start from an example|Start with a blank page|Answer three questions|Talk it through", "the six other ways to start are below the upload", ways.join("|"));
+  await bothThemes(page, "start");
 
-  await page.getByLabel("CV name").fill("Fern Example – Collections Officer");
-  await page.getByText("Early career", { exact: true }).click();
-  await page.getByText("UK", { exact: true }).click();
-  await page.getByRole("button", { name: "+ Add a target job (optional)" }).click();
-  await page.getByLabel("Job title").fill("Collections officer");
-  await page.getByLabel("Employer").fill("Lantern Atlas");
-  await page.getByLabel("Job advert").fill("We are looking for a collections officer.\nYou will catalogue paper collections and write handling guidance for volunteers.");
-  await bothThemes(page, "setup");
-  await page.getByRole("button", { name: "Create CV" }).click();
+  // Dragging a file over: the area says where to drop it.
+  await page.getByTestId("drop-area").dispatchEvent("dragenter", { dataTransfer: await page.evaluateHandle(() => new DataTransfer()) });
+  await page.getByRole("heading", { name: "Drop the file here" }).waitFor();
+  check((await page.getByTestId("drop-area").getAttribute("data-state")) === "over", "dragging a file over the area: “Drop the file here”, with the selected fill");
+  await bothThemes(page, "start-drag");
+  // A file of the wrong type, dropped.
+  const dropped = await page.evaluateHandle(() => {
+    const dt = new DataTransfer();
+    dt.items.add(new File(["plain words"], "my-cv.txt", { type: "text/plain" }));
+    return dt;
+  });
+  await page.getByTestId("drop-area").dispatchEvent("drop", { dataTransfer: dropped });
+  await page.getByRole("heading", { name: "That file type is not supported." }).waitFor();
+  check(/Choose a PDF or Word file up to 5 MB\./.test(await page.getByTestId("drop-problem").innerText()) && (await page.getByRole("button", { name: "Try again" }).isVisible()) && (await page.getByRole("button", { name: "Paste text instead" }).isVisible()), "a dropped file of the wrong type: said at once, with Try again and Paste text instead");
+  await bothThemes(page, "start-wrong-type");
+  // Too big.
+  await page.getByLabel("CV file").setInputFiles({ name: "big-cv.pdf", mimeType: "application/pdf", buffer: Buffer.alloc(5 * 1024 * 1024 + 10, 32) });
+  await page.getByRole("heading", { name: "This file is over 5 MB." }).waitFor();
+  check(true, "a file over 5 MB: “This file is over 5 MB.”");
+  // A scan: read on the server, nothing kept.
+  await page.getByLabel("CV file").setInputFiles(require("node:path").join(require("./cv-helpers.cjs").FIXTURES, "scanned.pdf"));
+  await page.getByRole("heading", { name: "We couldn’t read any text from this PDF." }).waitFor({ timeout: 45000 });
+  check(/It may be a scanned image\. Upload a text-based file or paste the text instead\./.test(await page.getByTestId("drop-problem").innerText()), "a scanned PDF says so, with what to do instead");
+  await bothThemes(page, "start-scanned");
+  const none = await page.evaluate(async () => (await (await fetch("/api/cv/versions")).json()).cvs.length);
+  check(none === 0, "a file that couldn’t be read leaves no CV behind", String(none));
+  // Paste text instead opens the paste box.
+  await page.getByRole("button", { name: "Paste text instead" }).click();
+  await page.getByLabel("The text of your CV").waitFor();
+  check((await page.locator(".cv-start3-way", { hasText: "Paste text" }).getAttribute("aria-pressed")) === "true", "Paste text instead opens the paste box");
+
+  // --- A blank page: made at once, called My CV, with UK or US and the level not known yet ---
+  await page.getByRole("button", { name: /^Start with a blank page Fill it in/ }).click();
+  await bothThemes(page, "start-blank");
+  await page.getByRole("button", { name: "Start with a blank page", exact: true }).click();
   await page.waitForURL(/\/cv\/v\/cv_[a-f0-9]+\/edit\/contact/);
   const cvUrl = page.url();
   const id = cvUrl.match(/cv_[a-f0-9]+/)[0];
+  check((await page.locator(".cv-edhead-name").innerText()) === "My CV", "the CV starts as “My CV”");
+  const regionChoice = page.getByRole("combobox", { name: "UK or US" });
+  check((await regionChoice.inputValue()) === "" && /not known yet/.test(await regionChoice.locator("option:checked").innerText()), "UK or US shows “not known yet”: nothing is chosen for you");
+  check((await page.getByRole("combobox", { name: "Level" }).inputValue()) === "" && /not known yet/.test(await page.getByRole("combobox", { name: "Level" }).locator("option:checked").innerText()), "the level shows “not known yet”");
+  await bothThemes(page, "editor-not-known");
+  await regionChoice.selectOption("uk");
+  await page.getByRole("combobox", { name: "Level" }).selectOption("early");
+  await page.getByTestId("spelling-toggle").waitFor();
+  check((await page.getByTestId("spelling-toggle").innerText()).includes("UK · A4"), "once chosen, the chip says UK · A4");
+  await page.locator("header.cv-bar").getByText("Saved", { exact: true }).waitFor();
+  let stored = await page.evaluate(async (cvId) => (await (await fetch(`/api/cv/versions/${cvId}`)).json()).cv, id);
+  check(stored.level === "early" && stored.region === "uk" && stored.design.pageSize === "a4" && stored.inferred.unknown.length === 0, "what she chose is kept (UK means A4), and nothing is marked unknown any more", JSON.stringify(stored.inferred));
+  // The name and the target job are set as she would in the editor; here directly, so the rest of the test can follow.
+  await page.evaluate(async ({ cvId, rev }) => fetch(`/api/cv/versions/${cvId}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ rev, name: "Fern Example – Collections Officer", target: { title: "Collections officer", employer: "Lantern Atlas", advert: "We are looking for a collections officer.\nYou will catalogue paper collections and write handling guidance for volunteers." } }) }), { cvId: id, rev: stored.rev });
+  await page.reload();
 
   // --- A new CV is empty ---
   await page.getByText("Your CV is empty").waitFor();
@@ -55,9 +94,8 @@ run("CV start", async (browser) => {
     check(any === 0, `${tab} starts with nothing in it`, `${any} field(s) had a value`);
   }
   await noForbidden(page, "new CV");
-  const stored = await page.evaluate(async (cvId) => (await (await fetch(`/api/cv/versions/${cvId}`)).json()).cv, id);
-  check(stored.target && stored.target.title === "Collections officer" && stored.target.advert.includes("handling guidance"), "the target job from set-up is kept word for word");
-  check(stored.level === "early" && stored.region === "uk" && stored.design.pageSize === "a4", "the level and region from set-up are kept (UK means A4)");
+  stored = await page.evaluate(async (cvId) => (await (await fetch(`/api/cv/versions/${cvId}`)).json()).cv, id);
+  check(stored.target && stored.target.title === "Collections officer" && stored.target.advert.includes("handling guidance"), "the target job is kept word for word");
 
   // --- What she types is saved as she goes, and survives a reload ---
   await page.goto(cvUrl);
@@ -103,7 +141,7 @@ run("CV start", async (browser) => {
   await page.waitForURL(/\/edit\/languages/);
   await page.getByRole("button", { name: "+ Add language" }).click();
   await page.getByLabel("Language", { exact: true }).fill("French");
-  await page.getByLabel("Level").fill("B2");
+  await page.getByRole("textbox", { name: "Level" }).fill("B2");
   await page.locator("header.cv-bar").getByText("Saved", { exact: true }).waitFor();
   const after = await page.evaluate(async (cvId) => (await (await fetch(`/api/cv/versions/${cvId}`)).json()).cv, id);
   const skills = after.sections.find((s) => s.kind === "skills").groups[0].skills.map((k) => k.name);
@@ -188,19 +226,42 @@ run("CV start", async (browser) => {
   // --- Import from LinkedIn: nothing is fetched from LinkedIn and nothing is filled in ---
   const li = a.page;
   await li.goto(`${BASE}/cv/new`);
-  await li.getByRole("button", { name: "Import from LinkedIn", exact: true }).click();
-  await li.getByLabel("CV name").fill("From LinkedIn");
-  await li.getByText("Experienced", { exact: true }).click();
-  await li.getByText("UK", { exact: true }).click();
+  await li.getByRole("button", { name: /^LinkedIn Upload the PDF/ }).click();
+  check(await li.getByText("Hakkiri never reads LinkedIn pages itself.").isVisible(), "LinkedIn: it says Hakkiri never reads LinkedIn pages itself");
   await li.getByLabel("Profile link (optional)").fill("linkedin.com/in/sam-example");
   await li.getByRole("button", { name: "Read my profile", exact: true }).click();
   check(await li.getByText(/Paste your profile’s About, Experience and Education, or upload the PDF LinkedIn makes for you\./).first().isVisible(), "a LinkedIn link alone is not read: it asks for LinkedIn's PDF or the profile text, and fills nothing in");
   check(await li.getByRole("button", { name: "Upload LinkedIn’s PDF" }).isVisible(), "with a way to upload LinkedIn's own PDF");
+  await bothThemes(li, "start-linkedin");
   await li.getByLabel("Or paste your profile").fill("About\nI look after collections at a small archive.\n\nExperience\nArchive assistant\nPaper Kite Archive\nSep 2023 – Present\n• Catalogued 1,200 maps in a year");
   await li.getByRole("button", { name: "Read my profile", exact: true }).click();
   await li.waitForURL(/\/cv\/import\/imp_/, { timeout: 45000 });
   const read = await li.locator("main").innerText();
   check(!/Professional Role|Led key projects|University Degree|Strategic Planning/.test(read), "only the pasted profile is read: no stand-in roles, degrees or skills", read.slice(0, 200));
+
+  // --- An upload: the name, UK or US and the level come from the file, each with why ---
+  await li.goto(`${BASE}/cv/new`);
+  await li.getByLabel("CV file").setInputFiles(require("node:path").join(require("./cv-helpers.cjs").FIXTURES, "daniel-okoye.two-column.pdf"));
+  await li.waitForURL(/\/cv\/import\/imp_/, { timeout: 45000 });
+  await li.getByTestId("found-from-file").waitFor();
+  const found = await li.getByTestId("found-from-file").innerText();
+  check(/Daniel Okoye – /.test(found) && /UK · A4/.test(found) && /From your file: UK phone number/.test(found), "after the upload: the CV is named after him and his latest role, and UK · A4 comes from the phone number", found.replace(/\n/g, " / "));
+  check((await li.locator('.cv-steps3 li[aria-current="step"]').innerText()).includes("Check"), "the steps show Check as the current step");
+  const title = await li.locator("h1").first().innerText();
+  check(title === "Check what we read" && (await li.getByRole("link", { name: /^Check flagged details \(\d+\)$/ }).isVisible()), "with details it couldn’t place: “Check what we read”, and only the flagged details to check", title);
+  await bothThemes(li, "start-flagged");
+  await li.goto(`${BASE}/cv/new`);
+  await li.getByLabel("CV file").setInputFiles(require("node:path").join(require("./cv-helpers.cjs").FIXTURES, "maya-chen.writer.docx"));
+  await li.waitForURL(/\/cv\/import\/imp_/, { timeout: 45000 });
+  await li.getByTestId("found-from-file").waitFor();
+  const title2 = await li.locator("h1").first().innerText();
+  if (title2 === "Nothing flagged") {
+    check(/Everything we read is ready to edit\. No extra review step is needed\./.test(await li.locator("main").innerText()), "with nothing flagged: “Nothing flagged”, and no extra review step");
+    await bothThemes(li, "start-nothing-flagged");
+    await li.getByTestId("open-editor").click();
+    await li.waitForURL(/\/cv\/v\/cv_[a-f0-9]+\/edit\/contact/);
+    check(true, "Open editor goes straight to the editor");
+  } else check(title2 === "Check what we read", "the second file has details to check", title2);
 
   check(a.errors.length + b.errors.length + p.errors.length === 0, "no page errors", [...a.errors, ...b.errors, ...p.errors].join("\n"));
 });

@@ -30,7 +30,7 @@ function statusOf(check: FileCheck | undefined, checks: FileChecks | null, curre
  * the Finish tab and in the Download dialog, from the same state, so a check
  * made in one is the check shown in the other.
  */
-export function FilesPanel({ say, inDialog = false }: { say: (text: string) => void; inDialog?: boolean }) {
+export function FilesPanel({ say, inDialog = false, onBack }: { say: (text: string) => void; inDialog?: boolean; /** In the Download dialog: back to the editor. */ onBack?: () => void }) {
   const w = useWorkspace();
   const { update, settle, save, checks, setChecks } = w;
   const cv = w.cv!;
@@ -193,6 +193,19 @@ export function FilesPanel({ say, inDialog = false }: { say: (text: string) => v
                   );
                 })}
               </ul>
+              {inDialog && downloads > 0 && (
+                // After a download, practice is offered, never required (DESIGN-SPEC-v3 §04).
+                <div className="cv-practisecard" data-testid="download-practise" role="status">
+                  <b>Your {word} is ready. Practise the questions it will get you.</b>
+                  <span className="cv-small cv-muted">We’ll build questions from the claims on your {word}.</span>
+                  <div className="cv-row">
+                    <BtnLink kind="primary" href={`/cv/v/${cv.id}/questions`}>
+                      Questions your {word} will get
+                    </BtnLink>
+                    {onBack && <Btn onClick={onBack}>Back to editor</Btn>}
+                  </div>
+                </div>
+              )}
               <div className="cv-row">
                 <Btn busy={busy === "check"} disabled={!!busy} onClick={() => void check()}>
                   Check both files
