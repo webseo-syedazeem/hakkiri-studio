@@ -149,6 +149,108 @@ const RULES: { test: RegExp; prompt: FeedbackPrompt }[] = [
       ],
     },
   },
+  // CVs and cover letters: one question per kind of screen, most specific first.
+  {
+    test: /^\/cv\/check\/[^/]+/,
+    prompt: {
+      screen: "CV check report",
+      lead: "Was this check of your CV fair?",
+      asks: [
+        "Which fix was wrong, or about words that are fine as they are?",
+        "Did \"How software reads it\" match what you see in your file?",
+        "Would you change your CV because of this report? Which part?",
+      ],
+    },
+  },
+  {
+    test: /^\/cv\/check/,
+    prompt: {
+      screen: "CV check",
+      lead: "Was it clear how to check your CV?",
+      asks: [
+        "Did your file upload and read correctly? If not, what kind of file was it?",
+        "What did you expect to happen next that didn't?",
+      ],
+    },
+  },
+  {
+    test: /^\/cv\/v\/[^/]+\/letter/,
+    prompt: {
+      screen: "Cover letter",
+      lead: "Would you send this cover letter?",
+      asks: [
+        "Which sentence doesn't sound like you, or says more than you did?",
+        "Did the checks on each sentence help, or get in the way?",
+      ],
+    },
+  },
+  {
+    test: /^\/cv\/v\/[^/]+\/tailor/,
+    prompt: {
+      screen: "Tailor to a job",
+      lead: "Did tailoring make your CV a better fit for the job?",
+      asks: [
+        "Which requirement did it read wrongly from the advert?",
+        "Did it ever suggest something you haven't done?",
+      ],
+    },
+  },
+  {
+    test: /^\/cv\/v\/[^/]+\/talk/,
+    prompt: {
+      screen: "Talk it through",
+      lead: "Did talking it through build your CV well?",
+      asks: [
+        "Which question was confusing or repeated?",
+        "Did it add anything to your CV you didn't say?",
+      ],
+    },
+  },
+  {
+    test: /^\/cv\/v\//,
+    prompt: {
+      screen: "CV editor",
+      lead: "Was it easy to get your CV how you want it?",
+      asks: [
+        "What took longer than it should have?",
+        "Does the downloaded file look right, and fit the pages you expected?",
+        "Was the score fair? Which suggestion didn't make sense?",
+      ],
+    },
+  },
+  {
+    test: /^\/cv\/import\//,
+    prompt: {
+      screen: "Upload check",
+      lead: "Did we read your CV correctly?",
+      asks: [
+        "What did we put in the wrong section, or miss altogether?",
+        "What kind of file was it (PDF, Word, made in Canva or a builder)?",
+      ],
+    },
+  },
+  {
+    test: /^\/cv\/(examples|templates)/,
+    prompt: {
+      screen: "Examples and templates",
+      lead: "Did you find a design or example that suits you?",
+      asks: [
+        "What job or industry did you look for and not find?",
+        "Which designs looked too alike?",
+      ],
+    },
+  },
+  {
+    test: /^\/cv(\/new)?\/?$/,
+    prompt: {
+      screen: "CVs and letters",
+      lead: "Did you know how to start?",
+      asks: [
+        "Which way of starting did you pick, and was it the right one?",
+        "What did you expect to find here that isn't?",
+      ],
+    },
+  },
   {
     test: /^\/story-bank/,
     prompt: {

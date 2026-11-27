@@ -802,7 +802,7 @@ export function Pricing({
   );
 }
 
-/** The pricing section during the free beta: one card, everything included, an hour a day. */
+/** The pricing section during the free beta: one card, everything included, with the monthly practice hours. */
 function BetaPricing({ plans }: { plans: Plan[] }) {
   const promises = [
     "No card, ever, during the beta",
@@ -814,6 +814,8 @@ function BetaPricing({ plans }: { plans: Plan[] }) {
   const included = [
     `${BETA.hoursPerTester} hours of practice a month: about twenty 30-minute interviews, or sixty run-throughs of a 10-minute talk`,
     "Interviews built from your job and CV, with follow-ups",
+    "CV and cover letter builder: 45 designs, PDF and Word downloads",
+    "CV and cover letter check, and tailoring to each job",
     "Presentations and audience Q&A",
     "Reports, feedback on every answer, focused practice, story bank, prep sheet",
     "The natural interviewer voice",

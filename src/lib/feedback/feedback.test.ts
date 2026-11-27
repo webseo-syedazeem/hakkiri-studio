@@ -76,6 +76,18 @@ describe("feedback prompts", () => {
     expect(feedbackPrompt("/").screen).toBe("Home");
     expect(feedbackPrompt("/somewhere-else").screen).toBe("General");
   });
+  it("asks about the CV screen the tester is on, most specific first", () => {
+    expect(feedbackPrompt("/cv").screen).toBe("CVs and letters");
+    expect(feedbackPrompt("/cv/new").screen).toBe("CVs and letters");
+    expect(feedbackPrompt("/cv/check").screen).toBe("CV check");
+    expect(feedbackPrompt("/cv/check/chk_0123456789abcdef").screen).toBe("CV check report");
+    expect(feedbackPrompt("/cv/examples/marketing-lead").screen).toBe("Examples and templates");
+    expect(feedbackPrompt("/cv/import/imp_1/review/contact").screen).toBe("Upload check");
+    expect(feedbackPrompt("/cv/v/cv_1/edit/experience").screen).toBe("CV editor");
+    expect(feedbackPrompt("/cv/v/cv_1/letter").screen).toBe("Cover letter");
+    expect(feedbackPrompt("/cv/v/cv_1/tailor").screen).toBe("Tailor to a job");
+    expect(feedbackPrompt("/cv/v/cv_1/talk").screen).toBe("Talk it through");
+  });
   it("every prompt has a lead and at least two asks", () => {
     for (const p of [
       "/",
