@@ -896,4 +896,166 @@ What we are looking for
       ],
     },
   },
+  {
+    id: "teaching-assistant",
+    industry: "education",
+    role: { uk: "Teaching Assistant", us: "Teacher's Aide" },
+    level: "early",
+    template: "chalkboard",
+    blurb: {
+      uk: "A teaching assistant with two years in a Year 2 class, including one-to-one support for a pupil with autism.",
+      us: "A teacher's aide with two years in a second grade class, including one-on-one support for a student with autism.",
+    },
+    person: { name: "Lucy Pearson", email: "lucy.pearson@example.com", phone: { uk: "07700 900607", us: "(404) 555-0130" }, location: { uk: "York", us: "Atlanta, GA" } },
+    profile: {
+      uk: "Teaching assistant with two years in a Year 2 class at a York primary school, including 15 hours a week working one-to-one with a pupil with autism. Runs phonics and reading groups each morning, and 7 of 8 pupils in a catch-up group passed their phonics check. Raised the time one pupil spends in class from 40% to 80% of lessons in a year. Holds a Level 3 Certificate in Supporting Teaching and Learning, an enhanced DBS check and paediatric first aid.",
+      us: "Teacher's aide with two years in a second grade class at an Atlanta elementary school, including 15 hours a week working one-on-one with a student with autism. Runs phonics and reading groups each morning, and 7 of 8 students in a small group met the end-of-year reading benchmark. Raised the time one student spends in class from 40% to 80% of lessons in a year. Holds a Georgia paraprofessional certificate, a cleared background check and pediatric first aid training.",
+    },
+    experience: [
+      {
+        title: { uk: "Teaching Assistant", us: "Teacher's Aide" },
+        org: { uk: "Hollybank Primary School", us: "Hollybank Elementary School" },
+        location: { uk: "York", us: "Atlanta, GA" },
+        start: "2024-09",
+        current: true,
+        bullets: [
+          {
+            uk: "Work in a Year 2 class of 28 pupils with the class teacher, running phonics and reading groups of 6 each morning",
+            us: "Work in a second grade class of 26 students with the lead teacher, running phonics and reading groups of 6 each morning",
+          },
+          {
+            uk: "Give one-to-one support to a pupil with autism for 15 hours a week, working on the targets in his education, health and care plan (EHCP)",
+            us: "Give one-on-one support to a student with autism for 15 hours a week, working on the goals in his Individualized Education Program (IEP)",
+          },
+          {
+            uk: "Raised his time in class from 40% to 80% of lessons in a year, using a visual timetable and planned movement breaks",
+            us: "Raised his time in class from 40% to 80% of lessons in a year, using a visual schedule and planned movement breaks",
+          },
+          {
+            uk: "Run 3 catch-up phonics groups a week for 8 pupils, and 7 of the 8 passed their phonics check in June 2025",
+            us: "Run 3 small-group phonics sessions a week for 8 students, and 7 of the 8 met the end-of-year reading benchmark",
+          },
+          {
+            uk: "Started a quiet lunchtime club for 12 pupils who found the playground hard, halving playground incidents in Year 2 in a term",
+            us: "Started a quiet lunchtime club for 12 students who found recess hard, halving recess incidents in second grade in a semester",
+          },
+        ],
+      },
+      {
+        title: { uk: "Nursery Assistant (part-time)", us: "Preschool Assistant (part-time)" },
+        org: { uk: "Cherry Lane Day Nursery", us: "Cherry Lane Preschool" },
+        location: { uk: "York", us: "Atlanta, GA" },
+        start: "2022-09",
+        end: "2024-08",
+        bullets: [
+          {
+            uk: "Cared for a room of 16 children aged 3 to 4 with 2 nursery practitioners, planning play-based activities each week",
+            us: "Cared for a room of 16 children aged 3 to 4 with 2 lead teachers, planning play-based activities each week",
+          },
+          {
+            uk: "Wrote weekly learning journal notes for 8 key children, shared with parents through the nursery app",
+            us: "Wrote weekly progress notes for 8 children, shared with parents through the preschool app",
+          },
+          "Started a lending library of 150 picture books, borrowed by 20 families a month",
+        ],
+      },
+    ],
+    certificates: [
+      {
+        title: { uk: "Enhanced DBS check (Update Service)", us: "Georgia Paraprofessional Certificate" },
+        org: { uk: "Disclosure and Barring Service", us: "Georgia Professional Standards Commission" },
+        end: "2024",
+      },
+      {
+        title: { uk: "Paediatric First Aid (12 hours)", us: "Pediatric First Aid, CPR and AED" },
+        org: { uk: "St John Ambulance", us: "American Red Cross" },
+        end: "2025",
+      },
+    ],
+    education: [
+      {
+        title: { uk: "Level 3 Certificate in Supporting Teaching and Learning", us: "Associate of Arts in Early Childhood Education" },
+        org: { uk: "York College", us: "Peachtree Community College" },
+        end: "2024-06",
+        grade: { uk: "", us: "GPA 3.4" },
+      },
+      {
+        title: { uk: "A levels in English Language, Biology and Sociology", us: "High School Diploma" },
+        org: { uk: "Minster Sixth Form College", us: "Magnolia Park High School" },
+        end: "2022-06",
+        grade: { uk: "B, C, C", us: "GPA 3.2" },
+      },
+    ],
+    skills: [
+      "Phonics",
+      "Reading groups",
+      { uk: "One-to-one support", us: "One-on-one support" },
+      "Autism",
+      { uk: "EHCP targets", us: "IEP goals" },
+      { uk: "Visual timetables", us: "Visual schedules" },
+      { uk: "Catch-up groups", us: "Small-group sessions" },
+      { uk: "Learning journals", us: "Progress notes" },
+      { uk: "Paediatric first aid", us: "Pediatric first aid" },
+    ],
+    names: ["Pearson", "Hollybank", "Millbrook", "Minster", "Peachtree", "Magnolia"],
+    letter: {
+      job: {
+        title: { uk: "Teaching Assistant", us: "Teacher's Aide" },
+        employer: { uk: "Millbrook Primary School", us: "Millbrook Elementary School" },
+        advert: {
+          uk: `Teaching Assistant
+Millbrook Primary School, York
+
+Millbrook is a primary school with 420 pupils.
+
+The role
+A permanent, term-time post in a Year 1 class, including one-to-one support for a pupil with an education, health and care plan. 32.5 hours a week. Salary £19,800 a year.
+
+What we are looking for
+- Experience working with children in a primary school or nursery
+- Experience of one-to-one support for a pupil with special educational needs
+- Knowledge of phonics
+- A Level 3 teaching assistant qualification
+- An enhanced DBS check, or willing to apply for one`,
+          us: `Teacher's Aide
+Millbrook Elementary School, Atlanta, GA
+
+Millbrook Elementary serves 540 students from kindergarten to fifth grade.
+
+The role
+A full-time, school-year position in a first grade class, including one-on-one support for a student with an Individualized Education Program. Pay $18.50 an hour.
+
+What we are looking for
+- Experience working with children in an elementary school or preschool
+- Experience giving one-on-one support to a student with special needs
+- Knowledge of phonics
+- A Georgia paraprofessional certificate
+- A cleared background check`,
+        },
+      },
+      reason: {
+        uk: "I want to keep working in a primary school, and I would like to do more one-to-one work with pupils who have special educational needs.",
+        us: "I want to keep working in an elementary school, and I would like to do more one-on-one work with students who have special needs.",
+      },
+      paragraphs: [
+        {
+          uk: "I am applying for the role of Teaching Assistant at Millbrook Primary School. I want to keep working in a primary school, and I would like to do more one-to-one work with pupils who have special educational needs.",
+          us: "I am applying for the role of Teacher's Aide at Millbrook Elementary School. I want to keep working in an elementary school, and I would like to do more one-on-one work with students who have special needs.",
+        },
+        {
+          uk: "At Hollybank Primary School I work in a Year 2 class of 28 pupils with the class teacher, running phonics and reading groups of 6 each morning. I run 3 catch-up phonics groups a week for 8 pupils, and 7 of the 8 passed their phonics check in June 2025. Before that, I cared for a room of 16 children aged 3 to 4 at Cherry Lane Day Nursery.",
+          us: "At Hollybank Elementary School I work in a second grade class of 26 students with the lead teacher, running phonics and reading groups of 6 each morning. I run 3 small-group phonics sessions a week for 8 students, and 7 of the 8 met the end-of-year reading benchmark. Before that, I cared for a room of 16 children aged 3 to 4 at Cherry Lane Preschool.",
+        },
+        {
+          uk: "Your advert asks for experience of one-to-one support for a pupil with special educational needs. I give one-to-one support to a pupil with autism for 15 hours a week, working on the targets in his education, health and care plan (EHCP). I raised his time in class from 40% to 80% of lessons in a year, using a visual timetable and planned movement breaks.",
+          us: "Your advert asks for experience giving one-on-one support to a student with special needs. I give one-on-one support to a student with autism for 15 hours a week, working on the goals in his Individualized Education Program (IEP). I raised his time in class from 40% to 80% of lessons in a year, using a visual schedule and planned movement breaks.",
+        },
+        {
+          uk: "Your advert also asks for a Level 3 teaching assistant qualification and an enhanced DBS check. I hold a Level 3 Certificate in Supporting Teaching and Learning and an enhanced DBS check, and I have paediatric first aid.",
+          us: "Your advert also asks for a Georgia paraprofessional certificate and a cleared background check. I hold a Georgia paraprofessional certificate and a cleared background check, and I have an Associate of Arts in Early Childhood Education.",
+        },
+        CLOSE,
+      ],
+    },
+  },
 ];
