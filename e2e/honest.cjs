@@ -123,10 +123,10 @@ const inDays = (n) => new Date(Date.now() + n * 86400000).toLocaleDateString("en
     const agenda2 = await p.locator('[data-testid="home-agenda-empty"]').count();
     check(agenda2 === 1, "…and the completed stage has left the agenda");
 
-    // "Mark unsuccessful" asks first; the archive entry is the person's own interview.
-    await p.getByRole("button", { name: "Mark unsuccessful" }).click();
-    check(await p.getByText("Move this application to your archive as unsuccessful?").count(), "“Mark unsuccessful” asks before it acts");
-    await p.getByRole("button", { name: "Yes, archive it" }).click();
+    // "End application" asks first, and how it ended; the archive entry is the person's own interview.
+    await p.getByRole("button", { name: "End application" }).click();
+    check(await p.getByText("Move this application to your archive?").count(), "“End application” asks before it acts");
+    await p.getByRole("button", { name: "Not successful", exact: true }).click();
     await p.getByText(/moved to your archive/).waitFor();
     await p.getByTestId("home-archive").click();
     await dialog.waitFor();
