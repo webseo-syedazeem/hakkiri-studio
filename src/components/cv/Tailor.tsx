@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { type Locator, type Requirement } from "@/lib/cv/schema";
+import { bandOf } from "@/lib/cv/score/band";
 import { docWord } from "@/lib/cv/sections";
 import { type Assessed, cvLines, fitMaths, jobFit, keywords } from "@/lib/cv/tailor/fit";
 import { bestRoleFor, mergeRequirements } from "@/lib/cv/tailor/propose";
@@ -225,14 +226,14 @@ export function Tailor() {
                     </>
                   ) : (
                     <>
-                      <div>
+                      <div data-band={bandOf(fit.score).key}>
                         <span className="cv-eyebrow">Job fit</span>
-                        <p className="cv-scorebig" data-testid="fit-score">
+                        <p className="cv-scorebig" data-testid="fit-score" data-band={bandOf(fit.score).key}>
                           {fit.score}
                           <small> / 100</small>
                         </p>
                         <small style={{ display: "block" }}>Evidence in this {word} for this advert</small>
-                        <div className="cv-fit-meter" aria-hidden="true">
+                        <div className="cv-fit-meter" data-band={bandOf(fit.score).key} aria-hidden="true">
                           <span style={{ width: `${Math.max(0, Math.min(100, fit.score))}%` }} />
                         </div>
                       </div>

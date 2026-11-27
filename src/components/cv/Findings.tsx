@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { stateAt } from "@/lib/cv/edit";
+import { bandOf } from "@/lib/cv/score/band";
 import { type Finding, GOOD_ENOUGH, GROUPS, type GroupId, LINES_NEEDED, type Score } from "@/lib/cv/score/score";
 import { docWord, formatDate } from "@/lib/cv/sections";
 import { Dialog, usePanel } from "./Dialog";
@@ -143,9 +144,9 @@ export function Findings() {
                   </>
                 ) : (
                   <>
-                    <div>
+                    <div data-band={bandOf(score.shown).key}>
                       <span className="cv-eyebrow">{word === "CV" ? "CV" : "Resume"} score</span>
-                      <p className="cv-scorebig" data-testid="score">
+                      <p className="cv-scorebig" data-testid="score" data-band={bandOf(score.shown).key}>
                         {score.shown}
                         <small> / 100</small>
                       </p>
@@ -156,19 +157,23 @@ export function Findings() {
                       )}
                     </div>
                     <ul className="cv-plainlist" aria-label="The four parts of the score">
-                      {score.groups.map((g) => (
-                        <li key={g.id} data-group={g.id} style={{ padding: "8px 0" }}>
-                          <div className="cv-row" style={{ gap: 8 }}>
-                            <span className="grow">{g.name}</span>
-                            <b>
-                              {pts(g.earned)} / {g.points}
-                            </b>
-                          </div>
-                          <span className="cv-scorebar" aria-hidden="true">
-                            <span style={{ width: `${Math.min(100, Math.round((g.earned / g.points) * 100))}%` }} />
-                          </span>
-                        </li>
-                      ))}
+                      {score.groups.map((g) => {
+                        const pct = Math.min(100, Math.round((g.earned / g.points) * 100));
+                        const gBand = bandOf(pct).key;
+                        return (
+                          <li key={g.id} data-group={g.id} data-band={gBand} style={{ padding: "8px 0" }}>
+                            <div className="cv-row" style={{ gap: 8 }}>
+                              <span className="grow">{g.name}</span>
+                              <b style={{ color: "var(--ring)" }}>
+                                {pts(g.earned)} / {g.points}
+                              </b>
+                            </div>
+                            <span className="cv-scorebar" data-band={gBand} aria-hidden="true">
+                              <span style={{ width: `${pct}%` }} />
+                            </span>
+                          </li>
+                        );
+                      })}
                     </ul>
                     {score.goodEnough ? (
                       <div className="cv-note" data-testid="good-enough">

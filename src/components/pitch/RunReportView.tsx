@@ -110,6 +110,7 @@ export function RunReportView({ presentation, run, whenFormatted }: RunReportVie
     : null;
 
   const scoreVal = run.overall != null ? run.overall : null;
+  const scoreBand = scoreVal == null ? undefined : scoreVal < 2 ? "poor" : scoreVal < 3 ? "average" : scoreVal < 4 ? "good" : "strong";
   const timeVerdict = `Delivered ${mmss(run.totalSec || 0)} of ${mmss(presentation.timeLimitSec)}, reached slide ${deliveredSlidesCount} of ${totalSlides}.`;
 
   const handleShare = () => {
@@ -177,31 +178,54 @@ export function RunReportView({ presentation, run, whenFormatted }: RunReportVie
       <div className="rounded-2xl bg-panel dark:bg-[#0d0c1c] border border-line dark:border-white/[0.08] p-6 lg:p-7 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_10px_28px_-6px_rgba(15,23,42,0.08)] dark:shadow-xl grid grid-cols-1 lg:grid-cols-[1.25fr_1fr] gap-6 items-center">
         {/* Left: Gauge + Description */}
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
-          {/* Radial Gauge */}
-          <div className="relative w-28 h-28 shrink-0 flex items-center justify-center">
-            <svg className="w-28 h-28 -rotate-90 transform" viewBox="0 0 100 100">
-              <circle cx="50" cy="50" r="40" stroke="var(--color-line)" strokeWidth="10" fill="transparent" />
-              <circle
-                cx="50"
-                cy="50"
-                r="40"
-                stroke="url(#rehearsalGradient)"
-                strokeWidth="10"
-                strokeDasharray={`${2 * Math.PI * 40}`}
-                strokeDashoffset={`${2 * Math.PI * 40 * (1 - (scoreVal ?? 0) / 5)}`}
-                strokeLinecap="round"
-                fill="transparent"
-                className="transition-all duration-1000 ease-out"
-              />
-              <defs>
-                <linearGradient id="rehearsalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#0071e3" />
-                  <stop offset="100%" stopColor="#6366f1" />
-                </linearGradient>
-              </defs>
+          {/* Radial Gauge with 4-Band Scale */}
+          <div className="relative w-28 h-28 shrink-0 flex items-center justify-center" data-band={scoreBand}>
+            <svg className="w-28 h-28 transform" viewBox="0 0 100 100">
+              {(
+                [
+                  { key: "poor", from: 0, to: 40 },
+                  { key: "average", from: 40, to: 60 },
+                  { key: "good", from: 60, to: 80 },
+                  { key: "strong", from: 80, to: 100 },
+                ] as const
+              ).map((b) => {
+                const c = 2 * Math.PI * 40;
+                const gap = 0.014;
+                const dash = `${Math.max(0, (b.to - b.from) / 100 - gap) * c} ${c}`;
+                const turn = (b.from / 100) * 360 - 90 + (gap / 2) * 360;
+                return (
+                  <circle
+                    key={b.key}
+                    data-band={b.key}
+                    cx="50"
+                    cy="50"
+                    r="40"
+                    stroke="var(--ring)"
+                    strokeOpacity="0.22"
+                    strokeWidth="10"
+                    strokeDasharray={dash}
+                    transform={`rotate(${turn} 50 50)`}
+                    fill="transparent"
+                  />
+                );
+              })}
+              {scoreVal != null && scoreVal > 0 && (
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="40"
+                  stroke="var(--ring)"
+                  strokeWidth="10"
+                  strokeDasharray={`${Math.min(1, scoreVal / 5) * 2 * Math.PI * 40} ${2 * Math.PI * 40}`}
+                  transform="rotate(-90 50 50)"
+                  strokeLinecap="round"
+                  fill="transparent"
+                  className="transition-all duration-1000 ease-out"
+                />
+              )}
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-              <span className="num text-2xl font-bold text-ink tracking-tight leading-none">
+              <span className="num text-2xl font-bold text-ink tracking-tight leading-none" style={scoreVal != null ? { color: "var(--ring)" } : undefined}>
                 {scoreVal != null ? scoreVal.toFixed(1) : "—"}
               </span>
               <span className="text-[11px] text-muted font-medium mt-0.5">
@@ -281,30 +305,30 @@ export function RunReportView({ presentation, run, whenFormatted }: RunReportVie
 
             <div className="mt-4 space-y-3">
               {[
-                { label: "Opening", score: 3.8, isLow: false },
-                { label: "Message and ask", score: 3.2, isLow: false },
-                { label: "Structure and flow", score: 3.5, isLow: false },
-                { label: "Slide coverage", score: 1.7, isLow: true },
-                { label: "Timing", score: 3.0, isLow: false },
-                { label: "Audience fit", score: 3.6, isLow: false },
-                { label: "Delivery", score: 4.0, isLow: false },
-              ].map((area) => (
-                <div key={area.label} className="space-y-1">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-ink/85">{area.label}</span>
-                    <span className="num font-semibold text-ink">{area.score.toFixed(1)} / 5</span>
+                { label: "Opening", score: 3.8 },
+                { label: "Message and ask", score: 3.2 },
+                { label: "Structure and flow", score: 3.5 },
+                { label: "Slide coverage", score: 1.7 },
+                { label: "Timing", score: 3.0 },
+                { label: "Audience fit", score: 3.6 },
+                { label: "Delivery", score: 4.0 },
+              ].map((area) => {
+                const areaBand = area.score < 2 ? "poor" : area.score < 3 ? "average" : area.score < 4 ? "good" : "strong";
+                return (
+                  <div key={area.label} className="space-y-1" data-band={areaBand}>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-ink/85">{area.label}</span>
+                      <span className="num font-semibold" style={{ color: "var(--ring)" }}>{area.score.toFixed(1)} / 5</span>
+                    </div>
+                    <div className="h-1.5 w-full rounded-full bg-panel-2 border border-line/60 dark:bg-white/[0.08] overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-700"
+                        style={{ width: `${Math.min(100, (area.score / 5) * 100)}%`, backgroundColor: "var(--ring)" }}
+                      />
+                    </div>
                   </div>
-                  <div className="h-1.5 w-full rounded-full bg-panel-2 border border-line/60 dark:bg-white/[0.08] overflow-hidden">
-                    <div
-                      className={clsx(
-                        "h-full rounded-full transition-all duration-700",
-                        area.isLow ? "bg-rose-500" : "bg-gradient-to-r from-blue-fill to-indigo-500"
-                      )}
-                      style={{ width: `${Math.min(100, (area.score / 5) * 100)}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>

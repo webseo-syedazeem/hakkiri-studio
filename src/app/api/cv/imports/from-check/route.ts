@@ -86,7 +86,9 @@ function letterFrom(text: string): Letter | undefined {
 /** From "Check my CV or cover letter": the CV that was checked, aimed at the job it was checked against, with its letter. */
 async function fromDocCheck(userId: string, id: string, then: "findings" | "tailor" | "letter" | undefined) {
   const check = await getOwnDocCheck(id, userId);
-  if (!check || check.docType === "cover" || !check.cvText.trim()) return NextResponse.json({ error: "not_found", message: GONE }, { status: 404 });
+  if (!check || (check.docType === "cover" ? !check.letterText.trim() : !check.cvText.trim())) {
+    return NextResponse.json({ error: "not_found", message: GONE }, { status: 404 });
+  }
   if (await atCvLimit(userId)) return badInput(TOO_MANY_CVS);
   const fast = makingTooFast(userId);
   if (fast) return fast;
@@ -94,8 +96,12 @@ async function fromDocCheck(userId: string, id: string, then: "findings" | "tail
   const region = check.region;
   const job = check.jobText ? advertHeading(check.jobText) : { title: "", employer: "" };
   const cv: CvDoc = newCv(userId, { name: job.title ? `${region === "us" ? "Resume" : "CV"} for ${job.title}`.slice(0, 120) : region === "us" ? "Resume from my check" : "CV from my check", level: "experienced", region, targetTitle: job.title.slice(0, 160), targetEmployer: job.employer.slice(0, 160), targetAdvert: check.jobText.slice(0, 20000) }, now);
-  const letter = check.docType === "both" ? letterFrom(check.letterText) : undefined;
+  const letter = check.docType !== "cv" ? letterFrom(check.letterText) : undefined;
   if (letter) cv.letter = letter;
+  if (check.docType === "cover") {
+    await saveCv(cv);
+    return NextResponse.json({ importId: "", versionId: cv.id, status: "confirmed" }, { status: 201 });
+  }
   const imp = { ...(await readUpload({ id: newImportId(), userId, versionId: cv.id, createdAt: now }, cv, { text: check.cvText }, now)), checkId: id, then };
   try {
     await saveCv(cv);

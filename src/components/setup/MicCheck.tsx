@@ -119,14 +119,26 @@ export function MicCheck({ next }: { next: string }) {
             Hakkiri scores what you say from the recording, so it needs to hear you clearly. This takes ten seconds. Your test isn’t saved.
           </p>
 
-          <div className="mt-6 rounded-xl bg-panel-2 px-5 py-4 shadow-[inset_0_0_0_1px_var(--color-line)]">
+          <div className="mt-6 rounded-xl bg-panel-2 px-5 py-4 border border-line">
             <div className="flex items-center justify-between text-[13px]">
-              <span className="font-semibold">{step === "start" ? "Microphone off" : step === "blocked" ? "Microphone blocked" : step === "recording" ? `Recording… ${left}` : "Listening"}</span>
+              <span className="font-semibold text-ink">{step === "start" ? "Microphone off" : step === "blocked" ? "Microphone blocked" : step === "recording" ? `Recording… ${left}` : "Listening"}</span>
               <span className="truncate pl-4 text-muted">{device ?? ""}</span>
             </div>
             <div className="mt-3 flex gap-[3px]" role="img" aria-label={`Input level ${Math.round(level * 100)}%`}>
               {Array.from({ length: SEGMENTS }, (_, k) => (
-                <span key={k} className={clsx("h-4 flex-1 rounded-[2px] transition-colors duration-75", k < lit && step !== "start" ? (k > SEGMENTS * 0.85 ? "bg-red" : "bg-blue") : "bg-white/[0.07]")} />
+                <span
+                  key={k}
+                  className={clsx(
+                    "h-4 flex-1 rounded-[2px] transition-colors duration-75",
+                    k < lit && step !== "start"
+                      ? k > SEGMENTS * 0.85
+                        ? "bg-red"
+                        : k > SEGMENTS * 0.65
+                          ? "bg-amber-500"
+                          : "bg-emerald-500"
+                      : "bg-line-strong/60 dark:bg-white/[0.08]"
+                  )}
+                />
               ))}
             </div>
             {step !== "start" && step !== "blocked" && <p className="mt-3 text-[13px] text-muted">Say something, like “I’m practising for my interview.” The bar should move as you speak.</p>}

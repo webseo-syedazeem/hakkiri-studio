@@ -906,13 +906,13 @@ export function LiveInterview(p: LiveInterviewProps) {
         <div className="flex min-w-0 items-center gap-3.5">
           <Link href={`/interviews/${p.interviewId}`} className="flex items-center gap-2 hover:opacity-85 transition-opacity">
             <Mark size={22} badge />
-            <span className="font-bold text-lg text-white tracking-tight">Hakkiri</span>
+            <span className="font-bold text-lg text-ink tracking-tight">Hakkiri</span>
           </Link>
-          <span className="text-white/20">|</span>
+          <span className="text-dim/40">|</span>
           <div className="flex items-center gap-2 text-sm">
             <Icon name="cal" size={15} className="text-muted" />
             <span className="text-muted">Interview</span>
-            <span className="truncate font-medium text-white">{p.heading}</span>
+            <span className="truncate font-medium text-ink">{p.heading}</span>
           </div>
         </div>
         {queue.length > 1 ? (
@@ -924,14 +924,14 @@ export function LiveInterview(p: LiveInterviewProps) {
                   className={clsx(
                     "h-1 rounded-sm",
                     queue.length > 10 ? "w-5" : "w-8",
-                    k === current - 1 ? "bg-white" : k < current - 1 ? "bg-white/40" : "bg-white/20"
+                    k === current - 1 ? "bg-blue-fill dark:bg-white" : k < current - 1 ? "bg-blue-fill/45 dark:bg-white/40" : "bg-line-strong dark:bg-white/20"
                   )}
                 />
               ))}
             </div>
             <span className="num text-[13px] text-muted">{phase === "finishing" ? "Finished" : `Question ${current} of ${queue.length}`}</span>
             {remainingSec != null && phase !== "ready" && phase !== "finishing" && (
-              <span className={clsx("num rounded-full px-2.5 py-1 text-[13px] font-semibold", remainingSec < WRAP_UP_SEC ? "bg-red/15 text-red-soft" : "bg-panel-2 text-muted")}>{mmss(remainingSec)} left</span>
+              <span className={clsx("num rounded-full px-2.5 py-1 text-[13px] font-semibold", remainingSec < WRAP_UP_SEC ? "bg-red/15 text-red-soft" : "bg-panel-2 border border-line text-muted")}>{mmss(remainingSec)} left</span>
             )}
           </div>
         ) : (
@@ -939,7 +939,7 @@ export function LiveInterview(p: LiveInterviewProps) {
         )}
         <div className="flex shrink-0 items-center gap-2.5">
           {p.testMode && (
-            <span role="note" data-testid="test-mode-notice" title="The questions’ follow-ups, transcripts and scores are stand-ins made without AI. They are not a reading of what you say." className="inline-flex h-[34px] items-center rounded-full border border-amber-500/40 bg-amber-500/10 px-3.5 text-[13px] font-semibold text-amber-100">
+            <span role="note" data-testid="test-mode-notice" title="The questions’ follow-ups, transcripts and scores are stand-ins made without AI. They are not a reading of what you say." className="inline-flex h-[34px] items-center rounded-full border border-amber-500/40 bg-amber-500/10 px-3.5 text-[13px] font-semibold text-amber-700 dark:text-amber-100">
               Test mode: scores are stand-ins
             </span>
           )}
@@ -950,12 +950,12 @@ export function LiveInterview(p: LiveInterviewProps) {
             </span>
           )}
           {(phase === "asking" || phase === "thinking" || phase === "scoring" || phase === "finishing") && (
-            <span className="inline-flex h-[34px] items-center gap-2 rounded-full bg-blue/15 px-3.5 text-[13px] font-semibold text-lilac">
+            <span className="inline-flex h-[34px] items-center gap-2 rounded-full bg-blue/15 px-3.5 text-[13px] font-semibold text-blue-soft">
               <span className="h-2 w-2 animate-rec rounded-full bg-blue" />
               {phase === "asking" ? `${name} is speaking` : phase === "thinking" ? `${name} is thinking` : phase === "finishing" ? "Writing your report" : "Scoring"}
             </span>
           )}
-          {phase === "paused" && <span className="inline-flex h-[34px] items-center rounded-full bg-panel-2 px-3.5 text-[13px] font-semibold text-muted">Paused</span>}
+          {phase === "paused" && <span className="inline-flex h-[34px] items-center rounded-full bg-panel-2 border border-line px-3.5 text-[13px] font-semibold text-muted">Paused</span>}
           {session && session.mode !== "drill" && phase !== "finishing" && (
             <Button size="sm" onClick={() => void openWrong()}>
               <Icon name="flag" size={14} strokeWidth={2} />
@@ -965,7 +965,7 @@ export function LiveInterview(p: LiveInterviewProps) {
           {isRun && phase !== "ready" && phase !== "finishing" ? (
             confirmingEnd ? (
               // Ending is asked about first: it can't be undone, and an answer in progress isn't kept.
-              <span role="alertdialog" aria-label="End now?" className="inline-flex items-center gap-2 rounded-full bg-panel-2 py-1 pl-3.5 pr-1 text-[13px] text-ink">
+              <span role="alertdialog" aria-label="End now?" className="inline-flex items-center gap-2 rounded-full bg-panel-2 border border-line py-1 pl-3.5 pr-1 text-[13px] text-ink">
                 <span>{scoredCount > 0 ? `End now? Your report will cover the ${scoredCount} ${scoredCount === 1 ? "answer" : "answers"} scored so far.` : "End now? Nothing has been scored yet, so there will be no report."}</span>
                 <Button size="sm" onClick={() => setConfirmingEnd(false)}>
                   Keep going
@@ -1001,26 +1001,26 @@ export function LiveInterview(p: LiveInterviewProps) {
           {/* Top 2 Cards: Interviewer Briefing + Ready to Start */}
           <div className="grid grid-cols-1 lg:grid-cols-[1.58fr_1fr] gap-5 items-stretch">
             {/* Left Card: Interviewer Briefing */}
-            <div className="rounded-2xl bg-[#0f0e1c] border border-white/[0.08] p-6 sm:p-7 shadow-xl flex flex-col justify-between">
+            <div className="rounded-2xl bg-panel dark:bg-[#0f0e1c] border border-line dark:border-white/[0.08] p-6 sm:p-7 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_10px_28px_-6px_rgba(15,23,42,0.08)] dark:shadow-xl flex flex-col justify-between">
               <div>
                 <div className="flex items-center gap-4">
-                  <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#4f52f8] to-[#7c3aed] text-xl font-bold text-white shadow-xl border-2 border-white/20">
+                  <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-blue-fill text-xl font-bold text-white shadow-lg border-2 border-white/20">
                     {name[0]}
                   </div>
                   <div>
                     <span className="text-xs font-medium text-muted">
                       {session?.mode === "drill" ? `Focused practice with ${name}` : "Your interviewer"}
                     </span>
-                    <h1 className="text-2xl font-bold tracking-tight text-white mt-0.5">
+                    <h1 className="text-2xl font-bold tracking-tight text-ink mt-0.5">
                       {session?.mode === "drill" && session.drill?.title ? session.drill.title : `Your interview with ${name}`}
                     </h1>
-                    <span className="mt-1.5 inline-block rounded-full bg-[#24213d] border border-[#3e3966] px-3 py-0.5 text-xs font-semibold text-[#a5a1ff]">
+                    <span className="mt-1.5 inline-block rounded-full bg-blue/10 dark:bg-[#24213d] border border-blue/25 dark:border-[#3e3966] px-3 py-0.5 text-xs font-semibold text-blue-soft dark:text-[#a5a1ff]">
                       {p.interviewer.title || "Hiring manager"}
                     </span>
                   </div>
                 </div>
 
-                <p className="mt-4 text-sm text-[#9b9ca8] leading-relaxed">
+                <p className="mt-4 text-sm text-muted leading-relaxed">
                   {session?.mode === "drill" && session.drill?.instruction
                     ? session.drill.instruction
                     : "A realistic, role-specific interview to help you build confidence and sharpen your answers."}
@@ -1032,7 +1032,7 @@ export function LiveInterview(p: LiveInterviewProps) {
                     {queue.map((item) => (
                       <span
                         key={item.id}
-                        className="rounded-lg bg-white/[0.04] border border-white/10 px-2.5 py-1 text-[11px] font-medium text-white/85"
+                        className="rounded-lg bg-panel-2 border border-line px-2.5 py-1 text-[11px] font-medium text-ink"
                       >
                         {item.short}
                       </span>
@@ -1043,19 +1043,19 @@ export function LiveInterview(p: LiveInterviewProps) {
 
               {/* 3 Metric Pills */}
               <div className="grid grid-cols-3 gap-3 mt-6">
-                <div className="flex items-center gap-3 rounded-xl bg-[#16152a] border border-white/[0.06] p-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#232043] text-[#a5a1ff]">
+                <div className="flex items-center gap-3 rounded-xl bg-panel-2 dark:bg-[#16152a] border border-line dark:border-white/[0.06] p-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue/10 dark:bg-[#232043] text-blue-soft dark:text-[#a5a1ff]">
                     <Icon name="clock" size={17} strokeWidth={2} />
                   </div>
                   <div className="min-w-0">
-                    <div className="text-sm font-semibold text-white truncate">
+                    <div className="text-sm font-semibold text-ink truncate">
                       {queue.length === 1
                         ? "3–5 minutes"
                         : !isRun
                         ? "3–5 minutes"
                         : `${session?.minutes ?? (session?.mode === "drill" ? 6 : 20)} minutes`}
                     </div>
-                    <div className="text-xs text-[#8c8d9e] truncate">
+                    <div className="text-xs text-muted truncate">
                       {queue.length === 1
                         ? "Practice length"
                         : !isRun
@@ -1067,12 +1067,12 @@ export function LiveInterview(p: LiveInterviewProps) {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 rounded-xl bg-[#16152a] border border-white/[0.06] p-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#232043] text-[#a5a1ff]">
+                <div className="flex items-center gap-3 rounded-xl bg-panel-2 dark:bg-[#16152a] border border-line dark:border-white/[0.06] p-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue/10 dark:bg-[#232043] text-blue-soft dark:text-[#a5a1ff]">
                     <Icon name="list" size={17} strokeWidth={2} />
                   </div>
                   <div className="min-w-0">
-                    <div className="text-sm font-semibold text-white truncate">
+                    <div className="text-sm font-semibold text-ink truncate">
                       {queue.length === 1
                         ? "1 question"
                         : !isRun
@@ -1081,7 +1081,7 @@ export function LiveInterview(p: LiveInterviewProps) {
                         ? `${queue.length} questions`
                         : `About ${queue.length} questions`}
                     </div>
-                    <div className="text-xs text-[#8c8d9e] truncate">
+                    <div className="text-xs text-muted truncate">
                       {queue.length === 1
                         ? "Instant feedback & next"
                         : !isRun
@@ -1093,12 +1093,12 @@ export function LiveInterview(p: LiveInterviewProps) {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 rounded-xl bg-[#16152a] border border-white/[0.06] p-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#232043] text-[#a5a1ff]">
+                <div className="flex items-center gap-3 rounded-xl bg-panel-2 dark:bg-[#16152a] border border-line dark:border-white/[0.06] p-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue/10 dark:bg-[#232043] text-blue-soft dark:text-[#a5a1ff]">
                     <Icon name="target" size={17} strokeWidth={2} />
                   </div>
                   <div className="min-w-0">
-                    <div className="text-sm font-semibold text-white truncate">
+                    <div className="text-sm font-semibold text-ink truncate">
                       {queue.length === 1
                         ? "Continuous practice"
                         : !isRun
@@ -1107,7 +1107,7 @@ export function LiveInterview(p: LiveInterviewProps) {
                         ? (session.drill?.focusLabel ?? "Focused")
                         : "Balanced"}
                     </div>
-                    <div className="text-xs text-[#8c8d9e] truncate">
+                    <div className="text-xs text-muted truncate">
                       {queue.length === 1
                         ? "Try another after feedback"
                         : !isRun
@@ -1122,30 +1122,30 @@ export function LiveInterview(p: LiveInterviewProps) {
             </div>
 
             {/* Right Card: You're ready to start */}
-            <div className="rounded-2xl bg-[#0f0e1c] border border-white/[0.08] p-6 shadow-xl flex flex-col justify-between">
+            <div className="rounded-2xl bg-panel dark:bg-[#0f0e1c] border border-line dark:border-white/[0.08] p-6 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_10px_28px_-6px_rgba(15,23,42,0.08)] dark:shadow-xl flex flex-col justify-between">
               <div>
                 <div className="flex items-center gap-2.5">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#272348] text-[#a5a1ff]">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue/10 dark:bg-[#272348] text-blue-soft dark:text-[#a5a1ff]">
                     <Icon name="sparkle" size={17} strokeWidth={2} />
                   </div>
-                  <h2 className="text-base font-bold text-white">You&apos;re ready to start</h2>
+                  <h2 className="text-base font-bold text-ink">You&apos;re ready to start</h2>
                 </div>
 
                 <div className="mt-5 space-y-3.5">
                   <div className="flex items-center gap-2.5">
-                    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400">
+                    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
                       <Icon name="check" size={13} strokeWidth={2.6} />
                     </div>
-                    <span className="text-sm text-white/90">
+                    <span className="text-sm text-ink/90">
                       {queue.length === 1 || !isRun ? "Realistic, role-relevant question." : session?.mode === "drill" ? "Focused, topic-relevant questions." : "Realistic, role-relevant questions."}
                     </span>
                   </div>
 
                   <div className="flex items-center gap-2.5">
-                    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400">
+                    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
                       <Icon name="check" size={13} strokeWidth={2.6} />
                     </div>
-                    <span className="text-sm text-white/90">
+                    <span className="text-sm text-ink/90">
                       {queue.length === 1 || !isRun
                         ? "Instant feedback after this question, with option to try the next question."
                         : session?.feedbackEach
@@ -1155,10 +1155,10 @@ export function LiveInterview(p: LiveInterviewProps) {
                   </div>
                 </div>
 
-                <div className="mt-5 pt-4 border-t border-white/[0.06]">
+                <div className="mt-5 pt-4 border-t border-line dark:border-white/[0.06]">
                   <div className="flex items-center justify-between gap-2 mb-2">
-                    <span className="text-xs font-semibold text-white">Difficulty</span>
-                    <span className="text-[11px] font-medium text-[#a5a1ff]">
+                    <span className="text-xs font-semibold text-ink">Difficulty</span>
+                    <span className="text-[11px] font-medium text-blue-soft dark:text-[#a5a1ff]">
                       {DIFFICULTY_LABEL[difficultyFor(style)]}
                     </span>
                   </div>
@@ -1168,21 +1168,21 @@ export function LiveInterview(p: LiveInterviewProps) {
                     options={DIFFICULTIES}
                     value={difficultyFor(style)}
                     onChange={(d) => void changeReadyDifficulty(d)}
-                    className="!bg-[#16152a] !shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"
+                    className="!bg-panel-2 dark:!bg-[#16152a] !shadow-[inset_0_0_0_1px_var(--color-line)]"
                   />
-                  <p className="mt-2 text-[11px] leading-relaxed text-[#8c8d9e]">
+                  <p className="mt-2 text-[11px] leading-relaxed text-muted">
                     {switchingDifficulty ? "Loading questions calibrated for this difficulty..." : DIFFICULTY_HINT[difficultyFor(style)]}
                   </p>
                 </div>
               </div>
 
-              <div className="mt-5 flex items-start gap-2.5 pt-3 border-t border-white/[0.06]">
-                <div className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-white/20 text-[10px] font-bold text-muted mt-0.5">
+              <div className="mt-5 flex items-start gap-2.5 pt-3 border-t border-line dark:border-white/[0.06]">
+                <div className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-line-strong text-[10px] font-bold text-muted mt-0.5">
                   i
                 </div>
-                <p className="text-xs leading-relaxed text-[#8c8d9e]">
+                <p className="text-xs leading-relaxed text-muted">
                   You can skip a question if it doesn&apos;t feel relevant. If something doesn&apos;t seem right, select{" "}
-                  <button onClick={() => void openWrong()} className="underline hover:text-white font-medium">
+                  <button onClick={() => void openWrong()} className="underline hover:text-ink font-medium cursor-pointer">
                     Report an issue
                   </button>.
                 </p>
@@ -1191,53 +1191,53 @@ export function LiveInterview(p: LiveInterviewProps) {
           </div>
 
           {/* Bottom Card: How it works */}
-          <div className="mt-4 rounded-2xl bg-[#0f0e1c] border border-white/[0.08] p-6 shadow-xl">
+          <div className="mt-4 rounded-2xl bg-panel dark:bg-[#0f0e1c] border border-line dark:border-white/[0.08] p-6 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_10px_28px_-6px_rgba(15,23,42,0.08)] dark:shadow-xl">
             <div className="flex items-center gap-2.5">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#24213d] text-[#a5a1ff]">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue/10 dark:bg-[#24213d] text-blue-soft dark:text-[#a5a1ff]">
                 <Icon name="mic" size={16} strokeWidth={2} />
               </div>
-              <h2 className="text-base font-bold text-white">How it works</h2>
+              <h2 className="text-base font-bold text-ink">How it works</h2>
             </div>
 
             {/* 3 Step Flow */}
             <div className="mt-5 grid grid-cols-[1fr_auto_1fr_auto_1fr] items-center gap-4">
               <div className="flex items-start gap-3">
-                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#1e2746] text-[#6d9dfd] text-xs font-bold mt-0.5">
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue/10 dark:bg-[#1e2746] text-blue-soft dark:text-[#6d9dfd] text-xs font-bold mt-0.5">
                   1
                 </div>
                 <div>
-                  <div className="text-sm font-semibold text-white">Get a question</div>
-                  <div className="text-xs text-[#8c8d9e] mt-0.5 leading-normal">
+                  <div className="text-sm font-semibold text-ink">Get a question</div>
+                  <div className="text-xs text-muted mt-0.5 leading-normal">
                     {name} will ask a role-specific question out loud.
                   </div>
                 </div>
               </div>
 
-              <span className="text-white/20 text-base font-light px-1">›</span>
+              <span className="text-dim/40 text-base font-light px-1">›</span>
 
               <div className="flex items-start gap-3">
-                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#1e2746] text-[#6d9dfd] text-xs font-bold mt-0.5">
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue/10 dark:bg-[#1e2746] text-blue-soft dark:text-[#6d9dfd] text-xs font-bold mt-0.5">
                   2
                 </div>
                 <div>
-                  <div className="text-sm font-semibold text-white">Give your answer</div>
-                  <div className="text-xs text-[#8c8d9e] mt-0.5 leading-normal">
+                  <div className="text-sm font-semibold text-ink">Give your answer</div>
+                  <div className="text-xs text-muted mt-0.5 leading-normal">
                     Aim for a clear and structured response (around 1–1½ minutes).
                   </div>
                 </div>
               </div>
 
-              <span className="text-white/20 text-base font-light px-1">›</span>
+              <span className="text-dim/40 text-base font-light px-1">›</span>
 
               <div className="flex items-start gap-3">
-                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#1e2746] text-[#6d9dfd] text-xs font-bold mt-0.5">
+                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue/10 dark:bg-[#1e2746] text-blue-soft dark:text-[#6d9dfd] text-xs font-bold mt-0.5">
                   3
                 </div>
                 <div>
-                  <div className="text-sm font-semibold text-white">
+                  <div className="text-sm font-semibold text-ink">
                     {queue.length === 1 || !isRun ? "Get feedback & next question" : "Get feedback"}
                   </div>
-                  <div className="text-xs text-[#8c8d9e] mt-0.5 leading-normal">
+                  <div className="text-xs text-muted mt-0.5 leading-normal">
                     {queue.length === 1 || !isRun
                       ? "Score & STAR coaching, then try the next question or practice again."
                       : "Receive a detailed score and personalised feedback at the end."}
@@ -1246,34 +1246,34 @@ export function LiveInterview(p: LiveInterviewProps) {
               </div>
             </div>
 
-            <div className="my-5 border-t border-white/[0.08]" />
+            <div className="my-5 border-t border-line dark:border-white/[0.08]" />
 
             {/* Answer Time Slider */}
             <div>
               <div className="flex items-baseline gap-2">
-                <span className="text-sm font-semibold text-white">Your answer time</span>
-                <span className="text-white/20">|</span>
-                <span className="text-xs text-[#8c8d9e]">
+                <span className="text-sm font-semibold text-ink">Your answer time</span>
+                <span className="text-dim/40">|</span>
+                <span className="text-xs text-muted">
                   Aim for around 1 to 1½ minutes per answer. You&apos;ll see a timer as you speak.
                 </span>
               </div>
 
               {/* Slider Track */}
               <div className="relative mt-5 mb-2">
-                <div className="h-1.5 w-full rounded-full bg-white/10" />
+                <div className="h-1.5 w-full rounded-full bg-panel-2 border border-line dark:bg-white/10" />
 
                 {/* Left 0:00 Thumb */}
-                <div className="absolute -top-1.5 left-0 h-4 w-4 rounded-full bg-white shadow-md" />
+                <div className="absolute -top-1.5 left-0 h-4 w-4 rounded-full bg-blue-fill dark:bg-white border-2 border-white shadow-md" />
 
                 {/* Target illuminated pill on track: 1:00 (33.3%) to 1:30 (50%) */}
                 <div
-                  className="absolute -top-3.5 left-[33.3%] flex h-8 w-[16.7%] min-w-[130px] items-center justify-center rounded-full bg-gradient-to-r from-[#4f5df7] via-[#5d55f5] to-[#6d55f4] text-[11px] font-semibold text-white shadow-[0_0_20px_rgba(99,102,241,0.55)] border border-white/20"
+                  className="absolute -top-3.5 left-[33.3%] flex h-8 w-[16.7%] min-w-[130px] items-center justify-center rounded-full bg-blue-fill text-[11px] font-semibold text-white shadow-[0_4px_14px_rgba(0,113,227,0.35)] border border-white/20"
                 >
                   Target: 1:00 – 1:30
                 </div>
 
                 {/* Time markers */}
-                <div className="mt-4 flex justify-between text-[11px] font-mono text-[#7b7c8e]">
+                <div className="mt-4 flex justify-between text-[11px] font-mono text-muted">
                   <span>0:00</span>
                   <span className="translate-x-1">0:30</span>
                   <span className="opacity-0">1:00 - 1:30</span>
@@ -1285,9 +1285,9 @@ export function LiveInterview(p: LiveInterviewProps) {
             </div>
 
             {/* Bottom Row */}
-            <div className="mt-5 pt-3 flex items-center justify-between border-t border-white/[0.06]">
-              <div className="flex items-center gap-2 text-xs text-[#8c8d9e]">
-                <kbd className="rounded bg-[#19182d] border border-white/15 px-2.5 py-1 font-mono text-xs font-semibold text-white shadow-sm">
+            <div className="mt-5 pt-3 flex items-center justify-between border-t border-line dark:border-white/[0.06]">
+              <div className="flex items-center gap-2 text-xs text-muted">
+                <kbd className="rounded bg-panel-2 dark:bg-[#19182d] border border-line-strong dark:border-white/15 px-2.5 py-1 font-mono text-xs font-semibold text-ink dark:text-white shadow-xs">
                   Space
                 </kbd>
                 <span>Press Space to finish your answer</span>
@@ -1299,7 +1299,7 @@ export function LiveInterview(p: LiveInterviewProps) {
                   disabled={isStarting}
                   onClick={() => void start()}
                   className={clsx(
-                    "group flex items-center gap-2.5 rounded-xl bg-gradient-to-r from-[#4f52f8] via-[#5c5ffc] to-[#6d5eff] hover:from-[#5b5efd] hover:to-[#7b6dff] px-7 py-3 text-sm font-semibold text-white border border-white/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.3),0_6px_25px_-2px_rgba(79,82,248,0.55)] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_8px_32px_-2px_rgba(79,82,248,0.75)] transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] cursor-pointer",
+                    "pro-btn-glow group flex items-center gap-2.5 rounded-xl bg-blue-fill hover:bg-blue-hover px-7 py-3 text-sm font-semibold text-white border border-blue-fill/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_6px_20px_-2px_rgba(0,113,227,0.45)] transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] cursor-pointer",
                     isStarting && "opacity-80 pointer-events-none cursor-wait"
                   )}
                 >
@@ -1321,74 +1321,74 @@ export function LiveInterview(p: LiveInterviewProps) {
             {/* Left Column: Question / Feedback / Ending */}
             <div className="flex flex-col justify-between gap-4 h-full">
               {phase === "finishing" || (phase === "error" && problem?.stage === "report") ? (
-                <div className="rounded-2xl bg-[#0f0e1c] border border-white/[0.08] p-7 sm:p-9 shadow-xl flex flex-col justify-center min-h-[340px]">
+                <div className="rounded-2xl bg-panel dark:bg-[#0f0e1c] border border-line dark:border-white/[0.08] p-7 sm:p-9 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_10px_28px_-6px_rgba(15,23,42,0.08)] dark:shadow-xl flex flex-col justify-center min-h-[340px]">
                   <div className="flex items-center gap-2.5 text-xs font-semibold text-blue-soft uppercase tracking-wider">
                     <Icon name="checkCircle" size={16} className="text-blue-soft" />
                     <span>Interview completed</span>
                   </div>
-                  <h1 className="mt-3 text-2xl sm:text-3xl font-bold tracking-tight text-white leading-tight">
+                  <h1 className="mt-3 text-2xl sm:text-3xl font-bold tracking-tight text-ink leading-tight">
                     {session?.mode === "drill" ? "That’s the focused practice done." : "Thank you. That’s the end of the interview."}
                   </h1>
-                  <p className="mt-3 text-sm text-[#a1a2b3] leading-relaxed max-w-xl" role={phase === "error" ? "alert" : undefined}>
+                  <p className="mt-3 text-sm text-muted leading-relaxed max-w-xl" role={phase === "error" ? "alert" : undefined}>
                     {phase === "error" ? (problem?.message ?? "Your report couldn’t be made.") : "Your report is being written now: every answer and follow-up, scored the same way."}
                   </p>
-                  <div className="mt-6 rounded-xl bg-[#141326] border border-white/10 p-5">
+                  <div className="mt-6 rounded-xl bg-panel-2 dark:bg-[#141326] border border-line dark:border-white/10 p-5">
                     <div className="flex items-center justify-between text-xs font-medium">
-                      <span className="text-white">Scoring your answers in background</span>
+                      <span className="text-ink">Scoring your answers in background</span>
                       <span className="num font-bold text-blue-soft">{scoredCount} of {total} scored</span>
                     </div>
-                    <div className="mt-3 flex gap-1.5 h-2 w-full rounded-full bg-white/10 overflow-hidden">
+                    <div className="mt-3 flex gap-1.5 h-2 w-full rounded-full bg-line/60 dark:bg-white/10 overflow-hidden">
                       {Array.from({ length: total }, (_, k) => (
-                        <span key={k} className={clsx("h-full flex-1 rounded-sm transition-all duration-500", k < scoredCount ? "bg-gradient-to-r from-blue to-indigo-500" : "bg-white/[0.06]")} />
+                        <span key={k} className={clsx("h-full flex-1 rounded-sm transition-all duration-500", k < scoredCount ? "bg-blue-fill" : "bg-line-strong/40 dark:bg-white/[0.06]")} />
                       ))}
                     </div>
                   </div>
                 </div>
               ) : phase === "feedback" && feedback && fb ? (
-                <div className="rounded-2xl bg-[#0f0e1c] border border-white/[0.08] p-7 sm:p-8 shadow-xl flex flex-col justify-between min-h-[340px]">
+                <div className="rounded-2xl bg-panel dark:bg-[#0f0e1c] border border-line dark:border-white/[0.08] p-7 sm:p-8 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_10px_28px_-6px_rgba(15,23,42,0.08)] dark:shadow-xl flex flex-col justify-between min-h-[340px]">
                   <div>
-                    <div className="flex items-center justify-between text-xs text-muted pb-3 border-b border-white/[0.06]">
+                    <div className="flex items-center justify-between text-xs text-muted pb-3 border-b border-line dark:border-white/[0.06]">
                       <span>Question {qIndex + 1} of {queue.length}: {feedback.question.short}</span>
                       <span className="px-2.5 py-0.5 rounded-full bg-blue/15 text-blue-soft font-semibold">Focused Feedback</span>
                     </div>
                     <div className="mt-4 flex items-baseline gap-4">
-                      <span className="num text-4xl sm:text-5xl font-bold text-white tracking-tight">{fb.overall?.toFixed(1) ?? "n/a"}</span>
+                      <span className="num text-4xl sm:text-5xl font-bold text-ink tracking-tight">{fb.overall?.toFixed(1) ?? "n/a"}</span>
                       <span className="text-base text-muted font-medium">{fb.overall != null ? scoreLabel(fb.overall) : ""}</span>
                       {before != null && fb.overall != null && (
-                        <span className={clsx("text-xs font-semibold px-2 py-0.5 rounded-full", fb.overall > before ? "bg-emerald-500/15 text-emerald-400" : "bg-white/10 text-muted")}>
+                        <span className={clsx("text-xs font-semibold px-2 py-0.5 rounded-full", fb.overall > before ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" : "bg-panel-2 border border-line text-muted")}>
                           {fb.overall > before ? `↑ up from ${before.toFixed(1)}` : fb.overall < before ? `↓ down from ${before.toFixed(1)}` : "same as before"}
                         </span>
                       )}
                     </div>
-                    <div className="mt-4 space-y-2 text-xs text-[#c9cad3] leading-relaxed">
-                      <p><b className="text-white">One fix: </b>{feedback.result.oneFix}</p>
+                    <div className="mt-4 space-y-2 text-xs text-muted leading-relaxed">
+                      <p><b className="text-ink">One fix: </b>{feedback.result.oneFix}</p>
                       {feedback.result.strength && (
-                        <p><b className="text-emerald-400">Keep: </b>{feedback.result.strength}</p>
+                        <p><b className="text-emerald-600 dark:text-emerald-400">Keep: </b>{feedback.result.strength}</p>
                       )}
                     </div>
                   </div>
                 </div>
               ) : (
                 /* Primary Active Question Section: Focused Question Card */
-                <div className="rounded-2xl bg-[#0f0e1c] border border-white/[0.08] p-6 sm:p-8 shadow-xl flex flex-col justify-between min-h-[380px] sm:min-h-[410px] relative overflow-hidden grow">
+                <div className="rounded-2xl bg-panel dark:bg-[#0f0e1c] border border-line dark:border-white/[0.08] p-6 sm:p-8 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_10px_28px_-6px_rgba(15,23,42,0.08)] dark:shadow-xl flex flex-col justify-between min-h-[380px] sm:min-h-[410px] relative overflow-hidden grow">
                   <div>
                     {/* Top row of card */}
-                    <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-white/[0.06]">
+                    <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-line dark:border-white/[0.06]">
                       <div className="flex items-center gap-2.5">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#4f52f8] to-[#7c3aed] text-xs font-bold text-white shadow-md">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-fill text-xs font-bold text-white shadow-md">
                           {name[0]}
                         </div>
                         <div>
-                          <div className="text-xs font-semibold text-white">{name}</div>
+                          <div className="text-xs font-semibold text-ink">{name}</div>
                           <div className="text-[11px] text-muted">{p.interviewer.title || "Lead Product Manager"} asks:</div>
                         </div>
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <span className="rounded-full bg-[#24213d] border border-[#3e3966] px-2.5 py-0.5 text-[11px] font-semibold text-[#a5a1ff]">
+                        <span className="rounded-full bg-blue/10 dark:bg-[#24213d] border border-blue/25 dark:border-[#3e3966] px-2.5 py-0.5 text-[11px] font-semibold text-blue-soft dark:text-[#a5a1ff]">
                           {q.contextLabel || "Competency question"}
                         </span>
-                        <span className="rounded-full bg-[#1b2649] border border-[#2b3d75] px-2.5 py-0.5 text-[11px] font-semibold text-[#6d9dfd]">
+                        <span className="rounded-full bg-panel-2 dark:bg-[#1b2649] border border-line dark:border-[#2b3d75] px-2.5 py-0.5 text-[11px] font-semibold text-ink dark:text-[#6d9dfd]">
                           Target: {mmss(target[0])}–{mmss(target[1])}
                         </span>
                       </div>
@@ -1396,24 +1396,24 @@ export function LiveInterview(p: LiveInterviewProps) {
 
                       {/* Full interview introduction & session overview banner */}
                       {introInfo && qIndex === 0 && (speakingIntro || phase === "asking") && (
-                        <div className="mt-4 rounded-xl bg-gradient-to-r from-blue/20 via-indigo-500/15 to-purple-500/15 border border-blue/30 p-4.5 animate-fade-in shadow-lg">
+                        <div className="mt-4 rounded-xl bg-blue/10 border border-blue/30 p-4.5 animate-fade-in shadow-sm">
                           <div className="flex items-start gap-3">
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue/25 text-blue-soft border border-blue/40 mt-0.5">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue/20 text-blue-soft border border-blue/40 mt-0.5">
                               <Icon name="sparkle" size={17} />
                             </div>
                             <div className="min-w-0 flex-1 space-y-1">
                               <div className="flex flex-wrap items-center gap-2">
-                                <span className="text-xs font-bold text-white tracking-tight">👋 Welcome to your mock interview</span>
-                                <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-blue/30 text-blue-soft">Full Interview</span>
+                                <span className="text-xs font-bold text-ink tracking-tight">👋 Welcome to your mock interview</span>
+                                <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-blue/20 text-blue-soft">Full Interview</span>
                                 {speakingIntro && (
-                                  <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-400">
-                                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                                  <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                                     {name} is introducing the session
                                   </span>
                                 )}
                               </div>
-                              <div className="text-xs text-white/85 leading-relaxed">
-                                <span className="font-semibold text-white">{introInfo.greeting}</span> {introInfo.agenda}
+                              <div className="text-xs text-ink/85 leading-relaxed">
+                                <span className="font-semibold text-ink">{introInfo.greeting}</span> {introInfo.agenda}
                               </div>
                             </div>
                           </div>
@@ -1423,39 +1423,39 @@ export function LiveInterview(p: LiveInterviewProps) {
                       {/* Question text */}
                       {turn.kind === "follow-up" ? (
                         <div className="mt-5">
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue/20 text-blue-soft border border-blue/30 text-[10px] font-bold uppercase tracking-wider mb-2">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue/15 text-blue-soft border border-blue/30 text-[10px] font-bold uppercase tracking-wider mb-2">
                             Follow-up {turn.number} of {turn.of}
                           </span>
-                          <h1 className="text-xl sm:text-2xl lg:text-[26px] font-bold text-white tracking-tight leading-snug">
+                          <h1 className="text-xl sm:text-2xl lg:text-[26px] font-bold text-ink tracking-tight leading-snug">
                             {turn.question}
                           </h1>
                         </div>
                       ) : (
-                        <h1 className="mt-5 text-xl sm:text-2xl lg:text-[26px] font-bold text-white tracking-tight leading-snug">
+                        <h1 className="mt-5 text-xl sm:text-2xl lg:text-[26px] font-bold text-ink tracking-tight leading-snug">
                           {q.text}
                         </h1>
                       )}
 
                       {/* Rephrased Question Banner */}
                       {rephrasedText && (
-                        <div className="mt-4 rounded-xl bg-indigo-500/15 border border-indigo-500/35 p-4 flex items-start gap-2.5 animate-fade-in shadow-md">
-                          <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-lg bg-indigo-500/30 text-indigo-300 mt-0.5">
+                        <div className="mt-4 rounded-xl bg-blue/10 border border-blue/35 p-4 flex items-start gap-2.5 animate-fade-in shadow-sm">
+                          <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-lg bg-blue/20 text-blue-soft mt-0.5">
                             <Icon name="sparkle" size={13} />
                           </div>
-                          <div className="text-xs text-indigo-200 leading-relaxed">
-                            <span className="font-bold text-indigo-300 uppercase tracking-wide mr-2 text-[10px]">Rephrased question:</span>
-                            <span className="text-white font-medium text-[13px]">{rephrasedText}</span>
+                          <div className="text-xs text-ink/85 leading-relaxed">
+                            <span className="font-bold text-blue-soft uppercase tracking-wide mr-2 text-[10px]">Rephrased question:</span>
+                            <span className="text-ink font-medium text-[13px]">{rephrasedText}</span>
                           </div>
                         </div>
                       )}
 
                       {/* Guidance / Hint Callout Box */}
-                      <div className="mt-5 rounded-xl bg-[#16152a] border border-white/[0.06] p-4 flex items-start gap-3">
-                        <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-lg bg-amber-500/15 text-amber-400 mt-0.5">
+                      <div className="mt-5 rounded-xl bg-panel-2 dark:bg-[#16152a] border border-line dark:border-white/[0.06] p-4 flex items-start gap-3">
+                        <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 mt-0.5">
                           <Icon name="sparkle" size={13} />
                         </div>
-                        <div className="text-xs text-[#a5a7b8] leading-relaxed">
-                          <b className="text-white">Guidance: </b>
+                        <div className="text-xs text-muted leading-relaxed">
+                          <b className="text-ink">Guidance: </b>
                           {q.type === "strengths"
                             ? "Strengths question. Be spontaneous, authentic and explain what energises you. Aim for 1:00 to 1:30."
                             : session?.drill?.instruction && (session.drill.kind === "fix" || session.drill.kind === "habit" || session.drill.kind === "topic")
@@ -1470,16 +1470,16 @@ export function LiveInterview(p: LiveInterviewProps) {
               )}
 
               {/* Progress Segment Bar below question card */}
-              <div className="rounded-xl bg-[#0f0e1c] border border-white/[0.08] p-4 shadow-lg shrink-0">
+              <div className="rounded-xl bg-panel dark:bg-[#0f0e1c] border border-line dark:border-white/[0.08] p-4 shadow-sm shrink-0">
                 <div className="flex items-center justify-between text-xs mb-2.5">
-                  <div className="flex items-center gap-1.5 font-semibold text-white">
+                  <div className="flex items-center gap-1.5 font-semibold text-ink">
                     <span>Interview progress</span>
                     <Icon name="info" size={13} className="text-muted" />
                   </div>
                   <div className="flex items-center gap-3 text-[11px] text-muted">
-                    <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-blue" /> Current</span>
-                    <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-emerald-400" /> Done</span>
-                    <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-white/20" /> Upcoming</span>
+                    <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-blue-fill" /> Current</span>
+                    <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-emerald-500" /> Done</span>
+                    <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-line-strong dark:bg-white/20" /> Upcoming</span>
                   </div>
                 </div>
 
@@ -1496,18 +1496,18 @@ export function LiveInterview(p: LiveInterviewProps) {
                         className={clsx(
                           "flex items-center justify-between py-2.5 px-3 rounded-xl border transition-all",
                           isCurrent
-                            ? "bg-blue/20 border-blue text-white shadow-[0_0_12px_rgba(79,70,229,0.35)] font-bold ring-1 ring-blue/50"
+                            ? "bg-blue/15 border-blue-fill text-ink font-bold ring-1 ring-blue-fill/40 shadow-xs"
                             : isDone
-                            ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300 font-medium"
-                            : "bg-[#141326] border-white/5 text-muted opacity-60"
+                            ? "bg-emerald-500/10 border-emerald-500/35 text-emerald-700 dark:text-emerald-300 font-medium"
+                            : "bg-panel-2 dark:bg-[#141326] border-line dark:border-white/5 text-muted opacity-75"
                         )}
                       >
                         <div className="flex flex-col text-left min-w-0 flex-1">
-                          <span className="num text-[11px] font-bold text-white/70">{idx + 1}</span>
-                          <span className="text-xs truncate max-w-full font-medium text-white/90">{label}</span>
+                          <span className="num text-[11px] font-bold text-muted">{idx + 1}</span>
+                          <span className="text-xs truncate max-w-full font-medium text-ink">{label}</span>
                         </div>
                         {isDone && (
-                          <div className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-black text-[10px] font-bold ml-2">
+                          <div className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white text-[10px] font-bold ml-2">
                             ✓
                           </div>
                         )}
@@ -1521,10 +1521,10 @@ export function LiveInterview(p: LiveInterviewProps) {
             {/* Right Column: Sidebar with Coaching & Live State */}
             <div className="space-y-4">
               {/* Card 1: Current question status */}
-              <div className="rounded-2xl bg-[#0f0e1c] border border-white/[0.08] p-5 shadow-xl space-y-4">
-                <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
-                  <span className="text-xs font-bold text-white">Current question</span>
-                  <span className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-semibold text-white">
+              <div className="rounded-2xl bg-panel dark:bg-[#0f0e1c] border border-line dark:border-white/[0.08] p-5 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_10px_28px_-6px_rgba(15,23,42,0.08)] dark:shadow-xl space-y-4">
+                <div className="flex items-center justify-between border-b border-line dark:border-white/[0.06] pb-3">
+                  <span className="text-xs font-bold text-ink">Current question</span>
+                  <span className="rounded-full bg-panel-2 border border-line px-2 py-0.5 text-[11px] font-semibold text-ink">
                     {qIndex + 1} of {queue.length}
                   </span>
                 </div>
@@ -1533,11 +1533,11 @@ export function LiveInterview(p: LiveInterviewProps) {
                   <div>
                     <div className="text-[11px] text-muted">Time on this question</div>
                     <div className="mt-1 flex items-baseline gap-1.5">
-                      <span className={clsx("num text-2xl font-bold tracking-tight", shownSec > target[1] ? "text-rose-400" : "text-white")}>
+                      <span className={clsx("num text-2xl font-bold tracking-tight", shownSec > target[1] ? "text-rose-500 dark:text-rose-400" : "text-ink")}>
                         {mmss(shownSec)}
                       </span>
                       {shownSec > target[1] && (
-                        <span className="text-[10px] font-semibold text-rose-400">
+                        <span className="text-[10px] font-semibold text-rose-500 dark:text-rose-400">
                           +{mmss(shownSec - target[1])}
                         </span>
                       )}
@@ -1545,15 +1545,15 @@ export function LiveInterview(p: LiveInterviewProps) {
                   </div>
                   <div>
                     <div className="text-[11px] text-muted">Planned time</div>
-                    <div className="mt-1 num text-2xl font-bold text-white/70 tracking-tight">
+                    <div className="mt-1 num text-2xl font-bold text-muted tracking-tight">
                       {mmss(target[1])}
                     </div>
                   </div>
                 </div>
 
-                <div className="border-t border-white/[0.06] pt-3 text-xs text-muted flex items-start gap-1.5">
-                  <span className="text-white font-medium shrink-0">→ Next:</span>
-                  <span className="truncate text-[#c9cad3]">
+                <div className="border-t border-line dark:border-white/[0.06] pt-3 text-xs text-muted flex items-start gap-1.5">
+                  <span className="text-ink font-medium shrink-0">→ Next:</span>
+                  <span className="truncate text-muted">
                     {session?.mode === "drill"
                       ? (queue[qIndex + 1]?.short || "Final report & analysis")
                       : (queue[qIndex + 1]?.group ? `Question ${qIndex + 2} · ${CATEGORY_LABEL[queue[qIndex + 1].group] || queue[qIndex + 1].short}` : queue[qIndex + 1] ? `Question ${qIndex + 2}` : "Final report & analysis")}
@@ -1562,28 +1562,28 @@ export function LiveInterview(p: LiveInterviewProps) {
               </div>
 
               {/* Card 2: Interviewer presence */}
-              <div className="rounded-2xl bg-[#0f0e1c] border border-white/[0.08] p-5 shadow-xl space-y-3.5">
+              <div className="rounded-2xl bg-panel dark:bg-[#0f0e1c] border border-line dark:border-white/[0.08] p-5 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_10px_28px_-6px_rgba(15,23,42,0.08)] dark:shadow-xl space-y-3.5">
                 <div className="flex items-center gap-3">
                   <div className={clsx(
-                    "flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#4f52f8] to-[#7c3aed] text-sm font-bold text-white transition-all duration-300 shadow-md",
-                    phase === "asking" ? "ring-2 ring-blue shadow-[0_0_15px_rgba(79,82,248,0.5)]" : phase === "answering" ? "ring-2 ring-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)]" : "ring-0"
+                    "flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-fill text-sm font-bold text-white transition-all duration-300 shadow-md",
+                    phase === "asking" ? "ring-2 ring-blue-fill shadow-[0_0_15px_rgba(0,113,227,0.45)]" : phase === "answering" ? "ring-2 ring-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.45)]" : "ring-0"
                   )}>
                     {name[0]}
                   </div>
                   <div className="min-w-0">
-                    <div className="text-xs font-semibold text-white truncate">{name}</div>
+                    <div className="text-xs font-semibold text-ink truncate">{name}</div>
                     <div className="text-[11px] text-muted truncate">
                       {phase === "asking" ? "● Speaking to you out loud..." : phase === "answering" ? "● Listening to your answer..." : phase === "thinking" ? "● Considering what you said..." : phase === "paused" ? "Interview paused" : "Waiting"}
                     </div>
                   </div>
                 </div>
-                <div className="text-xs text-[#8c8d9e] border-t border-white/[0.06] pt-2.5">
+                <div className="text-xs text-muted border-t border-line dark:border-white/[0.06] pt-2.5">
                   {followUpsLine}
                 </div>
-                <div className="border-t border-white/[0.06] pt-3 space-y-2">
+                <div className="border-t border-line dark:border-white/[0.06] pt-3 space-y-2">
                   <div className="flex items-center justify-between text-[11px]">
                     <span className="font-medium text-muted">Difficulty</span>
-                    <span className="font-semibold text-[#a5a1ff]">{DIFFICULTY_LABEL[difficultyFor(style)]}</span>
+                    <span className="font-semibold text-blue-soft dark:text-[#a5a1ff]">{DIFFICULTY_LABEL[difficultyFor(style)]}</span>
                   </div>
                   <Segmented<Difficulty>
                     label="Session difficulty"
@@ -1591,15 +1591,15 @@ export function LiveInterview(p: LiveInterviewProps) {
                     options={DIFFICULTIES}
                     value={difficultyFor(style)}
                     onChange={(d) => setStyle(styleFor(d))}
-                    className="!bg-[#16152a] !shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"
+                    className="!bg-panel-2 dark:!bg-[#16152a] !shadow-[inset_0_0_0_1px_var(--color-line)]"
                   />
                 </div>
               </div>
 
               {/* Card 3: Interactive Answer Checklist */}
-              <div className="rounded-2xl bg-[#0f0e1c] border border-white/[0.08] p-5 shadow-xl space-y-3">
-                <div className="flex items-center gap-2 text-xs font-bold text-white">
-                  <Icon name="target" size={14} className="text-purple-400" />
+              <div className="rounded-2xl bg-panel dark:bg-[#0f0e1c] border border-line dark:border-white/[0.08] p-5 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_10px_28px_-6px_rgba(15,23,42,0.08)] dark:shadow-xl space-y-3">
+                <div className="flex items-center gap-2 text-xs font-bold text-ink">
+                  <Icon name="target" size={14} className="text-blue-soft" />
                   <span>Answer checklist</span>
                 </div>
                 <div className="space-y-2 text-xs">
@@ -1614,15 +1614,15 @@ export function LiveInterview(p: LiveInterviewProps) {
                         key={chk.id}
                         type="button"
                         onClick={() => toggleChecklist(`${q.id}_${chk.id}`)}
-                        className="w-full flex items-center gap-2.5 text-left p-1.5 rounded-lg hover:bg-white/[0.03] transition-colors cursor-pointer group"
+                        className="w-full flex items-center gap-2.5 text-left p-1.5 rounded-lg hover:bg-panel-2 transition-colors cursor-pointer group"
                       >
                         <span className={clsx(
                           "flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors",
-                          isChecked ? "bg-emerald-500 border-emerald-500 text-white font-bold text-[10px]" : "border-white/20 bg-white/5 group-hover:border-white/40"
+                          isChecked ? "bg-emerald-500 border-emerald-500 text-white font-bold text-[10px]" : "border-line-strong bg-panel-2 group-hover:border-blue-fill"
                         )}>
                           {isChecked ? "✓" : ""}
                         </span>
-                        <span className={clsx("transition-colors", isChecked ? "text-muted line-through" : "text-[#c9cad3]")}>
+                        <span className={clsx("transition-colors", isChecked ? "text-muted line-through" : "text-ink/85")}>
                           {chk.label}
                         </span>
                       </button>
@@ -1634,17 +1634,17 @@ export function LiveInterview(p: LiveInterviewProps) {
           </div>
 
           {/* Bottom Waveform & Control Console */}
-          <div className="mt-4 rounded-2xl bg-[#0f0e1c] border border-white/[0.08] p-5 shadow-xl space-y-3">
+          <div className="mt-4 rounded-2xl bg-panel dark:bg-[#0f0e1c] border border-line dark:border-white/[0.08] p-5 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_10px_28px_-6px_rgba(15,23,42,0.08)] dark:shadow-xl space-y-3">
             {/* Waveform Bar */}
-            <div className="rounded-xl bg-[#141326] px-5 py-3 border border-white/[0.06]">
+            <div className="rounded-xl bg-panel-2 dark:bg-[#141326] px-5 py-3 border border-line dark:border-white/[0.06]">
               <div className="flex items-center justify-between pb-2 text-xs font-medium">
                 <div className="flex items-center gap-2">
-                  <span className="text-white font-semibold">{phase === "asking" ? name : phase === "error" ? "Notice" : "You"}</span>
-                  <span className={clsx("text-[11px]", phase === "error" ? "text-rose-400" : "text-muted")}>
+                  <span className="text-ink font-semibold">{phase === "asking" ? name : phase === "error" ? "Notice" : "You"}</span>
+                  <span className={clsx("text-[11px]", phase === "error" ? "text-rose-500 dark:text-rose-400" : "text-muted")}>
                     {tip}
                   </span>
                 </div>
-                <div className="num font-bold text-base text-white">
+                <div className="num font-bold text-base text-ink">
                   {mmss(shownSec)}
                 </div>
               </div>
@@ -1653,14 +1653,14 @@ export function LiveInterview(p: LiveInterviewProps) {
               <div aria-hidden className="flex h-12 items-center justify-between gap-[2px]">
                 {phase === "asking"
                   ? SPEAKER_BARS.map((v, i) => (
-                      <span key={i} className="w-[3px] animate-wave rounded-full bg-gradient-to-t from-blue to-indigo-300" style={{ height: `max(4px, ${Math.round(v * 100)}%)`, animationDelay: `${-((i * 0.137) % 1.3).toFixed(2)}s` }} />
+                      <span key={i} className="w-[3px] animate-wave rounded-full bg-gradient-to-t from-blue-fill to-blue-soft" style={{ height: `max(4px, ${Math.round(v * 100)}%)`, animationDelay: `${-((i * 0.137) % 1.3).toFixed(2)}s` }} />
                     ))
                   : Array.from({ length: BARS }, (_, i) => {
                       const v = i < mic.bars.length ? mic.bars[i] : i === mic.bars.length && phase === "answering" ? mic.level : null;
                       return v == null ? (
-                        <span key={i} className="h-0.5 w-[3px] rounded-full bg-white/10" />
+                        <span key={i} className="h-0.5 w-[3px] rounded-full bg-line-strong dark:bg-white/10" />
                       ) : (
-                        <span key={i} className={clsx("w-[3px] rounded-full transition-all", i >= mic.bars.length - 8 && phase === "answering" ? "bg-gradient-to-t from-indigo-500 to-purple-400" : "bg-gradient-to-t from-blue to-indigo-400")} style={{ height: `max(4px, ${Math.round(v * 100)}%)` }} />
+                        <span key={i} className={clsx("w-[3px] rounded-full transition-all", i >= mic.bars.length - 8 && phase === "answering" ? "bg-emerald-500" : "bg-blue-fill")} style={{ height: `max(4px, ${Math.round(v * 100)}%)` }} />
                       );
                     })}
               </div>
@@ -1672,9 +1672,9 @@ export function LiveInterview(p: LiveInterviewProps) {
             </div>
 
             {/* Controls Row - Sticky bottom for desktop & mobile (UX-1) */}
-            <div className="sticky bottom-0 z-40 -mx-4 -mb-4 px-4 py-3 bg-[#13141b]/95 backdrop-blur-md border-t border-white/10 sm:static sm:bg-transparent sm:border-0 sm:p-0 flex flex-wrap items-center justify-between gap-3">
+            <div className="sticky bottom-0 z-40 -mx-4 -mb-4 px-4 py-3 bg-panel/95 dark:bg-[#13141b]/95 backdrop-blur-md border-t border-line dark:border-white/10 sm:static sm:bg-transparent sm:border-0 sm:p-0 flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2 text-xs text-muted">
-                <kbd className="rounded bg-[#19182d] border border-white/15 px-2.5 py-1 font-mono text-xs font-semibold text-white shadow-sm">
+                <kbd className="rounded bg-panel-2 dark:bg-[#19182d] border border-line-strong dark:border-white/15 px-2.5 py-1 font-mono text-xs font-semibold text-ink dark:text-white shadow-xs">
                   Space
                 </kbd>
                 <span>{footNote ?? "Press Space to finish your answer"}</span>
@@ -1683,7 +1683,7 @@ export function LiveInterview(p: LiveInterviewProps) {
               <div className="flex flex-wrap items-center gap-2.5">
                 {/* Single Skip Control (UX-3) */}
                 {Boolean(session) && turn.kind === "follow-up" && (phase === "asking" || phase === "answering" || phase === "paused") && (
-                  <Button onClick={() => void handleSkipQuestion()} className="rounded-xl text-xs hover:border-amber-500/40 hover:text-amber-300">
+                  <Button onClick={() => void handleSkipQuestion()} className="rounded-xl text-xs hover:border-amber-500/40 hover:text-amber-600 dark:hover:text-amber-300">
                     <Icon name="fastForward" size={14} />
                     Skip follow-up
                   </Button>
@@ -1698,7 +1698,7 @@ export function LiveInterview(p: LiveInterviewProps) {
                   <button
                     type="button"
                     disabled
-                    className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#4f52f8] via-[#5c5ffc] to-[#6d5eff] opacity-80 pointer-events-none px-6 py-2.5 text-xs font-semibold text-white border border-white/20 shadow-[0_4px_20px_rgba(79,82,248,0.45)] cursor-wait"
+                    className="flex items-center gap-2 rounded-xl bg-blue-fill opacity-80 pointer-events-none px-6 py-2.5 text-xs font-semibold text-white border border-blue-fill/30 shadow-md cursor-wait"
                   >
                     <span className="h-3.5 w-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin shrink-0" />
                     <span>{phase === "thinking" ? "Analyzing answer..." : phase === "finishing" ? "Writing your report…" : "Scoring answers…"}</span>
@@ -1759,7 +1759,7 @@ export function LiveInterview(p: LiveInterviewProps) {
                     <button
                       type="button"
                       onClick={() => voice.current?.cancel()}
-                      className="group flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#4f52f8] via-[#5c5ffc] to-[#6d5eff] hover:from-[#5b5efd] hover:to-[#7b6dff] px-6 py-2.5 text-xs font-semibold text-white border border-white/20 shadow-[0_4px_20px_rgba(79,82,248,0.45)] hover:shadow-[0_6px_26px_rgba(79,82,248,0.7)] transition-all cursor-pointer"
+                      className="pro-btn-glow group flex items-center gap-2 rounded-xl bg-blue-fill hover:bg-blue-hover px-6 py-2.5 text-xs font-semibold text-white border border-blue-fill/30 shadow-md transition-all cursor-pointer"
                     >
                       <Icon name="mic" size={15} className="group-hover:scale-110 transition-transform" />
                       <span>Start answering</span>
@@ -1782,7 +1782,7 @@ export function LiveInterview(p: LiveInterviewProps) {
                     <button
                       type="button"
                       onClick={() => void finish()}
-                      className="group flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#4f52f8] via-[#5c5ffc] to-[#6d5eff] hover:from-[#5b5efd] hover:to-[#7b6dff] px-6 py-2.5 text-xs font-semibold text-white border border-white/20 shadow-[0_4px_20px_rgba(79,82,248,0.45)] hover:shadow-[0_6px_26px_rgba(79,82,248,0.7)] transition-all cursor-pointer active:scale-[0.98]"
+                      className="pro-btn-glow group flex items-center gap-2 rounded-xl bg-blue-fill hover:bg-blue-hover px-6 py-2.5 text-xs font-semibold text-white border border-blue-fill/30 shadow-md transition-all cursor-pointer active:scale-[0.98]"
                     >
                       <Icon name="check" size={15} strokeWidth={2.4} className="group-hover:scale-110 transition-transform" />
                       <span>Finish answer</span>

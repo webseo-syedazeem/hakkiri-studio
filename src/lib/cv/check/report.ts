@@ -128,7 +128,7 @@ export function checkReport(check: DocCheck, now = new Date()): CheckReport {
           quote: r.requirement.quote,
           priority: r.requirement.priority === "required" ? "required" : "preferred",
           status: STATUS[r.status],
-          evidence: r.lines[0]?.text ?? null,
+          evidence: (r.lines.find((l) => l.kind === "bullet") ?? r.lines[0])?.text ?? null,
           note: r.note,
         })),
       };

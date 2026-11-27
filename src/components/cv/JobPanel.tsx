@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { type CvDoc, type Locator, type Requirement } from "@/lib/cv/schema";
+import { bandOf } from "@/lib/cv/score/band";
 import { confirmExperience, homesFor } from "@/lib/cv/tailor/confirm";
 import { jobFit } from "@/lib/cv/tailor/fit";
 import { extractRequirements } from "@/lib/cv/tailor/requirements";
@@ -111,7 +112,12 @@ export function JobPanel({ cv, update, word, onShow, say }: { cv: CvDoc; update:
           <b>
             {fit.counts.met} of {fit.rows.length} things the advert asks for are on your {word}
           </b>
-          <span className="cv-meter" aria-hidden="true" style={{ marginTop: 8 }}>
+          <span
+            className="cv-meter"
+            data-band={bandOf(Math.round((fit.counts.met / Math.max(1, fit.rows.length)) * 100)).key}
+            aria-hidden="true"
+            style={{ marginTop: 8 }}
+          >
             <span style={{ width: `${Math.round((fit.counts.met / Math.max(1, fit.rows.length)) * 100)}%` }} />
           </span>
         </div>

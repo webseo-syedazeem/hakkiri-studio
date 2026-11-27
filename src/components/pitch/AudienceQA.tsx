@@ -337,7 +337,7 @@ export function AudienceQA(p: AudienceQAProps) {
         <div role="img" aria-label={phase === "finishing" ? "Q&A finished" : `Question ${k + 1} of ${count}`} className="flex items-center gap-3">
           <div className="flex gap-1">
             {Array.from({ length: count }, (_, i) => (
-              <span key={i} className={clsx("h-1 w-9 rounded-sm", phase === "finishing" || i < k ? "bg-muted" : i === k && phase !== "ready" ? "bg-white" : "bg-white/20")} />
+              <span key={i} className={clsx("h-1 w-9 rounded-sm", phase === "finishing" || i < k ? "bg-blue-fill/50 dark:bg-muted" : i === k && phase !== "ready" ? "bg-blue-fill dark:bg-white" : "bg-line-strong dark:bg-white/20")} />
             ))}
           </div>
           <span className="num text-[13px] text-muted">{phase === "finishing" ? "Q&A finished" : `Question ${k + 1} of ${count}`}</span>
@@ -386,7 +386,7 @@ export function AudienceQA(p: AudienceQAProps) {
                 </div>
                 <div className="mt-3 flex gap-[3px]" aria-hidden>
                   {Array.from({ length: Math.max(1, answered.current.size) }, (_, i) => (
-                    <span key={i} className={clsx("h-2 flex-1 rounded-[2px]", i < scored ? "bg-blue" : "bg-white/[0.08]")} />
+                    <span key={i} className={clsx("h-2 flex-1 rounded-[2px]", i < scored ? "bg-blue-fill" : "bg-line-strong/60 dark:bg-white/[0.08]")} />
                   ))}
                 </div>
               </aside>
@@ -441,18 +441,18 @@ export function AudienceQA(p: AudienceQAProps) {
           <>
             {/* Left Column: Portrait Card of Asker + Question Content */}
             <div className="space-y-4">
-              <div className="relative w-full rounded-2xl overflow-hidden bg-[#0c0b16] border border-white/10 p-5 shadow-2xl flex items-center justify-between">
+              <div className="relative w-full rounded-2xl overflow-hidden bg-panel dark:bg-[#0c0b16] border border-line dark:border-white/10 p-5 shadow-md flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-[#4f52f8] to-[#7c3aed] text-sm font-bold text-white shadow-lg">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-fill text-sm font-bold text-white shadow-md">
                     {persona.name.charAt(0)}
                   </div>
                   <div>
-                    <p className="font-semibold text-sm text-white">{persona.name}</p>
+                    <p className="font-semibold text-sm text-ink">{persona.name}</p>
                     <p className="text-xs text-muted">{persona.title}</p>
                   </div>
                 </div>
                 {phase === "asking" ? (
-                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-semibold">
+                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-300 text-xs font-semibold">
                     <span className="relative flex h-2 w-2">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                       <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
@@ -470,9 +470,9 @@ export function AudienceQA(p: AudienceQAProps) {
               <div className="animate-rise space-y-2">
                 <div className="flex items-center gap-2">
                   <Chip tone={sceptic ? "red" : "blue"}>{QA_STYLE_LABEL[style]}</Chip>
-                  <span className="text-xs sm:text-sm font-semibold text-white/90">{persona.name}, {persona.title}</span>
+                  <span className="text-xs sm:text-sm font-semibold text-ink/90">{persona.name}, {persona.title}</span>
                 </div>
-                <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-white tracking-tight leading-snug">
+                <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-ink tracking-tight leading-snug">
                   {press ? press.question : q?.text}
                 </h1>
                 <p className="text-xs text-muted leading-relaxed">
@@ -543,14 +543,14 @@ export function AudienceQA(p: AudienceQAProps) {
           <div aria-hidden className="flex h-[clamp(64px,12vh,112px)] items-center justify-between">
             {phase === "asking"
               ? SPEAKER_BARS.map((v, i) => (
-                  <span key={i} className="w-[3px] animate-wave rounded-full bg-white/78" style={{ height: `max(4px, ${Math.round(v * 100)}%)`, animationDelay: `${-((i * 0.137) % 1.3).toFixed(2)}s` }} />
+                  <span key={i} className="w-[3px] animate-wave rounded-full bg-blue-fill dark:bg-white/78" style={{ height: `max(4px, ${Math.round(v * 100)}%)`, animationDelay: `${-((i * 0.137) % 1.3).toFixed(2)}s` }} />
                 ))
               : Array.from({ length: BARS }, (_, i) => {
                   const v = phase === "ready" || phase === "preparing" ? null : i < mic.bars.length ? mic.bars[i] : i === mic.bars.length && phase === "answering" ? mic.level : null;
                   return v == null ? (
-                    <span key={i} className="h-0.5 w-[3px] rounded-full bg-white/12" />
+                    <span key={i} className="h-0.5 w-[3px] rounded-full bg-line-strong dark:bg-white/12" />
                   ) : (
-                    <span key={i} className={clsx("w-[3px] rounded-full", i >= mic.bars.length - 8 && phase === "answering" ? "bg-blue" : "bg-wave")} style={{ height: `max(4px, ${Math.round(v * 100)}%)` }} />
+                    <span key={i} className={clsx("w-[3px] rounded-full", i >= mic.bars.length - 8 && phase === "answering" ? "bg-emerald-500" : "bg-blue-fill")} style={{ height: `max(4px, ${Math.round(v * 100)}%)` }} />
                   );
                 })}
           </div>

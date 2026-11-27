@@ -257,24 +257,24 @@ export function Rehearsal(p: RehearsalProps) {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#07060f] text-white">
-      {/* 1. TOP HEADER (Matching Image 1) */}
-      <header className="flex h-16 shrink-0 items-center justify-between border-b border-white/[0.08] px-6 lg:px-10 bg-[#0b0a17]">
+    <div className="flex min-h-screen flex-col bg-booth dark:bg-[#07060f] text-ink">
+      {/* 1. TOP HEADER */}
+      <header className="flex h-16 shrink-0 items-center justify-between border-b border-line dark:border-white/[0.08] px-6 lg:px-10 bg-panel dark:bg-[#0b0a17] shadow-2xs">
         {/* Left info */}
         <div>
           <Link
             href={`/presentations/${p.presentationId}`}
-            className="inline-flex items-center gap-1.5 text-xs text-muted hover:text-white transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs text-muted hover:text-ink transition-colors"
           >
             <Icon name="back" size={13} />
             <span>Presentations</span>
-            <span className="text-white/20">/</span>
-            <span className="text-[#c9cad3]">{p.heading.split(",")[0] || "Q1 product roadmap"}</span>
+            <span className="text-dim/40">/</span>
+            <span className="text-ink/85">{p.heading.split(",")[0] || "Q1 product roadmap"}</span>
           </Link>
 
           <div className="flex items-center gap-2.5 mt-0.5">
-            <h1 className="text-base font-bold text-white tracking-tight">{p.heading.split(",")[0] || "Q1 product roadmap"}</h1>
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+            <h1 className="text-base font-bold text-ink tracking-tight">{p.heading.split(",")[0] || "Q1 product roadmap"}</h1>
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue/15 text-blue-soft border border-blue/30">
               Live rehearsal
             </span>
             <span className="hidden sm:inline text-xs text-muted">
@@ -287,19 +287,19 @@ export function Rehearsal(p: RehearsalProps) {
         <div className="flex items-center gap-3">
           {/* Recording badge */}
           {phase === "running" && (
-            <span className="inline-flex items-center gap-2 rounded-full bg-rose-500/15 border border-rose-500/25 px-3 py-1 text-xs font-semibold text-rose-300 animate-pulse">
+            <span className="inline-flex items-center gap-2 rounded-full bg-rose-500/15 border border-rose-500/30 px-3 py-1 text-xs font-semibold text-rose-600 dark:text-rose-300 animate-pulse">
               <span className="h-2 w-2 rounded-full bg-rose-500" />
               Recording
             </span>
           )}
           {phase === "paused" && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 border border-amber-500/25 px-3 py-1 text-xs font-semibold text-amber-300">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 border border-amber-500/30 px-3 py-1 text-xs font-semibold text-amber-700 dark:text-amber-300">
               Paused
             </span>
           )}
 
           {/* Timer */}
-          <div className="num font-bold text-sm tracking-tight text-white bg-[#141326] border border-white/10 px-3 py-1 rounded-xl">
+          <div className="num font-bold text-sm tracking-tight text-ink bg-panel-2 dark:bg-[#141326] border border-line dark:border-white/10 px-3 py-1 rounded-xl">
             {mmss(elapsed)} <span className="text-muted font-normal">/ {mmss(budget)}</span>
           </div>
 
@@ -308,7 +308,7 @@ export function Rehearsal(p: RehearsalProps) {
             <button
               type="button"
               onClick={togglePause}
-              className="flex items-center gap-1.5 text-xs font-medium text-white px-3 py-1.5 rounded-xl bg-[#141326] border border-white/10 hover:border-white/25 transition-all"
+              className="flex items-center gap-1.5 text-xs font-medium text-ink px-3 py-1.5 rounded-xl bg-panel-2 dark:bg-[#141326] border border-line-strong dark:border-white/10 hover:border-blue/40 transition-all cursor-pointer"
             >
               <Icon name="pause" size={13} />
               <span>{phase === "paused" ? "Resume" : "Pause"}</span>
@@ -320,16 +320,16 @@ export function Rehearsal(p: RehearsalProps) {
             <button
               type="button"
               onClick={() => void finish()}
-              className="flex items-center gap-1.5 text-xs font-semibold text-white px-3.5 py-1.5 rounded-xl bg-white/[0.08] border border-white/15 hover:bg-rose-500/20 hover:border-rose-500/40 hover:text-rose-200 transition-all"
+              className="flex items-center gap-1.5 text-xs font-semibold text-ink px-3.5 py-1.5 rounded-xl bg-panel-2 border border-line-strong hover:bg-rose-500/15 hover:border-rose-500/40 hover:text-rose-600 dark:hover:text-rose-200 transition-all cursor-pointer"
             >
-              <span className="h-2.5 w-2.5 rounded-sm bg-white" />
+              <span className="h-2.5 w-2.5 rounded-sm bg-rose-500 dark:bg-white" />
               <span>End rehearsal</span>
             </button>
           ) : phase === "ready" ? (
             <button
               type="button"
               onClick={() => void start()}
-              className="pro-btn-glow flex items-center gap-1.5 text-xs font-semibold text-white px-4 py-1.5 rounded-xl bg-blue shadow-lg"
+              className="pro-btn-glow flex items-center gap-1.5 text-xs font-semibold text-white px-4 py-1.5 rounded-xl bg-blue-fill hover:bg-blue-hover shadow-md cursor-pointer"
             >
               <Icon name="play" size={13} />
               <span>Start</span>
@@ -343,9 +343,9 @@ export function Rehearsal(p: RehearsalProps) {
       </header>
 
       {problem && (
-        <div role="alert" className="mx-6 lg:mx-10 mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-rose-500/15 border border-rose-500/30 p-4 text-xs text-rose-200">
+        <div role="alert" className="mx-6 lg:mx-10 mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-rose-500/15 border border-rose-500/30 p-4 text-xs text-rose-700 dark:text-rose-200">
           <div className="flex items-center gap-2">
-            <Icon name="sparkle" size={16} className="text-rose-400 shrink-0" />
+            <Icon name="sparkle" size={16} className="text-rose-500 shrink-0" />
             <span>{problem.message}</span>
           </div>
           <div className="flex items-center gap-2">
@@ -367,7 +367,7 @@ export function Rehearsal(p: RehearsalProps) {
                   a.click();
                   URL.revokeObjectURL(url);
                 }}
-                className="rounded-lg bg-white/10 px-3 py-1.5 font-semibold text-white hover:bg-white/20 transition-colors cursor-pointer"
+                className="rounded-lg bg-panel border border-line px-3 py-1.5 font-semibold text-ink hover:bg-panel-2 transition-colors cursor-pointer"
               >
                 Download recording
               </button>
@@ -381,7 +381,7 @@ export function Rehearsal(p: RehearsalProps) {
         {/* CENTER / LEFT: The Big Slide + Strip + Progress + Navigation */}
         <div className="flex flex-col gap-4 min-w-0">
           {/* Main Slide Card */}
-          <div className="relative rounded-2xl bg-white p-6 shadow-2xl border border-white/20 overflow-hidden text-gray-900 aspect-[16/10] flex flex-col justify-between">
+          <div className="relative rounded-2xl bg-white p-6 shadow-xl border border-line overflow-hidden text-gray-900 aspect-[16/10] flex flex-col justify-between">
             {slide?.layout === "cards" ? (
               <div className="flex flex-col justify-between h-full py-4 px-2">
                 <h2 className="text-2xl lg:text-3xl font-extrabold text-[#111827] tracking-tight">{slide.title}</h2>
@@ -406,12 +406,12 @@ export function Rehearsal(p: RehearsalProps) {
           </div>
 
           {/* Carousel Thumbnails Strip */}
-          <div className="flex items-center gap-2 p-2.5 rounded-xl bg-[#0d0c1c] border border-white/[0.08] shadow-lg">
+          <div className="flex items-center gap-2 p-2.5 rounded-xl bg-panel dark:bg-[#0d0c1c] border border-line dark:border-white/[0.08] shadow-sm">
             <button
               type="button"
               onClick={() => go(index - 1)}
               disabled={index === 0}
-              className="p-1 rounded-lg text-muted hover:text-white disabled:opacity-30 transition-colors"
+              className="p-1 rounded-lg text-muted hover:text-ink disabled:opacity-30 transition-colors cursor-pointer"
             >
               <Icon name="chevronRight" size={16} className="rotate-180" />
             </button>
@@ -425,14 +425,14 @@ export function Rehearsal(p: RehearsalProps) {
                     type="button"
                     onClick={() => go(idx)}
                     className={clsx(
-                      "flex-shrink-0 w-24 h-15 rounded-lg bg-white p-1.5 flex flex-col justify-between text-left transition-all border shadow-sm relative overflow-hidden",
-                      active ? "border-indigo-400 ring-2 ring-indigo-500/50 scale-105" : "border-gray-200 opacity-60 hover:opacity-90"
+                      "flex-shrink-0 w-24 h-15 rounded-lg bg-white p-1.5 flex flex-col justify-between text-left transition-all border shadow-sm relative overflow-hidden cursor-pointer",
+                      active ? "border-blue-fill ring-2 ring-blue-fill/40 scale-105" : "border-gray-200 opacity-60 hover:opacity-90"
                     )}
                   >
                     <span className="text-[8px] font-bold text-gray-800 line-clamp-1">{s.title}</span>
                     <div className="flex items-center justify-between text-[7px] text-gray-500">
                       <span className="num font-semibold">{s.n}</span>
-                      <span className="h-1.5 w-6 rounded-full bg-indigo-500/40" />
+                      <span className="h-1.5 w-6 rounded-full bg-blue-fill/40" />
                     </div>
                   </button>
                 );
@@ -443,32 +443,32 @@ export function Rehearsal(p: RehearsalProps) {
               type="button"
               onClick={() => go(index + 1)}
               disabled={index === scope.length - 1}
-              className="p-1 rounded-lg text-muted hover:text-white disabled:opacity-30 transition-colors"
+              className="p-1 rounded-lg text-muted hover:text-ink disabled:opacity-30 transition-colors cursor-pointer"
             >
               <Icon name="chevronRight" size={16} />
             </button>
           </div>
 
           {/* Presentation Progress Bar */}
-          <div className="p-4 rounded-xl bg-[#0d0c1c] border border-white/[0.08] shadow-lg">
+          <div className="p-4 rounded-xl bg-panel dark:bg-[#0d0c1c] border border-line dark:border-white/[0.08] shadow-sm">
             <div className="flex items-center justify-between text-xs mb-2.5">
-              <div className="flex items-center gap-1.5 text-white font-medium">
+              <div className="flex items-center gap-1.5 text-ink font-medium">
                 <span>Presentation progress</span>
                 <Icon name="info" size={13} className="text-muted" />
               </div>
 
               {/* Legend */}
               <div className="flex items-center gap-4 text-[11px]">
-                <span className="inline-flex items-center gap-1.5 text-indigo-300">
-                  <span className="h-2 w-2 rounded-full bg-indigo-500" />
+                <span className="inline-flex items-center gap-1.5 text-blue-soft">
+                  <span className="h-2 w-2 rounded-full bg-blue-fill" />
                   On time
                 </span>
-                <span className="inline-flex items-center gap-1.5 text-rose-300">
+                <span className="inline-flex items-center gap-1.5 text-rose-500 dark:text-rose-300">
                   <span className="h-2 w-2 rounded-full bg-rose-500" />
                   Over time
                 </span>
                 <span className="inline-flex items-center gap-1.5 text-muted">
-                  <span className="h-2 w-2 rounded-full bg-white/20" />
+                  <span className="h-2 w-2 rounded-full bg-line-strong dark:bg-white/20" />
                   Not started
                 </span>
               </div>
@@ -484,7 +484,7 @@ export function Rehearsal(p: RehearsalProps) {
                     <div
                       className={clsx(
                         "h-2 w-full rounded-full transition-all",
-                        !visited ? "bg-white/[0.08]" : isOver ? "bg-rose-500" : "bg-indigo-500"
+                        !visited ? "bg-line dark:bg-white/[0.08]" : isOver ? "bg-rose-500" : "bg-blue-fill"
                       )}
                     />
                     <span className="text-[10px] num text-muted">{s.n}</span>
@@ -495,10 +495,10 @@ export function Rehearsal(p: RehearsalProps) {
           </div>
 
           {/* Bottom Control Bar */}
-          <div className="flex items-center justify-between p-3.5 rounded-xl bg-[#0d0c1c] border border-white/[0.08] shadow-lg">
+          <div className="flex items-center justify-between p-3.5 rounded-xl bg-panel dark:bg-[#0d0c1c] border border-line dark:border-white/[0.08] shadow-sm">
             <div className="text-xs text-muted flex items-center gap-1.5">
-              <span className="px-1.5 py-0.5 rounded bg-white/10 text-white font-mono text-[10px]">←</span>
-              <span className="px-1.5 py-0.5 rounded bg-white/10 text-white font-mono text-[10px]">→</span>
+              <span className="px-1.5 py-0.5 rounded bg-panel-2 border border-line text-ink font-mono text-[10px]">←</span>
+              <span className="px-1.5 py-0.5 rounded bg-panel-2 border border-line text-ink font-mono text-[10px]">→</span>
               <span>Use arrow keys to change slides</span>
             </div>
 
@@ -507,7 +507,7 @@ export function Rehearsal(p: RehearsalProps) {
                 type="button"
                 onClick={() => go(index - 1)}
                 disabled={index === 0}
-                className="px-3.5 py-2 rounded-xl bg-[#141326] border border-white/10 hover:border-white/20 text-xs font-semibold text-white disabled:opacity-40 transition-all flex items-center gap-1.5"
+                className="px-3.5 py-2 rounded-xl bg-panel-2 dark:bg-[#141326] border border-line-strong dark:border-white/10 hover:border-blue/40 text-xs font-semibold text-ink disabled:opacity-40 transition-all flex items-center gap-1.5 cursor-pointer"
               >
                 <Icon name="chevronRight" size={13} className="rotate-180" />
                 <span>Previous slide</span>
@@ -518,7 +518,7 @@ export function Rehearsal(p: RehearsalProps) {
                 type="button"
                 onClick={togglePause}
                 title={phase === "running" ? "Pause" : "Start speaking"}
-                className="relative flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-[0_0_24px_rgba(79,70,229,0.55)] hover:scale-105 transition-all"
+                className="relative flex h-12 w-12 items-center justify-center rounded-full bg-blue-fill hover:bg-blue-hover text-white shadow-[0_4px_20px_rgba(0,113,227,0.45)] hover:scale-105 transition-all cursor-pointer"
               >
                 <Icon name="mic" size={20} />
               </button>
@@ -527,7 +527,7 @@ export function Rehearsal(p: RehearsalProps) {
                 type="button"
                 onClick={() => go(index + 1)}
                 disabled={index === scope.length - 1}
-                className="px-3.5 py-2 rounded-xl bg-[#141326] border border-white/10 hover:border-white/20 text-xs font-semibold text-white disabled:opacity-40 transition-all flex items-center gap-1.5"
+                className="px-3.5 py-2 rounded-xl bg-panel-2 dark:bg-[#141326] border border-line-strong dark:border-white/10 hover:border-blue/40 text-xs font-semibold text-ink disabled:opacity-40 transition-all flex items-center gap-1.5 cursor-pointer"
               >
                 <span>Next slide</span>
                 <Icon name="chevronRight" size={13} />
@@ -536,18 +536,18 @@ export function Rehearsal(p: RehearsalProps) {
           </div>
         </div>
 
-        {/* RIGHT SIDEBAR (3 Cards matching Image 1) */}
+        {/* RIGHT SIDEBAR (3 Cards) */}
         <div className="flex flex-col gap-4">
           {/* Card 1: Current slide */}
-          <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-5 shadow-xl">
-            <div className="flex items-center justify-between pb-3 border-b border-white/[0.07]">
+          <div className="rounded-2xl bg-panel dark:bg-[#0d0c1c] border border-line dark:border-white/[0.08] p-5 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_10px_28px_-6px_rgba(15,23,42,0.08)] dark:shadow-xl">
+            <div className="flex items-center justify-between pb-3 border-b border-line dark:border-white/[0.07]">
               <span className="text-xs font-semibold text-muted uppercase tracking-wider">Current slide</span>
               <div className="flex items-center gap-1">
                 <button
                   type="button"
                   onClick={() => go(index - 1)}
                   disabled={index === 0}
-                  className="p-1 rounded text-muted hover:text-white disabled:opacity-30"
+                  className="p-1 rounded text-muted hover:text-ink disabled:opacity-30 cursor-pointer"
                 >
                   <Icon name="chevronRight" size={14} className="rotate-180" />
                 </button>
@@ -555,7 +555,7 @@ export function Rehearsal(p: RehearsalProps) {
                   type="button"
                   onClick={() => go(index + 1)}
                   disabled={index === scope.length - 1}
-                  className="p-1 rounded text-muted hover:text-white disabled:opacity-30"
+                  className="p-1 rounded text-muted hover:text-ink disabled:opacity-30 cursor-pointer"
                 >
                   <Icon name="chevronRight" size={14} />
                 </button>
@@ -563,21 +563,21 @@ export function Rehearsal(p: RehearsalProps) {
             </div>
 
             <div className="mt-3">
-              <div className="text-2xl font-bold text-white tracking-tight num">
+              <div className="text-2xl font-bold text-ink tracking-tight num">
                 {slide?.n} <span className="text-muted text-base font-normal">of {scope.length}</span>
               </div>
 
               <div className="mt-4 grid grid-cols-2 gap-4">
                 {/* Time on slide */}
-                <div className="p-3 rounded-xl bg-[#141326] border border-white/10">
+                <div className="p-3 rounded-xl bg-panel-2 dark:bg-[#141326] border border-line dark:border-white/10">
                   <div className="flex items-center gap-1 text-[11px] text-muted">
                     <Icon name="clock" size={12} />
                     <span>Time on this slide</span>
                   </div>
                   <div className="mt-1 flex items-baseline gap-2">
-                    <span className="text-xl font-bold text-white num">{mmss(onSlide)}</span>
+                    <span className="text-xl font-bold text-ink num">{mmss(onSlide)}</span>
                     {overSlide > 0 && (
-                      <span className="px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-rose-500/15 text-rose-300 border border-rose-500/25">
+                      <span className="px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-rose-500/15 text-rose-600 dark:text-rose-300 border border-rose-500/25">
                         +{mmss(overSlide)} over plan
                       </span>
                     )}
@@ -585,28 +585,28 @@ export function Rehearsal(p: RehearsalProps) {
                 </div>
 
                 {/* Planned time */}
-                <div className="p-3 rounded-xl bg-[#141326] border border-white/10">
+                <div className="p-3 rounded-xl bg-panel-2 dark:bg-[#141326] border border-line dark:border-white/10">
                   <div className="text-[11px] text-muted">Planned time</div>
-                  <div className="mt-1 text-xl font-bold text-white num">{mmss(plannedSlideSec)}</div>
+                  <div className="mt-1 text-xl font-bold text-ink num">{mmss(plannedSlideSec)}</div>
                 </div>
               </div>
 
               {/* Next slide title */}
               {nextSlide && (
-                <div className="mt-3 flex items-center gap-2 text-xs text-muted pt-3 border-t border-white/[0.06]">
-                  <Icon name="chevronRight" size={13} className="text-indigo-400" />
+                <div className="mt-3 flex items-center gap-2 text-xs text-muted pt-3 border-t border-line dark:border-white/[0.06]">
+                  <Icon name="chevronRight" size={13} className="text-blue-soft" />
                   <span className="text-muted">Next slide:</span>
-                  <span className="text-white font-medium truncate">{nextSlide.title}</span>
+                  <span className="text-ink font-medium truncate">{nextSlide.title}</span>
                 </div>
               )}
             </div>
           </div>
 
           {/* Card 2: Speaker notes */}
-          <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-5 shadow-xl">
-            <div className="flex items-center justify-between pb-3 border-b border-white/[0.07]">
-              <div className="flex items-center gap-2 text-sm font-semibold text-white">
-                <Icon name="doc" size={15} className="text-indigo-400" />
+          <div className="rounded-2xl bg-panel dark:bg-[#0d0c1c] border border-line dark:border-white/[0.08] p-5 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_10px_28px_-6px_rgba(15,23,42,0.08)] dark:shadow-xl">
+            <div className="flex items-center justify-between pb-3 border-b border-line dark:border-white/[0.07]">
+              <div className="flex items-center gap-2 text-sm font-semibold text-ink">
+                <Icon name="doc" size={15} className="text-blue-soft" />
                 <span>Speaker notes</span>
               </div>
               <div className="flex items-center gap-2">
@@ -616,8 +616,8 @@ export function Rehearsal(p: RehearsalProps) {
                   className={clsx(
                     "flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all border cursor-pointer",
                     isSpeakingNotes
-                      ? "bg-rose-500/15 border-rose-500/30 text-rose-300 hover:bg-rose-500/25 animate-pulse"
-                      : "bg-indigo-500/15 border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/25"
+                      ? "bg-rose-500/15 border-rose-500/30 text-rose-600 dark:text-rose-300 hover:bg-rose-500/25 animate-pulse"
+                      : "bg-blue/10 border-blue/30 text-blue-soft hover:bg-blue/20"
                   )}
                   title={isSpeakingNotes ? "Stop reading" : "Read speaker notes aloud"}
                 >
@@ -629,7 +629,7 @@ export function Rehearsal(p: RehearsalProps) {
                   onClick={() => setSpeakerNotesOpen((o) => !o)}
                   className={clsx(
                     "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out",
-                    speakerNotesOpen ? "bg-indigo-600" : "bg-white/20"
+                    speakerNotesOpen ? "bg-blue-fill" : "bg-line-strong dark:bg-white/20"
                   )}
                 >
                   <span
@@ -644,10 +644,10 @@ export function Rehearsal(p: RehearsalProps) {
 
             {speakerNotesOpen && (
               slideNotes.length > 0 ? (
-                <ul className="mt-3.5 space-y-2 text-xs text-[#c9cad3] leading-relaxed animate-rise">
+                <ul className="mt-3.5 space-y-2 text-xs text-muted leading-relaxed animate-rise">
                   {slideNotes.map((note, i) => (
                     <li key={i} className="flex items-start gap-2">
-                      <span className="h-1.5 w-1.5 rounded-full bg-indigo-400 mt-1.5 shrink-0" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-blue-fill mt-1.5 shrink-0" />
                       <span>{note}</span>
                     </li>
                   ))}
@@ -664,12 +664,12 @@ export function Rehearsal(p: RehearsalProps) {
           </div>
 
           {/* Card 3: Rehearsal checklist */}
-          <div className="rounded-2xl bg-[#0d0c1c] border border-white/[0.08] p-5 shadow-xl">
-            <div className="flex items-center gap-2 pb-3 border-b border-white/[0.07]">
-              <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-500/15 text-indigo-300">
+          <div className="rounded-2xl bg-panel dark:bg-[#0d0c1c] border border-line dark:border-white/[0.08] p-5 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_10px_28px_-6px_rgba(15,23,42,0.08)] dark:shadow-xl">
+            <div className="flex items-center gap-2 pb-3 border-b border-line dark:border-white/[0.07]">
+              <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue/10 text-blue-soft">
                 <Icon name="target" size={14} />
               </div>
-              <span className="text-sm font-semibold text-white">Rehearsal checklist</span>
+              <span className="text-sm font-semibold text-ink">Rehearsal checklist</span>
             </div>
 
             <div className="mt-3.5 space-y-2.5">
@@ -684,17 +684,17 @@ export function Rehearsal(p: RehearsalProps) {
                     key={i}
                     type="button"
                     onClick={() => toggleCheck(i)}
-                    className="w-full text-left flex items-start gap-2.5 text-xs text-[#c9cad3] hover:text-white transition-colors group"
+                    className="w-full text-left flex items-start gap-2.5 text-xs text-muted hover:text-ink transition-colors group cursor-pointer"
                   >
                     <div
                       className={clsx(
                         "h-4 w-4 rounded border mt-0.5 flex items-center justify-center transition-all shrink-0",
-                        checked ? "bg-indigo-600 border-indigo-500 text-white" : "border-white/30 bg-[#141326] group-hover:border-white/50"
+                        checked ? "bg-blue-fill border-blue-fill text-white" : "border-line-strong bg-panel-2 dark:bg-[#141326] group-hover:border-blue-fill"
                       )}
                     >
                       {checked && <Icon name="check" size={11} strokeWidth={2.8} />}
                     </div>
-                    <span className={clsx("leading-tight", checked && "text-white font-medium")}>{label}</span>
+                    <span className={clsx("leading-tight", checked && "text-ink font-medium")}>{label}</span>
                   </button>
                 );
               })}

@@ -273,12 +273,12 @@ export function BetaInterviewFeedbackModal({
       {!isEligible ? (
         <div className="mb-6 overflow-hidden rounded-[16px] border border-line bg-panel-2/60 p-4 shadow-sm">
           <div className="flex items-center gap-3.5">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/[0.06] text-muted border border-white/10">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-panel text-muted border border-line">
               <Icon name="lock" size={17} />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="rounded-full bg-white/[0.08] px-2.5 py-0.5 text-[10px] font-semibold text-muted border border-white/10">
+                <span className="rounded-full bg-panel px-2.5 py-0.5 text-[10px] font-semibold text-muted border border-line">
                   £15 Amazon Voucher
                 </span>
                 <span className="text-xs font-semibold text-ink">
@@ -294,18 +294,18 @@ export function BetaInterviewFeedbackModal({
           </div>
         </div>
       ) : (
-        <div className="mb-6 overflow-hidden rounded-[16px] border border-[#f59e0b]/40 bg-gradient-to-r from-[#241a0b] via-[#1c1a24] to-[#171926] p-4.5 shadow-[0_8px_30px_rgba(245,158,11,0.12)]">
+        <div className="mb-6 overflow-hidden rounded-[16px] border border-[#f59e0b]/40 bg-amber-500/10 dark:bg-gradient-to-r dark:from-[#241a0b] dark:via-[#1c1a24] dark:to-[#171926] p-4.5 shadow-sm">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-3.5">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#f59e0b]/20 text-[#fbbf24] shadow-[0_0_15px_rgba(245,158,11,0.35)]">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#f59e0b]/20 text-amber-600 dark:text-[#fbbf24]">
                 <span className="text-xl">🎁</span>
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="rounded-full bg-[#f59e0b]/20 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-[#fbbf24] border border-[#f59e0b]/40">
+                  <span className="rounded-full bg-[#f59e0b]/20 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-amber-700 dark:text-[#fbbf24] border border-[#f59e0b]/40">
                     Beta Reward
                   </span>
-                  <span className="text-sm font-bold text-white">
+                  <span className="text-sm font-bold text-ink">
                     {submitted ? "Survey Submitted · £15 Voucher Claimed" : "Get a £15 Amazon voucher for your feedback"}
                   </span>
                 </div>
@@ -318,7 +318,7 @@ export function BetaInterviewFeedbackModal({
             </div>
             <div className="flex shrink-0 items-center gap-2 self-end sm:self-center">
               {submitted ? (
-                <span className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-500/15 px-3.5 py-2 text-xs font-semibold text-emerald-400 border border-emerald-500/30">
+                <span className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-500/15 px-3.5 py-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
                   <Icon name="check" size={13} strokeWidth={3} />
                   Voucher claimed
                 </span>
@@ -326,7 +326,7 @@ export function BetaInterviewFeedbackModal({
                 <button
                   type="button"
                   onClick={() => setIsOpen(true)}
-                  className="group relative inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#f59e0b] to-[#d97706] px-4 py-2.5 text-xs font-bold text-black shadow-[0_0_20px_rgba(245,158,11,0.4)] transition-all hover:brightness-110 active:scale-95 cursor-pointer"
+                  className="group relative inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#f59e0b] to-[#d97706] px-4 py-2.5 text-xs font-bold text-black shadow-md transition-all hover:brightness-110 active:scale-95 cursor-pointer"
                 >
                   <span>Take survey · £15 voucher</span>
                   <span className="transition-transform group-hover:translate-x-0.5">→</span>
@@ -342,7 +342,7 @@ export function BetaInterviewFeedbackModal({
         mounted &&
         createPortal(
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-3 sm:p-6 backdrop-blur-md animate-fade-in"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/85 p-3 sm:p-6 backdrop-blur-md animate-fade-in"
             onClick={handleDismiss}
           >
             <div
@@ -350,30 +350,30 @@ export function BetaInterviewFeedbackModal({
               aria-modal="true"
               aria-labelledby="survey-title"
               onClick={(e) => e.stopPropagation()}
-              className="relative flex flex-col w-full max-w-[720px] max-h-[92vh] rounded-[22px] border border-line bg-[#131622] shadow-[0_25px_70px_rgba(0,0,0,0.9),0_0_35px_rgba(245,158,11,0.2)] animate-scale-in overflow-hidden"
+              className="relative flex flex-col w-full max-w-[720px] max-h-[92vh] rounded-[22px] border border-line-strong bg-panel dark:bg-[#131622] shadow-2xl animate-scale-in overflow-hidden"
             >
               {/* Modal Header */}
-              <div className="relative border-b border-line bg-gradient-to-b from-[#221c13] via-[#1a1b27] to-[#131622] p-5 sm:p-6">
+              <div className="relative border-b border-line bg-panel-2 dark:bg-gradient-to-b dark:from-[#221c13] dark:via-[#1a1b27] dark:to-[#131622] p-5 sm:p-6">
                 <button
                   type="button"
                   onClick={handleDismiss}
-                  className="absolute top-5 right-5 flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                  className="absolute top-5 right-5 flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:text-ink hover:bg-panel transition-colors cursor-pointer"
                   aria-label="Close survey"
                 >
                   <Icon name="x" size={16} />
                 </button>
 
                 <div className="flex items-center gap-2.5">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#f59e0b]/20 text-base shadow-[0_0_12px_rgba(245,158,11,0.4)]">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#f59e0b]/20 text-base">
                     🎁
                   </span>
-                  <span className="rounded-full bg-[#f59e0b]/20 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-[#fbbf24] border border-[#f59e0b]/40">
+                  <span className="rounded-full bg-[#f59e0b]/20 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-amber-700 dark:text-[#fbbf24] border border-[#f59e0b]/40">
                     £15 Amazon Voucher
                   </span>
                   <span className="text-[11px] text-muted font-medium">Estimated time: 3–5 minutes</span>
                 </div>
 
-                <h2 id="survey-title" className="mt-2.5 text-xl font-bold text-white tracking-tight sm:text-2xl">
+                <h2 id="survey-title" className="mt-2.5 text-xl font-bold text-ink tracking-tight sm:text-2xl">
                   {submitted ? "Survey Complete! 🎉" : "Help us make Hakkiri better"}
                 </h2>
                 <p className="mt-1 text-xs text-muted sm:text-sm leading-relaxed">
@@ -387,13 +387,13 @@ export function BetaInterviewFeedbackModal({
               <div className="overflow-y-auto px-5 py-5 sm:px-7 sm:py-6 space-y-6">
                 {submitted ? (
                   <div className="flex flex-col items-center justify-center py-8 text-center animate-rise">
-                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 text-3xl border border-emerald-500/40 shadow-[0_0_25px_rgba(16,185,129,0.35)]">
+                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-3xl border border-emerald-500/40 shadow-[0_0_25px_rgba(16,185,129,0.25)]">
                       ✓
                     </div>
-                    <h3 className="mt-4 text-xl font-bold text-white">We’ve received your feedback!</h3>
+                    <h3 className="mt-4 text-xl font-bold text-ink">We’ve received your feedback!</h3>
                     <p className="mt-2 max-w-[460px] text-sm text-muted leading-relaxed">
                       Your responses are saved. We will review your submission and email your{" "}
-                      <b className="text-white">£15 Amazon voucher</b> code to{" "}
+                      <b className="text-ink">£15 Amazon voucher</b> code to{" "}
                       <span className="font-semibold text-blue-soft">{email}</span> within 24–48 hours.
                     </p>
                     <p className="mt-3 text-xs text-muted">
@@ -417,7 +417,7 @@ export function BetaInterviewFeedbackModal({
                     {/* Question 1 */}
                     <div className="space-y-3 rounded-xl bg-panel-2 p-4 sm:p-5 border border-line">
                       <div>
-                        <span className="block text-xs font-bold text-white sm:text-sm">
+                        <span className="block text-xs font-bold text-ink sm:text-sm">
                           1. How realistic did your mock interview feel?
                         </span>
                         <span className="text-[11px] text-muted">Select one answer.</span>
@@ -431,7 +431,7 @@ export function BetaInterviewFeedbackModal({
                             className={clsx(
                               "rounded-lg p-2.5 text-left text-xs font-medium border transition-all cursor-pointer flex items-center gap-2",
                               q1Choice === opt
-                                ? "border-blue-fill bg-blue-fill/15 text-white shadow-[0_0_12px_rgba(99,102,241,0.25)]"
+                                ? "border-blue-fill bg-blue-fill/12 text-blue-fill dark:text-white shadow-xs"
                                 : "border-line bg-panel text-muted hover:border-line-strong hover:text-ink"
                             )}
                           >
@@ -458,7 +458,7 @@ export function BetaInterviewFeedbackModal({
                           value={q1More}
                           onChange={(e) => setQ1More(e.target.value)}
                           placeholder="What made the interview feel realistic or unrealistic?"
-                          className="w-full rounded-lg bg-[#0e111a] p-2.5 text-xs text-white border border-line focus:border-blue-fill focus:outline-none transition-colors"
+                          className="w-full rounded-lg bg-panel dark:bg-[#0e111a] p-2.5 text-xs text-ink dark:text-white border border-line focus:border-blue-fill focus:outline-none transition-colors"
                         />
                       </div>
                     </div>
@@ -466,7 +466,7 @@ export function BetaInterviewFeedbackModal({
                     {/* Question 2 */}
                     <div className="space-y-3 rounded-xl bg-panel-2 p-4 sm:p-5 border border-line">
                       <div>
-                        <span className="block text-xs font-bold text-white sm:text-sm">
+                        <span className="block text-xs font-bold text-ink sm:text-sm">
                           2. How relevant were the questions and follow-ups to your role?
                         </span>
                         <span className="text-[11px] text-muted">Select one answer.</span>
@@ -480,7 +480,7 @@ export function BetaInterviewFeedbackModal({
                             className={clsx(
                               "rounded-lg p-2.5 text-left text-xs font-medium border transition-all cursor-pointer flex items-center gap-2",
                               q2Choice === opt
-                                ? "border-blue-fill bg-blue-fill/15 text-white shadow-[0_0_12px_rgba(99,102,241,0.25)]"
+                                ? "border-blue-fill bg-blue-fill/12 text-blue-fill dark:text-white shadow-xs"
                                 : "border-line bg-panel text-muted hover:border-line-strong hover:text-ink"
                             )}
                           >
@@ -507,7 +507,7 @@ export function BetaInterviewFeedbackModal({
                           value={q2More}
                           onChange={(e) => setQ2More(e.target.value)}
                           placeholder="Were there any questions or topics you expected but didn't receive?"
-                          className="w-full rounded-lg bg-[#0e111a] p-2.5 text-xs text-white border border-line focus:border-blue-fill focus:outline-none transition-colors"
+                          className="w-full rounded-lg bg-panel dark:bg-[#0e111a] p-2.5 text-xs text-ink dark:text-white border border-line focus:border-blue-fill focus:outline-none transition-colors"
                         />
                       </div>
                     </div>
@@ -515,7 +515,7 @@ export function BetaInterviewFeedbackModal({
                     {/* Question 3 */}
                     <div className="space-y-3 rounded-xl bg-panel-2 p-4 sm:p-5 border border-line">
                       <div>
-                        <span className="block text-xs font-bold text-white sm:text-sm">
+                        <span className="block text-xs font-bold text-ink sm:text-sm">
                           3. How accurate and helpful did you find your scores and feedback?
                         </span>
                         <span className="text-[11px] text-muted">Select one answer.</span>
@@ -529,7 +529,7 @@ export function BetaInterviewFeedbackModal({
                             className={clsx(
                               "rounded-lg p-2.5 text-left text-xs font-medium border transition-all cursor-pointer flex items-center gap-2",
                               q3Choice === opt
-                                ? "border-blue-fill bg-blue-fill/15 text-white shadow-[0_0_12px_rgba(99,102,241,0.25)]"
+                                ? "border-blue-fill bg-blue-fill/12 text-blue-fill dark:text-white shadow-xs"
                                 : "border-line bg-panel text-muted hover:border-line-strong hover:text-ink"
                             )}
                           >
@@ -556,7 +556,7 @@ export function BetaInterviewFeedbackModal({
                           value={q3More}
                           onChange={(e) => setQ3More(e.target.value)}
                           placeholder="Was there a particular score or piece of feedback you agreed or disagreed with?"
-                          className="w-full rounded-lg bg-[#0e111a] p-2.5 text-xs text-white border border-line focus:border-blue-fill focus:outline-none transition-colors"
+                          className="w-full rounded-lg bg-panel dark:bg-[#0e111a] p-2.5 text-xs text-ink dark:text-white border border-line focus:border-blue-fill focus:outline-none transition-colors"
                         />
                       </div>
                     </div>
@@ -565,7 +565,7 @@ export function BetaInterviewFeedbackModal({
                     <div className="space-y-3 rounded-xl bg-panel-2 p-4 sm:p-5 border border-line">
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="block text-xs font-bold text-white sm:text-sm">
+                          <span className="block text-xs font-bold text-ink sm:text-sm">
                             4. Did you experience any technical issues or difficulties?
                           </span>
                           <span className="rounded bg-lilac/20 px-1.5 py-0.5 text-[10px] font-semibold text-lilac">
@@ -585,7 +585,7 @@ export function BetaInterviewFeedbackModal({
                               className={clsx(
                                 "rounded-lg p-2.5 text-left text-xs font-medium border transition-all cursor-pointer flex items-center gap-2",
                                 isSelected
-                                  ? "border-blue-fill bg-blue-fill/15 text-white shadow-[0_0_12px_rgba(99,102,241,0.25)]"
+                                  ? "border-blue-fill bg-blue-fill/12 text-blue-fill dark:text-white shadow-xs"
                                   : "border-line bg-panel text-muted hover:border-line-strong hover:text-ink"
                               )}
                             >
@@ -613,14 +613,14 @@ export function BetaInterviewFeedbackModal({
                           value={q4More}
                           onChange={(e) => setQ4More(e.target.value)}
                           placeholder="What happened, and how could we improve the experience?"
-                          className="w-full rounded-lg bg-[#0e111a] p-2.5 text-xs text-white border border-line focus:border-blue-fill focus:outline-none transition-colors"
+                          className="w-full rounded-lg bg-panel dark:bg-[#0e111a] p-2.5 text-xs text-ink dark:text-white border border-line focus:border-blue-fill focus:outline-none transition-colors"
                         />
                       </div>
                     </div>
 
                     {/* Question 5 (Optional) */}
                     <div className="space-y-2 rounded-xl bg-panel-2 p-4 sm:p-5 border border-line">
-                      <label className="block text-xs font-bold text-white sm:text-sm">
+                      <label className="block text-xs font-bold text-ink sm:text-sm">
                         5. What did you like most and least about Hakkiri? <span className="text-muted font-normal">(Optional)</span>
                       </label>
                       <p className="text-[11px] text-muted">
@@ -631,13 +631,13 @@ export function BetaInterviewFeedbackModal({
                         value={q5LikesDislikes}
                         onChange={(e) => setQ5LikesDislikes(e.target.value)}
                         placeholder="Tell us what worked particularly well and what you think could be better..."
-                        className="w-full rounded-lg bg-[#0e111a] p-2.5 text-xs text-white border border-line focus:border-blue-fill focus:outline-none transition-colors"
+                        className="w-full rounded-lg bg-panel dark:bg-[#0e111a] p-2.5 text-xs text-ink dark:text-white border border-line focus:border-blue-fill focus:outline-none transition-colors"
                       />
                     </div>
 
                     {/* Question 6 (Optional) */}
                     <div className="space-y-2 rounded-xl bg-panel-2 p-4 sm:p-5 border border-line">
-                      <label className="block text-xs font-bold text-white sm:text-sm">
+                      <label className="block text-xs font-bold text-ink sm:text-sm">
                         6. If you could change or add one thing to Hakkiri, what would it be? <span className="text-muted font-normal">(Optional)</span>
                       </label>
                       <p className="text-[11px] text-muted">
@@ -648,14 +648,14 @@ export function BetaInterviewFeedbackModal({
                         value={q6Changes}
                         onChange={(e) => setQ6Changes(e.target.value)}
                         placeholder="We're open to any ideas, big or small..."
-                        className="w-full rounded-lg bg-[#0e111a] p-2.5 text-xs text-white border border-line focus:border-blue-fill focus:outline-none transition-colors"
+                        className="w-full rounded-lg bg-panel dark:bg-[#0e111a] p-2.5 text-xs text-ink dark:text-white border border-line focus:border-blue-fill focus:outline-none transition-colors"
                       />
                     </div>
 
                     {/* Question 7 */}
                     <div className="space-y-3 rounded-xl bg-panel-2 p-4 sm:p-5 border border-line">
                       <div>
-                        <span className="block text-xs font-bold text-white sm:text-sm">
+                        <span className="block text-xs font-bold text-ink sm:text-sm">
                           7. Would you recommend Hakkiri to a friend or colleague?
                         </span>
                         <span className="text-[11px] text-muted">Select one answer.</span>
@@ -669,7 +669,7 @@ export function BetaInterviewFeedbackModal({
                             className={clsx(
                               "rounded-lg p-2.5 text-left text-xs font-medium border transition-all cursor-pointer flex items-center gap-2",
                               q7Choice === opt
-                                ? "border-blue-fill bg-blue-fill/15 text-white shadow-[0_0_12px_rgba(99,102,241,0.25)]"
+                                ? "border-blue-fill bg-blue-fill/12 text-blue-fill dark:text-white shadow-xs"
                                 : "border-line bg-panel text-muted hover:border-line-strong hover:text-ink"
                             )}
                           >
@@ -696,16 +696,16 @@ export function BetaInterviewFeedbackModal({
                           value={q7More}
                           onChange={(e) => setQ7More(e.target.value)}
                           placeholder="What influenced your answer? (Optional)"
-                          className="w-full rounded-lg bg-[#0e111a] p-2.5 text-xs text-white border border-line focus:border-blue-fill focus:outline-none transition-colors"
+                          className="w-full rounded-lg bg-panel dark:bg-[#0e111a] p-2.5 text-xs text-ink dark:text-white border border-line focus:border-blue-fill focus:outline-none transition-colors"
                         />
                       </div>
                     </div>
 
                     {/* Voucher Claim Section */}
-                    <div className="rounded-xl border border-[#f59e0b]/40 bg-gradient-to-r from-[#241a0b] via-[#1c1822] to-[#171a25] p-5 shadow-[0_0_25px_rgba(245,158,11,0.15)] space-y-3">
+                    <div className="rounded-xl border border-[#f59e0b]/40 bg-amber-500/[0.08] dark:bg-gradient-to-r dark:from-[#241a0b] dark:via-[#1c1822] dark:to-[#171a25] p-5 shadow-sm space-y-3">
                       <div className="flex items-center gap-2">
                         <span className="text-xl">🎁</span>
-                        <h4 className="text-sm font-bold text-white">Your £15 Amazon voucher</h4>
+                        <h4 className="text-sm font-bold text-ink dark:text-white">Your £15 Amazon voucher</h4>
                       </div>
                       <p className="text-xs text-muted">
                         Where should we send your £15 Amazon voucher?
@@ -721,7 +721,7 @@ export function BetaInterviewFeedbackModal({
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
                           placeholder="you@example.com"
-                          className="w-full rounded-xl bg-[#0e111a] px-3.5 py-2.5 text-sm text-white border border-line focus:border-[#f59e0b] focus:outline-none transition-colors"
+                          className="w-full rounded-xl bg-panel dark:bg-[#0e111a] px-3.5 py-2.5 text-sm text-ink dark:text-white border border-line focus:border-[#f59e0b] focus:outline-none transition-colors"
                         />
                         <p className="mt-1 text-[11px] text-muted">
                           We&apos;ll only use this email address to send your voucher.

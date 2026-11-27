@@ -1972,7 +1972,7 @@ select.cv-mini option,
 @media (max-width: 767px) { .cv-templates { grid-template-columns: minmax(0, 1fr); } }
 .cv-template { align-items: center; padding: 11px 12px; font-size: 13px; }
 .cv-template small { font-size: 11.5px; line-height: 1.35; margin-top: 2px; }
-.cv-thumb {
+svg.cv-thumb {
   flex: none;
   border-radius: 4px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.15);
@@ -1980,7 +1980,7 @@ select.cv-mini option,
   height: 57px;
   transition: transform 0.2s ease;
 }
-.cv-template:hover .cv-thumb {
+.cv-template:hover svg.cv-thumb {
   transform: scale(1.04);
 }
 .cv-swatch {
@@ -2087,18 +2087,24 @@ select.cv-mini option,
   background: none;
   -webkit-text-fill-color: var(--color-ink);
 }
+.cv-scorebig[data-band], [data-band] > .cv-scorebig {
+  background: none !important;
+  -webkit-text-fill-color: var(--ring) !important;
+  color: var(--ring) !important;
+}
 .cv-scorebig small {
   font-size: 16px;
   letter-spacing: 0;
   font-weight: 500;
-  -webkit-text-fill-color: var(--color-muted);
+  -webkit-text-fill-color: var(--color-muted) !important;
+  color: var(--color-muted) !important;
 }
 .cv-scorebar, .cv-fit-meter {
   display: block;
   width: 100%;
   height: 7px;
   border-radius: 999px;
-  background: var(--cv-input-bg);
+  background: var(--color-panel-2);
   border: 1px solid var(--color-line);
   overflow: hidden;
   margin-top: 8px;
@@ -2109,9 +2115,9 @@ select.cv-mini option,
   display: block;
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, #4f52f8 0%, #7b88ff 60%, #aeb6ff 100%);
-  box-shadow: 0 0 12px rgba(123, 136, 255, 0.5);
-  transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  background: var(--ring, linear-gradient(90deg, #4f52f8 0%, #7b88ff 60%, #aeb6ff 100%));
+  box-shadow: none;
+  transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.25s ease;
 }
 .cv-scorebar > span::after, .cv-fit-meter > span::after {
   content: "";
@@ -2892,8 +2898,8 @@ p.cv-talk-callout { display: flex; align-items: flex-start; gap: 7px; }
 .cv-score-number small { font-size: 16px; font-weight: 500; color: var(--color-muted); letter-spacing: 0; }
 .cv-score-parts { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; font-size: 13px; }
 .cv-score-parts b { font-weight: 600; font-variant-numeric: tabular-nums; }
-.cv-meter { display: block; height: 5px; border-radius: 3px; background: var(--color-panel-2); overflow: hidden; margin-top: 4px; }
-.cv-meter > span { display: block; height: 100%; background: var(--color-blue); border-radius: 3px; }
+.cv-meter { display: block; height: 6px; border-radius: 3px; background: var(--color-panel-2); box-shadow: inset 0 0 0 1px var(--color-line); overflow: hidden; margin-top: 4px; }
+.cv-meter > span { display: block; height: 100%; background: var(--ring, var(--color-blue)); border-radius: 3px; transition: width 0.45s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.25s ease; }
 .cv-fixnext { border-left: 3px solid var(--color-blue); background: var(--cv-selected); border-radius: 8px; padding: 10px 12px; display: grid; gap: 6px; justify-items: start; }
 .cv-fixnext p { margin: 0; font-size: 13.5px; }
 .cv-scoreline { display: flex; align-items: center; gap: 10px; padding: 10px 12px; margin-bottom: 12px; border: 1px solid var(--cv-edge); border-radius: 11px; background: var(--color-panel); position: sticky; top: 8px; z-index: 5; }
@@ -2984,3 +2990,186 @@ p.cv-talk-callout { display: flex; align-items: flex-start; gap: 7px; }
 @keyframes cv-ring-in { from { stroke-dasharray: 0 var(--ring-length); } }
 @media (prefers-reduced-motion: reduce) { .cv-ring-arc { animation: none; } }
 .cv-nextsteps { display: grid; gap: 10px; justify-items: start; }
+
+
+/* ============================================================================
+   Professional polish for the new CV screens (home, New CV, catalogue,
+   example detail, check). Apple-style: quiet surfaces, crisp edges, soft
+   elevation on hover, and short entrance motion. Respects reduced motion.
+   ============================================================================ */
+@keyframes cv-card-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Start here / New CV: four ways in. Compact, no dead space, lively on hover. */
+.cv-paths { gap: 12px; }
+.cv-paths > li { animation: cv-card-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.cv-paths > li:nth-child(2) { animation-delay: 0.05s; }
+.cv-paths > li:nth-child(3) { animation-delay: 0.1s; }
+.cv-paths > li:nth-child(4) { animation-delay: 0.15s; }
+.cv-path {
+  min-height: 0;
+  align-items: center;
+  padding: 16px 18px;
+  border-radius: 16px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.cv-path::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(420px 120px at 0% 0%, var(--cv-selected), transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+.cv-path:hover { transform: translateY(-2px); }
+.cv-path:hover::before, .cv-path[aria-pressed="true"]::before { opacity: 1; }
+.cv-path:active { transform: translateY(0) scale(0.995); }
+.cv-path > * { position: relative; }
+.cv-path-mark {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, color 0.2s ease;
+}
+.cv-path:hover .cv-path-mark, .cv-path[aria-pressed="true"] .cv-path-mark {
+  transform: scale(1.06);
+  background: var(--color-blue);
+  color: #ffffff;
+}
+.cv-path-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  background: var(--color-panel-2);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, color 0.2s ease;
+}
+.cv-path:hover .cv-path-arrow { transform: translateX(3px); background: var(--cv-selected); }
+.cv-path[aria-pressed="true"] .cv-path-arrow { background: var(--color-blue); color: #ffffff; }
+
+/* Catalogue cards: a proper page preview on a soft surround, lifting on hover. */
+.cv-cards { gap: 16px; }
+.cv-cards > li { animation: cv-card-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.cv-cards > li:nth-child(2) { animation-delay: 0.03s; }
+.cv-cards > li:nth-child(3) { animation-delay: 0.06s; }
+.cv-cards > li:nth-child(4) { animation-delay: 0.09s; }
+.cv-cards > li:nth-child(5) { animation-delay: 0.12s; }
+.cv-cards > li:nth-child(6) { animation-delay: 0.15s; }
+.cv-cards > li:nth-child(n + 7) { animation-delay: 0.18s; }
+.cv-card {
+  border-radius: 16px;
+  transition: border-color 0.2s ease, box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.cv-card:hover { transform: translateY(-4px); }
+.cv-card:active { transform: translateY(-1px) scale(0.995); }
+.cv-card .cv-thumb {
+  position: relative;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1.3;
+  padding: 18px 18px 0;
+  background: linear-gradient(180deg, #eef1f6 0%, #e3e7ee 100%);
+  border-bottom: 1px solid var(--cv-edge);
+}
+.cv-card .cv-thumb img {
+  width: 74%;
+  border-radius: 3px 3px 0 0;
+  box-shadow: 0 1px 2px rgb(16 24 40 / 0.08), 0 8px 24px -6px rgb(16 24 40 / 0.18);
+  transform-origin: top center;
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+}
+.cv-card:hover .cv-thumb img {
+  transform: translateY(-4px) scale(1.035);
+  box-shadow: 0 2px 4px rgb(16 24 40 / 0.08), 0 16px 32px -8px rgb(16 24 40 / 0.26);
+}
+.cv-card-body { padding: 14px 16px 16px; gap: 4px; }
+.cv-card-body b { letter-spacing: -0.01em; transition: color 0.2s ease; }
+.cv-card:hover .cv-card-body b { color: var(--color-blue); }
+@media (max-width: 720px) {
+  .cv-card .cv-thumb {
+    flex: none;
+    width: 110px;
+    aspect-ratio: auto;
+    padding: 10px 10px 0;
+    border-bottom: 0;
+    border-right: 1px solid var(--cv-edge);
+  }
+  .cv-card .cv-thumb img { width: 100%; }
+}
+
+/* Search panel and filter chips on the catalogue. */
+.cv-find { animation: cv-card-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.cv-find .cv-input { transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease; }
+.cv-find .cv-input:hover { border-color: var(--border-strong); }
+.cv-find .cv-input:focus { border-color: var(--color-blue); box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-blue) 16%, transparent); outline: none; }
+.cv-section-title { letter-spacing: -0.01em; }
+
+/* Starts (upload, paste, LinkedIn, blank): even, tactile buttons. */
+.cv-starts-buttons {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+@media (max-width: 720px) {
+  .cv-starts-buttons { grid-template-columns: minmax(0, 1fr); }
+}
+.cv-starts-buttons .cv-btn {
+  border-radius: 12px;
+  background: var(--color-panel-2);
+  border-color: var(--border-strong);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+}
+.cv-starts-buttons .cv-btn:hover { transform: translateY(-1.5px); background: var(--color-panel); border-color: var(--color-blue); color: var(--color-blue); box-shadow: var(--shadow-panel); }
+.cv-starts-buttons .cv-btn[aria-pressed="true"] { background: var(--cv-selected); border-color: var(--color-blue); color: var(--color-blue); box-shadow: 0 0 0 1px var(--color-blue); }
+.cv-starts-buttons .cv-btn:active { transform: scale(0.99); }
+
+/* 4-band score chips on CV list rows & dropzones */
+.cv-chip-score[data-band] {
+  color: var(--ring);
+  border-color: color-mix(in srgb, var(--ring) 35%, var(--cv-edge));
+  background: color-mix(in srgb, var(--ring) 12%, var(--color-panel));
+}
+.cv-chip-score[data-band]::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ring);
+  flex: none;
+}
+.cv-dropzone {
+  background: var(--color-panel-2);
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+.cv-dropzone:hover, .cv-dropzone:focus-within {
+  border-color: var(--color-blue);
+  background: var(--cv-selected);
+}
+.cv-design-choice {
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.18s ease, box-shadow 0.22s ease;
+}
+.cv-design-choice:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-panel);
+}
+
+/* Report and editor panels: gentle cascade, score parts animate in. */
+.cv-reportgrid > *, .cv-insights > * { animation: cv-card-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.cv-reportgrid > *:nth-child(2), .cv-insights > *:nth-child(2) { animation-delay: 0.08s; }
+@keyframes cv-meter-in { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.cv-meter > span, .cv-scorebar > span, .cv-fit-meter > span { transform-origin: left center; animation: cv-meter-in 0.8s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.cv-fix { transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease; }
+.cv-fix:hover { border-color: var(--border-strong); box-shadow: var(--shadow-panel); transform: translateY(-1px); }
+.cv-matchtable tbody tr { transition: background-color 0.15s ease; }
+.cv-matchtable tbody tr:hover { background: var(--color-panel-2); }
+
+@media (prefers-reduced-motion: reduce) {
+  .cv-paths > li, .cv-cards > li, .cv-find, .cv-reportgrid > *, .cv-insights > *,
+  .cv-meter > span, .cv-scorebar > span, .cv-fit-meter > span { animation: none !important; }
+  .cv-path, .cv-card, .cv-card .cv-thumb img, .cv-path-arrow, .cv-path-mark { transition: none !important; transform: none !important; }
+}

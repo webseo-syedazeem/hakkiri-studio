@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import type { Band, CheckReport as Report, CvFinding, CvReport, JobReport } from "@/lib/cv/check/report";
 import type { LetterCheck } from "@/lib/cv/letter/score";
+import { bandOf } from "@/lib/cv/score/band";
 import { api, messageOf } from "./client";
 import { ScoreRing } from "./ScoreRing";
 import { Bar, Btn, BtnLink, CvScreen, Panel, Skeleton, Toolbar } from "./ui";
@@ -28,14 +29,16 @@ function ScoreBox({ title, shown, band, parts, testId }: { title: string; shown:
           {parts.map((p) => {
             const unchecked = p.pending >= p.points;
             const partly = !unchecked && p.pending > 0;
+            const pct = unchecked ? 0 : Math.round((p.earned / p.points) * 100);
+            const partBand = unchecked ? undefined : bandOf(pct).key;
             return (
-              <li key={p.id}>
+              <li key={p.id} data-band={partBand}>
                 <span className="cv-row" style={{ justifyContent: "space-between", gap: 8 }}>
                   <span>{p.name}</span>
-                  <b>{unchecked ? "Not checked" : `${Math.round(p.earned)}/${p.points}`}</b>
+                  <b style={partBand ? { color: "var(--ring)" } : undefined}>{unchecked ? "Not checked" : `${Math.round(p.earned)}/${p.points}`}</b>
                 </span>
-                <span className="cv-meter" aria-hidden="true">
-                  <span style={{ width: `${unchecked ? 0 : Math.round((p.earned / p.points) * 100)}%` }} />
+                <span className="cv-meter" data-band={partBand} aria-hidden="true">
+                  <span style={{ width: `${pct}%` }} />
                 </span>
                 {partly && <span className="cv-small cv-muted">{Math.round(p.pending)} of these points not checked</span>}
               </li>
@@ -180,11 +183,11 @@ function JobMatch({ job, id }: { job: JobReport; id: string }) {
               {job.shown} of {job.total} requirements shown{job.partly ? ` · ${job.partly} partly shown` : ""}
             </p>
           </div>
-          <div style={{ textAlign: "right" }}>
+          <div style={{ textAlign: "right" }} data-band={job.score != null ? bandOf(job.score).key : undefined}>
             <p className="cv-small cv-muted" style={{ margin: 0 }}>
               Match score
             </p>
-            <p className="cv-score-number" aria-label={`Match score: ${job.score ?? 0} out of 100`}>
+            <p className="cv-score-number" style={job.score != null ? { color: "var(--ring)" } : undefined} aria-label={`Match score: ${job.score ?? 0} out of 100`}>
               {job.score ?? "–"}
               <small> / 100</small>
             </p>
@@ -309,7 +312,7 @@ export function CheckReport({ id }: { id: string }) {
   const cv = report.cv;
   const letter = report.letter;
   const job = report.job;
-  const builder = cv ? `/cv/from-check/${id}` : null;
+  const builder = cv ? `/cv/from-check/${id}` : letter ? `/cv/from-check/${id}?then=letter` : null;
   const showing = tab === "cv" && cv ? "cv" : "letter";
   const cvWord = report.region === "us" ? "resume" : "CV";
 
@@ -358,7 +361,7 @@ export function CheckReport({ id }: { id: string }) {
           <div className="cv-reportgrid">
             <div className="cv-stack cv-report-main">
               <LetterChecks checks={letter.checks} />
-              <Findings findings={letter.findings.map((f) => ({ ...f, severity: "suggestion" }))} base={null} label="letter" />
+              <Findings findings={letter.findings.map((f) => ({ ...f, severity: "suggestion" }))} base={builder} label="letter" />
             </div>
             <div className="cv-stack cv-report-side">
               <ScoreBox title="Cover letter score" shown={letter.shown} band={letter.band} parts={letter.parts} testId="letter-score" />

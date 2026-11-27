@@ -483,7 +483,7 @@ export function PracticeHubClient({
             </Link>
             <Link
               href={`/interviews/${current.id}`}
-              className="pro-btn-glow flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#4f52f8] via-[#5c5ffc] to-[#6d5eff] text-xs font-semibold text-white shadow-lg shadow-indigo-500/25 hover:brightness-110 transition-all"
+              className="pro-btn-glow flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-fill hover:bg-blue-hover text-xs font-semibold text-white shadow-md transition-all"
             >
               <Icon name="play" size={13} />
               <span>Start a full interview</span>
@@ -510,14 +510,30 @@ export function PracticeHubClient({
             </div>
           </div>
 
-          <div className="rounded-2xl bg-panel border border-line p-6 shadow-sm hover:shadow-md transition-all duration-300 flex items-center gap-4 hover:border-line-strong">
+          <div
+            className="rounded-2xl bg-panel border border-line p-6 shadow-sm hover:shadow-md transition-all duration-300 flex items-center gap-4 hover:border-line-strong"
+            data-band={
+              current.stats.averageScore == null
+                ? undefined
+                : current.stats.averageScore < 2
+                  ? "poor"
+                  : current.stats.averageScore < 3
+                    ? "average"
+                    : current.stats.averageScore < 4
+                      ? "good"
+                      : "strong"
+            }
+          >
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
               <Icon name="check" size={22} />
             </div>
             <div>
               <span className="text-xs font-semibold text-muted uppercase tracking-wider">Average score</span>
               <div className="mt-1 flex items-baseline gap-2">
-                <span className="text-2xl font-bold text-ink tracking-tight">
+                <span
+                  className="text-2xl font-bold text-ink tracking-tight"
+                  style={current.stats.averageScore != null ? { color: "var(--ring)" } : undefined}
+                >
                   {current.stats.averageScore != null ? `${current.stats.averageScore.toFixed(1)} / 5.0` : "Not scored yet"}
                 </span>
                 {current.stats.changeOnLastWeek != null ? (
@@ -936,7 +952,7 @@ export function PracticeHubClient({
           <div className="flex flex-col sm:flex-row gap-3.5">
             <Link
               href={startHref}
-              className="pro-btn-glow flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-xl bg-gradient-to-r from-[#4f52f8] via-[#5c5ffc] to-[#6d5eff] text-sm font-bold text-white shadow-lg shadow-indigo-500/25 hover:brightness-110 transition-all flex-1 cursor-pointer"
+              className="pro-btn-glow flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-xl bg-blue-fill hover:bg-blue-hover text-sm font-bold text-white shadow-md transition-all flex-1 cursor-pointer"
             >
               <Icon name="play" size={16} />
               <span>▶ Start practice</span>

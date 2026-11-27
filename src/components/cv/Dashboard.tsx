@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { forgetCheck, fromCheckPath, rememberedCheck } from "@/lib/cv/carry";
 import { type CvDoc, type CvSummary, LEVEL_LABELS } from "@/lib/cv/schema";
+import { bandOf } from "@/lib/cv/score/band";
 import { docWord } from "@/lib/cv/sections";
 import { ApiError, api, messageOf } from "./client";
 import { Dialog, usePanel } from "./Dialog";
@@ -369,12 +370,12 @@ function Row({ cv, indent, copies = 0, onAction }: { cv: CvSummary; indent?: boo
               <span className="cv-chip">Empty</span>
             ) : null}
             {cv.score !== undefined && !cv.pendingImportId && (
-              <span className="cv-chip cv-chip-score" data-testid="row-score">
+              <span className="cv-chip cv-chip-score" data-band={bandOf(cv.score).key} data-testid="row-score">
                 Score {cv.score}/100
               </span>
             )}
             {cv.fit !== undefined && (
-              <span className="cv-chip cv-chip-score" data-testid="row-fit">
+              <span className="cv-chip cv-chip-score" data-band={bandOf(cv.fit).key} data-testid="row-fit">
                 Job fit {cv.fit}
               </span>
             )}

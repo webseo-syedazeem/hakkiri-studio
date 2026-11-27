@@ -59,14 +59,16 @@ export function ScorePanel({ score, word, base, onShow }: { score: Score | null;
         <ul className="cv-score-parts">
           {score.groups.map((g) => {
             const unchecked = g.pending >= g.points;
+            const pct = unchecked ? 0 : Math.round((g.earned / g.points) * 100);
+            const partBand = unchecked ? undefined : bandOf(pct).key;
             return (
-              <li key={g.id}>
+              <li key={g.id} data-band={partBand}>
                 <span className="cv-row" style={{ justifyContent: "space-between", gap: 8 }}>
                   <span>{g.name}</span>
-                  <b>{unchecked ? "Not checked" : `${Math.round(g.earned)}/${g.points}`}</b>
+                  <b style={partBand ? { color: "var(--ring)" } : undefined}>{unchecked ? "Not checked" : `${Math.round(g.earned)}/${g.points}`}</b>
                 </span>
-                <span className="cv-meter" aria-hidden="true">
-                  <span style={{ width: `${unchecked ? 0 : Math.round((g.earned / g.points) * 100)}%` }} />
+                <span className="cv-meter" data-band={partBand} aria-hidden="true">
+                  <span style={{ width: `${pct}%` }} />
                 </span>
               </li>
             );

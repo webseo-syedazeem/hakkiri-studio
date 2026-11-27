@@ -37,6 +37,21 @@ interface InterviewReportViewProps {
 
 const CATEGORY_ICON: Record<CategoryLine["key"], IconName> = { cv: "brief", competency: "layers", technical: "code", motivation: "user", curveball: "chat", "opening-close": "sparkle" };
 
+const RING_BANDS = [
+  { key: "poor" as const, from: 0, to: 40 },
+  { key: "average" as const, from: 40, to: 60 },
+  { key: "good" as const, from: 60, to: 80 },
+  { key: "strong" as const, from: 80, to: 100 },
+];
+
+function scoreBandKey(score: number | null | undefined): "poor" | "average" | "good" | "strong" | undefined {
+  if (score == null) return undefined;
+  if (score < 2) return "poor";
+  if (score < 3) return "average";
+  if (score < 4) return "good";
+  return "strong";
+}
+
 function getPlaybooks(role?: string, company?: string) {
   const roleName = role || "the role";
   const orgName = company || "your team";
@@ -234,31 +249,53 @@ export function InterviewReportView(p: InterviewReportViewProps) {
       <div className="rounded-2xl bg-panel dark:bg-[#0d0c1c] border border-line dark:border-white/[0.08] p-6 lg:p-7 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_10px_28px_-6px_rgba(15,23,42,0.08)] dark:shadow-xl grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-6 items-center">
         {/* Left / Middle: Gauge + Strengths */}
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
-          {/* Radial Gauge */}
-          <div className="relative w-28 h-28 shrink-0 flex items-center justify-center">
-            <svg className="w-28 h-28 -rotate-90 transform" viewBox="0 0 100 100">
-              <circle cx="50" cy="50" r="40" stroke="var(--color-line)" strokeWidth="10" fill="transparent" />
-              <circle
-                cx="50"
-                cy="50"
-                r="40"
-                stroke="url(#radialGradient)"
-                strokeWidth="10"
-                strokeDasharray={`${2 * Math.PI * 40}`}
-                strokeDashoffset={`${2 * Math.PI * 40 * (1 - scorePercent / 100)}`}
-                strokeLinecap="round"
-                fill="transparent"
-                className="transition-all duration-1000 ease-out"
-              />
-              <defs>
-                <linearGradient id="radialGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#0071e3" />
-                  <stop offset="100%" stopColor="#6366f1" />
-                </linearGradient>
-              </defs>
+          {/* Radial Gauge with 4-Band Scale */}
+          <div className="relative w-28 h-28 shrink-0 flex items-center justify-center" data-band={scoreBandKey(report.score)}>
+            <svg className="w-28 h-28 transform" viewBox="0 0 100 100">
+              {RING_BANDS.map((b) => {
+                const c = 2 * Math.PI * 40;
+                const gap = 0.014;
+                const dash = `${Math.max(0, (b.to - b.from) / 100 - gap) * c} ${c}`;
+                const turn = (b.from / 100) * 360 - 90 + (gap / 2) * 360;
+                return (
+                  <circle
+                    key={b.key}
+                    data-band={b.key}
+                    cx="50"
+                    cy="50"
+                    r="40"
+                    stroke="var(--ring)"
+                    strokeOpacity="0.22"
+                    strokeWidth="10"
+                    strokeDasharray={dash}
+                    transform={`rotate(${turn} 50 50)`}
+                    fill="transparent"
+                  />
+                );
+              })}
+              {report.score != null && scorePercent > 0 && (
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="40"
+                  stroke="var(--ring)"
+                  strokeWidth="10"
+                  strokeDasharray={`${(scorePercent / 100) * 2 * Math.PI * 40} ${2 * Math.PI * 40}`}
+                  transform="rotate(-90 50 50)"
+                  strokeLinecap="round"
+                  fill="transparent"
+                  className="transition-all duration-1000 ease-out"
+                />
+              )}
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-              <span className="num text-2xl font-bold text-ink tracking-tight leading-none" data-testid="report-score">{report.score != null ? report.score.toFixed(1) : "–"}</span>
+              <span
+                className="num text-2xl font-bold text-ink tracking-tight leading-none"
+                style={report.score != null ? { color: "var(--ring)" } : undefined}
+                data-testid="report-score"
+              >
+                {report.score != null ? report.score.toFixed(1) : "–"}
+              </span>
               <span className="text-[11px] text-muted font-medium mt-0.5">{report.score != null ? "/ 5" : "Not scored"}</span>
             </div>
           </div>
@@ -302,16 +339,19 @@ export function InterviewReportView(p: InterviewReportViewProps) {
             ) : (
               <div className="mt-4 space-y-3.5">
                 {categories.map((cat) => (
-                  <div key={cat.key} className="space-y-1.5">
+                  <div key={cat.key} className="space-y-1.5" data-band={scoreBandKey(cat.score)}>
                     <div className="flex items-center justify-between text-xs">
                       <div className="flex items-center gap-2 text-ink/85 font-medium">
                         <Icon name={CATEGORY_ICON[cat.key]} size={14} className="text-muted" />
                         <span>{cat.label}</span>
                       </div>
-                      <span className="num font-semibold text-ink">{cat.score.toFixed(1)} / 5</span>
+                      <span className="num font-semibold" style={{ color: "var(--ring)" }}>{cat.score.toFixed(1)} / 5</span>
                     </div>
                     <div className="h-2 w-full rounded-full bg-panel-2 border border-line/60 dark:bg-white/[0.08] overflow-hidden" aria-hidden>
-                      <div className={clsx("h-full rounded-full transition-all duration-700", cat.score < 2 ? "bg-gradient-to-r from-rose-500 to-red-400" : cat.score < 3.5 ? "bg-gradient-to-r from-amber-500 to-orange-400" : "bg-gradient-to-r from-blue-fill to-indigo-500")} style={{ width: `${Math.min(100, (cat.score / 5) * 100)}%` }} />
+                      <div
+                        className="h-full rounded-full transition-all duration-700"
+                        style={{ width: `${Math.min(100, (cat.score / 5) * 100)}%`, backgroundColor: "var(--ring)" }}
+                      />
                     </div>
                   </div>
                 ))}
@@ -537,7 +577,13 @@ export function InterviewReportView(p: InterviewReportViewProps) {
                           <td className="py-4 px-3">
                             <span className="inline-flex px-3 py-1 rounded-md text-[11px] font-semibold bg-purple-500/10 dark:bg-[#2a1b42] text-purple-700 dark:text-[#d8b4fe] border border-purple-500/30 dark:border-[#581c87]/50">{pill}</span>
                           </td>
-                          <td className="py-4 px-3 num font-bold text-ink whitespace-nowrap">{r.overall != null ? `${r.overall.toFixed(1)} / 5` : <span className="font-medium text-muted">Not scored</span>}</td>
+                          <td
+                            className="py-4 px-3 num font-bold text-ink whitespace-nowrap"
+                            data-band={scoreBandKey(r.overall)}
+                            style={r.overall != null ? { color: "var(--ring)" } : undefined}
+                          >
+                            {r.overall != null ? `${r.overall.toFixed(1)} / 5` : <span className="font-medium text-muted">Not scored</span>}
+                          </td>
                           <td className="py-4 px-3">
                             {measured.good.length + measured.improve.length === 0 ? (
                               <span className="text-muted">Nothing could be measured in this answer.</span>

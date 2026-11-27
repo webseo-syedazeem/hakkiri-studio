@@ -622,12 +622,13 @@ export function InterviewOverviewClient({
                 <div className="space-y-3 pt-1">
                   {effectiveCategories.map((cat) => {
                     const pct = (cat.score / 5) * 100;
+                    const catBand = cat.score < 2 ? "poor" : cat.score < 3 ? "average" : cat.score < 4 ? "good" : "strong";
                     return (
-                      <div key={cat.name} className="space-y-1">
+                      <div key={cat.name} className="space-y-1" data-band={catBand}>
                         <div className="flex items-center justify-between text-xs">
                           <span className="font-medium text-ink">{cat.name}</span>
                           <div className="flex items-center gap-2">
-                            <span className="font-semibold text-ink num">{cat.score.toFixed(1)}/5</span>
+                            <span className="font-semibold num" style={{ color: "var(--ring)" }}>{cat.score.toFixed(1)}/5</span>
                             {cat.delta != null && cat.delta !== 0 && (
                               <span className={clsx("text-[11px] font-bold num", cat.delta > 0 ? "text-emerald-600 dark:text-emerald-300" : "text-rose-600 dark:text-rose-300")}>
                                 <span aria-hidden>{cat.delta > 0 ? "▲" : "▼"}</span>
@@ -638,15 +639,8 @@ export function InterviewOverviewClient({
                         </div>
                         <div className="h-2 w-full overflow-hidden rounded-full bg-panel-2 border border-line/60 dark:bg-white/[0.07] dark:border-0">
                           <div
-                            className={clsx(
-                              "h-full rounded-full transition-all duration-500",
-                              cat.score < 2
-                                ? "bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]"
-                                : cat.score < 3.5
-                                  ? "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]"
-                                  : "bg-indigo-500 dark:bg-indigo-400 shadow-[0_0_8px_rgba(129,140,248,0.5)]",
-                            )}
-                            style={{ width: `${pct}%` }}
+                            className="h-full rounded-full transition-all duration-500"
+                            style={{ width: `${pct}%`, backgroundColor: "var(--ring)" }}
                           />
                         </div>
                       </div>

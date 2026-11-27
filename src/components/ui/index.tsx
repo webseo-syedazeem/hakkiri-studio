@@ -11,7 +11,7 @@ const buttonBase =
   "group relative inline-flex items-center justify-center gap-2 whitespace-nowrap font-semibold transition-all duration-200 ease-out disabled:pointer-events-none disabled:opacity-50 select-none cursor-pointer";
 const buttonVariants: Record<Variant, string> = {
   primary:
-    "pro-btn-glow bg-gradient-to-r from-[#4f52f8] via-[#5c5ffc] to-[#6d5eff] text-white border border-indigo-500/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_4px_16px_-2px_rgba(79,82,248,0.45)] hover:from-[#5b5efd] hover:to-[#7b6dff] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_6px_24px_-2px_rgba(79,82,248,0.7)] hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]",
+    "pro-btn-glow bg-blue-fill hover:bg-blue-hover text-white border border-blue-fill/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_4px_14px_-2px_rgba(0,113,227,0.38)] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_6px_20px_-2px_rgba(0,113,227,0.55)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_4px_16px_-2px_rgba(74,90,240,0.45)] hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]",
   secondary:
     "bg-panel text-ink border border-line-strong shadow-[0_1px_3px_rgba(15,23,42,0.06)] hover:border-blue-fill/50 hover:bg-panel-2 hover:shadow-[0_4px_12px_rgba(15,23,42,0.1)] dark:bg-[#1c1d27] dark:border-white/10 dark:shadow-[0_2px_8px_rgba(0,0,0,0.35)] dark:hover:border-white/20 dark:hover:bg-[#252634] hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]",
   ghost:
@@ -105,14 +105,14 @@ export function Sep() {
 export type MeterTone = "ready" | "getting-there" | "not-ready";
 
 const meterColour: Record<MeterTone, string> = {
-  ready: "bg-blue",
-  "getting-there": "bg-lilac",
-  "not-ready": "bg-red",
+  ready: "bg-[#15803d] dark:bg-[#4ade80]",
+  "getting-there": "bg-[#c2410c] dark:bg-[#fb923c]",
+  "not-ready": "bg-[#b91c1c] dark:bg-[#f87171]",
 };
 export const toneText: Record<MeterTone, string> = {
-  ready: "text-blue-soft",
-  "getting-there": "text-ink",
-  "not-ready": "text-red-soft",
+  ready: "text-[#15803d] dark:text-[#4ade80]",
+  "getting-there": "text-[#c2410c] dark:text-[#fb923c]",
+  "not-ready": "text-[#b91c1c] dark:text-[#f87171]",
 };
 
 /** A segmented level meter, like a studio desk. */
@@ -121,7 +121,7 @@ export function Meter({ value, max = 5, segments = 20, tone, height = 16, label 
   return (
     <div role="img" aria-label={label ?? `${value} out of ${max}`} className="flex gap-[3px]">
       {Array.from({ length: segments }, (_, k) => (
-        <span key={k} className={clsx("flex-1 rounded-[2px]", k < lit ? meterColour[tone] : "bg-panel-2 border border-line/60 dark:bg-white/[0.07] dark:border-0")} style={{ height }} />
+        <span key={k} className={clsx("flex-1 rounded-[2px]", k < lit ? meterColour[tone] : "bg-line-strong/55 dark:bg-white/[0.08]")} style={{ height }} />
       ))}
     </div>
   );
