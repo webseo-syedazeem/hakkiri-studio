@@ -32,6 +32,10 @@ async function signIn(browser, label, opts = {}) {
     try {
       Object.defineProperty(window, "speechSynthesis", { value: undefined, configurable: true });
     } catch {}
+    // The one-time appearance choice is made (dark, the default), as on first sign-in.
+    try {
+      if (localStorage.getItem("hk_theme") === null) localStorage.setItem("hk_theme", "dark");
+    } catch {}
   });
   return user;
 }

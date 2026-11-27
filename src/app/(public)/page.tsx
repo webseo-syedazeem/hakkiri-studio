@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { LandingHero } from "@/components/landing/LandingHero";
+import { LandingCvSection } from "@/components/landing/LandingCvSection";
 import { LandingLiveSection } from "@/components/landing/LandingLiveSection";
 import { LandingSteps } from "@/components/landing/LandingSteps";
 import { LandingWalkthrough } from "@/components/landing/LandingWalkthrough";
@@ -201,6 +202,7 @@ export default async function LandingPage({ searchParams }: { searchParams?: Pro
       )}
 
       <LandingHero content={content} isLoggedIn={isLoggedIn} />
+      <LandingCvSection />
       <LandingLiveSection />
       <LandingSteps isLoggedIn={isLoggedIn} />
       <LandingWalkthrough />

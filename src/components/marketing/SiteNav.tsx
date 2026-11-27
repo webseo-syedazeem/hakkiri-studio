@@ -35,7 +35,8 @@ export function SiteNav() {
   ];
 
   const secondaryLinks: [string, string, boolean][] = [
-    ["/cv-templates", "CVs", /^\/(cv|resume|cover-letter)-(templates|examples)/.test(path)],
+    // A shortcut to the CV section of the home page, not a page of its own (DESIGN-SPEC-v3 §06).
+    ["/#cvs", "CVs", /^\/(cv|resume|cover-letter)-(templates|examples)/.test(path)],
     [`${base}#how`, "How it works", false],
     ["/blog", "Blog", path.startsWith("/blog")],
     ["/about", "About", path === "/about"],
