@@ -185,5 +185,22 @@ run("CV start", async (browser) => {
   await p.page.getByRole("link", { name: "Phone CV", exact: true }).waitFor();
   await fitsWidth(p.page, "dashboard on a phone");
 
+  // --- Import from LinkedIn: nothing is fetched from LinkedIn and nothing is filled in ---
+  const li = a.page;
+  await li.goto(`${BASE}/cv/new`);
+  await li.getByRole("button", { name: "Import from LinkedIn", exact: true }).click();
+  await li.getByLabel("CV name").fill("From LinkedIn");
+  await li.getByText("Experienced", { exact: true }).click();
+  await li.getByText("UK", { exact: true }).click();
+  await li.getByLabel("Profile link (optional)").fill("linkedin.com/in/sam-example");
+  await li.getByRole("button", { name: "Read my profile", exact: true }).click();
+  check(await li.getByText(/Paste your profile’s About, Experience and Education, or upload the PDF LinkedIn makes for you\./).first().isVisible(), "a LinkedIn link alone is not read: it asks for LinkedIn's PDF or the profile text, and fills nothing in");
+  check(await li.getByRole("button", { name: "Upload LinkedIn’s PDF" }).isVisible(), "with a way to upload LinkedIn's own PDF");
+  await li.getByLabel("Or paste your profile").fill("About\nI look after collections at a small archive.\n\nExperience\nArchive assistant\nPaper Kite Archive\nSep 2023 – Present\n• Catalogued 1,200 maps in a year");
+  await li.getByRole("button", { name: "Read my profile", exact: true }).click();
+  await li.waitForURL(/\/cv\/import\/imp_/, { timeout: 45000 });
+  const read = await li.locator("main").innerText();
+  check(!/Professional Role|Led key projects|University Degree|Strategic Planning/.test(read), "only the pasted profile is read: no stand-in roles, degrees or skills", read.slice(0, 200));
+
   check(a.errors.length + b.errors.length + p.errors.length === 0, "no page errors", [...a.errors, ...b.errors, ...p.errors].join("\n"));
 });

@@ -82,7 +82,7 @@ export function Setup() {
     if (!region) e.region = "Choose UK or US.";
     if (method === "upload" && !file) e.file = "Choose the file to upload.";
     if (method === "paste" && text.trim().length < 40) e.text = "Paste the text of your CV.";
-    if (method === "linkedin" && !linkedinUrl.trim()) e.linkedin = "Enter your LinkedIn profile link or username.";
+    if (method === "linkedin" && linkedinText.trim().length < 40) e.linkedin = "Paste your profile’s About, Experience and Education, or upload the PDF LinkedIn makes for you.";
     return e;
   }
 
@@ -115,8 +115,8 @@ export function Setup() {
       for (const [k, v] of Object.entries(setup)) form.set(k, v);
       if (method === "upload" && useFile) form.set("file", useFile);
       else if (method === "linkedin") {
-        form.set("linkedinUrl", linkedinUrl.trim());
-        if (linkedinText.trim()) form.set("linkedinText", linkedinText.trim());
+        if (linkedinUrl.trim()) form.set("linkedinUrl", linkedinUrl.trim());
+        form.set("linkedinText", linkedinText.trim());
       } else form.set("text", text);
       const made = await sendUpload<{ importId: string }>("/api/cv/imports", form, setStage);
       router.push(`/cv/import/${made.importId}`);
@@ -134,7 +134,7 @@ export function Setup() {
       : method === "empty"
       ? "Create CV"
       : method === "linkedin"
-      ? "Import from LinkedIn"
+      ? "Read my profile"
       : method === "notes"
       ? "Start with notes"
       : method === "talk"
@@ -283,20 +283,23 @@ export function Setup() {
 
               {method === "linkedin" && (
                 <div className="cv-stack" data-field="linkedin">
-                  <p style={{ margin: 0 }}>Read your profile into sections. You check each one before it is used.</p>
-                  <Field label="LinkedIn profile link or username" rule="For example linkedin.com/in/yourname." value={linkedinUrl} onChange={setLinkedinUrl} error={errors.linkedin} maxLength={300} />
+                  <p style={{ margin: 0 }}>
+                    The fullest import is the PDF LinkedIn makes for you: on your profile choose <b>More</b>, then <b>Save to PDF</b>, and upload it.{" "}
+                    <button type="button" className="cv-link" style={{ fontSize: "inherit" }} onClick={() => pick("upload")}>
+                      Upload LinkedIn’s PDF
+                    </button>
+                  </p>
                   <Field
-                    label="Profile text (optional)"
-                    rule="If your profile is private or needs a sign-in, copy your About, Experience and Education sections and paste them here."
+                    label="Or paste your profile"
+                    rule="Copy your About, Experience and Education sections from LinkedIn. We don’t read LinkedIn pages ourselves, and nothing is filled in for you."
                     multiline
-                    rows={5}
+                    rows={6}
                     value={linkedinText}
                     onChange={setLinkedinText}
+                    error={errors.linkedin}
                     maxLength={60000}
                   />
-                  <p className="cv-small" style={{ margin: 0 }}>
-                    For the most complete import, save your profile as a PDF in LinkedIn (More, then Save to PDF) and use Upload PDF or Word.
-                  </p>
+                  <Field label="Profile link (optional)" rule="Added to your contact links, for example linkedin.com/in/yourname." value={linkedinUrl} onChange={setLinkedinUrl} maxLength={300} />
                 </div>
               )}
 

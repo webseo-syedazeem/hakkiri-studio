@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { SetupSchema, badInput, failure, fieldErrors, makingTooFast, newCv, notFound, requireUserId } from "@/lib/cv/access";
 import { IMPORT_ERRORS } from "@/lib/cv/import";
-import { readLinkedInProfile } from "@/lib/cv/import/linkedin";
+import { LINKEDIN_HOW, linkedInText } from "@/lib/cv/import/linkedin";
 import { newImportId } from "@/lib/cv/import/record";
 import { readForm, readUpload } from "@/lib/cv/import/server";
 import { cvIsEmpty } from "@/lib/cv/schema";
@@ -29,16 +29,15 @@ export async function POST(req: Request) {
     const linkedinUrl = form.get("linkedinUrl");
     const linkedinText = form.get("linkedinText");
     const hasFile = file instanceof File && file.size > 0;
-    const hasLinkedIn = typeof linkedinUrl === "string" && linkedinUrl.trim().length > 0;
+    const hasLinkedIn = (typeof linkedinUrl === "string" && linkedinUrl.trim().length > 0) || (typeof linkedinText === "string" && linkedinText.trim().length > 0);
     let hasText = typeof text === "string" && text.trim().length > 0;
     let finalText = hasText ? (text as string) : "";
 
-    if (hasLinkedIn) {
-      const parsedLinkedIn = await readLinkedInProfile(
-        linkedinUrl as string,
-        typeof linkedinText === "string" ? (linkedinText as string) : undefined
-      );
-      finalText = parsedLinkedIn.text;
+    // LinkedIn: only what the person pasted is read. Nothing is fetched from LinkedIn, and nothing is filled in.
+    if (hasLinkedIn && !hasFile && !hasText) {
+      const fromProfile = linkedInText(typeof linkedinUrl === "string" ? linkedinUrl : "", typeof linkedinText === "string" ? linkedinText : "");
+      if (!fromProfile) return badInput(LINKEDIN_HOW, { linkedin: LINKEDIN_HOW });
+      finalText = fromProfile;
       hasText = true;
     }
 
