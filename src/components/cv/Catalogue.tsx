@@ -19,7 +19,7 @@ export const examplePreview = (id: string, region: CvRegion) => `/example-previe
 /**
  * Find an example or template: one search by job or industry across the
  * written examples (each a CV and cover letter, for the UK and the US) and
- * the 45 designs. Examples are content; templates are designs; any example
+ * the 20 designs of the v3 gallery. Examples are content; templates are designs; any example
  * can wear any design.
  */
 export function Catalogue() {
@@ -193,7 +193,7 @@ export function Catalogue() {
               Templates <small className="cv-muted">{templates.length} shown</small>
             </h2>
             {templates.length ? (
-              <ul className="cv-cards">
+              <ul className="cv-cards cv-cards-tpl">
                 {templates.map((t) => (
                   <li key={t.id}>
                     <Link className="cv-card" href={`/cv/templates/${templateSlug(t)}?region=${region}`} data-testid="template-card">
@@ -203,7 +203,7 @@ export function Catalogue() {
                       </span>
                       <span className="cv-card-body">
                         <b>{templateLabel(t)}</b>
-                        <small>Good for {t.suits.charAt(0).toLowerCase() + t.suits.slice(1)}</small>
+                        <small>{FAMILY_NAMES[t.family]} · Good for {t.suits.charAt(0).toLowerCase() + t.suits.slice(1)}</small>
                       </span>
                     </Link>
                   </li>

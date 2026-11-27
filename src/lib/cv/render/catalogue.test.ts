@@ -4,16 +4,24 @@ import { describe, expect, it } from "vitest";
 import { wrongRegionSpelling } from "../score/detect";
 import { CV_TEMPLATES } from "../schema";
 import { galleryItems } from "../templates/gallery";
-import { BODY_SIZE, FAMILY_NAMES, TEMPLATES, TEMPLATE_FAMILIES, type TemplateDef, catalogue, templateBySlug, templateLabel, templateMeta, templatePreview, templateSlug } from "./templates";
+import { BODY_SIZE, FAMILY_NAMES, GALLERY_V3, TEMPLATES, TEMPLATE_FAMILIES, type TemplateDef, catalogue, galleryTemplates, templateBySlug, templateLabel, templateMeta, templatePreview, templateSlug } from "./templates";
 
 const all = Object.values(TEMPLATES) as TemplateDef[];
 
 describe("the template catalogue", () => {
-  it("has 45 templates, numbered 1 to 45, each number once", () => {
-    expect(all).toHaveLength(45);
-    expect(all.map((t) => t.no).sort((a, b) => a - b)).toEqual(Array.from({ length: 45 }, (_, i) => i + 1));
-    expect(CV_TEMPLATES).toHaveLength(45);
+  it("has the 45 original templates, numbered 1 to 45, plus the five v3 designs, each number once", () => {
+    expect(all).toHaveLength(50);
+    expect(all.map((t) => t.no).sort((a, b) => a - b)).toEqual([...Array.from({ length: 45 }, (_, i) => i + 1), 46, 47, 49, 51, 52]);
+    expect(CV_TEMPLATES).toHaveLength(50);
     for (const id of CV_TEMPLATES) expect(TEMPLATES[id].id).toBe(id);
+  });
+
+  it("offers the v3 gallery of 20 designs, covering all nine families, and keeps every saved design openable", () => {
+    expect(galleryTemplates().map((t) => t.no)).toEqual([...GALLERY_V3]);
+    for (const f of TEMPLATE_FAMILIES) expect(galleryTemplates().some((t) => t.family === f), FAMILY_NAMES[f]).toBe(true);
+    // Healthcare and Teaching stay on offer.
+    expect(galleryTemplates().map((t) => t.id)).toEqual(expect.arrayContaining(["ward", "chalkboard"]));
+    for (const t of all) expect(templateBySlug(templateSlug(t))?.id).toBe(t.id);
   });
 
   it("gives each a name of its own, and none of another builder's template names", () => {
@@ -23,8 +31,8 @@ describe("the template catalogue", () => {
     expect(names.filter((n) => theirs.includes(n))).toEqual([]);
   });
 
-  it("puts five templates in each of the nine families", () => {
-    for (const f of TEMPLATE_FAMILIES) expect(all.filter((t) => t.family === f).map((t) => t.name), FAMILY_NAMES[f]).toHaveLength(5);
+  it("puts five of the original 45 templates in each of the nine families", () => {
+    for (const f of TEMPLATE_FAMILIES) expect(catalogue().filter((t) => t.family === f).map((t) => t.name), FAMILY_NAMES[f]).toHaveLength(5);
   });
 
   it("labels each by number and name", () => {
@@ -56,7 +64,7 @@ describe("the template catalogue", () => {
     expect(new Set(slugs).size).toBe(all.length);
     for (const t of all) expect(templateBySlug(templateSlug(t))?.id).toBe(t.id);
     expect(templateBySlug("07-clean-sans")).toBeUndefined();
-    expect(catalogue().map((t) => t.no)).toEqual(Array.from({ length: all.length }, (_, i) => i + 1));
+    expect(catalogue().map((t) => t.no)).toEqual(Array.from({ length: 45 }, (_, i) => i + 1));
   });
 
   it("has a CV and a cover letter preview image for every template (scripts/template-previews.cjs)", () => {

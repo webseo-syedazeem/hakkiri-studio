@@ -1,4 +1,4 @@
-import { type TemplateDef, type TemplateFamily, catalogue } from "../render/templates";
+import { type TemplateDef, type TemplateFamily, galleryTemplates } from "../render/templates";
 import type { CvLevel, CvRegion } from "../schema";
 import { pick, pickList } from "./build";
 import { EXAMPLES } from "./index";
@@ -122,7 +122,7 @@ export function findTemplates(query: CatalogueQuery): TemplateDef[] {
   const industryWords = [...industries].flatMap((id) => words(`${pick(industryById(id).name, "uk")}`));
   const homes = new Set([...industries].map((id) => industryById(id).template));
   const levelWords: Record<CvLevel, string[]> = { student: ["student", "graduate", "school", "first"], early: ["graduate", "first", "early", "short"], experienced: ["experienced", "professional"], senior: ["senior", "leader", "director", "executive", "board"] };
-  const scored = catalogue()
+  const scored = galleryTemplates()
     .filter((t) => !query.look || t.family === query.look)
     .map((t) => {
       const name = new Set(words(t.name));

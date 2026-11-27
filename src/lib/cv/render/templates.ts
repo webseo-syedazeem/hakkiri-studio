@@ -57,7 +57,7 @@ export type HeadingRule = "none" | "hairline-below" | "short-below" | "short-abo
 
 export interface TemplateDef {
   id: TemplateId;
-  /** Its number in the catalogue, 1 to 45: never changed, never reused. */
+  /** Its number in the catalogue (1 to 45, then the v3 designs 46, 47, 49, 51, 52): never changed, never reused. */
   no: number;
   name: string;
   family: TemplateFamily;
@@ -104,9 +104,17 @@ export const GALLERIES: Record<GalleryKind, { region: "uk" | "us"; word: string;
 /** The template's preview image, drawn by the renderer with an example (scripts/template-previews.cjs): 1098 by 1552 pixels, or 550 wide when small. */
 export const templatePreview = (t: Pick<TemplateDef, "no" | "id">, size: "large" | "small" = "large", kind: GalleryKind = "cv") =>
   `/${kind === "letter" ? "cover-letter-templates" : "cv-templates"}/${String(t.no).padStart(2, "0")}-${t.id}${size === "small" ? "-small" : ""}.webp`;
-/** Every template, by number. */
-export const catalogue = (): TemplateDef[] => (Object.values(TEMPLATES) as TemplateDef[]).sort((a, b) => a.no - b.no);
-export const templateBySlug = (slug: string): TemplateDef | undefined => catalogue().find((t) => templateSlug(t) === slug);
+/** The 45 original templates, by number: the public CV, resume and cover-letter galleries. */
+export const catalogue = (): TemplateDef[] => (Object.values(TEMPLATES) as TemplateDef[]).filter((t) => t.no <= 45).sort((a, b) => a.no - b.no);
+/** Every template there is, by number, including the v3 designs: so any saved CV's design can always be opened. */
+export const allTemplates = (): TemplateDef[] => (Object.values(TEMPLATES) as TemplateDef[]).sort((a, b) => a.no - b.no);
+/**
+ * The in-app gallery (design spec v3 §05): 15 retained designs and 5 new ones, covering all nine families.
+ * The other 25 stay available to CVs already using them; they are just not offered for new choices.
+ */
+export const GALLERY_V3: readonly number[] = [1, 2, 6, 7, 11, 16, 19, 21, 26, 30, 31, 36, 39, 40, 42, 46, 47, 49, 51, 52];
+export const galleryTemplates = (): TemplateDef[] => allTemplates().filter((t) => GALLERY_V3.includes(t.no));
+export const templateBySlug = (slug: string): TemplateDef | undefined => allTemplates().find((t) => templateSlug(t) === slug);
 
 /** The page title, description and addresses for a template's page in one of the galleries. */
 export function templateMeta(t: TemplateDef, kind: GalleryKind) {
@@ -840,6 +848,87 @@ export const TEMPLATES: Record<TemplateId, TemplateDef> = {
     heading: { size: 12, weight: 700, caps: true, tracking: 0.06, align: "center", accent: true, rule: "short-below", ruleAccent: true },
     header: "band",
     separator: "bullet",
+  },
+  /* ---- Design spec v3: five new designs. One column of real text, like every design here, so the
+   * software read-back and the word-for-word download check work exactly as for the others. */
+  clearline: {
+    id: "clearline",
+    no: 46,
+    name: "Clearline",
+    family: "contemporary",
+    tags: ["clean lines", "accent name", "rule under contact"],
+    suits: "Commercial and product roles",
+    order: ["summary", "experience", "skills", "projects", "education"],
+    fonts: { heading: "manrope", body: "inter" },
+    accent: "navy",
+    space: { section: 14, entry: 8 },
+    title: { size: 27, weight: 700, align: "left", accent: true },
+    contact: { align: "left", ruleBelow: true },
+    heading: { size: 11, weight: 700, caps: true, tracking: 0.08, align: "left", accent: true, rule: "hairline-below" },
+  },
+  fieldwork: {
+    id: "fieldwork",
+    no: 47,
+    name: "Fieldwork",
+    family: "contemporary",
+    tags: ["practical", "dash bullets", "short rules"],
+    suits: "Operations and project roles",
+    order: ["summary", "skills", "experience", "projects", "certificates", "education"],
+    fonts: { heading: "work", body: "work" },
+    accent: "teal",
+    space: { section: 13, entry: 7 },
+    title: { size: 27, weight: 700, align: "left", accent: true },
+    contact: { align: "left" },
+    heading: { size: 12, weight: 700, align: "left", accent: true, rule: "short-below", ruleAccent: true },
+    bullet: "dash",
+  },
+  "margin-notes": {
+    id: "margin-notes",
+    no: 49,
+    name: "Margin Notes",
+    family: "contemporary",
+    tags: ["serif headings", "indented entries", "editorial"],
+    suits: "Consulting and editorial roles",
+    order: ["summary", "experience", "education", "skills", "publications"],
+    fonts: { heading: "lora", body: "plex" },
+    accent: "burgundy",
+    space: { section: 14, entry: 8 },
+    title: { size: 26, weight: 600, align: "left" },
+    contact: { align: "left" },
+    heading: { size: 13, weight: 400, italic: true, align: "left", accent: true, rule: "short-above", ruleAccent: true },
+    entryIndent: 14,
+  },
+  framework: {
+    id: "framework",
+    no: 51,
+    name: "Framework",
+    family: "contemporary",
+    tags: ["framed header", "colour band", "structured"],
+    suits: "Policy, planning and analyst roles",
+    order: ["summary", "experience", "skills", "certificates", "languages", "education"],
+    fonts: { heading: "sans3", body: "sans3" },
+    accent: "slate",
+    space: { section: 14, entry: 8 },
+    title: { size: 26, weight: 700, align: "left" },
+    contact: { align: "left" },
+    heading: { size: 11.5, weight: 700, caps: true, tracking: 0.06, align: "left", accent: true, rule: "hairline-below", ruleAccent: true },
+    header: "band",
+  },
+  chronicle: {
+    id: "chronicle",
+    no: 52,
+    name: "Chronicle",
+    family: "contemporary",
+    tags: ["timeline", "accent bars", "dates first"],
+    suits: "Long, steady careers in one field",
+    order: ["summary", "experience", "education", "skills", "certificates"],
+    fonts: { heading: "franklin", body: "franklin" },
+    accent: "indigo",
+    space: { section: 14, entry: 9 },
+    title: { size: 27, weight: 700, align: "left", accent: true },
+    contact: { align: "left", ruleBelow: true },
+    heading: { size: 12, weight: 700, caps: true, tracking: 0.05, align: "left", accent: true, rule: "bar-before", ruleAccent: true },
+    entryIndent: 10,
   },
 };
 
