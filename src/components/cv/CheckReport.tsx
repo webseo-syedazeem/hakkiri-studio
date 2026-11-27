@@ -24,7 +24,7 @@ function ScoreBox({ title, shown, band, parts, testId }: { title: string; shown:
   return (
     <Panel title={title} data-testid={testId}>
       <div className="cv-pad cv-stack">
-        <ScoreRing score={shown} label={title} />
+        <ScoreRing score={shown} label={title} size={126} />
         <ul className="cv-score-parts">
           {parts.map((p) => {
             const unchecked = p.pending >= p.points;
@@ -50,7 +50,9 @@ function ScoreBox({ title, shown, band, parts, testId }: { title: string; shown:
   );
 }
 
-function Findings({ findings, base, label }: { findings: { quote: string; why: string; todo: string; severity?: string }[]; base: string | null; label: string }) {
+const PART_NAMES: Record<string, string> = { evidence: "Evidence", clarity: "Clarity", structure: "Structure", software: "Readable by software", relevance: "Relevance" };
+
+function Findings({ findings, base, label }: { findings: { quote: string; why: string; todo: string; severity?: string; part?: string }[]; base: string | null; label: string }) {
   const [all, setAll] = useState(false);
   const shown = all ? findings : findings.slice(0, 8);
   return (
@@ -64,20 +66,35 @@ function Findings({ findings, base, label }: { findings: { quote: string; why: s
             <ol className="cv-fixlist">
               {shown.map((f, i) => (
                 <li key={i} className="cv-fix" data-testid="finding">
-                  <span className="cv-chip" data-status={f.severity === "issue" ? "missing" : "partly"}>
-                    {f.severity === "issue" ? "To fix" : "To review"}
+                  <span className="cv-fix-head">
+                    <b>
+                      {i + 1}
+                      {f.part && PART_NAMES[f.part] ? ` · ${PART_NAMES[f.part]}` : ""}
+                    </b>
+                    <span className="cv-chip" data-status={f.severity === "issue" ? "missing" : "partly"}>
+                      {f.severity === "issue" ? "To fix" : "To review"}
+                    </span>
                   </span>
-                  {f.quote && <blockquote className="cv-quote">{f.quote}</blockquote>}
+                  {f.quote && <q className="cv-fix-quote">{f.quote}</q>}
                   <p>
                     <b>Why:</b> {f.why}
                   </p>
                   <p>
                     <b>What to do:</b> {f.todo}
                   </p>
+                  {base && (
+                    <Link className="cv-link cv-fix-link" href={base}>
+                      Fix this in the builder
+                    </Link>
+                  )}
                 </li>
               ))}
             </ol>
-            {findings.length > shown.length && <Btn onClick={() => setAll(true)}>Show all {findings.length}</Btn>}
+            {findings.length > 8 && (
+              <Btn className="cv-wide-btn" onClick={() => setAll(!all)}>
+                {all ? "Show fewer" : `Show all ${findings.length}`}
+              </Btn>
+            )}
           </>
         ) : (
           <>
@@ -96,14 +113,18 @@ function ReadBack({ cv }: { cv: CvReport }) {
     return (
       <Panel title="How software reads it" data-testid="read-back">
         <div className="cv-pad cv-stack">
-          <p className="cv-row" style={{ margin: 0, justifyContent: "space-between" }}>
-            <span>Your file</span>
-            <span className="cv-chip">Not checked</span>
-          </p>
-          <p className="cv-small" style={{ margin: 0 }}>
-            Pasted text has no file to read. Upload the PDF or Word file you send to employers to see what software reads from it.
-          </p>
-          <BtnLink href="/cv/check?method=upload">Check file</BtnLink>
+          <ul className="cv-readrows">
+            <li>
+              <span className="min-w-0">
+                <b>Your file</b>
+                <span className="cv-small cv-muted">Pasted text has no file to read. Upload the PDF or Word file you send to employers to see what software reads from it.</span>
+              </span>
+              <span className="cv-chip">Not checked</span>
+            </li>
+          </ul>
+          <BtnLink href="/cv/check?method=upload" style={{ justifySelf: "start" }}>
+            Check file
+          </BtnLink>
         </div>
       </Panel>
     );
@@ -120,16 +141,19 @@ function ReadBack({ cv }: { cv: CvReport }) {
         <p className="cv-small" style={{ margin: 0 }}>
           What the reader took from <b>{read.name}</b> ({read.kind === "pdf" ? "PDF" : "Word"}), as an applicant tracking system would read it. Systems differ: this shows what one careful reader found, not a promise about every system.
         </p>
-        <dl className="cv-readback">
+        <ul className="cv-readrows">
           {rows.map(([k, v, ok]) => (
-            <div key={k}>
-              <dt>{k}</dt>
-              <dd>
-                <span>{v}</span> <span className="cv-chip" data-status={ok ? undefined : "partly"}>{ok ? "Read" : "To review"}</span>
-              </dd>
-            </div>
+            <li key={k}>
+              <span className="min-w-0">
+                <b>{k}</b>
+                <span className="cv-small cv-muted">{v}</span>
+              </span>
+              <span className="cv-chip" data-status={ok ? "ok" : "partly"}>
+                {ok ? "Read" : "To review"}
+              </span>
+            </li>
           ))}
-        </dl>
+        </ul>
         {read.unplaced.length > 0 && (
           <details>
             <summary>Lines it couldn’t place</summary>
@@ -174,23 +198,21 @@ function JobMatch({ job, id }: { job: JobReport; id: string }) {
     <Panel className="cv-jobmatch" data-testid="job-match">
       <div className="cv-pad cv-stack">
         <div className="cv-row" style={{ justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
-          <div>
-            <p className="cv-small cv-muted" style={{ margin: 0 }}>
+          <div className="min-w-0">
+            <p className="cv-eyebrow" style={{ margin: 0 }}>
               Aimed at
             </p>
-            <h2 style={{ margin: "2px 0 4px", fontSize: 18 }}>{aimed}</h2>
-            <p style={{ margin: 0 }}>
+            <h2 style={{ margin: "4px 0 4px", fontSize: 17 }}>{aimed}</h2>
+            <p className="cv-small cv-muted" style={{ margin: 0 }}>
               {job.shown} of {job.total} requirements shown{job.partly ? ` · ${job.partly} partly shown` : ""}
             </p>
           </div>
-          <div style={{ textAlign: "right" }} data-band={job.score != null ? bandOf(job.score).key : undefined}>
-            <p className="cv-small cv-muted" style={{ margin: 0 }}>
-              Match score
-            </p>
-            <p className="cv-score-number" style={job.score != null ? { color: "var(--ring)" } : undefined} aria-label={`Match score: ${job.score ?? 0} out of 100`}>
+          <div className="cv-matchbox" data-band={job.score != null ? bandOf(job.score).key : undefined} role="img" aria-label={job.score === null ? "Match score: not measured" : `Match score: ${job.score} out of 100`}>
+            <span className="cv-small cv-muted">Match score</span>
+            <b style={job.score != null ? { color: "var(--ring)" } : undefined}>
               {job.score ?? "–"}
               <small> / 100</small>
-            </p>
+            </b>
           </div>
         </div>
         <div className="cv-row">
@@ -214,8 +236,11 @@ function JobMatch({ job, id }: { job: JobReport; id: string }) {
             {job.rows.map((r, i) => (
               <tr key={i} data-testid="match-row">
                 <td data-label="What the advert asks for">
-                  {r.requirement}
-                  {r.priority === "preferred" && <span className="cv-small cv-muted"> · preferred</span>}
+                  <b className="cv-req">{r.requirement}</b>
+                  <span className="cv-small cv-muted">
+                    {r.priority === "required" ? "Required" : "Preferred"}
+                    {r.quote && r.quote.replace(/[.\s]+$/, "") !== r.requirement.replace(/[.\s]+$/, "") ? ` · ${r.quote}` : ""}
+                  </span>
                 </td>
                 <td data-label="Evidence in your CV">{r.evidence ? <q>{r.evidence}</q> : <span className="cv-muted">No evidence found</span>}</td>
                 <td data-label="Match">
@@ -239,13 +264,15 @@ function LetterChecks({ checks }: { checks: LetterCheck[] }) {
         <ul className="cv-lettercheck">
           {checks.map((c) => (
             <li key={c.id}>
-              <span className="cv-row" style={{ justifyContent: "space-between", gap: 8 }}>
-                <b>{c.name}</b>
-                <span className="cv-chip" data-status={c.state === "review" ? "partly" : undefined}>
+              <span className="cv-readrow-head">
+                <span className="min-w-0">
+                  <b>{c.name}</b>
+                  <span className="cv-small cv-muted">{c.detail}</span>
+                </span>
+                <span className="cv-chip" data-status={c.state === "review" ? "partly" : c.state === "ok" ? "ok" : undefined}>
                   {STATE_WORDS[c.state]}
                 </span>
               </span>
-              <span className="cv-small">{c.detail}</span>
               {c.items.length > 0 && c.id !== "greeting" && (
                 <ul className="cv-small">
                   {c.items.slice(0, 6).map((t, i) => (
@@ -354,7 +381,7 @@ export function CheckReport({ id }: { id: string }) {
             </div>
             <div className="cv-stack cv-report-side">
               <ScoreBox title={report.region === "us" ? "Resume score" : "CV score"} shown={cv.shown} band={cv.band} parts={cv.parts} testId="cv-score" />
-              <NextSteps hasJob={!!job} docType={report.docType} />
+              <NextSteps hasJob={!!job} docType={report.docType} builder={builder} />
             </div>
           </div>
         ) : letter ? (
@@ -366,11 +393,11 @@ export function CheckReport({ id }: { id: string }) {
             <div className="cv-stack cv-report-side">
               <ScoreBox title="Cover letter score" shown={letter.shown} band={letter.band} parts={letter.parts} testId="letter-score" />
               {letter.parts.some((p) => p.pending > 0) && (
-                <p className="cv-small cv-muted" style={{ margin: 0 }}>
+                <p className="cv-small cv-muted cv-score-note" style={{ margin: 0 }}>
                   The score is out of what could be checked. {!job ? "Add the job advert to check relevance to it." : ""} {report.docType === "cover" ? `Add your ${cvWord} to check each claim against it.` : ""}
                 </p>
               )}
-              <NextSteps hasJob={!!job} docType={report.docType} />
+              <NextSteps hasJob={!!job} docType={report.docType} builder={builder} />
             </div>
           </div>
         ) : null}
@@ -400,23 +427,20 @@ export function CheckReport({ id }: { id: string }) {
   );
 }
 
-function NextSteps({ hasJob, docType }: { hasJob: boolean; docType: Report["docType"] }) {
+function NextSteps({ hasJob, docType, builder }: { hasJob: boolean; docType: Report["docType"]; builder: string | null }) {
   return (
-    <Panel title="Next steps">
+    <Panel title="Next steps" className="cv-nextpanel">
       <div className="cv-pad cv-nextsteps">
-        {!hasJob && (
-          <Link className="cv-link" href={`/cv/check?job=1${docType === "cv" ? "" : `&type=${docType}`}`}>
-            Check against a job
-          </Link>
+        {builder && (
+          <BtnLink kind="primary" href={builder}>
+            Fix this in the builder
+          </BtnLink>
         )}
-        {docType === "cover" && (
-          <Link className="cv-link" href="/cv/check?type=both">
-            Check it with your CV
-          </Link>
-        )}
-        <Link className="cv-link" href="/cv">
+        {!hasJob && <BtnLink href={`/cv/check?job=1${docType === "cv" ? "" : `&type=${docType}`}`}>Check against a job</BtnLink>}
+        {docType === "cover" && <BtnLink href="/cv/check?type=both">Check it with your CV</BtnLink>}
+        <BtnLink kind="quiet" href="/cv">
           Back to your documents
-        </Link>
+        </BtnLink>
       </div>
     </Panel>
   );

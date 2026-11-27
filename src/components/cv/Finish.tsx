@@ -25,7 +25,7 @@ function TemplateThumb({ def, accent }: { def: TemplateDef; accent: string }) {
   const headWidth = h.caps ? 20 : 24;
   return (
     <svg viewBox="0 0 64 84" width="64" height="84" aria-hidden="true" className="cv-thumb">
-      <rect width="64" height="84" rx="2" fill="#fbfbfd" />
+      <rect width="64" height="84" rx="2" fill="#ffffff" />
       <rect x={x(def.title.align, 34)} y="7" width="34" height="5" rx="1" fill={def.title.accent ? accent : "#17181f"} />
       {def.title.ruleBelow && <rect x="6" y="14.5" width="52" height="1" fill={accent} />}
       <rect x={x(def.contact.align, 42)} y="17" width="42" height="2" rx="1" fill="#8a8c99" />
