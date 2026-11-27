@@ -107,7 +107,7 @@ run("CV upload", async (browser) => {
   await setUp(page, { name: "Tom Reilly graduate CV", level: "Student or graduate", file: "tom-reilly.graduate.docx" });
   const tomImport = page.url().match(/imp_[a-f0-9]+/)[0];
   await page.getByText("Sections to confirm").waitFor();
-  const stepNames = await page.locator("ol .cv-pick a").allInnerTexts();
+  const stepNames = (await page.locator("ol .cv-pick a").allInnerTexts()).map((t) => t.replace(/\s+/g, " ").trim());
   check(stepNames.join(" | ") === "1. Contact | 2. Profile | 3. Education | 4. Experience | 5. Positions of Responsibility | 6. Skills | 7. Interests | 8. Unassigned text", "a Word file with heading styles reads into its sections, in the file's own order", stepNames.join(" | "));
   await page.getByRole("link", { name: /^Review (all sections|section by section)$/ }).click();
   await page.waitForURL(/review\/contact/);

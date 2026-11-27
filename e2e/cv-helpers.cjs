@@ -63,7 +63,13 @@ async function setUp(page, { name = "Test CV", level = "Experienced", region = "
 
 /** Switches the page to the app's light surface (the same tokens the public pages use), or back to dark. */
 async function theme(page, mode) {
-  await page.evaluate((light) => document.documentElement.classList.toggle("mk", light), mode === "light");
+  // As the Appearance switch does it: the class, the "dark" class and data-theme together.
+  await page.evaluate((light) => {
+    const h = document.documentElement;
+    h.classList.toggle("mk", light);
+    h.classList.toggle("dark", !light);
+    h.dataset.theme = light ? "light" : "dark";
+  }, mode === "light");
   await page.waitForTimeout(120);
 }
 
@@ -71,6 +77,8 @@ async function theme(page, mode) {
 async function a11y(page, label) {
   if (!(await page.evaluate(() => typeof window.axe !== "undefined"))) await page.addScriptTag({ content: AXE });
   const found = await page.evaluate(async () => {
+    // What a person sees: once a dialog has opened and a theme change has faded in, not part-way through.
+    await Promise.race([Promise.all(document.getAnimations().map((a) => a.finished.catch(() => {}))), new Promise((r) => setTimeout(r, 1500))]);
     const root = document.querySelector("main") || document;
     const r = await window.axe.run(root, { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21aa"] } });
     return r.violations.map((v) => `${v.id}: ${v.nodes.slice(0, 3).map((n) => `${n.html.slice(0, 110)} → ${((n.any[0] || n.all[0] || {}).message || "").slice(0, 130)}`).join(" ¦ ")}`);

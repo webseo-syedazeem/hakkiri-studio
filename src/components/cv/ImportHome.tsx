@@ -151,7 +151,13 @@ export function ImportHome({ importId }: { importId: string }) {
                 </>
               ) : (
                 <>
-                  <BtnLink kind="primary" href={`/cv/import/${importId}/review/${(steps.find((s) => openFlags(imp, s) > 0) ?? next).key}?flagged=true`}>
+                  {/* Stopped part-way and come back: carry on where they left off. */}
+                  {imp.reviewed.length > 0 && (
+                    <BtnLink kind="primary" href={`/cv/import/${importId}/review/${next.key}`}>
+                      Carry on checking
+                    </BtnLink>
+                  )}
+                  <BtnLink kind={imp.reviewed.length > 0 ? "default" : "primary"} href={`/cv/import/${importId}/review/${(steps.find((s) => openFlags(imp, s) > 0) ?? next).key}?flagged=true`}>
                     {`Review flagged sections (${toCheck} to check)`}
                   </BtnLink>
                   <BtnLink kind="quiet" href={`/cv/import/${importId}/review/${steps[0].key}`}>
