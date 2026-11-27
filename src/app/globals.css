@@ -412,3 +412,7 @@ html:not(.dark) .bg-panel-2 [class*="bg-white/10"] {
     box-shadow: none !important;
   }
 }
+
+/* Dark theme: the button blue (#4a5af0) is too dark for small text on dark panels (2.6–3.2:1).
+ * Text set in it uses the link blue instead (8:1); buttons and fills keep the button blue. */
+html.dark:not(.mk) .text-blue-fill { color: var(--color-blue-soft); }
