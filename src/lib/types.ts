@@ -57,6 +57,8 @@ export interface Question {
   drillOnly?: boolean;
   /** Difficulty tier this question is calibrated for ("easy" | "medium" | "hard"). */
   difficulty?: Difficulty;
+  /** The question focus it was written for (e.g. "strengths", "caseStudy"), when known. Otherwise worked out from group and type. */
+  focus?: "competency" | "strengths" | "technical" | "experience" | "motivation" | "situational" | "caseStudy" | "leadership" | "curveball" | "valuesCulture";
 }
 
 /** The six kinds of follow-up in the spec ("Follow-up questions"). */
@@ -176,6 +178,8 @@ export interface Interview {
   questionsToAsk?: string[];
   /** Skills the job needs that none of your stories covers yet, each with a question that tests it. */
   gaps?: { skill: string; question: string }[];
+  /** Set on a General practice record (one per industry, hidden from the interviews list). */
+  general?: { industry: string; profession: string };
 }
 
 export interface CoachNote {

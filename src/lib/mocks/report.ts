@@ -80,7 +80,8 @@ export const FOLLOW_UP_WEIGHT = 0.5;
 
 const round1 = (n: number) => Math.round(n * 10) / 10;
 
-function weightedAverage(rows: MockRow[]): number | null {
+/** Average score of these answers, follow-ups at half weight, to one decimal place. Null when none was scored. */
+export function weightedAverage(rows: MockRow[]): number | null {
   let sum = 0;
   let weight = 0;
   for (const r of rows) {

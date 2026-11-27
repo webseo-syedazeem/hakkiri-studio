@@ -10,6 +10,7 @@ import { CalendarPopup, TimePickerPopup } from "./DatePicker";
 import { DraftStorageModal } from "./DraftStorageModal";
 import { buildRequest, focusMix, hasDraftContent, mixLine, roundsSelected as existingRounds, setupProblems, type SetupForm } from "@/lib/interviews/setup-form";
 import { FOCUS_CATEGORIES, getSuggestedWeights, weightsLine, type FocusCategoryKey } from "@/lib/interviews/settings";
+import { readAssessment, toHundred } from "@/lib/interviews/focus-detect";
 import { formatStageDate } from "@/lib/format";
 
 /* ------------------------------------------------------------------ DocField (exported for RebuildFlow) */
@@ -153,31 +154,54 @@ export interface StageItem {
   icon: "phone" | "code" | "present" | "users";
 }
 
-export function InterviewSetup() {
+/** An interview being edited: the set-up form opens with everything it was built from. */
+export interface SetupInitial {
+  id: string;
+  company: string;
+  title: string;
+  website: string;
+  jobText: string;
+  jobLabel: string;
+  cvText: string;
+  cvLabel: string;
+  coverText: string;
+  coverLabel: string;
+  stages: { id: string; name: string; date: string; time: string; format: string; interviewer: string; status: string }[];
+  difficulty: "Easy" | "Medium" | "Hard";
+  duration: 10 | 20 | 30 | 45;
+  /** The focus saved with the interview, or null to suggest one from the advert. */
+  categoryWeights: Record<FocusCategoryKey, number> | null;
+}
+
+const wordCount = (s: string) => s.split(/\s+/).filter(Boolean).length;
+const docFrom = (text: string, name: string) => (text.trim() ? { name: name || "Saved document", uploaded: true, text: text.trim(), detail: `${wordCount(text)} words` } : null);
+
+export function InterviewSetup({ editing }: { editing?: SetupInitial } = {}) {
   const router = useRouter();
+  const isEdit = Boolean(editing);
 
   // Wizard Step (1: Job details, 2: Stages, 3: Practice setup, 4: Review)
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
 
-  // Step 1: Job Details State (starts empty for new interview setup)
-  const [companyName, setCompanyName] = useState("");
-  const [jobTitle, setJobTitle] = useState("");
-  const [companyWebsite, setCompanyWebsite] = useState("");
-  const [cvDoc, setCvDoc] = useState<{ name: string; uploaded: boolean; text?: string; detail?: string } | null>(null);
-  const [jobDoc, setJobDoc] = useState<{ name: string; uploaded: boolean; text?: string; detail?: string } | null>(null);
-  const [coverDoc, setCoverDoc] = useState<{ name: string; uploaded: boolean; text?: string; detail?: string } | null>(null);
+  // Step 1: Job Details State (starts empty for a new interview; holds what it was built from when editing)
+  const [companyName, setCompanyName] = useState(editing?.company ?? "");
+  const [jobTitle, setJobTitle] = useState(editing?.title ?? "");
+  const [companyWebsite, setCompanyWebsite] = useState(editing?.website ?? "");
+  const [cvDoc, setCvDoc] = useState<{ name: string; uploaded: boolean; text?: string; detail?: string } | null>(editing ? docFrom(editing.cvText, editing.cvLabel || "Your CV") : null);
+  const [jobDoc, setJobDoc] = useState<{ name: string; uploaded: boolean; text?: string; detail?: string } | null>(editing ? docFrom(editing.jobText, editing.jobLabel || "Job description") : null);
+  const [coverDoc, setCoverDoc] = useState<{ name: string; uploaded: boolean; text?: string; detail?: string } | null>(editing ? docFrom(editing.coverText, editing.coverLabel || "Cover letter") : null);
 
-  // Job description 3 modes: "attach" | "link" | "paste"
-  const [jobMode, setJobMode] = useState<"attach" | "link" | "paste">("attach");
+  // Job description 3 modes: "attach" | "link" | "paste". When editing, the saved text opens ready to change.
+  const [jobMode, setJobMode] = useState<"attach" | "link" | "paste">(editing?.jobText ? "paste" : "attach");
   const [jobUrl, setJobUrl] = useState("");
   const [jobLinkLoading, setJobLinkLoading] = useState(false);
   const [jobLinkSuccess, setJobLinkSuccess] = useState<string | null>(null);
   const [jobLinkError, setJobLinkError] = useState<string | null>(null);
-  const [jobPastedText, setJobPastedText] = useState("");
+  const [jobPastedText, setJobPastedText] = useState(editing?.jobText ?? "");
 
   // CV modes: "attach" | "paste" | "my-cvs"
-  const [cvMode, setCvMode] = useState<"attach" | "paste" | "my-cvs">("attach");
-  const [cvPastedText, setCvPastedText] = useState("");
+  const [cvMode, setCvMode] = useState<"attach" | "paste" | "my-cvs">(editing?.cvText ? "paste" : "attach");
+  const [cvPastedText, setCvPastedText] = useState(editing?.cvText ?? "");
   const [myCvs, setMyCvs] = useState<Array<{ id: string; name: string; targetTitle?: string; targetEmployer?: string; score?: number; updatedAt: string }>>([]);
   const [loadingMyCvs, setLoadingMyCvs] = useState(false);
   const [selectedCvId, setSelectedCvId] = useState<string | null>(null);
@@ -353,8 +377,17 @@ export function InterviewSetup() {
   };
 
   // Step 2: Stages State (dates, times and interviewers are completely optional)
-  const [stagesExpectation, setStagesExpectation] = useState<"single" | "multiple" | "practice">("single");
-  const [stages, setStages] = useState<StageItem[]>([
+  const [stagesExpectation, setStagesExpectation] = useState<"single" | "multiple" | "practice">(editing && editing.stages.length > 1 ? "multiple" : "single");
+  const [stages, setStages] = useState<StageItem[]>(editing?.stages.length ? editing.stages.map((s, i) => ({
+    id: s.id || String(i + 1),
+    name: s.name,
+    date: s.date,
+    time: s.time,
+    format: s.format || "Video call",
+    interviewer: s.interviewer,
+    status: (s.status === "completed" || s.status === "next" ? s.status : "not_scheduled") as StageItem["status"],
+    icon: "users" as const,
+  })) : [
     {
       id: "1",
       name: "Interview stage 1",
@@ -539,17 +572,20 @@ export function InterviewSetup() {
   };
 
   // Step 3: Practice Setup State
-  const [selectedRounds, setSelectedRounds] = useState<string[]>(["1"]); // the one stage a new form starts with
-  const [interviewStyle, setInterviewStyle] = useState<"recommended" | "custom">("recommended");
+  const [selectedRounds, setSelectedRounds] = useState<string[]>(editing?.stages.length ? editing.stages.map((s, i) => s.id || String(i + 1)) : ["1"]); // the one stage a new form starts with
+  const [interviewStyle, setInterviewStyle] = useState<"recommended" | "custom">(editing?.categoryWeights ? "custom" : "recommended");
   const [categoryWeights, setCategoryWeights] = useState<Record<FocusCategoryKey, number>>(() =>
-    getSuggestedWeights(jobTitle, jobDoc?.text || jobPastedText)
+    editing?.categoryWeights ?? getSuggestedWeights(jobTitle, jobDoc?.text || jobPastedText)
   );
   const [techFocus, setTechFocus] = useState(50);
   const [skillsFocus, setSkillsFocus] = useState(30);
   const [expFocus, setExpFocus] = useState(20);
-  const [difficulty, setDifficulty] = useState<"Easy" | "Medium" | "Hard">("Medium");
-  const [duration, setDuration] = useState<10 | 20 | 30 | 45>(30);
+  const [difficulty, setDifficulty] = useState<"Easy" | "Medium" | "Hard">(editing?.difficulty ?? "Medium");
+  const [duration, setDuration] = useState<10 | 20 | 30 | 45>(editing?.duration ?? 30);
   const [advancedOpen, setAdvancedOpen] = useState(false);
+
+  /** What the advert says the interview assesses, shown with the suggested focus. */
+  const assessment = readAssessment(jobTitle, jobDoc?.text || jobPastedText);
 
   // Keep suggested categories in sync with job advert when on recommended style
   useEffect(() => {
@@ -571,8 +607,12 @@ export function InterviewSetup() {
   const [draftToast, setDraftToast] = useState<{ title: string; subtitle: string } | null>(null);
   const [draftRestoredBanner, setDraftRestoredBanner] = useState<string | null>(null);
 
-  // Restore saved draft on mount
+  // Restore saved draft on mount (not when editing: the form already holds the interview being edited)
   useEffect(() => {
+    if (isEdit) {
+      setDraftRead(true);
+      return;
+    }
     try {
       const raw = localStorage.getItem("hk_interview_wizard_draft");
       if (raw) {
@@ -652,12 +692,25 @@ export function InterviewSetup() {
     setInterviewStyle("custom");
   };
 
+  /** −/+ in steps of 5. Taking a category down to 0% switches it off. */
   const adjustCategory = (key: FocusCategoryKey, delta: number) => {
     setCategoryWeights((prev) => {
       const currentVal = prev[key] || 0;
-      const nextVal = Math.max(5, Math.min(100, currentVal + delta));
+      const nextVal = Math.max(0, Math.min(100, currentVal + delta));
       return { ...prev, [key]: nextVal };
     });
+    setInterviewStyle("custom");
+  };
+
+  /** Scales the categories that are on so they add up to exactly 100%. */
+  const balanceCategories = () => {
+    setCategoryWeights((prev) => toHundred(prev, 5));
+    setInterviewStyle("custom");
+  };
+
+  /** Puts one category at 100% and switches every other one off. */
+  const onlyCategory = (key: FocusCategoryKey) => {
+    setCategoryWeights((prev) => Object.fromEntries(Object.keys(prev).map((k) => [k, k === key ? 100 : 0])) as Record<FocusCategoryKey, number>);
     setInterviewStyle("custom");
   };
 
@@ -735,7 +788,7 @@ export function InterviewSetup() {
   // "Draft saved" is only ever shown after it really has been.
   const draftSnapshot = JSON.stringify([companyName, jobTitle, companyWebsite, cvDoc, jobDoc, coverDoc, jobMode, jobUrl, jobPastedText, cvMode, cvPastedText, stagesExpectation, stages, selectedRounds, interviewStyle, categoryWeights, techFocus, skillsFocus, expFocus, difficulty, duration, step]);
   useEffect(() => {
-    if (!draftRead || isBuilding || !hasDraftContent(form)) return;
+    if (isEdit || !draftRead || isBuilding || !hasDraftContent(form)) return;
     const timer = setTimeout(() => {
       const saved = writeDraft();
       if (saved) setLastSavedTime(saved);
@@ -796,6 +849,25 @@ export function InterviewSetup() {
       return;
     }
     setIsBuilding(true);
+    if (editing) {
+      // Editing: the same interview is rebuilt from the changed set-up. Answers and sessions so far are kept.
+      try {
+        const res = await fetch(`/api/interviews/${encodeURIComponent(editing.id)}/edit`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+        const data = (await res.json().catch(() => ({}))) as { id?: string; message?: string };
+        if (!res.ok || !data.id) {
+          setBuildError(data.message ?? "Your changes couldn’t be saved. Nothing was changed: check the form and try again.");
+          setIsBuilding(false);
+          return;
+        }
+      } catch {
+        setBuildError("Your changes couldn’t be saved because the app couldn’t be reached. Check your connection and try again.");
+        setIsBuilding(false);
+        return;
+      }
+      router.push(`/interviews/${encodeURIComponent(editing.id)}?rebuilt=1`);
+      router.refresh();
+      return;
+    }
     try {
       const res = await fetch("/api/interviews", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
       const data = (await res.json().catch(() => ({}))) as { id?: string; message?: string };
@@ -829,13 +901,14 @@ export function InterviewSetup() {
 
   const headerTitle =
     step === 2
-      ? "Set up your interview stages"
+      ? isEdit ? "Edit your interview stages" : "Set up your interview stages"
       : step === 3
         ? "Practice setup"
-        : "Set up your interview";
+        : isEdit ? "Edit your interview" : "Set up your interview";
 
-  const headerSubtitle =
-    step === 3
+  const headerSubtitle = isEdit
+    ? "Everything you gave when you set it up is here. Change anything, and your questions are rebuilt to match. Your answers so far are kept."
+    : step === 3
       ? "Choose how to practise for your interview rounds."
       : "Build personalised practice for every stage of your interview.";
 
@@ -845,14 +918,22 @@ export function InterviewSetup() {
       <div className="flex flex-col gap-4 border-b border-line pb-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Crumbs
-            items={[
-              { label: "Interviews", href: "/interviews" },
-              { label: "New interview" },
-            ]}
+            items={
+              editing
+                ? [
+                    { label: "Interviews", href: "/interviews" },
+                    { label: `${editing.company} interview`, href: `/interviews/${editing.id}` },
+                    { label: "Edit interview" },
+                  ]
+                : [
+                    { label: "Interviews", href: "/interviews" },
+                    { label: "New interview" },
+                  ]
+            }
           />
 
-          {/* Live Draft Saved Indicator */}
-          <button
+          {/* Live Draft Saved Indicator (a new interview only) */}
+          {!isEdit && <button
             type="button"
             onClick={() => setShowDraftModal(true)}
             title="Click to view where and how your draft is saved"
@@ -864,7 +945,7 @@ export function InterviewSetup() {
             </span>
             <span data-testid="draft-status">{lastSavedTime ? `Draft saved in this browser (${lastSavedTime})` : "Nothing to save yet"}</span>
             <span className="text-[10px] font-semibold text-blue-soft group-hover:underline">Where it’s kept</span>
-          </button>
+          </button>}
         </div>
 
         <div className="flex flex-wrap items-end justify-between gap-6">
@@ -1434,7 +1515,9 @@ export function InterviewSetup() {
                   <button
                     type="button"
                     onClick={() => {
-                      if (companyName || jobTitle || form.jobText || form.cvText) {
+                      if (isEdit) {
+                        router.push(`/interviews/${editing!.id}`);
+                      } else if (companyName || jobTitle || form.jobText || form.cvText) {
                         setShowCancelModal(true);
                       } else {
                         router.push("/interviews");
@@ -1445,13 +1528,15 @@ export function InterviewSetup() {
                     Cancel
                   </button>
                   <div className="flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={saveDraft}
-                      className="inline-flex h-[42px] items-center justify-center rounded-[11px] bg-panel-2 px-5 text-sm font-semibold text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel dark:hover:bg-[#2b2d38] transition-all cursor-pointer active:scale-95"
-                    >
-                      Save draft
-                    </button>
+                    {!isEdit && (
+                      <button
+                        type="button"
+                        onClick={saveDraft}
+                        className="inline-flex h-[42px] items-center justify-center rounded-[11px] bg-panel-2 px-5 text-sm font-semibold text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel dark:hover:bg-[#2b2d38] transition-all cursor-pointer active:scale-95"
+                      >
+                        Save draft
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => {
@@ -1972,13 +2057,15 @@ export function InterviewSetup() {
                     ← Back
                   </button>
                   <div className="flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={saveDraft}
-                      className="inline-flex h-[42px] items-center justify-center rounded-[11px] bg-panel-2 px-5 text-sm font-semibold text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel dark:hover:bg-[#2b2d38] transition-all cursor-pointer active:scale-95"
-                    >
-                      Save draft
-                    </button>
+                    {!isEdit && (
+                      <button
+                        type="button"
+                        onClick={saveDraft}
+                        className="inline-flex h-[42px] items-center justify-center rounded-[11px] bg-panel-2 px-5 text-sm font-semibold text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel dark:hover:bg-[#2b2d38] transition-all cursor-pointer active:scale-95"
+                      >
+                        Save draft
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => setStep(3)}
@@ -2139,12 +2226,26 @@ export function InterviewSetup() {
                   </p>
                 </div>
 
+                {interviewStyle === "recommended" && (
+                  <p className="mt-2 rounded-lg border border-blue/25 bg-blue/5 px-3 py-2 text-xs leading-relaxed text-ink" data-testid="focus-reason">
+                    {assessment.reason}
+                  </p>
+                )}
                 <div className="mt-3 flex items-center justify-between gap-2 border-b border-line dark:border-white/[0.08] pb-3">
                   <span className="text-xs text-muted truncate">
                     {interviewStyle === "recommended"
-                      ? `Suggested for ${jobTitle.trim() || companyName.trim() || "Associate Product Manager"}`
+                      ? `Suggested for ${jobTitle.trim() || companyName.trim() || "this job"}`
                       : "Customised question weighting"}
                   </span>
+                  {totalCategoryWeight !== 100 && totalCategoryWeight > 0 && (
+                    <button
+                      type="button"
+                      onClick={balanceCategories}
+                      className="shrink-0 rounded-full border border-blue/40 px-2.5 py-0.5 text-[11px] font-semibold text-blue-soft hover:bg-blue/10 cursor-pointer"
+                    >
+                      Make it 100%
+                    </button>
+                  )}
                   <span
                     className={clsx(
                       "shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-bold tracking-tight border transition-colors",
@@ -2196,9 +2297,19 @@ export function InterviewSetup() {
                           {/* Adjuster [-] XX% [+] */}
                           {isChecked ? (
                             <div className="flex items-center gap-1.5 shrink-0">
+                              {weight < 100 && (
+                                <button
+                                  type="button"
+                                  onClick={() => onlyCategory(cat.key)}
+                                  title={`Only ${cat.label} questions`}
+                                  className="mr-1 rounded-full border border-line px-2 py-0.5 text-[10px] font-semibold text-muted hover:border-blue/50 hover:text-ink cursor-pointer"
+                                >
+                                  Only this
+                                </button>
+                              )}
                               <button
                                 type="button"
-                                disabled={weight <= 5}
+                                disabled={weight <= 0}
                                 onClick={() => adjustCategory(cat.key, -5)}
                                 aria-label={`Decrease ${cat.label} weighting`}
                                 className="h-6 w-6 rounded-full bg-panel-2 border border-line hover:bg-panel active:scale-95 text-ink disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center font-bold text-xs transition-all cursor-pointer"
@@ -2238,8 +2349,13 @@ export function InterviewSetup() {
                 </div>
 
                 <p className="mt-3 text-xs text-ink pt-2 border-t border-line dark:border-white/[0.06]" data-testid="mix-sent">
-                  Your questions will be: <b className="font-semibold">{weightsLine(categoryWeights)}</b>
+                  Your questions will be: <b className="font-semibold">{weightsLine(totalCategoryWeight === 100 || totalCategoryWeight === 0 ? categoryWeights : toHundred(categoryWeights, 5))}</b>
                 </p>
+                {totalCategoryWeight !== 100 && totalCategoryWeight > 0 && (
+                  <p className="mt-1 text-[11px] text-amber-700 dark:text-amber-300">
+                    Your choices add up to {totalCategoryWeight}%, so they’ll be scaled to 100% as shown above. Use −/+ (down to 0% switches a type off) or “Make it 100%”.
+                  </p>
+                )}
               </div>
 
               {/* Controls Row: Difficulty & Duration */}
@@ -2318,13 +2434,15 @@ export function InterviewSetup() {
                   ← Back
                 </button>
                 <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={saveDraft}
-                    className="inline-flex h-[42px] items-center justify-center rounded-[11px] bg-panel-2 px-5 text-sm font-semibold text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel dark:hover:bg-[#2b2d38] transition-all cursor-pointer active:scale-95"
-                  >
-                    Save draft
-                  </button>
+                  {!isEdit && (
+                    <button
+                      type="button"
+                      onClick={saveDraft}
+                      className="inline-flex h-[42px] items-center justify-center rounded-[11px] bg-panel-2 px-5 text-sm font-semibold text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel dark:hover:bg-[#2b2d38] transition-all cursor-pointer active:scale-95"
+                    >
+                      Save draft
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => setStep(4)}
@@ -2682,16 +2800,16 @@ export function InterviewSetup() {
                   className="group/btn relative overflow-hidden flex h-[44px] w-full items-center justify-center gap-2 rounded-[11px] bg-blue-fill font-semibold text-white shadow-[0_4px_20px_rgba(74,90,240,0.4)] hover:bg-blue-hover hover:shadow-[0_0_28px_rgba(90,105,255,0.7)] active:scale-95 transition-all cursor-pointer disabled:opacity-60"
                 >
                   <span className="relative z-10">
-                    {isBuilding ? "Building interview…" : "Build interview →"}
+                    {isEdit ? (isBuilding ? "Saving and rebuilding questions…" : "Save changes & rebuild questions →") : isBuilding ? "Building interview…" : "Build interview →"}
                   </span>
                   <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 group-hover/btn:translate-x-full" />
                 </button>
                 <button
                   type="button"
-                  onClick={saveDraft}
+                  onClick={isEdit ? () => router.push(`/interviews/${editing!.id}`) : saveDraft}
                   className="flex h-[40px] w-full items-center justify-center rounded-[11px] bg-panel-2 text-xs font-semibold text-ink shadow-[inset_0_0_0_1px_var(--color-line-strong)] hover:bg-panel dark:hover:bg-[#2b2d38] transition-all cursor-pointer"
                 >
-                  Save draft
+                  {isEdit ? "Cancel, keep it as it was" : "Save draft"}
                 </button>
               </div>
             </Panel>

@@ -308,6 +308,7 @@ export async function rebuildAndPlan(
     mix?: Mix;
     preset?: string;
     jobSummary?: string;
+    categoryWeights?: SessionSettings["categoryWeights"];
   },
   opts: { start: boolean },
   userId: string,
@@ -332,6 +333,7 @@ export async function rebuildAndPlan(
       settings: {
         ...settingsOr(i.settings, i.style),
         ...(change.mix ? { mix: change.mix, preset: (change.preset as any) || presetFor(change.mix) } : {}),
+        ...(change.categoryWeights ? { categoryWeights: change.categoryWeights } : {}),
       },
       documents: change.documents?.cv || i.documents?.cv
         ? {

@@ -3,12 +3,12 @@ import { cookies } from "next/headers";
 import { londonToday } from "@/lib/dates";
 import { getInterview, getInterviewAsync } from "@/lib/interviews/store";
 import { understandingOf } from "@/lib/interviews/build";
-import { PRESETS, settingsOr, mixIsValid } from "@/lib/interviews/settings";
+import { PRESETS, settingsOr, mixIsValid, savedWeights, getSuggestedWeights } from "@/lib/interviews/settings";
 import { interviewWhen, sessionTitle } from "@/lib/sessions/labels";
-import { DRILL_TOPICS, getTopicsForInterview } from "@/lib/sessions/topics";
+import { DRILL_TOPICS, getTopicsForInterview, resolveInterviewQuestion } from "@/lib/sessions/topics";
 import { isFresh, listMocksAsync, rowsForAsync } from "@/lib/mocks/store";
-import { categoryScores, mockScore, type MockRow } from "@/lib/mocks/report";
-import { overviewCategories } from "@/lib/sessions/overview";
+import { mockScore, type MockRow } from "@/lib/mocks/report";
+import { focusResults } from "@/lib/sessions/focus-results";
 import { formatStageDate, whenSaid } from "@/lib/format";
 import { requirePageUser } from "@/lib/auth/require";
 import {
@@ -131,8 +131,13 @@ export default async function InterviewOverview({
   const fresh = mockSessions
     .filter((m) => (m.status === "done" || (sessionRowsMap.get(m.id)?.length ?? 0) > 0))
     .sort((a, b) => Date.parse(b.startedAt) - Date.parse(a.startedAt));
-  const freshCategoryScores = fresh.map((m) => categoryScores(sessionRowsMap.get(m.id) ?? []));
-  const scoreCategories: OverviewScoreCategory[] = overviewCategories(freshCategoryScores, u.technicalLabel).map((c) => ({ name: c.name, score: c.score, delta: c.delta }));
+  // The same categories and weighting as the practice settings, each scored out of 5.
+  const focusWeights = savedWeights(settings) ?? getSuggestedWeights(interview.role, interview.documents?.job ?? "");
+  const scoreCategories: OverviewScoreCategory[] = focusResults(
+    fresh.map((m) => sessionRowsMap.get(m.id) ?? []),
+    (qid) => resolveInterviewQuestion(interview, qid),
+    focusWeights,
+  ).map((c) => ({ name: c.name, score: c.score, delta: c.delta, weight: c.weight }));
 
   const roleSummary = `${u.role}, ${u.level.toLowerCase()}: ${u.field}`;
   const inputsSummary =
@@ -150,7 +155,7 @@ export default async function InterviewOverview({
       isNew={Boolean(isNew)}
       rebuilt={Boolean(rebuilt)}
       interviewerName={interview.interviewer.name}
-      initialSettings={settings}
+      initialSettings={{ ...settings, categoryWeights: focusWeights }}
       initialStageId={initialStageId}
       stages={stages}
       ownStages={customStages.length > 0}

@@ -5,6 +5,7 @@ import { RebuildFlow } from "@/components/interview/RebuildFlow";
 import { getInterview, getInterviewAsync } from "@/lib/interviews/store";
 import { understandingOf } from "@/lib/interviews/build";
 import { findMock } from "@/lib/mocks/store";
+import { getSuggestedWeights } from "@/lib/interviews/settings";
 import { requirePageUser } from "@/lib/auth/require";
 
 export const dynamic = "force-dynamic";
@@ -32,7 +33,7 @@ export default async function RebuildPage({ params, searchParams }: { params: Pr
         <p className="mt-1 max-w-[760px] text-sm text-muted">
           {from
             ? "Hakkiri rereads your documents with your feedback and shows you what it changed. Confirm or edit it, and a fresh interview starts with new questions."
-            : "Update your job description, change focus metrics (like Strengths & Competency), or edit role understanding. Questions are rebuilt to match."}
+            : "Change the question focus percentages or what Hakkiri understood about the job. Questions are rebuilt to match. To change the job description, CV or stages, use Edit interview."}
         </p>
       </header>
       <RebuildFlow
@@ -45,6 +46,7 @@ export default async function RebuildPage({ params, searchParams }: { params: Pr
         company={interview.company}
         initialJobSummary={interview.jobSummary || ""}
         initialSettings={interview.settings}
+        suggestedWeights={getSuggestedWeights(interview.role, interview.documents?.job ?? "")}
       />
     </div>
   );

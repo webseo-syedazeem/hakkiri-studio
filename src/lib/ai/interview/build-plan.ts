@@ -31,10 +31,10 @@ export function bankCounts(settings: Pick<SessionSettings, "minutes" | "difficul
 /** Which kinds of question (and so which scoring profile) each category can hold. */
 export const TYPES_FOR_GROUP: Record<QuestionGroup, ContextType[]> = {
   motivation: ["why-us", "tell-me-about-yourself"],
-  competency: ["competency"],
+  competency: ["competency", "strengths"],
   technical: ["technical", "situational"],
   cv: ["competency", "tell-me-about-yourself"],
-  curveball: ["situational", "questions-for-us"],
+  curveball: ["situational", "strengths", "questions-for-us"],
 };
 
 export const INTERVIEWER_FOR_ROUND: Record<InterviewRound, string> = {
@@ -58,7 +58,7 @@ export const DIFFICULTY_GUIDE: Record<Difficulty, string> = {
 };
 
 const GROUPS = ["motivation", "competency", "technical", "cv", "curveball"] as const;
-const TYPES = ["tell-me-about-yourself", "why-us", "competency", "technical", "situational", "questions-for-us"] as const;
+const TYPES = ["tell-me-about-yourself", "why-us", "competency", "technical", "situational", "strengths", "questions-for-us"] as const;
 
 export const QuestionSchema = z.object({
   group: z.enum(GROUPS),
@@ -67,47 +67,60 @@ export const QuestionSchema = z.object({
   short: z.string().min(2).max(48),
 });
 
+/**
+ * A text field the model sometimes overruns by a few words. Rather than throw
+ * the whole plan away (and fall back to the standard questions), an overlong
+ * value is trimmed at a word boundary.
+ */
+const soft = (max: number, min = 0) =>
+  z
+    .string()
+    .min(min)
+    .transform((v) => (v.length <= max ? v : `${v.slice(0, max - 1).replace(/[\s,;:]+\S*$/, "")}…`));
+
+/** A list the model sometimes makes too long: the extra items are dropped. */
+const upTo = <T extends z.ZodType>(item: T, max: number) => z.array(item).transform((a) => a.slice(0, max));
+
 export const UnderstandingSchema = z.object({
-  role: z.string().min(2).max(80),
-  level: z.string().min(2).max(40),
-  field: z.string().min(3).max(120),
+  role: soft(80, 2),
+  level: soft(40, 2),
+  field: soft(120, 3),
   technicalLabel: z.enum(["Technical", "Role knowledge"]),
   meanings: z.object({
-    cv: z.string().min(8).max(160),
-    competency: z.string().min(8).max(160),
-    technical: z.string().min(8).max(160),
-    motivation: z.string().min(8).max(160),
-    curveball: z.string().min(8).max(160),
+    cv: soft(160, 8),
+    competency: soft(160, 8),
+    technical: soft(160, 8),
+    motivation: soft(160, 8),
+    curveball: soft(160, 8),
   }),
 });
 
 export const PlanSchema = z.object({
-  company: z.string().min(1).max(80),
-  role: z.string().min(2).max(120),
-  seniority: z.string().max(40),
-  interviewerTitle: z.string().max(50),
-  jobSummary: z.string().min(10).max(240),
-  skills: z.array(z.string().min(2).max(32)).min(3).max(8),
+  company: soft(80, 1),
+  role: soft(120, 2),
+  seniority: soft(40),
+  interviewerTitle: soft(50),
+  jobSummary: soft(240, 10),
+  skills: upTo(soft(32, 2), 8).refine((a) => a.length >= 3, "List at least 3 skills."),
   understanding: UnderstandingSchema,
   brief: z.object({
-    whatTheyDo: z.string().max(400),
-    whyYou: z.array(z.string().max(220)).max(3),
-    toKnow: z.array(z.string().max(220)).max(4),
+    whatTheyDo: soft(400),
+    whyYou: upTo(soft(220), 3),
+    toKnow: upTo(soft(220), 4),
   }),
-  probes: z.array(z.object({ ask: z.string().max(110), handle: z.string().max(200) })).max(4),
-  questionsToAsk: z.array(z.string().min(8).max(200)).max(4),
-  stories: z
-    .array(
-      z.object({
-        title: z.string().min(3).max(80),
-        source: z.string().max(60),
-        parts: z.object({ situation: z.boolean(), task: z.boolean(), action: z.boolean(), result: z.boolean() }),
-        fits: z.number().int().min(0).max(15),
-        useFor: z.array(z.string().max(60)).max(3),
-      }),
-    )
-    .max(8),
-  gaps: z.array(z.object({ skill: z.string().min(2).max(60), question: z.string().min(8).max(200) })).max(3),
+  probes: upTo(z.object({ ask: soft(110), handle: soft(200) }), 4),
+  questionsToAsk: upTo(soft(200, 8), 4),
+  stories: upTo(
+    z.object({
+      title: soft(80, 3),
+      source: soft(60),
+      parts: z.object({ situation: z.boolean(), task: z.boolean(), action: z.boolean(), result: z.boolean() }),
+      fits: z.number().int().min(0).max(15),
+      useFor: upTo(soft(60), 3),
+    }),
+    8,
+  ),
+  gaps: upTo(z.object({ skill: soft(60, 2), question: soft(200, 8) }), 3),
   questions: z.array(QuestionSchema).min(5).max(44),
 });
 export type PlanReply = z.infer<typeof PlanSchema>;
@@ -135,7 +148,7 @@ export const PLAN_SCHEMA_HINT = `{
   "questionsToAsk": ["3 thoughtful questions the candidate could ask them, specific to this company or job"],
   "stories": [{ "title": "short title", "source": "employer, year", "parts": { "situation": true, "task": true, "action": true, "result": false }, "fits": how many questions it could answer, "useFor": ["up to 3 short names of questions it answers best"] }],
   "gaps": [{ "skill": "a skill the job spec asks for that no story covers", "question": "a question that tests it" }],
-  "questions": [{ "group": "motivation" | "competency" | "technical" | "cv" | "curveball", "type": "tell-me-about-yourself" | "why-us" | "competency" | "technical" | "situational" | "questions-for-us", "text": "the question as the interviewer would say it", "short": "2 to 5 words naming it" }]
+  "questions": [{ "group": "motivation" | "competency" | "technical" | "cv" | "curveball", "type": "tell-me-about-yourself" | "why-us" | "competency" | "technical" | "situational" | "strengths" | "questions-for-us", "text": "the question as the interviewer would say it", "short": "2 to 5 words naming it" }]
 }`;
 
 export interface PlanInput {
@@ -148,12 +161,16 @@ export interface PlanInput {
   coverLetter?: string;
   job?: string;
   site?: string;
+  /** The person's question focus and the behaviours the advert names, in words the writer follows. */
+  focus?: string;
+  /** Whether Strengths questions are switched on. */
+  strengths?: boolean;
 }
 
 const cap = (s: string | undefined, n: number) => (s ? (s.length > n ? `${s.slice(0, n)}\n[…]` : s) : "");
 
 /** What each category holds, for the model. Shared with the later question builds. */
-export function getCategoryRules(isPublicSector = false): string[] {
+export function getCategoryRules(isPublicSector = false, strengths = isPublicSector): string[] {
   return [
     "- motivation: why this company (type why-us, using the company's name), why this role and why now, what they know about the company and its market. Not “Tell me about yourself”: that opens every interview already.",
     "- cv (Experience): about this candidate's own CV: real employers, roles, moves, gaps and claims (“Your CV says you grew conversion 17%. How?”). Type competency, or tell-me-about-yourself for “walk me through your CV”.",
@@ -163,9 +180,9 @@ export function getCategoryRules(isPublicSector = false): string[] {
     isPublicSector
       ? "- technical: what THIS job needs the person to know or do, in this job's own terms. For engineering or data jobs, technical problems and design choices. For other jobs, the work itself: for sales, product, pricing, pipeline and objections; for nursing, clinical judgement and patient safety; for teaching, lesson planning and behaviour. For government and digital roles (HMRC, DWP), accessibility and GDS standards. Never coding questions for a job that doesn't code. Type technical, or situational for “what would you do if…”."
       : "- technical: what THIS job needs the person to know or do, in this job's own terms. For engineering or data jobs, technical problems and design choices. For other jobs, the work itself: for sales, product, pricing, pipeline and objections; for nursing, clinical judgement and patient safety; for teaching, lesson planning and behaviour. Never coding questions for a job that doesn't code. Type technical, or situational for “what would you do if…”." ,
-    isPublicSector
-      ? "- curveball (Situational / Strengths): “What would you do if…” scenarios from this job, plus authentic Civil Service strengths questions assessing natural engagement and working preferences (e.g. “Do you enjoy working with people who have different viewpoints?”, “What motivates you when working under pressure?”, “Do you prefer making decisions independently or collaboratively?”). Type situational. Not “What questions do you have for us?”: that closes every interview already."
-      : "- curveball (Situational / Strengths): “What would you do if…” scenarios from this job, assessing problem-solving, situational judgement, adaptability and working preferences. Type situational. Not “What questions do you have for us?”: that closes every interview already.",
+    isPublicSector && strengths
+      ? "- curveball (Situational / Strengths): “What would you do if…” scenarios from this job (type situational), plus authentic Civil Service strengths questions (type strengths) assessing natural engagement and working preferences (e.g. “Do you enjoy working with people who have different viewpoints?”, “What motivates you when working under pressure?”, “Do you prefer making decisions independently or collaboratively?”). Not “What questions do you have for us?”: that closes every interview already."
+      : "- curveball (Situational): “What would you do if…” scenarios from this job, assessing problem-solving, situational judgement, adaptability and working preferences. Type situational. Not “What questions do you have for us?”: that closes every interview already.",
   ];
 }
 
@@ -175,7 +192,7 @@ export function buildPlanPrompt(input: PlanInput): { system: string; user: strin
   const isPublicSector = /\b(civil service|hmrc|dwp|nhs|council|councils|gds|government digital service|home office|cabinet office|ministry of|department for|public sector|gov\.uk)\b/i.test(
     `${input.company ?? ""} ${input.job ?? ""}`
   );
-  const categoryRules = getCategoryRules(isPublicSector);
+  const categoryRules = getCategoryRules(isPublicSector, input.strengths ?? false);
 
   const system = [
     "You are Hakkiri's interview coach. You prepare a candidate for a real interview at a specific company.",
@@ -186,6 +203,8 @@ export function buildPlanPrompt(input: PlanInput): { system: string; user: strin
     "The questions:",
     `- Exactly these counts: ${GROUP_ORDER.map((g) => `${g} (${GROUP_LABEL[g]}) ${input.counts[g]}`).join(", ")}.`,
     ...categoryRules,
+    "- Strengths questions (what energises you, what comes naturally, what you enjoy) use type strengths, never STAR wording. Only write them when Strengths is in the focus below.",
+    ...(input.focus ? [`- ${input.focus}`] : []),
     `- ${DIFFICULTY_GUIDE[input.difficulty]}`,
     "- One question each, in plain spoken English, as the interviewer would say it, ending with a question mark (or a full stop for an instruction like “Walk me through your CV.”). No two alike.",
     "",

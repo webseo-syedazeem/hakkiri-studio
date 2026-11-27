@@ -7,6 +7,8 @@ import clsx from "clsx";
 import { Icon, type IconName } from "@/components/ui";
 import { AnsweringGuides } from "@/components/practice/AnsweringGuides";
 import type { PracticeStats, PracticeType } from "@/lib/sessions/practice-stats";
+import { ALL_ROLES, planBreakdown, planCategories, SECTORS, targetCount, type CategoryKey, type IndustryKey } from "@/lib/practice/catalogue";
+import { BANK, PROFESSION_BANK } from "@/lib/practice/knowledge";
 
 export type PracticeQuestionType = PracticeType;
 
@@ -41,17 +43,7 @@ export interface PracticeHubClientProps {
   returnTo?: string;
 }
 
-export type CategoryKey =
-  | "behaviour"
-  | "strengths"
-  | "technical"
-  | "experience"
-  | "motivational"
-  | "situational"
-  | "case"
-  | "leadership"
-  | "challenging"
-  | "values";
+export type { CategoryKey };
 
 export interface CategorySpec {
   key: CategoryKey;
@@ -122,74 +114,6 @@ const CATEGORIES: CategorySpec[] = [
     previewQuestion: "How do you handle situations where organisational targets conflict with user fairness or ethics?",
   },
 ];
-
-interface SectorSpec {
-  name: string;
-  mix: CategoryKey[];
-  mixLabel: string;
-  roles: string[];
-}
-
-const SECTORS: Record<string, SectorSpec> = {
-  any: {
-    name: "Any industry",
-    mix: ["behaviour", "strengths", "motivational", "situational"],
-    mixLabel: "Competency & Behavioural · Strengths · Motivational · Situational",
-    roles: [],
-  },
-  government: {
-    name: "Government & Public Services",
-    mix: ["behaviour", "strengths", "situational", "values"],
-    mixLabel: "Competency & Behavioural · Strengths · Situational · Values",
-    roles: ["Policy & Strategy", "Operational Delivery", "Digital Product Management", "Commercial & Procurement"],
-  },
-  healthcare: {
-    name: "Healthcare & Social Care",
-    mix: ["situational", "values", "strengths", "behaviour"],
-    mixLabel: "Situational · Values & Culture · Strengths · Competency",
-    roles: ["Nursing", "Clinical Support", "Healthcare Operations", "Allied Health"],
-  },
-  technology: {
-    name: "Technology & Digital",
-    mix: ["technical", "case", "behaviour", "strengths"],
-    mixLabel: "Technical · Case Study · Competency · Strengths",
-    roles: ["Software Engineering", "Product Management", "Data & AI", "Cloud & DevOps"],
-  },
-  finance: {
-    name: "Banking & Finance",
-    mix: ["technical", "situational", "case", "challenging"],
-    mixLabel: "Technical · Situational · Case Study · Challenging",
-    roles: ["Financial Analysis", "Risk & Compliance", "Accounting", "Investment Operations"],
-  },
-  education: {
-    name: "Education & Training",
-    mix: ["behaviour", "values", "motivational", "situational"],
-    mixLabel: "Competency · Values & Culture · Motivational · Situational",
-    roles: ["Teaching", "Academic Support", "Education Management", "Instructional Design"],
-  },
-};
-
-function getTargetCount(duration: number, focus: "mix" | CategoryKey): number {
-  if (focus === "strengths") {
-    const table: Record<number, number> = { 5: 2, 10: 4, 20: 6, 30: 9, 45: 13 };
-    return table[duration] || 8;
-  }
-  if (focus === "case") {
-    const table: Record<number, number> = { 5: 1, 10: 2, 20: 3, 30: 5, 45: 7 };
-    return table[duration] || 5;
-  }
-  if (focus === "behaviour" || focus === "leadership" || focus === "experience") {
-    const table: Record<number, number> = { 5: 1, 10: 2, 20: 4, 30: 6, 45: 9 };
-    return table[duration] || 6;
-  }
-  if (focus === "technical") {
-    const table: Record<number, number> = { 5: 1, 10: 2, 20: 4, 30: 7, 45: 10 };
-    return table[duration] || 7;
-  }
-  // Recommended mix
-  const table: Record<number, number> = { 5: 1, 10: 3, 20: 5, 30: 8, 45: 11 };
-  return table[duration] || 8;
-}
 
 interface CustomSelectOption {
   value: string;
@@ -352,8 +276,12 @@ export function PracticeHubClient({
   const [stage, setStage] = useState<string>(current?.stage || "Panel interview");
 
   // General mode settings
-  const [industry, setIndustry] = useState<string>("any");
+  const [industry, setIndustry] = useState<IndustryKey>("any");
   const [role, setRole] = useState<string>("");
+  /** "Other": a profession the person types in. */
+  const [customRole, setCustomRole] = useState<string>("");
+  const [starting, setStarting] = useState(false);
+  const [startError, setStartError] = useState<string | null>(null);
 
   // Category Focus: "mix" | CategoryKey
   const [focus, setFocus] = useState<"mix" | CategoryKey>(
@@ -381,6 +309,9 @@ export function PracticeHubClient({
 
   // Active sector config for general
   const activeSector = SECTORS[industry] || SECTORS.any;
+  /** Professions to choose from: the industry's own, or every one for "Any industry". */
+  const roleOptions = industry === "any" ? ALL_ROLES : activeSector.roles;
+  const profession = (role === "__other" ? customRole : role).trim();
 
   // Derive active mix
   const activeMixKeys: CategoryKey[] =
@@ -388,51 +319,49 @@ export function PracticeHubClient({
       ? activeSector.mix
       : ["behaviour", "strengths", "technical"];
 
-  const mixLabel =
-    mode === "general"
-      ? activeSector.mixLabel
-      : "Competency & Behavioural · Strengths · Technical";
+  const mixLabel = activeMixKeys.map((k) => CATEGORIES.find((c) => c.key === k)?.name ?? k).join(" · ");
 
-  const count = getTargetCount(duration, focus);
+  const count = targetCount(duration, focus);
+  const generalPlan = planCategories(industry, focus, duration);
+  const sessionPlan: CategoryKey[] =
+    mode === "general" ? generalPlan : focus !== "mix" ? Array.from({ length: count }, () => focus) : Array.from({ length: count }, (_, i) => activeMixKeys[i % activeMixKeys.length]);
+  const plannedBreakdown = planBreakdown(sessionPlan);
 
-  // Calculate planned breakdown
-  const plannedBreakdown: Array<{ name: string; count: number }> = [];
-  if (focus !== "mix") {
-    const cat = CATEGORIES.find((c) => c.key === focus);
-    if (cat) {
-      plannedBreakdown.push({ name: cat.name, count });
-    }
-  } else {
-    // Distribute among active mix keys
-    const n = activeMixKeys.length;
-    const base = Math.floor(count / n);
-    let remainder = count % n;
-    for (let i = 0; i < n; i++) {
-      const extra = remainder > 0 ? 1 : 0;
-      if (remainder > 0) remainder--;
-      const catCount = base + extra;
-      if (catCount > 0) {
-        const cat = CATEGORIES.find((c) => c.key === activeMixKeys[i]);
-        if (cat) {
-          plannedBreakdown.push({ name: cat.name, count: catCount });
-        }
-      }
-    }
-  }
-
-  // Preview question text
+  // Preview question: in General practice, a real question for this industry and profession, so changing either shows the difference.
+  const previewType: CategoryKey = focus === "mix" ? sessionPlan[0] : focus;
   let previewQuestionText = "Tell me about a time you made an evidence-based decision despite competing delivery priorities.";
-  if (focus !== "mix") {
+  if (mode === "general") {
+    previewQuestionText = PROFESSION_BANK[profession]?.[previewType]?.[0] ?? BANK[industry][previewType][difficulty === "hard" ? 3 : difficulty === "easy" ? 0 : 1];
+  } else if (focus !== "mix") {
     const cat = CATEGORIES.find((c) => c.key === focus);
     if (cat) previewQuestionText = cat.previewQuestion;
-  } else if (mode === "tailored" && current) {
+  } else if (current) {
     previewQuestionText = `Tell me about a time in your work as a ${current.role} where you had to manage competing priorities.`;
   }
 
-  // Live mock start URL
+  // Live mock start URL (tailored to a saved job)
   const startHref = current
     ? `/mock/${current.id}?practice=1&mode=${mode}&type=${focus}&difficulty=${difficulty}&duration=${duration}m`
     : `/interviews/new`;
+
+  /** General practice: questions are written for the industry and profession, then the session starts. */
+  const startGeneral = async () => {
+    setStarting(true);
+    setStartError(null);
+    try {
+      const res = await fetch("/api/practice/general", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ industry, profession, focus, difficulty, duration }),
+      });
+      const json = (await res.json().catch(() => ({}))) as { href?: string; message?: string };
+      if (!res.ok || !json.href) throw new Error(json.message ?? "Your practice session couldn’t be prepared. Try again.");
+      router.push(json.href);
+    } catch (err) {
+      setStartError(err instanceof Error ? err.message : "Your practice session couldn’t be prepared. Try again.");
+      setStarting(false);
+    }
+  };
 
   return (
     <div className="flex grow flex-col w-full max-w-[1080px] mx-auto pb-20 animate-rise text-ink">
@@ -647,8 +576,9 @@ export function PracticeHubClient({
                   label="Industry"
                   value={industry}
                   onChange={(val) => {
-                    setIndustry(val);
+                    setIndustry(val as IndustryKey);
                     setRole("");
+                    setCustomRole("");
                   }}
                   options={[
                     { value: "any", label: "Any industry" },
@@ -660,18 +590,30 @@ export function PracticeHubClient({
                   ]}
                 />
 
-                <CustomSelect
-                  id="profession-select"
-                  label="Profession (optional)"
-                  value={role}
-                  disabled={activeSector.roles.length === 0}
-                  placeholder={activeSector.roles.length === 0 ? "Select an industry first" : "Any profession"}
-                  onChange={(val) => setRole(val)}
-                  options={[
-                    { value: "", label: "Any profession" },
-                    ...activeSector.roles.map((r) => ({ value: r, label: r })),
-                  ]}
-                />
+                <div className="flex flex-col gap-2">
+                  <CustomSelect
+                    id="profession-select"
+                    label="Profession (optional)"
+                    value={role}
+                    placeholder="Any profession"
+                    onChange={(val) => setRole(val)}
+                    options={[
+                      { value: "", label: "Any profession" },
+                      ...roleOptions.map((r) => ({ value: r, label: r })),
+                      { value: "__other", label: "Other (type your own)" },
+                    ]}
+                  />
+                  {role === "__other" && (
+                    <input
+                      aria-label="Your profession"
+                      value={customRole}
+                      maxLength={80}
+                      onChange={(e) => setCustomRole(e.target.value)}
+                      placeholder="e.g. Paralegal, Social worker, Business analyst"
+                      className="w-full rounded-xl border border-line bg-panel-2 px-4 py-2.5 text-xs font-medium text-ink outline-none focus:border-blue-fill"
+                    />
+                  )}
+                </div>
               </div>
 
               <div className="flex items-center gap-2 pt-1">
@@ -896,7 +838,7 @@ export function PracticeHubClient({
             <span className="text-[11px] font-bold uppercase tracking-wider text-blue-fill">
               {mode === "tailored" && current
                 ? `${current.role} · ${current.company}`
-                : `${activeSector.name} · ${role || "General"}`}
+                : `${activeSector.name} · ${profession || "Any profession"} · ${CATEGORIES.find((c) => c.key === previewType)?.name ?? ""}`}
             </span>
             <h3 className="mt-2 text-lg sm:text-xl font-bold text-ink leading-relaxed">
               “{previewQuestionText}”
@@ -912,7 +854,7 @@ export function PracticeHubClient({
               <Icon name="target" size={14} /> {difficulty}
             </span>
             <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-panel-2 border border-line text-xs font-semibold text-blue-fill">
-              <Icon name="layers" size={14} /> ~{count} main questions
+              <Icon name="layers" size={14} /> ~{sessionPlan.length} main questions
             </span>
           </div>
 
@@ -939,7 +881,7 @@ export function PracticeHubClient({
           <p className="text-xs text-muted leading-relaxed mb-4">
             {mode === "tailored"
               ? "Suggested from the available job context; the interview questions are grounded in your saved role."
-              : "Common questions tailored by sector and profession. No CV or job spec required."}
+              : "Questions are written for the industry and profession you chose: its real challenges, rules and responsibilities, not just its name. You won’t be asked the same question twice."}
           </p>
 
           {/* Availability note */}
@@ -949,13 +891,25 @@ export function PracticeHubClient({
 
           {/* Action buttons */}
           <div className="flex flex-col sm:flex-row gap-3.5">
-            <Link
-              href={startHref}
-              className="pro-btn-glow flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-xl bg-blue-fill hover:bg-blue-hover text-sm font-bold text-white shadow-md transition-all flex-1 cursor-pointer"
-            >
-              <Icon name="play" size={16} />
-              <span>▶ Start practice</span>
-            </Link>
+            {mode === "general" ? (
+              <button
+                type="button"
+                onClick={() => void startGeneral()}
+                disabled={starting || (role === "__other" && !customRole.trim())}
+                className="pro-btn-glow flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-xl bg-blue-fill hover:bg-blue-hover text-sm font-bold text-white shadow-md transition-all flex-1 cursor-pointer disabled:opacity-60"
+              >
+                <Icon name="play" size={16} />
+                <span>{starting ? "Writing your questions…" : "▶ Start practice"}</span>
+              </button>
+            ) : (
+              <Link
+                href={startHref}
+                className="pro-btn-glow flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-xl bg-blue-fill hover:bg-blue-hover text-sm font-bold text-white shadow-md transition-all flex-1 cursor-pointer"
+              >
+                <Icon name="play" size={16} />
+                <span>▶ Start practice</span>
+              </Link>
+            )}
 
             <button
               type="button"
@@ -966,6 +920,12 @@ export function PracticeHubClient({
             </button>
           </div>
 
+          {startError && (
+            <p role="alert" className="mt-3 text-xs font-semibold text-red-soft">
+              {startError}
+            </p>
+          )}
+
           {/* Expandable Plan Preview */}
           {showPlanPreview && (
             <div className="mt-6 p-5 rounded-xl bg-panel-2 border border-line animate-rise">
@@ -973,11 +933,7 @@ export function PracticeHubClient({
                 Estimated Question Sequence
               </span>
               <div className="space-y-2.5">
-                {Array.from({ length: count }).map((_, idx) => {
-                  const catKey =
-                    focus !== "mix"
-                      ? focus
-                      : activeMixKeys[idx % activeMixKeys.length];
+                {sessionPlan.map((catKey, idx) => {
                   const cat = CATEGORIES.find((c) => c.key === catKey);
                   return (
                     <div

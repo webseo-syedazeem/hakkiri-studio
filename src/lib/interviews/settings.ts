@@ -1,4 +1,5 @@
 import type { InterviewerStyle, QuestionGroup } from "@/lib/types";
+import { suggestWeights } from "./focus-detect";
 
 /**
  * The settings for one interview session: how hard, how long, and the mix of
@@ -50,86 +51,22 @@ export const FOCUS_CATEGORIES: FocusCategory[] = [
   { key: "valuesCulture", label: "Values & Culture", group: "motivation", description: "Cultural alignment, workplace ethics, integrity and collaboration" },
 ];
 
+/**
+ * The question focus suggested for a job. It follows what the advert says it
+ * assesses (e.g. "will assess your Behaviours and Experience"), and only falls
+ * back to the job title when the advert doesn't say.
+ */
 export function getSuggestedWeights(title: string, jobText: string = ""): Record<FocusCategoryKey, number> {
-  const t = (title + " " + jobText).toLowerCase();
-  
-  // HMRC / Civil Service / Public sector (Matches client mockup screenshot exactly: 40/20/30/10)
-  if (t.includes("hmrc") || t.includes("civil service") || t.includes("success profiles") || t.includes("public sector") || t.includes("government")) {
-    return {
-      competency: 40,
-      strengths: 20,
-      technical: 30,
-      experience: 10,
-      motivation: 0,
-      situational: 0,
-      caseStudy: 0,
-      leadership: 0,
-      curveball: 0,
-      valuesCulture: 0,
-    };
-  }
-  
-  // Tech / Software / Data / Engineering
-  if (/\b(engineer|developer|software|full[- ]stack|backend|frontend|data|devops|sre|architect|tech lead|programmer)\b/i.test(t)) {
-    return {
-      technical: 35,
-      caseStudy: 25,
-      competency: 20,
-      experience: 20,
-      strengths: 0,
-      motivation: 0,
-      situational: 0,
-      leadership: 0,
-      curveball: 0,
-      valuesCulture: 0,
-    };
-  }
+  return suggestWeights(title, jobText);
+}
 
-  // Leadership / Management / Executive
-  if (/\b(director|head of|vp|chief|lead|manager|executive|principal)\b/i.test(t)) {
-    return {
-      leadership: 35,
-      competency: 25,
-      experience: 25,
-      situational: 15,
-      technical: 0,
-      strengths: 0,
-      motivation: 0,
-      caseStudy: 0,
-      curveball: 0,
-      valuesCulture: 0,
-    };
-  }
+export const FOCUS_LABEL = Object.fromEntries(FOCUS_CATEGORIES.map((c) => [c.key, c.label])) as Record<FocusCategoryKey, string>;
 
-  // Product / Design
-  if (/\b(product manager|product owner|ux|designer|product)\b/i.test(t)) {
-    return {
-      competency: 35,
-      technical: 25,
-      caseStudy: 20,
-      experience: 20,
-      strengths: 0,
-      motivation: 0,
-      situational: 0,
-      leadership: 0,
-      curveball: 0,
-      valuesCulture: 0,
-    };
-  }
-
-  // Default balanced
-  return {
-    competency: 30,
-    technical: 30,
-    experience: 20,
-    motivation: 20,
-    strengths: 0,
-    situational: 0,
-    caseStudy: 0,
-    leadership: 0,
-    curveball: 0,
-    valuesCulture: 0,
-  };
+/** Saved weights, or nothing when none were saved (or they are all zero). */
+export function savedWeights(s?: { categoryWeights?: Partial<Record<FocusCategoryKey, number>> }): Record<FocusCategoryKey, number> | null {
+  const w = s?.categoryWeights;
+  if (!w || !Object.values(w).some((v) => (v ?? 0) > 0)) return null;
+  return Object.fromEntries(FOCUS_CATEGORIES.map((c) => [c.key, Math.max(0, Math.round(w[c.key] ?? 0))])) as Record<FocusCategoryKey, number>;
 }
 
 export function weightsToMix(weights: Record<FocusCategoryKey, number>): Mix {

@@ -133,7 +133,8 @@ export async function getInterviewAsync(id: string, userId: string): Promise<Int
 export function listInterviews(today: string, userId: string): Interview[] {
   if (!userId) return [];
   const mine = [...store.values()]
-    .filter((i) => !isDemoInterview(i.id) && i.userId === userId)
+    // General practice records are not interviews the person set up: they stay off the list.
+    .filter((i) => !isDemoInterview(i.id) && i.userId === userId && !i.general)
     .map((i) => getInterview(i.id, userId)!)
     .filter(Boolean);
   const rank = (i: Interview) => (!i.date ? 1 : daysBetween(today, i.date) >= 0 ? 0 : 2);

@@ -71,8 +71,11 @@ export type OverviewStageOption = {
 /** A category's score from the person's own interviews. `delta` is null until two of them have scored it. */
 export type OverviewScoreCategory = {
   name: string;
-  score: number;
+  /** Out of 5. Null when the category is in the focus but hasn't been practised yet. */
+  score: number | null;
   delta: number | null;
+  /** Its share of the interview in the practice settings. */
+  weight?: number;
 };
 
 export type OverviewPracticeItem = {
@@ -475,11 +478,11 @@ export function InterviewOverviewClient({
 
           <div className="flex flex-wrap items-center gap-2.5">
             <Link
-              href={`/interviews/${interviewId}/rebuild?edit=1`}
+              href={`/interviews/${interviewId}/edit`}
               className="inline-flex items-center gap-1.5 rounded-xl border border-line-strong bg-panel px-4 py-2 text-xs font-semibold text-ink shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-fill/50 hover:bg-panel-2 dark:border-white/10 dark:bg-white/[0.04] dark:text-white/90 active:scale-[0.98]"
             >
               <Icon name="sliders" size={13} />
-              <span>Edit job & rebuild</span>
+              <span>Edit interview</span>
             </Link>
 
             <Link
@@ -603,10 +606,10 @@ export function InterviewOverviewClient({
               <div>
                 <h2 className="text-sm font-bold text-ink">Latest practice results</h2>
                 <p className="text-xs text-muted">
-                  {effectiveCategories.length > 0 ? "Each category’s score from your latest interview that included it." : "No practice scores recorded yet"}
+                  {effectiveCategories.some((c) => c.score != null) ? "Your latest score out of 5 in each question category, with its share of your interview." : "No practice scores recorded yet"}
                 </p>
               </div>
-              {effectiveCategories.length > 0 && (
+              {effectiveCategories.some((c) => c.score != null) && (
                 <Link
                   href={`/interviews/${interviewId}/mocks`}
                   className="text-xs font-semibold text-blue-soft hover:underline flex items-center gap-1"
@@ -617,22 +620,28 @@ export function InterviewOverviewClient({
               )}
             </div>
 
-            {effectiveCategories.length > 0 ? (
+            {effectiveCategories.some((c) => c.score != null) ? (
               <>
                 <div className="space-y-3 pt-1">
                   {effectiveCategories.map((cat) => {
-                    const pct = (cat.score / 5) * 100;
-                    const catBand = cat.score < 2 ? "poor" : cat.score < 3 ? "average" : cat.score < 4 ? "good" : "strong";
+                    const score = cat.score;
+                    const pct = score != null ? (score / 5) * 100 : 0;
+                    const catBand = score == null ? undefined : score < 2 ? "poor" : score < 3 ? "average" : score < 4 ? "good" : "strong";
                     return (
-                      <div key={cat.name} className="space-y-1" data-band={catBand}>
+                      <div key={cat.name} className="space-y-1" data-band={catBand} data-testid="result-category">
                         <div className="flex items-center justify-between text-xs">
                           <span className="font-medium text-ink">{cat.name}</span>
                           <div className="flex items-center gap-2">
-                            <span className="font-semibold num" style={{ color: "var(--ring)" }}>{cat.score.toFixed(1)}/5</span>
+                            {score != null ? (
+                              <span className="font-semibold num" style={{ color: "var(--ring)" }}>{score.toFixed(1)}/5</span>
+                            ) : (
+                              <span className="text-[11px] text-muted">Not practised yet</span>
+                            )}
                             {cat.delta != null && cat.delta !== 0 && (
                               <span className={clsx("text-[11px] font-bold num", cat.delta > 0 ? "text-emerald-600 dark:text-emerald-300" : "text-rose-600 dark:text-rose-300")}>
-                                <span aria-hidden>{cat.delta > 0 ? "▲" : "▼"}</span>
-                                <span className="sr-only">{cat.delta > 0 ? "up" : "down"}</span> {Math.abs(cat.delta).toFixed(1)}
+                                <span aria-hidden>{cat.delta > 0 ? "+" : "−"}</span>
+                                <span className="sr-only">{cat.delta > 0 ? "up" : "down"}</span>
+                                {Math.abs(cat.delta).toFixed(1)}
                               </span>
                             )}
                           </div>
@@ -643,6 +652,9 @@ export function InterviewOverviewClient({
                             style={{ width: `${pct}%`, backgroundColor: "var(--ring)" }}
                           />
                         </div>
+                        <div className="text-[11px] text-muted">
+                          {cat.weight ? `${cat.weight}% of interview assessment` : "Not in your current question focus"}
+                        </div>
                       </div>
                     );
                   })}
@@ -650,7 +662,7 @@ export function InterviewOverviewClient({
 
                 <p className="pt-2 text-[11px] text-muted border-t border-line/60 flex items-center gap-1.5">
                   <span>ⓘ</span>
-                  <span>These are scores on your practice answers. The arrows show the change since your previous interview. They don’t predict whether you’ll get an offer.</span>
+                  <span>Scores are out of 5 on your practice answers; the green or red number is the change since your previous interview. Percentages are each category’s share of your interview, from Practice settings. They don’t predict whether you’ll get an offer.</span>
                 </p>
               </>
             ) : (
@@ -660,7 +672,7 @@ export function InterviewOverviewClient({
                 </div>
                 <p className="font-semibold text-ink">Baseline scores appear after your first session</p>
                 <p className="mt-1 text-dim max-w-sm mx-auto">
-                  Practise a round above to generate rubric scores across Experience, Skills, Technical depth, Motivation and Situational questions.
+                  Practise a round above to get a score out of 5 in each question category of your focus.
                 </p>
               </div>
             )}
@@ -890,6 +902,12 @@ export function InterviewOverviewClient({
                   })}
                 </div>
               </button>
+              <Link
+                href={`/interviews/${interviewId}/edit`}
+                className="inline-block text-[11px] font-semibold text-blue-fill hover:underline dark:text-indigo-300"
+              >
+                Change these percentages →
+              </Link>
 
               {/* 2. Category Drilldown Chips */}
               <div className="pt-1 space-y-1.5">
@@ -1010,7 +1028,7 @@ export function InterviewOverviewClient({
               </Link>
 
               <Link
-                href={`/interviews/${interviewId}/rebuild?edit=1`}
+                href={`/interviews/${interviewId}/edit`}
                 className="flex items-center justify-between p-3.5 rounded-xl bg-panel-2 border border-line hover:border-blue-fill/50 hover:bg-panel transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md dark:hover:bg-white/[0.04] dark:hover:shadow-[0_4px_20px_rgba(0,0,0,0.35)] group"
               >
                 <div className="flex items-center gap-3 text-xs">
@@ -1103,7 +1121,7 @@ export function InterviewOverviewClient({
               </div>
               <div className="pt-1">
                 <Link
-                  href={`/interviews/${interviewId}/rebuild?edit=1`}
+                  href={`/interviews/${interviewId}/edit`}
                   className="text-xs font-semibold text-blue-soft hover:underline"
                 >
                   Edit details or rebuild questions →

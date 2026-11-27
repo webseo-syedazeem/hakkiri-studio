@@ -4,6 +4,7 @@ import { shortTitle } from "@/lib/questions/store";
 import { TYPES_FOR_GROUP, normText } from "@/lib/ai/interview/build-plan";
 import { isTechRole, type Difficulty } from "./settings";
 import { withArticle } from "@/lib/format";
+import { readAssessment, type CivilServiceBehaviour } from "./focus-detect";
 
 /**
  * Turning a built plan into the interview's question bank, and the template
@@ -111,24 +112,159 @@ export function levelFrom(title: string): string {
   return "Mid-level";
 }
 
-/** What each category means for this job, without a model. */
-export function templateUnderstanding(input: { company: string; role: string; skills: string[] }): RoleUnderstanding {
+const clipTo = (s: string, max: number) => (s.length <= max ? s : `${s.slice(0, max - 1).replace(/[\s,;:]+\S*$/, "")}…`);
+const lowerFirst = (s: string) => (/^[A-Z][a-z]/.test(s) ? s.charAt(0).toLowerCase() + s.slice(1) : s);
+
+/** The first real line after a heading such as "Job description" or "Essential experience". */
+export function lineAfter(text: string, heading: RegExp): string {
+  const lines = text.split(/\r?\n/).map((l) => l.trim());
+  for (let i = 0; i < lines.length; i++) {
+    if (!heading.test(lines[i])) continue;
+    // The heading may carry its text on the same line ("Job summary: We are…").
+    const same = lines[i].replace(heading, "").replace(/^[\s:–-]+/, "").trim();
+    if (same.split(/\s+/).length >= 6) return same;
+    for (let j = i + 1; j < Math.min(lines.length, i + 6); j++) {
+      if (lines[j].split(/\s+/).length >= 6) return lines[j].replace(/^[•*\-–\d.)\s]+/, "");
+    }
+  }
+  return "";
+}
+
+/** The first sentence of a line, without its full stop. */
+const firstSentence = (line: string) => (line.match(/^.+?[.!?](?=\s|$)/)?.[0] ?? line).replace(/[.!?]$/, "").trim();
+
+/** What the job is, in one line from the advert. */
+function workFrom(job: string, company: string): string {
+  const line =
+    lineAfter(job, /^(job description|about the role|the role|role purpose|main purpose|overview of the role|what you(?:'|’)ll do)\b/i) ||
+    lineAfter(job, /^(job summary|summary|about the job)\b/i);
+  if (!line) return `working at ${company}`;
+  return clipTo(firstSentence(line), 118);
+}
+
+/** What each category means for this job, without a model, taken from the advert where it says. */
+export function templateUnderstanding(input: { company: string; role: string; skills: string[]; job?: string }): RoleUnderstanding {
   const role = input.role.trim() || "this role";
+  const job = input.job?.trim() ?? "";
   const tech = isTechRole(role);
   const skills = input.skills.slice(0, 3);
+  const read = readAssessment(role, job);
+  const essential = lineAfter(job, /^(essential (experience|criteria|skills)|you(?:'|’)ll need|requirements|what we(?:'|’)re looking for)\b/i);
+  const duty = lineAfter(job, /^(person specification|key responsibilities|responsibilities|main duties|duties|what you(?:'|’)ll do)\b/i);
+  const behaviourList = read.behaviours.join(", ");
+  const meaning = (s: string) => clipTo(s, 158);
   return {
-    role,
+    role: clipTo(role, 80),
     level: levelFrom(role),
-    field: `working at ${input.company}`,
+    field: workFrom(job, input.company),
     technicalLabel: tech ? "Technical" : "Role knowledge",
     meanings: {
-      cv: `Your path to ${role}: your roles, moves, gaps and the claims on your CV.`,
-      competency: skills.length ? `Times you used the skills the job asks for, such as ${skills.map(skillInSentence).join(", ")}.` : "Times you used the skills the job asks for.",
-      technical: tech ? `The tools, methods and decisions ${withArticle(role)} works with day to day.` : `The work itself: what ${withArticle(role)} needs to know and do, and how you’d handle it.`,
-      motivation: `Why ${input.company}, why this role, and what you know about their market.`,
+      cv: meaning(essential ? `Your experience against the essential criteria, e.g. ${lowerFirst(firstSentence(essential).replace(/^(have|be)\s+/i, ""))}.` : `Your path to ${role}: your roles, moves, gaps and the claims on your CV.`),
+      competency: meaning(
+        behaviourList
+          ? `Evidence of the behaviours the advert assesses: ${behaviourList}. What you did and the result.`
+          : skills.length
+            ? `Times you used the skills the job asks for, such as ${skills.map(skillInSentence).join(", ")}.`
+            : "Times you used the skills the job asks for.",
+      ),
+      technical: meaning(
+        duty
+          ? `The work itself, e.g. ${lowerFirst(firstSentence(duty))}, and how you’d handle it.`
+          : tech
+            ? `The tools, methods and decisions ${withArticle(role)} works with day to day.`
+            : `The work itself: what ${withArticle(role)} needs to know and do, and how you’d handle it.`,
+      ),
+      motivation: meaning(read.publicSector ? `Why ${input.company}, why this role and why public service: what it delivers and for whom.` : `Why ${input.company}, why this role, and what you know about their market.`),
       curveball: "What you’d do if…, quick-fire questions and fair curveballs.",
     },
   };
+}
+
+/** Success Profiles behaviour questions, three for each behaviour: a core one, then deeper. */
+export const BEHAVIOUR_QUESTIONS: Record<CivilServiceBehaviour, string[]> = {
+  "Seeing the Big Picture": [
+    "Tell me about a time you made sure your work supported wider organisational or government priorities.",
+    "Describe a time you used your understanding of the wider context to change the direction of a piece of work.",
+    "Tell me about a time you anticipated a long-term issue and planned for it before it became a problem.",
+  ],
+  "Changing and Improving": [
+    "Tell me about a time you identified a better way of doing something and made the change happen.",
+    "Describe a time you led or supported a change that people were resistant to. How did you bring them with you?",
+    "Tell me about a process improvement you delivered. How did you measure whether it worked?",
+  ],
+  "Making Effective Decisions": [
+    "Tell me about a time you made a decision using evidence from a range of sources.",
+    "Describe a difficult decision you made with incomplete information. How did you weigh up the risks?",
+    "Tell me about a time you had to explain or defend a decision to people who disagreed with it.",
+  ],
+  Leadership: [
+    "Tell me about a time you set a clear direction for a team and motivated them to deliver it.",
+    "Describe a time you championed inclusion or made sure different views in your team were heard.",
+    "Tell me about a time you led a team through uncertainty or a difficult period.",
+  ],
+  "Communicating and Influencing": [
+    "Tell me about a time you influenced a senior stakeholder to change their view.",
+    "Describe a time you had to communicate complex information to people with different levels of understanding.",
+    "Tell me about a time you built consensus between groups with competing priorities.",
+  ],
+  "Working Together": [
+    "Tell me about a time you built a strong working relationship with a team or organisation outside your own.",
+    "Describe a time you worked with others to resolve a conflict that was holding up delivery.",
+    "Tell me about a time you shared your knowledge or resources to help colleagues achieve a shared goal.",
+  ],
+  "Developing Self and Others": [
+    "Tell me about a time you invested in developing someone in your team.",
+    "Describe a time you identified a gap in your own skills and took action to close it.",
+    "Tell me about a time you created a learning culture or encouraged others to develop.",
+  ],
+  "Managing a Quality Service": [
+    "Tell me about a time you made sure a service met the needs of the people using it.",
+    "Describe a time you improved the quality of a service while working within limited resources.",
+    "Tell me about a time you handled a service failure and what you did to stop it happening again.",
+  ],
+  "Delivering at Pace": [
+    "Tell me about a time you delivered high-quality work to a tight deadline.",
+    "Describe a time you managed several competing priorities and still delivered what mattered most.",
+    "Tell me about a time you kept a project on track when it hit a significant setback.",
+  ],
+};
+
+/** Strengths questions: what energises you and comes naturally (never STAR). */
+export const STRENGTHS_QUESTIONS: string[] = [
+  "What kind of work energises you most, and why?",
+  "What do you find yourself doing well without having to try too hard?",
+  "How do you feel when plans change at the last minute?",
+  "Do you prefer to start new things or to finish things off? Why?",
+  "What does a really good day at work look like for you?",
+  "How do you feel about being responsible for other people’s work?",
+  "What tasks do you tend to put off, and why do you think that is?",
+];
+
+/** Behaviour and strengths questions to use first in the competency category, round-robin across the named behaviours. */
+export function focusedCompetency(n: number, opts: { behaviours?: string[]; strengthsShare?: number }, avoid: string[], difficulty: Difficulty = "medium"): BuiltPlan["questions"] {
+  const seen = new Set(avoid.map(normText));
+  const out: BuiltPlan["questions"] = [];
+  const strengthsN = Math.round(n * Math.min(1, Math.max(0, opts.strengthsShare ?? 0)));
+  const tier = difficulty === "easy" ? 0 : difficulty === "hard" ? 2 : 1;
+  const behaviours = (opts.behaviours ?? []).filter((b): b is CivilServiceBehaviour => b in BEHAVIOUR_QUESTIONS);
+  // Start at the question for this difficulty, then the others, so harder sessions get the deeper questions first.
+  const order = [tier, ...[0, 1, 2].filter((x) => x !== tier)];
+  for (const k of order) {
+    for (const b of behaviours) {
+      if (out.length >= n - strengthsN) break;
+      const text = BEHAVIOUR_QUESTIONS[b][k];
+      if (!text || seen.has(normText(text))) continue;
+      seen.add(normText(text));
+      out.push({ group: "competency", type: "competency", text, short: clipTo(b, 48), difficulty });
+    }
+  }
+  for (const text of STRENGTHS_QUESTIONS) {
+    if (out.filter((q) => q.type === "strengths").length >= strengthsN) break;
+    if (seen.has(normText(text))) continue;
+    seen.add(normText(text));
+    out.push({ group: "competency", type: "strengths", text, short: shortTitle(text), difficulty });
+  }
+  return out;
 }
 
 /** Standard questions for each category and difficulty, with the company and role filled in. */
@@ -289,21 +425,25 @@ export function templateQuestions(
   n: number,
   avoid: string[],
   difficulty: Difficulty = "medium",
+  focus: { behaviours?: string[]; strengthsShare?: number } = {},
 ): BuiltPlan["questions"] {
-  const seen = new Set(avoid.map(normText));
-  return templateBank(company, role, difficulty)
+  const first = group === "competency" && n > 0 ? focusedCompetency(n, focus, avoid, difficulty) : [];
+  const seen = new Set([...avoid, ...first.map((q) => q.text)].map(normText));
+  const rest = templateBank(company, role, difficulty)
     [group].filter(([, text]) => !seen.has(normText(text)))
-    .slice(0, n)
+    .slice(0, Math.max(0, n - first.length))
     .map(([type, text]) => ({ group, type, text, short: shortTitle(text), difficulty }));
+  return [...first, ...rest];
 }
 
 /** Standard questions and a plain understanding of the job, with the company and role filled in. */
-export function templatePlan(input: { company: string; role: string; counts: Record<QuestionGroup, number>; interviewerTitle: string; job?: string; site?: string; difficulty?: Difficulty }): BuiltPlan {
+export function templatePlan(input: { company: string; role: string; counts: Record<QuestionGroup, number>; interviewerTitle: string; job?: string; site?: string; difficulty?: Difficulty; strengthsShare?: number }): BuiltPlan {
   const c = input.company.trim();
   const job = input.job?.trim() ?? "";
   const skills = skillsIn(job);
   const difficulty = input.difficulty ?? "medium";
-  const questions = GROUP_ORDER.flatMap((g) => templateQuestions(c, input.role, g, input.counts[g], [], difficulty));
+  const focus = { behaviours: readAssessment(input.role, job).behaviours, strengthsShare: input.strengthsShare };
+  const questions = GROUP_ORDER.flatMap((g) => templateQuestions(c, input.role, g, input.counts[g], [], difficulty, focus));
   return {
     company: c,
     role: input.role.trim(),
@@ -311,7 +451,7 @@ export function templatePlan(input: { company: string; role: string; counts: Rec
     interviewerTitle: input.interviewerTitle,
     jobSummary: job ? firstSentences(job, 200) : `${input.role.trim() || "A role"} at ${c}. Expect questions on why ${c}, your experience and how you’d approach the work.`,
     skills,
-    understanding: templateUnderstanding({ company: c, role: input.role, skills }),
+    understanding: templateUnderstanding({ company: c, role: input.role, skills, job }),
     brief: {
       whatTheyDo: input.site ? firstSentences(input.site, 300) : "",
       whyYou: [],

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { UnderstandingSchema } from "@/lib/ai/interview/build-plan";
+import { SettingsBody } from "@/lib/interviews/settings-schema";
 import { PlanError, rebuildAndPlan } from "@/lib/sessions/server";
 import { guard } from "@/lib/usage/limits";
 import { setUsageContext } from "@/lib/usage/store";
@@ -24,6 +25,7 @@ const Body = z.object({
   start: z.boolean(),
   mix: z.record(z.string(), z.number()).optional(),
   preset: z.string().optional(),
+  categoryWeights: SettingsBody.shape.categoryWeights,
   jobSummary: z.string().optional(),
 });
 
@@ -61,6 +63,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         sources: { ...(b.cv ? { cv: b.cv.label } : {}), ...(b.job ? { job: b.job.label } : {}) },
         mix: b.mix as any,
         preset: b.preset,
+        categoryWeights: b.categoryWeights,
         jobSummary: b.jobSummary,
       },
       { start: b.start },

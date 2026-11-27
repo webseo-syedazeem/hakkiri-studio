@@ -8,62 +8,10 @@ import { Segmented } from "@/components/ui/Segmented";
 import { DocField } from "./InterviewSetup";
 import type { ReadDoc } from "./read-docs";
 import type { QuestionGroup, RoleUnderstanding } from "@/lib/types";
-import { CATEGORY_ORDER, categoryLabel, type SessionSettings } from "@/lib/interviews/settings";
+import { CATEGORY_ORDER, categoryLabel, FOCUS_CATEGORIES, presetFor, savedWeights, weightsLine, weightsToMix, type FocusCategoryKey, type SessionSettings } from "@/lib/interviews/settings";
+import { toHundred } from "@/lib/interviews/focus-detect";
 
 type Rethought = { before: RoleUnderstanding; after: RoleUnderstanding; rules: string[]; by: "model" | "rules"; attempt: number };
-
-function getFocusOptions(company: string, isPublicSector: boolean) {
-  return [
-    {
-      key: "strengths-competency",
-      label: "Strengths & Competency (STAR)",
-      badge: isPublicSector ? "Civil Service / HMRC" : undefined,
-      description: isPublicSector
-        ? "STAR behavioural competencies + spontaneous strengths questions"
-        : "STAR behavioural competencies + structured behavioural questions",
-      mix: { competency: 40, technical: 20, curveball: 20, motivation: 20, cv: 0 },
-    },
-    {
-      key: "balanced",
-      label: "Balanced (All areas)",
-      badge: undefined,
-      description: "Even coverage across Experience, Skills, Technical, Motivation & Situational",
-      mix: { cv: 20, competency: 20, technical: 20, motivation: 20, curveball: 20 },
-    },
-    {
-      key: "strengths",
-      label: "Strengths focus",
-      badge: undefined,
-      description: "Focus on spontaneous strengths, values, motivation and pressure reactions",
-      mix: { curveball: 80, competency: 20, cv: 0, technical: 0, motivation: 0 },
-    },
-    {
-      key: "competency",
-      label: "Competency focus (STAR)",
-      badge: undefined,
-      description: "Deep dive on structured behavioural examples and delivering outcomes",
-      mix: { competency: 80, curveball: 20, cv: 0, technical: 0, motivation: 0 },
-    },
-    {
-      key: "technical",
-      label: "Role Knowledge & Technical",
-      badge: undefined,
-      description: isPublicSector
-        ? "GDS standards, delivery methods, WCAG accessibility and technical execution"
-        : "Domain knowledge, system architecture, delivery methods and technical execution",
-      mix: { technical: 60, competency: 20, motivation: 20, cv: 0, curveball: 0 },
-    },
-    {
-      key: "motivation",
-      label: isPublicSector ? `Motivation & Why ${company || "HMRC"}` : `Motivation & Why ${company || "This Role"}`,
-      badge: undefined,
-      description: isPublicSector
-        ? "Public service motivation, why this role and organisation"
-        : "Company culture, values alignment, why this role and organisation",
-      mix: { motivation: 60, cv: 20, competency: 20, technical: 0, curveball: 0 },
-    },
-  ];
-}
 
 const input = "w-full rounded-[9px] bg-panel-2 px-3 py-2 text-sm outline-none shadow-[inset_0_0_0_1px_var(--color-line-strong)] placeholder:text-dim focus:shadow-[inset_0_0_0_1px_var(--color-blue)]";
 
@@ -101,6 +49,7 @@ export function RebuildFlow({
   company,
   initialJobSummary = "",
   initialSettings,
+  suggestedWeights,
 }: {
   interviewId: string;
   /** The stopped interview, after "Something's wrong"; absent when editing from the overview. */
@@ -113,6 +62,8 @@ export function RebuildFlow({
   company: string;
   initialJobSummary?: string;
   initialSettings?: SessionSettings;
+  /** The focus suggested from the advert, used when none was saved. */
+  suggestedWeights?: Record<FocusCategoryKey, number>;
 }) {
   const router = useRouter();
   const [phase, setPhase] = useState<"reading" | "ready" | "rebuilding" | "error">(sessionId ? "reading" : "ready");
@@ -121,11 +72,12 @@ export function RebuildFlow({
   const [rules, setRules] = useState<string[]>(initialRules);
   const [newRule, setNewRule] = useState("");
   const [jobSummary, setJobSummary] = useState<string>(initialJobSummary);
-  const isCivilService = /\b(civil service|hmrc|dwp|nhs|council|councils|gds|government digital service|home office|cabinet office|ministry of|department for|public sector|gov\.uk)\b/i.test(
-    `${company} ${current.role} ${current.field} ${initialJobSummary}`
+  // The focus this interview was set up with (or suggested from its advert), editable here.
+  const [weights, setWeights] = useState<Record<FocusCategoryKey, number>>(
+    () => savedWeights(initialSettings) ?? suggestedWeights ?? toHundred({ competency: 1, experience: 1, technical: 1, motivation: 1, situational: 1 }),
   );
-  const focusOptions = getFocusOptions(company, isCivilService);
-  const [focusPreset, setFocusPreset] = useState<string>(isCivilService ? "strengths-competency" : "balanced");
+  const weightTotal = Object.values(weights).reduce((a, b) => a + b, 0);
+  const adjustWeight = (key: FocusCategoryKey, delta: number) => setWeights((w) => ({ ...w, [key]: Math.max(0, Math.min(100, (w[key] ?? 0) + delta)) }));
   const [by, setBy] = useState<"model" | "rules" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [cv, setCv] = useState<ReadDoc | null>(null);
@@ -174,7 +126,8 @@ export function RebuildFlow({
     setPhase("rebuilding");
     setError(null);
     try {
-      const chosen = focusOptions.find((f) => f.key === focusPreset) || focusOptions[0];
+      const focus = weightTotal === 100 ? weights : toHundred(weights, 5);
+      const mix = weightsToMix(focus);
       const res = await fetch(`/api/interviews/${interviewId}/rebuild`, {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -184,8 +137,9 @@ export function RebuildFlow({
           start: opts.start,
           templates: opts.templates,
           jobSummary,
-          mix: chosen.mix,
-          preset: chosen.key === "balanced" ? "balanced" : "custom",
+          mix,
+          preset: presetFor(mix),
+          categoryWeights: focus,
           cv: cv ? { text: cv.text, label: cv.name } : undefined,
           job: job ? { text: job.text, label: job.name } : undefined,
         }),
@@ -292,38 +246,38 @@ export function RebuildFlow({
               Customise focus
             </span>
           </div>
-          <p className="mt-0.5 text-[13px] text-muted">Choose what areas you want your practice questions to focus on.</p>
-          <div className="mt-3 space-y-2">
-            {focusOptions.map((opt) => {
-              const isSel = focusPreset === opt.key;
+          <p className="mt-0.5 text-[13px] text-muted">Set how much of the interview each type of question gets. Take a type down to 0% to switch it off.</p>
+          <div className="mt-3 divide-y divide-line">
+            {FOCUS_CATEGORIES.map((cat) => {
+              const w = weights[cat.key] ?? 0;
               return (
-                <button
-                  key={opt.key}
-                  type="button"
-                  onClick={() => setFocusPreset(opt.key)}
-                  className={clsx(
-                    "w-full text-left p-3 rounded-xl border text-xs transition-all flex items-start justify-between gap-3 cursor-pointer",
-                    isSel
-                      ? "border-indigo-500 bg-indigo-500/15 text-white shadow-[0_0_15px_rgba(99,102,241,0.2)]"
-                      : "border-line bg-panel-2 hover:border-white/20 text-[#c9cad4] hover:text-white"
-                  )}
-                >
-                  <div>
-                    <div className="font-semibold text-white flex items-center gap-2">
-                      <span>{opt.label}</span>
-                      {opt.badge && (
-                        <span className="rounded bg-indigo-500/25 px-1.5 py-0.2 text-[9px] font-bold uppercase tracking-wider text-indigo-300">
-                          {opt.badge}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[11px] text-muted mt-0.5">{opt.description}</p>
+                <div key={cat.key} className="flex items-center justify-between gap-3 py-2">
+                  <div className="min-w-0">
+                    <div className={clsx("text-xs font-semibold", w > 0 ? "text-ink" : "text-muted")}>{cat.label}</div>
+                    <div className="truncate text-[11px] text-muted">{cat.description}</div>
                   </div>
-                  {isSel && <Icon name="check" size={14} className="text-indigo-400 shrink-0 mt-0.5" />}
-                </button>
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    <button type="button" aria-label={`Less ${cat.label}`} disabled={w <= 0} onClick={() => adjustWeight(cat.key, -10)} className="flex h-6 w-6 items-center justify-center rounded-full border border-line bg-panel-2 text-xs font-bold disabled:opacity-30 cursor-pointer">
+                      −
+                    </button>
+                    <span className="w-10 text-center text-xs font-bold num">{w}%</span>
+                    <button type="button" aria-label={`More ${cat.label}`} disabled={w >= 100} onClick={() => adjustWeight(cat.key, 10)} className="flex h-6 w-6 items-center justify-center rounded-full border border-line bg-panel-2 text-xs font-bold disabled:opacity-30 cursor-pointer">
+                      +
+                    </button>
+                  </div>
+                </div>
               );
             })}
           </div>
+          <div className="mt-2 flex items-center justify-between gap-2 text-[11px]">
+            <span className={clsx("font-semibold", weightTotal === 100 ? "text-emerald-600 dark:text-emerald-400" : "text-amber-700 dark:text-amber-300")}>Total {weightTotal}%</span>
+            {weightTotal !== 100 && weightTotal > 0 && (
+              <button type="button" onClick={() => setWeights((w) => toHundred(w, 5))} className="rounded-full border border-blue/40 px-2.5 py-0.5 font-semibold text-blue-soft hover:bg-blue/10 cursor-pointer">
+                Make it 100%
+              </button>
+            )}
+          </div>
+          {weightTotal > 0 && <p className="mt-1 text-[11px] text-muted">New questions: {weightsLine(weightTotal === 100 ? weights : toHundred(weights, 5))}</p>}
         </Panel>
 
         <Panel aria-label="Rules for the new questions" className="animate-rise px-6 py-5 [animation-delay:0.06s]">

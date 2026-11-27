@@ -1,4 +1,11 @@
 import { mixIsValid, presetFor, PRESETS, type Mix, type FocusCategoryKey, weightsToMix } from "./settings";
+import { toHundred } from "./focus-detect";
+
+/** The focus as it is saved: what the person chose, scaled to add up to 100% when it doesn't. */
+export function savedFocus(categories: Record<FocusCategoryKey, number>): Record<FocusCategoryKey, number> {
+  const total = Object.values(categories).reduce((a, b) => a + Math.max(0, b), 0);
+  return total === 100 ? { ...categories } : toHundred(categories, 5);
+}
 
 /**
  * The rules of the interview set-up form: what must be there before an
@@ -149,7 +156,7 @@ export function buildRequest(f: SetupForm) {
       minutes: (MINUTES.includes(f.minutes) ? f.minutes : 30) as 10 | 20 | 30 | 45 | 60,
       preset: presetFor(mix),
       mix,
-      ...(f.focus.categories ? { categoryWeights: f.focus.categories } : {}),
+      ...(f.focus.categories && Object.values(f.focus.categories).some((v) => v > 0) ? { categoryWeights: savedFocus(f.focus.categories) } : {}),
     },
     stages,
   };

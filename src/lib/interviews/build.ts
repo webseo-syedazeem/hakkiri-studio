@@ -23,7 +23,8 @@ import { GROUP_ORDER } from "@/lib/labels";
 import { displayHost, readLink } from "./links";
 import { closingQuestion, openingQuestion, templatePlan, templateQuestions, templateUnderstanding, toQuestions, type BuiltPlan } from "./plan";
 import { saveInterview, saveInterviewAsync, updateInterview } from "./store";
-import { settingsOr, type Difficulty, type SessionSettings } from "./settings";
+import { FOCUS_LABEL, savedWeights, settingsOr, type Difficulty, type SessionSettings } from "./settings";
+import { focusBrief, readAssessment, suggestWeights } from "./focus-detect";
 
 /**
  * Builds an interview from what you gave at set-up, and adds questions later:
@@ -68,6 +69,20 @@ export function countGroups(questions: Question[]): Record<QuestionGroup, number
   return c;
 }
 
+/** The person's question focus for a job, and what the writer is told about it. */
+export function focusFor(role: string, job: string, settings?: Pick<SessionSettings, "categoryWeights">) {
+  const weights = savedWeights(settings) ?? suggestWeights(role, job);
+  const read = readAssessment(role, job);
+  const compShare = weights.competency + weights.strengths + weights.leadership;
+  return {
+    weights,
+    read,
+    text: focusBrief(weights, read, FOCUS_LABEL),
+    strengths: weights.strengths > 0,
+    strengthsShare: compShare ? weights.strengths / compShare : 0,
+  };
+}
+
 /**
  * The relevance check (fast model): drops questions that don't fit the job
  * or break a rule, as long as each category keeps `keep` of its questions.
@@ -90,7 +105,19 @@ export async function reviewQuestions(questions: Question[], understanding: Role
   return { kept: questions.filter((q) => !dropped.some((d) => d.question === q)), dropped };
 }
 
-export async function buildInterview(input: BuildInput): Promise<BuildResult> {
+interface MadePlan {
+  plan: BuiltPlan;
+  planBy: Interview["planBy"];
+  notes: string[];
+  job: string;
+  site: string;
+  counts: Record<QuestionGroup, number>;
+  round: Interview["round"];
+  settings: SessionSettings;
+}
+
+/** Reads the links, writes the plan (or uses the standard one) for a set-up. */
+async function makePlan(input: BuildInput): Promise<MadePlan> {
   const notes: string[] = [];
   let site = input.company.siteText?.trim() || "";
   if (!site && input.company.url) {
@@ -105,10 +132,12 @@ export async function buildInterview(input: BuildInput): Promise<BuildResult> {
     else notes.push(`The job link: ${r.message}`);
   }
 
-  const settings = input.settings;
+  const focus = focusFor(input.job.title, job, input.settings);
+  // The focus is kept with the interview, so every screen shows what was chosen (or suggested from the advert).
+  const settings: SessionSettings = { ...input.settings, categoryWeights: focus.weights };
   const counts = bankCounts(settings);
   const round = roundFor(settings.preset);
-  const planInput: PlanInput = { company: input.company.name.trim(), role: input.job.title.trim(), difficulty: settings.difficulty, counts, cv: input.cv.text, coverLetter: input.coverLetter?.text, job, site };
+  const planInput: PlanInput = { company: input.company.name.trim(), role: input.job.title.trim(), difficulty: settings.difficulty, counts, cv: input.cv.text, coverLetter: input.coverLetter?.text, job, site, focus: focus.text, strengths: focus.strengths };
   let plan: BuiltPlan | null = null;
   let planBy: Interview["planBy"] = "templates";
   if (useModel()) {
@@ -121,12 +150,22 @@ export async function buildInterview(input: BuildInput): Promise<BuildResult> {
   } else if (!mockAiEnabled()) {
     notes.push(devOr("Add GEMINI_API_KEY or ANTHROPIC_API_KEY to .env.local to build questions from your CV and the job spec. For now you have a standard set.", "Your questions couldn’t be tailored this time, so you have a standard set for now. Use “Something’s wrong” in the interview to rebuild them later."));
   }
-  plan ??= templatePlan({ company: planInput.company, role: planInput.role, counts, interviewerTitle: INTERVIEWER_FOR_ROUND[round], job, site, difficulty: settings.difficulty });
+  plan ??= templatePlan({ company: planInput.company, role: planInput.role, counts, interviewerTitle: INTERVIEWER_FOR_ROUND[round], job, site, difficulty: settings.difficulty, strengthsShare: focus.strengthsShare });
+  return { plan, planBy, notes, job, site, counts, round, settings };
+}
 
-  let questions = toQuestions(plan.questions, counts, [], settings.difficulty);
-  // Spares cover anything the check drops: keep what the first interview needs.
+/** The plan's questions as the bank needs them, checked for fit (spares cover anything the check drops). */
+async function checkedQuestions(made: MadePlan, existing: Question[] = []): Promise<Question[]> {
+  const { plan, counts, settings } = made;
+  const questions = toQuestions(plan.questions, counts, existing, settings.difficulty);
   const firstNeeds = Object.fromEntries(GROUP_ORDER.map((g) => [g, Math.max(0, counts[g] - 2)])) as Record<QuestionGroup, number>;
-  questions = (await reviewQuestions(questions, plan.understanding, [], firstNeeds)).kept;
+  return (await reviewQuestions(questions, plan.understanding, [], firstNeeds)).kept;
+}
+
+export async function buildInterview(input: BuildInput): Promise<BuildResult> {
+  const made = await makePlan(input);
+  const { plan, planBy, notes, job, site, round, settings } = made;
+  const questions = await checkedQuestions(made);
   const bank = [openingQuestion(), ...questions, closingQuestion()];
 
   const company = input.company.name.trim() || plan.company;
@@ -184,9 +223,77 @@ export async function buildInterview(input: BuildInput): Promise<BuildResult> {
   return { interview, notes };
 }
 
+/**
+ * "Edit interview": rebuilds the same interview from the changed set-up. The
+ * questions you've already been asked stay (set aside) so your answers and
+ * reports still read; everything else is written afresh from the new set-up.
+ */
+export async function rebuildFromSetup(existing: Interview, input: BuildInput, heardIds: string[]): Promise<BuildResult> {
+  const sameSite = Boolean(input.company.url && existing.companyUrl && displayHost(input.company.url) === existing.companyUrl);
+  const made = await makePlan({
+    ...input,
+    company: { ...input.company, siteText: input.company.siteText || (sameSite ? existing.documents?.site : undefined) },
+  });
+  const { plan, planBy, notes, job, site, round, settings } = made;
+  const heard = new Set(heardIds);
+  const kept = existing.questions.filter((q) => !q.slot && !q.custom && heard.has(q.id)).map((q) => ({ ...q, retired: true }));
+  const fresh = await checkedQuestions(made, kept);
+  const opening = existing.questions.find((q) => q.slot === "opening") ?? openingQuestion();
+  const closing = existing.questions.find((q) => q.slot === "closing") ?? closingQuestion();
+  const pay = existing.questions.filter((q) => q.pay && !q.custom);
+  const bank = [opening, ...kept, ...pay, ...fresh, closing];
+  const company = input.company.name.trim() || plan.company;
+  const change = (i: Interview): Interview => ({
+    ...i,
+    company,
+    companyInitial: company.charAt(0).toUpperCase(),
+    companyUrl: input.company.url ? displayHost(input.company.url) : undefined,
+    role: input.job.title.trim() || plan.role || i.role,
+    seniority: plan.seniority || plan.understanding.level || i.seniority,
+    round,
+    format: input.format,
+    stages: input.stages?.map((s, idx) => ({
+      id: s.id || `stage-${idx + 1}`,
+      name: s.name,
+      date: s.date,
+      time: s.time,
+      format: s.format,
+      interviewer: s.interviewer,
+      status: s.status || (idx === 0 ? "next" : "not_scheduled"),
+    })) ?? i.stages,
+    style: settings.difficulty === "easy" ? "friendly" : settings.difficulty === "hard" ? "tough" : "realistic",
+    interviewer: { name: i.interviewer?.name || "Sam", title: plan.interviewerTitle || i.interviewer?.title || "hiring manager" },
+    questions: bank,
+    groupCounts: countGroups(bank),
+    jobSummary: plan.jobSummary,
+    skills: plan.skills,
+    likelyAsks: plan.probes.map((p) => p.ask),
+    probes: plan.probes,
+    questionsToAsk: plan.questionsToAsk,
+    brief: plan.brief.whatTheyDo || plan.brief.whyYou.length || plan.brief.toKnow.length ? plan.brief : null,
+    stories: plan.stories.map((s, k) => ({ ...s, id: `s${k + 1}` })),
+    gaps: plan.gaps,
+    understanding: plan.understanding,
+    settings,
+    rebuilds: (i.rebuilds ?? 0) + 1,
+    sources: {
+      cv: input.cv.label,
+      coverLetter: input.coverLetter?.label,
+      job: input.job.label ?? (input.job.url ? displayHost(input.job.url) : job ? "Pasted job description" : undefined),
+      company: input.company.url ? displayHost(input.company.url) : undefined,
+    },
+    planBy,
+    documents: { cv: input.cv.text, coverLetter: input.coverLetter?.text, job: job || undefined, site: site || undefined },
+    setupNotes: notes,
+  });
+  const saved = updateInterview(existing.id, change, input.userId) ?? change(existing);
+  await saveInterviewAsync(saved, input.userId);
+  return { interview: saved, notes };
+}
+
 /** The understanding to use for an interview saved before it had one. */
 export function understandingOf(interview: Interview): RoleUnderstanding {
-  return interview.understanding ?? templateUnderstanding({ company: interview.company, role: interview.role, skills: interview.skills });
+  return interview.understanding ?? templateUnderstanding({ company: interview.company, role: interview.role, skills: interview.skills, job: interview.documents?.job });
 }
 
 /**
@@ -231,12 +338,13 @@ export async function addQuestions(interview: Interview, need: Partial<Record<Qu
   if (useModel() && !opts.templatesOnly && wanted > 0 && (docs.cv || docs.job)) {
     // Ask for one spare per category, so the relevance check can drop one without leaving a gap.
     const asking = Object.fromEntries(GROUP_ORDER.map((g) => [g, counts[g] > 0 ? counts[g] + 1 : 0])) as Record<QuestionGroup, number>;
-    const input = { company: interview.company, understanding, difficulty, counts: asking, rules, avoid, documents: docs };
+    const input = { company: interview.company, understanding, difficulty, counts: asking, rules, avoid, documents: docs, focus: focusFor(interview.role, docs.job ?? "", interview.settings).text };
     const { system, user } = buildNewQuestionsPrompt(input);
     const reply = await ask({ model: aiConfig.mainModel, system, user, maxTokens: 3000, temperature: 0.5, timeoutMs: 25_000, schema: NewQuestionsSchema, check: (r) => checkNewQuestions(r, input), label: "new-questions" });
     written = reply?.questions ?? null;
   }
-  written ??= GROUP_ORDER.flatMap((g) => templateQuestions(interview.company, interview.role, g, counts[g], avoid, difficulty));
+  const tf = focusFor(interview.role, docs.job ?? "", interview.settings);
+  written ??= GROUP_ORDER.flatMap((g) => templateQuestions(interview.company, interview.role, g, counts[g], avoid, difficulty, { behaviours: tf.read.behaviours, strengthsShare: tf.strengthsShare }));
 
   const asking = Object.fromEntries(GROUP_ORDER.map((g) => [g, counts[g] > 0 ? counts[g] + 1 : 0])) as Record<QuestionGroup, number>;
   let fresh = toQuestions(written, asking, bank, difficulty);

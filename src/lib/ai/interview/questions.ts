@@ -44,6 +44,8 @@ export interface NewQuestionsInput {
   /** Every question already in the bank, asked or not: none may come back. */
   avoid: string[];
   documents: { cv: string; coverLetter?: string; job?: string; site?: string };
+  /** The person's question focus and the behaviours the advert names. */
+  focus?: string;
 }
 
 export function buildNewQuestionsPrompt(input: NewQuestionsInput): { system: string; user: string } {
@@ -53,6 +55,8 @@ export function buildNewQuestionsPrompt(input: NewQuestionsInput): { system: str
     "",
     `Write exactly: ${wanted.map((g) => `${input.counts[g]} ${g}`).join(", ")}. No other categories.`,
     ...CATEGORY_RULES.filter((r) => wanted.some((g) => r.startsWith(`- ${g}`))),
+    "- Strengths questions (what energises you, what comes naturally) use type strengths, never STAR wording; write them only when Strengths is in the focus.",
+    ...(input.focus ? [`- ${input.focus}`] : []),
     `- ${DIFFICULTY_GUIDE[input.difficulty]}`,
     `- Target difficulty level strictly: ${input.difficulty.toUpperCase()}. Write questions calibrated solely for ${input.difficulty} — never reuse or soften/harden questions from another difficulty tier.`,
     "- Every question must be new: not one of the questions listed as already written, and not the same question reworded.",
