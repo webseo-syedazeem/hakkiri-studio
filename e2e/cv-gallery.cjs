@@ -158,7 +158,7 @@ run("Template galleries", async (browser) => {
   // Find an example or template: one search by job.
   await a.page.goto(`${BASE}/cv/examples?region=uk`);
   await a.page.getByRole("heading", { level: 1, name: "Find an example or template" }).waitFor();
-  check((await a.page.getByTestId("example-card").count()) >= 66 && (await a.page.getByTestId("template-card").count()) === 20, "with nothing asked, every example and the 20 designs offered are listed");
+  check((await a.page.getByTestId("example-card").count()) >= 72 && (await a.page.getByTestId("template-card").count()) === 20, "with nothing asked, every example and the 20 designs offered are listed");
   await a.page.getByLabel("Search by job or industry").fill("pilot");
   check(/First Officer/.test(await a.page.getByTestId("example-card").first().innerText()), "searching “pilot” finds the First Officer example first");
   await a.page.getByLabel("Search by job or industry").fill("nurse");
