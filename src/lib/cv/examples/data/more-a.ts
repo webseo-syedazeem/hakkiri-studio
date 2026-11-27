@@ -909,7 +909,7 @@ What we are looking for
     person: { name: "Lucy Pearson", email: "lucy.pearson@example.com", phone: { uk: "07700 900607", us: "(404) 555-0130" }, location: { uk: "York", us: "Atlanta, GA" } },
     profile: {
       uk: "Teaching assistant with two years in a Year 2 class at a York primary school, including 15 hours a week working one-to-one with a pupil with autism. Runs phonics and reading groups each morning, and 7 of 8 pupils in a catch-up group passed their phonics check. Raised the time one pupil spends in class from 40% to 80% of lessons in a year. Holds a Level 3 Certificate in Supporting Teaching and Learning, an enhanced DBS check and paediatric first aid.",
-      us: "Teacher's aide with two years in a second grade class at an Atlanta elementary school, including 15 hours a week working one-on-one with a student with autism. Runs phonics and reading groups each morning, and 7 of 8 students in a small group met the end-of-year reading benchmark. Raised the time one student spends in class from 40% to 80% of lessons in a year. Holds a Georgia paraprofessional certificate, a cleared background check and pediatric first aid training.",
+      us: "Teacher's aide with two years in a second grade class, including 15 hours a week working one-on-one with a student with autism. Runs daily phonics groups, and 7 of 8 students in a small group met the end-of-year benchmark. Raised one student's time in class from 40% to 80% of lessons. Holds a Georgia paraprofessional certificate, a cleared background check and pediatric first aid.",
     },
     experience: [
       {
@@ -921,7 +921,7 @@ What we are looking for
         bullets: [
           {
             uk: "Work in a Year 2 class of 28 pupils with the class teacher, running phonics and reading groups of 6 each morning",
-            us: "Work in a second grade class of 26 students with the lead teacher, running phonics and reading groups of 6 each morning",
+            us: "Work with the lead teacher in a second grade class of 26, running phonics and reading groups",
           },
           {
             uk: "Give one-to-one support to a pupil with autism for 15 hours a week, working on the targets in his education, health and care plan (EHCP)",
@@ -929,11 +929,11 @@ What we are looking for
           },
           {
             uk: "Raised his time in class from 40% to 80% of lessons in a year, using a visual timetable and planned movement breaks",
-            us: "Raised his time in class from 40% to 80% of lessons in a year, using a visual schedule and planned movement breaks",
+            us: "Raised his time in class from 40% to 80% of lessons in a year, using a visual schedule",
           },
           {
             uk: "Run 3 catch-up phonics groups a week for 8 pupils, and 7 of the 8 passed their phonics check in June 2025",
-            us: "Run 3 small-group phonics sessions a week for 8 students, and 7 of the 8 met the end-of-year reading benchmark",
+            us: "Run 3 phonics sessions a week for a small group of 8, and 7 met the end-of-year benchmark",
           },
           {
             uk: "Started a quiet lunchtime club for 12 pupils who found the playground hard, halving playground incidents in Year 2 in a term",
@@ -950,7 +950,7 @@ What we are looking for
         bullets: [
           {
             uk: "Cared for a room of 16 children aged 3 to 4 with 2 nursery practitioners, planning play-based activities each week",
-            us: "Cared for a room of 16 children aged 3 to 4 with 2 lead teachers, planning play-based activities each week",
+            us: "Cared for a room of 16 children aged 3 to 4 with 2 lead teachers, planning weekly play activities",
           },
           {
             uk: "Wrote weekly learning journal notes for 8 key children, shared with parents through the nursery app",
@@ -993,7 +993,7 @@ What we are looking for
       "Autism",
       { uk: "EHCP targets", us: "IEP goals" },
       { uk: "Visual timetables", us: "Visual schedules" },
-      { uk: "Catch-up groups", us: "Small-group sessions" },
+      { uk: "Catch-up groups", us: "Small-group phonics" },
       { uk: "Learning journals", us: "Progress notes" },
       { uk: "Paediatric first aid", us: "Pediatric first aid" },
     ],
@@ -1043,12 +1043,12 @@ What we are looking for
           us: "I am applying for the role of Teacher's Aide at Millbrook Elementary School. I want to keep working in an elementary school, and I would like to do more one-on-one work with students who have special needs.",
         },
         {
-          uk: "At Hollybank Primary School I work in a Year 2 class of 28 pupils with the class teacher, running phonics and reading groups of 6 each morning. I run 3 catch-up phonics groups a week for 8 pupils, and 7 of the 8 passed their phonics check in June 2025. Before that, I cared for a room of 16 children aged 3 to 4 at Cherry Lane Day Nursery.",
-          us: "At Hollybank Elementary School I work in a second grade class of 26 students with the lead teacher, running phonics and reading groups of 6 each morning. I run 3 small-group phonics sessions a week for 8 students, and 7 of the 8 met the end-of-year reading benchmark. Before that, I cared for a room of 16 children aged 3 to 4 at Cherry Lane Preschool.",
+          uk: "At Hollybank Primary School I work in a Year 2 class of 28 pupils with the class teacher, running phonics and reading groups of 6 each morning. I run 3 catch-up phonics groups a week for 8 pupils, and 7 of the 8 passed their phonics check in June 2025. I also started a quiet lunchtime club for 12 pupils who found the playground hard, halving playground incidents in Year 2 in a term. Before that, I cared for a room of 16 children aged 3 to 4 at Cherry Lane Day Nursery.",
+          us: "At Hollybank Elementary School I work with the lead teacher in a second grade class of 26, running phonics and reading groups. I run 3 phonics sessions a week for a small group of 8, and 7 met the end-of-year benchmark. I also started a quiet lunchtime club for 12 students who found recess hard, halving recess incidents in second grade in a semester. Before that, I cared for a room of 16 children aged 3 to 4 at Cherry Lane Preschool.",
         },
         {
           uk: "Your advert asks for experience of one-to-one support for a pupil with special educational needs. I give one-to-one support to a pupil with autism for 15 hours a week, working on the targets in his education, health and care plan (EHCP). I raised his time in class from 40% to 80% of lessons in a year, using a visual timetable and planned movement breaks.",
-          us: "Your advert asks for experience giving one-on-one support to a student with special needs. I give one-on-one support to a student with autism for 15 hours a week, working on the goals in his Individualized Education Program (IEP). I raised his time in class from 40% to 80% of lessons in a year, using a visual schedule and planned movement breaks.",
+          us: "Your advert asks for experience giving one-on-one support to a student with special needs. I give one-on-one support to a student with autism for 15 hours a week, working on the goals in his Individualized Education Program (IEP). I raised his time in class from 40% to 80% of lessons in a year, using a visual schedule.",
         },
         {
           uk: "Your advert also asks for a Level 3 teaching assistant qualification and an enhanced DBS check. I hold a Level 3 Certificate in Supporting Teaching and Learning and an enhanced DBS check, and I have paediatric first aid.",
