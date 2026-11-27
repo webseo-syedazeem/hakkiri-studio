@@ -7,7 +7,7 @@ import { PrintButton } from "@/components/interview/PrintButton";
 import { StartButton } from "@/components/interview/StartSession";
 import { PrepChecklist } from "@/components/interview/PrepChecklist";
 import { PrepDocumentsViewer } from "@/components/interview/PrepDocumentsViewer";
-import { getInterview } from "@/lib/interviews/store";
+import { getInterview, isDemoInterview } from "@/lib/interviews/store";
 import { buildPrepSheet } from "@/lib/interviews/prep";
 import { likelyQuestions, prepPriorities, prepStage } from "@/lib/interviews/prep-view";
 import { settingsOr } from "@/lib/interviews/settings";
@@ -126,7 +126,7 @@ export default async function PrepSheetPage({ params }: { params: Promise<{ id: 
           </div>
         </div>
 
-        <InterviewTabs id={interview.id} current="prep" />
+        <InterviewTabs id={interview.id} current="prep" sample={isDemoInterview(interview.id)} />
         <p className="mt-4 text-xs text-muted" data-testid="prep-based-on">
           Built from what Hakkiri read at set-up
           {sheet.basedOn.interviews > 0 || sheet.basedOn.answers > 0

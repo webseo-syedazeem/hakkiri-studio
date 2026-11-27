@@ -9,8 +9,23 @@ const TABS = [
 ] as const;
 
 /** The tabs under an interview's header. The prep sheet shows a lock until your first interview. */
-export function InterviewTabs({ id, current, prepReady = true }: { id: string; current: (typeof TABS)[number]["key"]; prepReady?: boolean }) {
+/** Shown on a built-in sample interview, so nobody takes it for a job they saved. */
+export function SampleNote() {
   return (
+    <p className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3.5 py-2.5 text-xs leading-relaxed text-ink" data-testid="sample-interview-note">
+      <span className="font-semibold text-amber-600 dark:text-amber-400">Sample interview.</span> A made-up example so you can try practice; it isn’t one of your jobs.{" "}
+      <Link href="/interviews/new" className="font-semibold text-blue-fill hover:underline">
+        Add your own job
+      </Link>{" "}
+      to practise for your real interview.
+    </p>
+  );
+}
+
+export function InterviewTabs({ id, current, prepReady = true, sample = false }: { id: string; current: (typeof TABS)[number]["key"]; prepReady?: boolean; sample?: boolean }) {
+  return (
+    <>
+    {sample && <SampleNote />}
     <nav aria-label="Interview sections" className="mt-6 flex gap-7 border-b border-line">
       {TABS.map((t) => (
         <Link
@@ -24,5 +39,6 @@ export function InterviewTabs({ id, current, prepReady = true }: { id: string; c
         </Link>
       ))}
     </nav>
+    </>
   );
 }

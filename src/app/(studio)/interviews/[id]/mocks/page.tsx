@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import clsx from "clsx";
 import { ButtonLink, Crumbs, Icon, Panel } from "@/components/ui";
 import { InterviewTabs } from "@/components/interview/InterviewTabs";
-import { getInterview } from "@/lib/interviews/store";
+import { getInterview, isDemoInterview } from "@/lib/interviews/store";
 import { isFresh, listMocks, rowsFor } from "@/lib/mocks/store";
 import { countsLine, mockScore } from "@/lib/mocks/report";
 import { sessionSettingsText, sessionTitle } from "@/lib/sessions/labels";
@@ -35,7 +35,7 @@ export default async function PastSessionsPage({ params }: { params: Promise<{ i
           {started ? "New questions" : "Start interview"}
         </ButtonLink>
       </header>
-      <InterviewTabs id={interview.id} current="mocks" prepReady={started} />
+      <InterviewTabs id={interview.id} current="mocks" prepReady={started} sample={isDemoInterview(interview.id)} />
 
       <Panel aria-label="Past sessions" className="mt-5 animate-rise px-5 pb-1.5 pt-3 [animation-delay:0.05s]">
         {sessions.length === 0 && <p className="px-1 py-3.5 text-sm text-muted">Nothing yet. Your interviews, re-runs and drills appear here, each with its report.</p>}

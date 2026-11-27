@@ -408,7 +408,7 @@ export function PracticeHubClient({
               href={`/interviews/${current.id}/prep`}
               className="px-4 py-2.5 rounded-xl bg-panel-2 border border-line hover:border-blue-fill/50 text-xs font-semibold text-ink transition-all hover:-translate-y-0.5"
             >
-              {current.company} prep sheet
+              {current.isDemo ? `Sample prep sheet: ${current.company}` : `${current.company} prep sheet`}
             </Link>
             <Link
               href={`/interviews/${current.id}`}
@@ -635,8 +635,8 @@ export function PracticeHubClient({
                         onChange={(val) => setSelectedId(val)}
                         options={interviews.map((iv) => ({
                           value: iv.id,
-                          label: `${iv.role} — ${iv.company}`,
-                          subtitle: iv.stage || "Standard Round",
+                          label: `${iv.role} — ${iv.company}${iv.isDemo ? " (sample)" : ""}`,
+                          subtitle: iv.isDemo ? "Sample job to try practice, not one you saved" : iv.stage || "Standard Round",
                         }))}
                       />
                     </div>
@@ -666,14 +666,29 @@ export function PracticeHubClient({
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 pt-1">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-fill/10 border border-blue-fill/25 text-blue-fill text-xs font-semibold">
-                      <span>✓</span> Job spec supplied
-                    </span>
-                    <span className="text-xs text-muted">
-                      Based on your saved role requirements.
-                    </span>
-                  </div>
+                  {current?.isDemo ? (
+                    <div className="flex flex-wrap items-center gap-2 pt-1" data-testid="sample-job-note">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs font-semibold">
+                        Sample job
+                      </span>
+                      <span className="text-xs text-muted">
+                        A made-up example so you can try practice. It isn’t one of your jobs.{" "}
+                        <Link href="/interviews/new" className="font-semibold text-blue-fill hover:underline">
+                          Add your own job
+                        </Link>{" "}
+                        to practise for your real interview.
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 pt-1">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-fill/10 border border-blue-fill/25 text-blue-fill text-xs font-semibold">
+                        <span>✓</span> Job spec supplied
+                      </span>
+                      <span className="text-xs text-muted">
+                        Based on your saved role requirements.
+                      </span>
+                    </div>
+                  )}
                 </>
               ) : (
                 <div className="p-5 rounded-xl bg-panel-2 border border-line text-center">
@@ -837,7 +852,7 @@ export function PracticeHubClient({
           <div className="mb-5">
             <span className="text-[11px] font-bold uppercase tracking-wider text-blue-fill">
               {mode === "tailored" && current
-                ? `${current.role} · ${current.company}`
+                ? `${current.role} · ${current.company}${current.isDemo ? " · Sample" : ""}`
                 : `${activeSector.name} · ${profession || "Any profession"} · ${CATEGORIES.find((c) => c.key === previewType)?.name ?? ""}`}
             </span>
             <h3 className="mt-2 text-lg sm:text-xl font-bold text-ink leading-relaxed">

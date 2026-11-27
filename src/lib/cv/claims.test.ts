@@ -33,4 +33,13 @@ describe("Questions your CV will get (design spec v3 §04)", () => {
     expect(parseClaimQuestionId(id)).toEqual({ cvId: "cv_0123456789abcdef", claimId: "b_9_x", hash: claimHash("grew   leads by 52%") });
     expect(claimHash("Grew leads by 52%")).not.toBe(claimHash("Grew leads by 50%"));
   });
+
+  it("quotes numbers whole and asks about the change, never the starting figure alone", () => {
+    expect(claimQuestion("Cut average queue times at the tills from 6 to 4 minutes by planning staff breaks")).toBe("How did you bring it down from 6 to 4 minutes, and how did you check the change held?");
+    expect(claimQuestion("Grew average attendance from 35 to 60 students an event by moving talks to lunchtime")).toBe("What did you change to go from 35 to 60 students, and how did you establish that your work drove it?");
+    expect(claimQuestion("Lead a team of 6 customer assistants on weekend shifts in a store serving around 4,000 shoppers a weekend")).toBe("How do you lead the team of 6 customer assistants, and how do you handle competing priorities?");
+    expect(claimQuestion("Grew followers from 900 to 4,000 in 2 years")).toContain("from 900 to 4,000");
+    expect(claimQuestion("Cut costs by £20,000 a year")).toContain("£20,000");
+    expect(claimQuestion("Led a stock team of 8, cutting the time from delivery to shop floor from 48 to 24 hours")).toContain("lead the stock team of 8");
+  });
 });

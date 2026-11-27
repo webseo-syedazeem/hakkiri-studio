@@ -36,15 +36,48 @@ export function claimHash(text: string): string {
  * (money, then a percentage, then any number) and asks how it was achieved and measured, so it never adds
  * a premise the line doesn't make.
  */
+/** A number as written, never cut at a thousands comma: "4,000", "£1.5m", "52%". */
+const NUM = String.raw`[£$€]?\d{1,3}(?:,\d{3})+(?:\.\d+)?(?:\s?(?:per ?cent|million|billion|bn|k|m)\b|%)?|[£$€]?\d+(?:\.\d+)?(?:\s?(?:per ?cent|million|billion|bn|k|m)\b|%)?`;
+/** Words that are not a unit after a figure ("4 minutes by…", "60 students an event"). */
+const NOT_UNIT = /^(?:a|an|the|by|in|on|at|for|of|to|with|and|or|per|each|every|while|across|over|from|through|after|before|within|since|during)$/i;
+
+const valueOf = (n: string) => {
+  const v = Number(n.replace(/[^\d.]/g, ""));
+  return /bn|billion/i.test(n) ? v * 1e9 : /\dm\b|million/i.test(n) ? v * 1e6 : /\dk\b/i.test(n) ? v * 1e3 : v;
+};
+
+/** "from 6 to 4 minutes": both figures as written, the unit after them, and whether it went down. */
+export function fromTo(text: string): { from: string; to: string; unit: string; down: boolean } | null {
+  const m = new RegExp(String.raw`\bfrom\s+(${NUM})\s+to\s+(${NUM})(?:\s+([A-Za-z][A-Za-z-]*))?`, "i").exec(text);
+  if (!m) return null;
+  const unit = m[3] && !NOT_UNIT.test(m[3]) ? m[3] : "";
+  return { from: m[1].trim(), to: m[2].trim(), unit, down: valueOf(m[2]) < valueOf(m[1]) };
+}
+
+/** "team of 6 customer assistants": who, without the rest of the line, and never cut inside a number like 4,000. */
+function teamOf(text: string): string | undefined {
+  const m = /\b(?:an? (?:[a-z-]+ )?)?team of (?:[^,.;]|[,.](?=\d))+/i.exec(text)?.[0];
+  if (!m) return undefined;
+  return `the ${m.split(/\s+(?:on|in|at|across|serving|for|to|with|while|who|through|during)\s+/i)[0].trim().replace(/^an? /i, "")}`;
+}
+
 export function claimQuestion(text: string): string {
   const figs = figures(text);
   const money = figs.find((f) => /[£$€]/.test(f.text));
   const pct = figs.find((f) => /%|per ?cent/i.test(f.text));
   const fig = money ?? pct ?? figs.find((f) => /\d/.test(f.text)) ?? figs[0];
   const topic = claimTopic(text);
-  const team = /\b(?:a )?team of [^,.;]+/i.exec(text)?.[0];
+  const team = teamOf(text);
+  const change = fromTo(text);
   if (topic === "Budget and return" && money) return `How did you decide where the ${money.text} went, and how did you measure what it returned?`;
   if (topic === "Leadership" && team) return `How do you lead ${team.replace(/^a /i, "the ").trim()}, and how do you handle competing priorities?`;
+  // "from X to Y": ask about the change, quoting both figures as the CV gives them, never the starting figure alone.
+  if (change) {
+    const span = `from ${change.from} to ${change.to}${change.unit ? ` ${change.unit}` : ""}`;
+    return change.down
+      ? `How did you bring it down ${span}, and how did you check the change held?`
+      : `What did you change to go ${span}, and how did you establish that your work drove it?`;
+  }
   if (topic === "Cost and savings" && fig) return `How did you achieve the ${fig.text} saving, and how did you check it held?`;
   if ((topic === "Growth" || topic === "Improvement" || topic === "Conversion improvement") && fig) return `What did you change to get ${fig.text}, and how did you establish that your work drove it?`;
   if (topic === "Revenue" && fig) return `How did your work lead to ${fig.text}, and how is that figure measured?`;
