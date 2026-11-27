@@ -32,7 +32,7 @@ export const MORE_F: ExampleSpec[] = [
         bullets: [
           {
             uk: "Lead a team of 6 property managers and 2 compliance officers looking after 640 homes for 210 landlords, with a rent roll of £7.8 million a year",
-            us: "Lead a team of 14 leasing and maintenance staff across 3 apartment communities with 640 units, with a $6.2 million operating budget",
+            us: "Lead a team of 14 leasing and maintenance staff across 3 apartment communities with 640 units, keeping a $6.2 million operating budget within 1% each year",
           },
           {
             uk: "Cut rent arrears from 4.1% to 1.7% of rent due in 3 years by calling tenants on the first day a payment was late and agreeing repayment plans early",
