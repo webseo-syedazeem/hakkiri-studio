@@ -265,6 +265,27 @@ describe("Fix this in the builder", () => {
     expect(theirs.status).toBe(404);
   });
 
+  it("opens a letter-only check in the letter builder once, and goes back to the same one after that", async () => {
+    alice = fresh();
+    signedIn = alice;
+    const made = await make({ docType: "cover", region: "uk", letterText: LETTER, jobOn: "1", jobText: ADVERT });
+    const ask = () => fromCheck.POST(new Request("http://localhost/api", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ auditId: made.body.id, then: "letter" }) }));
+    const first = await ask();
+    expect(first.status).toBe(201);
+    const { versionId, status } = await first.json();
+    expect(status).toBe("confirmed");
+    const cv = await store.getOwnCv(versionId, alice.id);
+    expect(cv!.name).toBe("Cover letter for Head of Growth Marketing");
+    expect(cv!.letter!.paragraphs.length).toBe(4);
+    // A reload, the Back button, or "Fix this in the builder" on a second finding: the same one, nothing new.
+    const again = await ask();
+    expect(again.status).toBe(200);
+    expect((await again.json()).versionId).toBe(versionId);
+    expect((await store.listOwnCvs(alice.id)).length).toBe(1);
+    signedIn = bob;
+    expect((await ask()).status).toBe(404);
+  });
+
   it("works out the report again from what was checked", async () => {
     alice = fresh();
     signedIn = alice;

@@ -3006,8 +3006,7 @@ html:not(.dark):not([data-theme="dark"]) .cv .cv-bar.cv-bar-plain {
 .cv .cv-card, .cv .cv-path { border-radius: 14px; }
 
 /* v2: report rows */
-.cv .cv-fix { gap: 8px; border-radius: 11px; padding: 14px; transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease; }
-.cv .cv-fix:hover { border-color: var(--border-strong); box-shadow: var(--shadow-panel); transform: translateY(-1px); }
+.cv .cv-fix { gap: 8px; border-radius: 11px; padding: 14px; }
 .cv-fix-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; }
 .cv-fix-head b { font-size: 14px; font-weight: 600; }
 .cv-fix-quote { display: block; width: 100%; box-sizing: border-box; background: var(--color-panel-2); border-left: 2px solid var(--color-blue); border-radius: 6px; padding: 8px 10px; font-size: 13px; color: var(--color-ink); overflow-wrap: anywhere; }
@@ -3090,11 +3089,10 @@ html:not(.dark):not([data-theme="dark"]) .cv .cv-bar.cv-bar-plain {
 .cv .cv-starts-self .cv-btn-quiet[aria-pressed="true"] { background: var(--selected-bg); }
 
 /* v2: catalogue cards hold the page inset, with a rounded surround. */
-.cv .cv-card { padding: 10px; gap: 10px; transition: border-color 0.2s ease, box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
-.cv .cv-card:hover { transform: translateY(-3px); }
+/* Hover marks the edge only: nothing moves or grows (spec v2 §4.1). */
+.cv .cv-card { padding: 10px; gap: 10px; transition: border-color 0.15s ease; }
+.cv .cv-card:hover, .cv .cv-card:hover > .cv-thumb img { transform: none; }
 .cv .cv-card > .cv-thumb { border-radius: 8px; }
-.cv .cv-card > .cv-thumb img { transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease; }
-.cv .cv-card:hover > .cv-thumb img { transform: translateY(-3px) scale(1.03); }
 .cv .cv-card-body { padding: 0 4px 4px; }
 /* v2: example actions fill the panel's width. */
 .cv .cv-actions-col { justify-items: stretch; }
@@ -3116,15 +3114,8 @@ html:not(.dark):not([data-theme="dark"]) .cv, .mk .cv, .cv.mk, [data-theme="ligh
 /* The fix-next instruction is read as much as the reason: full-strength text, so it stays readable behind an open dialog's scrim too. */
 .cv .cv-fixnext p.cv-muted { color: var(--color-ink); opacity: 0.9; }
 
-/* 4-band score chips & subtle entrance polish */
-@keyframes cv-card-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: none; }
-}
-.cv-paths > li, .cv-cards > li { animation: cv-card-in 0.42s cubic-bezier(0.16, 1, 0.3, 1) both; }
-.cv-paths > li:nth-child(2), .cv-cards > li:nth-child(2) { animation-delay: 0.03s; }
-.cv-paths > li:nth-child(3), .cv-cards > li:nth-child(3) { animation-delay: 0.06s; }
-.cv-paths > li:nth-child(4), .cv-cards > li:nth-child(4) { animation-delay: 0.09s; }
+/* 4-band score chips. No entrance animation and a still ring: the spec asks for no decorative motion. */
+.cv .cv-ring-arc { animation: none; }
 .cv-chip-score[data-band] {
   color: var(--ring);
   border-color: color-mix(in srgb, var(--ring) 35%, var(--cv-edge));
@@ -3138,7 +3129,9 @@ html:not(.dark):not([data-theme="dark"]) .cv, .mk .cv, .cv.mk, [data-theme="ligh
   background: var(--ring);
   flex: none;
 }
-@media (prefers-reduced-motion: reduce) {
-  .cv-paths > li, .cv-cards > li { animation: none !important; }
-  .cv .cv-card, .cv .cv-card > .cv-thumb img { transition: none !important; transform: none !important; }
-}
+
+/* v2: no decorative motion (spec §3.3, §4.1). Screens, panels and tabs appear without sliding in,
+ * and hover changes colour or edge only: nothing moves or grows. Dialogs and menus keep their short open. */
+.cv .cv-area, .cv .cv-tab-content, .cv .cv-panel { animation: none; }
+.cv .cv-choice:hover, .cv .cv-tpl-card:hover, .cv .cv-skillchip:hover, .cv .cv-termchip:hover,
+.cv .cv-dashboard-row:hover .cv-doc-avatar { transform: none; }

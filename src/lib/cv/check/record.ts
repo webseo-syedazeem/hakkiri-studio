@@ -59,6 +59,8 @@ export const DocCheckSchema = z.object({
   cvScore: z.number().min(0).max(100).optional(),
   letterScore: z.number().min(0).max(100).optional(),
   matchScore: z.number().min(0).max(100).nullable().optional(),
+  /** The CV a letter-only check was opened in, so opening it again goes back there instead of making another. */
+  versionId: z.string().max(60).optional(),
   createdAt: z.string(),
   expiresAt: z.string(),
 });

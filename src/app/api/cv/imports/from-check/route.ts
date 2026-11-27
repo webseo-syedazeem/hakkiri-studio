@@ -9,7 +9,7 @@ import { splitSentences } from "@/lib/cv/letter/check";
 import { letterParts } from "@/lib/cv/letter/score";
 import { type CvDoc, type Letter, emptyLetter, newId } from "@/lib/cv/schema";
 import { getCheck, isCheckId, saveCheck } from "@/lib/cv/score/publicCheck";
-import { TOO_MANY_CVS, atCvLimit, deleteCv, deleteImport, getOwnDocCheck, listOwnImports, saveCv, saveImport } from "@/lib/cv/store";
+import { TOO_MANY_CVS, atCvLimit, deleteCv, deleteImport, getOwnCv, getOwnDocCheck, listOwnImports, saveCv, saveDocCheck, saveImport } from "@/lib/cv/store";
 
 export const runtime = "nodejs";
 
@@ -89,6 +89,10 @@ async function fromDocCheck(userId: string, id: string, then: "findings" | "tail
   if (!check || (check.docType === "cover" ? !check.letterText.trim() : !check.cvText.trim())) {
     return NextResponse.json({ error: "not_found", message: GONE }, { status: 404 });
   }
+  // A letter-only check has no upload to find again: it remembers the CV it was opened in.
+  if (check.docType === "cover" && check.versionId && (await getOwnCv(check.versionId, userId))) {
+    return NextResponse.json({ importId: "", versionId: check.versionId, status: "confirmed" });
+  }
   if (await atCvLimit(userId)) return badInput(TOO_MANY_CVS);
   const fast = makingTooFast(userId);
   if (fast) return fast;
@@ -99,7 +103,14 @@ async function fromDocCheck(userId: string, id: string, then: "findings" | "tail
   const letter = check.docType !== "cv" ? letterFrom(check.letterText) : undefined;
   if (letter) cv.letter = letter;
   if (check.docType === "cover") {
+    cv.name = (job.title ? `Cover letter for ${job.title}` : "Cover letter from my check").slice(0, 120);
     await saveCv(cv);
+    try {
+      await saveDocCheck({ ...check, versionId: cv.id });
+    } catch (err) {
+      await deleteCv(cv.id).catch(() => {});
+      throw err;
+    }
     return NextResponse.json({ importId: "", versionId: cv.id, status: "confirmed" }, { status: 201 });
   }
   const imp = { ...(await readUpload({ id: newImportId(), userId, versionId: cv.id, createdAt: now }, cv, { text: check.cvText }, now)), checkId: id, then };
