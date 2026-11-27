@@ -217,12 +217,18 @@ export interface PaperViewProps {
   overlay?: (page: number) => ReactNode;
   /** The page to show, when something outside the paper asks for one (a sentence was selected). */
   showPage?: number;
+  /** Told when the zoom changes: the editor folds its fields at 100% so the page can be read at full size. */
+  onZoom?: (zoom: number | "fit") => void;
 }
 
 /** The paper with its controls: which page, how large, and the Text view. */
-export function PaperView({ paper, state, retry, cv, focus, onPick, word, children, highlight, overlay, showPage }: PaperViewProps) {
+export function PaperView({ paper, state, retry, cv, focus, onPick, word, children, highlight, overlay, showPage, onZoom }: PaperViewProps) {
   const [page, setPage] = useState(0);
-  const [zoom, setZoom] = useState<number | "fit">("fit");
+  const [zoom, setZoomState] = useState<number | "fit">("fit");
+  const setZoom = (z: number | "fit") => {
+    setZoomState(z);
+    onZoom?.(z);
+  };
   const [asText, setAsText] = useState(false);
   const pages = paper?.layout.pages ?? 1;
   const current = Math.min(page, pages - 1);
@@ -287,6 +293,7 @@ export function PaperView({ paper, state, retry, cv, focus, onPick, word, childr
             ›
           </Btn>
         </div>
+        <span className="cv-small cv-paper-size">{paper.layout.width === 612 ? "US Letter" : "A4"}</span>
         <div className="cv-row cv-push" style={{ gap: 4 }}>
           {!asText && (
             <>
@@ -294,7 +301,10 @@ export function PaperView({ paper, state, retry, cv, focus, onPick, word, childr
                 −
               </Btn>
               <Btn kind="quiet" aria-pressed={zoom === "fit"} onClick={() => setZoom("fit")}>
-                {zoom === "fit" ? "Fit width" : `${Math.round(zoom * 100)}%`}
+                Fit width
+              </Btn>
+              <Btn kind="quiet" aria-pressed={zoom === 1} onClick={() => setZoom(1)}>
+                {zoom === "fit" || zoom === 1 ? "100%" : `${Math.round(zoom * 100)}%`}
               </Btn>
               <Btn kind="quiet" aria-label="Zoom in" disabled={zoomIndex === ZOOMS.length - 1} onClick={() => setZoom(zoom === "fit" ? 1 : ZOOMS[zoomIndex + 1])}>
                 +

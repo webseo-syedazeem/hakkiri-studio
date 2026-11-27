@@ -13,6 +13,7 @@ import { Dialog, usePanel } from "./Dialog";
 import { ReplaceFileDialog } from "./ReplaceFile";
 import { Bar, Btn, BtnLink, CvScreen, Panel, Skeleton, Toolbar } from "./ui";
 import { useImport } from "./useImport";
+import { UploadCheck } from "./UploadCheck";
 
 /** The name of a step of the check, as shown to the person. */
 export function stepName(imp: CvImport, cv: CvDoc, key: string): string {
@@ -31,7 +32,7 @@ const SOURCE_WORDS = { pdf: "PDF", docx: "Word file", "linkedin-pdf": "LinkedIn 
  */
 export function ImportHome({ importId }: { importId: string }) {
   const router = useRouter();
-  const { imp, cv, load, reload } = useImport(importId);
+  const { imp, cv, load, reload, change, flush } = useImport(importId);
   const { panel, item, open, close } = usePanel();
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState("");
@@ -58,6 +59,9 @@ export function ImportHome({ importId }: { importId: string }) {
         </div>
       </CvScreen>
     );
+
+  // Upload first (design spec v3): what was read, with only the flagged details to check.
+  if (imp.about && imp.status === "needs-review") return <UploadCheck imp={imp} cv={cv} change={change} flush={flush} />;
 
   const steps = reviewSteps(imp);
   const next = steps.find((s) => !imp.reviewed.includes(s.key)) ?? steps[steps.length - 1];

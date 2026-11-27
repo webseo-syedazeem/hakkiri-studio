@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { applyAppearance, saveAppearance, type Appearance } from "@/lib/theme";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
@@ -73,6 +74,8 @@ export function Rail({
   beta?: boolean;
 }) {
   const pathname = usePathname() ?? "/";
+  // The CV editor gets a compact 56 px rail (design spec v3 §02), so the page can be wider. Everywhere else is unchanged.
+  const compact = /^\/cv\/v\/[^/]+\/edit(\/|$)/.test(pathname);
   const { user: authUser, logout } = useAuth();
   const [showMenu, setShowMenu] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -87,24 +90,17 @@ export function Rail({
     setIsDark(!lightActive);
   }, []);
 
+  useEffect(() => {
+    const follow = (e: Event) => setIsDark((e as CustomEvent<Appearance>).detail === "dark");
+    window.addEventListener("hk_theme_changed", follow);
+    return () => window.removeEventListener("hk_theme_changed", follow);
+  }, []);
+
   const toggleTheme = () => {
-    const willBeDark = !isDark;
-    setIsDark(willBeDark);
-    if (willBeDark) {
-      document.documentElement.classList.add("dark");
-      document.documentElement.classList.remove("mk");
-      document.documentElement.dataset.theme = "dark";
-      try {
-        localStorage.setItem("hk_theme", "dark");
-      } catch {}
-    } else {
-      document.documentElement.classList.remove("dark");
-      document.documentElement.classList.add("mk");
-      document.documentElement.dataset.theme = "light";
-      try {
-        localStorage.setItem("hk_theme", "light");
-      } catch {}
-    }
+    const next: Appearance = isDark ? "light" : "dark";
+    setIsDark(next === "dark");
+    applyAppearance(next);
+    saveAppearance(next);
   };
 
   const isUserAdmin = !!authUser?.isAdmin;
@@ -226,21 +222,23 @@ export function Rail({
       )}
 
       {/* Desktop spacer to preserve layout flow alongside fixed sidebar */}
-      <div className="hidden md:block print:hidden w-[216px] shrink-0" aria-hidden="true" />
+      <div className={clsx("hidden md:block print:hidden shrink-0", compact ? "w-[56px]" : "w-[216px]")} aria-hidden="true" />
 
       {/* Desktop Navigation Sidebar (>= md) */}
       <nav
         aria-label="Main"
-        className="print-hide fixed top-0 bottom-0 left-0 z-30 hidden md:flex h-screen w-[216px] shrink-0 flex-col border-r border-line bg-booth py-5 px-3 overflow-y-auto overflow-x-hidden [scrollbar-width:none] transition-colors duration-250"
+        data-compact={compact || undefined}
+        className={clsx("print-hide fixed top-0 bottom-0 left-0 z-30 hidden md:flex h-screen shrink-0 flex-col border-r border-line bg-booth py-5 overflow-y-auto overflow-x-hidden [scrollbar-width:none] transition-colors duration-250", compact ? "w-[56px] px-2" : "w-[216px] px-3")}
       >
         {/* Brand Header */}
         <Link
           href="/"
           aria-label="Hakkiri Studio home"
-          className="mb-6 flex items-center gap-3 px-2 text-ink hover:opacity-90 transition-opacity"
+          title={compact ? "Hakkiri home" : undefined}
+          className={clsx("mb-6 flex items-center gap-3 text-ink hover:opacity-90 transition-opacity", compact ? "justify-center px-0" : "px-2")}
         >
           <Mark size={28} badge />
-          <span className="text-[18px] font-bold tracking-tight text-ink">Hakkiri</span>
+          <span className={compact ? "sr-only" : "text-[18px] font-bold tracking-tight text-ink"}>Hakkiri</span>
         </Link>
 
         {/* Navigation Items with labels matching mockup */}
@@ -252,8 +250,10 @@ export function Rail({
                 key={it.label}
                 href={it.href}
                 aria-current={on ? "page" : undefined}
+                title={compact ? it.label : undefined}
                 className={clsx(
-                  "flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all duration-200",
+                  "flex items-center gap-3 rounded-xl py-2.5 text-[13px] font-medium transition-all duration-200",
+                  compact ? "justify-center px-0 min-h-[40px]" : "px-3",
                   on
                     ? "bg-white text-ink shadow-[0_1px_3px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)] border border-black/[0.06] font-semibold dark:bg-[#1c2237] dark:text-white dark:border-[#374268]"
                     : "text-muted hover:bg-panel-2 hover:text-ink"
@@ -264,24 +264,24 @@ export function Rail({
                   size={18}
                   className={clsx("shrink-0 transition-colors", on ? "text-blue-soft" : "text-muted")}
                 />
-                <span className="truncate">{it.label}</span>
-                {on && <span className="ml-auto h-4 w-[3px] shrink-0 rounded-full bg-blue-fill" aria-hidden="true" />}
+                <span className={compact ? "sr-only" : "truncate"}>{it.label}</span>
+                {on && !compact && <span className="ml-auto h-4 w-[3px] shrink-0 rounded-full bg-blue-fill" aria-hidden="true" />}
               </Link>
             );
           })}
         </div>
 
         <div className="grow" />
-        {beta && <FeedbackButton />}
+        {beta && !compact && <FeedbackButton />}
 
         {/* Bottom Appearance Toggle, Profile and Settings */}
-        <div className="mt-4 flex flex-col gap-2.5 border-t border-line/80 pt-4 px-2">
+        <div className={clsx("mt-4 flex flex-col gap-2.5 border-t border-line/80 pt-4", compact ? "items-center px-0" : "px-2")}>
           <button
             type="button"
             onClick={toggleTheme}
             aria-label="Change theme"
             title={isDark ? "Switch to Apple light theme" : "Switch to dark theme"}
-            className="group flex w-full items-center justify-between rounded-xl px-2.5 py-2 text-[13px] font-medium text-ink hover:bg-panel-2 transition-all cursor-pointer"
+            className={clsx("group flex w-full items-center rounded-xl py-2 text-[13px] font-medium text-ink hover:bg-panel-2 transition-all cursor-pointer", compact ? "justify-center px-0" : "justify-between px-2.5")}
           >
             <div className="flex items-center gap-2.5 min-w-0">
               <svg
@@ -299,9 +299,9 @@ export function Rail({
                 <circle cx="12" cy="12" r="4" />
                 <path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l2 2m10 10 2 2M19 5l-2 2M7 17l-2 2" />
               </svg>
-              <span className="font-medium whitespace-nowrap text-ink">Appearance</span>
+              <span className={compact ? "sr-only" : "font-medium whitespace-nowrap text-ink"}>Appearance</span>
             </div>
-            <span className="shrink-0 text-[10px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-md bg-panel-2 text-ink border border-line">
+            <span className={compact ? "sr-only" : "shrink-0 text-[10px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-md bg-panel-2 text-ink border border-line"}>
               {isDark ? "Dark" : "Light"}
             </span>
           </button>

@@ -3,10 +3,13 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { diffParts, fieldFor, formTabs, itemCount, snapshotOf, stateAt, switchOff, tabFor } from "@/lib/cv/edit";
+import { bulletAt, changeBullet, diffParts, fieldFor, formTabs, itemCount, snapshotOf, stateAt, switchOff, tabFor } from "@/lib/cv/edit";
 import type { Finding } from "@/lib/cv/score/score";
 import { fitToPages } from "@/lib/cv/render/layout";
-import { type CvSummary, type Locator, type Section, type SectionKind, cvIsEmpty, emptySection, isEntrySection } from "@/lib/cv/schema";
+import { type HonestFit, fitHonestly, fitSummary, marginMm } from "@/lib/cv/render/fit";
+import { BODY_SIZE } from "@/lib/cv/render/templates";
+import { type Design } from "@/lib/cv/schema";
+import { type CvSummary, type CvLevel, type Locator, type Section, type SectionKind, CV_LEVELS, LEVEL_LABELS, cvIsEmpty, emptySection, isEntrySection } from "@/lib/cv/schema";
 import { OPTIONAL_KINDS, SECTION_DEFS, docWord, sectionHeading } from "@/lib/cv/sections";
 import { Switch } from "./Arrange";
 import { BulletHelp } from "./Assist";
@@ -15,9 +18,11 @@ import { Dialog, usePanel } from "./Dialog";
 import { scoreLabel } from "./Findings";
 import { Finish } from "./Finish";
 import { FilesPanel } from "./Files";
-import { FormatBar } from "./FormatBar";
+import { FormatBar, linesOver } from "./FormatBar";
 import { ShareDialog } from "./ShareDialog";
 import { JobPanel } from "./JobPanel";
+import { cvClaims } from "@/lib/cv/claims";
+import { Menu } from "./Menu";
 import { PaperView } from "./Paper";
 import { ScoreLine, ScorePanel } from "./ScorePanel";
 import { ContactForm, type FieldHooks, SectionForm } from "./SectionForms";
@@ -46,6 +51,16 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
   const [removed, setRemoved] = useState(false);
   const [busy, setBusy] = useState("");
   const [moreFor, setMoreFor] = useState("");
+  /** Editing fields hidden, so the paper can be read at full size (also chosen by 100%). Desktop only. */
+  const [folded, setFolded] = useState(false);
+  /** The last Fit to one page: its result and the design before it, for Undo fit. */
+  const [fitResult, setFitResult] = useState<{ fit: HonestFit; before: Design } | null>(null);
+  const [fitBusy, setFitBusy] = useState(false);
+  /** A file was downloaded in this visit: the download dialog then offers practice, never forces it. */
+  const [downloaded, setDownloaded] = useState(false);
+  /** A message about an action that couldn't be done (practice couldn't start, say), shown until dismissed. */
+  const [notice, setNotice] = useState("");
+  const [shorten, setShorten] = useState<{ at: Locator; original: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const versionId = w.versionId;
 
@@ -238,6 +253,18 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
     note: (entry, field) => findingNote(sectionId, entry, field),
     onFocus: (entry, field) => setFocus({ section: sectionId, entry: entry || undefined, field }),
     // The writing help for one bullet opens in place of the paper.
+    onPractise: (_entry, bullet) => {
+      void (async () => {
+        try {
+          await flush();
+          const { href } = await api<{ href: string }>("/api/practice/cv", { method: "POST", json: { cv: cv.id, claims: [bullet] } });
+          router.push(href);
+        } catch (err) {
+          say(messageOf(err));
+          setNotice(messageOf(err));
+        }
+      })();
+    },
     onHelp: (entry, bullet) => {
       w.setInspect({ section: sectionId, entry, field: bullet });
       setView("paper");
@@ -251,6 +278,31 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
       </div>
     ),
   });
+  /** Fit to one page (design spec v3 §03): spacing, then text down to 10 pt, then margins down to 12 mm. Never the words. */
+  const runFit = () => {
+    if (!paper || fitBusy) return;
+    setFitBusy(true);
+    // Measured just after this render, so the busy state shows while the real page is laid out again.
+    setTimeout(() => {
+      try {
+        const before = cv.design;
+        const fit = fitHonestly(cv, paper.fonts, cv.design.pageTarget);
+        if (fit.status !== "already") update({ design: fit.design });
+        setFitResult({ fit, before });
+        say(fitSummary(fit, cv.design.pageTarget));
+      } catch {
+        setFitResult(null);
+        say("The page couldn’t be measured, so nothing was changed. Try again.");
+      } finally {
+        setFitBusy(false);
+      }
+    }, 0);
+  };
+  const liveOver = paper ? linesOver(paper, cv.design.pageTarget) : 0;
+  const overLines = paper && fitResult?.fit.status === "over"
+    ? paper.layout.blocks.flatMap((b) => b.lines.filter((l) => l.page >= cv.design.pageTarget).map((l) => ({ at: b.at, text: l.runs.map((x) => x.text).join("").trim() }))).filter((l) => l.text)
+    : [];
+
   const chosenEntry = panel === "choose-achievement" ? cv.sections.flatMap((s) => (isEntrySection(s) ? s.entries.map((e) => ({ entry: e, sectionId: s.id })) : [])).find((x) => x.entry.id === item) : undefined;
   const fit = panel === "page-overflow" && paper ? fitToPages(cv, paper.fonts, cv.design.pageTarget) : null;
   const diff = panel === "save-conflict" && w.other ? diffParts(snapshotOf(cv), snapshotOf(w.other)) : [];
@@ -262,22 +314,32 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
           <Crumbs crumbs={crumbs} />
           <p className="cv-edhead-name">{cv.name}</p>
           <div className="cv-row cv-edhead-meta">
-            <span className="cv-chip">{cv.kind === "base" ? `Base ${word}` : cv.target?.employer || "Tailored copy"}</span>
+            <span className="cv-chip">{cv.kind === "base" ? `Base ${word}` : "Tailored copy"}</span>
             <button
               type="button"
               onClick={() => {
                 const nextRegion = cv.region === "uk" ? "us" : "uk";
                 update({ region: nextRegion, design: { ...cv.design, pageSize: nextRegion === "uk" ? "a4" : "letter" } });
-                say(`Spelling switched to ${nextRegion === "uk" ? "UK English (A4)" : "US English (Letter)"}.`);
+                say(`Switched to ${nextRegion === "uk" ? "UK English on A4" : "US English on US Letter"}.`);
               }}
               className="cv-chip cv-region-toggle"
-              title={`Spelling format: ${cv.region === "uk" ? "UK (British)" : "US (American)"}. Click to toggle.`}
-              aria-label={`Toggle spelling between UK and US. Currently ${cv.region.toUpperCase()}`}
+              title="Switch between UK (A4, UK spelling) and US (Letter, US spelling)"
+              aria-label={`Region and paper: ${cv.region === "uk" ? "UK · A4" : "US · Letter"}. Switch to ${cv.region === "uk" ? "US · Letter" : "UK · A4"}`}
               data-testid="spelling-toggle"
             >
-              <span>{cv.region === "uk" ? "UK" : "US"}</span>
+              <span>{cv.region === "uk" ? "UK · A4" : "US · Letter"}</span>
               <span aria-hidden="true">⇄</span>
             </button>
+            <label className="cv-chip cv-level-chip">
+              <span className="sr-only">Level</span>
+              <select value={cv.level} onChange={(e) => update({ level: e.target.value as CvLevel })} data-testid="level-chip">
+                {CV_LEVELS.map((l) => (
+                  <option key={l} value={l}>
+                    {LEVEL_LABELS[l]}
+                  </option>
+                ))}
+              </select>
+            </label>
             <small role="status" data-testid="save-state" data-save={save}>
               {SAVE_WORDS[save]}
             </small>
@@ -290,33 +352,36 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
               Back to findings
             </BtnLink>
           )}
-          <BtnLink href={`/cv/v/${cv.id}/talk`} onClick={() => void flush()} data-testid="talk-button">
-            Talk it through
-          </BtnLink>
-          <BtnLink className="cv-notphone" href={`/cv/v/${cv.id}/findings`} onClick={() => void flush()} data-testid="score-button">
-            {scoreLabel(w.score, word)}
-          </BtnLink>
-          <BtnLink className="cv-notphone" href={`/cv/v/${cv.id}/tailor`} onClick={() => void flush()} data-testid="fit-button">
-            {fitLabel(cv.requirements.length ? jobFit(cv).score : null)}
-          </BtnLink>
-          <BtnLink className="cv-notphone" href={`/cv/v/${cv.id}/letter`} onClick={() => void flush()} data-testid="letter-button">
-            Cover letter
-          </BtnLink>
-          <Btn kind="primary" onClick={() => openPanel("download")} data-testid="download-button">
+          <Btn kind="primary" className="cv-edhead-download" onClick={() => openPanel("download")} data-testid="download-button">
             Download
           </Btn>
-          <Btn className="cv-notphone" onClick={() => openPanel("share")} data-testid="share-button">
+          <Btn onClick={() => openPanel("share")} data-testid="share-button">
             Share
           </Btn>
-          <Btn className="cv-notphone" onClick={doUndo} disabled={!canUndo} aria-keyshortcuts="Control+Z Meta+Z">
-            Undo
-          </Btn>
-          <Btn className="cv-notphone" onClick={doRedo} disabled={!canRedo} aria-keyshortcuts="Control+Shift+Z Meta+Shift+Z">
-            Redo
-          </Btn>
-          <Btn className="cv-phone-only" onClick={() => openPanel("more")} data-testid="more-button">
-            More
-          </Btn>
+          <Menu
+            label="More actions"
+            trigger="More"
+            testId="more-button"
+            items={[
+              { label: "Talk it through", onSelect: () => void flush().then(() => router.push(`/cv/v/${cv.id}/talk`)) },
+              { label: scoreLabel(w.score, word), onSelect: () => void flush().then(() => router.push(`/cv/v/${cv.id}/findings`)) },
+              { label: "Tailor to a job", onSelect: () => void flush().then(() => router.push(`/cv/v/${cv.id}/tailor`)) },
+              { label: "Cover letter", onSelect: () => void flush().then(() => router.push(`/cv/v/${cv.id}/letter`)) },
+              { label: "Questions your CV will get", onSelect: () => void flush().then(() => router.push(`/cv/v/${cv.id}/questions`)) },
+              { label: "Rename", divide: true, onSelect: () => openPanel("rename") },
+              { label: "Design", onSelect: () => openPanel("design") },
+              { label: "Undo", divide: true, disabled: !canUndo, onSelect: doUndo },
+              { label: "Redo", disabled: !canRedo, onSelect: doRedo },
+            ]}
+          />
+          <span className="cv-edhead-history cv-notphone" role="group" aria-label="History">
+            <button type="button" className="cv-btn cv-iconbtn" onClick={doUndo} disabled={!canUndo} aria-label="Undo" title="Undo (Ctrl+Z)" aria-keyshortcuts="Control+Z Meta+Z">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5" /><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" /></svg>
+            </button>
+            <button type="button" className="cv-btn cv-iconbtn" onClick={doRedo} disabled={!canRedo} aria-label="Redo" title="Redo (Ctrl+Shift+Z)" aria-keyshortcuts="Control+Shift+Z Meta+Shift+Z">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m15 14 5-5-5-5" /><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13" /></svg>
+            </button>
+          </span>
         </div>
       </header>
       <div className="cv-area">
@@ -344,6 +409,13 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
             <span>{save === "saving" ? "Sending your changes again." : save === "device" ? "Your changes couldn’t reach us, so they are kept on this device. They will be saved when you’re back online." : (w.saveError ? `${w.saveError} What you typed is still here.` : "Your changes couldn’t be saved. Check you’re online and press Retry.")}</span>
           </div>
         )}
+        {notice && (
+          <div className="cv-issue" role="alert" style={{ marginBottom: 18 }} data-testid="editor-notice">
+            <strong>That didn’t work</strong>
+            <span>{notice}</span>
+            <Btn className="cv-push" onClick={() => setNotice("")}>Dismiss</Btn>
+          </div>
+        )}
         {pending && (
           <div className="cv-note" style={{ marginBottom: 18 }}>
             You uploaded a file for this {word} and haven’t finished checking it. <Link className="cv-link" href={`/cv/import/${pending}`}>Carry on checking</Link>
@@ -366,6 +438,12 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
               {t.section && !t.section.visible && <span className="sr-only"> (off in this version)</span>}
             </a>
           ))}
+          <a href={`/cv/v/${cv.id}/talk`} onClick={(e) => { e.preventDefault(); void flush().then(() => router.push(`/cv/v/${cv.id}/talk`)); }}>
+            Talk it through
+          </a>
+          <a href={`/cv/v/${cv.id}/letter`} onClick={(e) => { e.preventDefault(); void flush().then(() => router.push(`/cv/v/${cv.id}/letter`)); }}>
+            Cover letter
+          </a>
           <button className="cv-push" onClick={() => openPanel("add-section")}>
             + Add section
           </button>
@@ -390,6 +468,16 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
         </div>
 
         <ScoreLine score={w.score} word={word} base={`/cv/v/${cv.id}`} />
+        {!isFinish && (
+          <div className="cv-scorestrip cv-midonly" data-testid="score-strip">
+            <b>{w.score && !w.score.empty ? `${word === "CV" ? "CV" : "Resume"} score ${w.score.shown}/100` : `${word === "CV" ? "CV" : "Resume"} score: Not checked yet`}</b>
+            {w.score && !w.score.empty && <span className="cv-ring-inline" data-band={w.score.shown < 40 ? "poor" : w.score.shown < 60 ? "average" : w.score.shown < 80 ? "good" : "strong"}>{w.score.shown < 40 ? "Poor" : w.score.shown < 60 ? "Average" : w.score.shown < 80 ? "Good" : "Strong"}</span>}
+            <span className="cv-push cv-row" style={{ gap: 6 }}>
+              <Btn onClick={() => openPanel("insights")} data-testid="insights-button">Score &amp; job keywords</Btn>
+              {cvClaims(cv).length > 0 && <BtnLink href={`/cv/v/${cv.id}/questions`} onClick={() => void flush()}>Practise</BtnLink>}
+            </span>
+          </div>
+        )}
         <div className="cv-narrow cv-viewbar">
           <div className="cv-seg" role="group" aria-label="Show">
             <button type="button" aria-pressed={view === "paper"} onClick={() => setView("paper")}>
@@ -406,7 +494,21 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
           )}
         </div>
 
-        <div className={isFinish ? "cv-layout" : "cv-layout cv-workbench"} style={isFinish ? { gridTemplateColumns: "minmax(0, 0.94fr) minmax(0, 1.16fr)" } : undefined}>
+        {!isFinish && (
+          <div className="cv-doctools cv-notnarrow" role="toolbar" aria-label="Document">
+            <Btn aria-pressed={folded} onClick={() => setFolded((v) => !v)} data-testid="fold-fields">
+              {folded ? "Show editing fields" : "Hide editing fields"}
+            </Btn>
+            <Btn onClick={runFit} busy={fitBusy} disabled={!paper} data-testid="fit-button-doc">
+              {fitBusy ? "Measuring…" : `Fit to ${cv.design.pageTarget === 1 ? "one page" : "two pages"}`}
+            </Btn>
+            <span className="cv-small cv-push">
+              Document · {cv.design.pageSize === "letter" ? "US Letter" : "A4"}
+              {paper ? ` · ${paper.layout.pages} ${paper.layout.pages === 1 ? "page" : "pages"}` : ""}
+            </span>
+          </div>
+        )}
+        <div className={isFinish ? "cv-layout" : folded ? "cv-layout cv-workbench cv-folded" : "cv-layout cv-workbench"} style={isFinish ? { gridTemplateColumns: "minmax(0, 0.94fr) minmax(0, 1.16fr)" } : undefined}>
           <div key={tab.key} className={view === "edit" ? "min-w-0 cv-tab-content" : "min-w-0 cv-wide cv-tab-content"} onBlur={() => void flush()}>
             {empty && !pending && !isFinish && (
               <Panel style={{ marginBottom: 18 }}>
@@ -513,13 +615,43 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
                 <FormatBar cv={cv} paper={paper} update={update} base={base} say={say} />
               </div>
             )}
-            <PaperView paper={paper} state={w.state} retry={w.retryPaper} cv={cv} focus={isFinish ? null : focus} onPick={pick} word={word}>
+            {!isFinish && fitResult && (
+              <FitResultPanel
+                result={fitResult.fit}
+                target={cv.design.pageTarget}
+                liveOver={liveOver}
+                lines={overLines}
+                textPt={cv.design.fontSize ?? BODY_SIZE}
+                marginMm={marginMm(cv.design)}
+                onUndo={() => {
+                  update({ design: fitResult.before });
+                  setFitResult(null);
+                  say("Fit undone. Your previous design is back.");
+                }}
+                onClose={() => setFitResult(null)}
+                onSwitchOff={(at) => {
+                  const off = switchOff(cv.sections, at);
+                  if (off) {
+                    update({ sections: off.sections });
+                    say(`Switched off for this version. It stays in your ${word} and can be switched back on.`);
+                  }
+                }}
+                canSwitchOff={(at) => Boolean(switchOff(cv.sections, at))}
+                onShorten={(at, text) => {
+                  const b = bulletAt(cv.sections, at);
+                  if (b) setShorten({ at, original: b.bullet.text });
+                  else pick(at);
+                  void text;
+                }}
+              />
+            )}
+            <PaperView paper={paper} state={w.state} retry={w.retryPaper} cv={cv} focus={isFinish ? null : focus} onPick={pick} word={word} onZoom={(z) => z === 1 && setFolded(true)}>
               {w.previewProfile !== null && (
                 <div className="cv-note" style={{ marginBottom: 10 }} data-testid="profile-preview">
                   Preview of your profile. It isn’t in your {word} yet.
                 </div>
               )}
-              {over && (
+              {over && !fitResult && (
                 <div className="cv-note cv-row" style={{ marginBottom: 10 }} data-testid="over-target">
                   <span>
                     This runs to {pages} pages. Your target is {cv.design.pageTarget === 1 ? "one page" : "two pages"}.
@@ -535,7 +667,7 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
           </aside>
           {!isFinish && (
             <aside className={view === "paper" ? "cv-insights min-w-0" : "cv-insights min-w-0 cv-wide"} aria-label="Score and job keywords">
-              <ScorePanel score={w.score} word={word} base={`/cv/v/${cv.id}`} onShow={pick} />
+              <ScorePanel score={w.score} word={word} base={`/cv/v/${cv.id}`} onShow={pick} claims={cvClaims(cv).length} />
               <JobPanel cv={cv} update={update} word={word} onShow={pick} say={say} />
             </aside>
           )}
@@ -546,52 +678,47 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
       {panel === "download" && (
         <Dialog title="Download" onClose={closePanel} wide>
           <p style={{ marginTop: 0 }}>Download your current {word} as PDF or Word. Each file is read back and compared with your {word} before it is downloaded.</p>
-          <FilesPanel say={say} inDialog />
+          <FilesPanel say={say} inDialog onDownloaded={() => setDownloaded(true)} />
+          {downloaded && cvClaims(cv).length > 0 && (
+            <div className="cv-practice-card" data-testid="download-practice" style={{ marginTop: 14 }}>
+              <b>Your {word} is ready. Practise the questions it will get you.</b>
+              <span className="cv-small">We’ll build questions from the claims on your {word}.</span>
+              <span className="cv-row" style={{ gap: 8 }}>
+                <BtnLink kind="primary" href={`/cv/v/${cv.id}/questions`} onClick={() => void flush()}>
+                  Questions your {word} will get
+                </BtnLink>
+                <Btn onClick={closePanel}>Back to editor</Btn>
+              </span>
+            </div>
+          )}
         </Dialog>
       )}
-      {panel === "more" && (
-        <Dialog title="More actions" onClose={closePanel}>
-          <div className="cv-morelist">
-            {w.fromFindings && (
-              <BtnLink href={`/cv/v/${cv.id}/findings`} onClick={() => void flush()}>
-                Back to findings
-              </BtnLink>
-            )}
-            <BtnLink href={`/cv/v/${cv.id}/findings`} onClick={() => void flush()}>
-              {scoreLabel(w.score, word)}
-            </BtnLink>
-            <BtnLink href={`/cv/v/${cv.id}/tailor`} onClick={() => void flush()}>
-              {fitLabel(cv.requirements.length ? jobFit(cv).score : null)}
-            </BtnLink>
-            <BtnLink href={`/cv/v/${cv.id}/letter`} onClick={() => void flush()}>
-              Cover letter
-            </BtnLink>
-            <Btn onClick={() => openPanel("share")}>Share</Btn>
-            <Btn
-              onClick={() => {
-                closePanel();
-                doUndo();
-              }}
-              disabled={!canUndo}
-            >
-              Undo
-            </Btn>
-            <Btn
-              onClick={() => {
-                closePanel();
-                doRedo();
-              }}
-              disabled={!canRedo}
-            >
-              Redo
-            </Btn>
+      {shorten && (
+        <ShortenDialog
+          original={shorten.original}
+          word={word}
+          onClose={() => setShorten(null)}
+          onApprove={(text) => {
+            update({ sections: changeBullet(cv.sections, shorten.at, { text }) });
+            setShorten(null);
+            say("Your wording is added. The page has been measured again.");
+          }}
+        />
+      )}
+      {panel === "insights" && (
+        <Dialog title="Score & job keywords" onClose={closePanel} wide>
+          <div className="cv-stack">
+            <ScorePanel score={w.score} word={word} base={`/cv/v/${cv.id}`} onShow={(at) => { closePanel(); pick(at); }} claims={cvClaims(cv).length} />
+            <JobPanel cv={cv} update={update} word={word} onShow={(at) => { closePanel(); pick(at); }} say={say} />
           </div>
         </Dialog>
       )}
+      {panel === "rename" && <RenameDialog name={cv.name} onClose={closePanel} onSave={(name) => { update({ name }); say("Renamed."); closePanel(); }} />}
       {panel === "share" && <ShareDialog cv={cv} word={word} saved={save === "saved"} flush={flush} onClose={closePanel} say={say} />}
       {panel === "design" && (
         <Dialog title="Design" onClose={closePanel} wide>
-          <FormatBar cv={cv} paper={paper} update={update} base={base} say={say} />
+          <FormatBar cv={cv} paper={paper} update={update} base={base} say={say} onFit={runFit} fitBusy={fitBusy} />
+          {fitResult && <p className="cv-small" role="status" style={{ marginBottom: 0 }}>{fitSummary(fitResult.fit, cv.design.pageTarget)} Your words haven’t changed.</p>}
         </Dialog>
       )}
       {panel === "add-section" && (
@@ -764,5 +891,125 @@ export function Editor({ sectionKey }: { sectionKey: string }) {
         </Dialog>
       )}
     </CvScreen>
+  );
+}
+
+/** Rename, from More: the CV's own name, for telling versions apart. */
+function RenameDialog({ name, onClose, onSave }: { name: string; onClose: () => void; onSave: (name: string) => void }) {
+  const [value, setValue] = useState(name);
+  const ok = value.trim().length > 0;
+  return (
+    <Dialog
+      title="Rename"
+      onClose={onClose}
+      actions={
+        <>
+          <Btn onClick={onClose}>Cancel</Btn>
+          <Btn kind="primary" disabled={!ok} onClick={() => onSave(value.trim())}>
+            Save name
+          </Btn>
+        </>
+      }
+    >
+      <Field label="Name" rule="For you, so you can tell versions apart." value={value} onChange={setValue} maxLength={120} error={ok ? undefined : "Give it a name."} />
+    </Dialog>
+  );
+}
+
+/**
+ * The result of Fit to one page, just above the paper (design spec v3 §03): the actual outcome, never
+ * a quality score. When formatting alone can't do it, each line still over is quoted with Switch off and
+ * Shorten, so the person decides; nothing is cut for them.
+ */
+function FitResultPanel({ result, target, liveOver, lines, textPt, marginMm, onUndo, onClose, onSwitchOff, canSwitchOff, onShorten }: {
+  result: HonestFit;
+  target: number;
+  liveOver: number;
+  lines: { at: Locator; text: string }[];
+  textPt: number;
+  marginMm: number;
+  onUndo: () => void;
+  onClose: () => void;
+  onSwitchOff: (at: Locator) => void;
+  canSwitchOff: (at: Locator) => boolean;
+  onShorten: (at: Locator, text: string) => void;
+}) {
+  const nowFits = result.status === "over" && liveOver === 0;
+  return (
+    <section className="cv-fitresult" aria-label="Fit to one page result" data-testid="fit-result" data-status={nowFits ? "fits" : result.status}>
+      <div className="cv-fitresult-head">
+        <div className="min-w-0">
+          <p className="cv-fitresult-title" role="status">
+            {nowFits ? `Fits on ${target === 1 ? "1 page" : `${target} pages`} now.` : result.status === "over" ? (liveOver > 0 ? `${liveOver} ${liveOver === 1 ? "line still runs" : "lines still run"} onto page ${target + 1}.` : fitSummary(result, target)) : fitSummary(result, target)}
+          </p>
+          <p className="cv-small" style={{ margin: "2px 0 0" }}>
+            {result.status === "over" && !nowFits ? `Text is at ${textPt} pt, margins at ${marginMm} mm. No change made to your words.` : "Your words haven’t changed."}
+          </p>
+        </div>
+        <span className="cv-row" style={{ gap: 6 }}>
+          {result.status !== "already" && <Btn onClick={onUndo}>Undo fit</Btn>}
+          <Btn kind="quiet" onClick={onClose} aria-label="Close the fit result">Close</Btn>
+        </span>
+      </div>
+      {result.status === "over" && !nowFits && lines.length > 0 && (
+        <ul className="cv-fitresult-lines">
+          {lines.slice(0, 12).map((l, i) => (
+            <li key={`${i}-${l.text}`}>
+              <q className="min-w-0">{l.text}</q>
+              <span className="cv-row" style={{ gap: 6 }}>
+                {canSwitchOff(l.at) && <Btn onClick={() => onSwitchOff(l.at)} aria-label={`Switch off: ${l.text.slice(0, 60)}`}>Switch off</Btn>}
+                <Btn onClick={() => onShorten(l.at, l.text)} aria-label={`Shorten: ${l.text.slice(0, 60)}`}>Shorten</Btn>
+              </span>
+            </li>
+          ))}
+          {lines.length > 12 && <li className="cv-small">And {lines.length - 12} more {lines.length - 12 === 1 ? "line" : "lines"} on page {target + 1}.</li>}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+/** Shorten a line (design spec v3 §03): the person rewrites it; nothing is added until they approve their own wording. */
+function ShortenDialog({ original, word, onClose, onApprove }: { original: string; word: string; onClose: () => void; onApprove: (text: string) => void }) {
+  const [text, setText] = useState(original);
+  const [review, setReview] = useState(false);
+  const changed = text.trim() && text.trim() !== original.trim();
+  return (
+    <Dialog
+      title={review ? "Review your line" : "Shorten this line"}
+      onClose={onClose}
+      wide
+      actions={
+        review ? (
+          <>
+            <Btn onClick={() => setReview(false)}>Edit wording</Btn>
+            <Btn kind="primary" onClick={() => onApprove(text.trim())}>
+              Approve and add
+            </Btn>
+          </>
+        ) : (
+          <>
+            <Btn onClick={onClose}>Cancel</Btn>
+            <Btn kind="primary" disabled={!changed} onClick={() => setReview(true)}>
+              Review your line
+            </Btn>
+          </>
+        )
+      }
+    >
+      {review ? (
+        <>
+          <blockquote className="cv-quote">{text.trim()}</blockquote>
+          <p className="cv-muted" style={{ marginBottom: 0 }}>Approve your wording before it is added to your {word}.</p>
+        </>
+      ) : (
+        <>
+          <span className="cv-label">Your line now</span>
+          <blockquote className="cv-quote">{original}</blockquote>
+          <p className="cv-muted">Keep the facts. Change only the wording you approve.</p>
+          <Field label="Your revised words" multiline rows={3} value={text} onChange={setText} maxLength={600} />
+        </>
+      )}
+    </Dialog>
   );
 }

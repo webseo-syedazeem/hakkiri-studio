@@ -3,6 +3,7 @@ import { Mark } from "@/components/brand/Mark";
 import { MiniWave } from "@/components/audio/MiniWave";
 import { buttonClass } from "@/components/ui";
 import { requirePageUser } from "@/lib/auth/require";
+import { FirstAppearance } from "@/components/shell/FirstAppearance";
 
 const PLANNED = [30, 60, 45, 60, 60, 60, 60, 30, 45, 45, 45, 60];
 const ACTUAL = [32, 75, 40, 160, 70, 65, 50, 25, 50, 55, 48, 10];
@@ -38,6 +39,7 @@ function Choice({ href, title, body, cta, children, delay }: { href: string; tit
 export default async function WelcomePage() {
   const user = await requirePageUser();
   return (
+    <FirstAppearance>
     <div className="mx-auto flex w-full max-w-[1120px] grow flex-col justify-center">
       <div className="text-[15px] text-muted">Welcome to Hakkiri Studio, {user.firstName}</div>
       <h1 className="mt-1.5 animate-rise text-[28px] sm:text-[40px] font-semibold tracking-[-0.03em]">What are you preparing for?</h1>
@@ -90,5 +92,6 @@ export default async function WelcomePage() {
         Look around the demo first
       </Link>
     </div>
+    </FirstAppearance>
   );
 }

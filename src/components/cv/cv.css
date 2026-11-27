@@ -3142,3 +3142,214 @@ html:not(.dark):not([data-theme="dark"]) .cv, .mk .cv, .cv.mk, [data-theme="ligh
   .cv-paths > li, .cv-cards > li { animation: none !important; }
   .cv .cv-card, .cv .cv-card > .cv-thumb img { transition: none !important; transform: none !important; }
 }
+
+/* ===================================================================
+ * Design spec v3 · §01 New CV, upload first
+ * Centred 840 px column; 32 px card padding (16 phone); 250 px drop area (224 phone),
+ * 2 px dashed edge, 12 px radius; 26 px progress markers, 13 px labels, 12 px gaps.
+ * Motion: colour and edge transitions only, removed under reduced motion.
+ * =================================================================== */
+.cv .cv-start { max-width: 840px; margin: 0 auto; width: 100%; }
+.cv .cv-steps { display: flex; flex-wrap: wrap; gap: 12px; list-style: none; margin: 0 0 18px; padding: 0; font-size: 13px; color: var(--text-muted); }
+.cv .cv-steps li { display: inline-flex; align-items: center; gap: 8px; }
+.cv .cv-steps-dot { width: 26px; height: 26px; border-radius: 50%; display: inline-grid; place-items: center; font-size: 12px; font-weight: 700; box-shadow: inset 0 0 0 1px var(--control-edge); color: var(--text-muted); }
+.cv .cv-steps li[aria-current="step"] { color: var(--text); font-weight: 600; }
+.cv .cv-steps li[aria-current="step"] .cv-steps-dot { background: var(--primary); color: #fff; box-shadow: none; }
+.cv .cv-steps li[data-done] .cv-steps-dot { color: var(--text); }
+.cv .cv-start-title { font-size: 28px; line-height: 34px; font-weight: 700; letter-spacing: -0.02em; margin: 0; }
+.cv .cv-start-sub { margin: 6px 0 0; color: var(--text-muted); font-size: 14px; }
+.cv .cv-start-card { margin-top: 18px; padding: 32px; border-radius: 14px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border); animation: cvFade 0.25s ease-out both; }
+.cv .cv-start-card > .cv-start-title { margin-top: 0; }
+.cv .cv-start-card:first-of-type { margin-top: 0; }
+.cv .cv-start-design { margin: 14px 0 0; font-size: 13px; color: var(--text-muted); }
+.cv .cv-drop { margin-top: 22px; min-height: 250px; border: 2px dashed var(--control-edge); border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 24px 16px; text-align: center; transition: background-color 0.15s ease, border-color 0.15s ease; }
+.cv .cv-drop[data-drag] { background: var(--selected-bg); border-color: var(--accent); border-style: solid; }
+.cv .cv-drop[data-error] { border-color: var(--danger); }
+.cv .cv-drop-icon { width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; background: var(--selected-bg); color: var(--accent); }
+.cv .cv-drop-title { font-size: 17px; font-weight: 600; color: var(--text); }
+.cv .cv-drop-meta { font-size: 13px; color: var(--text-muted); }
+.cv .cv-start-help { margin: 10px 0 0; font-size: 12px; color: var(--text-muted); }
+.cv .cv-start-problem { margin-top: 12px; display: grid; gap: 6px; padding: 14px 16px; border-radius: 12px; background: var(--danger-surface); box-shadow: inset 0 0 0 1px var(--danger); color: var(--text); font-size: 14px; animation: cvFade 0.2s ease-out both; }
+.cv .cv-start-problem b { color: var(--text); }
+.cv .cv-start-problem .cv-row { margin-top: 4px; }
+.cv .cv-start-other { margin-top: 22px; border-top: 1px solid var(--border); padding-top: 14px; }
+.cv .cv-disclose { display: inline-flex; align-items: center; gap: 8px; min-height: 36px; font-size: 14px; font-weight: 600; color: var(--accent-soft, #aeb6ff); background: none; border: 0; cursor: pointer; border-radius: 9px; padding: 0 6px; margin-left: -6px; }
+.cv .cv-disclose-mark { display: inline-block; transition: transform 0.15s ease; }
+.cv .cv-disclose[aria-expanded="true"] .cv-disclose-mark { transform: rotate(90deg); }
+.cv .cv-start-ways { margin-top: 12px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; animation: cvFade 0.2s ease-out both; }
+.cv .cv-way { text-align: left; display: grid; gap: 4px; padding: 14px 16px; min-height: 72px; border-radius: 12px; background: var(--surface-raised); box-shadow: inset 0 0 0 1px var(--border-strong); color: var(--text); cursor: pointer; transition: background-color 0.15s ease, box-shadow 0.15s ease; }
+.cv .cv-way b { font-size: 14px; font-weight: 600; }
+.cv .cv-way span { font-size: 13px; color: var(--text-muted); }
+.cv .cv-way:hover { box-shadow: inset 0 0 0 1px var(--accent); }
+.cv .cv-way[aria-pressed="true"] { background: var(--selected-bg); box-shadow: inset 0 0 0 1px var(--accent); }
+.cv .cv-start-panel { margin-top: 14px; display: grid; gap: 12px; padding: 16px; border-radius: 12px; background: var(--surface-raised); box-shadow: inset 0 0 0 1px var(--border); animation: cvFade 0.2s ease-out both; }
+.cv .cv-start-h2 { margin: 0; font-size: 17px; font-weight: 600; }
+.cv .cv-start-three { margin: 0; padding-left: 20px; display: grid; gap: 6px; font-size: 14px; }
+.cv .cv-readrows { list-style: none; margin: 18px 0 0; padding: 0; border-radius: 12px; box-shadow: inset 0 0 0 1px var(--border); }
+.cv .cv-readrows li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border-top: 1px solid var(--border); font-size: 14px; }
+.cv .cv-readrows li:first-child { border-top: 0; }
+.cv .cv-readrows li > span:first-child, .cv .cv-readrows li > div { min-width: 0; }
+.cv .cv-readrows small { display: block; color: var(--text-muted); font-size: 12px; margin-top: 2px; }
+.cv .cv-chip[data-state="read"] { color: var(--success); background: var(--success-surface); }
+.cv .cv-chip[data-state="review"] { color: var(--warning); background: var(--warning-surface); }
+@keyframes cvFade { from { opacity: 0; } to { opacity: 1; } }
+@media (max-width: 767px) {
+  .cv .cv-start-card { padding: 16px; }
+  .cv .cv-drop { min-height: 224px; }
+  .cv .cv-start-ways { grid-template-columns: minmax(0, 1fr); }
+  .cv .cv-start-title { font-size: 25px; line-height: 30px; }
+  .cv .cv-way, .cv .cv-disclose { min-height: 44px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cv .cv-start-card, .cv .cv-start-problem, .cv .cv-start-ways, .cv .cv-start-panel { animation: none; }
+  .cv .cv-drop, .cv .cv-way, .cv .cv-disclose-mark { transition: none; }
+}
+.cv .cv-chipselect, .cv .cv-chipinput { min-height: 36px; border-radius: 9px; background: var(--surface-raised); color: var(--text); box-shadow: inset 0 0 0 1px var(--control-edge); border: 0; padding: 0 10px; font-size: 14px; }
+.cv .cv-chipinput { width: 100%; margin-top: 6px; }
+.cv .cv-flag-dates .cv-chipinput { width: auto; margin: 0 0 0 6px; }
+.cv .cv-chipselect:focus-visible, .cv .cv-chipinput:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.cv .cv-flag { margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border); display: grid; gap: 12px; animation: cvFade 0.2s ease-out both; }
+.cv .cv-flag-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.cv .cv-flag-source { margin: 6px 0 0; padding: 12px 14px; border-radius: 9px; background: var(--surface-raised); display: grid; gap: 2px; font-size: 14px; }
+.cv .cv-flag-source span { background: linear-gradient(transparent 60%, rgba(123, 136, 255, 0.28) 60%); width: fit-content; }
+.cv .cv-flag-dates { border: 0; padding: 0; margin: 0; display: grid; gap: 8px; font-size: 14px; }
+@media (max-width: 767px) {
+  .cv .cv-flag-grid { grid-template-columns: minmax(0, 1fr); }
+  .cv .cv-chipselect, .cv .cv-chipinput { min-height: 44px; font-size: 16px; }
+  .cv .cv-readrows li { flex-wrap: wrap; }
+}
+@media (prefers-reduced-motion: reduce) { .cv .cv-flag { animation: none; } }
+.cv .cv-start-card > .cv-readrows { box-shadow: none; border-radius: 0; }
+.cv .cv-start-card > .cv-readrows li { padding-left: 0; padding-right: 0; }
+
+/* ===================================================================
+ * Design spec v3 · menus (⋯ on roles and bullets, More in the editor header)
+ * =================================================================== */
+.cv .cv-menu { position: relative; display: inline-flex; }
+.cv .cv-menu-trigger { min-width: 36px; min-height: 36px; padding: 0 10px; justify-content: center; }
+.cv .cv-menu-list { position: absolute; top: calc(100% + 6px); z-index: 60; min-width: 220px; padding: 6px; border-radius: 12px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border-strong), 0 12px 32px -8px rgba(0, 0, 0, 0.5); display: grid; gap: 2px; animation: cvFade 0.12s ease-out both; }
+.cv .cv-menu-list[data-align="end"] { right: 0; }
+.cv .cv-menu-list[data-align="start"] { left: 0; }
+.cv .cv-menu-item { text-align: left; min-height: 36px; padding: 0 12px; border-radius: 9px; background: none; border: 0; color: var(--text); font-size: 14px; font-weight: 500; cursor: pointer; white-space: nowrap; transition: background-color 0.12s ease; }
+.cv .cv-menu-item:hover:not(:disabled), .cv .cv-menu-item:focus-visible { background: var(--surface-hover); }
+.cv .cv-menu-item:focus-visible { outline: 3px solid var(--focus); outline-offset: -1px; }
+.cv .cv-menu-item:disabled { color: var(--text-muted); cursor: not-allowed; opacity: 0.6; }
+.cv .cv-menu-danger { color: var(--danger); }
+.cv .cv-menu-divide { margin-top: 5px; position: relative; }
+.cv .cv-menu-divide::before { content: ""; position: absolute; left: 6px; right: 6px; top: -4px; height: 1px; background: var(--border); }
+@media (max-width: 767px) {
+  .cv .cv-menu-trigger, .cv .cv-menu-item { min-height: 44px; }
+}
+@media (prefers-reduced-motion: reduce) { .cv .cv-menu-list { animation: none; } .cv .cv-menu-item { transition: none; } }
+
+/* ===================================================================
+ * Design spec v3 · §02 editor geometry
+ * 1440: 56 rail · 16 gutter · 380 fields · 12 · 680 page · 12 · 268 insights · 16.
+ * 1280–1439: 360 fields · 12 · page fills; score and job keywords move to a strip below.
+ * Under 1200: one column with Page / Editing fields and Design (unchanged v2 behaviour).
+ * =================================================================== */
+@media (min-width: 1200px) {
+  .cv .cv-workbench { grid-template-columns: 360px minmax(0, 1fr); gap: 12px; }
+  .cv .cv-workbench > .cv-insights { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; position: static; }
+  .cv .cv-workbench.cv-folded { grid-template-columns: minmax(0, 1fr); }
+  .cv .cv-workbench.cv-folded > .cv-tab-content { display: none; }
+}
+@media (min-width: 1440px) {
+  .cv .cv-workbench { grid-template-columns: 380px minmax(0, 1fr) 268px; gap: 12px; }
+  .cv .cv-workbench > .cv-insights { grid-column: auto; display: flex; flex-direction: column; gap: 12px; position: sticky; top: 80px; }
+  .cv .cv-workbench.cv-folded { grid-template-columns: minmax(0, 1fr) 268px; }
+  .cv .cv-area:has(.cv-workbench) { padding-left: 16px; padding-right: 16px; }
+}
+
+/* The document toolbar above the page: Hide editing fields, Fit to one page (once, here only), the document. */
+.cv .cv-doctools { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+.cv .cv-doctools .cv-btn { min-height: 36px; }
+
+/* The slim design row: 34 px controls, 6 px gaps, 8 px padding, one row. */
+.cv .cv-formatbar.cv-formatbar-v3 { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px; }
+.cv .cv-formatbar-v3 .cv-fb-control, .cv .cv-formatbar-v3 .cv-btn { min-height: 34px; height: 34px; font-size: 13px; padding-top: 0; padding-bottom: 0; }
+.cv .cv-formatbar-v3 .cv-fb-template { max-width: 200px; display: inline-flex; align-items: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cv .cv-formatbar-v3 .cv-fb-inline select { width: auto; max-width: 190px; }
+.cv .cv-formatbar-v3 .cv-fb-fitbtn { display: none; }
+[role="dialog"] .cv-formatbar.cv-formatbar-v3 { display: grid; grid-template-columns: minmax(0, 1fr); }
+[role="dialog"] .cv-formatbar-v3 .cv-fb-template, [role="dialog"] .cv-formatbar-v3 .cv-fb-inline select { max-width: none; width: 100%; }
+[role="dialog"] .cv-formatbar-v3 .cv-fb-fitbtn { display: inline-flex; }
+[role="dialog"] .cv-formatbar-v3 .cv-fb-control, [role="dialog"] .cv-formatbar-v3 .cv-btn { min-height: 44px; height: auto; font-size: 16px; }
+.cv .cv-design-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 12px; }
+.cv .cv-design-grid label { display: grid; gap: 4px; min-width: 0; }
+@media (max-width: 767px) { .cv .cv-design-grid { grid-template-columns: minmax(0, 1fr); } .cv .cv-design-grid select { min-height: 44px; font-size: 16px; } }
+
+/* Fit result: a quiet bordered panel just above the paper, 12 px inset. Never styled like a score. */
+.cv .cv-fitresult { margin: 0 0 12px; padding: 12px; border-radius: 12px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border-strong); animation: cvFade 0.2s ease-out both; }
+.cv .cv-fitresult-head { display: flex; gap: 12px; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; }
+.cv .cv-fitresult-title { margin: 0; font-size: 14px; font-weight: 600; color: var(--text); }
+.cv .cv-fitresult[data-status="fits"] .cv-fitresult-title::before, .cv .cv-fitresult[data-status="already"] .cv-fitresult-title::before { content: "✓ "; color: var(--success); }
+.cv .cv-fitresult-lines { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 6px; }
+.cv .cv-fitresult-lines li { display: flex; gap: 10px; align-items: center; justify-content: space-between; padding: 8px 10px; border-radius: 9px; background: var(--surface-raised); font-size: 13px; }
+.cv .cv-fitresult-lines q { overflow-wrap: anywhere; quotes: "“" "”"; color: var(--text); }
+.cv .cv-paper-size { margin-left: 6px; }
+
+/* Header: Download / Share / More, then labelled Undo and Redo icons. */
+.cv .cv-iconbtn { min-width: 36px; min-height: 36px; padding: 0 !important; justify-content: center; }
+.cv .cv-edhead-history { display: inline-flex; gap: 4px; }
+.cv .cv-level-chip { position: relative; display: inline-flex; align-items: center; padding: 0; border: 1px solid var(--control-edge); }
+.cv .cv-level-chip select { appearance: none; background: transparent; border: 0; color: inherit; font: inherit; font-weight: 600; padding: 2px 22px 2px 9px; cursor: pointer; }
+.cv .cv-level-chip::after { content: "▾"; position: absolute; right: 7px; pointer-events: none; font-size: 10px; }
+.cv .cv-level-chip:focus-within { outline: 3px solid var(--focus); outline-offset: 2px; }
+.cv .cv-region-toggle { min-height: 26px; }
+@media (max-width: 767px) {
+  .cv .cv-edhead-actions { grid-template-columns: 1.4fr 1fr 1fr; }
+  .cv .cv-edhead-actions .cv-menu, .cv .cv-edhead-actions .cv-menu-trigger { width: 100%; }
+  .cv .cv-fitresult-lines li { flex-direction: column; align-items: stretch; }
+}
+@media (prefers-reduced-motion: reduce) { .cv .cv-fitresult { animation: none; } }
+/* v3: the editor's own 16 px gutters and 18 px top, inside the compact rail. */
+@media (min-width: 768px) {
+  main:has(.cv-edhead) { padding-left: 16px !important; padding-right: 16px !important; padding-top: 18px !important; }
+  .cv .cv-area:has(.cv-workbench) { padding-left: 0 !important; padding-right: 0 !important; }
+}
+.cv .cv-area:has(.cv-workbench) { max-width: none !important; }
+.cv .cv-formatbar-v3 .cv-fb-template { max-width: 170px; }
+.cv .cv-formatbar-v3 .cv-fb-inline:first-of-type select { max-width: 150px; }
+.cv .cv-formatbar-v3 .cv-fb-template { max-width: 150px; }
+.cv .cv-formatbar-v3 .cv-fb-inline:nth-of-type(1) select { max-width: 140px; }
+.cv .cv-formatbar-v3 .cv-fb-inline:nth-of-type(2) select { max-width: 84px; }
+.cv .cv-formatbar-v3 .cv-fb-inline:nth-of-type(3) select { max-width: 104px; }
+.cv .cv-formatbar-v3 .cv-fb-control, .cv .cv-formatbar-v3 .cv-btn { padding-left: 10px; padding-right: 10px; }
+
+/* ===================================================================
+ * Design spec v3 · §04 Questions your CV will get
+ * 1000 px max; rows: 44 px number column, flexible text, action; 14 px gap, 20 px padding, divider.
+ * Phone: 32 px number, 8 px gap, 14 px padding, action wraps below.
+ * =================================================================== */
+.cv .cv-questions { max-width: 1000px; margin: 0 auto; width: 100%; }
+.cv .cv-questions-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.cv .cv-questions-meta { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 14px 0 12px; }
+.cv .cv-qlist { list-style: none; margin: 0; padding: 0; border-radius: 14px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border); animation: cvFade 0.2s ease-out both; }
+.cv .cv-qrow { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 14px; padding: 20px; border-top: 1px solid var(--border); }
+.cv .cv-qrow:first-child { border-top: 0; }
+.cv .cv-qnum { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; font-weight: 700; font-size: 14px; box-shadow: inset 0 0 0 1px var(--control-edge); color: var(--text); }
+.cv .cv-qbody { display: grid; gap: 8px; min-width: 0; }
+.cv .cv-qclaim { margin: 0; padding: 8px 12px; border-left: 3px solid var(--accent); border-radius: 0 9px 9px 0; background: var(--surface-raised); font-size: 14px; color: var(--text); overflow-wrap: anywhere; }
+.cv .cv-qtext { margin: 0; font-size: 16px; font-weight: 600; color: var(--text); line-height: 1.4; }
+.cv .cv-qdone { margin: 0; font-size: 13px; font-weight: 600; color: var(--success); }
+.cv .cv-qaction { align-self: start; }
+@media (max-width: 767px) {
+  .cv .cv-qrow { grid-template-columns: 32px minmax(0, 1fr); gap: 8px; padding: 14px; }
+  .cv .cv-qaction { grid-column: 2; }
+  .cv .cv-qaction .cv-btn { min-height: 44px; width: 100%; }
+  .cv .cv-questions-head .cv-btn { width: 100%; min-height: 44px; }
+}
+@media (prefers-reduced-motion: reduce) { .cv .cv-qlist { animation: none; } }
+/* v3 score panel: practice card, then Tailor to a job and Cover letter as two equal buttons (1fr 1fr, 8 px gap, 44 px). */
+.cv .cv-score-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
+.cv .cv-score-actions .cv-btn { min-height: 44px; font-size: 12px; line-height: 1.25; padding: 8px 5px; justify-content: center; text-align: center; white-space: normal; }
+.cv .cv-practice-card { display: grid; gap: 6px; padding: 12px; border-radius: 12px; background: var(--selected-bg); box-shadow: inset 0 0 0 1px var(--border-strong); }
+.cv .cv-practice-card b { font-size: 13px; line-height: 1.35; color: var(--text); }
+/* v3: at 1200–1439 the score and job keywords sit in a one-line strip that opens them in a drawer. */
+.cv .cv-scorestrip { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 14px; margin-bottom: 12px; border-radius: 12px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border); font-size: 14px; }
+.cv .cv-midonly { display: none; }
+@media (min-width: 1200px) and (max-width: 1439px) {
+  .cv .cv-midonly { display: flex; }
+  .cv .cv-workbench > .cv-insights { display: none !important; }
+}

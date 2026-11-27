@@ -63,6 +63,18 @@ export const CvImportSchema = z.object({
   reviewed: z.array(z.string().max(40)).max(40).default([]),
   /** The free public check this upload was started from, if it was: the person then lands on the score, where its findings are. */
   checkId: z.string().regex(/^(?:aud|chk)_[A-Za-z0-9_-]{8,40}$/).optional(),
+  /**
+   * Upload first: the CV's name, UK or US and level, read from the file rather than asked before it.
+   * null means not known yet: the person sets it before opening the editor. Absent on older uploads.
+   */
+  about: z
+    .object({
+      name: z.string().max(120),
+      region: z.enum(["uk", "us"]).nullable(),
+      level: z.enum(["student", "early", "experienced", "senior"]).nullable(),
+      why: z.object({ region: z.string().max(200), level: z.string().max(200) }),
+    })
+    .optional(),
   /** Where to go once it is confirmed, when it was started from a check: the score, tailoring, or the letter. */
   then: z.enum(["findings", "tailor", "letter"]).optional(),
   createdAt: z.string(),

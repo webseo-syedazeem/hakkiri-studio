@@ -23,6 +23,8 @@ export interface FieldHooks {
   onEdit?: (entryId: string, field: string) => void;
   /** The builder: opens the writing help for one bullet. */
   onHelp?: (entryId: string, bulletId: string) => void;
+  /** "Practise this" on a bullet: practise the question this line will get. */
+  onPractise?: (entryId: string, bulletId: string) => void;
   /** The builder: what else can be done for an entry (start from notes, use a saved achievement), shown under its bullets. */
   entryTools?: (entry: Entry) => ReactNode;
 }
@@ -317,10 +319,19 @@ function BulletsEditor({ bullets, onChange, label, rule, hooks, entryId, arrange
                   Bullet {i + 1}
                 </span>
               </div>
-              <div className="cv-row" style={{ gap: 6 }}>
-                {!b.visible && <OffChip />}
-                <Switch checked={b.visible} onChange={(visible) => onChange(bullets.map((x) => (x.id === b.id ? { ...x, visible } : x)))} label={`Include bullet ${i + 1} in this version`} />
-              </div>
+              <ItemControls
+                name={`bullet ${i + 1}`}
+                index={i}
+                count={bullets.length}
+                visible={b.visible}
+                onVisible={(visible) => onChange(bullets.map((x) => (x.id === b.id ? { ...x, visible } : x)))}
+                onMove={(to) => drag.move(b.id, to)}
+                onRemove={() => onChange(bullets.filter((x) => x.id !== b.id))}
+                extra={[
+                  ...(hooks?.onHelp ? [{ label: "Help me word this", onSelect: () => hooks.onHelp!(entryId, b.id) }] : []),
+                  ...(hooks?.onPractise ? [{ label: "Practise this", disabled: b.text.trim().length < 20, onSelect: () => hooks.onPractise!(entryId, b.id) }] : []),
+                ]}
+              />
             </div>
             <Field
               className="cv-item-main [&>label]:sr-only"
@@ -335,19 +346,6 @@ function BulletsEditor({ bullets, onChange, label, rule, hooks, entryId, arrange
               }}
               {...hook(hooks, entryId, b.id)}
             />
-            <div className="cv-bullet-foot">
-              <span className="cv-controls">
-                <MoveMenu index={i} count={bullets.length} name={`bullet ${i + 1}`} onMove={(to) => drag.move(b.id, to)} />
-                {hooks?.onHelp && (
-                  <Btn kind="quiet" aria-label={`Help with bullet ${i + 1}`} onClick={() => hooks.onHelp!(entryId, b.id)}>
-                    Help
-                  </Btn>
-                )}
-                <Btn kind="quiet" onClick={() => onChange(bullets.filter((x) => x.id !== b.id))} aria-label={`Remove bullet ${i + 1}`}>
-                  Remove
-                </Btn>
-              </span>
-            </div>
           </div>
         ) : (
           <div key={b.id} className="cv-item" data-item={b.id} data-off={!b.visible || undefined}>
@@ -513,9 +511,9 @@ export function EntriesForm({ value, onChange, region, hooks, expandAll, entryNo
                   onMove={(to) => drag.move(e.id, to)}
                   onRemove={() => remove(e.id)}
                 >
-                  <Btn kind="quiet" aria-expanded={isOpen} aria-label={`${isOpen ? "Close" : "Edit"} ${title}`} onClick={() => setOpen(isOpen ? "" : e.id)}>
-                    {isOpen ? "Close" : "Edit"}
-                  </Btn>
+                  <button type="button" className="cv-btn cv-iconbtn" aria-expanded={isOpen} aria-label={`${isOpen ? "Collapse" : "Expand"} ${title}`} title={isOpen ? "Collapse" : "Expand"} onClick={() => setOpen(isOpen ? "" : e.id)}>
+                    <span aria-hidden="true">{isOpen ? "⌃" : "⌄"}</span>
+                  </button>
                 </ItemControls>
               ) : (
                 <span className="cv-push cv-row" style={{ gap: 4 }}>

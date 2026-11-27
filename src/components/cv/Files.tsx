@@ -30,7 +30,7 @@ function statusOf(check: FileCheck | undefined, checks: FileChecks | null, curre
  * the Finish tab and in the Download dialog, from the same state, so a check
  * made in one is the check shown in the other.
  */
-export function FilesPanel({ say, inDialog = false }: { say: (text: string) => void; inDialog?: boolean }) {
+export function FilesPanel({ say, inDialog = false, onDownloaded }: { say: (text: string) => void; inDialog?: boolean; /** Told once a file has really been downloaded. */ onDownloaded?: () => void }) {
   const w = useWorkspace();
   const { update, settle, save, checks, setChecks } = w;
   const cv = w.cv!;
@@ -99,6 +99,7 @@ export function FilesPanel({ say, inDialog = false }: { say: (text: string) => v
         a.remove();
         setTimeout(() => URL.revokeObjectURL(url), 30000);
         setDownloads((n) => n + 1);
+        onDownloaded?.();
         if (res.headers.get("x-cv-check") === "checked") {
           setChecks((c) =>
             keep(c, {

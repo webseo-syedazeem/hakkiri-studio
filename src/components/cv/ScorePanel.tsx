@@ -27,8 +27,15 @@ export function fixNext(score: Score) {
  * that line. It is worked out in code as the person types; nothing about it
  * is a sample.
  */
-export function ScorePanel({ score, word, base, onShow }: { score: Score | null; word: string; base: string; onShow: (at: Locator) => void }) {
+export function ScorePanel({ score, word, base, onShow, claims = 0, letterMode = false }: { score: Score | null; word: string; base: string; onShow: (at: Locator) => void; /** How many claims on the CV can be practised. */ claims?: number; /** In letter mode the second button goes back to the CV. */ letterMode?: boolean }) {
   const title = word === "CV" ? "CV score" : "Resume score";
+  // Two equal secondary buttons, the same weight (design spec v3 §02). No Fit to one page here: it lives once, above the page.
+  const actions = (
+    <div className="cv-score-actions">
+      <Link className="cv-btn" href={`${base}/tailor`}>Tailor to a job</Link>
+      <Link className="cv-btn" href={letterMode ? `${base}/edit/experience` : `${base}/letter`}>{letterMode ? `Back to ${word}` : "Cover letter"}</Link>
+    </div>
+  );
   if (!score) {
     return (
       <Panel title={title} data-testid="score-panel">
@@ -36,6 +43,7 @@ export function ScorePanel({ score, word, base, onShow }: { score: Score | null;
           <p className="cv-muted" style={{ margin: 0 }}>
             Checking changes…
           </p>
+          {actions}
         </div>
       </Panel>
     );
@@ -47,6 +55,7 @@ export function ScorePanel({ score, word, base, onShow }: { score: Score | null;
           <p className="cv-muted" style={{ margin: 0 }}>
             Not checked yet. Add your experience and the score appears here, with what to fix first.
           </p>
+          {actions}
         </div>
       </Panel>
     );
@@ -76,6 +85,15 @@ export function ScorePanel({ score, word, base, onShow }: { score: Score | null;
             );
           })}
         </ul>
+        {claims > 0 && (
+          <div className="cv-practice-card" data-testid="practice-card">
+            <b>{score.shown >= 80 ? `Your ${word} is ready. Practise the questions it will get you.` : `Practise the questions your ${word} will get.`}</b>
+            <span className="cv-small">Questions built from your own {word}.</span>
+            <Link className="cv-link" href={`${base}/questions`}>
+              Questions your {word} will get
+            </Link>
+          </div>
+        )}
         {next ? (
           <div className="cv-fixnext" data-testid="fix-next">
             <b>Fix next</b>
@@ -97,6 +115,7 @@ export function ScorePanel({ score, word, base, onShow }: { score: Score | null;
         <Link className="cv-link" href={`${base}/findings`}>
           See all findings
         </Link>
+        {actions}
       </div>
     </Panel>
   );

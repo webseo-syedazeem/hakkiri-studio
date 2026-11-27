@@ -488,7 +488,7 @@ export function layoutFlow(flow: Flow, style: PaperStyle, fonts: Fonts): Layout 
   return { width: page.width, height: page.height, pages: blocks.length ? pg + 1 : 1, blocks, rules, missing: [...m.missing] };
 }
 
-type Printable = Pick<CvDoc, "contact" | "sections" | "design" | "region" | "target">;
+export type Printable = Pick<CvDoc, "contact" | "sections" | "design" | "region" | "target">;
 
 /** The whole way from a CV to its pages. */
 export function layoutCv(cv: Printable, fonts: Fonts): { flow: Flow; layout: Layout; style: PaperStyle } {

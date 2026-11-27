@@ -1,378 +1,329 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { type FormEvent, useEffect, useRef, useState } from "react";
+import { type DragEvent, useEffect, useRef, useState } from "react";
 import { TEMPLATES, templateLabel } from "@/lib/cv/render/templates";
-import { CV_LEVELS, CV_TEMPLATES, type CvLevel, type CvRegion, LEVEL_LABELS, type TemplateId } from "@/lib/cv/schema";
+import { CV_TEMPLATES, type TemplateId } from "@/lib/cv/schema";
 import { ApiError, api, messageOf } from "./client";
-import { StartPaths } from "./StartPaths";
-import { ACCEPT, STAGE_WORDS, UPLOAD_HELP, type UploadStage, sendUpload } from "./upload";
-import { Announce, Bar, Btn, CvScreen, Field, Note, Panel, Toolbar } from "./ui";
+import { ACCEPT, type UploadStage, sendUpload } from "./upload";
+import { Announce, Bar, Btn, CvScreen, Field } from "./ui";
 
-const LEVEL_HELP: Record<CvLevel, string> = {
-  student: "Studying, or looking for a first professional role.",
-  early: "Up to about three years of work.",
-  experienced: "Several years in your field.",
-  senior: "Leading a function, a department or an organisation.",
+/** Upload limit, as the server enforces it. */
+const MAX_BYTES = 5 * 1024 * 1024;
+const OK_TYPE = /\.(pdf|docx)$/i;
+
+type Other = "paste" | "linkedin" | "three" | null;
+
+/** Upload problems, in the words of design spec v3 §01. */
+type UploadProblem = "wrong-type" | "too-big" | "scanned" | "failed";
+const PROBLEM: Record<UploadProblem, { title: string; body: string }> = {
+  "wrong-type": { title: "That file type is not supported.", body: "Choose a PDF or Word file up to 5 MB." },
+  "too-big": { title: "This file is over 5 MB.", body: "Choose a PDF or Word file up to 5 MB." },
+  scanned: { title: "We couldn’t read any text from this PDF.", body: "It may be a scanned image. Upload a text-based file or paste the text instead." },
+  failed: { title: "We couldn’t read your CV.", body: "Try the upload again or paste the text instead." },
 };
 
-type Method = "empty" | "linkedin" | "upload" | "paste" | "notes" | "talk";
-
-/** What each way to start is called above its own panel. */
-const METHOD_TITLE: Record<Method, string> = {
-  talk: "Build with the assistant",
-  linkedin: "Import from LinkedIn",
-  upload: "Upload your CV",
-  paste: "Paste your CV",
-  empty: "Start with a blank page",
-  notes: "Answer three questions about one job",
-};
-/** ?start= on the address picks a way to start: the CV home's "Build with the assistant" sends ?start=talk. */
-const START: Record<string, Method> = { talk: "talk", upload: "upload", paste: "paste", linkedin: "linkedin", blank: "empty", notes: "notes" };
+/** ?start= on the address opens a way to start directly (the CV home's "Build with the assistant" sends ?start=talk). */
+const START: Record<string, "talk" | "blank" | "three" | "paste" | "linkedin"> = { talk: "talk", blank: "blank", notes: "three", paste: "paste", linkedin: "linkedin" };
 
 /**
- * New CV: first how to start (the same four paths as the CV home, then "I
- * have a CV already" and a blank page), then four questions before any CV
- * exists: what it is called, the level, UK or US, and (optionally) the job it
- * is aimed at. Nothing is pre-filled.
+ * New CV, upload first (design spec v3 §01): no questions before the file.
+ * The CV's name, UK or US and level are read from it afterwards, and only
+ * the details we couldn't place confidently are shown for checking. Six other
+ * ways to start sit underneath.
  */
 export function Setup() {
   const router = useRouter();
-  const [name, setName] = useState("");
-  const [level, setLevel] = useState<CvLevel | "">("");
-  const [region, setRegion] = useState<CvRegion | "">("");
-  const [showTarget, setShowTarget] = useState(false);
-  const [targetTitle, setTargetTitle] = useState("");
-  const [targetEmployer, setTargetEmployer] = useState("");
-  const [targetAdvert, setTargetAdvert] = useState("");
-  const [method, setMethod] = useState<Method | null>(null);
-  const formTop = useRef<HTMLDivElement>(null);
-  /** Chooses a way to start and brings its questions into view. */
-  function pick(m: Method) {
-    setMethod(m);
-    setErrors({});
-    setProblem("");
-    requestAnimationFrame(() => formTop.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
-  }
-  const [linkedinUrl, setLinkedinUrl] = useState("");
-  const [linkedinText, setLinkedinText] = useState("");
-  const [file, setFile] = useState<File | null>(null);
-  const [text, setText] = useState("");
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [problem, setProblem] = useState("");
+  const [drag, setDrag] = useState(false);
+  const [problem, setProblem] = useState<UploadProblem | null>(null);
+  const [message, setMessage] = useState("");
   const [stage, setStage] = useState<UploadStage | "creating" | "">("");
-  const formRef = useRef<HTMLFormElement>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
-  // A design chosen in the template gallery (/cv/new?template=harbour) comes along; it can be dropped here or changed later.
+  const [fileName, setFileName] = useState("");
+  const [showOther, setShowOther] = useState(false);
+  const [other, setOther] = useState<Other>(null);
+  const [text, setText] = useState("");
+  const [textError, setTextError] = useState("");
   const [design, setDesign] = useState<TemplateId | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const linkedinRef = useRef<HTMLInputElement>(null);
+  const otherRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     const q = new URLSearchParams(window.location.search);
     const t = q.get("template");
     if (t && (CV_TEMPLATES as readonly string[]).includes(t)) setDesign(t as TemplateId);
-    // A way to start named in the address; a design chosen in the gallery starts a blank CV in it unless another is named.
     const start = START[q.get("start") ?? ""];
-    if (start) setMethod(start);
-    else if (t) setMethod("empty");
+    if (start === "talk" || start === "blank") void create(start);
+    else if (start) {
+      setShowOther(true);
+      setOther(start);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function check(): Record<string, string> {
-    const e: Record<string, string> = {};
-    if (!name.trim()) e.name = "Give your CV a name.";
-    if (!level) e.level = "Choose the level that fits you best.";
-    if (!region) e.region = "Choose UK or US.";
-    if (method === "upload" && !file) e.file = "Choose the file to upload.";
-    if (method === "paste" && text.trim().length < 40) e.text = "Paste the text of your CV.";
-    if (method === "linkedin" && !linkedinUrl.trim()) e.linkedin = "Enter your LinkedIn profile link or username.";
-    return e;
+  const busy = stage !== "";
+
+  /** Checks the file here first, so a wrong type or size is said at once, then sends it to be read. */
+  async function upload(file: File) {
+    if (busy) return;
+    setProblem(null);
+    setMessage("");
+    if (!OK_TYPE.test(file.name)) return setProblem("wrong-type");
+    if (file.size > MAX_BYTES) return setProblem("too-big");
+    if (file.size === 0) return setProblem("failed");
+    setFileName(file.name);
+    const form = new FormData();
+    form.set("file", file);
+    if (design) form.set("template", design);
+    await send(form);
   }
 
-  /** Shows the problems and moves to the first field that has one. */
-  function showErrors(e: Record<string, string>) {
-    setErrors(e);
-    const first = ["name", "level", "region", "file", "text", "linkedin"].find((k) => e[k]);
-    if (first) requestAnimationFrame(() => formRef.current?.querySelector<HTMLElement>(`[data-field="${first}"] input, [data-field="${first}"] textarea, [data-field="${first}"] button`)?.focus());
-  }
-
-  async function submit(ev?: FormEvent, chosen?: File) {
-    ev?.preventDefault();
-    if (stage || !method) return;
-    const useFile = chosen ?? file;
-    const found = check();
-    if (chosen) delete found.file;
-    setProblem("");
-    if (Object.keys(found).length) return showErrors(found);
-    setErrors({});
-    const setup = { name: name.trim(), level, region, targetTitle, targetEmployer, targetAdvert, ...(design ? { template: design } : {}) };
+  async function send(form: FormData) {
     try {
-      if (method === "empty" || method === "notes" || method === "talk") {
-        setStage("creating");
-        const { id } = await api<{ id: string }>("/api/cv/versions", { method: "POST", json: setup });
-        // From notes: straight to the three questions about one role. Talking: straight to the assistant. The CV itself still starts empty.
-        router.push(method === "notes" ? `/cv/v/${id}/capture/new` : method === "talk" ? `/cv/v/${id}/talk` : `/cv/v/${id}/edit/contact`);
+      const made = await sendUpload<{ importId: string; versionId: string; status: string; error?: { code: string } }>("/api/cv/imports", form, setStage);
+      if (made.status === "failed") {
+        // Nothing was read, so nothing is kept: the empty CV made for it goes too, and the person can try again here.
+        await api(`/api/cv/versions/${made.versionId}`, { method: "DELETE" }).catch(() => {});
+        setStage("");
+        const code = made.error?.code;
+        setProblem(code === "scanned" || code === "empty" ? "scanned" : code === "too-big" ? "too-big" : code === "not-supported" || code === "old-word" ? "wrong-type" : "failed");
         return;
       }
-      const form = new FormData();
-      for (const [k, v] of Object.entries(setup)) form.set(k, v);
-      if (method === "upload" && useFile) form.set("file", useFile);
-      else if (method === "linkedin") {
-        form.set("linkedinUrl", linkedinUrl.trim());
-        if (linkedinText.trim()) form.set("linkedinText", linkedinText.trim());
-      } else form.set("text", text);
-      const made = await sendUpload<{ importId: string }>("/api/cv/imports", form, setStage);
       router.push(`/cv/import/${made.importId}`);
     } catch (err) {
       setStage("");
-      if (err instanceof ApiError && Object.keys(err.fields).length) showErrors(err.fields);
-      else setProblem(messageOf(err));
+      if (err instanceof ApiError && err.code === "too_big") setProblem("too-big");
+      else {
+        setProblem("failed");
+        setMessage(messageOf(err));
+      }
     }
   }
 
-  const busy = stage !== "";
-  const action =
-    method === null
-      ? ""
-      : method === "empty"
-      ? "Create CV"
-      : method === "linkedin"
-      ? "Import from LinkedIn"
-      : method === "notes"
-      ? "Start with notes"
-      : method === "talk"
-      ? "Start talking"
-      : method === "paste"
-      ? "Read this text"
-      : file
-      ? `Upload ${file.name}`
-      : "Choose file";
+  /** Pasted text (or a pasted LinkedIn profile) is read the same way as a file; the text is kept until it is read. */
+  async function sendText() {
+    if (text.trim().length < 40) return setTextError("Paste the text of your CV: there isn’t enough here to read yet.");
+    setTextError("");
+    setProblem(null);
+    setFileName(other === "linkedin" ? "Your LinkedIn profile" : "Your pasted text");
+    const form = new FormData();
+    form.set("text", text);
+    if (design) form.set("template", design);
+    await send(form);
+  }
+
+  /** A blank page, three questions or the assistant: an empty CV in UK · A4 until the person changes it in the editor. */
+  async function create(kind: "blank" | "three" | "talk") {
+    if (busy) return;
+    setStage("creating");
+    try {
+      const { id } = await api<{ id: string }>("/api/cv/versions", { method: "POST", json: { name: "Untitled CV", level: "experienced", region: "uk", ...(design ? { template: design } : {}) } });
+      router.push(kind === "three" ? `/cv/v/${id}/capture/new` : kind === "talk" ? `/cv/v/${id}/talk` : `/cv/v/${id}/edit/contact`);
+    } catch (err) {
+      setStage("");
+      setProblem("failed");
+      setMessage(messageOf(err));
+    }
+  }
+
+  function onDrop(e: DragEvent) {
+    e.preventDefault();
+    setDrag(false);
+    const f = e.dataTransfer.files?.[0];
+    if (f) void upload(f);
+  }
+
+  function pickOther(o: Exclude<Other, null>) {
+    setOther(o);
+    setTextError("");
+    requestAnimationFrame(() => otherRef.current?.querySelector<HTMLElement>("textarea, button.cv-btn-primary")?.focus());
+  }
+
+  const reading = stage === "uploading" || stage === "reading";
 
   return (
     <CvScreen>
       <Bar crumbs={[{ label: "CVs and letters", href: "/cv" }, { label: "New CV" }]} />
-      <form ref={formRef} className="cv-area" onSubmit={submit} noValidate>
-        <Toolbar title="New CV" subtitle="Choose one of four ways to create your CV." />
-        {problem && (
-          <div className="cv-issue" role="alert" style={{ marginBottom: 18 }}>
-            <strong>That didn’t work</strong>
-            <span>{problem} Your answers are still here.</span>
-          </div>
-        )}
-        <StartPaths label="How would you like to start?" picked={method === "talk" ? "assistant" : null} onPick={{ assistant: () => pick("talk") }} />
-        <div className="cv-starts">
-          <Panel title="I have a CV already">
-            <div className="cv-pad">
-              <p className="cv-muted" style={{ margin: 0 }}>Bring your existing content into the editor, or check it first.</p>
-              <div className="cv-starts-buttons" role="group" aria-label="I have a CV already">
-                <Btn aria-pressed={method === "upload"} onClick={() => pick("upload")}>
-                  Upload PDF or Word
-                </Btn>
-                <Btn aria-pressed={method === "paste"} onClick={() => pick("paste")}>
-                  Paste text
-                </Btn>
-                <Btn aria-pressed={method === "linkedin"} onClick={() => pick("linkedin")}>
-                  Import from LinkedIn
-                </Btn>
-              </div>
-              <div className="cv-starts-self" role="group" aria-label="Write it yourself">
-                <span className="cv-muted">Prefer to write it yourself?</span>
-                <span className="cv-row" style={{ gap: 4 }}>
-                  <Btn kind="quiet" aria-pressed={method === "empty"} onClick={() => pick("empty")}>
-                    Start with a blank page
+      <div className="cv-area cv-start">
+        <ol className="cv-steps" aria-label="Steps">
+          <li aria-current="step"><span className="cv-steps-dot">1</span>Upload</li>
+          <li><span className="cv-steps-dot">2</span>Check flagged details</li>
+          <li><span className="cv-steps-dot">3</span>Editor</li>
+        </ol>
+
+        {reading ? (
+          <>
+          <h1 className="cv-start-title">Reading your CV</h1>
+          <p className="cv-start-sub">We’ll show what we find as we read your file.</p>
+          <section className="cv-start-card" aria-busy="true" data-testid="reading">
+            <ul className="cv-readrows" style={{ marginTop: 0 }}>
+              <li><b>{fileName || "Your file"}</b><span className="cv-chip">{stage === "uploading" ? "Uploading…" : "Reading…"}</span></li>
+              {["Name and contact details", "Experience", "UK or US", "Level", "Document name"].map((row) => (
+                <li key={row}><span>{row}</span><span className="cv-chip">Reading…</span></li>
+              ))}
+            </ul>
+          </section>
+          </>
+        ) : (
+          <>
+          <h1 id="start-title" className="cv-start-title">Start your CV</h1>
+          <p className="cv-start-sub">Upload your CV. We’ll read it into editable sections.</p>
+          <section className="cv-start-card" aria-labelledby="start-title">
+
+            {design && (
+              <p className="cv-start-design">
+                Design: <b>{templateLabel(TEMPLATES[design])}</b>. Your CV starts in it; change it any time.{" "}
+                <button type="button" className="cv-link" onClick={() => setDesign(null)}>Don’t use this design</button>
+              </p>
+            )}
+
+            <div
+              className="cv-drop"
+              style={{ marginTop: design ? 14 : 0 }}
+              data-drag={drag || undefined}
+              data-error={problem ? true : undefined}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDrag(true);
+              }}
+              onDragLeave={() => setDrag(false)}
+              onDrop={onDrop}
+            >
+              <span className="cv-drop-icon" aria-hidden>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" /><path d="M14 3v5h5M9 13h6M9 17h4" /></svg>
+              </span>
+              {drag ? (
+                <b className="cv-drop-title">Drop the file here</b>
+              ) : (
+                <>
+                  <b className="cv-drop-title">Upload your CV</b>
+                  <span className="cv-drop-meta">PDF, DOCX · Up to 5 MB</span>
+                  <Btn kind="primary" onClick={() => fileRef.current?.click()} aria-describedby="drop-help">
+                    Choose file
                   </Btn>
-                  <Btn kind="quiet" aria-pressed={method === "notes"} onClick={() => pick("notes")}>
-                    Answer three questions about one job
+                  <span className="cv-drop-meta">Or drag and drop your file here</span>
+                </>
+              )}
+              <input
+                ref={fileRef}
+                type="file"
+                accept={ACCEPT}
+                className="sr-only"
+                tabIndex={-1}
+                aria-label="CV file"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  e.target.value = "";
+                  if (f) void upload(f);
+                }}
+              />
+            </div>
+
+            {problem ? (
+              <div className="cv-start-problem" role="alert">
+                <b>{PROBLEM[problem].title}</b>
+                <span>{PROBLEM[problem].body}</span>
+                {message && problem === "failed" && <span className="cv-small">{message}</span>}
+                <span className="cv-row">
+                  <Btn onClick={() => fileRef.current?.click()}>Try again</Btn>
+                  <Btn
+                    kind="quiet"
+                    onClick={() => {
+                      setShowOther(true);
+                      pickOther("paste");
+                    }}
+                  >
+                    Paste text instead
                   </Btn>
                 </span>
               </div>
-            </div>
-          </Panel>
-        </div>
+            ) : (
+              <p id="drop-help" className="cv-start-help">Choose a PDF or Word file up to 5 MB. We read your words; nothing is added to your CV without your approval.</p>
+            )}
 
-        {method && (
-        <div ref={formTop} className="cv-layout" style={{ gridTemplateColumns: "minmax(0, 640fr) minmax(0, 528fr)", scrollMarginTop: 16 }} data-testid="setup-form">
-          <Panel title="About this CV">
-            <div className="cv-pad cv-stack">
-              {design && (
-                <Note label={`Design: ${templateLabel(TEMPLATES[design])}`} actions={<Btn onClick={() => setDesign(null)}>Don’t use this design</Btn>}>
-                  Chosen in the template gallery. Your CV starts in it, and you can change it at any time on the Finish step.
-                </Note>
+            <div className="cv-start-other">
+              <button type="button" className="cv-disclose" aria-expanded={showOther} aria-controls="other-ways" onClick={() => setShowOther((v) => !v)}>
+                <span aria-hidden className="cv-disclose-mark">›</span> Other ways to start
+              </button>
+              {showOther && (
+                <div id="other-ways" className="cv-start-ways">
+                  <WayCard title="Paste text" body="Paste the text from your existing CV." pressed={other === "paste"} onClick={() => pickOther("paste")} />
+                  <WayCard title="LinkedIn" body="Upload the PDF LinkedIn makes, or paste your profile." pressed={other === "linkedin"} onClick={() => pickOther("linkedin")} />
+                  <WayCard title="Start from an example" body="Choose a written example and replace the sample facts." onClick={() => router.push("/cv/examples?view=examples")} />
+                  <WayCard title="Start with a blank page" body="Fill in the sections yourself." onClick={() => void create("blank")} />
+                  <WayCard title="Answer three questions" body="Tell us about one job in your own words." pressed={other === "three"} onClick={() => pickOther("three")} />
+                  <WayCard title="Talk it through" body="Work through the CV with the assistant." onClick={() => void create("talk")} />
+                </div>
               )}
-              <div data-field="name">
-                <Field label="CV name" rule="For you, so you can tell versions apart. Your name and the job you’re aiming for works well." value={name} onChange={setName} error={errors.name} maxLength={120} />
-              </div>
 
-              <fieldset data-field="level" aria-describedby={errors.level ? "level-error" : undefined}>
-                <legend className="cv-label">
-                  Your level<span className="cv-rule">This sets the page count and what comes first. It never changes your words.</span>
-                </legend>
-                <div className="cv-pair" style={{ marginTop: 6 }}>
-                  {CV_LEVELS.map((l) => (
-                    <label key={l} className="cv-choice">
-                      <input type="radio" name="level" value={l} checked={level === l} onChange={() => setLevel(l)} />
-                      <span>
-                        <b style={{ display: "block", fontWeight: 600 }}>{LEVEL_LABELS[l]}</b>
-                        <small>{LEVEL_HELP[l]}</small>
+              {showOther && other && (
+                <div ref={otherRef} className="cv-start-panel">
+                  {other === "paste" && (
+                    <>
+                      <h2 className="cv-start-h2">Paste your CV</h2>
+                      <Field label="Your text" multiline rows={9} value={text} onChange={setText} error={textError} maxLength={60000} />
+                      <span className="cv-row">
+                        <Btn kind="primary" busy={busy} onClick={() => void sendText()}>Open editor</Btn>
                       </span>
-                    </label>
-                  ))}
-                </div>
-                {errors.level && (
-                  <p className="cv-error-text" id="level-error">
-                    {errors.level}
-                  </p>
-                )}
-              </fieldset>
-
-              <fieldset data-field="region" aria-describedby={errors.region ? "region-error" : undefined}>
-                <legend className="cv-label">
-                  Where you’re applying<span className="cv-rule">Sets “CV” or “resume”, the paper size, spelling and how grades are written.</span>
-                </legend>
-                <div className="cv-pair" style={{ marginTop: 6 }}>
-                  <label className="cv-choice">
-                    <input type="radio" name="region" value="uk" checked={region === "uk"} onChange={() => setRegion("uk")} />
-                    <span>
-                      <b style={{ display: "block", fontWeight: 600 }}>UK</b>
-                      <small>A CV on A4, UK spelling.</small>
-                    </span>
-                  </label>
-                  <label className="cv-choice">
-                    <input type="radio" name="region" value="us" checked={region === "us"} onChange={() => setRegion("us")} />
-                    <span>
-                      <b style={{ display: "block", fontWeight: 600 }}>US</b>
-                      <small>A resume on Letter, US spelling.</small>
-                    </span>
-                  </label>
-                </div>
-                {errors.region && (
-                  <p className="cv-error-text" id="region-error">
-                    {errors.region}
-                  </p>
-                )}
-              </fieldset>
-
-              <div>
-                <Btn kind="quiet" aria-expanded={showTarget} aria-controls="target-job" onClick={() => setShowTarget((v) => !v)}>
-                  {showTarget ? "− Hide the target job" : "+ Add a target job (optional)"}
-                </Btn>
-                {showTarget && (
-                  <div id="target-job" className="cv-stack" style={{ marginTop: 10 }}>
-                    <div className="cv-pair">
-                      <Field label="Job title" value={targetTitle} onChange={setTargetTitle} maxLength={160} />
-                      <Field label="Employer" value={targetEmployer} onChange={setTargetEmployer} maxLength={160} />
-                    </div>
-                    <Field label="Job advert" rule="Paste the whole advert. It is kept word for word and used when you tailor this CV." multiline rows={6} value={targetAdvert} onChange={setTargetAdvert} maxLength={20000} />
-                  </div>
-                )}
-              </div>
-            </div>
-          </Panel>
-
-          <Panel title={METHOD_TITLE[method]}>
-            <div className="cv-pad cv-stack">
-              {method === "talk" && (
-                <div className="cv-stack">
-                  <p style={{ margin: 0 }}>The assistant asks one question at a time and writes your CV as you answer, on the page beside you.</p>
-                  <span className="cv-feature-points">
-                    <span>Speak or type your answers</span>
-                    <span>See your CV take shape as you go</span>
-                    <span>Nothing invented. Undo any change.</span>
-                  </span>
-                </div>
-              )}
-              {method === "empty" && <p style={{ margin: 0 }}>Fill it in section by section. Nothing is written for you.</p>}
-              {method === "notes" && <p style={{ margin: 0 }}>Say or type what you did, what changed and a number you stand behind. You choose which of the drafted lines to keep.</p>}
-
-              {method === "linkedin" && (
-                <div className="cv-stack" data-field="linkedin">
-                  <p style={{ margin: 0 }}>Read your profile into sections. You check each one before it is used.</p>
-                  <Field label="LinkedIn profile link or username" rule="For example linkedin.com/in/yourname." value={linkedinUrl} onChange={setLinkedinUrl} error={errors.linkedin} maxLength={300} />
-                  <Field
-                    label="Profile text (optional)"
-                    rule="If your profile is private or needs a sign-in, copy your About, Experience and Education sections and paste them here."
-                    multiline
-                    rows={5}
-                    value={linkedinText}
-                    onChange={setLinkedinText}
-                    maxLength={60000}
-                  />
-                  <p className="cv-small" style={{ margin: 0 }}>
-                    For the most complete import, save your profile as a PDF in LinkedIn (More, then Save to PDF) and use Upload PDF or Word.
-                  </p>
-                </div>
-              )}
-
-              {(method === "upload" || method === "paste") && (
-                <div className="cv-stack" data-field={method === "paste" ? "text" : "file"}>
-                  <input
-                    ref={fileRef}
-                    type="file"
-                    accept={ACCEPT}
-                    className="sr-only"
-                    tabIndex={-1}
-                    aria-label="CV file"
-                    onChange={(e) => {
-                      const f = e.target.files?.[0] ?? null;
-                      // A file with nothing in it is not kept as the chosen file: it is said at once, by name.
-                      if (f && f.size === 0) {
-                        setFile(null);
-                        setErrors((x) => ({ ...x, file: `“${f.name}” is empty: there is nothing in it to read. Choose another file, or paste the text of your CV.` }));
-                        e.target.value = "";
-                        return;
-                      }
-                      setFile(f);
-                      setErrors((x) => ({ ...x, file: "" }));
-                      if (f) {
-                        setMethod("upload");
-                        void submit(undefined, f);
-                      }
-                    }}
-                  />
-                  {method === "upload" ? (
-                    <>
-                      <span className="cv-help" id="upload-help">{UPLOAD_HELP}</span>
-                      {file && (
-                        <p className="cv-row">
-                          <span className="cv-chip">{file.name}</span>
-                          <Btn kind="quiet" onClick={() => fileRef.current?.click()} disabled={busy}>
-                            Choose a different file
-                          </Btn>
-                        </p>
-                      )}
-                      {errors.file && <p className="cv-error-text">{errors.file}</p>}
-                      <Btn kind="quiet" onClick={() => setMethod("paste")} disabled={busy}>
-                        Paste the text instead
-                      </Btn>
                     </>
-                  ) : (
+                  )}
+                  {other === "linkedin" && (
                     <>
-                      <Field label="The text of your CV" rule="Copy everything from your CV and paste it here." multiline rows={9} value={text} onChange={setText} error={errors.text} maxLength={60000} />
-                      <Btn kind="quiet" onClick={() => setMethod("upload")} disabled={busy}>
-                        Upload a file instead
-                      </Btn>
+                      <h2 className="cv-start-h2">Bring your LinkedIn profile</h2>
+                      <p className="cv-muted" style={{ margin: 0 }}>Hakkiri never reads LinkedIn pages itself. Upload the PDF LinkedIn makes, or paste the profile.</p>
+                      <span className="cv-row">
+                        <Btn onClick={() => linkedinRef.current?.click()}>Choose LinkedIn PDF</Btn>
+                      </span>
+                      <input
+                        ref={linkedinRef}
+                        type="file"
+                        accept=".pdf,application/pdf"
+                        className="sr-only"
+                        tabIndex={-1}
+                        aria-label="LinkedIn PDF"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          e.target.value = "";
+                          if (f) void upload(f);
+                        }}
+                      />
+                      <Field label="Your text" multiline rows={7} value={text} onChange={setText} error={textError} maxLength={60000} />
+                      <span className="cv-row">
+                        <Btn kind="primary" busy={busy} onClick={() => void sendText()}>Open editor</Btn>
+                      </span>
+                    </>
+                  )}
+                  {other === "three" && (
+                    <>
+                      <h2 className="cv-start-h2">Tell me what you did</h2>
+                      <ol className="cv-start-three">
+                        <li>What were you responsible for?</li>
+                        <li>What changed because of your work?</li>
+                        <li>Is there a number you can stand behind?</li>
+                      </ol>
+                      <p className="cv-muted" style={{ margin: 0 }}>You answer about one job, then review your words. Only the lines you approve are added.</p>
+                      <span className="cv-row">
+                        <Btn kind="primary" busy={stage === "creating"} onClick={() => void create("three")}>Review your words</Btn>
+                      </span>
                     </>
                   )}
                 </div>
               )}
             </div>
-            <div className="cv-panelfoot">
-              <Btn kind="quiet" onClick={() => setMethod(null)} disabled={busy}>
-                Choose a different way to start
-              </Btn>
-              <small aria-hidden={!busy}>{stage === "creating" ? "Creating your CV…" : stage ? STAGE_WORDS[stage] : ""}</small>
-              {method === "upload" && !file ? (
-                <Btn kind="primary" busy={busy} aria-describedby="upload-help" onClick={() => fileRef.current?.click()}>
-                  {busy ? "Working…" : action}
-                </Btn>
-              ) : (
-                <Btn kind="primary" type="submit" busy={busy}>
-                  {busy ? "Working…" : action}
-                </Btn>
-              )}
-            </div>
-          </Panel>
-        </div>
+          </section>
+          </>
         )}
-        <Announce>{stage === "creating" ? "Creating your CV" : stage ? STAGE_WORDS[stage] : problem}</Announce>
-      </form>
+        <Announce>{reading ? "Reading your CV" : stage === "creating" ? "Creating your CV" : problem ? PROBLEM[problem].title : ""}</Announce>
+      </div>
     </CvScreen>
+  );
+}
+
+function WayCard({ title, body, pressed, onClick }: { title: string; body: string; pressed?: boolean; onClick: () => void }) {
+  return (
+    <button type="button" className="cv-way" aria-pressed={pressed === undefined ? undefined : pressed} onClick={onClick}>
+      <b>{title}</b>
+      <span>{body}</span>
+    </button>
   );
 }

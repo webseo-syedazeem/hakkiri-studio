@@ -3,6 +3,8 @@
 import { type DragEvent, type ReactNode, useEffect, useId, useRef, useState } from "react";
 import { moveById, moveItem } from "@/lib/cv/edit";
 import { Btn } from "./ui";
+import { Dialog } from "./Dialog";
+import { Menu, type MenuItem } from "./Menu";
 
 /**
  * The controls every repeatable item carries: a switch that keeps it in or
@@ -18,7 +20,7 @@ export function Switch({ checked, onChange, label, showWord = true }: { checked:
       <button type="button" role="switch" aria-checked={checked} aria-label={label} title={checked ? "In this version" : "Off in this version"} className="cv-switch" onClick={() => onChange(!checked)}>
         <span aria-hidden="true" />
       </button>
-      {showWord && checked && <span className="cv-switch-word" aria-hidden="true">Included</span>}
+      {showWord && <span className="cv-switch-word" data-off={!checked || undefined} aria-hidden="true">{checked ? "Included" : "Off in this version"}</span>}
     </span>
   );
 }
@@ -137,18 +139,48 @@ export function Grip(props: Record<string, unknown>) {
   );
 }
 
-/** Switch, Move and Remove together, for one item of a list. */
-export function ItemControls({ name, index, count, visible, onVisible, onMove, onRemove, children }: { name: string; index: number; count: number; visible: boolean; onVisible: (on: boolean) => void; onMove: (to: number) => void; onRemove?: () => void; children?: ReactNode }) {
+/**
+ * The controls for one item of a list (design spec v3 §02): a labelled Included / Off in this version
+ * switch beside it, then a ⋯ menu — Move up, Move down, anything particular to the item (Help me word this,
+ * Practise this), Switch off for this version or Include in this version, and Remove. Moves that can't be
+ * made are disabled at the ends. Remove asks first, and Undo brings the item back. Switching off keeps the
+ * words exactly; it only leaves the item out of this version.
+ */
+export function ItemControls({ name, index, count, visible, onVisible, onMove, onRemove, children, extra = [] }: { name: string; index: number; count: number; visible: boolean; onVisible: (on: boolean) => void; onMove: (to: number) => void; onRemove?: () => void; children?: ReactNode; extra?: MenuItem[] }) {
+  const [confirm, setConfirm] = useState(false);
+  const items: MenuItem[] = [
+    { label: "Move up", disabled: index === 0, onSelect: () => onMove(index - 1) },
+    { label: "Move down", disabled: index >= count - 1, onSelect: () => onMove(index + 1) },
+    ...extra.map((x, i) => (i === 0 ? { ...x, divide: true } : x)),
+    { label: visible ? "Switch off for this version" : "Include in this version", divide: true, onSelect: () => onVisible(!visible) },
+    ...(onRemove ? [{ label: "Remove", danger: true, onSelect: () => setConfirm(true) }] : []),
+  ];
   return (
     <span className="cv-controls">
-      {!visible && <OffChip />}
       <Switch checked={visible} onChange={onVisible} label={`Include ${name} in this version`} />
-      <MoveMenu index={index} count={count} name={name} onMove={onMove} />
       {children}
-      {onRemove && (
-        <Btn kind="quiet" onClick={onRemove} aria-label={`Remove ${name}`}>
-          Remove
-        </Btn>
+      <Menu label={`Actions for ${name}`} trigger={<span aria-hidden="true">⋯</span>} items={items} />
+      {confirm && onRemove && (
+        <Dialog
+          title={`Remove ${name}?`}
+          onClose={() => setConfirm(false)}
+          actions={
+            <>
+              <Btn onClick={() => setConfirm(false)}>Keep it</Btn>
+              <Btn
+                kind="danger"
+                onClick={() => {
+                  setConfirm(false);
+                  onRemove();
+                }}
+              >
+                Remove
+              </Btn>
+            </>
+          }
+        >
+          <p style={{ margin: 0 }}>It comes out of this CV. You can bring it back straight away with Undo. To keep it but leave it off this version, use Switch off instead.</p>
+        </Dialog>
       )}
     </span>
   );
