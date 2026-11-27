@@ -16,6 +16,15 @@ function resolveStorageDirectory(): string {
   return path.join(process.cwd(), ".hakkiri-data");
 }
 
+/** Placeholder posts that shipped as seeds and were later withdrawn; removed from storage on load. */
+export const RETIRED_SEED_IDS = [
+  "post-nhs-nursing-band-5-6",
+  "post-executive-star-technique",
+  "post-presentation-anxiety-boardroom",
+  "post-civil-service-success-profiles",
+];
+const isRetired = (p: BlogPost) => RETIRED_SEED_IDS.includes(p.id);
+
 const DATA_FILE = path.join(resolveStorageDirectory(), "blogs.json");
 
 function ensureDir(filePath: string) {
@@ -61,6 +70,8 @@ export async function initializeBlogStoreAsync(): Promise<BlogPost[]> {
       const db = await getMongoDb();
       if (db) {
         const col = db.collection<BlogPost>("blogs");
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await col.deleteMany({ id: { $in: RETIRED_SEED_IDS } } as any);
         const count = await col.countDocuments();
         if (count === 0) {
           // Seed MongoDB with default rich posts
@@ -100,7 +111,9 @@ export async function initializeBlogStoreAsync(): Promise<BlogPost[]> {
   }
 
   // Fallback to local disk storage
-  const local = loadLocalPosts();
+  const loaded = loadLocalPosts();
+  const local = loaded.filter((p) => !isRetired(p));
+  if (local.length !== loaded.length) saveLocalPosts(local);
   if (local.length === 0) {
     saveLocalPosts(SEED_BLOG_POSTS);
     memoryCache = [...SEED_BLOG_POSTS];
