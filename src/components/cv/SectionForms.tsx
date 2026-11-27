@@ -421,7 +421,7 @@ function EntryFields({ kind, entry, onChange, region, hooks, arrange }: { kind: 
     <div className="cv-stack">
       {rows}
       {dates.length > 0 && (
-        <div className="cv-pair">
+        <div className="cv-pair cv-pair-dates">
           {dates.map((f) => (
             <DateField key={f.field} label={fieldLabel(kind, f, region)} yearOnly={f.date === "year"} value={entry[f.field]} disabled={f.field === "end" && entry.current} onChange={(v) => set(f.field, v)} {...hook(hooks, entry.id, f.field)} />
           ))}

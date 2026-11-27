@@ -612,31 +612,32 @@ html:not(.dark):not([data-theme="dark"]) .cv .cv-panelfoot,
 .cv-stack > * + * { margin-top: 16px; }
 .cv-pair {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
-  align-items: stretch;
+  align-items: start;
 }
 .cv-field-header {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-  min-height: 22px;
+  flex-direction: column;
+  gap: 2px;
   margin-bottom: 6px;
 }
 .cv-field-header .cv-rule {
   margin-top: 0;
   margin-bottom: 0;
-  text-align: right;
-  white-space: nowrap;
+  text-align: left;
+  white-space: normal;
+  line-height: 1.38;
+  overflow-wrap: anywhere;
 }
 .cv-pair > div {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 .cv-pair > div > .cv-field-header {
-  min-height: 22px;
   margin-bottom: 6px;
+  flex: 1 0 auto;
 }
 .cv-pair > div > .cv-input,
 .cv-pair > div > .cv-select-wrap {
@@ -3061,6 +3062,9 @@ html:not(.dark):not([data-theme="dark"]) .cv .cv-bar.cv-bar-plain {
 .cv .cv-viewbar .cv-seg > button { flex: 1; }
 
 /* v2: editor columns: fields 320, the page widest, score and job keywords 272. */
+.cv .cv-workbench > .cv-tab-content .cv-pair:not(.cv-pair-dates) {
+  grid-template-columns: minmax(0, 1fr);
+}
 @media (min-width: 1200px) {
   .cv .cv-workbench { grid-template-columns: minmax(320px, 0.8fr) minmax(0, 1.2fr); gap: 16px; }
 }

@@ -82,7 +82,7 @@ export function ScorePanel({ score, word, base, onShow }: { score: Score | null;
             <p>{next.reason}</p>
             <p className="cv-muted">{next.action}</p>
             {next.at.section === "finish" ? (
-              <Link className="cv-btn" href={`${base}/finish`}>
+              <Link className="cv-btn" href={`${base}/edit/finish`}>
                 Go to Finish
               </Link>
             ) : (
