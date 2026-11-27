@@ -750,4 +750,150 @@ What we are looking for
       ],
     },
   },
+  {
+    id: "retail-assistant",
+    industry: "retail",
+    role: { uk: "Retail Assistant", us: "Sales Associate" },
+    level: "student",
+    template: "standard",
+    blurb: {
+      uk: "A first-year student with two years of weekend work at a cinema, applying for weekend and holiday shop work.",
+      us: "A first-year student with two years of weekend work at a movie theater, applying for weekend and holiday store work.",
+    },
+    person: { name: "Ellie Turner", email: "ellie.turner@example.com", phone: { uk: "07700 900606", us: "(512) 555-0122" }, location: { uk: "Brighton", us: "Austin, TX" } },
+    profile: {
+      uk: "First-year psychology student with two years of weekend work at a busy cinema, serving around 250 customers a shift at the kiosk and box office. Raised snack combo sales from 20% to 34% of orders and balances the till at the end of each shift. Volunteered for a year in a hospice charity shop, pricing donations and dressing the window. Looking for weekend and holiday work in retail.",
+      us: "First-year psychology student with two years of weekend work at a busy movie theater, serving around 250 customers a shift at the concession stand and box office. Raised snack combo sales from 20% to 34% of orders and balances the register at the end of each shift. Volunteered for a year at a hospice thrift store, pricing donations and dressing the window. Looking for weekend and holiday work in retail.",
+    },
+    education: [
+      {
+        title: { uk: "BA (Hons) Psychology", us: "Bachelor of Arts in Psychology" },
+        org: { uk: "University of Sussex", us: "University of Texas at Austin" },
+        start: "2026-09",
+        current: true,
+      },
+      {
+        title: { uk: "A levels in Psychology, Sociology and Art", us: "High School Diploma" },
+        org: { uk: "Downsview Sixth Form College", us: "Bluebonnet High School" },
+        end: "2026-06",
+        grade: { uk: "A, B, B", us: "GPA 3.5" },
+      },
+    ],
+    experience: [
+      {
+        title: { uk: "Customer Assistant (part-time)", us: "Concessions Associate (part-time)" },
+        org: { uk: "Lantern Cinema", us: "Lantern Cinemas" },
+        location: { uk: "Brighton", us: "Austin, TX" },
+        start: "2024-07",
+        current: true,
+        bullets: [
+          {
+            uk: "Serve around 250 customers a shift at the kiosk and box office on Friday and Saturday evenings",
+            us: "Serve around 250 customers a shift at the concession stand and box office on Friday and Saturday nights",
+          },
+          "Raised snack combo sales from 20% to 34% of orders in 6 months by upselling at every order",
+          {
+            uk: "Balance the till at the end of each shift, handling around £3,000 in cash and card payments a night",
+            us: "Balance the register at the end of each shift, handling around $3,500 in cash and card payments a night",
+          },
+          {
+            uk: "Restock the kiosk and clean all 6 screens between showings, keeping turnarounds within 15 minutes",
+            us: "Restock the concession stand and clean all 6 theaters between showings, keeping turnarounds within 15 minutes",
+          },
+          {
+            uk: "Trained 4 new staff on the till and ticket scanners, each working alone within 2 shifts",
+            us: "Trained 4 new staff on the register and ticket scanners, each working alone within 2 shifts",
+          },
+        ],
+      },
+    ],
+    volunteering: [
+      {
+        title: { uk: "Charity Shop Volunteer", us: "Thrift Store Volunteer" },
+        org: { uk: "Seagrove Hospice Shop", us: "Seagrove Hospice Thrift Store" },
+        location: { uk: "Brighton", us: "Austin, TX" },
+        start: "2023-09",
+        end: "2024-06",
+        bullets: [
+          "Sorted and priced around 300 donated items every Saturday, from clothes to books and toys",
+          {
+            uk: "Planned and dressed 10 window displays in a year, and the Christmas window lifted December sales by 12% on the year before",
+            us: "Planned and dressed 10 window displays in a year, and the holiday window lifted December sales by 12% on the year before",
+          },
+          {
+            uk: "Arranged the clothing rails by size and colour, which lifted clothing sales by 15% in 3 months",
+            us: "Arranged the clothing racks by size and color, which lifted clothing sales by 15% in 3 months",
+          },
+        ],
+      },
+    ],
+    skills: [
+      "Serving customers",
+      "Cash handling",
+      { uk: "Till balancing", us: "Register balancing" },
+      "Upselling",
+      "Restocking",
+      "Training new staff",
+      "Pricing",
+      "Window displays",
+    ],
+    names: ["Turner", "Lantern", "Seagrove", "Downsview", "Bluebonnet", "Wilder", "Wren"],
+    letter: {
+      job: {
+        title: { uk: "Retail Assistant", us: "Sales Associate" },
+        employer: "Wilder & Wren",
+        advert: {
+          uk: `Retail Assistant (weekends and holidays)
+Wilder & Wren, Brighton
+
+Wilder & Wren is an independent gift and homeware shop in the Lanes, open 7 days a week.
+
+The role
+Saturday and Sunday shifts all year, with extra hours over Christmas and the summer. You will serve customers, take payments, restock shelves and help with window displays. Pay £12.60 an hour.
+
+What we are looking for
+- Experience serving customers in a shop, restaurant or cinema
+- Confident handling cash and card payments
+- Free to work weekends and during holidays
+- An eye for displays`,
+          us: `Sales Associate (weekends and holidays)
+Wilder & Wren, Austin, TX
+
+Wilder & Wren is an independent gift and home store on South Congress, open 7 days a week.
+
+The role
+Saturday and Sunday shifts all year, with extra hours over the holidays and summer. You will serve customers, ring up sales, restock shelves and help with window displays. Pay $15 an hour.
+
+What we are looking for
+- Experience serving customers in a store, restaurant or movie theater
+- Comfortable handling cash and card payments
+- Available to work weekends and during holidays
+- An eye for displays`,
+        },
+      },
+      reason: "I want weekend and holiday work during my degree, and I enjoy choosing gifts for people.",
+      paragraphs: [
+        {
+          uk: "I am applying for the role of Retail Assistant at Wilder & Wren. I want weekend and holiday work during my degree, and I enjoy choosing gifts for people.",
+          us: "I am applying for the role of Sales Associate at Wilder & Wren. I want weekend and holiday work during my degree, and I enjoy choosing gifts for people.",
+        },
+        {
+          uk: "Your advert asks for experience serving customers in a shop, restaurant or cinema. At Lantern Cinema I serve around 250 customers a shift at the kiosk and box office on Friday and Saturday evenings. I raised snack combo sales from 20% to 34% of orders in 6 months by upselling at every order. Between showings I restock the kiosk and clean all 6 screens, keeping turnarounds within 15 minutes.",
+          us: "Your advert asks for experience serving customers in a store, restaurant or movie theater. At Lantern Cinemas I serve around 250 customers a shift at the concession stand and box office on Friday and Saturday nights. I raised snack combo sales from 20% to 34% of orders in 6 months by upselling at every order. Between showings I restock the concession stand and clean all 6 theaters, keeping turnarounds within 15 minutes.",
+        },
+        {
+          uk: "You also ask for someone confident handling cash and card payments. I balance the till at the end of each shift, handling around £3,000 in cash and card payments a night. I also trained 4 new staff on the till and ticket scanners, each working alone within 2 shifts.",
+          us: "You also ask for someone comfortable handling cash and card payments. I balance the register at the end of each shift, handling around $3,500 in cash and card payments a night. I also trained 4 new staff on the register and ticket scanners, each working alone within 2 shifts.",
+        },
+        {
+          uk: "Your advert also mentions an eye for displays. As a volunteer at Seagrove Hospice Shop, I planned and dressed 10 window displays in a year, and the Christmas window lifted December sales by 12% on the year before. I also arranged the clothing rails by size and colour, which lifted clothing sales by 15% in 3 months.",
+          us: "Your advert also mentions an eye for displays. As a volunteer at Seagrove Hospice Thrift Store, I planned and dressed 10 window displays in a year, and the holiday window lifted December sales by 12% on the year before. I also arranged the clothing racks by size and color, which lifted clothing sales by 15% in 3 months.",
+        },
+        {
+          uk: "I am available to work weekends and during the holidays. My CV is attached, and I would welcome the chance to discuss the role. Thank you for your time and consideration.",
+          us: "I am available to work weekends and during the holidays. My resume is attached, and I would welcome the chance to discuss the role. Thank you for your time and consideration.",
+        },
+      ],
+    },
+  },
 ];
