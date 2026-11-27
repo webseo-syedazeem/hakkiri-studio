@@ -532,7 +532,7 @@ export function PracticeHubClient({
               <div className="mt-1 flex items-baseline gap-2">
                 <span
                   className="text-2xl font-bold text-ink tracking-tight"
-                  style={current.stats.averageScore != null ? { color: "var(--ring)" } : undefined}
+                  style={current.stats.averageScore != null ? { color: "var(--ring-text)" } : undefined}
                 >
                   {current.stats.averageScore != null ? `${current.stats.averageScore.toFixed(1)} / 5.0` : "Not scored yet"}
                 </span>

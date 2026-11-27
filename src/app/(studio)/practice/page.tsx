@@ -63,7 +63,12 @@ export default async function PracticeHubPage({ searchParams }: { searchParams: 
       presentation={own ? { id: own.id, title: own.title } : null}
       claim={claim}
       question={question}
-      returnTo={returnTo}
+      returnTo={safeReturn(returnTo)}
     />
   );
+}
+
+/** Only a page of this site: a path that starts with one "/" (not "//" or "/\\", which leave it). */
+function safeReturn(to: string | undefined): string | undefined {
+  return typeof to === "string" && /^\/(?![\/\\])/.test(to) && to.length <= 500 ? to : undefined;
 }

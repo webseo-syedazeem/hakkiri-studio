@@ -44,6 +44,13 @@ describe("reading figures", () => {
     expect(keys("12 months")).toEqual(["12"]);
   });
 
+  it("reads a degree class, a time or a ratio as one value: the 2 of a 2:1 is not two of anything", () => {
+    expect(keys("BA (Hons) History · 2018 – 2021 · 2:1")).toEqual(["2018", "2021", "2:1"]);
+    expect(keys("opens at 9:30")).toEqual(["9:30"]);
+    expect(checkGrounded("I manage two junior executives.", ["Manage three junior executives", "BA (Hons) Marketing · 2013 – 2016 · 2:1"]).ok).toBe(false);
+    expect(checkGrounded("I graduated with a 2:1.", ["BA (Hons) Marketing · 2013 – 2016 · 2:1"]).problems.filter((p) => p.kind === "added-figure")).toEqual([]);
+  });
+
   it("notes when a figure is an estimate, a minimum or a maximum", () => {
     expect(figures("roughly 40 volunteers")[0]).toMatchObject({ key: "40", hedge: "about", phrase: "roughly 40" });
     expect(figures("about six months")[0]).toMatchObject({ key: "6", hedge: "about" });

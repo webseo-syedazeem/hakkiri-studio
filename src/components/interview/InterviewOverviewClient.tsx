@@ -628,7 +628,7 @@ export function InterviewOverviewClient({
                         <div className="flex items-center justify-between text-xs">
                           <span className="font-medium text-ink">{cat.name}</span>
                           <div className="flex items-center gap-2">
-                            <span className="font-semibold num" style={{ color: "var(--ring)" }}>{cat.score.toFixed(1)}/5</span>
+                            <span className="font-semibold num" style={{ color: "var(--ring-text)" }}>{cat.score.toFixed(1)}/5</span>
                             {cat.delta != null && cat.delta !== 0 && (
                               <span className={clsx("text-[11px] font-bold num", cat.delta > 0 ? "text-emerald-600 dark:text-emerald-300" : "text-rose-600 dark:text-rose-300")}>
                                 <span aria-hidden>{cat.delta > 0 ? "▲" : "▼"}</span>

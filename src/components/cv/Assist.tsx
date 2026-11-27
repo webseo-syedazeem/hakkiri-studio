@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { bulletAt, changeBullet } from "@/lib/cv/edit";
 import type { Bullet, Excerpt } from "@/lib/cv/schema";
@@ -35,6 +36,8 @@ interface Draft {
 }
 
 export function BulletHelp({ say, onEdit }: { say: (text: string) => void; onEdit: () => void }) {
+  // "Return to CV" from the Practice Hub comes back to this tab of the builder.
+  const here = usePathname();
   const w = useWorkspace();
   const { update, setInspect, inspect } = w;
   const cv = w.cv!;
@@ -326,7 +329,7 @@ export function BulletHelp({ say, onEdit }: { say: (text: string) => void; onEdi
           <div className="cv-row">
             <Link
               className="cv-btn cv-btn-primary"
-              href={`/practice?claim=${encodeURIComponent(text)}&question=${encodeURIComponent(question)}&returnTo=${encodeURIComponent(`/cv/${cv.id}?inspect=${encodeURIComponent(JSON.stringify(inspect))}`)}`}
+              href={`/practice?claim=${encodeURIComponent(text)}&question=${encodeURIComponent(question)}&returnTo=${encodeURIComponent(here || `/cv/v/${cv.id}`)}`}
             >
               Open the Practice Hub
             </Link>

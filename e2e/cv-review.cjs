@@ -136,13 +136,13 @@ run("CV review fixes", async (browser) => {
   await v.locator('button[type="submit"]').click();
   await v.waitForURL(/\/cv\/import\/imp_[a-f0-9]+/, { timeout: 45000 });
   check(true, "after signing up they are taken on to the CV made from the text they checked");
-  await v.getByRole("link", { name: "Start checking" }).waitFor({ timeout: 30000 });
+  await v.getByRole("link", { name: /^Review (all sections|section by section)$/ }).waitFor({ timeout: 30000 });
   const body = await v.locator("main").innerText();
   check(/Pasted text/.test(body), "it came through the same reader as pasted text", body.slice(0, 200));
   await noForbidden(v, "from a free check");
 
   // The check of what was read, step by step, as for any upload.
-  await v.getByRole("link", { name: "Start checking" }).click();
+  await v.getByRole("link", { name: /^Review (all sections|section by section)$/ }).click();
   await v.waitForURL(/review\/contact/);
   check((await v.getByLabel("Name", { exact: true }).inputValue()) === "Ada Example" && (await v.getByLabel("Email").inputValue()) === "ada.example@example.com", "their name and email were read from the text they checked: nothing is typed again");
   for (let step = 0; step < 12; step++) {

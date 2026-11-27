@@ -1816,10 +1816,10 @@ html:not(.dark):not([data-theme="dark"]) .cv .cv-bullet-card,
   box-shadow: 0 2px 8px -2px rgba(74, 90, 240, 0.35);
 }
 .cv-skillchip[aria-pressed="false"] {
+  /* Left out: struck through and dashed, in muted text at full strength so it stays readable (4.5:1). */
   color: var(--color-muted);
   text-decoration: line-through;
   border-style: dashed;
-  opacity: 0.75;
 }
 
 /* ----------------------------------------------------------- The Paper Pane */
@@ -2028,8 +2028,8 @@ html:not(.dark):not([data-theme="dark"]) .cv .cv-scorebig,
 }
 .cv-scorebig[data-band], [data-band] > .cv-scorebig {
   background: none !important;
-  -webkit-text-fill-color: var(--ring) !important;
-  color: var(--ring) !important;
+  -webkit-text-fill-color: var(--ring-text) !important;
+  color: var(--ring-text) !important;
 }
 .cv-scorebig small {
   font-size: 16px;
@@ -2054,7 +2054,7 @@ html:not(.dark):not([data-theme="dark"]) .cv .cv-scorebig,
   display: block;
   height: 100%;
   border-radius: 999px;
-  background: var(--ring, linear-gradient(90deg, #4f52f8 0%, #7b88ff 60%, #aeb6ff 100%));
+  background: var(--ring, var(--color-blue));
   box-shadow: none;
   transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.25s ease;
 }
@@ -2907,12 +2907,14 @@ p.cv-talk-callout { display: flex; align-items: flex-start; gap: 7px; }
 
 /* ------------------------------------------------ The score ring */
 /* Each label has its own colour: red, orange, lime, green. Strong enough on the panel to be seen; the label is always written too. */
-.cv { --band-poor: #f87171; --band-average: #fb923c; --band-good: #a3e635; --band-strong: #4ade80; }
-html:not(.dark):not([data-theme="dark"]) .cv, .mk .cv, .cv.mk, [data-theme="light"] .cv, .cv[data-theme="light"] { --band-poor: #b91c1c; --band-average: #c2410c; --band-good: #4d7c0f; --band-strong: #15803d; }
-[data-band="poor"] { --ring: var(--band-poor); }
-[data-band="average"] { --ring: var(--band-average); }
-[data-band="good"] { --ring: var(--band-good); }
-[data-band="strong"] { --ring: var(--band-strong); }
+.cv { --band-poor: #f87171; --band-average: #fb923c; --band-good: #a3e635; --band-strong: #4ade80; --band-poor-text: initial; --band-average-text: initial; --band-good-text: initial; --band-strong-text: initial; }
+html:not(.dark):not([data-theme="dark"]) .cv, .mk .cv, .cv.mk, [data-theme="light"] .cv, .cv[data-theme="light"] { --band-poor: #b91c1c; --band-average: #c2410c; --band-good: #4d7c0f; --band-strong: #15803d;
+  /* Small text in a band colour uses a darker shade of it: 4.5:1 on tinted chips and behind a dialog's scrim. The ring and bars keep the spec colours. */
+  --band-poor-text: #991b1b; --band-average-text: #9a3412; --band-good-text: #3f6212; --band-strong-text: #166534; }
+[data-band="poor"] { --ring: var(--band-poor); --ring-text: var(--band-poor-text, var(--band-poor)); }
+[data-band="average"] { --ring: var(--band-average); --ring-text: var(--band-average-text, var(--band-average)); }
+[data-band="good"] { --ring: var(--band-good); --ring-text: var(--band-good-text, var(--band-good)); }
+[data-band="strong"] { --ring: var(--band-strong); --ring-text: var(--band-strong-text, var(--band-strong)); }
 .cv-scorering { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-bottom: 14px; }
 .cv-ring { position: relative; flex: none; }
 .cv-ring svg { display: block; }
@@ -2922,11 +2924,11 @@ html:not(.dark):not([data-theme="dark"]) .cv, .mk .cv, .cv.mk, [data-theme="ligh
 .cv-ring-number b { font-size: 38px; font-weight: 700; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
 .cv-ring-number small { font-size: 13px; color: var(--color-muted); margin-top: 4px; }
 .cv-ring-words { display: grid; gap: 5px; min-width: 0; flex: 1 1 150px; }
-.cv-ring-band { font-size: 18px; font-weight: 650; color: var(--ring); }
+.cv-ring-band { font-size: 18px; font-weight: 650; color: var(--ring-text); }
 .cv-ring-band::before { content: ""; display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--ring); margin-right: 8px; vertical-align: 2px; }
 .cv-ring-key { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 11.5px; color: var(--color-muted); margin-top: 2px; }
 .cv-ring-key > span::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--ring); margin-right: 5px; vertical-align: 1px; }
-.cv-ring-inline { color: var(--ring); font-weight: 600; }
+.cv-ring-inline { color: var(--ring-text); font-weight: 600; }
 .cv-ring-inline::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--ring); margin-right: 6px; vertical-align: 1px; }
 @keyframes cv-ring-in { from { stroke-dasharray: 0 var(--ring-length); } }
 @media (prefers-reduced-motion: reduce) { .cv-ring-arc { animation: none; } }
@@ -3117,7 +3119,7 @@ html:not(.dark):not([data-theme="dark"]) .cv, .mk .cv, .cv.mk, [data-theme="ligh
 /* 4-band score chips. No entrance animation and a still ring: the spec asks for no decorative motion. */
 .cv .cv-ring-arc { animation: none; }
 .cv-chip-score[data-band] {
-  color: var(--ring);
+  color: var(--ring-text);
   border-color: color-mix(in srgb, var(--ring) 35%, var(--cv-edge));
   background: color-mix(in srgb, var(--ring) 12%, var(--color-panel));
 }

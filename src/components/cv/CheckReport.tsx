@@ -35,7 +35,7 @@ function ScoreBox({ title, shown, band, parts, testId }: { title: string; shown:
               <li key={p.id} data-band={partBand}>
                 <span className="cv-row" style={{ justifyContent: "space-between", gap: 8 }}>
                   <span>{p.name}</span>
-                  <b style={partBand ? { color: "var(--ring)" } : undefined}>{unchecked ? "Not checked" : `${Math.round(p.earned)}/${p.points}`}</b>
+                  <b style={partBand ? { color: "var(--ring-text)" } : undefined}>{unchecked ? "Not checked" : `${Math.round(p.earned)}/${p.points}`}</b>
                 </span>
                 <span className="cv-meter" data-band={partBand} aria-hidden="true">
                   <span style={{ width: `${pct}%` }} />
@@ -207,9 +207,9 @@ function JobMatch({ job, id }: { job: JobReport; id: string }) {
               {job.shown} of {job.total} requirements shown{job.partly ? ` · ${job.partly} partly shown` : ""}
             </p>
           </div>
-          <div className="cv-matchbox" data-band={job.score != null ? bandOf(job.score).key : undefined} role="img" aria-label={job.score === null ? "Match score: not measured" : `Match score: ${job.score} out of 100`}>
+          <div className="cv-matchbox" role="img" aria-label={job.score === null ? "Match score: not measured" : `Match score: ${job.score} out of 100`}>
             <span className="cv-small cv-muted">Match score</span>
-            <b style={job.score != null ? { color: "var(--ring)" } : undefined}>
+            <b>
               {job.score ?? "–"}
               <small> / 100</small>
             </b>

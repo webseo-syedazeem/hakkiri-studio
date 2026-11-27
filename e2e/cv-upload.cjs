@@ -25,7 +25,7 @@ run("CV upload", async (browser) => {
   check((await cvOf(page, cvId)).contact.fullName === "", "nothing has been added to the CV yet");
   await bothThemes(page, "import-home");
 
-  await page.getByRole("link", { name: "Start checking" }).click();
+  await page.getByRole("link", { name: /^Review (all sections|section by section)$/ }).click();
   await page.waitForURL(/review\/contact/);
   check((await page.getByLabel("Name").inputValue()) === "Daniel Okoye", "contact: the name was read from the file");
   check((await page.getByLabel("Email").inputValue()) === "daniel.okoye@example.com" && (await page.getByLabel("Phone").inputValue()) === "+44 7700 900812" && (await page.getByLabel("Town or city").inputValue()) === "Bristol", "contact: email, phone and town were read from the side column");
@@ -109,7 +109,7 @@ run("CV upload", async (browser) => {
   await page.getByText("Sections to confirm").waitFor();
   const stepNames = await page.locator("ol .cv-pick a").allInnerTexts();
   check(stepNames.join(" | ") === "1. Contact | 2. Profile | 3. Education | 4. Experience | 5. Positions of Responsibility | 6. Skills | 7. Interests | 8. Unassigned text", "a Word file with heading styles reads into its sections, in the file's own order", stepNames.join(" | "));
-  await page.getByRole("link", { name: "Start checking" }).click();
+  await page.getByRole("link", { name: /^Review (all sections|section by section)$/ }).click();
   await page.waitForURL(/review\/contact/);
   check((await page.getByLabel("Name").inputValue()) === "Tom Reilly", "the name in the Word page header was read");
   check((await page.getByLabel("Town or city").inputValue()) === "Nottingham", "a full address was cut to the town");

@@ -42,6 +42,8 @@ export interface Figure {
 
 const DIGITS = /(?<![A-Za-z])([£$€])?\s?(\d[\d,]*(?:\.\d+)?)(\s?(?:%|percent\b|per cent\b|pc\b)|\s?(?:million|billion|thousand|hundred|bn|mn|m|k)\b(?!\s?(?:²|2\b)))?(\+)?/gi;
 const PERCENT = /^(?:%|percent|per cent|pc)$/i;
+/** Two numbers joined by a colon: a degree class (2:1), a time (9:30), a ratio (3:1). */
+const PAIRED = /(?<![\d:.,])\d{1,2}:\d{1,2}(?![\d:])/g;
 
 function hedgeBefore(text: string, index: number): { hedge: Hedge; from: number } {
   const before = text.slice(Math.max(0, index - 24), index);
@@ -56,7 +58,13 @@ function hedgeBefore(text: string, index: number): { hedge: Hedge; from: number 
 export function figures(text: string): Figure[] {
   const out: Figure[] = [];
   const taken: [number, number][] = [];
+  // "2:1" (a degree), "9:30", "3:1" is one value, read whole: the "2" of a 2:1 degree is not two of anything.
+  for (const m of text.matchAll(PAIRED)) {
+    out.push({ text: m[0], key: m[0], hedge: "", phrase: m[0], index: m.index });
+    taken.push([m.index, m.index + m[0].length]);
+  }
   for (const m of text.matchAll(DIGITS)) {
+    if (taken.some(([a, b]) => m.index + (m[0].length - m[0].trimStart().length) >= a && m.index + (m[0].length - m[0].trimStart().length) < b)) continue;
     const [whole, currency = "", digits, unit = "", plus = ""] = m;
     const index = m.index + (whole.length - whole.trimStart().length);
     // A year or a date is a fact too: it is kept as a plain number.

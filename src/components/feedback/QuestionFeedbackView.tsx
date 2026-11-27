@@ -262,7 +262,7 @@ export function QuestionFeedbackView({
             {overallScore != null ? (
               <>
                 <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: "var(--ring)" }} aria-hidden />
-                <span className="num text-base font-bold" style={{ color: "var(--ring)" }}>{overallScore.toFixed(1)}</span>
+                <span className="num text-base font-bold" style={{ color: "var(--ring-text)" }}>{overallScore.toFixed(1)}</span>
                 <span className="text-xs text-muted font-medium"> / 5</span>
               </>
             ) : (
@@ -379,7 +379,7 @@ export function QuestionFeedbackView({
                 return (
                   <div key={label} className="rounded-xl bg-panel-2 dark:bg-[#141624] border border-line dark:border-white/[0.06] px-3.5 py-3" data-band={partBand}>
                     <dt className="text-[11px] text-muted font-medium">{label}</dt>
-                    <dd className="num text-base font-bold text-ink mt-0.5" style={partBand ? { color: "var(--ring)" } : undefined}>{value}</dd>
+                    <dd className="num text-base font-bold text-ink mt-0.5" style={partBand ? { color: "var(--ring-text)" } : undefined}>{value}</dd>
                     {numericScore != null && (
                       <div className="mt-2 h-1.5 w-full rounded-full bg-panel border border-line/60 dark:bg-white/[0.08] overflow-hidden" aria-hidden>
                         <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(100, (numericScore / 5) * 100)}%`, backgroundColor: "var(--ring)" }} />

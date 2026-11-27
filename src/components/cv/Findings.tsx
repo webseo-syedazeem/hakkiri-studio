@@ -164,7 +164,7 @@ export function Findings() {
                           <li key={g.id} data-group={g.id} data-band={gBand} style={{ padding: "8px 0" }}>
                             <div className="cv-row" style={{ gap: 8 }}>
                               <span className="grow">{g.name}</span>
-                              <b style={{ color: "var(--ring)" }}>
+                              <b style={{ color: "var(--ring-text)" }}>
                                 {pts(g.earned)} / {g.points}
                               </b>
                             </div>

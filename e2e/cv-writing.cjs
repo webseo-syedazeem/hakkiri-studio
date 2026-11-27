@@ -190,7 +190,8 @@ run("CV writing help", async (browser) => {
   await page.waitForFunction(() => /\?/.test(document.querySelector('[data-testid="practice-question"]')?.textContent ?? ""), null, { timeout: 10000 });
   const question = await dialog.getByTestId("practice-question").innerText();
   check(question === "How did you arrive at roughly 40, and what did you do to get there?", "“Practise this claim” gives a question an interviewer may ask about that line", question);
-  check((await dialog.getByRole("link", { name: "Open the Practice Hub" }).getAttribute("href")) === "/practice", "with a way into practice");
+  const practice = new URL(await dialog.getByRole("link", { name: "Open the Practice Hub" }).getAttribute("href"), BASE);
+  check(practice.pathname === "/practice" && practice.searchParams.get("question") === question && /^\/cv\/v\/[^/]+\/edit\//.test(practice.searchParams.get("returnTo") ?? ""), "with a way into practice that carries the question, and comes back to this tab of the builder", practice.search);
   await a11y(page, "practise dialog");
   await dialog.getByRole("button", { name: "Close" }).click();
 

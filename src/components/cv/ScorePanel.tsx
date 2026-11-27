@@ -67,7 +67,7 @@ export function ScorePanel({ score, word, base, onShow }: { score: Score | null;
               <li key={g.id} data-band={partBand}>
                 <span className="cv-row" style={{ justifyContent: "space-between", gap: 8 }}>
                   <span>{g.name}</span>
-                  <b style={partBand ? { color: "var(--ring)" } : undefined}>{unchecked ? "Not checked" : `${Math.round(g.earned)}/${g.points}`}</b>
+                  <b style={partBand ? { color: "var(--ring-text)" } : undefined}>{unchecked ? "Not checked" : `${Math.round(g.earned)}/${g.points}`}</b>
                 </span>
                 <span className="cv-meter" data-band={partBand} aria-hidden="true">
                   <span style={{ width: `${pct}%` }} />

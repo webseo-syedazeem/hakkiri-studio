@@ -228,6 +228,11 @@
     --band-average: #c2410c;
     --band-good: #4d7c0f;
     --band-strong: #15803d;
+    /* Small text in a band colour: a darker shade, so it keeps 4.5:1 on tinted chips and behind a dialog's scrim. */
+    --band-poor-text: #991b1b;
+    --band-average-text: #9a3412;
+    --band-good-text: #3f6212;
+    --band-strong-text: #166534;
     color-scheme: light;
     background-color: #eceef4;
     background-image: none;
@@ -267,10 +272,10 @@
 }
 
 @layer utilities {
-  [data-band="poor"] { --ring: var(--band-poor); }
-  [data-band="average"] { --ring: var(--band-average); }
-  [data-band="good"] { --ring: var(--band-good); }
-  [data-band="strong"] { --ring: var(--band-strong); }
+  [data-band="poor"] { --ring: var(--band-poor); --ring-text: var(--band-poor-text, var(--band-poor)); }
+  [data-band="average"] { --ring: var(--band-average); --ring-text: var(--band-average-text, var(--band-average)); }
+  [data-band="good"] { --ring: var(--band-good); --ring-text: var(--band-good-text, var(--band-good)); }
+  [data-band="strong"] { --ring: var(--band-strong); --ring-text: var(--band-strong-text, var(--band-strong)); }
   .num { font-variant-numeric: tabular-nums; }
   .um { color: var(--color-red); text-decoration: line-through; text-decoration-thickness: 1.5px; }
   .late { color: var(--color-ink); background: rgb(255 92 97 / 0.16); box-shadow: inset 0 -2px 0 var(--color-red); }

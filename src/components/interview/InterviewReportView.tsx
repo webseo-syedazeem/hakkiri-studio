@@ -291,7 +291,7 @@ export function InterviewReportView(p: InterviewReportViewProps) {
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
               <span
                 className="num text-2xl font-bold text-ink tracking-tight leading-none"
-                style={report.score != null ? { color: "var(--ring)" } : undefined}
+                style={report.score != null ? { color: "var(--ring-text)" } : undefined}
                 data-testid="report-score"
               >
                 {report.score != null ? report.score.toFixed(1) : "–"}
@@ -345,7 +345,7 @@ export function InterviewReportView(p: InterviewReportViewProps) {
                         <Icon name={CATEGORY_ICON[cat.key]} size={14} className="text-muted" />
                         <span>{cat.label}</span>
                       </div>
-                      <span className="num font-semibold" style={{ color: "var(--ring)" }}>{cat.score.toFixed(1)} / 5</span>
+                      <span className="num font-semibold" style={{ color: "var(--ring-text)" }}>{cat.score.toFixed(1)} / 5</span>
                     </div>
                     <div className="h-2 w-full rounded-full bg-panel-2 border border-line/60 dark:bg-white/[0.08] overflow-hidden" aria-hidden>
                       <div
@@ -580,7 +580,7 @@ export function InterviewReportView(p: InterviewReportViewProps) {
                           <td
                             className="py-4 px-3 num font-bold text-ink whitespace-nowrap"
                             data-band={scoreBandKey(r.overall)}
-                            style={r.overall != null ? { color: "var(--ring)" } : undefined}
+                            style={r.overall != null ? { color: "var(--ring-text)" } : undefined}
                           >
                             {r.overall != null ? `${r.overall.toFixed(1)} / 5` : <span className="font-medium text-muted">Not scored</span>}
                           </td>

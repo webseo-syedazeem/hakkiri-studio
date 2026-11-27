@@ -375,7 +375,7 @@ function Row({ cv, indent, copies = 0, onAction }: { cv: CvSummary; indent?: boo
               </span>
             )}
             {cv.fit !== undefined && (
-              <span className="cv-chip cv-chip-score" data-band={bandOf(cv.fit).key} data-testid="row-fit">
+              <span className="cv-chip cv-chip-score" data-testid="row-fit">
                 Job fit {cv.fit}
               </span>
             )}

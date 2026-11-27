@@ -231,6 +231,17 @@ describe("noting what a sentence rests on", () => {
     expect(acceptSources(d.letter!, id, d, NOW)).toBeNull();
   });
 
+  it("“It still holds” is refused when the number changed, even if the same number is elsewhere on the CV (a 2:1 degree)", () => {
+    const d = drafted();
+    experience(d).entries[1].bullets[1].text = "Trained two new starters on the café till & the catalogue.";
+    const letter = { ...d.letter!, paragraphs: d.letter!.paragraphs.map((p) => ({ ...p, sentences: p.sentences.map((s) => (s.text.includes("six new starters") ? { ...s, text: s.text.replace("six new starters", "two new starters") } : s)) })) };
+    const id = letter.paragraphs.flatMap((p) => p.sentences).find((s) => s.text.includes("two new starters"))!.id;
+    // The degree on this CV is a 2:1: its "2" must not back "two new starters" once the line says three.
+    expect(JSON.stringify(d.sections)).toContain("2:1");
+    experience(d).entries[1].bullets[1].text = "Trained three new starters on the café till & the catalogue.";
+    expect(acceptSources(letter, id, d, NOW)).toBeNull();
+  });
+
   it("knows whether a noted source still reads the same", () => {
     const d = drafted();
     const at = lineAt(d, 1, 1);

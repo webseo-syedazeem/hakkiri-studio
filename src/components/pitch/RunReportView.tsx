@@ -225,7 +225,7 @@ export function RunReportView({ presentation, run, whenFormatted }: RunReportVie
               )}
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-              <span className="num text-2xl font-bold text-ink tracking-tight leading-none" style={scoreVal != null ? { color: "var(--ring)" } : undefined}>
+              <span className="num text-2xl font-bold text-ink tracking-tight leading-none" style={scoreVal != null ? { color: "var(--ring-text)" } : undefined}>
                 {scoreVal != null ? scoreVal.toFixed(1) : "—"}
               </span>
               <span className="text-[11px] text-muted font-medium mt-0.5">
@@ -318,7 +318,7 @@ export function RunReportView({ presentation, run, whenFormatted }: RunReportVie
                   <div key={area.label} className="space-y-1" data-band={areaBand}>
                     <div className="flex items-center justify-between text-xs">
                       <span className="text-ink/85">{area.label}</span>
-                      <span className="num font-semibold" style={{ color: "var(--ring)" }}>{area.score.toFixed(1)} / 5</span>
+                      <span className="num font-semibold" style={{ color: "var(--ring-text)" }}>{area.score.toFixed(1)} / 5</span>
                     </div>
                     <div className="h-1.5 w-full rounded-full bg-panel-2 border border-line/60 dark:bg-white/[0.08] overflow-hidden">
                       <div
