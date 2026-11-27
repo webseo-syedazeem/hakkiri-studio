@@ -25,7 +25,8 @@ export function SiteNav() {
   const questionsRef = useRef<HTMLDivElement>(null);
 
   const isPresent = path === "/present";
-  const base = isPresent ? "/present" : "";
+  // "How it works" is a section of a home page: from any other page the link goes there, not to "#how" on this page.
+  const base = isPresent ? "/present" : "/";
 
   // Core navigation links matching the executive navigation
   const interviewLinks: [string, string, boolean][] = [
@@ -93,7 +94,9 @@ export function SiteNav() {
         >
           <button
             type="button"
-            onClick={() => setQuestionsMenuOpen((prev) => !prev)}
+            // Opens on press as well as on hover. A toggle here closed the menu that hovering (or a tap, which
+            // a phone sends as a hover first) had just opened, so pressing it seemed to do nothing.
+            onClick={() => setQuestionsMenuOpen(true)}
             className={clsx(
               "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[13px] cursor-pointer whitespace-nowrap leading-none select-none transition-all duration-200",
               isQuestionsActive || questionsMenuOpen

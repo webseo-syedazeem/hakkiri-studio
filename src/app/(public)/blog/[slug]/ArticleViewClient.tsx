@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import clsx from "clsx";
+import { headingSlug } from "@/lib/blog/markdown";
 import type { BlogPost } from "@/lib/blog/types";
 
 export function ArticleViewClient({
@@ -186,7 +187,7 @@ export function ArticleViewClient({
                         "hover:text-purple-600 transition-colors"
                       )}
                     >
-                      <a href={`#${encodeURIComponent(h.text.toLowerCase().replace(/\s+/g, "-"))}`} className="line-clamp-2">
+                      <a href={`#${headingSlug(h.text)}`} className="line-clamp-2">
                         {h.text}
                       </a>
                     </li>

@@ -3,6 +3,19 @@
  * Converts markdown text into semantic, safe HTML with Tailwind typography.
  */
 
+/**
+ * The anchor of a heading, for the article's contents list: lower case, words joined by hyphens, nothing else.
+ * The same for the heading as written in the article and as escaped into HTML.
+ */
+export function headingSlug(text: string): string {
+  return text
+    .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+    .replace(/[*_`]/g, "")
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 export function markdownToHtml(md: string): string {
   if (!md) return "";
 
@@ -53,8 +66,8 @@ export function markdownToHtml(md: string): string {
 
   // Headings
   text = text.replace(/^####\s+(.+)$/gm, '<h4 class="text-lg font-bold text-slate-100 mt-6 mb-2 tracking-tight">$1</h4>');
-  text = text.replace(/^###\s+(.+)$/gm, '<h3 class="text-xl font-bold text-slate-100 mt-8 mb-3 tracking-tight">$1</h3>');
-  text = text.replace(/^##\s+(.+)$/gm, '<h2 class="text-2xl font-bold text-slate-100 mt-10 mb-4 tracking-tight border-b border-slate-800/80 pb-2">$1</h2>');
+  text = text.replace(/^###\s+(.+)$/gm, (_m, h: string) => `<h3 id="${headingSlug(h)}" class="text-xl font-bold text-slate-100 mt-8 mb-3 tracking-tight scroll-mt-24">${h}</h3>`);
+  text = text.replace(/^##\s+(.+)$/gm, (_m, h: string) => `<h2 id="${headingSlug(h)}" class="text-2xl font-bold text-slate-100 mt-10 mb-4 tracking-tight border-b border-slate-800/80 pb-2 scroll-mt-24">${h}</h2>`);
   text = text.replace(/^#\s+(.+)$/gm, '<h1 class="text-3xl font-extrabold text-slate-100 mt-8 mb-4 tracking-tight">$1</h1>');
 
   // Lists (Unordered)
