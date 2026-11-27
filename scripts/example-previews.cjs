@@ -24,7 +24,7 @@ const ONLY = (process.env.ONLY || "").split(",").filter(Boolean);
 (async () => {
   if (ids.length < 33) throw new Error(`Expected at least 33 examples, found ${ids.length}`);
   const browser = await chromium.launch();
-  const context = await browser.newContext({ viewport: { width: 1440, height: 1200 }, deviceScaleFactor: 2, extraHTTPHeaders: { "x-forwarded-for": "10.9.8.7" } });
+  const context = await browser.newContext({ viewport: { width: 1440, height: 2400 }, deviceScaleFactor: 2, extraHTTPHeaders: { "x-forwarded-for": "10.9.8.7" } });
   await context.addInitScript(() => sessionStorage.setItem("dismiss_phone_notice", "1"));
   const page = await context.newPage();
   const res = await page.request.post(`${BASE}/api/auth/signup`, { data: { email: `examples-${Date.now()}@example.com`, password: "Password123!", name: "Previews" } });
