@@ -12,7 +12,7 @@ import { Announce, Bar, Btn, CvScreen, Field } from "./ui";
 const MAX_BYTES = 5 * 1024 * 1024;
 const OK_TYPE = /\.(pdf|docx)$/i;
 
-type Other = "paste" | "linkedin" | "three" | null;
+type Other = "paste" | "linkedin" | "three" | "talk" | "blank" | null;
 
 /** Upload problems, in the words of design spec v3 §01. */
 type UploadProblem = "wrong-type" | "too-big" | "scanned" | "failed";
@@ -54,9 +54,9 @@ export function Setup() {
     const q = new URLSearchParams(window.location.search);
     const t = q.get("template");
     if (t && (CV_TEMPLATES as readonly string[]).includes(t)) setDesign(t as TemplateId);
+    // A way to start named in the address opens that option here; nothing is created until the person chooses to go on.
     const start = START[q.get("start") ?? ""];
-    if (start === "talk" || start === "blank") void create(start);
-    else if (start) {
+    if (start) {
       setShowOther(true);
       setOther(start);
     }
@@ -254,9 +254,9 @@ export function Setup() {
                   <WayCard title="Paste text" body="Paste the text from your existing CV." pressed={other === "paste"} onClick={() => pickOther("paste")} />
                   <WayCard title="LinkedIn" body="Upload the PDF LinkedIn makes, or paste your profile." pressed={other === "linkedin"} onClick={() => pickOther("linkedin")} />
                   <WayCard title="Start from an example" body="Choose a written example and replace the sample facts." onClick={() => router.push("/cv/examples?view=examples")} />
-                  <WayCard title="Start with a blank page" body="Fill in the sections yourself." onClick={() => void create("blank")} />
+                  <WayCard title="Start with a blank page" body="Fill in the sections yourself." pressed={other === "blank"} onClick={() => pickOther("blank")} />
                   <WayCard title="Answer three questions" body="Tell us about one job in your own words." pressed={other === "three"} onClick={() => pickOther("three")} />
-                  <WayCard title="Talk it through" body="Work through the CV with the assistant." onClick={() => void create("talk")} />
+                  <WayCard title="Talk it through" body="Work through the CV with the assistant." pressed={other === "talk"} onClick={() => pickOther("talk")} />
                   <p className="cv-small" style={{ gridColumn: "1 / -1", margin: 0 }}>A blank page, three questions and Talk it through start as a UK CV on A4. Change it to US · Letter, and set your level, at the top of the editor.</p>
                 </div>
               )}
@@ -295,6 +295,24 @@ export function Setup() {
                       <Field label="Your text" multiline rows={7} value={text} onChange={setText} error={textError} maxLength={60000} />
                       <span className="cv-row">
                         <Btn kind="primary" busy={busy} onClick={() => void sendText()}>Open editor</Btn>
+                      </span>
+                    </>
+                  )}
+                  {other === "talk" && (
+                    <>
+                      <h2 className="cv-start-h2">Talk it through</h2>
+                      <p className="cv-muted" style={{ margin: 0 }}>The assistant asks one question at a time and writes your CV on the page beside you as you answer. Speak or type. Nothing is invented, and every change can be undone.</p>
+                      <span className="cv-row">
+                        <Btn kind="primary" busy={stage === "creating"} onClick={() => void create("talk")} data-testid="start-talking">Start talking</Btn>
+                      </span>
+                    </>
+                  )}
+                  {other === "blank" && (
+                    <>
+                      <h2 className="cv-start-h2">Start with a blank page</h2>
+                      <p className="cv-muted" style={{ margin: 0 }}>Fill in each section yourself. Nothing is written for you.</p>
+                      <span className="cv-row">
+                        <Btn kind="primary" busy={stage === "creating"} onClick={() => void create("blank")}>Create a blank CV</Btn>
                       </span>
                     </>
                   )}
