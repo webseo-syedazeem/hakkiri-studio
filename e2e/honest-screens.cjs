@@ -159,45 +159,14 @@ const APPLY_STOCK = ["Alex Morgan", "FinTech Scaleup", "+44 7700 900123", "Unive
     check((await p.getByTestId("hub-interview").innerText()) === chosen && /\(example\)/.test(chosen), "The interview chosen is still chosen after a refresh");
     await none(p, "The Practice Hub on an example interview", HUB_STOCK);
 
-    // ── Apply ───────────────────────────────────────────────────────────────────────────────────
-    for (const [where, url, expect] of [
-      ["The Apply home", "/apply", null],
-      ["The Apply profile", "/apply/profile", null],
-      ["The Apply voice page", "/apply/voice", "Nothing has been measured yet"],
-      ["The Apply settings", "/apply/settings", null],
-      ["The Apply evidence bank", "/apply/evidence", null],
-      ["The Apply applications", "/apply/applications", "You have no applications yet"],
-    ]) {
-      await p.goto(`${BASE}${url}`, { waitUntil: "networkidle" });
-      await p.waitForTimeout(600);
-      await none(p, where, APPLY_STOCK);
-      if (expect) check((await text(p)).includes(expect), `${where} says: ${expect}`);
+    // ── Apply: not part of the beta, so hidden from testers ─────────────────────────────────────
+    for (const url of ["/apply", "/apply/profile", "/apply/voice", "/apply/settings", "/apply/evidence", "/apply/applications", "/apply/jobs/new"]) {
+      const res = await p.goto(`${BASE}${url}`, { waitUntil: "networkidle" });
+      check(res.status() === 404, `${url} is not found for a tester: applications come after the beta`, `status ${res.status()}`);
     }
-    await p.goto(`${BASE}/apply/profile`, { waitUntil: "networkidle" });
-    const inputs = await p.locator("input, textarea").evaluateAll((els) => els.map((el) => el.value).filter(Boolean));
-    check(inputs.every((v) => /honest|example\.com|^GBP$|^0$|^any$|^uk$/i.test(v)), "A new profile holds only the account's own name and email", inputs.join(" | "));
-    await p.screenshot({ path: `${OUT}/honest-apply-profile.png`, fullPage: true });
 
-    // A pasted advert that names no employer, place or requirement.
-    await p.goto(`${BASE}/apply/jobs/new`, { waitUntil: "networkidle" });
-    await none(p, "The add-a-job page", APPLY_STOCK);
-    await p.locator("textarea").first().fill("We are a small team looking for someone friendly to help out in the shop at weekends. Apply by email to the manager.");
-    await p.getByRole("button", { name: /Intake Job/ }).click();
-    await p.waitForURL(/\/apply\/applications\/app_/, { timeout: 20000 });
-    await p.getByText("Match Fit").waitFor({ timeout: 15000 });
-    await none(p, "The application made from that advert", APPLY_STOCK);
-    const workspace = await p.locator("main").innerText();
-    check(/title not found in the advert/i.test(workspace) && /employer not found in the advert/i.test(workspace), "…and the title and employer the advert didn't give are shown as not found");
-    check(/not known/i.test(workspace) && !/\b\d+%\s*(fit|match)/i.test(workspace), "With nothing in the advert to measure against, the fit is shown as not known", workspace.slice(0, 300).replace(/\n+/g, " | "));
-    await p.goto(`${BASE}/apply/applications`, { waitUntil: "networkidle" });
-    const tracker = await text(p);
-    check(/fit not known/i.test(tracker) && /employer not found/i.test(tracker), "The tracker says what the advert didn't give, with no stand-in", tracker.slice(0, 300).replace(/\n+/g, " | "));
-    await p.screenshot({ path: `${OUT}/honest-apply-tracker.png`, fullPage: true });
-
-    // An application that isn't there shows "not found", not a sample.
-    await p.goto(`${BASE}/apply/applications/app_does_not_exist`, { waitUntil: "networkidle" });
-    await p.getByTestId("application-not-found").waitFor({ timeout: 10000 });
-    await none(p, "A missing application", APPLY_STOCK);
+    // The Apply walk-through (a pasted advert, the tracker, a missing application) comes back with the
+    // applications phase: see this file before 27 Nov 2026 in git history.
 
     // Moving on while the browser is still fetching a page's lazy chunks aborts those requests, which the
     // browser reports as a chunk-load error. That is this script leaving the page, not a fault in it.

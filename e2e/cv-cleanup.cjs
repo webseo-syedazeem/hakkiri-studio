@@ -23,24 +23,13 @@ run("CV clean-up", async (browser) => {
   await a.page.goto(`${BASE}/cv-audit`);
   await a.page.getByText("Free CV check").waitFor();
   await noForbidden(a.page, "public CV check");
-  await a.page.goto(`${BASE}/apply`);
-  await a.page.waitForLoadState("networkidle");
-  const hub = await a.page.locator("body").innerText();
-  check(!/Ashby|Greenhouse|Workday/.test(hub), "Apply hub names no applicant-tracking systems");
-  check(!/verified/i.test(hub), "Apply hub does not call facts 'verified'");
-  check(/facts you (have )?confirmed/i.test(hub), "Apply hub says the facts are confirmed by you");
-  await a.page.locator('a[href="/cv"]').first().click();
-  await a.page.waitForURL(/\/cv$/);
-  check(true, "the Apply hub's CV card opens the new section");
-
-  // --- A new account's Evidence Bank is empty ---
+  // --- Applications come after the beta: the Apply area is hidden from everyone but administrators ---
+  for (const url of ["/apply", "/apply/evidence", "/apply/applications"]) {
+    const res = await a.page.goto(`${BASE}${url}`);
+    check(res.status() === 404, `${url} is not found for a tester while applications are not part of the beta`, `status ${res.status()}`);
+  }
   const bank = await a.page.evaluate(async () => (await fetch("/api/apply/evidence")).json());
   check(Array.isArray(bank) && bank.length === 0, "a new account's Evidence Bank is empty", JSON.stringify(bank).slice(0, 200));
-  await a.page.goto(`${BASE}/apply/evidence`);
-  await a.page.waitForLoadState("networkidle");
-  const bankText = await a.page.locator("body").innerText();
-  check(!/Spearheaded|Black Friday|Playwright/.test(bankText), "the Evidence Bank page shows no invented achievements");
-  check(!/verified/i.test(bankText), "the Evidence Bank page does not call facts 'verified'");
 
   // --- The old CV API is gone ---
   const old = await a.page.evaluate(async () => (await fetch("/api/apply/cvs")).status);
