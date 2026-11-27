@@ -46,7 +46,8 @@ const noStock = async (page, where) => {
 };
 const axe = async (page, where) => {
   await page.addScriptTag({ content: AXE });
-  const v = await page.evaluate(async () => (await axe.run(document, { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21aa"] } })).violations.map((x) => `${x.id} (${x.nodes.length}): ${x.nodes[0].target.join(" ")}`));
+  // Scanned as a person sees it: once anything fading in has finished.
+  const v = await page.evaluate(async () => (await Promise.race([Promise.all(document.getAnimations().map((a) => a.finished.catch(() => {}))), new Promise((r) => setTimeout(r, 1500))]), await axe.run(document, { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21aa"] } })).violations.map((x) => `${x.id} (${x.nodes.length}): ${x.nodes[0].target.join(" ")}`));
   check(v.length === 0, `${where}: accessibility scan is clean`, v.join(" ; "));
 };
 const api = (page, method, path, data) =>
