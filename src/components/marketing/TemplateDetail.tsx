@@ -45,7 +45,7 @@ export function TemplateDetail({ t, kind }: { t: TemplateDef; kind: GalleryKind 
               <dt className="font-semibold text-slate-900">{region === "us" ? "Color" : "Colour"}</dt>
               <dd className="text-slate-700">
                 <span aria-hidden="true" className="mr-2 inline-block h-3 w-3 rounded-full align-middle" style={{ background: ACCENTS[t.accent].hex }} />
-                {ACCENTS[t.accent].name}, or any of 12 others, or your own
+                {ACCENTS[t.accent].name}, or any of {Object.keys(ACCENTS).length - 1} others, or your own
               </dd>
               <dt className="font-semibold text-slate-900">Style</dt>
               <dd className="text-slate-700">{words.tags.join(", ")}</dd>
