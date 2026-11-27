@@ -23,6 +23,31 @@ export function SiteNav() {
   const [questionsMenuOpen, setQuestionsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const questionsRef = useRef<HTMLDivElement>(null);
+  // Hover intent: a short close delay lets the pointer cross the gap into the menu without it closing.
+  const questionsCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const questionsOpenedAt = useRef(0);
+  const cancelQuestionsClose = () => {
+    if (questionsCloseTimer.current) clearTimeout(questionsCloseTimer.current);
+    questionsCloseTimer.current = null;
+  };
+  const openQuestionsMenu = () => {
+    cancelQuestionsClose();
+    if (!questionsMenuOpen) questionsOpenedAt.current = Date.now();
+    setQuestionsMenuOpen(true);
+  };
+  const closeQuestionsMenuSoon = () => {
+    cancelQuestionsClose();
+    questionsCloseTimer.current = setTimeout(() => setQuestionsMenuOpen(false), 250);
+  };
+  useEffect(() => () => cancelQuestionsClose(), []);
+  useEffect(() => {
+    if (!questionsMenuOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setQuestionsMenuOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [questionsMenuOpen]);
 
   const isPresent = path === "/present";
   const base = isPresent ? "/present" : "";
@@ -88,12 +113,18 @@ export function SiteNav() {
         <div
           className="relative inline-block"
           ref={questionsRef}
-          onMouseEnter={() => setQuestionsMenuOpen(true)}
-          onMouseLeave={() => setQuestionsMenuOpen(false)}
+          onMouseEnter={openQuestionsMenu}
+          onMouseLeave={closeQuestionsMenuSoon}
         >
           <button
             type="button"
-            onClick={() => setQuestionsMenuOpen((prev) => !prev)}
+            onClick={() => {
+              cancelQuestionsClose();
+              // A click right after hover opened the menu keeps it open instead of toggling it shut.
+              if (questionsMenuOpen && Date.now() - questionsOpenedAt.current < 600) return;
+              if (!questionsMenuOpen) questionsOpenedAt.current = Date.now();
+              setQuestionsMenuOpen((prev) => !prev);
+            }}
             className={clsx(
               "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[13px] cursor-pointer whitespace-nowrap leading-none select-none transition-all duration-200",
               isQuestionsActive || questionsMenuOpen
@@ -114,6 +145,8 @@ export function SiteNav() {
           {/* Solid Opaque Executive Dropdown */}
           {questionsMenuOpen && (
             <div className="absolute left-1/2 -translate-x-1/2 top-[calc(100%+12px)] z-[100] w-[390px] rounded-3xl border border-slate-200/90 bg-white p-3 shadow-[0_25px_70px_-15px_rgba(0,0,0,0.18),0_0_0_1px_rgba(0,0,0,0.04)] animate-dropdown">
+              {/* Invisible bridge over the 12px gap so moving the pointer down keeps the menu open */}
+              <span aria-hidden className="absolute -top-4 left-0 right-0 h-4" />
               {/* Header */}
               <div className="px-3 py-2 border-b border-slate-100 flex items-center justify-between mb-1.5">
                 <div className="flex items-center gap-2">
