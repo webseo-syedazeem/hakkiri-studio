@@ -18,11 +18,16 @@ import { MORE_I } from "./data/more-i";
 import { MORE_J } from "./data/more-j";
 import { MORE_K } from "./data/more-k";
 import { MORE_L } from "./data/more-l";
+import { MORE_M } from "./data/more-m";
+import { MORE_N } from "./data/more-n";
+import { MORE_O } from "./data/more-o";
+import { MORE_P } from "./data/more-p";
+import { MORE_Q } from "./data/more-q";
 import { TECHNOLOGY } from "./data/technology";
 import type { ExampleSpec } from "./types";
 
 /** Every example CV, each written for the UK and the US, with its cover letter. */
-export const EXAMPLES: ExampleSpec[] = [...TECHNOLOGY, ...BUSINESS, ...COMMERCIAL, ...HEALTHCARE, ...INDUSTRY_PEOPLE, ...INDUSTRY_TECHNICAL, ...INDUSTRY_SERVICES, ...INDUSTRY_OFFICE, ...MORE_A, ...MORE_B, ...MORE_C, ...MORE_D, ...MORE_E, ...MORE_F, ...MORE_G, ...MORE_H, ...MORE_I, ...MORE_J, ...MORE_K, ...MORE_L].map((spec) => {
+export const EXAMPLES: ExampleSpec[] = [...TECHNOLOGY, ...BUSINESS, ...COMMERCIAL, ...HEALTHCARE, ...INDUSTRY_PEOPLE, ...INDUSTRY_TECHNICAL, ...INDUSTRY_SERVICES, ...INDUSTRY_OFFICE, ...MORE_A, ...MORE_B, ...MORE_C, ...MORE_D, ...MORE_E, ...MORE_F, ...MORE_G, ...MORE_H, ...MORE_I, ...MORE_J, ...MORE_K, ...MORE_L, ...MORE_M, ...MORE_N, ...MORE_O, ...MORE_P, ...MORE_Q].map((spec) => {
   const extra = LETTERS[spec.id];
   if (!extra || spec.letter) return spec;
   const { names, ...letter } = extra;

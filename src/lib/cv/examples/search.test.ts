@@ -42,7 +42,9 @@ describe("finding an example by the job someone wants", () => {
   });
 
   it("narrows by industry and level", () => {
-    expect(ids("", { industry: "aviation" }).sort()).toEqual(["cabin-crew", "first-officer"]);
+    const aviation = EXAMPLES.filter((e) => e.industry === "aviation").map((e) => e.id).sort();
+    expect(aviation).toEqual(expect.arrayContaining(["cabin-crew", "first-officer"]));
+    expect(ids("", { industry: "aviation" }).sort()).toEqual(aviation);
     expect(ids("", { level: "student" })).toEqual(EXAMPLES.filter((e) => e.level === "student").map((e) => e.id));
     expect(ids("nurse", { industry: "aviation" })).toEqual([]);
   });
