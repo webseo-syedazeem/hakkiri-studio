@@ -290,7 +290,7 @@ export function describeFlow(flow: Flow, style: PaperStyle): ParaSpec[] {
         ...headerRule(i),
       });
     } else if (n.kind === "contact") {
-      const size = t.contact.tight ? 9.5 : 10;
+      const size = t.contactSize ?? (t.contact.tight ? 9.5 : 10);
       const pieces: Piece[] = [];
       n.items.forEach((item, k) => {
         if (k) pieces.push({ text: style.separator ?? " · ", font: body, size, color: MUTED, separator: true });
@@ -328,7 +328,7 @@ export function describeFlow(flow: Flow, style: PaperStyle): ParaSpec[] {
         before: t.space.section * d + (h.rule === "short-above" ? 5 : 0),
         after: (h.rule === "hairline-below" ? 6.5 : h.rule === "short-below" ? 8 : h.rule === "none" ? 3.5 : 4) * d,
         keepWithNext: true,
-        rule: h.rule === "none" ? undefined : { type: h.rule, color: ruleColor },
+        rule: h.rule === "none" ? undefined : { type: h.rule, color: ruleColor, ...(t.ruleWeight ? { height: t.ruleWeight } : {}) },
       });
     } else if (n.kind === "entry") {
       specs.push({
@@ -346,7 +346,7 @@ export function describeFlow(flow: Flow, style: PaperStyle): ParaSpec[] {
       });
     } else if (n.kind === "para") {
       const meta = n.role === "meta";
-      const size = meta ? Math.max(7, bodySize - 1) : bodySize;
+      const size = meta ? (t.metaSize ?? Math.max(7, bodySize - 1)) : bodySize;
       const sameEntryBefore = !!prev && "entryId" in prev && !!n.entryId && prev.entryId === n.entryId;
       const before = n.space !== undefined ? n.space * d : prev?.kind === "heading" ? 0 : sameEntryBefore ? (meta ? 1 : 2.5 * d) : prev?.kind === "para" && prev.role === "body" ? 3.5 * d : t.space.entry * d;
       specs.push({
@@ -354,7 +354,7 @@ export function describeFlow(flow: Flow, style: PaperStyle): ParaSpec[] {
         tag: "P",
         sectionId: n.sectionId,
         entryId: n.entryId,
-        pieces: n.runs.map((r) => ({ text: r.text, font: r.bold ? bold : body, size, color: meta ? MUTED : INK, link: r.link })),
+        pieces: n.runs.map((r) => ({ text: r.text, font: r.bold ? bold : body, size, color: meta ? (t.metaAccent ? accent : MUTED) : INK, link: r.link })),
         lineHeight: size * leading * lineSpacingFactor,
         size,
         font: body,
@@ -471,7 +471,7 @@ function layoutWith(flow: Flow, style: PaperStyle, fonts: Fonts, grid: Grid | un
     if (r.type === "name-bar") return { page: pg, x: left, y: topY + 2, width: r.height ?? 4, height: bottomY - topY - 4, color: r.color };
     if (r.type === "title-below") return { page: pg, x: cx, y: bottomY + 5, width: cw, height: 1.4, color: r.color };
     if (r.type === "contact-below") return { page: pg, x: cx, y: bottomY + 6, width: cw, height: 0.7, color: r.color };
-    if (r.type === "hairline-below") return { page: pg, x: cx, y: bottomY + 2.2, width: cw, height: 0.6, color: r.color };
+    if (r.type === "hairline-below") return { page: pg, x: cx, y: bottomY + 2.2, width: cw, height: r.height ?? 0.6, color: r.color };
     if (r.type === "short-below") return { page: pg, x: b.align === "center" ? cx + cw / 2 - 15 : textX, y: bottomY + 3, width: 30, height: 1.3, color: r.color };
     if (r.type === "short-above") return { page: pg, x: textX, y: topY - 4.5, width: 26, height: 1.7, color: r.color };
     return { page: pg, x: cx, y: baseline - b.size * 0.74, width: 3.2, height: b.size * 0.78, color: r.color };

@@ -107,7 +107,7 @@ describe("the page", () => {
           expect(r.x).toBeGreaterThanOrEqual(marginX - 0.01);
           expect(r.x + r.width).toBeLessThanOrEqual(width - marginX + 0.5);
           // Body text (not the smaller dates line) is never under 10.5 pt.
-          if (b.kind === "bullet" || (b.kind === "para" && r.size > style.fontSize - 0.95)) expect(r.size).toBeGreaterThanOrEqual(BODY_SIZE);
+          if (b.kind === "bullet" || (b.kind === "para" && r.size > (TEMPLATES[id].metaSize ?? style.fontSize - 0.95))) expect(r.size).toBeGreaterThanOrEqual(BODY_SIZE);
         }
       }
     }

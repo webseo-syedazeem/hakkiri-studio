@@ -123,6 +123,14 @@ export interface TemplateDef {
   /** A thin outline around the profile, with its padding. */
   frame?: { color: string; padX: number; padY: number };
   grid?: Grid;
+  /** Dates and other metadata lines, in points (TEMPLATES-v3: 9 pt on 46/47/49, 10 pt on 51/52). */
+  metaSize?: number;
+  /** Dates and metadata in the accent colour instead of the muted grey (52). */
+  metaAccent?: boolean;
+  /** Contact line size, in points (TEMPLATES-v3: 9.5 pt on 46/47/49, 10 pt on 51/52). */
+  contactSize?: number;
+  /** Thickness of the rule under each section heading, in points, when not the standard hairline. */
+  ruleWeight?: number;
 }
 
 /** "No. 07 · Harbour": how a template is named everywhere it is shown. */
@@ -921,6 +929,9 @@ export const TEMPLATES: Record<TemplateId, TemplateDef> = {
     margin: 45.35,
     leading: 1.32,
     ruleColor: "#B9C3D3",
+    ruleWeight: 0.75,
+    metaSize: 9,
+    contactSize: 9.5,
     headerRule: { height: 3, gap: 9 },
     grid: { kind: "rail", side: "right", width: 135, gap: 18, padX: 14, padY: 0, kinds: ["skills", "certificates", "languages", "awards", "courses", "interests"], line: "#A7BAC3" },
   },
@@ -941,6 +952,9 @@ export const TEMPLATES: Record<TemplateId, TemplateDef> = {
     margin: 42.52,
     leading: 1.32,
     ruleColor: "#B9C3D3",
+    ruleWeight: 0.75,
+    metaSize: 9,
+    contactSize: 9.5,
     topBar: { height: 6, gap: 12 },
     grid: { kind: "rail", side: "left", width: 132, gap: 20, padX: 11, padY: 10, kinds: ["skills", "certificates", "languages", "awards", "courses", "interests"], fill: "#F1F6F3" },
   },
@@ -962,6 +976,8 @@ export const TEMPLATES: Record<TemplateId, TemplateDef> = {
     heading: { size: 10, weight: 700, caps: true, tracking: 0.06, align: "left", accent: true, rule: "none" },
     margin: 45.35,
     leading: 1.34,
+    metaSize: 9,
+    contactSize: 9.5,
     headerRule: { height: 1, gap: 7 },
     grid: { kind: "margin-heads", width: 91, gap: 12, rule: "#D8C8B6" },
   },
@@ -982,6 +998,9 @@ export const TEMPLATES: Record<TemplateId, TemplateDef> = {
     margin: 45.35,
     leading: 1.32,
     ruleColor: "#C5B6CE",
+    ruleWeight: 1,
+    metaSize: 10,
+    contactSize: 10,
     nameBar: { width: 4, inset: 12 },
     frame: { color: "#C5B6CE", padX: 12, padY: 10 },
     grid: { kind: "rail", side: "right", width: 142, gap: 18, padX: 11, padY: 10, kinds: ["skills", "certificates", "languages", "awards", "courses", "interests"], outline: "#C5B6CE" },
@@ -1004,6 +1023,9 @@ export const TEMPLATES: Record<TemplateId, TemplateDef> = {
     margin: 45.35,
     bodySize: 11,
     leading: 1.35,
+    metaSize: 10,
+    metaAccent: true,
+    contactSize: 10,
     headerRule: { height: 2, gap: 10 },
     grid: { kind: "date-gutter", width: 96, gap: 15, rule: "#B8CCD0" },
   },

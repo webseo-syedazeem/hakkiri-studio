@@ -182,9 +182,9 @@ describe.each(CV_TEMPLATES)("Word, %s template", (template: TemplateId) => {
     expect((xml.match(/<w:hyperlink /g) ?? []).length).toBe(3);
     const rels = await zip.file("word/_rels/document.xml.rels")!.async("string");
     for (const url of ["mailto:fern@example.com", "https://linkedin.com/in/fern-example", "https://paperkite.example/maps"]) expect(rels).toContain(`Target="${url}" TargetMode="External"`);
-    // Body text is 10.5pt (21 half-points) or larger.
+    // Nothing under 9.5pt (19 half-points), except dates set at 9pt where TEMPLATES-v3 says so (46, 47, 49).
     const sizes = [...xml.matchAll(/<w:sz w:val="(\d+)"/g)].map((m) => Number(m[1]));
-    expect(Math.min(...sizes)).toBeGreaterThanOrEqual(19);
+    expect(Math.min(...sizes)).toBeGreaterThanOrEqual(Math.min(19, (TEMPLATES[template].metaSize ?? 9.5) * 2));
     const core = await zip.file("docProps/core.xml")!.async("string");
     expect(core).toContain("<dc:title>Fern Example – Collections officer – CV</dc:title>");
     expect(core).toContain("<dc:language>en-GB</dc:language>");
